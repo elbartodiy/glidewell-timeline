@@ -38,6 +38,11 @@ window.GW_TASKS = [
     links:[], media:[] },
 
   // ——— IDEAS ———
+  { id:"t11", col:"ideas",
+    title:{en:"Place Glidewell HT (implants) in the film narrative", ru:"Куда встроить Glidewell HT (импланты) в нарратив фильма"},
+    notes:{en:"The Glidewell HT / implant line — and its philosophy — currently isn't really represented in the film's story; it slipped out. Figure out where it belongs across the 14 parts and how to carry it. It has a rich timeline card (2015, Hahn Tapered → Glidewell HT): the 'BruxZir move' applied to the most expensive tooth — premium quality at a fraction of the price, finished with a BruxZir crown, one warranty from implant to restoration; strong fit for the access thesis. Likely homes: Part 10 (philosophy / implants as standard of care) and/or Part 13 (next generation). Implant voices on the roster: Resnik, Kosinski, Patel, Manalili. Decide and work it in.",
+           ru:"Линия Glidewell HT / импланты — и её философия — сейчас почти не представлены в истории фильма; выпали. Продумать, где её место в 14 частях и как её провести. На таймлайне есть подробная карточка (2015, Hahn Tapered → Glidewell HT): «ход BruxZir», применённый к самому дорогому зубу — премиум-качество за долю цены, сверху коронка BruxZir, одна гарантия от импланта до реставрации; сильно ложится на тезис доступности. Вероятные места: Часть 10 (философия / импланты как стандарт) и/или Часть 13 (следующее поколение). Имплант-голоса в ростере: Resnik, Kosinski, Patel, Manalili. Решить и вписать."},
+    links:[{en:"Milestone: Glidewell HT (2015) · parts 10 / 13",ru:"Веха: Glidewell HT (2015) · части 10 / 13"}], media:[] },
   { id:"t2", col:"ideas",
     title:{en:"Find an old-school dentist (impressions)", ru:"Найти дантиста, работающего «по-старому» (слепки)"},
     notes:{en:"For the \"before\" contrast and the Hero 2 (old-school) arc. Which clients still send the most archaic impressions? Possibly one of the side-heroes.",
