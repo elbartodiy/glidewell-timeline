@@ -1,0 +1,4 @@
+# Netlify config — deploy this folder as a static site.
+# The folder itself is the publish root (index.html + Glidewell_Tasks.js + tasks_media/).
+[build]
+  publish = "."
