@@ -241,6 +241,19 @@
   .film-block .fb-en.down{color:#A2561E}
   .film-block .fb-title{font-family:var(--body);font-size:12px;line-height:1.2;color:var(--ink);font-weight:600;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
   .stage.dim .film-block:not(.hl){opacity:.32}
+  /* pillar dots inside each storyboard part */
+  .film-block .fb-pills{display:flex;gap:3px;align-items:center;flex:1;justify-content:center}
+  .fb-pill{width:8px;height:8px;border-radius:50%;cursor:pointer;display:inline-block;border:1px solid rgba(0,0,0,.18);transition:transform .1s}
+  .fb-pill:hover{transform:scale(1.4)}
+  /* production calendar lane (months) */
+  .cal-month{position:absolute;box-sizing:border-box;background:#fff;border:1px solid #C6CCD2;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#5A5550;font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.02em}
+  .cal-month.alt{background:#EAEEF1}
+  .cal-ev{position:absolute;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:translateX(-50%);width:128px;z-index:4}
+  .cal-ev .ce-dot{width:12px;height:12px;border-radius:50%;border:2px solid var(--paper);box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+  .cal-ev.star .ce-dot{width:13px;height:13px;border-radius:2px;transform:rotate(45deg)}
+  .cal-ev .ce-stem{width:2px;height:9px;opacity:.7}
+  .cal-ev .ce-lbl{font-family:var(--body);font-size:10.5px;line-height:1.18;text-align:center;font-weight:700;margin-top:3px;paint-order:stroke}
+  .cal-ev:hover .ce-lbl{text-decoration:underline}
 
   /* pillars tier */
   .accline{stroke:#E11B2A;stroke-width:1.5px;opacity:.45}
@@ -461,13 +474,15 @@ const UI = {
   moreKicker:{en:"Roster · parking",ru:"Ростер · парковка"},
   moreTitle:{en:"More personalities — not yet on the line",ru:"More personalities — ещё не на линии"},
   moreIntro:{en:"Names from the photo wall and the master plan that aren't on the timeline yet. Proposed names first; the Extra block holds faces still to be identified. (Jim lives on his own line.)",ru:"Имена с фото-стены и из мастер-плана, которых пока нет на таймлайне. Сначала — предложенные; блок Extra — лица, которых ещё надо опознать. (Джим — на своей линии.)"},
-  filmTier:{en:"Storyboard / film — scenes 1–14 ↓",ru:"Раскадровка / фильм — сцены 1–14 ↓"},
+  filmTier:{en:"Storyboard / film — parts 1–14 ↓",ru:"Раскадровка / фильм — части 1–14 ↓"},
   sceneKicker:{en:"Film scene",ru:"Сцена фильма"},
   scAnchorFacts:{en:"Anchor facts",ru:"Опорные факты"},
   scNoFacts:{en:"Human / emotional beat — no single company fact anchors it.",ru:"Человеческая сцена — её не держит отдельный факт компании."},
   fsStoryboard:{en:"Storyboard & notes",ru:"Раскадровка и заметки"},
   fsFill:{en:"To fill in: the storyboard frame and notes for this scene.",ru:"Заполнить: кадр раскадровки и заметки по сцене."},
   pillarsTier:{en:"Pillars — how each theme surfaces ↓",ru:"Пилоны — как раскрывается каждая тема ↓"},
+  calTier:{en:"Production calendar — shoot window Jun–Oct ↓",ru:"Производственный календарь — съёмочное окно июнь–октябрь ↓"},
+  calKicker:{en:"Production calendar",ru:"Производственный календарь"},
   heroTier:{en:"Heroes — whose story each scene tells (airtime) ↓",ru:"Герои — чью историю рассказывает сцена (эфирное время) ↓"},
   beatTier:{en:"Story beats — Save the Cat structure (% of film) ↓",ru:"Сюжетные биты — структура Save the Cat (% фильма) ↓"},
   frameTier:{en:"Preview frames — stills per scene (click → scene) ↓",ru:"Превью-кадры — стиллы по сценам (клик → сцена) ↓"},
@@ -706,6 +721,31 @@ const SCENE_SHORT = {
   14:{en:"The forecast",ru:"Прогноз"}
 };
 const ENERGY = {1:'down',2:'up',3:'up',4:'down',5:'down',6:'down',7:'down',8:'up',9:'up',10:'up',11:'up',12:'up',13:'up',14:'up'};
+// --- production calendar: the real shoot window (months), with key dates as markers ---
+const CAL_MONTHS=[
+  {k:6,nm:{en:"June",ru:"Июнь"},dim:30},
+  {k:7,nm:{en:"July",ru:"Июль"},dim:31},
+  {k:8,nm:{en:"August",ru:"Август"},dim:31},
+  {k:9,nm:{en:"September",ru:"Сентябрь"},dim:30},
+  {k:10,nm:{en:"October",ru:"Октябрь"},dim:31}
+];
+const CAL_EVENTS=[
+  {m:6,d:24,c:"#E11B2A",
+   t:{en:"Now — production setup",ru:"Сейчас — настройка продакшна"},
+   when:{en:"June 2026 · where we are today",ru:"Июнь 2026 · где мы сейчас"},
+   desc:{en:"Where we stand today: crew, gear and the timeline tool are coming together, the first hero calls go out (Abdul confirmed) and early interviews begin. Everything further down this calendar hangs off what we lock now — heroes, access permissions, and the shooting order.",
+         ru:"Где мы сегодня: собираются команда, техника и сам таймлайн-инструмент, идут первые звонки героям (Абдул подтверждён), начинаются ранние интервью. Всё, что дальше по календарю, держится на том, что мы зафиксируем сейчас — герои, разрешения на доступ и порядок съёмок."}},
+  {m:7,d:16,c:"#2C6E9E",star:true,
+   t:{en:"Guiding Leaders — summer session (16–17)",ru:"Guiding Leaders — летняя сессия (16–17)"},
+   when:{en:"July 16–17, 2026 · we film Friday the 17th",ru:"16–17 июля 2026 · снимаем в пятницу 17-го"},
+   desc:{en:"The Guiding Leaders cohort is physically on campus July 16–17 — our window to capture the program in motion and the alumni hero candidates Bobbie recommended (Ellen Paulisick, Nadia Rodriguez, Bianca Clark, Jim Lam). We shoot Friday the 17th. Coordinate logistics and consent with Bobbie Norton ahead of time; this is the first big multi-hero shoot day.",
+         ru:"Группа Guiding Leaders физически на кампусе 16–17 июля — наше окно, чтобы снять программу в движении и кандидатов-героев из выпускников, которых рекомендовала Бобби (Ellen Paulisick, Nadia Rodriguez, Bianca Clark, Jim Lam). Снимаем в пятницу 17-го. Логистику и согласия заранее свести с Бобби Нортон; это первый большой съёмочный день с несколькими героями."}},
+  {m:10,d:15,c:"#137C7C",star:true,
+   t:{en:"Graduation — “Dentistry on the Rise”",ru:"Выпуск — «Dentistry on the Rise»"},
+   when:{en:"October 2026 · exact date to confirm with Bobbie",ru:"Октябрь 2026 · точную дату уточнить у Бобби"},
+   desc:{en:"The Guiding Leaders finale — graduation, staged as “Dentistry on the Rise.” It is the emotional payoff of the cohort arc we start filming in July, and a strong candidate for a film climax beat. Exact October date is still to be confirmed with Bobbie Norton.",
+         ru:"Финал Guiding Leaders — выпуск под названием «Dentistry on the Rise». Это эмоциональная кульминация арки группы, которую мы начинаем снимать в июле, и сильный кандидат на кульминационный бит фильма. Точную октябрьскую дату ещё нужно подтвердить у Бобби Нортон."}}
+];
 const ANG = {
   venard:{en:"Oral history of the pre-digital lab — how hand-craft became machines.",ru:"Устная история долиджитальной лаборатории — как ручной труд стал машинами."},
   ditolla:{en:"Insider who brought BruxZir to market (2006–09), now told from outside — the Revolution.",ru:"Инсайдер, выведший BruxZir на рынок (2006–09), рассказ со стороны — Революция."},
@@ -934,7 +974,7 @@ const MORE_PEOPLE = [
 ];
 
 const X0=190, DX=252, LINEY=404, PAD=190;
-const SPKROWY=716, FILMDIV=728, FBTOP=744, FBH=54, FILMLINEY=744, BEATDIV=826, BEATY=850, FRAMEDIV=890, FRAMETOP=902, FRAMEH=54, HERODIV=992, HEROW0=1010, HERO_DY=22, PDIV=1134, ACCY=1156, PROW0=1180, PROW_DY=24, JIMDIV=118, JIMLINEY=150, STAGEH=1290;
+const SPKROWY=716, FILMDIV=728, FBTOP=744, FBH=54, FILMLINEY=744, BEATDIV=826, BEATY=850, FRAMEDIV=890, FRAMETOP=902, FRAMEH=54, HERODIV=992, HEROW0=1010, HERO_DY=22, PDIV=1134, ACCY=1156, PROW0=1180, PROW_DY=24, CALDIV=1134, CALTOP=1156, CALH=46, JIMDIV=118, JIMLINEY=150, STAGEH=1290;
 BEATS.forEach((b,i)=>b.x=X0+i*DX);
 const STAGEW=X0+(BEATS.length-1)*DX+PAD;
 const stage=document.getElementById('stage'), draw=document.getElementById('draw'), layer=document.getElementById('layer');
@@ -1296,20 +1336,9 @@ function buildSVG(){
     s+='</g>';
   });
 
-  // --- pillars tier: how each theme surfaces (fragmented, tied to scenes) ---
-  s+='<line class="tierdiv" x1="72" y1="'+PDIV+'" x2="'+(STAGEW-70)+'" y2="'+PDIV+'"/>';
-  s+='<text class="tierlbl" x="84" y="'+(PDIV-9)+'">'+L(UI.pillarsTier)+'</text>';
-  // accessibility — the through-line (almost always present)
-  s+='<line class="accline" x1="84" y1="'+ACCY+'" x2="'+(STAGEW-70)+'" y2="'+ACCY+'"/>';
-  const accXs=[];
-  for(let k=1;k<=14;k++){ if((SCENE_PILLARS[k]||[]).indexOf('acc')>=0){ accXs.push(sceneX[k]); s+='<circle class="ptick" data-scene="'+k+'" cx="'+sceneX[k]+'" cy="'+ACCY+'" r="3.5" fill="'+PILLARS.acc.c+'"/>'; } }
-  s+=clusterLabels(accXs, ACCY-7, L(PILLARS.acc.nm), PILLARS.acc.c, 'data-pillar="acc"');
-  // four pillars as fragments (chips only where developed); name sits beside each cluster
-  P_ROWS.forEach((pk,r)=>{
-    const y=PROW0+r*PROW_DY, P=PILLARS[pk], xs=[];
-    for(let k=1;k<=14;k++){ if((SCENE_PILLARS[k]||[]).indexOf(pk)>=0){ xs.push(sceneX[k]); s+='<rect class="pchip" data-scene="'+k+'" x="'+(sceneX[k]-9)+'" y="'+(y-6)+'" width="18" height="12" rx="3" fill="'+P.c+'"/>'; } }
-    s+=clusterLabels(xs, y+3, L(P.nm), P.c, 'data-pillar="'+pk+'"');
-  });
+  // --- production calendar tier (months Jun–Oct); month blocks + event pins live in buildLayer ---
+  s+='<line class="tierdiv" x1="72" y1="'+CALDIV+'" x2="'+(STAGEW-70)+'" y2="'+CALDIV+'"/>';
+  s+='<text class="tierlbl" x="84" y="'+(CALDIV-9)+'">'+L(UI.calTier)+'</text>';
   // --- heroes / airtime: whose story each scene tells (bars across scene segments) ---
   s+='<line class="tierdiv" x1="72" y1="'+BEATDIV+'" x2="'+(STAGEW-70)+'" y2="'+BEATDIV+'"/>';
   s+='<text class="tierlbl" x="84" y="'+(BEATDIV-9)+'">'+L(UI.beatTier)+'</text>';
@@ -1346,13 +1375,30 @@ function buildLayer(){
       +(b.sc&&b.sc.length?'<div class="sc">'+b.sc.map(n=>'#'+n).join(' ')+'</div>':'')
       +'<div class="yr">'+b.y+'</div><h3>'+L(b.t)+'</h3><div class="d">'+L(b.d)+'</div><div class="th">'+L(b.th)+'</div></div>';
   });
-  // storyboard scene blocks — wide labeled segments with energy arrows (sbnd is global)
+  // storyboard scene blocks — wide labeled segments with energy arrows + pillar dots (sbnd is global)
   for(let k=1;k<=14;k++){
     const lb=sbnd[k-1], rb=sbnd[k], w=Math.max(44,rb-lb-4), en=ENERGY[k]||'up';
+    const pills=(SCENE_PILLARS[k]||[]).map(pk=>PILLARS[pk]?'<span class="fb-pill" data-pillar="'+pk+'" title="'+L(PILLARS[pk].nm)+'" style="background:'+PILLARS[pk].c+'"></span>':'').join('');
     h+='<div class="film-block'+(k%2?'':' alt')+'" id="fl-'+k+'" data-scene="'+k+'" style="left:'+(lb+2)+'px;top:'+FBTOP+'px;width:'+w+'px;height:'+FBH+'px">'
-      +'<div class="fb-top"><span class="fb-n">'+k+'</span><span class="fb-en '+en+'">'+(en==='up'?'▲':'▼')+'</span></div>'
+      +'<div class="fb-top"><span class="fb-n">'+k+'</span><span class="fb-pills">'+pills+'</span><span class="fb-en '+en+'">'+(en==='up'?'▲':'▼')+'</span></div>'
       +'<div class="fb-title">'+L(SCENE_SHORT[k])+'</div></div>';
   }
+  // production calendar lane — month columns Jun–Oct with event markers (replaces the pillars lane)
+  (function(){
+    const CL=84, CR=STAGEW-70, CW=CR-CL, MW=CW/CAL_MONTHS.length;
+    CAL_MONTHS.forEach((m,i)=>{
+      h+='<div class="cal-month'+(i%2?'':' alt')+'" style="left:'+(CL+i*MW+2)+'px;top:'+CALTOP+'px;width:'+(MW-4)+'px;height:'+CALH+'px">'
+        +'<span class="cm-nm">'+L(m.nm)+'</span></div>';
+    });
+    const evx=(mk,d)=>{ const i=CAL_MONTHS.findIndex(m=>m.k===mk); if(i<0)return CL; const m=CAL_MONTHS[i]; return CL+i*MW+((d-0.5)/m.dim)*MW; };
+    CAL_EVENTS.forEach((e,i)=>{
+      const x=evx(e.m,e.d);
+      h+='<div class="cal-ev'+(e.star?' star':'')+'" data-cal="'+i+'" style="left:'+x.toFixed(1)+'px;top:'+(CALTOP+CALH-6)+'px">'
+        +'<span class="ce-dot" style="background:'+e.c+'"></span>'
+        +'<span class="ce-stem" style="background:'+e.c+'"></span>'
+        +'<span class="ce-lbl" style="color:'+e.c+'">'+L(e.t)+'</span></div>';
+    });
+  })();
   // story-beat ruler (Save the Cat) — between scenes and heroes, positioned by % of film
   const bx=p=>84+(p/100)*(STAGEW-154);
   let _bb=0,_pp=0;
@@ -1447,7 +1493,7 @@ function render(){
   buildNav(); buildLegend();
   document.getElementById('v-spine').textContent=L(UI.vSpine);
   document.getElementById('v-full').textContent=L(UI.vFull);
-  if(openRef){ openRef.type==='expansion'?openExpansion(openRef.id,true):openRef.type==='workforce'?openWorkforce(openRef.id,true):openRef.type==='metric'?openMetric(openRef.id,true):openRef.type==='morepeople'?openMorePeople(true):openRef.type==='personalities'?openPersonalities(true):openRef.type==='spk'?openSpeaker(openRef.id,true):openRef.type==='journey'?openJourney(openRef.id,true):openRef.type==='jim'?openJim(openRef.id,true):openRef.type==='hero'?openHeroMoment(openRef.id,openRef.k,true):openRef.type==='pillar'?openPillar(openRef.id,true):openRef.type==='beatsheet'?openBeatSheet(openRef.id,true):openRef.type==='scene'?openScene(openRef.id,true):openRef.type==='allscenes'?openAllScenes(true):openBeat(openRef.id,true); }
+  if(openRef){ openRef.type==='expansion'?openExpansion(openRef.id,true):openRef.type==='workforce'?openWorkforce(openRef.id,true):openRef.type==='metric'?openMetric(openRef.id,true):openRef.type==='morepeople'?openMorePeople(true):openRef.type==='personalities'?openPersonalities(true):openRef.type==='spk'?openSpeaker(openRef.id,true):openRef.type==='journey'?openJourney(openRef.id,true):openRef.type==='jim'?openJim(openRef.id,true):openRef.type==='hero'?openHeroMoment(openRef.id,openRef.k,true):openRef.type==='pillar'?openPillar(openRef.id,true):openRef.type==='cal'?openCalEvent(openRef.id,true):openRef.type==='beatsheet'?openBeatSheet(openRef.id,true):openRef.type==='scene'?openScene(openRef.id,true):openRef.type==='allscenes'?openAllScenes(true):openBeat(openRef.id,true); }
 }
 
 function setHL(bi,on){
@@ -1586,6 +1632,14 @@ function openPillar(key,keep){
     +'<p class="scdesc">'+L(d.body)+'</p>'
     +'<dl><dt>'+L(UI.pillarRole)+'</dt><dd>'+L(d.role)+'</dd>'
     +'<dt>'+L(UI.pillarScenes)+'</dt><dd><div class="who">'+scenes+'</div></dd></dl>';
+  show();
+}
+function openCalEvent(i,keep){
+  const e=CAL_EVENTS[i]; if(!e)return; if(!keep)openRef={type:'cal',id:i}; clearPin();
+  pin.innerHTML='<div class="kicker" style="color:'+e.c+'">'+L(UI.calKicker)+'</div>'
+    +'<h2>'+L(e.t)+'</h2>'
+    +'<div class="role" style="color:'+e.c+'">'+L(e.when)+'</div>'
+    +'<p class="scdesc">'+L(e.desc)+'</p>';
   show();
 }
 function openHeroMoment(id,k,keep){
@@ -1820,6 +1874,8 @@ stage.addEventListener('click',e=>{
   const lg=e.target.closest('.lgnd-row'); if(lg){openMetric(lg.dataset.metric);return;}
   const mp=e.target.closest('.morep'); if(mp){mp.dataset.pers?openPersonalities():openMorePeople();return;}
   const bk=e.target.closest('.beatblk,.beatpin'); if(bk){openBeatSheet(+bk.dataset.beatSheet);return;}
+  const ce=e.target.closest('.cal-ev'); if(ce){openCalEvent(+ce.dataset.cal);return;}
+  const pl=e.target.closest('.fb-pill'); if(pl){openPillar(pl.dataset.pillar);return;}
   const fb=e.target.closest('.film-block'); if(fb){openScene(+fb.dataset.scene);return;}
   const chip=e.target.closest('.chip'); if(chip){openSpeaker(chip.dataset.spk);return;}
   const card=e.target.closest('.ev'); if(card){openBeat(+card.dataset.beat);return;}
