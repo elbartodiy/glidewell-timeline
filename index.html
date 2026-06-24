@@ -1343,10 +1343,10 @@ function buildLayer(){
       h+='<div class="beatblk'+(_bb++%2?'':' alt')+'" data-beat-sheet="'+i+'" style="left:'+(x1+1.5)+'px;top:'+(BEATY-12)+'px;width:'+w+'px">'
         +'<span class="bk-n">'+L(B.nm)+'</span><span class="bk-p">'+B.pct+'</span></div>';
     } else {
-      const x=bx(B.pos), hi=(_pp++%2===1);
+      const x=bx(B.pos);
       h+='<div class="beatpin" data-beat-sheet="'+i+'" style="left:'+x+'px;top:'+(BEATY-15)+'px">'
         +'<span class="pin-stem"></span><span class="pin-dot"></span>'
-        +'<span class="pin-lbl '+(hi?'hi':'lo')+'">'+L(B.nm)+'</span></div>';
+        +'<span class="pin-lbl hi">'+L(B.nm)+'</span></div>';
     }
   });
   h+='<div class="morep" data-pers="1" style="left:88px;top:188px"><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div><div class="mp-sub">'+L(UI.persSub)+' · '+Object.keys(SPK).length+'</div></div>';
