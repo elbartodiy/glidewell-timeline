@@ -371,7 +371,11 @@
   .kb-detail .kd-back:hover{color:var(--red)}
   .kb-detail h3{font-size:18px;color:var(--ink);margin:2px 0 6px}
   .kb-detail .kd-meta{font-family:var(--mono);font-size:10.5px;color:var(--mute);margin-bottom:12px}
-  .kb-detail .kd-notes{font-size:14px;line-height:1.6;color:var(--ink-2);white-space:pre-wrap}
+  .kb-detail .kd-notes{font-size:14px;line-height:1.55;color:var(--ink-2)}
+  .kb-detail .kd-notes p{margin:0 0 11px}
+  .kb-detail .kd-notes p:last-child{margin-bottom:0}
+  .kb-detail .kd-notes .kn-li{margin:4px 0 4px 18px;position:relative}
+  .kb-detail .kd-notes .kn-li:before{content:"•";position:absolute;left:-15px;color:var(--mute)}
   .kb-detail .kd-sec{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:16px 0 6px}
   .kb-detail .kd-link{font-size:13px;color:var(--ink-2);padding:3px 0}
   .kb-detail .kd-media img{max-width:100%;border-radius:8px;border:1px solid var(--line);margin-top:8px}
@@ -2050,13 +2054,22 @@ setView(view);
     h+='</div>';
     tpBody.innerHTML=h;
   }
+  function fmtNotes(s){
+    return String(s).split(/\n+/).map(function(raw){
+      var line=raw.trim(); if(!line) return '';
+      var bullet=/^[•\-–]\s?/.test(line);
+      if(bullet) line=line.replace(/^[•\-–]\s?/,'');
+      var html=esc(line).replace(/^([A-ZА-Я][A-ZА-Я0-9 ()\/.,—-]{1,42}:)/, '<b>$1</b>');
+      return bullet ? '<div class="kn-li">'+html+'</div>' : '<p>'+html+'</p>';
+    }).join('');
+  }
   function renderCard(id){
     const t=tasks().find(x=>x.id===id); if(!t){renderBoard();return;}
     const col=COLS.find(c=>c.key===t.col);
     let h='<div class="kb-detail"><button class="kd-back" id="kd-back">‹ '+L({en:'all tasks',ru:'все задачи'})+'</button>';
     h+='<div class="kd-meta">'+esc(t.id)+' · '+L(col?col.nm:{en:t.col,ru:t.col})+(t.date?' · '+esc(t.date):'')+'</div>';
     h+='<h3>'+esc(L(t.title))+'</h3>';
-    h+='<div class="kd-notes">'+esc(t.notes?L(t.notes):'—')+'</div>';
+    h+='<div class="kd-notes">'+(t.notes?fmtNotes(L(t.notes)):'—')+'</div>';
     if(t.links&&t.links.length){ h+='<div class="kd-sec">'+L({en:'Links',ru:'Связи'})+'</div>'+t.links.map(l=>'<div class="kd-link">• '+esc(L(l))+'</div>').join(''); }
     if(t.media&&t.media.length){ h+='<div class="kd-sec">'+L({en:'Media',ru:'Медиа'})+'</div><div class="kd-media">'+t.media.map(m=>'<img src="'+esc(m)+'" alt="">').join('')+'</div>'; }
     h+='</div>';
