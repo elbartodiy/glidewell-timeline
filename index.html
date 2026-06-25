@@ -1451,7 +1451,7 @@ function buildLayer(){
       segs.forEach((sg,si)=>{ const x=sg[0]/dim*100, w=(sg[1]-sg[0])/dim*100;
         s+='<rect x="'+x.toFixed(2)+'" y="0" width="'+w.toFixed(2)+'" height="100" fill="#1C2024" opacity="'+(si===1?0.05:0.03)+'"/>'; });
       for(let d=1; d<=dim; d++){ const x=(d-1)/dim*100, dow=new Date(2026,mk-1,d).getDay();
-        if(dow===0||dow===6) s+='<rect x="'+x.toFixed(2)+'" y="0" width="'+(100/dim).toFixed(2)+'" height="100" fill="#3E5C8A" opacity="0.11"/>';
+        if(dow===0||dow===6) s+='<rect x="'+x.toFixed(2)+'" y="0" width="'+(100/dim).toFixed(2)+'" height="100" fill="#4A5568" opacity="0.06"/>';
         s+='<line x1="'+x.toFixed(2)+'" y1="0" x2="'+x.toFixed(2)+'" y2="100" stroke="#1C2024" stroke-width="1" vector-effect="non-scaling-stroke" opacity="0.06"/>'; }
       return s+'</svg>';
     };
