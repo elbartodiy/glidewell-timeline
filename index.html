@@ -183,6 +183,10 @@
   #panel .who button b{font-family:var(--mono);font-weight:600}
   #panel .nofacts{font-size:13px;color:var(--mute);font-style:italic}
   #panel .scdesc{font-size:15px;line-height:1.5;color:var(--ink);margin:10px 0 4px}
+  #panel .scdesc p{margin:0 0 10px}
+  #panel .scdesc p:last-child{margin-bottom:0}
+  #panel .scdesc .fmt-li{margin:5px 0 5px 18px;position:relative}
+  #panel .scdesc .fmt-li:before{content:"•";position:absolute;left:-15px;color:var(--mute)}
   #panel .wholist{display:flex;flex-direction:column;gap:6px;margin-top:6px}
   #panel .whorow{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;width:100%;background:#F6F8FA;border:1px solid #E4E8EC;border-radius:10px;padding:7px 11px;cursor:pointer;transition:background .12s,border-color .12s}
   #panel .whorow:hover{background:var(--red-tint);border-color:#F2C9CD}
@@ -785,8 +789,8 @@ const CAL_EVENTS=[
   {m:10,d:15,c:"#9E5C8E",star:true,short:{en:"Dentistry on the Rise · 15–16",ru:"Dentistry on the Rise · 15–16"},
    t:{en:"Graduation — “Dentistry on the Rise” (15–16)",ru:"Выпуск — «Dentistry on the Rise» (15–16)"},
    when:{en:"Oct 15–16, 2026 · Dentistry on the Rise Symposium (Irvine)",ru:"15–16 октября 2026 · симпозиум Dentistry on the Rise (Ирвайн)"},
-   desc:{en:"The Guiding Leaders finale — the “Dentistry on the Rise” (DOTR) symposium, Oct 15–16 at the Glidewell Clinical Education Center, Irvine. Bobbie confirms this IS the graduation. Huge for us on three fronts: (1) our own hero candidates are on the speaker roster — Ellen Paulisick and Bianca Clark — alongside roster name Taylor Manalili and Jim Glidewell himself; (2) the program includes a tour of the world’s largest dental lab (B-roll) and an exclusive party at Mesa Manor, the home of Jim and Parvina Glidewell — intimate access that doubles for the personal film; (3) Day 1 is real cases / wins-and-setbacks talks, Day 2 hands-on workshops (guided implant surgery, smile design, scanning, 3D printing, same-day). Likely the film’s climax. Confirm the exact graduation moment and our shooting access with Bobbie. (Brochure offer code DOTR26; registration via glidewellsymposium.com/dentistry-on-the-rise — to-confirm details.)",
-         ru:"Финал Guiding Leaders — симпозиум «Dentistry on the Rise» (DOTR), 15–16 октября в Glidewell Clinical Education Center, Ирвайн. Бобби подтверждает: это и есть выпускной. Для нас огромен по трём фронтам: (1) в списке спикеров — наши же кандидаты-герои Ellen Paulisick и Bianca Clark, плюс из ростера Taylor Manalili и сам Джим Глайдвелл; (2) в программе — тур по крупнейшей зуботехнической лаборатории мира (B-roll) и закрытая вечеринка в Mesa Manor, доме Джима и Парвины Глайдвелл — интимный доступ, который работает и на личный фильм; (3) День 1 — реальные кейсы / доклады об удачах и провалах, День 2 — практические воркшопы (управляемая имплант-хирургия, дизайн улыбки, сканирование, 3D-печать, «за один визит»). Вероятная кульминация фильма. Точный момент выпуска и наш доступ к съёмке сверить с Бобби. (В брошюре промокод DOTR26; регистрация через glidewellsymposium.com/dentistry-on-the-rise — детали уточнить.)"}}
+   desc:{en:"The Guiding Leaders finale — the DOTR symposium, Oct 15–16 at the Glidewell Clinical Education Center, Irvine. Bobbie confirms this IS the graduation, and it's likely the film's climax.\nWhy it's gold for us: a tour of the world's largest dental lab (B-roll), and an exclusive party at Mesa Manor — Jim & Parvina Glidewell's home (intimate access that doubles for the personal film). Day 1 = real cases / wins & setbacks; Day 2 = hands-on workshops (guided implant surgery, smile design, scanning, 3D printing, same-day).\n**Speakers** (from the program — photos to add; backgrounds to confirm/expand with Bobbie):\n• **Jim Glidewell, CDT** — founder & president; the origin of the whole story.\n• **Ellen Paulisick, DDS, FAGD** — GL alumna & our hero candidate; built a brand-new practice fully on Glidewell (mill, scanner, HT implants).\n• **Bianca Clark, DDS** — GL alumna & our hero candidate; the program's go-to voice on 3D printing.\n• **Taylor Manalili, DDS** — on our roster: Glidewell Director of Clinical Prosthodontics, first Glidewell Fellow (2018); materials, AI, women in dentistry.\n• Also presenting (background TBD — ask Bobbie / research): Brittany Bergeron DDS · Bhumika Patel DDS · David Rice DDS · Setareh Lavasani DDS, MS · Dar Radfar DDS · Eric Johnson DDS · Jinny Bender DMD · Christina Do DDS · Danielle Brown DDS.\nConfirm the exact graduation moment and our shooting access with Bobbie.",
+         ru:"Финал Guiding Leaders — симпозиум DOTR, 15–16 октября в Glidewell Clinical Education Center, Ирвайн. Бобби подтверждает: это и есть выпускной, и вероятная кульминация фильма.\nЧем ценно для нас: тур по крупнейшей зуботехнической лаборатории мира (B-roll) и закрытая вечеринка в Mesa Manor — доме Джима и Парвины Глайдвелл (интимный доступ, который работает и на личный фильм). День 1 — реальные кейсы / удачи и провалы; День 2 — практические воркшопы (управляемая имплант-хирургия, дизайн улыбки, сканирование, 3D-печать, «за один визит»).\n**Спикеры** (из программы — фото добавим; бэкграунд сверить/дополнить с Бобби):\n• **Jim Glidewell, CDT** — основатель и президент; исток всей истории.\n• **Ellen Paulisick, DDS, FAGD** — выпускница GL и наш кандидат-герой; построила новую практику целиком на Glidewell (фрезер, сканер, импланты HT).\n• **Bianca Clark, DDS** — выпускница GL и наш кандидат-герой; главный голос программы по 3D-печати.\n• **Taylor Manalili, DDS** — из нашего ростера: директор по клинической ортопедии Glidewell, первый Glidewell Fellow (2018); материалы, ИИ, женщины в стоматологии.\n• Также выступают (бэкграунд уточнить — у Бобби / ресёрч): Brittany Bergeron DDS · Bhumika Patel DDS · David Rice DDS · Setareh Lavasani DDS, MS · Dar Radfar DDS · Eric Johnson DDS · Jinny Bender DMD · Christina Do DDS · Danielle Brown DDS.\nТочный момент выпуска и наш доступ к съёмке сверить с Бобби."}}
 ];
 // per-month detail — opens when a month block is clicked. Day-by-day plan + prep deadlines.
 // d: day or range as a string; done:true = already happened; tbc:true = date/plan to confirm. Fill freely.
@@ -1710,12 +1714,22 @@ function openPillar(key,keep){
     +'<dt>'+L(UI.pillarScenes)+'</dt><dd><div class="who">'+scenes+'</div></dd></dl>';
   show();
 }
+// format free text into readable blocks: blank-line paragraphs, • / - bullets, **bold**, leading LABEL:
+function fmtText(s){
+  function esc2(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  return String(s).split(/\n+/).map(function(raw){
+    var line=raw.trim(); if(!line) return '';
+    var bullet=/^[•\-–]\s?/.test(line); if(bullet) line=line.replace(/^[•\-–]\s?/,'');
+    var html=esc2(line).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^([A-ZА-Я][A-ZА-Я0-9 ()\/.,—-]{1,42}:)/,'<b>$1</b>');
+    return bullet ? '<div class="fmt-li">'+html+'</div>' : '<p>'+html+'</p>';
+  }).join('');
+}
 function openCalEvent(i,keep){
   const e=CAL_EVENTS[i]; if(!e)return; if(!keep)openRef={type:'cal',id:i}; clearPin();
   pin.innerHTML='<div class="kicker" style="color:'+e.c+'">'+L(UI.calKicker)+'</div>'
     +'<h2>'+L(e.t)+'</h2>'
     +'<div class="role" style="color:'+e.c+'">'+L(e.when)+'</div>'
-    +'<p class="scdesc">'+L(e.desc)+'</p>';
+    +'<div class="scdesc">'+fmtText(L(e.desc))+'</div>';
   show();
 }
 function openCalMonth(mk,keep){
