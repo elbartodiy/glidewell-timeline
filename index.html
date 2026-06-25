@@ -1460,8 +1460,11 @@ function buildLayer(){
         +calDays(m.dim,m.k)+'<span class="cm-nm">'+L(m.nm)+'</span></div>';
     });
     const evx=(mk,d)=>{ const i=CAL_MONTHS.findIndex(m=>m.k===mk); if(i<0)return CL; const m=CAL_MONTHS[i]; return CL+i*MW+((d-0.5)/m.dim)*MW; };
+    // "Now" tracks the real current date (clamped to the Jun–Oct window) so it never goes stale
+    const lo=CAL_MONTHS[0].k, hi=CAL_MONTHS[CAL_MONTHS.length-1].k, t=new Date(), tM=t.getMonth()+1, tD=t.getDate();
+    const nowMD=(tM<lo)?[lo,1]:(tM>hi)?[hi,CAL_MONTHS[CAL_MONTHS.length-1].dim]:[tM,tD];
     CAL_EVENTS.forEach((e,i)=>{
-      const x=evx(e.m,e.d), lbl=L(e.short||e.t);
+      const x=e.now?evx(nowMD[0],nowMD[1]):evx(e.m,e.d), lbl=L(e.short||e.t);
       if(e.now){
         h+='<div class="cal-now" data-cal="'+i+'" title="'+L(e.t)+' — '+L(e.when)+'" style="left:'+x.toFixed(1)+'px;top:'+(CALTOP-15)+'px;height:'+(CALH+26)+'px">'
           +'<span class="cn-lbl" style="color:'+e.c+'">'+lbl+'</span>'
