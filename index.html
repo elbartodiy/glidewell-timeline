@@ -201,7 +201,7 @@
   /* meanings tier — the 5 journeys */
   .tierdiv{stroke:#CDD4DC;stroke-width:1px}
   .tierlbl{font-family:var(--mono);font-size:11px;letter-spacing:.14em;fill:#8A94A0;text-transform:uppercase}
-  .tierlbl-link{cursor:pointer;fill:var(--red);text-decoration:underline}
+  .tierlbl-link{cursor:pointer;fill:var(--red);text-decoration:underline;pointer-events:auto}
   .tierlbl-link:hover{fill:var(--red-bright)}
   .cast-cand{display:flex;gap:14px;padding:14px 0;border-top:1px solid var(--line)}
   .cast-cand img{width:84px;height:84px;object-fit:cover;border-radius:8px;flex:none;background:#EEF1F3}
@@ -1515,7 +1515,7 @@ function buildSVG(){
   s+='<text class="tierlbl" x="84" y="'+(BEATDIV-9)+'">'+L(UI.beatTier)+'</text>';
   s+='<line class="tierdiv" x1="72" y1="'+FRAMEDIV+'" x2="'+(STAGEW-70)+'" y2="'+FRAMEDIV+'"/>';
   s+='<line class="tierdiv" x1="72" y1="'+HERODIV+'" x2="'+(STAGEW-70)+'" y2="'+HERODIV+'"/>';
-  s+='<rect data-go-allheroes="1" x="78" y="'+(HERODIV-23)+'" width="560" height="24" rx="5" fill="transparent" style="cursor:pointer"/>';
+  s+='<rect data-go-allheroes="1" x="78" y="'+(HERODIV-23)+'" width="560" height="24" rx="5" fill="transparent" style="cursor:pointer;pointer-events:all"/>';
   s+='<text class="tierlbl tierlbl-link" data-go-allheroes="1" x="84" y="'+(HERODIV-9)+'">'+L(UI.heroTier)+'</text>';
   HEROES.forEach((H,r)=>{
     const y=HEROW0+r*HERO_DY, lefts=[], scs=(H.sc||[]);
