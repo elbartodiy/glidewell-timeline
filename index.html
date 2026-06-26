@@ -208,7 +208,11 @@
   .cast-cand img.noimg{visibility:hidden}
   .cast-cb{min-width:0}
   .cast-nm{font-size:15px;font-weight:700;color:var(--ink)}
-  .cast-meta{font-family:var(--mono);font-size:11px;color:var(--mute);margin:2px 0 6px}
+  .cast-loc{font-size:13px;font-weight:700;color:var(--ink);margin:2px 0 3px}
+  .cast-loc .pin{color:var(--red);margin-right:3px}
+  .cast-meta{font-family:var(--mono);font-size:11px;color:var(--mute);margin:0 0 6px}
+  .cast-ig{color:var(--teal);text-decoration:none;pointer-events:auto}
+  .cast-ig:hover{text-decoration:underline}
   .cast-story{font-size:12.5px;line-height:1.45;color:var(--ink-2)}
   .cast-rec{margin-top:8px}
   .cast-rec button{font-family:var(--mono);font-size:10.5px;color:var(--teal);background:none;border:1px solid var(--line);border-radius:6px;padding:4px 9px;cursor:pointer}
@@ -559,6 +563,7 @@ const UI = {
   castHeroLines:{en:"Hero lines",ru:"Линии героев"},
   castCandidates:{en:"Hero #3 candidates — Guiding Leaders alumni",ru:"Кандидаты в Героя №3 — выпускники Guiding Leaders"},
   castRecBobbie:{en:"Recommended by Bobbie Norton →",ru:"Рекомендовала Бобби Нортон →"},
+  castCohort:{en:"cohort",ru:"когорта"},
   castConfirmed:{en:"confirmed",ru:"подтверждён"},
   castTBD:{en:"casting",ru:"в подборе"},
   beatTier:{en:"Story beats — Save the Cat structure (% of film) ↓",ru:"Сюжетные биты — структура Save the Cat (% фильма) ↓"},
@@ -1915,9 +1920,11 @@ function openAllHeroes(keep){
   });
   let cands='';
   HERO_CANDS.forEach(c=>{
+    const ig = c.ig ? '<a class="cast-ig" href="https://instagram.com/'+c.ig.replace('@','')+'" target="_blank" rel="noopener">'+c.ig+'</a>' : '';
     cands+='<div class="cast-cand"><img src="'+c.photo+'" alt="" onerror="this.classList.add(\'noimg\')">'
       +'<div class="cast-cb"><div class="cast-nm">'+c.nm+'</div>'
-      +'<div class="cast-meta">'+L(c.loc)+' · '+c.cohort+' · '+L(c.focus)+(c.ig?' · '+c.ig:'')+'</div>'
+      +'<div class="cast-loc"><span class="pin">📍</span>'+L(c.loc)+'</div>'
+      +'<div class="cast-meta">'+L(UI.castCohort)+' '+c.cohort+' · '+L(c.focus)+(ig?' · '+ig:'')+'</div>'
       +'<div class="cast-story">'+L(c.story)+'</div>'
       +'<div class="cast-rec"><button data-go="'+c.rec+'">'+L(UI.castRecBobbie)+'</button></div></div></div>';
   });
