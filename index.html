@@ -207,7 +207,9 @@
   .cast-cand img{width:84px;height:84px;object-fit:cover;border-radius:8px;flex:none;background:#EEF1F3}
   .cast-cand img.noimg{visibility:hidden}
   .cast-cb{min-width:0}
-  .cast-nm{font-size:15px;font-weight:700;color:var(--ink)}
+  .cast-nm{font-size:16px;font-weight:700;color:var(--ink)}
+  .cast-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:2px}
+  .cast-ph{width:84px;height:84px;border-radius:8px;flex:none;opacity:.9}
   .cast-loc{font-size:13px;font-weight:700;color:var(--ink);margin:2px 0 3px}
   .cast-loc .pin{color:var(--red);margin-right:3px}
   .cast-meta{font-family:var(--mono);font-size:11px;color:var(--mute);margin:0 0 6px}
@@ -226,6 +228,8 @@
   .cast-status{font-family:var(--mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:4px}
   .cast-status.ok{background:#1F7A57;color:#fff}
   .cast-status.tbd{background:#EEF1F3;color:var(--mute)}
+  .cast-status.rec{cursor:pointer;border:1px solid #BFE0DA;background:#E8F3F1;color:var(--teal);text-transform:none;letter-spacing:.02em;pointer-events:auto}
+  .cast-status.rec:hover{background:#D9EEE9}
   .cast-sum{font-size:12.5px;line-height:1.42;color:var(--ink-2);margin:5px 0 7px}
   .cast-sec{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:20px 0 4px}
   .jlane{pointer-events:auto;cursor:pointer;transition:opacity .15s}
@@ -1912,24 +1916,26 @@ function openAllHeroes(keep){
   if(!keep)openRef={type:'allheroes'}; clearPin();
   let lines='';
   HEROES.forEach(H=>{
-    const conf = (H.id==='abdul'||H.id==='jim');
+    const conf = (H.id==='abdul');
     const scenes=(H.sc||[]).map(k=>'<button data-go-scene="'+k+'">#'+k+'</button>').join(' ');
-    lines+='<div class="cast-hero"><div class="cast-hero-h">'
-      +(H.photo?'<img class="cast-hero-img" src="'+H.photo+'" alt="" onerror="this.classList.add(\'noimg\')">':'<span class="cast-dot" style="background:'+H.c+'"></span>')
-      +'<span class="cast-hn">'+L(H.nm)+'</span>'
+    const pic = H.photo ? '<img src="'+H.photo+'" alt="" onerror="this.style.visibility=\'hidden\'">'
+                        : '<div class="cast-ph" style="background:'+H.c+'"></div>';
+    lines+='<div class="cast-cand">'+pic
+      +'<div class="cast-cb"><div class="cast-head"><span class="cast-nm">'+L(H.nm)+'</span>'
       +'<span class="cast-status '+(conf?'ok':'tbd')+'">'+(conf?L(UI.castConfirmed):L(UI.castTBD))+'</span></div>'
-      +'<div class="cast-sum">'+L(H.wants)+'</div>'
-      +'<div class="who">'+scenes+'</div></div>';
+      +(H.loc?'<div class="cast-loc"><span class="pin">📍</span>'+L(H.loc)+'</div>':'')
+      +'<div class="cast-story">'+L(H.wants)+'</div>'
+      +'<div class="who" style="margin-top:7px">'+scenes+'</div></div></div>';
   });
   let cands='';
   HERO_CANDS.forEach(c=>{
     const ig = c.ig ? '<a class="cast-ig" href="https://instagram.com/'+c.ig.replace('@','')+'" target="_blank" rel="noopener">'+c.ig+'</a>' : '';
     cands+='<div class="cast-cand"><img src="'+c.photo+'" alt="" onerror="this.classList.add(\'noimg\')">'
-      +'<div class="cast-cb"><div class="cast-nm">'+c.nm+'</div>'
+      +'<div class="cast-cb"><div class="cast-head"><span class="cast-nm">'+c.nm+'</span>'
+      +'<button class="cast-status rec" data-go="'+c.rec+'">'+L(UI.castRecBobbie)+'</button></div>'
       +'<div class="cast-loc"><span class="pin">📍</span>'+L(c.loc)+'</div>'
       +'<div class="cast-meta">'+L(UI.castCohort)+' '+c.cohort+' · '+L(c.focus)+(ig?' · '+ig:'')+'</div>'
-      +'<div class="cast-story">'+L(c.story)+'</div>'
-      +'<div class="cast-rec"><button data-go="'+c.rec+'">'+L(UI.castRecBobbie)+'</button></div></div></div>';
+      +'<div class="cast-story">'+L(c.story)+'</div></div></div>';
   });
   pin.innerHTML='<div class="kicker">'+L(UI.castKicker)+'</div>'
     +'<h2>'+L(UI.castTitle)+'</h2>'
