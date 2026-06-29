@@ -4,122 +4,195 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>For the Sake of Smiles — a documentary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,380;1,6..72,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#15191e; --ink-2:#3c424a; --paper:#fdfcf9; --red:#E11B2A;
-    --mute:#7b828b; --line:#e7e4de; --gold:#c9a24b;
-    --serif:Georgia,"Times New Roman",serif;
-    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --porcelain:#F4EFE6; --enamel:#fbf8f2; --graphite:#211E1A; --ink:#2c2820;
+    --signal:#E11B2A; --dentin:#B98C46; --mute:#8c8474; --line:#e2dccf;
+    --disp:"Newsreader",Georgia,serif;
+    --body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    --measure:640px;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;padding:0}
-  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
-  .kick{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--red);font-weight:600}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--porcelain);color:var(--ink);font-family:var(--body);line-height:1.72;font-size:17.5px;-webkit-font-smoothing:antialiased}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--signal);font-weight:500}
+  a{color:inherit}
 
-  /* HERO */
-  .hero{background:#101418;color:#fff;padding:64px 24px 72px;position:relative;overflow:hidden}
-  .hero:before{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 70% 0%,rgba(225,27,42,.16),transparent 60%);pointer-events:none}
-  .hero-in{max-width:760px;margin:0 auto;position:relative}
-  .hero .kick{color:#ff5a66}
-  .hero h1{font-family:var(--serif);font-weight:600;font-size:clamp(38px,7vw,68px);line-height:1.04;letter-spacing:-.01em;margin:18px 0 0}
-  .hero .sub{color:#c6cbd2;font-size:clamp(17px,2.4vw,21px);line-height:1.5;margin:22px 0 0;max-width:640px}
-  .hero .mark{margin-top:40px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8b929c}
-  .hero .mark b{color:#fff;font-weight:600}
+  /* ── HERO ── */
+  .hero{background:var(--graphite);color:var(--porcelain);padding:clamp(40px,6vw,72px) 24px clamp(48px,6vw,80px)}
+  .hero-grid{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(28px,5vw,64px);align-items:center}
+  .hero .eyebrow{color:#e8736f}
+  .hero h1{font-family:var(--disp);font-weight:500;font-size:clamp(46px,7.2vw,92px);line-height:.98;letter-spacing:-.015em;margin:20px 0 0}
+  .hero h1 em{font-style:italic;font-weight:380;color:#fff}
+  .hero .sub{color:#c8c2b4;font-size:clamp(16px,2vw,19px);line-height:1.55;margin:24px 0 0;max-width:30em}
+  .hero .by{margin-top:30px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#9a9384}
+  .hero .by b{color:var(--porcelain);font-weight:500}
+  .hero-shot{aspect-ratio:4/5;border-radius:4px;overflow:hidden;position:relative;background:#15120f}
+  .hero-shot img{width:100%;height:100%;object-fit:cover;display:block}
+  /* red margin line under the hero */
+  .rule-hero{max-width:1080px;margin:clamp(34px,5vw,52px) auto 0;display:flex;align-items:center;gap:0}
+  .rule-hero .dot{width:7px;height:7px;border-radius:50%;background:var(--signal);flex:0 0 auto}
+  .rule-hero .ln{height:1.5px;background:var(--signal);flex:1 1 auto;transform-origin:left;animation:draw 1.1s cubic-bezier(.2,.7,.2,1) .15s both}
+  @keyframes draw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 
-  /* BODY */
-  .wrap{max-width:680px;margin:0 auto;padding:0 24px}
-  section{padding:54px 0;border-bottom:1px solid var(--line)}
-  section:last-of-type{border-bottom:none}
-  h2{font-family:var(--serif);font-weight:600;font-size:clamp(24px,3.6vw,32px);line-height:1.15;margin:12px 0 0;letter-spacing:-.01em}
-  p{font-size:17px;color:var(--ink-2);margin:16px 0 0}
-  p.lead{font-size:19px;color:var(--ink)}
-  .pull{font-family:var(--serif);font-size:clamp(22px,3.4vw,30px);line-height:1.32;color:var(--ink);font-style:italic;margin:0;padding:8px 0}
-  .pull .accent{color:var(--red);font-style:normal}
+  /* ── BODY: the margin spine ── */
+  main{max-width:var(--measure);margin:0 auto;padding:0 24px}
+  .case{position:relative;padding-left:26px}
+  .case:before{content:"";position:absolute;left:0;top:6px;bottom:0;width:1.5px;background:linear-gradient(var(--signal) 0 60%,var(--line) 60% 100%)}
+  section{padding:clamp(40px,6vw,64px) 0;position:relative}
+  section + section{border-top:1px solid var(--line)}
+  /* node on the spine at each section */
+  section:before{content:"";position:absolute;left:-26px;top:clamp(44px,6.2vw,68px);width:9px;height:9px;border-radius:50%;background:var(--porcelain);border:1.5px solid var(--signal);transform:translateX(-3.75px)}
+  h2{font-family:var(--disp);font-weight:500;font-size:clamp(26px,3.6vw,37px);line-height:1.14;letter-spacing:-.01em;margin:12px 0 0;color:var(--graphite)}
+  p{margin:16px 0 0;color:var(--ink)}
+  p.lead{font-size:19.5px;color:var(--graphite)}
+  .num{font-family:var(--mono);font-size:11px;color:var(--dentin);letter-spacing:.12em}
 
-  .crew{display:flex;gap:14px;align-items:flex-start;margin-top:22px;padding:18px 20px;background:#fff;border:1px solid var(--line);border-radius:12px}
-  .crew .ic{font-size:22px;line-height:1.2}
-  .crew .tx{font-size:15.5px;color:var(--ink-2)}
-  .crew .tx b{color:var(--ink)}
+  .quote{font-family:var(--disp);font-style:italic;font-weight:380;font-size:clamp(25px,4.2vw,42px);line-height:1.28;color:var(--graphite);margin:6px 0 0;letter-spacing:-.005em}
+  .quote .hl{color:var(--signal);font-style:normal;font-weight:500}
 
-  .points{list-style:none;margin:18px 0 0;padding:0}
-  .points li{position:relative;padding:0 0 0 26px;margin:12px 0;font-size:16.5px;color:var(--ink-2)}
-  .points li:before{content:"";position:absolute;left:4px;top:11px;width:7px;height:7px;border-radius:50%;background:var(--red)}
-  .points li b{color:var(--ink)}
+  ul.steps{list-style:none;margin:22px 0 0;padding:0}
+  ul.steps li{position:relative;padding-left:24px;margin:14px 0;color:var(--ink)}
+  ul.steps li:before{content:"";position:absolute;left:2px;top:13px;width:6px;height:6px;background:var(--signal);border-radius:1px}
+  ul.steps li b{color:var(--graphite);font-weight:600}
 
-  .cta{background:#101418;color:#fff;border-radius:16px;padding:34px 30px;margin-top:24px;text-align:center}
-  .cta h2{color:#fff;margin:0}
-  .cta p{color:#c6cbd2;margin-top:12px}
-  .cta a.mail{display:inline-block;margin-top:22px;font-family:var(--mono);font-size:15px;letter-spacing:.02em;color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.35);border-radius:30px;padding:13px 26px;transition:background .15s,border-color .15s}
-  .cta a.mail:hover{background:#fff;color:#101418}
+  .crew{display:flex;gap:14px;margin-top:24px;padding:18px 20px;background:var(--enamel);border:1px solid var(--line);border-radius:8px}
+  .crew .ic{font-family:var(--mono);color:var(--dentin);font-size:13px;letter-spacing:.1em;padding-top:2px}
+  .crew .tx{font-size:15.5px;color:var(--ink)}
+  .crew .tx b{color:var(--graphite)}
 
-  footer{text-align:center;padding:40px 24px 56px;color:var(--mute);font-size:13px}
-  footer .logo{font-family:var(--serif);font-weight:600;color:var(--ink);font-size:16px;letter-spacing:.01em}
-  footer .logo .r{color:var(--red)}
+  /* full-measure documentary shot between sections */
+  figure.shot{margin:0;grid-column:1/-1}
+  .shot-wrap{max-width:1080px;margin:0 auto;padding:clamp(8px,2vw,20px) 24px}
+  .shot-img{width:100%;border-radius:4px;overflow:hidden;background:var(--bisque,#e7dcc9);aspect-ratio:3/2}
+  .shot-img img{width:100%;height:100%;object-fit:cover;display:block}
+  figcaption{font-family:var(--mono);font-size:11px;color:var(--mute);letter-spacing:.04em;margin-top:9px}
+
+  /* photo placeholder (until real images drop in) */
+  .ph{display:flex;align-items:center;justify-content:center;text-align:center;background:
+      repeating-linear-gradient(45deg,#ece3d4 0 12px,#e7dcc9 12px 24px);color:#9b8f78;
+      font-family:var(--mono);font-size:11px;letter-spacing:.06em;padding:16px}
+  .hero-shot .ph{color:#6b6253;background:repeating-linear-gradient(45deg,#1c1814 0 12px,#221d17 12px 24px)}
+
+  /* ── CTA ── */
+  .cta{background:var(--graphite);color:var(--porcelain)}
+  .cta-in{max-width:var(--measure);margin:0 auto;padding:clamp(48px,7vw,80px) 24px;text-align:center}
+  .cta h2{color:#fff}
+  .cta p{color:#c8c2b4}
+  .cta a.go{display:inline-block;margin-top:26px;font-family:var(--mono);font-size:14px;letter-spacing:.04em;color:#fff;text-decoration:none;border:1px solid rgba(244,239,230,.4);border-radius:2px;padding:14px 28px;transition:background .15s,color .15s,border-color .15s}
+  .cta a.go:hover,.cta a.go:focus-visible{background:var(--signal);border-color:var(--signal);color:#fff;outline:none}
+
+  footer{text-align:center;padding:34px 24px 52px;color:var(--mute);font-family:var(--mono);font-size:11px;letter-spacing:.06em}
+  footer .nm{color:var(--graphite);font-weight:500}
+
+  @media(max-width:720px){
+    .hero-grid{grid-template-columns:1fr}
+    .hero-shot{aspect-ratio:3/2;order:-1}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .rule-hero .ln{animation:none}
+  }
 </style>
 </head>
 <body>
 
   <header class="hero">
-    <div class="hero-in">
-      <div class="kick">A feature documentary</div>
-      <h1>For the Sake of Smiles</h1>
-      <p class="sub">For half a century, fixing a tooth meant wax, plaster, and weeks of waiting. This is the story of how that changed — and of the people who made the best dentistry affordable enough to reach everyone.</p>
-      <div class="mark">Produced by <b>Glidewell</b></div>
+    <div class="hero-grid">
+      <div class="hero-tx">
+        <div class="eyebrow">A documentary · in production</div>
+        <h1>For the Sake<br>of <em>Smiles</em></h1>
+        <p class="sub">For half a century, fixing a tooth meant wax, plaster, and weeks of waiting. This is the story of how that changed — and of the people who made the best dentistry affordable enough to reach everyone.</p>
+        <div class="by">Produced by <b>Glidewell</b></div>
+      </div>
+      <div class="hero-shot">
+        <!-- PHOTO SLOT 1 — hands cradling a crown, warm light, portrait 4:5 -->
+        <div class="ph">PHOTO · hands &amp; crown · 4:5</div>
+      </div>
     </div>
+    <div class="rule-hero"><span class="dot"></span><span class="ln"></span><span class="dot"></span></div>
   </header>
 
-  <main class="wrap">
+  <main>
+    <div class="case">
 
-    <section>
-      <div class="kick">What this is</div>
-      <h2>An honest film about modern dentistry — told through the people who live it.</h2>
-      <p class="lead">Clinicians, makers, educators and patients. Not a commercial — a real look at how the craft moved from the bench to scanners, milling and AI, and what that means for the person in the chair.</p>
-    </section>
+      <section>
+        <div class="eyebrow">What this is</div>
+        <h2>An honest film about modern dentistry — told through the people who live it.</h2>
+        <p class="lead">Clinicians, makers, educators and patients. Not a commercial — a real look at how the craft moved from the bench to scanners, milling and AI, and what that means for the person in the chair.</p>
+      </section>
 
-    <section>
-      <div class="kick">Why it matters</div>
-      <p class="pull">“The best dentistry in the world doesn’t help the person who <span class="accent">can’t afford to walk in.</span>”</p>
-      <p>At its heart the film is about access. We follow the half-century push to make great dentistry affordable — and the smiles it finally reached. That’s the thread that ties every story together.</p>
-    </section>
+    </div>
 
-    <section>
-      <div class="kick">Why your voice</div>
-      <h2>We’re building this from real, first-hand voices.</h2>
-      <p>We’re inviting a small circle of people whose work and experience tell this story honestly. We’d be glad to have yours on the record — in your own words, on your own terms. No company script, no sales pitch. Just the truth of your work.</p>
-    </section>
+    <figure class="shot"><div class="shot-wrap">
+      <div class="shot-img"><div class="ph">PHOTO · hands at the bench, shaping wax · 3:2</div></div>
+      <figcaption>The craft, where it begins — wax, a fine tool, a steady hand.</figcaption>
+    </div></figure>
 
-    <section>
-      <div class="kick">What taking part looks like</div>
-      <ul class="points">
-        <li>A <b>relaxed, on-camera conversation</b> about your path and your work — nothing to memorize, no script. We guide it.</li>
-        <li>Around it, we quietly film a little of your <b>everyday practice</b> for texture.</li>
-        <li><b>We come to you</b>, work around your schedule, and stay out of the way of your patients.</li>
-      </ul>
-      <div class="crew">
-        <div class="ic">🎥</div>
-        <div class="tx"><b>A small, unobtrusive crew.</b> Just two or three people with a camera and some lights — not a film set. Easy, calm, and over before you know it.</div>
-      </div>
-    </section>
+    <div class="case">
 
-    <section>
-      <div class="kick">You’re in good company</div>
-      <p>The film brings together respected, independent voices across dentistry — clinicians, scientists, educators and the rising doctors of the Guiding Leaders community — building toward the celebration at <b>Dentistry on the Rise</b> this fall.</p>
-    </section>
+      <section>
+        <div class="eyebrow">Why it matters</div>
+        <p class="quote">“The best dentistry in the world doesn’t help the person who <span class="hl">can’t afford to walk in.</span>”</p>
+        <p>At its heart the film is about access. We follow the half-century push to make great dentistry affordable — and the smiles it finally reached. That’s the thread that ties every story together.</p>
+      </section>
 
-    <section>
-      <div class="cta">
-        <h2>If this resonates, we’d love to include you.</h2>
-        <p>Reach out and we’ll find a time that works — everything else, we handle.</p>
-        <a class="mail" href="mailto:eldar.asanov@glidewelldental.com?subject=For%20the%20Sake%20of%20Smiles%20—%20count%20me%20in">eldar.asanov@glidewelldental.com</a>
-      </div>
-    </section>
+      <section>
+        <div class="eyebrow">Why your voice</div>
+        <h2>We’re building this from real, first-hand voices.</h2>
+        <p>We’re inviting a small circle of people whose work and experience tell this story honestly. We’d be glad to have yours on the record — in your own words, on your own terms. No company script, no sales pitch. Just the truth of your work.</p>
+      </section>
+
+    </div>
+
+    <figure class="shot"><div class="shot-wrap">
+      <div class="shot-img"><div class="ph">PHOTO · a dentist with a chairside scanner, warm · 3:2</div></div>
+      <figcaption>The same craft, today — made faster, and within reach.</figcaption>
+    </div></figure>
+
+    <div class="case">
+
+      <section>
+        <div class="eyebrow">What taking part looks like</div>
+        <ul class="steps">
+          <li>A <b>relaxed, on-camera conversation</b> about your path and your work — nothing to memorize, no script. We guide it.</li>
+          <li>Around it, we quietly film a little of your <b>everyday practice</b> for texture.</li>
+          <li><b>We come to you</b>, work around your schedule, and stay out of the way of your patients.</li>
+        </ul>
+        <div class="crew">
+          <div class="ic">crew</div>
+          <div class="tx"><b>A small, unobtrusive crew.</b> Just two or three people with a camera and some lights — not a film set. Easy, calm, and over before you know it.</div>
+        </div>
+      </section>
+
+      <section>
+        <div class="eyebrow">You’re in good company</div>
+        <p>The film brings together respected, independent voices across dentistry — clinicians, scientists, educators and the rising doctors of the Guiding Leaders community — building toward the celebration at <b>Dentistry on the Rise</b> this fall.</p>
+      </section>
+
+    </div>
+
+    <figure class="shot"><div class="shot-wrap">
+      <div class="shot-img"><div class="ph">PHOTO · a genuine, everyday smile · 3:2</div></div>
+      <figcaption>The reason for all of it.</figcaption>
+    </div></figure>
 
   </main>
 
+  <section class="cta">
+    <div class="cta-in">
+      <div class="eyebrow" style="color:#e8736f">Join the film</div>
+      <h2 style="font-family:var(--disp);font-weight:500;font-size:clamp(26px,3.8vw,38px);line-height:1.15;margin:14px 0 0">If this resonates, we’d love to include you.</h2>
+      <p>Reach out and we’ll find a time that works — everything else, we handle.</p>
+      <a class="go" href="mailto:eldar.asanov@glidewelldental.com?subject=For%20the%20Sake%20of%20Smiles%20%E2%80%94%20count%20me%20in">eldar.asanov@glidewelldental.com</a>
+    </div>
+  </section>
+
   <footer>
-    <div class="logo">G<span class="r">·</span> Glidewell</div>
-    <div style="margin-top:8px">For the Sake of Smiles — a documentary in production</div>
+    <span class="nm">Glidewell</span> · For the Sake of Smiles — a documentary in production
   </footer>
 
 </body>
