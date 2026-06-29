@@ -2156,6 +2156,9 @@ function gwLogVisit(){
   }catch(e){}
 }
 gwLogVisit();
+// Deep-link: …#cast (or #survey / #personalities) opens the survey panel straight away.
+function gwAutoOpen(){ try{ if(/cast|survey|person/.test((location.hash||'').toLowerCase())) openPersonalities(); }catch(e){} }
+window.addEventListener('load', gwAutoOpen);
 const SURVEY_FAM=[
   {v:'no',    en:"Don't know", ru:'Не знаю'},
   {v:'know',  en:'Acquainted', ru:'Знаком'},
