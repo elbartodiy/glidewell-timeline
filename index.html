@@ -171,6 +171,9 @@
   #panel .sv-send{font-family:var(--mono);font-size:13px;padding:9px 18px;border:none;border-radius:7px;background:var(--red,#E11B2A);color:#fff;cursor:pointer}
   #panel .sv-send:hover{opacity:.9}
   #panel .sv-status{font-size:12px;color:var(--mute)}
+  #panel .sv-back{display:flex;align-items:center;gap:10px;width:100%;text-align:left;margin:2px 0 16px;padding:10px 13px;border:1px solid var(--navy,#1E3A8A);border-radius:9px;background:rgba(30,58,138,.06);color:var(--navy,#1E3A8A);font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;transition:background .12s}
+  #panel .sv-back:hover{background:rgba(30,58,138,.13)}
+  #panel .sv-back-note{margin-left:auto;font-family:var(--ui,system-ui);font-weight:400;font-size:11px;color:var(--mute);white-space:nowrap}
   #panel .pers-card .pc-tx{min-width:0}
 
   #panel{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#fff;border-top:1px solid var(--line);
@@ -1775,8 +1778,10 @@ function hoverScene(k,on){ if(String(pinScene)===String(k)){ if(on)setSceneHL(k,
 const panel=document.getElementById('panel'), pin=document.getElementById('pinner');
 function openSpeaker(id,keep){
   const s=SPK[id]; if(!keep)openRef={type:'spk',id}; clearPin();
+  const _sv=svLoad(); const _hasSurvey=!!(_sv&&((_sv.answers&&Object.keys(_sv.answers).some(k=>_sv.answers[k]&&(_sv.answers[k].fam||_sv.answers[k].connect)))||(_sv.name&&_sv.name.trim())));
+  const svBack=_hasSurvey?'<button type="button" class="sv-back" data-go-pers="1">'+L({en:'← Back to the survey',ru:'← Назад к опросу'})+'<span class="sv-back-note">'+L({en:'your answers are saved',ru:'ваши ответы сохранены'})+'</span></button>':'';
   const themes=(s.sc||[]).map(n=>'<button data-go-scene="'+n+'">#'+n+' '+L(SCENES[n])+'</button>').join('') || '<span style="color:var(--mute)">—</span>';
-  pin.innerHTML=(SPK_IMG[id]?'<img class="spk-avatar" src="'+SPK_IMG[id]+'" alt="">':'')+'<div class="kicker">'+L(UI.grp[s.g])+' · <span class="pers-back" data-go-pers="1">'+L(UI.allPers)+'</span></div>'
+  pin.innerHTML=(SPK_IMG[id]?'<img class="spk-avatar" src="'+SPK_IMG[id]+'" alt="">':'')+'<div class="kicker">'+L(UI.grp[s.g])+' · <span class="pers-back" data-go-pers="1">'+L(UI.allPers)+'</span></div>'+svBack
     +'<h2>'+s.nm+'</h2><div class="role">'+L(s.role)+'</div>'
     +'<div class="metarow"><span class="loc">'+L(s.loc)+'</span><span class="st '+s.status+'">'+s.status+'</span></div>'
     +(SPK_MW[id]?'<div class="mwline">'+MW[SPK_MW[id]].g+' '+L(MW[SPK_MW[id]].nm)+'</div>':'')
