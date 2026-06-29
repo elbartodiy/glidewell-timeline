@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>For the Sake of Smiles — a documentary</title>
+<style>
+  :root{
+    --ink:#15191e; --ink-2:#3c424a; --paper:#fdfcf9; --red:#E11B2A;
+    --mute:#7b828b; --line:#e7e4de; --gold:#c9a24b;
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--red);font-weight:600}
+
+  /* HERO */
+  .hero{background:#101418;color:#fff;padding:64px 24px 72px;position:relative;overflow:hidden}
+  .hero:before{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 70% 0%,rgba(225,27,42,.16),transparent 60%);pointer-events:none}
+  .hero-in{max-width:760px;margin:0 auto;position:relative}
+  .hero .kick{color:#ff5a66}
+  .hero h1{font-family:var(--serif);font-weight:600;font-size:clamp(38px,7vw,68px);line-height:1.04;letter-spacing:-.01em;margin:18px 0 0}
+  .hero .sub{color:#c6cbd2;font-size:clamp(17px,2.4vw,21px);line-height:1.5;margin:22px 0 0;max-width:640px}
+  .hero .mark{margin-top:40px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8b929c}
+  .hero .mark b{color:#fff;font-weight:600}
+
+  /* BODY */
+  .wrap{max-width:680px;margin:0 auto;padding:0 24px}
+  section{padding:54px 0;border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:none}
+  h2{font-family:var(--serif);font-weight:600;font-size:clamp(24px,3.6vw,32px);line-height:1.15;margin:12px 0 0;letter-spacing:-.01em}
+  p{font-size:17px;color:var(--ink-2);margin:16px 0 0}
+  p.lead{font-size:19px;color:var(--ink)}
+  .pull{font-family:var(--serif);font-size:clamp(22px,3.4vw,30px);line-height:1.32;color:var(--ink);font-style:italic;margin:0;padding:8px 0}
+  .pull .accent{color:var(--red);font-style:normal}
+
+  .crew{display:flex;gap:14px;align-items:flex-start;margin-top:22px;padding:18px 20px;background:#fff;border:1px solid var(--line);border-radius:12px}
+  .crew .ic{font-size:22px;line-height:1.2}
+  .crew .tx{font-size:15.5px;color:var(--ink-2)}
+  .crew .tx b{color:var(--ink)}
+
+  .points{list-style:none;margin:18px 0 0;padding:0}
+  .points li{position:relative;padding:0 0 0 26px;margin:12px 0;font-size:16.5px;color:var(--ink-2)}
+  .points li:before{content:"";position:absolute;left:4px;top:11px;width:7px;height:7px;border-radius:50%;background:var(--red)}
+  .points li b{color:var(--ink)}
+
+  .cta{background:#101418;color:#fff;border-radius:16px;padding:34px 30px;margin-top:24px;text-align:center}
+  .cta h2{color:#fff;margin:0}
+  .cta p{color:#c6cbd2;margin-top:12px}
+  .cta a.mail{display:inline-block;margin-top:22px;font-family:var(--mono);font-size:15px;letter-spacing:.02em;color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.35);border-radius:30px;padding:13px 26px;transition:background .15s,border-color .15s}
+  .cta a.mail:hover{background:#fff;color:#101418}
+
+  footer{text-align:center;padding:40px 24px 56px;color:var(--mute);font-size:13px}
+  footer .logo{font-family:var(--serif);font-weight:600;color:var(--ink);font-size:16px;letter-spacing:.01em}
+  footer .logo .r{color:var(--red)}
+</style>
+</head>
+<body>
+
+  <header class="hero">
+    <div class="hero-in">
+      <div class="kick">A feature documentary</div>
+      <h1>For the Sake of Smiles</h1>
+      <p class="sub">For half a century, fixing a tooth meant wax, plaster, and weeks of waiting. This is the story of how that changed — and of the people who made the best dentistry affordable enough to reach everyone.</p>
+      <div class="mark">Produced by <b>Glidewell</b></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <section>
+      <div class="kick">What this is</div>
+      <h2>An honest film about modern dentistry — told through the people who live it.</h2>
+      <p class="lead">Clinicians, makers, educators and patients. Not a commercial — a real look at how the craft moved from the bench to scanners, milling and AI, and what that means for the person in the chair.</p>
+    </section>
+
+    <section>
+      <div class="kick">Why it matters</div>
+      <p class="pull">“The best dentistry in the world doesn’t help the person who <span class="accent">can’t afford to walk in.</span>”</p>
+      <p>At its heart the film is about access. We follow the half-century push to make great dentistry affordable — and the smiles it finally reached. That’s the thread that ties every story together.</p>
+    </section>
+
+    <section>
+      <div class="kick">Why your voice</div>
+      <h2>We’re building this from real, first-hand voices.</h2>
+      <p>We’re inviting a small circle of people whose work and experience tell this story honestly. We’d be glad to have yours on the record — in your own words, on your own terms. No company script, no sales pitch. Just the truth of your work.</p>
+    </section>
+
+    <section>
+      <div class="kick">What taking part looks like</div>
+      <ul class="points">
+        <li>A <b>relaxed, on-camera conversation</b> about your path and your work — nothing to memorize, no script. We guide it.</li>
+        <li>Around it, we quietly film a little of your <b>everyday practice</b> for texture.</li>
+        <li><b>We come to you</b>, work around your schedule, and stay out of the way of your patients.</li>
+      </ul>
+      <div class="crew">
+        <div class="ic">🎥</div>
+        <div class="tx"><b>A small, unobtrusive crew.</b> Just two or three people with a camera and some lights — not a film set. Easy, calm, and over before you know it.</div>
+      </div>
+    </section>
+
+    <section>
+      <div class="kick">You’re in good company</div>
+      <p>The film brings together respected, independent voices across dentistry — clinicians, scientists, educators and the rising doctors of the Guiding Leaders community — building toward the celebration at <b>Dentistry on the Rise</b> this fall.</p>
+    </section>
+
+    <section>
+      <div class="cta">
+        <h2>If this resonates, we’d love to include you.</h2>
+        <p>Reach out and we’ll find a time that works — everything else, we handle.</p>
+        <a class="mail" href="mailto:eldar.asanov@glidewelldental.com?subject=For%20the%20Sake%20of%20Smiles%20—%20count%20me%20in">eldar.asanov@glidewelldental.com</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="logo">G<span class="r">·</span> Glidewell</div>
+    <div style="margin-top:8px">For the Sake of Smiles — a documentary in production</div>
+  </footer>
+
+</body>
+</html>
