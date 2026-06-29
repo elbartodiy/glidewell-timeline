@@ -2161,7 +2161,7 @@ const SURVEY_FAM=[
   {v:'know',  en:'Acquainted', ru:'Знаком'},
   {v:'close', en:'Work closely', ru:'Тесно'}
 ];
-const SURVEY_CONNECTED={norton:1}; // already on the team's side — show "Connected" badge, no familiarity ask
+const SURVEY_CONNECTED={norton:1, jim:1}; // already on the team's side — show "Connected" badge, no familiarity ask
 function svLoad(){ try{return JSON.parse(localStorage.getItem('gw_survey')||'{}');}catch(e){return {};} }
 function svSave(d){ try{localStorage.setItem('gw_survey',JSON.stringify(d));}catch(e){} }
 function svEsc(s){ return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
