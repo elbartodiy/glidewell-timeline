@@ -449,6 +449,16 @@
   .kb-detail .kd-sec{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:16px 0 6px}
   .kb-detail .kd-link{font-size:13px;color:var(--ink-2);padding:3px 0}
   .kb-detail .kd-media img{max-width:100%;border-radius:8px;border:1px solid var(--line);margin-top:8px}
+  /* task feedback */
+  .kb-card .kc-fb{float:right;font-size:11px;opacity:.85}
+  .kb-detail .kd-fb{width:100%;box-sizing:border-box;min-height:74px;resize:vertical;font-family:var(--body);font-size:13.5px;line-height:1.5;padding:9px 11px;border:1px solid var(--line);border-radius:8px;margin-top:4px}
+  .kb-detail .kd-fb:focus{outline:none;border-color:var(--navy,#1E3A8A)}
+  #taskpanel .tp-foot{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:11px 16px;border-top:1px solid var(--line,#e5e3df);background:var(--paper,#fdfcf9)}
+  #taskpanel .tk-name{font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;flex:0 1 220px;max-width:220px;min-width:130px}
+  #taskpanel .tk-send{font-family:var(--mono);font-size:13px;padding:9px 18px;border:none;border-radius:7px;background:var(--red,#E11B2A);color:#fff;cursor:pointer}
+  #taskpanel .tk-send:hover{opacity:.9}
+  #taskpanel .tk-send:disabled{background:#cfd4d8;cursor:default}
+  #taskpanel .tk-status{font-size:12px;color:var(--mute)}
   @media(prefers-reduced-motion:reduce){#taskpanel{transition:none}}
   /* === Lightbox (frosted glass + photo to foreground) === */
   #lightbox{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:4vh 4vw;
@@ -506,6 +516,7 @@
     <button class="tp-x" id="tp-close" aria-label="Закрыть">×</button>
   </div>
   <div class="tp-body" id="tp-body"></div>
+  <div class="tp-foot" id="tp-foot" hidden></div>
 </div>
 
 <div id="lightbox" aria-hidden="true"><figure><img alt=""><figcaption></figcaption></figure></div>
@@ -2300,12 +2311,17 @@ setView(view);
   const tp=document.getElementById('taskpanel'), tpBody=document.getElementById('tp-body');
   const tasks=()=> (window.GW_TASKS||[]);
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+  const tpFoot=document.getElementById('tp-foot');
+  function tfbLoad(){ try{return JSON.parse(localStorage.getItem('gw_taskfb')||'{}');}catch(e){return {};} }
+  function tfbSave(d){ try{localStorage.setItem('gw_taskfb',JSON.stringify(d));}catch(e){} }
+  function tfbCount(){ var f=(tfbLoad().fb)||{}, n=0; Object.keys(f).forEach(function(k){ if(f[k]&&f[k].trim())n++; }); return n; }
   function renderBoard(){
+    const fb=(tfbLoad().fb)||{};
     let h='<div class="kb">';
     COLS.forEach(c=>{
       const items=tasks().filter(t=>t.col===c.key);
       h+='<div class="kb-col"><div class="kb-colh"><span>'+L(c.nm)+'</span><span>'+items.length+'</span></div>';
-      h+=items.map(t=>'<div class="kb-card c-'+c.key+'" data-card="'+esc(t.id)+'"><div class="kc-id">'+esc(t.id)+(t.date?' · '+esc(t.date):'')+'</div><div class="kc-t">'+esc(L(t.title))+'</div></div>').join('');
+      h+=items.map(t=>'<div class="kb-card c-'+c.key+'" data-card="'+esc(t.id)+'"><div class="kc-id">'+esc(t.id)+(t.date?' · '+esc(t.date):'')+(fb[t.id]&&fb[t.id].trim()?'<span class="kc-fb" title="has feedback">💬</span>':'')+'</div><div class="kc-t">'+esc(L(t.title))+'</div></div>').join('');
       h+='</div>';
     });
     h+='</div>';
@@ -2329,11 +2345,35 @@ setView(view);
     h+='<div class="kd-notes">'+(t.notes?fmtNotes(L(t.notes)):'—')+'</div>';
     if(t.links&&t.links.length){ h+='<div class="kd-sec">'+L({en:'Links',ru:'Связи'})+'</div>'+t.links.map(l=>'<div class="kd-link">• '+esc(L(l))+'</div>').join(''); }
     if(t.media&&t.media.length){ h+='<div class="kd-sec">'+L({en:'Media',ru:'Медиа'})+'</div><div class="kd-media">'+t.media.map(m=>'<img src="'+esc(m)+'" alt="">').join('')+'</div>'; }
+    h+='<div class="kd-sec">'+L({en:'Your feedback',ru:'Ваш комментарий'})+'</div>';
+    h+='<textarea class="kd-fb" data-tk-id="'+esc(t.id)+'" placeholder="'+esc(L({en:'Notes, ideas, concerns on this task…',ru:'Заметки, идеи, вопросы по задаче…'}))+'">'+esc(((tfbLoad().fb)||{})[t.id]||'')+'</textarea>';
     h+='</div>';
     tpBody.innerHTML=h;
   }
+  function sendLabel(){ var n=tfbCount(); return L({en:'Send all feedback',ru:'Отправить всё'})+(n?' ('+n+')':''); }
+  function renderFoot(){
+    if(!tpFoot) return;
+    var d=tfbLoad();
+    tpFoot.hidden=false;
+    tpFoot.innerHTML='<input class="tk-name" id="tk-name" placeholder="'+esc(L({en:'Your name',ru:'Ваше имя'}))+'" value="'+esc(d.name||'')+'">'
+      +'<button type="button" class="tk-send" id="tk-send"'+(tfbCount()?'':' disabled')+'>'+esc(sendLabel())+'</button>'
+      +'<span class="tk-status" id="tk-status"></span>';
+  }
+  function updateFootCount(){ var b=document.getElementById('tk-send'); if(b){ b.disabled=!tfbCount(); b.textContent=sendLabel(); } }
+  function tfbSubmit(){
+    var d=tfbLoad(), f=d.fb||{}, st=document.getElementById('tk-status');
+    var items=Object.keys(f).filter(function(id){return f[id]&&f[id].trim();})
+      .map(function(id){var t=tasks().find(x=>x.id===id); return {id:id, title:t?L(t.title):id, comment:f[id].trim()};});
+    if(!d.name||!d.name.trim()){ if(st)st.textContent=L({en:'Enter your name first.',ru:'Сначала впишите имя.'}); return; }
+    if(!items.length){ if(st)st.textContent=L({en:'Add a comment to at least one task.',ru:'Добавьте коммент хотя бы к одной задаче.'}); return; }
+    if(!SURVEY_ENDPOINT){ if(st)st.textContent=L({en:'Receiver not connected yet.',ru:'Приёмник ещё не подключён.'}); return; }
+    if(st)st.textContent=L({en:'Sending…',ru:'Отправляю…'});
+    fetch(SURVEY_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({type:'taskfeedback', respondent:d.name.trim(), items:items})})
+      .then(function(){ if(st)st.textContent=L({en:'Thanks — sent ✓',ru:'Спасибо — отправлено ✓'}); })
+      .catch(function(){ if(st)st.textContent=L({en:'Send error — try again.',ru:'Ошибка отправки — ещё раз.'}); });
+  }
   function setTitle(){ const el=tp.querySelector('.tp-ttl'); if(el)el.innerHTML='📋 '+esc(L({en:'Film tasks',ru:'Задачи фильма'}))+' <span class="tp-sub">· task board</span>'; }
-  function openTasks(){ setTitle(); if(!window.GW_TASKS){tpBody.innerHTML='<p style="color:var(--mute)">Glidewell_Tasks.js not loaded.</p>';}else renderBoard(); tp.classList.add('open'); tp.setAttribute('aria-hidden','false'); }
+  function openTasks(){ setTitle(); if(!window.GW_TASKS){tpBody.innerHTML='<p style="color:var(--mute)">Glidewell_Tasks.js not loaded.</p>';}else renderBoard(); renderFoot(); tp.classList.add('open'); tp.setAttribute('aria-hidden','false'); }
   function closeTasks(){ tp.classList.remove('open'); tp.setAttribute('aria-hidden','true'); }
   const gw=document.getElementById('gwmark'); if(gw)gw.addEventListener('click',openTasks);
   document.getElementById('tp-close').addEventListener('click',closeTasks);
@@ -2341,9 +2381,16 @@ setView(view);
     const card=e.target.closest('[data-card]'); if(card){renderCard(card.dataset.card);return;}
     if(e.target.closest('#kd-back')){renderBoard();return;}
   });
+  tpBody.addEventListener('input',e=>{
+    const fb=e.target.closest('.kd-fb'); if(fb){ const d=tfbLoad(); d.fb=d.fb||{}; d.fb[fb.dataset.tkId]=fb.value; tfbSave(d); updateFootCount(); }
+  });
+  if(tpFoot){
+    tpFoot.addEventListener('input',e=>{ const n=e.target.closest('.tk-name'); if(n){ const d=tfbLoad(); d.name=n.value; tfbSave(d); } });
+    tpFoot.addEventListener('click',e=>{ if(e.target.closest('.tk-send'))tfbSubmit(); });
+  }
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&tp.classList.contains('open'))closeTasks(); });
   // re-render board in the new language if it's open when the toggle is switched
-  ['lang-en','lang-ru'].forEach(id=>{ const b=document.getElementById(id); if(b)b.addEventListener('click',()=>{ if(tp.classList.contains('open')){ setTitle(); renderBoard(); } }); });
+  ['lang-en','lang-ru'].forEach(id=>{ const b=document.getElementById(id); if(b)b.addEventListener('click',()=>{ if(tp.classList.contains('open')){ setTitle(); renderBoard(); renderFoot(); } }); });
 })();
 </script>
 </body>
