@@ -32,12 +32,12 @@
   header.top .gwmark .gw-logo-svg{height:30px;width:auto}
   header.top .brandtext{min-width:0}
   .hmsg-link{color:inherit;text-decoration:none;border:none;font:inherit;cursor:default}
-  footer a.aimos{display:inline-flex;align-items:center;gap:18px;color:#9FB0BE;text-decoration:none;text-transform:none;letter-spacing:.02em}
-  footer a.aimos img{height:18px;width:auto;display:block;opacity:.95}
-  footer a.aimos:hover{color:#EDF1F5}
-  footer a.aimos .aimos-wm{font-family:var(--disp);font-weight:600;letter-spacing:.02em;color:#EDF1F5}
-  footer a.aimos .aimos-logo{height:38px;width:auto;display:block;mix-blend-mode:screen}
-  footer a.aimos .mw-txt{font-family:var(--mono);text-transform:uppercase;letter-spacing:.3em;font-size:12px;color:var(--slate)}
+  footer .aimos{display:inline-flex;align-items:center;gap:18px;color:#9FB0BE;text-decoration:none;text-transform:none;letter-spacing:.02em}
+  footer .aimos img{height:18px;width:auto;display:block;opacity:.95}
+  footer .aimos .aimos-wm{font-family:var(--disp);font-weight:600;letter-spacing:.02em;color:#EDF1F5}
+  footer .aimos .aimos-logo{height:38px;width:auto;display:block;mix-blend-mode:screen}
+  footer .aimos .mw-txt{font-family:var(--mono);text-transform:uppercase;letter-spacing:.3em;font-size:12px;color:var(--slate)}
+  footer .sheetlink{color:inherit;text-decoration:none;cursor:text}
   header.top .hint{font-family:var(--mono);font-size:12px;color:#9FB0BE;margin-top:8px;letter-spacing:.02em;max-width:90ch}
   .langtoggle{position:absolute;top:20px;right:26px;display:flex;border:1px solid #2A3744;border-radius:20px;overflow:hidden}
   .langtoggle button{font-family:var(--mono);font-size:12px;letter-spacing:.06em;background:#10161D;color:#9FB0BE;border:0;padding:7px 14px;cursor:pointer}
@@ -1722,7 +1722,8 @@ let openRef=null;
 function render(){
   document.documentElement.lang=lang;
   document.getElementById('h-title').innerHTML=L(UI.messages).map(function(m,i){var inner=(i===1)?'<a class="hmsg-link" href="https://elbartodiy.github.io/glidewell-timeline/" target="_blank" rel="noopener" title="Open the published timeline">'+m+'</a>':m;return '<span class="hmsg'+(i===1?' mid':'')+'">'+inner+'</span>';}).join('');
-  document.getElementById('footer').innerHTML='<a class="aimos" href="https://aimos.ai" target="_blank" rel="noopener"><span class="mw-txt">'+L(UI.madeWith)+'</span><img class="aimos-logo" alt="AIMOS" src="'+AIMOS_LOGO+'"></a>';
+  var _mw=L(UI.madeWith);
+  document.getElementById('footer').innerHTML='<div class="aimos"><span class="mw-txt"><a class="sheetlink" href="https://docs.google.com/spreadsheets/d/1K0zPInMC3SgQakJCjt1289Loxbtsv_xke-AFiYAKDHQ/edit" target="_blank" rel="noopener">'+_mw.charAt(0)+'</a>'+_mw.slice(1)+'</span><img class="aimos-logo" alt="AIMOS" src="'+AIMOS_LOGO+'"></div>';
   draw.innerHTML=buildSVG();
   layer.innerHTML=buildLayer();
   buildNav(); buildLegend();
