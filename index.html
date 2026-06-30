@@ -184,6 +184,9 @@
   #panel{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#fff;border-top:1px solid var(--line);
     box-shadow:0 -10px 40px rgba(20,30,40,.18);transform:translateY(110%);transition:transform .28s ease;height:38vh;overflow:hidden}
   #panel.open{transform:none}
+  #panel.full{height:100vh;height:100dvh}
+  #panel .pfull{position:absolute;top:14px;right:max(58px, calc(50% - 390px));z-index:2;border:1px solid var(--line);background:#fff;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:15px;line-height:1;color:var(--ink-2)}
+  #panel .pfull:hover{border-color:var(--slate,#9aa3ab)}
   #panel .inner{max-width:880px;margin:0 auto;padding:22px 26px 30px;height:100%;overflow-y:auto;overflow-x:hidden;box-sizing:border-box}
   #panel .x{position:absolute;top:14px;right:max(16px, calc(50% - 432px));z-index:2;border:1px solid var(--line);background:#fff;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:17px;line-height:1;color:var(--ink-2)}
   #panel .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--clay)}
@@ -512,7 +515,7 @@
      One trip: AZ — Farran + Spear · NW — Kois · Mtn West — Christensen · MW/East — Kosinski · Resnik · Patel -->
 <footer id="footer"></footer>
 
-<div id="panel" aria-hidden="true"><button class="x" id="px" aria-label="Close">×</button><div class="inner" id="pinner"></div></div>
+<div id="panel" aria-hidden="true"><button class="x" id="px" aria-label="Close">×</button><button class="pfull" id="pfull" type="button" aria-label="Expand" title="Развернуть на весь экран">⤢</button><div class="inner" id="pinner"></div></div>
 
 <div id="taskpanel" aria-hidden="true">
   <div class="tp-head">
@@ -2176,7 +2179,7 @@ function gwLogVisit(){
 }
 gwLogVisit();
 // Deep-link: …#cast (or #survey / #personalities) opens the survey panel straight away.
-function gwAutoOpen(){ try{ if(/cast|survey|person/.test((location.hash||'').toLowerCase())) openPersonalities(); }catch(e){} }
+function gwAutoOpen(){ try{ var h=(location.hash||'').toLowerCase(); if(/cast|survey|person/.test(h)){ openPersonalities(); if(/full|survey/.test(h)){ panel.classList.add('full'); var b=document.getElementById('pfull'); if(b)b.textContent='⤡'; } } }catch(e){} }
 window.addEventListener('load', gwAutoOpen);
 const SURVEY_FAM=[
   {v:'no',    en:"Don't know", ru:'Не знаю'},
@@ -2223,13 +2226,14 @@ function openPersonalities(keep){
   show();
 }
 function show(){panel.classList.add('open');panel.setAttribute('aria-hidden','false');}
-function hide(){panel.classList.remove('open');panel.setAttribute('aria-hidden','true');openRef=null;clearPin();}
+function hide(){panel.classList.remove('open');panel.classList.remove('full');var _pf=document.getElementById('pfull');if(_pf)_pf.textContent='⤢';panel.setAttribute('aria-hidden','true');openRef=null;clearPin();}
 const lightbox=document.getElementById('lightbox');
 const lbImg=lightbox.querySelector('img'), lbCap=lightbox.querySelector('figcaption');
 function openLightbox(src){ if(!src)return; lbImg.src=src; lbCap.style.display='none'; lightbox.classList.add('open'); lightbox.setAttribute('aria-hidden','false'); }
 function closeLightbox(){ lightbox.classList.remove('open'); lightbox.setAttribute('aria-hidden','true'); lbImg.removeAttribute('src'); }
 lightbox.addEventListener('click',closeLightbox);
 document.getElementById('px').onclick=hide;
+document.getElementById('pfull').onclick=function(){var f=panel.classList.toggle('full');this.textContent=f?'⤡':'⤢';this.setAttribute('aria-label',f?'Collapse':'Expand');this.setAttribute('title',f?'Свернуть':'Развернуть на весь экран');};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(lightbox.classList.contains('open')){closeLightbox();return;}hide();}});
 stage.addEventListener('click',e=>{
   const lp=e.target.closest('.line-photo'); if(lp){ if(lp.dataset.film){window.open(lp.dataset.film,'_blank','noopener');return;} openLightbox(lp.dataset.src||(lp.querySelector('img')||{}).src, lp.dataset.cap||''); return;}
