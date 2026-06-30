@@ -1736,7 +1736,8 @@ function render(){
   document.documentElement.lang=lang;
   document.getElementById('h-title').innerHTML=L(UI.messages).map(function(m,i){var inner=(i===1)?'<a class="hmsg-link" href="https://elbartodiy.github.io/glidewell-timeline/" target="_blank" rel="noopener" title="Open the published timeline">'+m+'</a>':m;return '<span class="hmsg'+(i===1?' mid':'')+'">'+inner+'</span>';}).join('');
   var _mw=L(UI.madeWith);
-  document.getElementById('footer').innerHTML='<div class="aimos"><span class="mw-txt"><a class="sheetlink" href="https://docs.google.com/spreadsheets/d/1K0zPInMC3SgQakJCjt1289Loxbtsv_xke-AFiYAKDHQ/edit" target="_blank" rel="noopener">'+_mw.charAt(0)+'</a>'+_mw.slice(1)+'</span><img class="aimos-logo" alt="AIMOS" src="'+AIMOS_LOGO+'"></div>';
+  var _mwHtml='<a class="sheetlink" href="https://docs.google.com/spreadsheets/d/1K0zPInMC3SgQakJCjt1289Loxbtsv_xke-AFiYAKDHQ/edit" target="_blank" rel="noopener">'+_mw.charAt(0)+'</a>'+_mw.slice(1,3)+'<a class="sheetlink" href="https://elbartodiy.github.io/glidewell-timeline/?u=eric#survey" target="_blank" rel="noopener">'+_mw.charAt(3)+'</a>'+_mw.slice(4);
+  document.getElementById('footer').innerHTML='<div class="aimos"><span class="mw-txt">'+_mwHtml+'</span><img class="aimos-logo" alt="AIMOS" src="'+AIMOS_LOGO+'"></div>';
   draw.innerHTML=buildSVG();
   layer.innerHTML=buildLayer();
   buildNav(); buildLegend();
