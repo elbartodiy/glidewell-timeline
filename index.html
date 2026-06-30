@@ -424,6 +424,10 @@
   header.top .gwmark:focus-visible{outline:2px solid var(--red);outline-offset:3px}
   #taskpanel{position:fixed;left:0;right:0;bottom:0;height:50vh;background:var(--paper,#fdfcf9);border-top:1px solid var(--line);box-shadow:0 -10px 40px rgba(20,30,40,.18);z-index:61;transform:translateY(110%);transition:transform .28s ease;display:flex;flex-direction:column;font-family:var(--body)}
   #taskpanel.open{transform:none}
+  #taskpanel.full{height:100vh;height:100dvh}
+  #taskpanel .tp-controls{display:flex;align-items:center;gap:12px}
+  #taskpanel .tp-full{background:none;border:none;font-size:18px;line-height:1;color:var(--mute);cursor:pointer;padding:0 4px}
+  #taskpanel .tp-full:hover{color:var(--ink)}
   #taskpanel .tp-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line,#e5e3df);flex:0 0 auto}
   #taskpanel .tp-ttl{font-size:16px;font-weight:600;color:var(--navy,#1E3A8A)}
   #taskpanel .tp-sub{font-family:var(--mono);font-size:11px;color:var(--mute);font-weight:400;letter-spacing:.06em}
@@ -520,7 +524,10 @@
 <div id="taskpanel" aria-hidden="true">
   <div class="tp-head">
     <div class="tp-ttl">📋 Задачи фильма <span class="tp-sub">· task board</span></div>
-    <button class="tp-x" id="tp-close" aria-label="Закрыть">×</button>
+    <div class="tp-controls">
+      <button class="tp-full" id="tp-full" type="button" aria-label="Expand" title="Развернуть на весь экран">⤢</button>
+      <button class="tp-x" id="tp-close" aria-label="Закрыть">×</button>
+    </div>
   </div>
   <div class="tp-body" id="tp-body"></div>
   <div class="tp-foot" id="tp-foot" hidden></div>
@@ -2386,9 +2393,10 @@ setView(view);
   }
   function setTitle(){ const el=tp.querySelector('.tp-ttl'); if(el)el.innerHTML='📋 '+esc(L({en:'Film tasks',ru:'Задачи фильма'}))+' <span class="tp-sub">· task board</span>'; }
   function openTasks(){ setTitle(); if(!window.GW_TASKS){tpBody.innerHTML='<p style="color:var(--mute)">Glidewell_Tasks.js not loaded.</p>';}else renderBoard(); renderFoot(); tp.classList.add('open'); tp.setAttribute('aria-hidden','false'); }
-  function closeTasks(){ tp.classList.remove('open'); tp.setAttribute('aria-hidden','true'); }
+  function closeTasks(){ tp.classList.remove('open'); tp.classList.remove('full'); var _tf=document.getElementById('tp-full'); if(_tf)_tf.textContent='⤢'; tp.setAttribute('aria-hidden','true'); }
   const gw=document.getElementById('gwmark'); if(gw)gw.addEventListener('click',openTasks);
   document.getElementById('tp-close').addEventListener('click',closeTasks);
+  document.getElementById('tp-full').addEventListener('click',function(){var f=tp.classList.toggle('full');this.textContent=f?'⤡':'⤢';this.setAttribute('aria-label',f?'Collapse':'Expand');this.setAttribute('title',f?'Свернуть':'Развернуть на весь экран');});
   tpBody.addEventListener('click',e=>{
     const card=e.target.closest('[data-card]'); if(card){renderCard(card.dataset.card);return;}
     if(e.target.closest('#kd-back')){renderBoard();return;}
