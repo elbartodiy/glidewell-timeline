@@ -1811,7 +1811,7 @@ function hoverScene(k,on){ if(String(pinScene)===String(k)){ if(on)setSceneHL(k,
 });
 
 const panel=document.getElementById('panel'), pin=document.getElementById('pinner');
-function gwBadge(sp){ return (sp && (sp.g==='g' || sp.g==='e') && !/DiTolla/.test(sp.nm||'')) ? '<span class="gw-badge" title="Glidewell">G</span>' : ''; }
+function gwBadge(sp){ return (sp && (sp.g==='g' || sp.g==='e') && !/DiTolla|Venard/.test(sp.nm||'')) ? '<span class="gw-badge" title="Glidewell">G</span>' : ''; }
 function openSpeaker(id,keep){
   const s=SPK[id]; if(!keep)openRef={type:'spk',id}; clearPin();
   const _sv=svLoad(); const _hasSurvey=!!(_sv&&((_sv.answers&&Object.keys(_sv.answers).some(k=>_sv.answers[k]&&(_sv.answers[k].fam||_sv.answers[k].connect)))||(_sv.name&&_sv.name.trim())));
