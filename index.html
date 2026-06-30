@@ -127,6 +127,9 @@
   .line-photo{position:absolute;z-index:6;border-radius:4px;overflow:hidden;background:#EAEEF1;border:1px solid var(--line,#d9d6cf);box-shadow:0 1px 5px rgba(19,23,27,.12);transition:transform .15s,box-shadow .15s}
   .line-photo:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 6px 18px rgba(19,23,27,.2);border-color:var(--red)}
   .line-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .lp-film{cursor:pointer;border-color:var(--red);box-shadow:0 1px 6px rgba(225,27,42,.3)}
+  .lp-film .lp-badge{position:absolute;left:0;right:0;bottom:0;z-index:2;background:linear-gradient(transparent,rgba(16,20,24,.85));color:#fff;font-family:var(--mono,monospace);font-size:9px;letter-spacing:.06em;text-transform:uppercase;text-align:center;padding:12px 3px 3px;line-height:1;pointer-events:none}
+  .lp-film:hover .lp-badge{background:linear-gradient(transparent,rgba(225,27,42,.9))}
   .spk-brief{font-size:12.5px;line-height:1.6;color:var(--ink)}
   .spk-brief b{color:var(--navy);font-weight:700}
   .allsc{display:flex;flex-direction:column;gap:14px;margin-top:6px}
@@ -1302,7 +1305,7 @@ const SCENE_THEMES={
 // Archival book photos placed ON the line by year (above it). yr anchors the x; src = file in line_photos/.
 // No caption on the line — click opens the frosted-glass lightbox (image only). Source: Jim's book "Constant Change".
 const BOOK_PHOTOS=[
-  {yr:1970, src:"line_photos/jim-ceramist-1970.jpg"},
+  {yr:1970, src:"line_photos/jim-ceramist-1970.jpg", film:true},
   {yr:1972, src:"line_photos/promo-1722rose-early70s.jpg"},
   {yr:1975, src:"line_photos/lab4-exterior-1975-84.jpg"},
   {yr:1975, src:"line_photos/lab4-interior-1975-84.jpg"},
@@ -1679,8 +1682,10 @@ function buildLayer(){
       const PH=66, PW=Math.round(PH*16/9), GAP=7, TOP=JIMLINEY+8; let lastRight=-1e9;
       [...BOOK_PHOTOS].sort((a,b)=>a.yr-b.yr).forEach((p,i)=>{
         let left=yToX(p.yr)-PW/2; if(left<lastRight+GAP) left=lastRight+GAP; lastRight=left+PW;
-        h+='<div class="line-photo" data-src="'+p.src+'" style="left:'+left.toFixed(1)+'px;top:'+TOP+'px;width:'+PW+'px;height:'+PH+'px" title="'+p.yr+'">'
-          +'<img src="'+p.src+'" alt="" onerror="this.closest(\'.line-photo\').remove()"></div>';
+        h+='<div class="line-photo'+(p.film?' lp-film':'')+'" data-src="'+p.src+'"'+(p.film?' data-film="film.html"':'')+' style="left:'+left.toFixed(1)+'px;top:'+TOP+'px;width:'+PW+'px;height:'+PH+'px" title="'+(p.film?'About the film':p.yr)+'">'
+          +'<img src="'+p.src+'" alt="" onerror="this.closest(\'.line-photo\').remove()">'
+          +(p.film?'<span class="lp-badge">▶ The film</span>':'')
+          +'</div>';
       });
     }
   })();
@@ -2226,7 +2231,7 @@ lightbox.addEventListener('click',closeLightbox);
 document.getElementById('px').onclick=hide;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(lightbox.classList.contains('open')){closeLightbox();return;}hide();}});
 stage.addEventListener('click',e=>{
-  const lp=e.target.closest('.line-photo'); if(lp){openLightbox(lp.dataset.src||(lp.querySelector('img')||{}).src, lp.dataset.cap||''); return;}
+  const lp=e.target.closest('.line-photo'); if(lp){ if(lp.dataset.film){window.open(lp.dataset.film,'_blank','noopener');return;} openLightbox(lp.dataset.src||(lp.querySelector('img')||{}).src, lp.dataset.cap||''); return;}
   const ft=e.target.closest('.frame-thumb'); if(ft){openScene(+ft.dataset.frameScene);return;}
   const bd=e.target.closest('.bld'); if(bd){openExpansion(+bd.dataset.bld);return;}
   const pp=e.target.closest('.ppl'); if(pp){openWorkforce(+pp.dataset.ppl);return;}
