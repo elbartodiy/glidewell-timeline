@@ -166,6 +166,7 @@
   #panel .sv-card .pc-nm:hover{text-decoration:underline;text-underline-offset:2px}
   #panel .sv-fams{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 6px}
   #panel .sv-connected{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 11px;border-radius:20px;background:#E4F4D6;color:#3C7A2E;border:1px solid #C5E5AE;cursor:default;user-select:none}
+  .gw-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 3px;margin-left:7px;border:1.4px solid var(--red,#E11B2A);border-radius:4px;color:var(--red,#E11B2A);font-weight:800;font-size:11px;line-height:1;vertical-align:middle;font-family:var(--disp,Georgia,serif);cursor:default}
   #panel .sv-fam{font-family:var(--mono);font-size:10.5px;padding:3px 9px;border:1px solid var(--line);border-radius:20px;background:#fff;color:var(--ink-2);cursor:pointer;transition:background .12s,border-color .12s,color .12s}
   #panel .sv-fam:hover{border-color:var(--slate)}
   #panel .sv-fam.on{background:var(--navy,#1E3A8A);color:#fff;border-color:var(--navy,#1E3A8A)}
@@ -1808,13 +1809,14 @@ function hoverScene(k,on){ if(String(pinScene)===String(k)){ if(on)setSceneHL(k,
 });
 
 const panel=document.getElementById('panel'), pin=document.getElementById('pinner');
+function gwBadge(sp){ return (sp && (sp.g==='g' || sp.g==='e')) ? '<span class="gw-badge" title="Glidewell">G</span>' : ''; }
 function openSpeaker(id,keep){
   const s=SPK[id]; if(!keep)openRef={type:'spk',id}; clearPin();
   const _sv=svLoad(); const _hasSurvey=!!(_sv&&((_sv.answers&&Object.keys(_sv.answers).some(k=>_sv.answers[k]&&(_sv.answers[k].fam||_sv.answers[k].connect)))||(_sv.name&&_sv.name.trim())));
   const svBack=_hasSurvey?'<button type="button" class="sv-back" data-go-pers="1">'+L({en:'← Back to the survey',ru:'← Назад к опросу'})+'<span class="sv-back-note">'+L({en:'your answers are saved',ru:'ваши ответы сохранены'})+'</span></button>':'';
   const themes=(s.sc||[]).map(n=>'<button data-go-scene="'+n+'">#'+n+' '+L(SCENES[n])+'</button>').join('') || '<span style="color:var(--mute)">—</span>';
   pin.innerHTML=(SPK_IMG[id]?'<img class="spk-avatar" src="'+SPK_IMG[id]+'" alt="">':'')+'<div class="kicker">'+L(UI.grp[s.g])+' · <span class="pers-back" data-go-pers="1">'+L(UI.allPers)+'</span></div>'+svBack
-    +'<h2>'+s.nm+'</h2><div class="role">'+L(s.role)+'</div>'
+    +'<h2>'+s.nm+gwBadge(s)+'</h2><div class="role">'+L(s.role)+'</div>'
     +'<div class="metarow"><span class="loc">'+L(s.loc)+'</span><span class="st '+s.status+'">'+s.status+'</span></div>'
     +(SPK_MW[id]?'<div class="mwline">'+MW[SPK_MW[id]].g+' '+L(MW[SPK_MW[id]].nm)+'</div>':'')
     +'<dl>'
@@ -2221,7 +2223,7 @@ function openPersonalities(keep){
       : SURVEY_FAM.map(f=>'<button type="button" class="sv-fam'+(a.fam===f.v?' on':'')+'" data-sv-id="'+id+'" data-sv-fam="'+f.v+'">'+L(f)+'</button>').join('');
     return '<div class="pers-card sv-card">'
       +(SPK_IMG[id]?'<img src="'+SPK_IMG[id]+'" alt="" data-go="'+id+'" title="'+L({en:'Open profile',ru:'Открыть профиль'})+'">':'')
-      +'<div class="pc-tx"><div class="pc-nm" data-go="'+id+'" title="'+L({en:'Open profile',ru:'Открыть профиль'})+'">'+sp.nm+'</div><div class="pc-role">'+L(sp.role)+'</div>'
+      +'<div class="pc-tx"><div class="pc-nm" data-go="'+id+'" title="'+L({en:'Open profile',ru:'Открыть профиль'})+'">'+sp.nm+gwBadge(sp)+'</div><div class="pc-role">'+L(sp.role)+'</div>'
       +'<div class="sv-fams">'+fam+'</div>'
       +(connected?'':'<input class="sv-connect" data-sv-id="'+id+'" placeholder="'+L({en:'Can you connect / via whom?',ru:'Могу свести / через кого?'})+'" value="'+svEsc(a.connect)+'">')
       +'</div></div>';
