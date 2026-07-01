@@ -333,6 +333,46 @@
   .cal-ev.star:hover .ce-dot{transform:rotate(45deg) scale(1.25)}
   .cal-ev .ce-lbl{font-family:var(--mono);font-size:10.5px;font-weight:700;line-height:1.1;text-shadow:0 0 3px var(--paper),0 0 3px var(--paper),0 0 3px var(--paper)}
   .cal-ev:hover .ce-lbl{text-decoration:underline}
+  .cal-ev.tent .ce-dot{border-style:dashed}
+  .cal-ev.tent .ce-lbl{font-style:italic;font-weight:600;opacity:.92}
+  .tent-banner{display:inline-block;margin:8px 0 2px;padding:3px 9px;border:1px dashed #BD6A45;border-radius:3px;background:rgba(189,106,69,.08);color:#BD6A45;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.02em}
+  .lp-archive{cursor:pointer;border-color:var(--navy);box-shadow:0 1px 6px rgba(28,32,36,.3)}
+  .lp-archive .lp-badge{position:absolute;left:0;right:0;bottom:0;z-index:2;background:linear-gradient(transparent,rgba(16,20,24,.85));color:#fff;font-family:var(--mono,monospace);font-size:9px;letter-spacing:.06em;text-transform:uppercase;text-align:center;padding:12px 3px 3px;line-height:1;pointer-events:none}
+  .lp-archive:hover .lp-badge{background:linear-gradient(transparent,rgba(28,32,36,.92))}
+  /* --- archive hunt page --- */
+  .arc-sec-h{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:22px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
+  .arc-sec-h:first-of-type{margin-top:16px}
+  .arc-stages{display:flex;flex-direction:column;gap:8px}
+  .arc-stage{border:1px solid var(--line);border-radius:9px;padding:10px 13px;background:var(--card)}
+  .arc-stage.now{border-color:var(--red);background:var(--red-tint)}
+  .arc-stage.done{opacity:.55}
+  .arc-stage-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .arc-stage-nm{font-size:14px;font-weight:700;color:var(--ink)}
+  .arc-stage.now .arc-stage-nm{color:var(--red)}
+  .arc-stage-cnt{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--mute);white-space:nowrap}
+  .arc-tasks{margin-top:6px;display:flex;flex-direction:column;gap:4px}
+  .arc-task{display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.4;color:var(--ink-2)}
+  .arc-task.done{color:var(--mute);text-decoration:line-through;text-decoration-color:var(--line)}
+  .arc-check{flex:none;width:15px;height:15px;border:1.5px solid var(--line);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ok);line-height:1;margin-top:1px}
+  .arc-task.done .arc-check{border-color:var(--ok);background:var(--ok);color:#fff}
+  .arc-st{flex:none;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#fff;padding:2px 8px;border-radius:20px;white-space:nowrap}
+  .arc-people,.arc-sources{display:flex;flex-direction:column;gap:9px}
+  .arc-person,.arc-src{border:1px solid var(--line);border-radius:9px;padding:10px 13px;background:var(--card)}
+  .arc-person-head,.arc-src-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .arc-person-nm{font-size:14px;font-weight:700;color:var(--ink)}
+  .arc-person-role{font-family:var(--mono);font-size:10.5px;color:var(--teal);margin-top:2px}
+  .arc-src-nm{font-size:14px;font-weight:700;color:var(--ink)}
+  .arc-person-note,.arc-src-note{font-size:12.5px;line-height:1.5;color:var(--ink-2);margin-top:5px}
+  .arc-mats{display:flex;flex-direction:column;gap:10px}
+  .arc-mat{display:flex;gap:11px}
+  .arc-thumb{position:relative;flex:none;width:96px;height:66px;border-radius:6px;overflow:hidden;background:#EAEEF1;border:1px solid var(--line)}
+  .arc-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .arc-thumb.noimg{display:flex;align-items:center;justify-content:center}
+  .arc-thumb-ph{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}
+  .arc-thumb-tag{position:absolute;left:3px;bottom:3px;z-index:2;font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#fff;padding:2px 6px;border-radius:20px}
+  .arc-mat-tx{min-width:0;flex:1}
+  .arc-mat-nm{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.3}
+  .arc-mat-note{font-size:12px;line-height:1.45;color:var(--ink-2);margin-top:3px}
   /* "now" vertical line marker */
   .cal-now{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;z-index:6}
   .cal-now .cn-lbl{font-family:var(--mono);font-size:10.5px;font-weight:700;margin-bottom:3px;white-space:nowrap;text-shadow:0 0 3px var(--paper),0 0 3px var(--paper),0 0 3px var(--paper)}
@@ -612,8 +652,16 @@ const UI = {
   fsStoryboard:{en:"Storyboard & notes",ru:"Раскадровка и заметки"},
   fsFill:{en:"To fill in: the storyboard frame and notes for this scene.",ru:"Заполнить: кадр раскадровки и заметки по сцене."},
   pillarsTier:{en:"Pillars — how each theme surfaces ↓",ru:"Пилоны — как раскрывается каждая тема ↓"},
-  calTier:{en:"Production calendar — shoot window Jun–Oct · click a month for ALL Glidewell events ↓",ru:"Производственный календарь — съёмочное окно июнь–октябрь · клик по месяцу = ВСЕ события Glidewell ↓"},
+  calTier:{en:"Production calendar — shoot window Jul–Oct · click a month for ALL Glidewell events ↓",ru:"Производственный календарь — съёмочное окно июль–октябрь · клик по месяцу = ВСЕ события Glidewell ↓"},
   calKicker:{en:"Production calendar",ru:"Производственный календарь"},
+  calTent:{en:"⚠ Planned — not confirmed yet",ru:"⚠ Планируется — пока не утверждено"},
+  archiveKicker:{en:"Company archive",ru:"Архив компании"},
+  archiveTitle:{en:"Finding, reviewing and cutting in the archive",ru:"Поиск, отсмотр и монтаж архива"},
+  archiveIntro:{en:"Glidewell almost certainly has decades of photos, video and marketing material sitting in drawers, drives and someone's memory. None of it is in one place. This page tracks the hunt: who to ask, where to look, what we've pulled, and what's still missing — so we don't lose track of a good find or chase the same dead end twice.",ru:"У Glidewell почти наверняка десятилетия фото, видео и маркетинговых материалов лежат по ящикам, дискам и чьей-то памяти. Всё это не в одном месте. Эта страница держит охоту в поле зрения: кого спросить, где искать, что уже забрали и чего ещё не хватает — чтобы не терять хорошую находку и не гнаться за одним и тем же тупиком дважды."},
+  archivePipelineH:{en:"The pipeline",ru:"Пайплайн"},
+  archivePeopleH:{en:"Who to ask",ru:"Кого спросить"},
+  archiveSourcesH:{en:"Where to look",ru:"Где искать"},
+  archiveMatsH:{en:"What we have vs. what we still need",ru:"Что у нас есть vs. что ещё нужно"},
   calMonthKicker:{en:"Production calendar · month",ru:"Производственный календарь · месяц"},
   calMonthEmpty:{en:"Nothing scheduled yet — add prep deadlines and shoot days here.",ru:"Пока ничего не запланировано — добавляй сюда дедлайны подготовки и съёмочные дни."},
   heroTier:{en:"Heroes — whose story each scene tells · click for the full cast ↓",ru:"Герои — чью историю рассказывает сцена · клик = весь каст ↓"},
@@ -877,7 +925,6 @@ const SCENE_SHORT = {
 const ENERGY = {1:'down',2:'up',3:'up',4:'down',5:'down',6:'down',7:'down',8:'up',9:'up',10:'up',11:'up',12:'up',13:'up',14:'up'};
 // --- production calendar: the real shoot window (months), with key dates as markers ---
 const CAL_MONTHS=[
-  {k:6,nm:{en:"June",ru:"Июнь"},dim:30},
   {k:7,nm:{en:"July",ru:"Июль"},dim:31},
   {k:8,nm:{en:"August",ru:"Август"},dim:31},
   {k:9,nm:{en:"September",ru:"Сентябрь"},dim:30},
@@ -910,11 +957,16 @@ function glDatesLine(lang){
   }).join(" · ");
 }
 const CAL_EVENTS=[
-  {m:6,d:24,c:"#E11B2A",now:true,short:{en:"Now",ru:"Сейчас"},
+  {m:7,d:1,c:"#E11B2A",now:true,short:{en:"Now",ru:"Сейчас"},
    t:{en:"Now — production setup",ru:"Сейчас — настройка продакшна"},
-   when:{en:"June 2026 · where we are today",ru:"Июнь 2026 · где мы сейчас"},
+   when:{en:"July 2026 · where we are today",ru:"Июль 2026 · где мы сейчас"},
    desc:{en:"Where we stand today: crew, gear and the timeline tool are coming together, the first hero calls go out (Abdul confirmed) and early interviews begin. Everything further down this calendar hangs off what we lock now — heroes, access permissions, and the shooting order.",
          ru:"Где мы сегодня: собираются команда, техника и сам таймлайн-инструмент, идут первые звонки героям (Абдул подтверждён), начинаются ранние интервью. Всё, что дальше по календарю, держится на том, что мы зафиксируем сейчас — герои, разрешения на доступ и порядок съёмок."}},
+  {m:7,d:10,c:"#BD6A45",tent:true,short:{en:"Abdul shoot · planned",ru:"Съёмка Абдула · план"},
+   t:{en:"Abdul — interview + B-roll shoot (planned, not locked)",ru:"Съёмка Абдула — интервью + B-roll (планируется, не утв.)"},
+   when:{en:"Target: Fri Jul 10 or 17, 2026 · ~2:30pm · Bakersfield — TBC",ru:"Цель: пт 10 или 17 июля 2026 · ~14:30 · Бейкерсфилд — не утв."},
+   desc:{en:"Our first hero shoot — Dr. Abdul Alas (Hero #1) in Bakersfield. Coming out of a warm planning call, Abdul is fully on board and generous with time (“I'll give you a long time”). Format: a seated interview (tripod, lights) on his professional and Glidewell experience, plus B-roll the same day — working with his interns, the fastmill / chairside process, whatever's available that day.\n**Why NOT confirmed yet:** the date isn't locked — Eldar is sending both candidate Fridays (Jul 10 / Jul 17) to Eric to line up the video-production crew; the window is tight (this is the bottleneck). July, not August — we're gathering stories now and need his material early to build the arc.\n**Before we shoot:** send Abdul more info + a few prep questions and a reference reel / framework of what we're building (he asked twice, wants to match the vision); closer to the date, share the plan/scenes so he and the interns are at ease. Note: one intern (a young woman) graduates this year — a natural, time-sensitive moment worth a separate grab.",
+         ru:"Наша первая съёмка героя — д-р Абдул Алас (Герой №1) в Бейкерсфилде. По итогам тёплого звонка-планирования Абдул полностью за и щедр по времени («I'll give you a long time»). Формат: интервью (штатив, свет) про профессиональный опыт и опыт с Glidewell, плюс B-roll в тот же день — работа с интернами, процесс fastmill / chairside, что доступно в этот день.\n**Почему пока НЕ утверждено:** дата не зафиксирована — Эльдар шлёт Эрику обе даты-кандидата (10 / 17 июля), чтобы свести съёмочную группу видеопродакшена; окно тесное (это узкое место). Июль, не август — истории собираем сейчас, его материал нужен рано, чтобы строить арку.\n**До съёмки:** отправить Абдулу больше инфо + пару вопросов на подготовку и референс-ролик / каркас того, что строим (он просил дважды — хочет попасть в видение); ближе к дате поделиться планом/сценами, чтобы ему и интернам было легко. Пометка: одна из интернов (девушка) выпускается в этом году — естественный времязависимый момент, стоит отдельной съёмки."}},
   {m:7,d:16,c:"#9E5C8E",star:true,short:{en:"Guiding Leaders · 16–17"+glTag(7),ru:"Guiding Leaders · 16–17"+glTag(7)},
    t:{en:"Guiding Leaders"+glTag(7)+" — summer session (16–17)",ru:"Guiding Leaders"+glTag(7)+" — летняя сессия (16–17)"},
    when:{en:"July 16–17, 2026 · we film Friday the 17th",ru:"16–17 июля 2026 · снимаем в пятницу 17-го"},
@@ -930,13 +982,8 @@ const CAL_EVENTS=[
 // d: day or range as a string; done:true = already happened; tbc:true = date/plan to confirm. Fill freely.
 // each item: {d:date or '', kind:'gl|grad|symp|ce|shoot|prep|setup', nm:{en,ru} name, t:{en,ru} detail, done?, tbc?, ev?:true(render the month's star-marker full card inline)}
 const CAL_MONTH_DETAIL={
-  6:{ intro:{en:"Early Glidewell events on campus we can scout/shoot before the July push. (All dates official-verified.)",ru:"Ранние события Glidewell на кампусе, которые можно разведать/снять до июльского рывка. (Все даты сверены с официальными.)"}, items:[
-    {d:"5–6", tbc:true, kind:"symp", nm:{en:"Spring IOX: The Digital Dentistry Experience",ru:"Spring IOX: The Digital Dentistry Experience"}, t:{en:"The analog→digital adoption story; early scouting B-roll before we shoot in earnest.",ru:"История перехода аналог→цифра; ранний разведочный B-roll до основных съёмок."}},
-    {d:"11–12", done:true, kind:"gl", nm:{en:"Guiding Leaders cohort session",ru:"Сессия Guiding Leaders"}, t:{en:"Already passed — context for the arc we pick up in July.",ru:"Уже прошла — контекст для арки, которую подхватываем в июле."}},
-    {d:"12–13", tbc:true, kind:"symp", nm:{en:"Spring Implant Symposium",ru:"Spring Implant Symposium"}, t:{en:"Implant / full-arch theme (ties to Ellen's HT-implant story). Eventbrite listing — confirm.",ru:"Тема имплантов / full-arch (связь с историей Эллен про импланты HT). Листинг Eventbrite — подтвердить."}},
-    {d:"26–27", tbc:true, kind:"ce", nm:{en:"Esthetic Techniques: Anterior Crowns & Veneers",ru:"Esthetic Techniques: Anterior Crowns & Veneers"}, t:{en:"Lower priority; smile-design close-ups if we need them.",ru:"Низкий приоритет; крупные планы дизайна улыбки, если понадобятся."}}
-  ]},
   7:{ intro:{en:"First big shoot — Guiding Leaders on campus (16–17), film Friday the 17th.",ru:"Первая большая съёмка — Guiding Leaders на кампусе (16–17), снимаем в пятницу 17-го."}, items:[
+    {d:"10 / 17", tbc:true, kind:"shoot", ev:true, evTent:true, nm:{en:"Abdul — interview + B-roll (planned)",ru:"Абдул — интервью + B-roll (планируется)"}, t:{en:"Hero #1 shoot in Bakersfield — NOT locked yet. Target Fri Jul 10 or 17, ~2:30pm; Eldar clearing the date with Eric + the video crew. Full plan below.",ru:"Съёмка Героя №1 в Бейкерсфилде — пока НЕ утверждена. Цель — пт 10 или 17 июля, ~14:30; Эльдар сводит дату с Эриком + съёмочной группой. Полный план ниже."}},
     {d:"16–17", kind:"gl", ev:true, nm:{en:"Guiding Leaders summer session"+glTag(7),ru:"Летняя сессия Guiding Leaders"+glTag(7)}, t:{en:"Cohort physically on campus — we film Friday the 17th. Full event details & education-interview list below.",ru:"Группа физически на кампусе — снимаем в пятницу 17-го. Полные детали события и список образовательных интервью ниже."}},
     {d:"31", tbc:true, kind:"ce", nm:{en:"Effective & Practical Implant Overdentures",ru:"Effective & Practical Implant Overdentures"}, t:{en:"Removable / affordability angle (edentulous patients); optional.",ru:"Тема съёмных / доступности (беззубые пациенты); опционально."}}
   ]},
@@ -959,6 +1006,74 @@ const CAL_MONTH_DETAIL={
     {d:"30", tbc:true, kind:"ce", nm:{en:"Surgical Placement of Dental Implants",ru:"Surgical Placement of Dental Implants"}, t:{en:"Restorative-driven approach. After the climax; optional.",ru:"Restorative-driven подход. После кульминации; опционально."}}
   ]}
 };
+// --- archive hunt: company photos/video/marketing material — find it, get it, review it, cut it in ---
+// tasks[].done drives stage progress; a stage counts "current" when it's the first one not fully done.
+const ARCHIVE_STAGES=[
+  {k:'ask', nm:{en:"1 · Find & ask",ru:"1 · Найти и спросить"}, tasks:[
+    {done:true, t:{en:"List the likely holders — Jim's own archive, Marketing, IT/records, retired staff",ru:"Составить список вероятных держателей — архив Джима, маркетинг, IT/архив, бывшие сотрудники"}},
+    {done:false, t:{en:"Ask Eric who owns the marketing asset library today, and who owned it in past decades",ru:"Спросить у Эрика, кто сейчас владеет библиотекой маркетинговых материалов и кто владел раньше"}},
+    {done:false, t:{en:"Ask Jim's office whether a fuller “Constant Change” photo set survives beyond the book crops",ru:"Спросить в приёмной Джима, сохранился ли более полный набор фото к «Constant Change» за пределами обрезков из книги"}}
+  ]},
+  {k:'access', nm:{en:"2 · Get access",ru:"2 · Получить доступ"}, tasks:[
+    {done:false, t:{en:"Get folder / drive permissions once a holder is confirmed",ru:"Получить права на папку/диск, когда держатель подтверждён"}},
+    {done:false, t:{en:"Locate physical storage (prints, tapes, reels) and who holds the key",ru:"Найти физическое хранение (печать, кассеты, кинолента) и у кого ключ"}}
+  ]},
+  {k:'pull', nm:{en:"3 · Pull everything",ru:"3 · Забрать всё"}, tasks:[
+    {done:false, t:{en:"Bulk-download or scan everything found, keep original filenames/dates",ru:"Скачать/отсканировать всё найденное массово, сохранить исходные имена файлов и даты"}},
+    {done:false, t:{en:"Drop into one shared folder so nothing lives only on one laptop",ru:"Сложить в одну общую папку, чтобы ничего не жило только на одном ноутбуке"}}
+  ]},
+  {k:'review', nm:{en:"4 · Review & log",ru:"4 · Отсмотреть и внести в лог"}, tasks:[
+    {done:false, t:{en:"Watch/look at everything once, log what it is and roughly which year/era",ru:"Один раз просмотреть всё, записать что это и примерный год/эра"}}
+  ]},
+  {k:'classify', nm:{en:"5 · Classify & tag",ru:"5 · Классифицировать"}, tasks:[
+    {done:false, t:{en:"Tag by kind (photo / video / marketing) and by part/scene it could serve",ru:"Пометить по типу (фото / видео / маркетинг) и по части/сцене, которой это может служить"}},
+    {done:false, t:{en:"Flag anything unusable (rights unclear, too low-res, off-brand)",ru:"Пометить то, что нельзя использовать (права неясны, слишком низкое разрешение, не в бренде)"}}
+  ]},
+  {k:'cut', nm:{en:"6 · Pull into the edit",ru:"6 · Забрать в монтаж"}, tasks:[
+    {done:false, t:{en:"Hand the classified, cleared set to editorial as B-roll/archive inserts",ru:"Передать классифицированный, расчищенный набор монтажу как B-roll/архивные вставки"}}
+  ]}
+];
+const ARCHIVE_PEOPLE=[
+  {nm:"Jim Glidewell", role:{en:"Founder & President",ru:"Основатель и президент"}, status:'ask',
+   note:{en:"Personal + company archive behind the “Constant Change” book — likely the single deepest well of period photos. Worth asking whether the full, uncropped set still exists and who holds the files.",ru:"Личный + корпоративный архив за книгой «Constant Change» — вероятно, самый глубокий источник фото по эпохам. Стоит спросить, сохранился ли полный, необрезанный набор и у кого файлы."}},
+  {nm:"Eric", role:{en:"Our sponsor · marketing",ru:"Наш куратор · маркетинг"}, status:'asked',
+   note:{en:"Best positioned to point at the current marketing asset library (DAM) and to loop in whoever ran past campaigns.",ru:"Лучше всех может указать на текущую библиотеку маркетинговых материалов (DAM) и подключить тех, кто вёл прошлые кампании."}},
+  {nm:"Bobbie Norton", role:{en:"Education (Guiding Leaders / DOTR)",ru:"Образование (Guiding Leaders / DOTR)"}, status:'todo',
+   note:{en:"Years of symposium and GITC event photo/video recaps likely sit with Education.",ru:"Годы фото/видео-рекапов симпозиумов и GITC вероятно лежат у отдела образования."}},
+  {nm:"IT / records", role:{en:"Internal",ru:"Внутренний"}, status:'todo',
+   note:{en:"Where old server backups, SharePoint sites and any digitized tape archives actually live today.",ru:"Где сегодня реально лежат старые бэкапы серверов, сайты SharePoint и оцифрованные архивы кассет."}},
+  {nm:{en:"Long-tenured / retired staff",ru:"Давние / бывшие сотрудники"}, role:{en:"Institutional memory",ru:"Институциональная память"}, status:'todo',
+   note:{en:"May hold personal photos or home-video tapes from the early decades that never entered any company system.",ru:"Могут держать личные фото или домашние видеозаписи первых десятилетий, которые никогда не попадали ни в одну корпоративную систему."}}
+];
+const ARCHIVE_SOURCES=[
+  {nm:{en:"Marketing asset library (DAM)",ru:"Библиотека маркетинга (DAM)"}, status:'todo',
+   note:{en:"Current campaigns and product shots; possibly older brand photography if it was ever migrated in.",ru:"Текущие кампании и продуктовая съёмка; возможно старая брендовая фотография, если её когда-то туда перенесли."}},
+  {nm:{en:"“Constant Change” book production files",ru:"Продакшн-файлы книги «Constant Change»"}, status:'ask',
+   note:{en:"The book already proves a curated photo set exists somewhere — worth asking for the full, uncropped originals.",ru:"Книга уже доказывает, что где-то есть подобранный набор фото — стоит попросить полные, необрезанные оригиналы."}},
+  {nm:{en:"Chairside magazine / podcast archive",ru:"Архив журнала/подкаста Chairside"}, status:'todo',
+   note:{en:"Years of company-produced media — likely has usable interview/B-roll footage already shot.",ru:"Годы медиа, сделанных компанией — вероятно уже есть готовые интервью/B-roll."}},
+  {nm:{en:"Past video vendors / PR agencies",ru:"Прошлые видео-подрядчики / PR-агентства"}, status:'todo',
+   note:{en:"Whoever shot past campaigns or symposium recaps may still hold raw, unedited footage we never saw.",ru:"У тех, кто снимал прошлые кампании или рекапы симпозиумов, может остаться сырой, неопубликованный материал, который мы не видели."}},
+  {nm:{en:"Physical storage — prints, VHS, film reels",ru:"Физическое хранение — печать, VHS, кинолента"}, status:'todo',
+   note:{en:"Old-format media that needs to be located, then digitized before it can be used at all.",ru:"Материалы в старых форматах, которые нужно сначала найти, а потом оцифровать, прежде чем ими можно пользоваться."}},
+  {nm:{en:"Symposium / GITC event recap videos",ru:"Ролики-рекапы симпозиумов / GITC"}, status:'todo',
+   note:{en:"Likely the richest source of usable, on-brand B-roll from recent years — probably already edited once.",ru:"Вероятно самый богатый источник готового B-roll последних лет — скорее всего уже смонтирован хотя бы раз."}}
+];
+// tag: have = in hand & usable · need = required, not found yet · unused = found, not placed in the edit yet
+const ARCHIVE_MATERIALS=[
+  {tag:'have', kind:'photo', src:"line_photos/lab4-exterior-1975-84.jpg", nm:{en:"1975–84 lab exterior & interior",ru:"1975–84 · экстерьер и интерьер лаборатории"},
+   note:{en:"From the book scan set — usable as-is for the 1970s–80s section.",ru:"Из набора сканов книги — можно использовать как есть для раздела 1970–80-х."}},
+  {tag:'have', kind:'photo', src:"line_photos/lab3-benches-1983-84.jpg", nm:{en:"1983–84 benches & reception",ru:"1983–84 · верстаки и ресепшн"},
+   note:{en:"Same book set. Good texture for the “nine labs” scale beat.",ru:"Из того же набора книги. Хорошая текстура для бита про «девять лабораторий»."}},
+  {tag:'unused', kind:'photo', src:"line_photos/promo-1722rose-early70s.jpg", nm:{en:"Early-70s promo shot",ru:"Промо-фото начала 70-х"},
+   note:{en:"On the line as a book photo but not placed in any scene yet — candidate for Part 1 B-roll.",ru:"Стоит на линии как фото из книги, но пока не привязано к сцене — кандидат на B-roll Части 1."}},
+  {tag:'need', kind:'video', nm:{en:"Any period Super-8 / B-roll of the original one-man lab",ru:"Любой период Super-8 / B-roll оригинальной лаборатории-одиночки"},
+   note:{en:"Nothing found yet — ask Jim's office and retired staff directly; may not exist on film at all.",ru:"Пока ничего не нашли — спросить напрямую у приёмной Джима и бывших сотрудников; возможно, на пленке этого просто нет."}},
+  {tag:'need', kind:'marketing', nm:{en:"Early print ads / catalogs (70s–90s)",ru:"Ранняя печатная реклама / каталоги (70–90-е)"},
+   note:{en:"Would show how the company talked about itself over time — not located yet.",ru:"Показало бы, как компания говорила о себе с годами — пока не найдено."}},
+  {tag:'need', kind:'video', nm:{en:"BruxZir launch (2009) marketing / B-roll",ru:"Маркетинг / B-roll запуска BruxZir (2009)"},
+   note:{en:"Key for the “Revolution” beat — ask Marketing for the 2009 campaign assets.",ru:"Ключевое для бита «Революция» — спросить у маркетинга материалы кампании 2009."}}
+];
 const ANG = {
   venard:{en:"Oral history of the pre-digital lab — how hand-craft became machines.",ru:"Устная история долиджитальной лаборатории — как ручной труд стал машинами."},
   ditolla:{en:"Insider who brought BruxZir to market (2006–09), now told from outside — the Revolution.",ru:"Инсайдер, выведший BruxZir на рынок (2006–09), рассказ со стороны — Революция."},
@@ -1328,7 +1443,7 @@ const SCENE_THEMES={
 // No caption on the line — click opens the frosted-glass lightbox (image only). Source: Jim's book "Constant Change".
 const BOOK_PHOTOS=[
   {yr:1970, src:"line_photos/jim-ceramist-1970.jpg", film:true},
-  {yr:1972, src:"line_photos/promo-1722rose-early70s.jpg"},
+  {yr:1972, src:"line_photos/promo-1722rose-early70s.jpg", archive:true},
   {yr:1975, src:"line_photos/lab4-exterior-1975-84.jpg"},
   {yr:1975, src:"line_photos/lab4-interior-1975-84.jpg"},
   {yr:1983, src:"line_photos/lab3-exterior-1983-84.jpg"},
@@ -1595,7 +1710,7 @@ function buildSVG(){
     s+='</g>';
   });
 
-  // --- production calendar tier (months Jun–Oct); month blocks + event pins live in buildLayer ---
+  // --- production calendar tier (months Jul–Oct); month blocks + event pins live in buildLayer ---
   s+='<line class="tierdiv" x1="72" y1="'+CALDIV+'" x2="'+(STAGEW-70)+'" y2="'+CALDIV+'"/>';
   s+='<text class="tierlbl" x="84" y="'+(CALDIV-9)+'">'+L(UI.calTier)+'</text>';
   // --- heroes / airtime: whose story each scene tells (bars across scene segments) ---
@@ -1647,7 +1762,7 @@ function buildLayer(){
       +'<div class="fb-top"><span class="fb-n">'+k+'</span><span class="fb-pills">'+pills+'</span><span class="fb-en '+en+'">'+(en==='up'?'▲':'▼')+'</span></div>'
       +'<div class="fb-title">'+L(SCENE_SHORT[k])+'</div></div>';
   }
-  // production calendar lane — month columns Jun–Oct with event markers (replaces the pillars lane)
+  // production calendar lane — month columns Jul–Oct with event markers (replaces the pillars lane)
   (function(){
     const CL=84, CR=STAGEW-70, CW=CR-CL, MW=CW/CAL_MONTHS.length;
     // faint day-grid inside a month strip: 3 sections + per-day ticks + subtle weekend columns
@@ -1666,7 +1781,7 @@ function buildLayer(){
         +calDays(m.dim,m.k)+'<span class="cm-nm">'+L(m.nm)+'</span></div>';
     });
     const evx=(mk,d)=>{ const i=CAL_MONTHS.findIndex(m=>m.k===mk); if(i<0)return CL; const m=CAL_MONTHS[i]; return CL+i*MW+((d-0.5)/m.dim)*MW; };
-    // "Now" tracks the real current date (clamped to the Jun–Oct window) so it never goes stale
+    // "Now" tracks the real current date (clamped to the Jul–Oct window) so it never goes stale
     const lo=CAL_MONTHS[0].k, hi=CAL_MONTHS[CAL_MONTHS.length-1].k, t=new Date(), tM=t.getMonth()+1, tD=t.getDate();
     const nowMD=(tM<lo)?[lo,1]:(tM>hi)?[hi,CAL_MONTHS[CAL_MONTHS.length-1].dim]:[tM,tD];
     CAL_EVENTS.forEach((e,i)=>{
@@ -1676,8 +1791,9 @@ function buildLayer(){
           +'<span class="cn-lbl" style="color:'+e.c+'">'+lbl+'</span>'
           +'<span class="cn-line" style="background:'+e.c+'"></span></div>';
       } else {
-        h+='<div class="cal-ev'+(e.star?' star':'')+'" data-cal="'+i+'" title="'+L(e.t)+' — '+L(e.when)+'" style="left:'+x.toFixed(1)+'px;top:'+(CALTOP+CALH/2)+'px">'
-          +'<span class="ce-dot" style="background:'+e.c+'"></span>'
+        const dotStyle=e.tent?('background:var(--paper);border-color:'+e.c):('background:'+e.c);
+        h+='<div class="cal-ev'+(e.star?' star':'')+(e.tent?' tent':'')+'" data-cal="'+i+'" title="'+L(e.t)+' — '+L(e.when)+'" style="left:'+x.toFixed(1)+'px;top:'+(CALTOP+CALH/2)+'px">'
+          +'<span class="ce-dot" style="'+dotStyle+'"></span>'
           +'<span class="ce-lbl" style="color:'+e.c+'">'+lbl+'</span></div>';
       }
     });
@@ -1727,9 +1843,10 @@ function buildLayer(){
       const PH=66, PW=Math.round(PH*16/9), GAP=7, TOP=JIMLINEY+8; let lastRight=-1e9;
       [...BOOK_PHOTOS].sort((a,b)=>a.yr-b.yr).forEach((p,i)=>{
         let left=yToX(p.yr)-PW/2; if(left<lastRight+GAP) left=lastRight+GAP; lastRight=left+PW;
-        h+='<div class="line-photo'+(p.film?' lp-film':'')+'" data-src="'+p.src+'"'+(p.film?' data-film="film.html"':'')+' style="left:'+left.toFixed(1)+'px;top:'+TOP+'px;width:'+PW+'px;height:'+PH+'px" title="'+(p.film?'About the film':p.yr)+'">'
+        h+='<div class="line-photo'+(p.film?' lp-film':'')+(p.archive?' lp-archive':'')+'" data-src="'+p.src+'"'+(p.film?' data-film="film.html"':'')+(p.archive?' data-archive="1"':'')+' style="left:'+left.toFixed(1)+'px;top:'+TOP+'px;width:'+PW+'px;height:'+PH+'px" title="'+(p.film?'About the film':p.archive?'Archive hunt':p.yr)+'">'
           +'<img src="'+p.src+'" alt="" onerror="this.closest(\'.line-photo\').remove()">'
           +(p.film?'<span class="lp-badge">▶ The film</span>':'')
+          +(p.archive?'<span class="lp-badge">🗄 Archive</span>':'')
           +'</div>';
       });
     }
@@ -1775,7 +1892,7 @@ function render(){
   buildNav(); buildLegend();
   document.getElementById('v-spine').textContent=L(UI.vSpine);
   document.getElementById('v-full').textContent=L(UI.vFull);
-  if(openRef) openRef.type==='expansion'?openExpansion(openRef.id,true):openRef.type==='workforce'?openWorkforce(openRef.id,true):openRef.type==='metric'?openMetric(openRef.id,true):openRef.type==='morepeople'?openMorePeople(true):openRef.type==='personalities'?openPersonalities(true):openRef.type==='spk'?openSpeaker(openRef.id,true):openRef.type==='journey'?openJourney(openRef.id,true):openRef.type==='jim'?openJim(openRef.id,true):openRef.type==='hero'?openHeroMoment(openRef.id,openRef.k,true):openRef.type==='pillar'?openPillar(openRef.id,true):openRef.type==='cal'?openCalEvent(openRef.id,true):openRef.type==='calmonth'?openCalMonth(openRef.id,true):openRef.type==='beatsheet'?openBeatSheet(openRef.id,true):openRef.type==='scene'?openScene(openRef.id,true):openRef.type==='allscenes'?openAllScenes(true):openRef.type==='allheroes'?openAllHeroes(true):openBeat(openRef.id,true);
+  if(openRef) openRef.type==='expansion'?openExpansion(openRef.id,true):openRef.type==='workforce'?openWorkforce(openRef.id,true):openRef.type==='metric'?openMetric(openRef.id,true):openRef.type==='morepeople'?openMorePeople(true):openRef.type==='personalities'?openPersonalities(true):openRef.type==='spk'?openSpeaker(openRef.id,true):openRef.type==='journey'?openJourney(openRef.id,true):openRef.type==='jim'?openJim(openRef.id,true):openRef.type==='hero'?openHeroMoment(openRef.id,openRef.k,true):openRef.type==='pillar'?openPillar(openRef.id,true):openRef.type==='cal'?openCalEvent(openRef.id,true):openRef.type==='calmonth'?openCalMonth(openRef.id,true):openRef.type==='archive'?openArchive(true):openRef.type==='beatsheet'?openBeatSheet(openRef.id,true):openRef.type==='scene'?openScene(openRef.id,true):openRef.type==='allscenes'?openAllScenes(true):openRef.type==='allheroes'?openAllHeroes(true):openBeat(openRef.id,true);
 }
 
 function setHL(bi,on){
@@ -1931,6 +2048,7 @@ function openCalEvent(i,keep){
   pin.innerHTML='<div class="kicker" style="color:'+e.c+'">'+L(UI.calKicker)+'</div>'
     +'<h2>'+L(e.t)+'</h2>'
     +'<div class="role" style="color:'+e.c+'">'+L(e.when)+'</div>'
+    +(e.tent?'<div class="tent-banner">'+L(UI.calTent)+'</div>':'')
     +'<div class="scdesc">'+fmtText(L(e.desc))+'</div>';
   show();
 }
@@ -1955,7 +2073,7 @@ function openCalMonth(mk,keep){
     else if(it.tbc) h+='<span class="calmo-date"><span class="calmo-tbc">tbc</span></span>';
     h+='</div>';
     if(it.t&&L(it.t)) h+='<div class="calmo-detail">'+L(it.t)+'</div>';
-    if(it.ev){ const ev=CAL_EVENTS.find(e=>e.m===mk&&e.star); if(ev){ h+='<div class="calmo-full">'+fmtText(L(ev.desc))+'</div>'; } }
+    if(it.ev){ const ev=CAL_EVENTS.find(e=>e.m===mk&&(it.evTent?e.tent:e.star)); if(ev){ h+='<div class="calmo-full">'+fmtText(L(ev.desc))+'</div>'; } }
     return h+'</div>';
   }).join('') || '<div class="nofacts">'+L(UI.calMonthEmpty)+'</div>';
   const idx=CAL_MONTHS.findIndex(x=>x.k===mk);
@@ -1969,6 +2087,50 @@ function openCalMonth(mk,keep){
     +'<h2>'+L(m.nm)+' 2026</h2>'
     +(det.intro?'<p class="scdesc">'+L(det.intro)+'</p>':'')
     +'<div class="calmo">'+rows+'</div>';
+  show();
+}
+function openArchive(keep){
+  if(!keep) openRef={type:'archive'}; clearPin();
+  const STAT={
+    ask:{l:{en:'To ask',ru:'Спросить'},c:'#8A929B'},
+    asked:{l:{en:'Asked — waiting',ru:'Спросили — ждём'},c:'#B07A16'},
+    got:{l:{en:'Got it',ru:'Получили'},c:'#1F7A57'},
+    todo:{l:{en:'Not started',ru:'Не начато'},c:'#8A929B'}
+  };
+  const curIdx=ARCHIVE_STAGES.findIndex(s=>!s.tasks.every(t=>t.done));
+  const stagesHtml=ARCHIVE_STAGES.map((s,i)=>{
+    const total=s.tasks.length, done=s.tasks.filter(t=>t.done).length;
+    const state=done===total?'done':(i===curIdx?'now':'todo');
+    const tasksHtml=s.tasks.map(t=>'<div class="arc-task'+(t.done?' done':'')+'"><span class="arc-check">'+(t.done?'✓':'')+'</span><span>'+L(t.t)+'</span></div>').join('');
+    return '<div class="arc-stage '+state+'"><div class="arc-stage-head"><span class="arc-stage-nm">'+L(s.nm)+'</span><span class="arc-stage-cnt">'+done+'/'+total+'</span></div>'
+      +'<div class="arc-tasks">'+tasksHtml+'</div></div>';
+  }).join('');
+  const peopleHtml=ARCHIVE_PEOPLE.map(p=>{
+    const st=STAT[p.status]||STAT.todo;
+    return '<div class="arc-person"><div class="arc-person-head"><span class="arc-person-nm">'+L(p.nm)+'</span><span class="arc-st" style="background:'+st.c+'">'+L(st.l)+'</span></div>'
+      +'<div class="arc-person-role">'+L(p.role)+'</div><div class="arc-person-note">'+L(p.note)+'</div></div>';
+  }).join('');
+  const sourcesHtml=ARCHIVE_SOURCES.map(s=>{
+    const st=STAT[s.status]||STAT.todo;
+    return '<div class="arc-src"><div class="arc-src-head"><span class="arc-src-nm">'+L(s.nm)+'</span><span class="arc-st" style="background:'+st.c+'">'+L(st.l)+'</span></div>'
+      +'<div class="arc-src-note">'+L(s.note)+'</div></div>';
+  }).join('');
+  const TAG={have:{l:{en:'Have it',ru:'Есть у нас'},c:'#1F7A57'}, need:{l:{en:'Still need',ru:'Ещё нужно'},c:'#B07A16'}, unused:{l:{en:'Found — unused',ru:'Нашли — не используем'},c:'#8A929B'}};
+  const KIND={photo:{en:'Photo',ru:'Фото'}, video:{en:'Video',ru:'Видео'}, marketing:{en:'Marketing',ru:'Маркетинг'}};
+  const matsHtml=ARCHIVE_MATERIALS.map(m=>{
+    const tg=TAG[m.tag]||TAG.need;
+    const thumb=m.src
+      ? '<div class="arc-thumb"><img src="'+m.src+'" alt="" onerror="this.parentNode.classList.add(\'noimg\');this.remove()"><span class="arc-thumb-tag" style="background:'+tg.c+'">'+L(tg.l)+'</span></div>'
+      : '<div class="arc-thumb noimg"><span class="arc-thumb-ph">'+L(KIND[m.kind]||{en:'',ru:''})+'</span><span class="arc-thumb-tag" style="background:'+tg.c+'">'+L(tg.l)+'</span></div>';
+    return '<div class="arc-mat">'+thumb+'<div class="arc-mat-tx"><div class="arc-mat-nm">'+L(m.nm)+'</div><div class="arc-mat-note">'+L(m.note)+'</div></div></div>';
+  }).join('');
+  pin.innerHTML='<div class="kicker">'+L(UI.archiveKicker)+'</div>'
+    +'<h2>'+L(UI.archiveTitle)+'</h2>'
+    +'<p class="scdesc">'+L(UI.archiveIntro)+'</p>'
+    +'<div class="arc-sec-h">'+L(UI.archivePipelineH)+'</div><div class="arc-stages">'+stagesHtml+'</div>'
+    +'<div class="arc-sec-h">'+L(UI.archivePeopleH)+'</div><div class="arc-people">'+peopleHtml+'</div>'
+    +'<div class="arc-sec-h">'+L(UI.archiveSourcesH)+'</div><div class="arc-sources">'+sourcesHtml+'</div>'
+    +'<div class="arc-sec-h">'+L(UI.archiveMatsH)+'</div><div class="arc-mats">'+matsHtml+'</div>';
   show();
 }
 function openHeroMoment(id,k,keep){
@@ -2276,7 +2438,7 @@ document.getElementById('px').onclick=hide;
 document.getElementById('pfull').onclick=function(){var f=panel.classList.toggle('full');this.textContent=f?'⤡':'⤢';this.setAttribute('aria-label',f?'Collapse':'Expand');this.setAttribute('title',f?'Свернуть':'Развернуть на весь экран');};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(lightbox.classList.contains('open')){closeLightbox();return;}hide();}});
 stage.addEventListener('click',e=>{
-  const lp=e.target.closest('.line-photo'); if(lp){ if(lp.dataset.film){window.open(lp.dataset.film,'_blank','noopener');return;} openLightbox(lp.dataset.src||(lp.querySelector('img')||{}).src, lp.dataset.cap||''); return;}
+  const lp=e.target.closest('.line-photo'); if(lp){ if(lp.dataset.film){window.open(lp.dataset.film,'_blank','noopener');return;} if(lp.dataset.archive){openArchive();return;} openLightbox(lp.dataset.src||(lp.querySelector('img')||{}).src, lp.dataset.cap||''); return;}
   const ft=e.target.closest('.frame-thumb'); if(ft){openScene(+ft.dataset.frameScene);return;}
   const bd=e.target.closest('.bld'); if(bd){openExpansion(+bd.dataset.bld);return;}
   const pp=e.target.closest('.ppl'); if(pp){openWorkforce(+pp.dataset.ppl);return;}
