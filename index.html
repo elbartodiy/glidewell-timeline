@@ -644,7 +644,7 @@ const UI = {
   moreSub:{en:"not yet on the line",ru:"ещё не на линии"},
   moreKicker:{en:"Roster · parking",ru:"Ростер · парковка"},
   moreTitle:{en:"More personalities — not yet on the line",ru:"More personalities — ещё не на линии"},
-  moreIntro:{en:"Names from the photo wall and the master plan that aren't on the timeline yet. Proposed names first; the Extra block holds faces still to be identified. (Jim lives on his own line.)",ru:"Имена с фото-стены и из мастер-плана, которых пока нет на таймлайне. Сначала — предложенные; блок Extra — лица, которых ещё надо опознать. (Джим — на своей линии.)"},
+  moreIntro:{en:"Names from the photo wall and the master plan that aren't on the timeline yet. Proposed names first; the Extra block holds faces still to be identified.",ru:"Имена с фото-стены и из мастер-плана, которых пока нет на таймлайне. Сначала — предложенные; блок Extra — лица, которых ещё надо опознать."},
   filmTier:{en:"Storyboard / film — parts 1–14 ↓",ru:"Раскадровка / фильм — части 1–14 ↓"},
   sceneKicker:{en:"Film scene",ru:"Сцена фильма"},
   scAnchorFacts:{en:"Anchor facts",ru:"Опорные факты"},
@@ -657,7 +657,7 @@ const UI = {
   calTent:{en:"⚠ Planned — not confirmed yet",ru:"⚠ Планируется — пока не утверждено"},
   archiveKicker:{en:"Company archive",ru:"Архив компании"},
   archiveTitle:{en:"Finding, reviewing and cutting in the archive",ru:"Поиск, отсмотр и монтаж архива"},
-  archiveIntro:{en:"Glidewell almost certainly has decades of photos, video and marketing material sitting in drawers, drives and someone's memory. None of it is in one place. This page tracks the hunt: who to ask, where to look, what we've pulled, and what's still missing — so we don't lose track of a good find or chase the same dead end twice.",ru:"У Glidewell почти наверняка десятилетия фото, видео и маркетинговых материалов лежат по ящикам, дискам и чьей-то памяти. Всё это не в одном месте. Эта страница держит охоту в поле зрения: кого спросить, где искать, что уже забрали и чего ещё не хватает — чтобы не терять хорошую находку и не гнаться за одним и тем же тупиком дважды."},
+  archiveIntro:{en:"Who to ask, where to look, and what we've found so far.",ru:"Кого спросить, где искать и что уже нашли."},
   archivePipelineH:{en:"The pipeline",ru:"Пайплайн"},
   archivePeopleH:{en:"Who to ask",ru:"Кого спросить"},
   archiveSourcesH:{en:"Where to look",ru:"Где искать"},
@@ -1010,7 +1010,8 @@ const CAL_MONTH_DETAIL={
 // tasks[].done drives stage progress; a stage counts "current" when it's the first one not fully done.
 const ARCHIVE_STAGES=[
   {k:'ask', nm:{en:"1 · Find & ask",ru:"1 · Найти и спросить"}, tasks:[
-    {done:true, t:{en:"List the likely holders — Jim's own archive, Marketing, IT/records, retired staff",ru:"Составить список вероятных держателей — архив Джима, маркетинг, IT/архив, бывшие сотрудники"}},
+    {done:true, t:{en:"Confirmed — a single company-wide archive already exists",ru:"Подтверждено — единый архив компании уже существует"}},
+    {done:false, t:{en:"Ask James Kwasniewski for access and start reviewing it — top priority",ru:"Спросить доступ у James Kwasniewski и начать смотреть — приоритет №1"}},
     {done:false, t:{en:"Ask Eric who owns the marketing asset library today, and who owned it in past decades",ru:"Спросить у Эрика, кто сейчас владеет библиотекой маркетинговых материалов и кто владел раньше"}},
     {done:false, t:{en:"Ask Jim's office whether a fuller “Constant Change” photo set survives beyond the book crops",ru:"Спросить в приёмной Джима, сохранился ли более полный набор фото к «Constant Change» за пределами обрезков из книги"}}
   ]},
@@ -1034,6 +1035,8 @@ const ARCHIVE_STAGES=[
   ]}
 ];
 const ARCHIVE_PEOPLE=[
+  {nm:"James Kwasniewski", role:{en:"Holds the company-wide archive — role TBC",ru:"Держит единый архив компании — роль уточнить"}, status:'ask',
+   note:{en:"Confirmed to hold the single company-wide archive. Top priority: reach out for access and start reviewing before chasing any other, smaller source.",ru:"Подтверждено, что у него единый архив компании. Приоритет №1: попросить доступ и начать смотреть, прежде чем гоняться за остальными, более мелкими источниками."}},
   {nm:"Jim Glidewell", role:{en:"Founder & President",ru:"Основатель и президент"}, status:'ask',
    note:{en:"Personal + company archive behind the “Constant Change” book — likely the single deepest well of period photos. Worth asking whether the full, uncropped set still exists and who holds the files.",ru:"Личный + корпоративный архив за книгой «Constant Change» — вероятно, самый глубокий источник фото по эпохам. Стоит спросить, сохранился ли полный, необрезанный набор и у кого файлы."}},
   {nm:"Eric", role:{en:"Our sponsor · marketing",ru:"Наш куратор · маркетинг"}, status:'asked',
@@ -1046,6 +1049,8 @@ const ARCHIVE_PEOPLE=[
    note:{en:"May hold personal photos or home-video tapes from the early decades that never entered any company system.",ru:"Могут держать личные фото или домашние видеозаписи первых десятилетий, которые никогда не попадали ни в одну корпоративную систему."}}
 ];
 const ARCHIVE_SOURCES=[
+  {nm:{en:"Company-wide archive (held by James Kwasniewski)",ru:"Единый архив компании (у James Kwasniewski)"}, status:'ask',
+   note:{en:"Confirmed to exist — the primary source. Start here before any of the sources below.",ru:"Подтверждено, что существует — основной источник. Начинать с него, до всех источников ниже."}},
   {nm:{en:"Marketing asset library (DAM)",ru:"Библиотека маркетинга (DAM)"}, status:'todo',
    note:{en:"Current campaigns and product shots; possibly older brand photography if it was ever migrated in.",ru:"Текущие кампании и продуктовая съёмка; возможно старая брендовая фотография, если её когда-то туда перенесли."}},
   {nm:{en:"“Constant Change” book production files",ru:"Продакшн-файлы книги «Constant Change»"}, status:'ask',
