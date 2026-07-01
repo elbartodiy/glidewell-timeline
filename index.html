@@ -1612,7 +1612,7 @@ function buildSVG(){
   s+='<rect data-go-allheroes="1" x="78" y="'+(HERODIV-23)+'" width="560" height="24" rx="5" fill="transparent" style="cursor:pointer;pointer-events:all"/>';
   s+='<text class="tierlbl tierlbl-link" data-go-allheroes="1" x="84" y="'+(HERODIV-9)+'">'+L(UI.heroTier)+'</text>';
   // --- lane letters (A–H) on the far left, so we can name each line quickly ---
-  [['A',JIMLINEY+2],['B',JIMLINEY+48],['C',LINEY+2],['D',FILMDIV-8],['E',BEATDIV-8],['F',FRAMEDIV-8],['G',HERODIV-8],['H',CALDIV-8]].forEach(function(q){
+  [['A',JIMLINEY+2],['B',JIMLINEY+48],['C',LINEY+2],['D',FILMDIV-8],['E',BEATDIV-8],['F',FRAMETOP+34],['G',HERODIV-8],['H',CALDIV-8]].forEach(function(q){
     s+='<text class="laneltr" x="40" y="'+q[1]+'">'+q[0]+'</text>';
   });
   HEROES.forEach((H,r)=>{
