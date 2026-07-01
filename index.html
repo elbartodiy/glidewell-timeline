@@ -1257,15 +1257,20 @@ const PILLARS={
   exp:{nm:{en:"Experience",ru:"Опыт"}, c:"#6E5C97"},
   inn:{nm:{en:"Innovation",ru:"Инновация"}, c:"#2C6E9E"},
   int:{nm:{en:"Integration",ru:"Интеграция"}, c:"#137C7C"},
-  sup:{nm:{en:"Support",ru:"Поддержка"}, c:"#4E9A86"}
+  sup:{nm:{en:"Support",ru:"Поддержка"}, c:"#4E9A86"},
+  sd:{nm:{en:"Self-disruption",ru:"Само-дизрапшн"}, c:"#C77A2A"}
 };
-const P_ROWS=["exp","inn","int","sup"]; // acc = through-line, not a fragment row
+const P_ROWS=["exp","inn","int","sup","sd"]; // acc = through-line, not a fragment row
 // full meaning of each pillar — grounded in the film page ("Glidewell Advantage" mapping, option б)
 const PILLAR_DESC={
   acc:{
     tag:{en:"The through-line — over all four pillars, not a fifth block",ru:"Сквозная надтема — над всеми четырьмя, не пятый блок"},
     body:{en:"The film's central message and the antagonist's opposite: make the best dentistry affordable, not exclusive. It isn't one pillar among five — it runs over all four. And it's honest because it is both the mission (\"for the sake of smiles\") and the business model: the flywheel — cheaper to make → more people can afford it → bigger market → more revenue → reinvest in R&D and production → cheaper still. Aligned incentives, not charity. Its honest limit: Glidewell moves the supply side (price, speed, one visit instead of two) — it doesn't solve insurance or \"dental deserts.\"",ru:"Центральный месседж фильма и противоположность антагониста: сделать лучшую стоматологию доступной, а не эксклюзивной. Это не один из пяти пилонов — он проходит над всеми четырьмя. И он честен, потому что одновременно и миссия («ради улыбок»), и бизнес-модель: маховик — дешевле производить → больше людей могут позволить → больше рынок → больше доход → реинвест в R&D и производство → ещё дешевле. Выровненные стимулы, не благотворительность. Честная граница: Glidewell двигает сторону предложения (цена, скорость, один визит вместо двух) — не решает страховку и «стоматологические пустыни»."},
     role:{en:"Antagonist: exclusivity / price / access. Proof so far: 39M+ BruxZir restorations — and the turn that creates the conflict: how many smiles haven't lit up yet?",ru:"Антагонист: эксклюзивность / цена / доступ. Доказательство: 39 млн+ реставраций BruxZir — и поворот, рождающий конфликт: сколько улыбок ещё не засияло?"}},
+  sd:{
+    tag:{en:"Narrative spine · the company disrupts itself",ru:"Нарративная ось · компания дизраптит сама себя"},
+    body:{en:"Eric's proposed primary journey (#35): Glidewell repeatedly makes its OWN products and processes obsolete with something better and cheaper. BruxZir undercuts metal-ceramic (PFM); CAD/CAM design-and-mill replaces the technician's hand-craft; the automated BruxZir Factory replaces human milling labor; glidewell.io / fastmill moves the lab into the dentist's chair, bypassing even the lab itself. Each step kills the previous one before a competitor can. It's the same as the film's analog→digital spine — seen from the business side.",ru:"Предложенная Эриком (#35) главная линия: Glidewell раз за разом делает СВОИ продукты и процессы устаревшими за счёт лучшего и дешёвого. BruxZir подрезает металлокерамику (PFM); CAD/CAM «дизайн+фреза» вытесняет ручной труд техника; автоматизированная BruxZir Factory заменяет ручную фрезеровку; glidewell.io / fastmill переносит лабораторию в кресло дантиста, обходя даже саму лабораторию. Каждый шаг убивает предыдущий раньше конкурента. Это та же ось «аналог→цифра» — взгляд со стороны бизнеса."},
+    role:{en:"Eric #35's single primary journey: BruxZir → CAD/CAM → BruxZir Factory → glidewell.io. Surfaces in parts 3, 8, 10, 11, 12.",ru:"Единственная несущая линия из коммента Эрика #35: BruxZir → CAD/CAM → BruxZir Factory → glidewell.io. Проявляется в частях 3, 8, 10, 11, 12."}},
   exp:{
     tag:{en:"Glidewell Advantage pillar · experience, scale, trust",ru:"Пилон Glidewell Advantage · опыт, масштаб, доверие"},
     body:{en:"50+ years and the world's largest dental lab — the credibility and scale that make the affordability bet believable. Experience is what lets the company say \"we've already done this at scale\" instead of promising it. In the film it's the depth behind the founder's climb (from a one-man lab → thousands of employees) and the analog→digital story lived out across one company's lifetime.",ru:"50+ лет и крупнейшая в мире зуботехническая лаборатория — авторитет и масштаб, делающие ставку на доступность правдоподобной. Опыт — это то, что позволяет говорить «мы уже сделали это в масштабе», а не обещать. В фильме — глубина за восхождением основателя (от лаборатории-одиночки → тысячи сотрудников) и история «аналог→цифра», прожитая за время одной компании."},
@@ -1349,9 +1354,9 @@ const SCENE_FRAMES={
 };
 // which pillars each scene develops (fragmented; multiple may coexist)
 const SCENE_PILLARS={
-  1:["exp"], 2:["acc"], 3:["inn","acc"], 4:["sup","acc"], 5:["inn"],
-  6:["acc"], 7:["acc"], 8:["acc","exp"], 9:["acc","int"],
-  10:["acc","int","sup","inn"], 11:["inn","int"], 12:["inn"], 13:["sup"], 14:["acc","exp"]
+  1:["exp"], 2:["acc"], 3:["inn","acc","sd"], 4:["sup","acc"], 5:["inn"],
+  6:["acc"], 7:["acc"], 8:["acc","exp","sd"], 9:["acc","int"],
+  10:["acc","int","sup","inn","sd"], 11:["inn","int","sd"], 12:["inn","sd"], 13:["sup"], 14:["acc","exp"]
 };
 
 // scene cuts anchored to the key Save the Cat turns (points stay fixed; scenes move to meet them):
