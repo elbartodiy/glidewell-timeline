@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI-Jim — quest prototype</title>
+<style>
+  :root{
+    --paper:#f4efe6; --ink:#1c1a17; --mut:#7a7264; --line:#ddd4c5;
+    --red:#c0392b; --clay:#b07a3c; --jim:#26466e; --card:#fffdf8;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--paper);color:var(--ink);
+    font:16px/1.5 "Inter",-apple-system,system-ui,sans-serif;
+    display:flex;flex-direction:column;align-items:center;padding:22px 16px 0}
+  .wrap{width:100%;max-width:640px;display:flex;flex-direction:column;flex:1;min-height:0}
+  header{border-bottom:2px solid var(--red);padding-bottom:12px;margin-bottom:6px}
+  h1{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:26px;margin:0;letter-spacing:-.01em}
+  h1 .s{color:var(--red)}
+  .tag{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.04em;color:var(--mut);margin-top:4px}
+  .tag b{color:var(--clay)}
+  /* progress gate */
+  .gate{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px;font-family:"IBM Plex Mono",monospace;font-size:11px}
+  .chip{border:1.5px solid var(--line);border-radius:20px;padding:4px 11px;color:var(--mut);background:var(--card);white-space:nowrap;transition:.15s}
+  .chip.on{border-color:var(--jim);color:var(--jim);background:#eaf0f7;font-weight:600}
+  .chip.prod.on{border-color:var(--red);color:var(--red);background:#fbeae8}
+  /* chat */
+  #chat{flex:1;overflow-y:auto;padding:8px 2px 14px;display:flex;flex-direction:column;gap:12px}
+  .msg{max-width:82%;padding:10px 14px;border-radius:14px;font-size:15px;line-height:1.5;white-space:pre-wrap}
+  .jim{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px}
+  .msg .who{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--jim);display:block;margin-bottom:3px}
+  .you{align-self:flex-end;background:var(--jim);color:#fff;border-bottom-right-radius:4px}
+  .win{align-self:stretch;max-width:100%;background:#f3ede0;border:1.5px solid var(--clay);border-radius:12px;padding:14px 16px}
+  .win .who{color:var(--clay)}
+  .win b{color:var(--clay)}
+  /* input */
+  form{display:flex;gap:8px;padding:12px 0 18px;border-top:1px solid var(--line)}
+  #in{flex:1;font:15px "Inter",sans-serif;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;background:#fff;outline:none}
+  #in:focus{border-color:var(--jim)}
+  button{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;border:none;border-radius:10px;padding:0 18px;background:var(--jim);color:#fff;cursor:pointer}
+  button:hover{background:#1b3452}
+  .reset{background:none;color:var(--mut);border:1.5px solid var(--line);padding:0 12px}
+  .reset:hover{background:#fff;color:var(--ink)}
+  .foot{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--mut);text-align:center;padding-bottom:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>AI-<span class="s">Jim</span> <span style="font-weight:400;color:var(--mut);font-size:17px">· the quest</span></h1>
+    <div class="tag"><b>PROTOTYPE</b> — rules-based grader standing in for a live LLM. Talk to Jim. He won't hand over the code until you prove you know the product.</div>
+  </header>
+
+  <div class="gate">
+    <span class="chip prod" id="c-prod">product: BruxZir ✕</span>
+    <span class="chip" id="c-adv">advantages: 0 / 5</span>
+  </div>
+
+  <div id="chat"></div>
+
+  <form id="f" autocomplete="off">
+    <input id="in" placeholder="Say something to Jim…" autofocus>
+    <button type="submit">Send</button>
+    <button type="button" class="reset" id="reset" title="Start over">↺</button>
+  </form>
+  <div class="foot">proof of concept · Glidewell documentary — interactive activations</div>
+</div>
+
+<script>
+// ---- knowledge: the gate ----
+const PRODUCT = ['bruxzir','brux zir','brux-zir'];
+const ADV = {
+  esthetics:['esthet','aesthet','natural','looks like','lifelike','translucen','tooth-color','tooth color','realistic','beautiful','looks real','like a real tooth'],
+  strength:['strong','strength','durab','tough','chip','crack','fractur',"won't break",'wont break','break','monolithic','solid','robust'],
+  price:['afford','cheap','price','cost','value','inexpensive','budget','economical','low-cost','low cost'],
+  speed:['fast','quick','same-day','same day','single visit','one visit','chairside','speed','saves time','in one'],
+  quality:['quality','precis','consistent','no metal','metal-free','metal free','biocompat','reliable','high grade']
+};
+const ADV_NAMES = {esthetics:'natural esthetics',strength:'strength / durability',price:'affordable',speed:'fast / single-visit',quality:'quality / metal-free'};
+
+// ---- Jim persona lines (game dialogue, not real quotes) ----
+const OPEN = "So you found me. Everybody wants something from old Jim. You want the code for the next station? Fine. But I built this company on people who actually KNOW the work.\n\nTell me: which product changed the whole industry — and give me FIVE reasons it matters. Do that, and the code's yours.";
+const DEFLECT = [
+  "Nice try. The code's not free. Name the product first — and back it up.",
+  "You think I just hand it over? Tell me what you actually know.",
+  "I started at a kitchen table with nothing. You'll work for this. What's the product?",
+  "Keep talking. I'm listening for something that tells me you did your homework."
+];
+const NUDGE_PROD = "Good — you named it. Now: what makes it matter? I want five real reasons. Esthetics, cost, strength — start anywhere.";
+const NEED_PROD = "You're listing good things — but which PRODUCT are you talking about? Name it.";
+let deflectI = 0;
+
+// ---- state ----
+let named=false, found=new Set(), won=false;
+const chat=document.getElementById('chat'), inp=document.getElementById('in');
+
+function add(text, cls){
+  const d=document.createElement('div'); d.className='msg '+cls;
+  if(cls==='jim'||cls==='win'){ const w=document.createElement('span'); w.className='who'; w.textContent = cls==='win'?'Jim — unlocked':'Jim'; d.appendChild(w); d.appendChild(document.createTextNode(text)); }
+  else d.textContent=text;
+  chat.appendChild(d); chat.scrollTop=chat.scrollHeight;
+}
+function updateGate(){
+  const cp=document.getElementById('c-prod'); cp.textContent='product: BruxZir '+(named?'✓':'✕'); cp.classList.toggle('on',named);
+  const ca=document.getElementById('c-adv'); ca.textContent='advantages: '+found.size+' / 5'; ca.classList.toggle('on',found.size>0);
+}
+function has(text, list){ return list.some(k=>text.includes(k)); }
+
+function jimRespond(raw){
+  const t=(' '+raw+' ').toLowerCase();
+  if(won){ add("You already cracked it. Go on — the next station's waiting.", 'jim'); return; }
+
+  const nowNamed = has(t, PRODUCT);
+  if(nowNamed && !named){ named=true; }
+
+  // collect newly-found advantages
+  const fresh=[];
+  for(const k in ADV){ if(!found.has(k) && has(t, ADV[k])){ found.add(k); fresh.push(ADV_NAMES[k]); } }
+  updateGate();
+
+  // WIN
+  if(named && found.size>=5){
+    won=true;
+    add("There it is. You didn't just answer me — you sold it. Natural-looking, strong, priced so a normal person can afford it, fast, and no metal to hide. That's the whole bet: the best dentistry, made affordable.\n\nCode for the next station: MONOLITH-1970. Now go.", 'win');
+    inp.disabled=true; document.querySelector('#f button[type=submit]').disabled=true;
+    return;
+  }
+  // reactions
+  if(nowNamed && fresh.length===0 && found.size===0){ add(NUDGE_PROD,'jim'); return; }
+  if(fresh.length){
+    if(!named){ add("That's a real advantage ("+fresh.join(', ')+"). But "+NEED_PROD.toLowerCase(),'jim'); return; }
+    const left=5-found.size;
+    if(left>0) add("Good — "+fresh.join(', ')+". That's "+found.size+" of 5. "+left+" more.",'jim');
+    return;
+  }
+  // nothing landed
+  if(!named){ add(NEED_PROD,'jim'); return; }
+  add(DEFLECT[deflectI++ % DEFLECT.length],'jim');
+}
+
+document.getElementById('f').addEventListener('submit',function(e){
+  e.preventDefault(); const v=inp.value.trim(); if(!v)return;
+  add(v,'you'); inp.value='';
+  setTimeout(()=>jimRespond(v), 340);
+});
+document.getElementById('reset').addEventListener('click',function(){
+  named=false; found=new Set(); won=false; deflectI=0; chat.innerHTML='';
+  inp.disabled=false; document.querySelector('#f button[type=submit]').disabled=false; inp.focus();
+  updateGate(); add(OPEN,'jim');
+});
+// boot
+updateGate(); add(OPEN,'jim');
+</script>
+</body>
+</html>
