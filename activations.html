@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beyond the film — interactive activations</title>
+<style>
+  :root{
+    --paper:#f4efe6; --ink:#1c1a17; --mut:#6f675a; --line:#ddd4c5;
+    --red:#c0392b; --clay:#b07a3c; --jim:#26466e; --card:#fffdf8; --tint:#ece4d6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font:17px/1.6 "Inter",-apple-system,system-ui,sans-serif;
+    padding:0 20px 90px}
+  .wrap{max-width:760px;margin:0 auto}
+  .eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--red);padding-top:54px}
+  h1{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:44px;line-height:1.05;letter-spacing:-.015em;margin:10px 0 4px}
+  .lede{font-size:20px;line-height:1.5;color:#3a352d;max-width:640px;margin:14px 0 0}
+  h2{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:27px;margin:52px 0 6px;padding-top:22px;border-top:1px solid var(--line)}
+  h3{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:20px;margin:0 0 6px}
+  p{margin:12px 0}
+  strong{font-weight:600}
+  .mono-note{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--mut);letter-spacing:.02em}
+  /* framework list */
+  .frame{list-style:none;padding:0;margin:18px 0 0}
+  .frame li{display:flex;gap:16px;padding:11px 0;border-bottom:1px dashed var(--line)}
+  .frame .k{flex:0 0 132px;font-family:"IBM Plex Mono",monospace;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--clay);font-weight:600;padding-top:2px}
+  .frame .v{flex:1}
+  /* cases */
+  .cases{display:flex;flex-direction:column;gap:16px;margin-top:22px}
+  .case{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--jim);border-radius:10px;padding:18px 20px}
+  .case .n{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--jim);font-weight:600;letter-spacing:.04em}
+  .case p{margin:6px 0 0;font-size:16px}
+  /* jim callout */
+  .jimbox{background:#eaf0f7;border:1.5px solid var(--jim);border-radius:12px;padding:20px 22px;margin-top:22px}
+  .jimbox h3{color:var(--jim)}
+  .try{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;text-decoration:none;color:#fff;background:var(--jim);padding:10px 18px;border-radius:9px}
+  .try:hover{background:#1b3452}
+  .try .a{font-size:17px}
+  /* flows */
+  .flows{background:var(--tint);border-radius:10px;padding:16px 20px;margin-top:16px}
+  .flows ul{margin:8px 0 0;padding-left:20px}
+  .flows li{margin:3px 0}
+  .todo{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--clay);background:#f6ede0;border:1px solid #e6d6bf;border-radius:5px;padding:1px 6px;letter-spacing:.03em}
+  .coda{font-family:"Newsreader",serif;font-style:italic;font-size:21px;line-height:1.45;color:#3a352d;margin:44px 0 0;padding-top:24px;border-top:2px solid var(--red)}
+  footer{margin-top:40px;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--mut)}
+  footer .nm{color:var(--ink);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Glidewell documentary · beyond the film</div>
+  <h1>Two outputs, not one.</h1>
+  <p class="lede">The documentary is the film. But the same material — footage, archives, artifacts — can also become an <strong>interactive living history</strong>: an audience-facing experience people walk into, and a legacy they can revisit years from now to find an interview or trace how the craft changed.</p>
+  <p class="mono-note">A working proposal. Real event names, internal touchpoints and budget are marked <span class="todo">to fill</span>.</p>
+
+  <h2>How we pitch each activation</h2>
+  <p>Every activation is described the same way we describe a film block — so it reads in one consistent shape:</p>
+  <ul class="frame">
+    <li><span class="k">Task</span><span class="v">Which people-flow or moment is this for?</span></li>
+    <li><span class="k">What we need</span><span class="v">Space, hardware, content, staffing.</span></li>
+    <li><span class="k">Why</span><span class="v">The value to land — the message, the thing we want them to feel or do (learn / be sold / feel part of the community).</span></li>
+    <li><span class="k">Mechanic</span><span class="v">How it works — the actual interaction.</span></li>
+    <li><span class="k">Outcome</span><span class="v">What the visitor walks away with: now understands, knows, and likes Glidewell.</span></li>
+  </ul>
+
+  <h2>Three seed use-cases</h2>
+  <div class="cases">
+    <div class="case">
+      <div class="n">01 · Symposium</div>
+      <h3>An interactive board, as a mini-quest</h3>
+      <p>Three stations, optionally linked into one route (“solve this here → go there → finish here”). Each case drawn from a <strong>different era</strong> — analog past → digital present → what’s next — so the walk itself tells the arc. Carries the AI-Jim quest below, and can layer in audio through the headphones handed out at the entrance.</p>
+    </div>
+    <div class="case">
+      <div class="n">02 · Exhibition / expo</div>
+      <h3>A booth version</h3>
+      <p>The same idea condensed for a trade show or exhibition floor — a single station that hooks passers-by and leaves them with the one thing we want them to remember.</p>
+    </div>
+    <div class="case">
+      <div class="n">03 · Daily employee flow</div>
+      <h3>The everyday version</h3>
+      <p>Staff pass fixed points inside the company every day. A light, rotating activation on those routes keeps the story — and the message of the season — in front of them.</p>
+    </div>
+  </div>
+
+  <h2>The centerpiece: the AI-Jim quest</h2>
+  <div class="jimbox">
+    <h3>Talk to Jim. Earn the answer.</h3>
+    <p>A conversational game where visitors talk to an AI “Jim” and have to <strong>work him</strong> — he only hands over the hint once they meet a condition, e.g. name the Glidewell product that changed the industry and five of its advantages.</p>
+    <p>The trick: <strong>visitors sell themselves.</strong> To get the answer they go read up on the product and its advantages — and end up reciting the pitch we never had to make. We ask a puzzle; they deliver the value proposition.</p>
+    <a class="try" href="ai-jim.html"><span class="a">▶</span> Try the prototype</a>
+    <p class="mono-note" style="margin-top:12px">Prototype uses a rules-based grader; in production it runs on a live LLM that grades free-form answers.</p>
+  </div>
+
+  <h2>The audio layer</h2>
+  <p>Symposiums already hand out headphones and devices at the entrance. That’s a channel — pipe a short, well-produced audio track into the quest, so the experience isn’t only on a screen.</p>
+
+  <h2>Where it lives: the people-flows map</h2>
+  <p>Before designing more activations, map <strong>every point in the company where a flow of people meets a message we want to land</strong> — from symposiums down to the daily employee routes. For each: who flows through, and what they should take away. That map becomes the menu of places to drop an activation.</p>
+  <div class="flows">
+    <span class="todo">to map with the team</span>
+    <ul>
+      <li>Symposiums &amp; education events</li>
+      <li>Campus tours</li>
+      <li>Lobby / reception</li>
+      <li>Onboarding</li>
+      <li>Cafeteria &amp; corridor routes</li>
+      <li>DOTR / graduation</li>
+      <li>Trade shows</li>
+    </ul>
+  </div>
+  <p>We’ll want <strong>more than three</strong>, and to <strong>rotate them each season</strong> — a growing library, not a fixed set.</p>
+
+  <p class="coda">The film says it once. The interactive says it every day — and keeps saying it long after the premiere.</p>
+
+  <footer><span class="nm">Glidewell</span> · For the Sake of Smiles — interactive activations · working proposal</footer>
+</div>
+</body>
+</html>
