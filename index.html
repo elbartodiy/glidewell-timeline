@@ -2400,10 +2400,10 @@ function svEsc(s){ return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt
 function svSubmit(){
   const d=svLoad(), st=document.getElementById('sv-status');
   const rows=Object.keys(d.answers||{}).filter(id=>d.answers[id]&&(d.answers[id].fam||d.answers[id].connect))
-    .map(id=>({id:id, name:SPK[id]?SPK[id].nm:id, familiarity:d.answers[id].fam||'', connect:d.answers[id].connect||''}));
+    .map(id=>({id:id, name:SPK[id]?SPK[id].nm:id, fam:d.answers[id].fam||'', connect:d.answers[id].connect||''}));
   if(!d.name||!d.name.trim()){ if(st)st.textContent=L({en:'Enter your name first.',ru:'Сначала впишите имя.'}); return; }
   if(!rows.length){ if(st)st.textContent=L({en:'Mark at least one person.',ru:'Отметьте хотя бы одного.'}); return; }
-  const payload={respondent:d.name.trim(), answers:rows};
+  const payload={type:'connect', respondent:d.name.trim(), items:rows};
   if(!SURVEY_ENDPOINT){ if(st)st.textContent=L({en:'Receiver not connected yet (Apps Script URL needed).',ru:'Приёмник ещё не подключён (нужен URL Apps Script).'}); console.log('SURVEY payload (not sent):',payload); return; }
   if(st)st.textContent=L({en:'Sending…',ru:'Отправляю…'});
   fetch(SURVEY_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)})
@@ -2427,7 +2427,7 @@ function openPersonalities(keep){
   }).join('');
   pin.innerHTML='<div class="kicker">'+L(UI.persKicker)+'</div>'
     +'<h2>'+L({en:'Speaker connections — survey',ru:'Связи со спикерами — опрос'})+'</h2>'
-    +'<p class="scdesc">'+L({en:'For each person: how well you know them, and whether you can connect us for an interview. Fill once, one <a class="sv-resplink" href="https://docs.google.com/spreadsheets/d/1K0zPInMC3SgQakJCjt1289Loxbtsv_xke-AFiYAKDHQ/edit" target="_blank" rel="noopener">Send</a>.',ru:'По каждому: насколько знаете и можете ли свести для интервью. Заполните один раз, одна <a class="sv-resplink" href="https://docs.google.com/spreadsheets/d/1K0zPInMC3SgQakJCjt1289Loxbtsv_xke-AFiYAKDHQ/edit" target="_blank" rel="noopener">«Отправить»</a>.'})+'</p>'
+    +'<p class="scdesc">'+L({en:'For each person: how well you know them, and whether you can connect us for an interview. Fill once, one <a class="sv-resplink" href="https://docs.google.com/spreadsheets/d/1K0zPInMC3SgQakJCjt1289Loxbtsv_xke-AFiYAKDHQ/edit" target="_blank" rel="noopener">Send</a><a href="cast-results.html" style="color:inherit;text-decoration:none;cursor:text">.</a>',ru:'По каждому: насколько знаете и можете ли свести для интервью. Заполните один раз, одна <a class="sv-resplink" href="https://docs.google.com/spreadsheets/d/1K0zPInMC3SgQakJCjt1289Loxbtsv_xke-AFiYAKDHQ/edit" target="_blank" rel="noopener">«Отправить»</a><a href="cast-results.html" style="color:inherit;text-decoration:none;cursor:text">.</a>'})+'</p>'
     +'<div class="pers-grid sv-grid">'+cards+'</div>'
     +'<div class="sv-foot"><input class="sv-name" placeholder="'+L({en:'Your name',ru:'Ваше имя'})+'" value="'+svEsc(sv.name)+'"><button type="button" class="sv-send" id="sv-send">'+L({en:'Send',ru:'Отправить'})+'</button><span class="sv-status" id="sv-status"></span></div>';
   show();
