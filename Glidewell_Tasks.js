@@ -154,7 +154,12 @@ window.GW_TASKS = [
     title:{en:"Map the internal 'people-flows' for activations", ru:"Составить карту внутренних «потоков людей» для активаций"},
     notes:{en:"List every point in the company where there's a flow of people we want to reach with a message — from symposiums down to the daily employee routes (staff pass fixed points every day). For each: who flows through, and the message to land. That map becomes the menu of places to drop an interactive activation. Plan to refresh/rotate the activations each season, so we'll need a growing library, not just three. Starting points to enumerate: symposiums & education events, campus tours, lobby/reception, onboarding, cafeteria & corridor routes, DOTR/graduation, trade shows.",
            ru:"Перечислить каждую точку в компании, где есть поток людей, которым надо донести смысл — от симпозиумов до ежедневных маршрутов сотрудников (персонал проходит фиксированные точки каждый день). По каждой: кто проходит и какой месседж донести. Эта карта — меню мест, куда ставить интерактивную активацию. Планировать обновление/ротацию активаций посезонно, значит нужна растущая библиотека, а не только три. Откуда начать: симпозиумы и обучающие события, туры по кампусу, лобби/ресепшн, онбординг, столовая и коридорные маршруты, DOTR/выпускной, выставки."},
-    links:[{en:"part of: t35 (activations)",ru:"часть: t35 (активации)"}], media:[] }
+    links:[{en:"part of: t35 (activations)",ru:"часть: t35 (активации)"}], media:[] },
+  { id:"t38", col:"ideas",
+    title:{en:"Research who 'The Dentists Association' is", ru:"Изучить, кто такие «The Dentists Association»"},
+    notes:{en:"Find out what 'The Dentists Association' actually is — who they are, what they do, size/reach, and any tie to Glidewell. Then decide if/how it matters to the film or the activations (potential partner, audience, distribution, or a credibility voice). Just get the facts first.",
+           ru:"Выяснить, что такое «The Dentists Association» — кто это, чем занимаются, масштаб/охват и есть ли связь с Glidewell. Затем решить, важно ли это для фильма или активаций (потенциальный партнёр, аудитория, дистрибуция или голос-авторитет). Сначала просто собрать факты."},
+    links:[], media:[] }
 
   // ——— DONE / ARCHIVE ——— (пока пусто; сюда — завершённые/отменённые задачи ПО ФИЛЬМУ)
 ];
