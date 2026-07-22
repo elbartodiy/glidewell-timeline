@@ -1325,8 +1325,8 @@ const MORE_PEOPLE = [
     ]}
 ];
 
-const X0=190, DX=252, LINEY=250, PAD=190;
-const SPKROWY=562, FILMDIV=574, FBTOP=590, FBH=54, FILMLINEY=590, BEATDIV=666, BEATY=690, FRAMEDIV=728, FRAMETOP=740, FRAMEH=54, HERODIV=820, HEROW0=838, HERO_DY=22, PDIV=916, ACCY=938, PROW0=962, PROW_DY=24, CALDIV=916, CALTOP=938, CALH=46, JIMDIV=46, JIMLINEY=78, STAGEH=1010;
+const X0=190, DX=252, LINEY=200, PAD=190;
+const SPKROWY=512, FILMDIV=524, FBTOP=540, FBH=54, FILMLINEY=540, BEATDIV=616, BEATY=640, FRAMEDIV=678, FRAMETOP=690, FRAMEH=54, HERODIV=770, HEROW0=788, HERO_DY=22, PDIV=866, ACCY=888, PROW0=912, PROW_DY=24, CALDIV=866, CALTOP=888, CALH=46, JIMDIV=46, JIMLINEY=28, STAGEH=960;
 BEATS.forEach((b,i)=>b.x=X0+i*DX);
 const STAGEW=X0+(BEATS.length-1)*DX+PAD;
 const stage=document.getElementById('stage'), draw=document.getElementById('draw'), layer=document.getElementById('layer');
@@ -1700,17 +1700,8 @@ function buildSVG(){
     // (speaker initials row removed 2026-07-22 — redundant with per-part casting)
   }
 
-  // --- Jim's parallel life line --- (no divider above; caption goes BELOW the line)
-  s+='<line class="jimline" x1="84" y1="'+JIMLINEY+'" x2="'+(STAGEW-70)+'" y2="'+JIMLINEY+'"/>';
-  s+='<text class="tierlbl" x="84" y="'+(JIMLINEY+18)+'">'+L(UI.jimTier)+'</text>';
-  JIM.forEach((e,i)=>{
-    const x=X0+e.bx*DX;
-    s+='<g class="jim-ev" id="jim-'+i+'" data-jim="'+i+'">';
-    s+='<rect class="jhit" x="'+(x-16)+'" y="'+(JIMLINEY-16)+'" width="32" height="32"/>';
-    s+='<rect class="jim-nd" x="'+(x-5)+'" y="'+(JIMLINEY-5)+'" width="10" height="10" transform="rotate(45 '+x+' '+JIMLINEY+')"/>';
-    s+='<text class="jim-lbl" x="'+x+'" y="'+(JIMLINEY-14)+'">'+e.y+' · '+L(e.t)+'</text>';
-    s+='</g>';
-  });
+  // --- Jim's parallel life line removed (2026-07-22): the timeline is the company's history;
+  //     Jim's personal-life arc belongs to the separate Jim film, not this tool. ---
 
   // --- production calendar tier (months Jul–Oct); month blocks + event pins live in buildLayer ---
   s+='<line class="tierdiv" x1="72" y1="'+CALDIV+'" x2="'+(STAGEW-70)+'" y2="'+CALDIV+'"/>';
@@ -1723,7 +1714,7 @@ function buildSVG(){
   s+='<rect data-go-allheroes="1" x="78" y="'+(HERODIV-23)+'" width="560" height="24" rx="5" fill="transparent" style="cursor:pointer;pointer-events:all"/>';
   s+='<text class="tierlbl tierlbl-link" data-go-allheroes="1" x="84" y="'+(HERODIV-9)+'">'+L(UI.heroTier)+'</text>';
   // --- lane letters (A–H) on the far left, so we can name each line quickly ---
-  [['A',JIMLINEY+2],['B',JIMLINEY+48],['C',LINEY+2],['D',FILMDIV-8],['E',BEATDIV-8],['F',FRAMETOP+34],['G',HERODIV-8],['H',CALDIV-8]].forEach(function(q){
+  [['B',JIMLINEY+48],['C',LINEY+2],['D',FILMDIV-8],['E',BEATDIV-8],['F',FRAMETOP+34],['G',HERODIV-8],['H',CALDIV-8]].forEach(function(q){
     s+='<text class="laneltr" x="40" y="'+q[1]+'">'+q[0]+'</text>';
   });
   HEROES.filter(H=>H.id!=='abdul').forEach((H,r)=>{
@@ -1809,8 +1800,8 @@ function buildLayer(){
         +'<span class="pin-lbl hi">'+L(B.nm)+'</span></div>';
     }
   });
-  h+='<div class="morep" data-pers="1" style="left:88px;top:116px"><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div><div class="mp-sub">'+L(UI.persSub)+' · '+Object.keys(SPK).length+' + '+MORE_PEOPLE.reduce((a,b)=>a+b.people.length,0)+'</div></div>';
-  h+='<div class="linelegend" style="left:90px;top:165px">'
+  h+='<div class="morep" data-pers="1" style="left:88px;top:66px"><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div><div class="mp-sub">'+L(UI.persSub)+' · '+Object.keys(SPK).length+' + '+MORE_PEOPLE.reduce((a,b)=>a+b.people.length,0)+'</div></div>';
+  h+='<div class="linelegend" style="left:90px;top:115px">'
     +'<div class="lgnd-row" data-metric="cap"><span class="lgnd-sw cap"></span>'+L(UI.legCap)+'</div>'
     +'<div class="lgnd-row" data-metric="territory"><span class="lgnd-sw terr"></span>'+L(UI.legTerr)+'</div>'
     +'<div class="lgnd-row" data-metric="employees"><span class="lgnd-sw emp"></span>'+L(UI.legEmp)+'</div>'
