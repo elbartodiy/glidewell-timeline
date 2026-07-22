@@ -63,9 +63,11 @@
   svg.draw{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
   .stalk{stroke:#AAB2BC;stroke-width:1.6px;fill:none;transition:stroke .15s}
   .stalk.hl{stroke:var(--clay);stroke-width:2.4px}
-  .nd{stroke:#fff;stroke-width:2px;transition:r .15s,fill .15s;cursor:pointer;pointer-events:auto}
+  .mainrail{filter:drop-shadow(0 1.5px 1px rgba(28,32,36,.18))}
+  .nd{stroke:#fff;stroke-width:2px;transition:r .18s cubic-bezier(.2,.7,.2,1),fill .18s;cursor:pointer;pointer-events:auto;filter:drop-shadow(0 1px 1.5px rgba(28,32,36,.22))}
   .nd.t-g{fill:var(--navy)} .nd.t-i{fill:var(--slate)} .nd.t-m{fill:var(--teal)}
-  .nd.hl{fill:var(--clay)}
+  .nd:hover{r:9} .nd.hl{fill:var(--clay);r:8.5}
+  .nd:focus-visible{outline:none;stroke:var(--clay);stroke-width:3px}
   .eraband{fill:#000;opacity:.022}
   .eradiv{stroke:#E0E4E9;stroke-width:1px;stroke-dasharray:2 5}
   .eralbl{font-family:var(--mono);font-size:11px;letter-spacing:.12em;fill:#8A94A0;text-transform:uppercase}
@@ -84,7 +86,8 @@
   .ev{position:absolute;transform:translateX(-50%);width:226px;background:var(--card);border:1px solid var(--line);
     border-radius:8px;border-top:3px solid var(--navy);padding:12px 13px;cursor:pointer;transition:box-shadow .15s,transform .15s,opacity .15s;z-index:4}
   .ev.t-i{border-top-color:var(--slate)} .ev.t-m{border-top-color:var(--teal)}
-  .ev:hover,.ev.hl{box-shadow:0 6px 20px rgba(19,23,27,.10);transform:translateX(-50%) translateY(-3px)}
+  .ev:hover,.ev.hl{box-shadow:0 10px 28px -6px rgba(28,32,36,.20),0 2px 6px rgba(28,32,36,.08);transform:translateX(-50%) translateY(-3px);border-color:var(--slate)}
+  .ev:focus-visible{outline:none;box-shadow:0 0 0 2px var(--clay);transform:translateX(-50%) translateY(-3px)}
   .ev .yr{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--navy)}
   .ev.t-i .yr{color:var(--slate)} .ev.t-m .yr{color:var(--teal)}
   .ev h3{font-size:18px;letter-spacing:-.01em;margin:3px 0 5px}
@@ -1684,7 +1687,7 @@ function buildSVG(){
   s+='<defs><marker id="ah" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--red)"/></marker><filter id="rough" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4"/></filter></defs>';
   // era bands/labels removed — they cluttered the top; eras still drive nothing visual now
   s+='<g>';
-  s+='<line x1="84" y1="'+LINEY+'" x2="'+(STAGEW-70)+'" y2="'+LINEY+'" stroke="#1C2024" stroke-width="2" stroke-linecap="round"/>';
+  s+='<line class="mainrail" x1="84" y1="'+LINEY+'" x2="'+(STAGEW-70)+'" y2="'+LINEY+'" stroke="#1C2024" stroke-width="2" stroke-linecap="round"/>';
   s+='<polyline points="'+(STAGEW-86)+','+(LINEY-9)+' '+(STAGEW-66)+','+LINEY+' '+(STAGEW-86)+','+(LINEY+9)+'" fill="none" stroke="#1C2024" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
   s+='</g>';
   BEATS.forEach((b,i)=>{ s+='<circle class="nd t-'+b.tr+' tier-'+(b.tier||3)+'" id="nd-'+i+'" cx="'+b.x+'" cy="'+LINEY+'" r="6.5" data-beat="'+i+'"/>'; });
