@@ -95,6 +95,13 @@
   .morep:hover{box-shadow:0 4px 14px rgba(19,23,27,.10);transform:translateY(-2px)}
   .morep .mp-ttl{font-family:var(--body);font-size:13px;font-weight:600;color:var(--navy)}
   .morep .mp-sub{font-family:var(--mono);font-size:10px;color:var(--mute);margin-top:2px}
+  .scq{margin:14px 0;padding:12px 14px;background:var(--card);border:1px solid var(--slate);border-radius:10px}
+  .scq-h{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .scq-h img{width:44px;height:44px;border-radius:50%;object-fit:cover}
+  .scq-h b{cursor:pointer}
+  .scq-ok{color:#1DA24A;font-weight:800}
+  .scq-d{color:var(--mute);font-size:12px}
+  .scq-b{font-size:13.5px;line-height:1.55}
   .linelegend{position:absolute;z-index:5;font-family:var(--mono);white-space:nowrap}
   .linelegend .lgnd-ttl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-bottom:5px}
   .lgnd-row{display:flex;align-items:center;gap:8px;font-size:11px;white-space:nowrap;color:var(--ink-2);cursor:pointer;padding:2px 5px;border-radius:5px;transition:background .15s}
@@ -1729,7 +1736,7 @@ function buildSVG(){
   [['A',JIMLINEY+2],['B',JIMLINEY+48],['C',LINEY+2],['D',FILMDIV-8],['E',BEATDIV-8],['F',FRAMETOP+34],['G',HERODIV-8],['H',CALDIV-8]].forEach(function(q){
     s+='<text class="laneltr" x="40" y="'+q[1]+'">'+q[0]+'</text>';
   });
-  HEROES.forEach((H,r)=>{
+  HEROES.filter(H=>H.id!=='abdul').forEach((H,r)=>{
     const y=HEROW0+r*HERO_DY, lefts=[], scs=(H.sc||[]);
     scs.forEach(k=>{ const lb=sbnd[k-1], rb=sbnd[k]; lefts.push(lb+13);
       s+='<rect class="herobar" data-hero="'+H.id+'" data-scene="'+k+'" x="'+(lb+2)+'" y="'+(y-7)+'" width="'+Math.max(10,rb-lb-4)+'" height="14" rx="7" fill="'+H.c+'"/>';
@@ -1818,8 +1825,7 @@ function buildLayer(){
         +'<span class="pin-lbl hi">'+L(B.nm)+'</span></div>';
     }
   });
-  h+='<div class="morep" data-pers="1" style="left:88px;top:116px"><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div><div class="mp-sub">'+L(UI.persSub)+' · '+Object.keys(SPK).length+'</div></div>';
-  h+='<div class="morep" data-morep="1" style="left:88px;top:168px"><div class="mp-ttl">'+L(UI.moreBtnTitle)+'</div><div class="mp-sub">'+L(UI.moreSub)+' · '+MORE_PEOPLE.reduce((a,b)=>a+b.people.length,0)+'</div></div>';
+  h+='<div class="morep" data-pers="1" style="left:88px;top:116px"><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div><div class="mp-sub">'+L(UI.persSub)+' · '+Object.keys(SPK).length+' + '+MORE_PEOPLE.reduce((a,b)=>a+b.people.length,0)+'</div></div>';
   h+='<div class="linelegend" style="left:90px;top:228px">'
     +'<div class="lgnd-row" data-metric="cap"><span class="lgnd-sw cap"></span>'+L(UI.legCap)+'</div>'
     +'<div class="lgnd-row" data-metric="territory"><span class="lgnd-sw terr"></span>'+L(UI.legTerr)+'</div>'
@@ -2170,7 +2176,7 @@ function openAllScenes(keep){
 function openAllHeroes(keep){
   if(!keep)openRef={type:'allheroes'}; clearPin();
   let lines='';
-  HEROES.forEach(H=>{
+  [...HEROES.filter(h=>h.id!=='abdul'),...HEROES.filter(h=>h.id==='abdul')].forEach(H=>{
     const conf = (H.id==='abdul');
     const scenes=(H.sc||[]).map(k=>'<button data-go-scene="'+k+'">#'+k+'</button>').join(' ');
     const pic = H.photo ? '<img src="'+H.photo+'" alt="" onerror="this.style.visibility=\'hidden\'">'
@@ -2199,6 +2205,80 @@ function openAllHeroes(keep){
     +'<div class="cast-sec">'+L(UI.castCandidates)+'</div>'+cands;
   show();
 }
+// Live speaker quotes laid onto the storyboard parts (verbatim, cleaned from ASR — verify against video before screen use).
+// Part 1 has its own inline Azernikov block inside SCENE_DESC (the original pattern) — not duplicated here.
+const SCENE_QUOTES = {
+  1:[{spk:'abdul', d:{en:"from his 10 Jul interview",ru:"из интервью 10 июля"}, items:[
+    {h:{en:"The old way, first-person",ru:"Старый процесс от первого лица"}, q:"“Just to make a crown, it was a lot of steps: the manual impression, mix the stone, pour it, wait, trim it… wax a crown by hand, put it in a flask, melt the wax out — then you melt the metal with really extreme heat, it spins, you inject it into the flask… and you've got to pray there are no bubbles, because if there are, you do it all over again. If it's a front tooth, you brush the porcelain on one layer at a time, bake it, glaze it — and again you pray everything fits.”"},
+    {h:{en:"Never imagined",ru:"Не мог представить"}, q:"“I never imagined in my life that it would be just kind of a click of a button at some point — and boom, you have your crown.”"}]}],
+  2:[{spk:'azernikov', d:{en:"from his 9 Jul interview",ru:"из интервью 9 июля"}, items:[
+    {h:{en:"Why it matters",ru:"Почему это важно"}, q:"“Teeth you don't always see — but a toothache, or a crown made wrong, has a huge impact on your quality of life. If we do the software and the process right, we help people with real problems — that's what drives me.”"}]},
+   {spk:'abdul', d:{en:"from his 10 Jul interview",ru:"из интервью 10 июля"}, items:[
+    {h:{en:"The price, felt",ru:"Цена, как её чувствуют"}, q:"“There's always that little financial pain when you're paying for those services.” · Volunteer events offer extractions and fillings — never crowns: “when it comes to having a crown, in our society right now it comes with a price tag.”"}]}],
+  3:[{spk:'azernikov', d:{en:"from his 9 Jul interview",ru:"из интервью 9 июля"}, items:[
+    {h:{en:"Same-day crown",ru:"Коронка за один визит"}, q:"“You come to the dentist, he can scan you, design — you can see how they design your crown and how they make it — and put it in your mouth in under two hours. I experienced it myself. It's a game changer.”"}]},
+   {spk:'abdul', d:{en:"from his 10 Jul interview",ru:"из интервью 10 июля"}, items:[
+    {h:{en:"In his office, today",ru:"В его кабинете, сегодня"}, q:"“We tell the patient: give us about an hour — we're going to work on your crown… We call them to the back office and show them how we designed it, how we're milling it. It's a wow factor: ‘You don't have to send it out anymore? I don't have to come back for a temporary anymore?’ The machine prompts us: put the block in, change the bur, close the door, hit start — and it just takes over from there.”"},
+    {h:{en:"The taste of digital",ru:"Вкус цифры"}, q:"“Once you get a taste of that digital advantage — the perfection in the design, the execution, the delivery — it's very satisfying, because you reach a level that is very predictable, and you can reach it over and over and over.”"}]}],
+  4:[{spk:'azernikov', d:{en:"from his 9 Jul interview",ru:"из интервью 9 июля"}, items:[
+    {h:{en:"Why change is hard",ru:"Почему переход труден"}, q:"“Change is difficult for everybody. People who are not willing to adjust, not willing to change — it will be very tough for them.”"}]},
+   {spk:'abdul', d:{en:"from his 10 Jul interview",ru:"из интервью 10 июля"}, items:[
+    {h:{en:"His own doubt",ru:"Его собственное сомнение"}, q:"“We were skeptical at first — you're so used to a physical impression, and now everything is digital, images flying around: does this really work? I even had to have that leap of faith with my staff.”"},
+    {h:{en:"The catalyst was the pandemic",ru:"Катализатором стала пандемия"}, q:"“It all started in the pandemic… I started thinking about the same-day crown — this will eliminate a second visit… that's when we adopted that new technology.” (milling since 2020)"},
+    {h:{en:"Trust, earned",ru:"Доверие, заработанное"}, q:"“I used to tell my patients: just in case technology fails me, I want to have a backup [impression] so I can make you a temporary crown… We don't take those backup impressions anymore — that's how confident we are with the process.”"}]}],
+  5:[{spk:'azernikov', d:{en:"from his 9 Jul interview",ru:"из интервью 9 июля"}, items:[
+    {h:{en:"AI designs, a human approves",ru:"ИИ проектирует, человек утверждает"}, q:"“Today we design pretty much 100% of our crowns using generative neural networks. Back in 2015–2016 it was absolutely novel — even outside of dentistry.” ⚠ reconcile with the public “>95%” figure before screen"},
+    {h:{en:"50 → 200 a day",ru:"50 → 200 в день"}, q:"“A designer went from about 50 designs a day to 200 — his role essentially shifted from designing to quality assurance. When he opens the case, he is the first person who actually sees it.”"},
+    {h:{en:"A twist of history",ru:"Поворот истории"}, q:"“Interestingly, 3Shape — very known now as a dental company — was a hearing-aid company. Glidewell actually taught 3Shape how to make teeth.”"}]}],
+  6:[{spk:'azernikov', d:{en:"from his 9 Jul interview",ru:"из интервью 9 июля"}, items:[
+    {h:{en:"Awareness",ru:"Осведомлённость"}, q:"“If you ask people on the street — do you know you can get a crown done the same day in the doctor's office? — most of them will say no. If we create that awareness, we'll serve many more patients.”"}]},
+   {spk:'abdul', d:{en:"from his 10 Jul interview",ru:"из интервью 10 июля"}, items:[
+    {h:{en:"What holds patients back",ru:"Что держит пациентов"}, q:"“Patients have their worries first: in their mind it's not a pleasant experience — numbing, discomfort, time, and the cost, because dentistry is not cheap. The number one factor that makes things easier is trust — that relationship you build with the patient.”"},
+    {h:{en:"Do they care how it's made?",ru:"Им важно, как сделана коронка?"}, q:"“Honestly — the patients, they don't care… they want to feel they're in a place where they can trust you. But I always enjoy showing them the process — the scanning, the AI-assisted design, the mill. For them it's entertaining, and it reinforces that feeling of trust.”"}]}],
+  8:[{spk:'azernikov', d:{en:"from his 9 Jul interview",ru:"из интервью 9 июля"}, items:[
+    {h:{en:"Self-reliance",ru:"Самодостаточность"}, q:"“If you're using third party, you depend on somebody else. Jim's philosophy is always to be self-reliant — vertical integration is one of the pillars of this company.”"},
+    {h:{en:"Kitchen → empire",ru:"Кухня → империя"}, q:"“You can't, from just making crowns in your kitchen, create an empire that runs hundreds of thousands of cases a week. Those things don't happen — but it happened here. I compare him to Ford or Carnegie.”"}]}],
+  9:[{spk:'abdul', d:{en:"from his 10 Jul interview",ru:"из интервью 10 июля"}, items:[
+    {h:{en:"Visits are the cost",ru:"Визиты и есть цена"}, q:"“Before: two visits — if you get everything right and don't have to remake it… With the same-day crown, patients come in, get numbed once, we do the work. It's chair time for us too — we used to block an hour that now we can free up for other work.”"}]}],
+  10:[{spk:'azernikov', d:{en:"from his 9 Jul interview",ru:"из интервью 9 июля"}, items:[
+    {h:{en:"The data moat",ru:"Ров из данных"}, q:"“Our case collection implicitly represents the knowledge of thousands of technicians. I compare it to a self-driving car: millions of cars accumulating data constantly, improving the system. The same can be said about our cases — a self-accelerating process that is difficult to replicate.”"},
+    {h:{en:"People, not layoffs",ru:"Люди, а не сокращения"}, q:"“When we introduced innovation, part of that process was thinking where we are going to relocate these people. We never went through a major wave of layoffs — we kept the headcount steady while the volume grew.”"}]},
+   {spk:'abdul', d:{en:"from his 10 Jul interview",ru:"из интервью 10 июля"}, items:[
+    {h:{en:"The Costco effect",ru:"Эффект Costco"}, q:"“It's like going to Costco: you buy something, you're not sure if it's going to work or not, but you always feel like you have that backup — they'll take care of it. That's been our story with Glidewell.”"},
+    {h:{en:"Support as the answer to fear",ru:"Поддержка как ответ на страх"}, q:"“If there's any issue, they're so quick on making it right — that gives you confidence… we love the people that pick up on the other side of the phone: very courteous, very helpful, very prompt.”"}]}],
+  11:[{spk:'azernikov', d:{en:"from his 9 Jul interview",ru:"из интервью 9 июля"}, items:[
+    {h:{en:"Nearly hands-free",ru:"Почти без рук"}, q:"“If you think about how many people touch the crown manually today — it can be as little as the person who puts it in the shipping package.”"}]},
+   {spk:'abdul', d:{en:"from his 10 Jul interview",ru:"из интервью 10 июля"}, items:[
+    {h:{en:"Routine now",ru:"Теперь рутина"}, q:"“My staff do it: they scan, they get the design, we get the milling going.” · “With all the updates, with the AI features detecting the margin, the design is a lot more flawless now — we don't have to interfere as much.”"}]}],
+  12:[{spk:'azernikov', d:{en:"from his 9 Jul interview",ru:"из интервью 9 июля"}, items:[
+    {h:{en:"Connect first, then make it smart",ru:"Сначала соединить, потом поумнеть"}, q:"“In the doctor's office the systems just don't talk to each other. Before you make them smarter, you have to connect them — and once we have that, we can enhance it with intelligence.”"},
+    {h:{en:"Robots at the chair",ru:"Роботы у кресла"}, q:"“There are robots that can prepare the tooth with the doctor supervising. It's not adopted yet, but technically it's possible — within the next 5 to 10 years we'll definitely see it.”"}]},
+   {spk:'abdul', d:{en:"from his 10 Jul interview",ru:"из интервью 10 июля"}, items:[
+    {h:{en:"An honest note",ru:"Честная нота"}, q:"“We're implementing the 3D printing now — we're still kind of struggling with that step, compared to the milling. The milling we got down; I'm sure there will be a lot of changes.”"}]}],
+  13:[{spk:'azernikov', d:{en:"from his 9 Jul interview",ru:"из интервью 9 июля"}, items:[
+    {h:{en:"The lesson of the transition",ru:"Урок перехода"}, q:"“The machine is not going to replace you — but somebody who knows how to use it will. People who were forward-looking understood the potential — they're now able to make much more.”"}]},
+   {spk:'abdul', d:{en:"from his 10 Jul interview",ru:"из интервью 10 июля"}, items:[
+    {h:{en:"Walter's story",ru:"История Уолтера"}, q:"“About 15 years ago a young guy named Walter came to shadow us… he ended up going to UCLA for dental school, and he told us: ‘that experience really changed my life.’ Through the years we've had more than 12 young dentists start here. I tell them: you'd better come back to Bakersfield and help me out — one of them will take over the practice.”"}]}],
+  14:[{spk:'azernikov', d:{en:"from his 9 Jul interview",ru:"из интервью 9 июля"}, items:[
+    {h:{en:"Five years out",ru:"Через пять лет"}, q:"“I'm sure that in five years from now most dentists will have some sort of technology that will allow them to create crowns in the office. From the patient's perspective — one visit. That's huge.”"},
+    {h:{en:"The hardest part",ru:"Самое трудное"}, q:"“If you ask people what they want, they would want a faster horse. It's not until you come up with the disruption… For a system to learn how to disrupt — creativity — that's the hardest part.”"}]},
+   {spk:'abdul', d:{en:"from his 10 Jul interview",ru:"из интервью 10 июля"}, items:[
+    {h:{en:"The counterpoint",ru:"Контрапункт"}, q:"“I don't think people would want to go to a robot to do their dental work. The human interaction is very crucial in our profession… That relationship, that human labor — I think we still have a pretty good runway before the machine takes over.”"}]}]
+};
+function sceneQuotesHtml(k){
+  if(typeof SCENE_QUOTES==='undefined'||!SCENE_QUOTES[k])return '';
+  return SCENE_QUOTES[k].map(Q=>{
+    const sp=SPK[Q.spk];
+    const hero=!sp&&(HEROES.find(h=>h.id===Q.spk));
+    const nm=sp?sp.nm:(hero?L(hero.nm):Q.spk);
+    const photo=SPK_IMG[Q.spk]||(hero&&hero.photo)||'';
+    const go=sp?'data-go="'+Q.spk+'"':'data-go-allheroes="1"';
+    const items=Q.items.map(it=>'<b>'+L(it.h)+':</b> '+it.q).join('<br><br>');
+    return '<div class="scq"><div class="scq-h">'+(photo?'<img src="'+photo+'" alt="" '+go+'>':'')
+      +'<b '+go+'>'+nm+'</b> <span class="scq-ok">✓</span> <span class="scq-d">'+L(Q.d)+'</span></div>'
+      +'<div class="scq-b">'+items+'</div></div>';
+  }).join('');
+}
 function openScene(k,keep){
   if(!keep)openRef={type:'scene',id:k}; clearPin(); pinScene=k; setSceneHL(k,true);
   const facts=(sceneAnchors[k]||[]).map(bi=>'<button data-go-beat="'+bi+'"><b>'+BEATS[bi].y+'</b> · '+L(BEATS[bi].t)+'</button>').join('')
@@ -2217,6 +2297,7 @@ function openScene(k,keep){
     +'<h2>'+L(SCENES[k])+'</h2>'
     +(frames?'<div class="scframes">'+frames+'</div>':'')
     +'<p class="scdesc">'+L(SCENE_DESC[k])+'</p>'
+    +sceneQuotesHtml(k)
     +'<dl><dt>'+L(UI.scThemes)+'</dt><dd><div class="scthemes">'+themes+'</div></dd>'
     +'<dt>'+L(UI.scPillars)+'</dt><dd>'+((SCENE_PILLARS[k]||[]).map(pk=>'<span style="color:'+PILLARS[pk].c+';font-weight:600">'+L(PILLARS[pk].nm)+'</span>').join(' · ')||'—')+'</dd>'
     +'<dt>'+L(UI.scAnchorFacts)+'</dt><dd><div class="who">'+facts+'</div></dd>'
@@ -2412,10 +2493,15 @@ function svSubmit(){
     .then(()=>{ if(st)st.textContent=L({en:'Thanks — sent ✓',ru:'Спасибо — отправлено ✓'}); })
     .catch(()=>{ if(st)st.textContent=L({en:'Send error — try again.',ru:'Ошибка отправки — ещё раз.'}); });
 }
+const SPK_GEO=[
+  {t:{en:"Glidewell — at the company now",ru:"Glidewell — сейчас работают в компании"}, ids:['jim','sasaki','leeson','azernikov','chi','manalili','friebauer','norton']},
+  {t:{en:"California — outside the company",ru:"Калифорния — вне компании"}, ids:['venard','dorfman','ditolla','park']},
+  {t:{en:"Other states",ru:"Другие штаты"}, ids:['farran','spear','christensen','rella','kois','kosinski','resnik','patel']}
+];
 function openPersonalities(keep){
   if(!keep)openRef={type:'personalities'}; clearPin();
   const sv=svLoad();
-  const cards=Object.keys(SPK).map(function(id){var sp=SPK[id]; var a=(sv.answers&&sv.answers[id])||{};
+  const cardFor=function(id){var sp=SPK[id]; var a=(sv.answers&&sv.answers[id])||{};
     var connected=!!SURVEY_CONNECTED[id];
     var fam=connected
       ? '<span class="sv-connected">'+L({en:'Connected',ru:'На связи'})+'</span>'
@@ -2426,12 +2512,20 @@ function openPersonalities(keep){
       +'<div class="sv-fams">'+fam+'</div>'
       +(connected?'':'<input class="sv-connect" data-sv-id="'+id+'" placeholder="'+L({en:'Can you connect / via whom?',ru:'Могу свести / через кого?'})+'" value="'+svEsc(a.connect)+'">')
       +'</div></div>';
-  }).join('');
+  };
+  const placed={}; SPK_GEO.forEach(g=>g.ids.forEach(id=>placed[id]=1));
+  const leftovers=Object.keys(SPK).filter(id=>!placed[id]);
+  const secs=SPK_GEO.map(g=>'<div class="cast-sec">'+L(g.t)+'</div><div class="pers-grid sv-grid">'+g.ids.filter(id=>SPK[id]).map(cardFor).join('')+'</div>').join('')
+    +(leftovers.length?'<div class="cast-sec">'+L({en:'Unsorted',ru:'Вне групп'})+'</div><div class="pers-grid sv-grid">'+leftovers.map(cardFor).join('')+'</div>':'');
+  const moreBlocks=MORE_PEOPLE.map(b=>'<dt>'+L(b.g)+'</dt><dd>'+b.people.map(p=>'<div class="mp-row">'+(MORE_IMG[p.n]?'<img class="mp-av" src="'+MORE_IMG[p.n]+'" alt="">':'')+'<div class="mp-tx"><b>'+p.n+'</b>'+(p.r?' — '+L(p.r):'')+'</div></div>').join('')+'</dd>').join('');
   pin.innerHTML='<div class="kicker">'+L(UI.persKicker)+'</div>'
     +'<h2>'+L({en:'Speaker connections — survey',ru:'Связи со спикерами — опрос'})+'</h2>'
     +'<p class="scdesc">'+L({en:'For each person: how well you know them, and whether you can connect us for an interview. Fill once, one <a class="sv-resplink" href="https://docs.google.com/spreadsheets/d/1K0zPInMC3SgQakJCjt1289Loxbtsv_xke-AFiYAKDHQ/edit" target="_blank" rel="noopener">Send</a><a href="cast-results.html" style="color:inherit;text-decoration:none;cursor:text">.</a>',ru:'По каждому: насколько знаете и можете ли свести для интервью. Заполните один раз, одна <a class="sv-resplink" href="https://docs.google.com/spreadsheets/d/1K0zPInMC3SgQakJCjt1289Loxbtsv_xke-AFiYAKDHQ/edit" target="_blank" rel="noopener">«Отправить»</a><a href="cast-results.html" style="color:inherit;text-decoration:none;cursor:text">.</a>'})+'</p>'
-    +'<div class="pers-grid sv-grid">'+cards+'</div>'
-    +'<div class="sv-foot"><input class="sv-name" placeholder="'+L({en:'Your name',ru:'Ваше имя'})+'" value="'+svEsc(sv.name)+'"><button type="button" class="sv-send" id="sv-send">'+L({en:'Send',ru:'Отправить'})+'</button><span class="sv-status" id="sv-status"></span></div>';
+    +secs
+    +'<div class="sv-foot"><input class="sv-name" placeholder="'+L({en:'Your name',ru:'Ваше имя'})+'" value="'+svEsc(sv.name)+'"><button type="button" class="sv-send" id="sv-send">'+L({en:'Send',ru:'Отправить'})+'</button><span class="sv-status" id="sv-status"></span></div>'
+    +'<div class="cast-sec" style="margin-top:22px">'+L(UI.moreTitle)+'</div>'
+    +'<p class="scdesc">'+L(UI.moreIntro)+'</p>'
+    +'<dl>'+moreBlocks+'</dl>';
   show();
 }
 function show(){panel.classList.add('open');panel.setAttribute('aria-hidden','false');}
