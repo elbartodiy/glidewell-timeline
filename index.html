@@ -1970,6 +1970,45 @@ function hoverScene(k,on){ if(String(pinScene)===String(k)){ if(on)setSceneHL(k,
 const panel=document.getElementById('panel'), pin=document.getElementById('pinner');
 function gwBadge(sp){ return (sp && (sp.g==='g' || sp.g==='e')) ? '<span class="gw-badge" title="Glidewell">G</span>' : ''; }
 function micBadge(id){ return (typeof INTERVIEWED!=='undefined' && INTERVIEWED[id]) ? ' <span class="mic-badge" title="Interviewed — quotes & transcript in the card" style="color:#1DA24A;font-weight:800">✓</span>' : ''; }
+// Wikipedia-style cross-links into the Chairside archive. ONLY verified items (read in the harvest pass
+// or unambiguous by author/subject) — no keyword-guessed mappings. Grow as more issues are read.
+const CHMAG='https://glidewelldental.com/education/chairside-magazine/';
+const SPK_CHAIRSIDE={
+  jim:[
+    {v:"Vol. 1-3, 2007",t:{en:"CAD/CAM Technology — his interview (by Dr. DiTolla): the 90%-digital prophecy",ru:"CAD/CAM Technology — его интервью (вёл DiTolla): пророчество о 90% цифры"},u:CHMAG+'volume-1-issue-3/cadcam-technology'},
+    {v:"Vol. 20-2, 2025",t:{en:"Glidewell at 55 — legacy Q&A with CEO Goddard",ru:"Glidewell at 55 — юбилейное Q&A с CEO Goddard"},u:CHMAG+'volume-20-issue-2/featured-qa-interview-glidewell-at-55'},
+    {v:"Chairside Live ep. 273",t:{en:"A Look Inside the Lab — video interview",ru:"A Look Inside the Lab — видеоинтервью"},u:'https://glidewelldental.com/education/chairside-live/csl-273-a-look-inside-the-lab-an-interview-with-jim'}],
+  ditolla:[
+    {v:"Vol. 1-3, 2007",t:{en:"He interviews Jim on CAD/CAM — the page for the re-read scene",ru:"Он интервьюирует Джима о CAD/CAM — страница для сцены перечитывания"},u:CHMAG+'volume-1-issue-3/cadcam-technology'},
+    {v:"Vol. 4-4, 2009",t:{en:"His first BruxZir clinical tip — six months after launch",ru:"Его первый clinical tip о BruxZir — через полгода после запуска"},u:CHMAG+'volume-4-issue-4/dr-ditollas-clinical-tips-why-should-you-be-interested-in-this-monolithic'},
+    {v:"Vol. 5-3, 2010",t:{en:"Full digital workflow photo essay — IOS FastScan + BruxZir bridge, no physical model",ru:"Фотоочерк полного цифрового workflow — IOS FastScan + мост BruxZir без физической модели"},u:CHMAG+'volume-5-issue-3/restorative-photo-essay-the-ios-fastscan-for-an-anterior-bruxzir-bridge'}],
+  christensen:[
+    {v:"Vol. 2-1, 2007",t:{en:"Is the Wide Range in Crown Fees Justifiable? — the $808 fee analysis",ru:"Is the Wide Range in Crown Fees Justifiable? — анализ цен ($808)"},u:CHMAG+'volume-2-issue-1/is-the-wide-range-in-crown-fees-justifiable'},
+    {v:"Vol. 3-1, 2008",t:{en:"Clinician Spotlight — his zirconia-overtakes-PFM prediction, a year before BruxZir",ru:"Clinician Spotlight — его пророчество о циркониевом переломе, за год до BruxZir"},u:CHMAG+'volume-3-issue-1/clinician-spotlight-dr-gordon-christensen'}],
+  farran:[
+    {v:"Vol. 5-1, 2010",t:{en:"The Rise of Dentaltown — “no dentist ever has to practice solo again”",ru:"The Rise of Dentaltown — «ни один дантист больше не одинок»"},u:CHMAG+'volume-5-issue-1/practice-management-the-rise-of-dentaltown'}],
+  leeson:[
+    {v:"Vol. 21-2, 2026",t:{en:"Robotics and Automation — mass customization, the factory today",ru:"Robotics and Automation — mass customization, фабрика сегодня"},u:CHMAG+'volume-21-issue-2/robotics-automation'}]
+};
+const SCENE_CHAIRSIDE={
+  1:[{v:"Vol. 1-1, 2006",t:{en:"Portrait of a Technician — Steve Lam, the ceramist-sculptor (find him!)",ru:"Portrait of a Technician — Steve Lam, керамист-«скульптор» (найти его!)"},u:CHMAG+'volume-1-issue-1/portrait-of-a-technician'},
+     {v:"Vol. 3-3, 2008",t:{en:"Impression Taking: Is It a Lost Art? — the profession stuck at the threshold",ru:"Impression Taking: Is It a Lost Art? — профессия на пороге, её словами"},u:CHMAG+'volume-3-issue-3/impression-taking-is-it-a-lost-art'}],
+  3:[{v:"Vol. 5-3, 2010",t:{en:"IOS FastScan photo essay — a bridge milled with no physical model, in 2010",ru:"Фотоочерк IOS FastScan — мост без физической модели, 2010 год"},u:CHMAG+'volume-5-issue-3/restorative-photo-essay-the-ios-fastscan-for-an-anterior-bruxzir-bridge'}],
+  5:[{v:"Vol. 1-2, 2006",t:{en:"Laboratory Portrait: Mervyn Rudgley — when digital printed WAX crowns",ru:"Laboratory Portrait: Mervyn Rudgley — когда цифра печатала ВОСКОВЫЕ коронки"},u:CHMAG+'volume-1-issue-2/laboratory-portrait'}],
+  7:[{v:"Vol. 2-1, 2007",t:{en:"Christensen: the crown-fee spread — $650–$1,095, average $808 (ADA 2005)",ru:"Christensen: разброс цен на коронку — $650–$1,095, средняя $808 (ADA 2005)"},u:CHMAG+'volume-2-issue-1/is-the-wide-range-in-crown-fees-justifiable'}],
+  8:[{v:"Vol. 1-3, 2007",t:{en:"Jim's CAD/CAM interview — the skeptic's confession and the prophecy",ru:"Интервью Джима о CAD/CAM — исповедь скептика и пророчество"},u:CHMAG+'volume-1-issue-3/cadcam-technology'},
+     {v:"Vol. 4-4, 2009",t:{en:"The first BruxZir clinical tip — the shift caught in real time",ru:"Первый clinical tip о BruxZir — перелом в реальном времени"},u:CHMAG+'volume-4-issue-4/dr-ditollas-clinical-tips-why-should-you-be-interested-in-this-monolithic'}],
+  9:[{v:"Vol. 2-1, 2007",t:{en:"Christensen: crown-fee economics, era numbers for the price formula",ru:"Christensen: экономика цены коронки — цифры эпохи для формулы"},u:CHMAG+'volume-2-issue-1/is-the-wide-range-in-crown-fees-justifiable'}],
+  10:[{v:"Vol. 3-1, 2008",t:{en:"Christensen Spotlight — the independent prediction in Glidewell's own magazine",ru:"Christensen Spotlight — независимое пророчество в журнале самого Glidewell"},u:CHMAG+'volume-3-issue-1/clinician-spotlight-dr-gordon-christensen'},
+      {v:"Vol. 19-2, 2024",t:{en:"Why Does Glidewell Promote Chairside Milling? — self-disruption in plain words (⚠ not read yet)",ru:"Why Does Glidewell Promote Chairside Milling? — self-disruption прямым текстом (⚠ ещё не прочитано)"},u:CHMAG+'volume-19-issue-2/why-does-glidewell-dental-lab-promote-chairside-milling'}],
+  11:[{v:"Vol. 13-2, 2018",t:{en:"Employee Spotlight: Grant Bullis — the industrialization step (2007–2018)",ru:"Employee Spotlight: Grant Bullis — ступень индустриализации (2007–2018)"},u:CHMAG+'volume-13-issue-2/employee-spotlight-bullis'},
+      {v:"Vol. 21-2, 2026",t:{en:"Robotics and Automation — the factory as it runs today",ru:"Robotics and Automation — фабрика как она есть сегодня"},u:CHMAG+'volume-21-issue-2/robotics-automation'}],
+  12:[{v:"Vol. 21-2, 2026",t:{en:"Robotics and Automation — where the lines go next",ru:"Robotics and Automation — куда идут линии дальше"},u:CHMAG+'volume-21-issue-2/robotics-automation'}],
+  14:[{v:"Vol. 20-2, 2025",t:{en:"Glidewell at 55 — Jim & CEO Goddard on the future (the 2007↔2025 mirror)",ru:"Glidewell at 55 — Джим и CEO Goddard о будущем (зеркало 2007↔2025)"},u:CHMAG+'volume-20-issue-2/featured-qa-interview-glidewell-at-55'}]
+};
+function chairsideLinks(arr){
+  return arr.map(x=>'<div class="mp-row" style="align-items:baseline"><a href="'+x.u+'" target="_blank" rel="noopener"><b>'+x.v+'</b></a>&nbsp;— '+L(x.t)+'</div>').join('');
+}
 function openSpeaker(id,keep){
   const s=SPK[id]; if(!keep)openRef={type:'spk',id}; clearPin();
   const _sv=svLoad(); const _hasSurvey=!!(_sv&&((_sv.answers&&Object.keys(_sv.answers).some(k=>_sv.answers[k]&&(_sv.answers[k].fam||_sv.answers[k].connect)))||(_sv.name&&_sv.name.trim())));
@@ -1983,6 +2022,7 @@ function openSpeaker(id,keep){
     +(s.glsummary?'<dt>'+L(UI.dGL)+'</dt><dd class="spk-brief">'+L(s.glsummary)+'</dd>':'')
     +(s.brief?'<dt>'+L(UI.dBrief)+'</dt><dd class="spk-brief">'+L(s.brief)+'</dd>':'')
     +(s.quote?'<dt>'+L(UI.dQuote)+'</dt><dd><blockquote class="spk-quote">“'+s.quote.q+'”<cite><a href="'+s.quote.url+'" target="_blank" rel="noopener">'+s.quote.src+'</a></cite></blockquote></dd>':'')
+    +(typeof SPK_CHAIRSIDE!=='undefined'&&SPK_CHAIRSIDE[id]?'<dt>'+L({en:"In the Chairside archive",ru:"След в архиве Chairside"})+'</dt><dd>'+chairsideLinks(SPK_CHAIRSIDE[id])+'</dd>':'')
     +'<dt>'+L(UI.dSpeaksThemes)+'</dt><dd><div class="who">'+themes+'</div></dd>'
     +'<dt>'+L(UI.dWitnessed)+'</dt><dd>'+BEATS[s.a].y+' · '+L(BEATS[s.a].t)+'</dd>'
     +(s.bruxzir?'<dt>'+L(UI.dBruxzir)+'</dt><dd style="border-left:3px solid var(--red);padding-left:10px">'+L(s.bruxzir)+'</dd>':'')
@@ -2385,6 +2425,7 @@ function openScene(k,keep){
     +'<dl><dt>'+L(UI.scThemes)+'</dt><dd><div class="scthemes">'+themes+'</div></dd>'
     +'<dt>'+L(UI.scPillars)+'</dt><dd>'+((SCENE_PILLARS[k]||[]).map(pk=>'<span style="color:'+PILLARS[pk].c+';font-weight:600">'+L(PILLARS[pk].nm)+'</span>').join(' · ')||'—')+'</dd>'
     +'<dt>'+L(UI.scAnchorFacts)+'</dt><dd><div class="who">'+facts+'</div></dd>'
+    +(typeof SCENE_CHAIRSIDE!=='undefined'&&SCENE_CHAIRSIDE[k]?'<dt>'+L({en:"From the Chairside archive",ru:"Из архива Chairside"})+'</dt><dd>'+chairsideLinks(SCENE_CHAIRSIDE[k])+'</dd>':'')
     +'<dt>'+L(UI.scSpeakers)+'</dt><dd><div class="wholist">'+ppl+'</div></dd>'
     +'<dt>'+L(UI.fsStoryboard)+'</dt><dd'+(SCENE_NOTES[k]?'':' style="color:var(--mute)"')+'>'+(SCENE_NOTES[k]?L(SCENE_NOTES[k]):L(UI.fsFill))+'</dd></dl>';
   show();
