@@ -545,37 +545,36 @@
   .line-photo{cursor:zoom-in}
   @media(prefers-reduced-motion:reduce){#lightbox,#lightbox figure{transition:none}}
   /* ============================================================
-     LINE CANVAS — dark "CAD viewport / scan" theme (2026-07-22)
-     Scoped to #scroller via token overrides; side panels stay light.
-     Grounded in the film's subject: intraoral scanning, CAD, precision.
+     LINE CANVAS — light "lab white / precision" theme (2026-07-22)
+     Very-light cool-gray field so WHITE elements (cards, nodes) read
+     as raised accents. Cool, airy, futuristic; one brand-red accent.
+     Scoped to #scroller via token overrides.
      ============================================================ */
   #scroller{
-    --paper:#0C0F13; --card:#161C24; --line:rgba(196,222,230,.12);
-    --ink:#E9EEF3; --ink-2:#AEBAC6; --mute:#8391A0; --slate:#6E7B89;
-    --navy:#EAF0F5; --teal:#BAC4CE; --red-tint:rgba(245,64,75,.14);
-    background:#0C0F13; color:var(--ink);
+    --paper:#EAEEF2; --card:#FFFFFF; --line:#DCE2E8;
+    --ink:#10151A; --ink-2:#586472; --mute:#8791A0; --slate:#A6B0BB;
+    --navy:#9AA6B2; --teal:#0E7C86;
+    background:#EAEEF2; color:var(--ink);
   }
   #scroller .stage{background:transparent;position:relative}
-  /* subtle grain to break the flat dark — the "screen" texture */
-  #scroller .stage::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.05;mix-blend-mode:soft-light;
+  /* whisper of cool grain so the light field isn't sterile-flat */
+  #scroller .stage::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.025;mix-blend-mode:multiply;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");}
-  /* the rail glows like a scan sweep instead of casting a dark shadow */
-  #scroller .mainrail{filter:drop-shadow(0 0 4px rgba(226,236,242,.5))}
-  #scroller .nd{filter:drop-shadow(0 0 5px rgba(226,236,242,.6))}
-  #scroller .nd{stroke:#0C0F13}
-  #scroller .nd.hl{fill:var(--red-bright);filter:drop-shadow(0 0 7px rgba(245,64,75,.7))}
-  #scroller .baseline-cap{fill:#7C8794}
-  #scroller .eralbl{fill:#6E7B89}
-  #scroller .eraband{fill:#CFE7E2;opacity:.03}
-  #scroller .eradiv{stroke:rgba(196,222,230,.10)}
-  /* dark-glass milestone cards: hairline + soft glow lift, not a black shadow */
-  #scroller .ev{box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 8px 24px -14px rgba(0,0,0,.7)}
-  #scroller .ev:hover,#scroller .ev.hl{box-shadow:0 0 0 1px rgba(226,236,242,.4),0 14px 34px -10px rgba(0,0,0,.75);border-color:transparent}
-  #scroller .ev .star{background:var(--red-bright);box-shadow:0 0 10px rgba(245,64,75,.5)}
-  #scroller .morep{background:var(--card);border-color:var(--slate)}
-  /* employees metric line was near-black — lift it for the dark canvas */
-  #scroller .lgnd-sw.emp{border-top-color:#8391A0}
-  #scroller .film-block,#scroller .film-clip{}
+  /* thin cool rail, softly embossed with a white highlight beneath */
+  #scroller .mainrail{stroke:#AFB9C4;filter:drop-shadow(0 1px 0 rgba(255,255,255,.95))}
+  /* milestone nodes = WHITE beads with a cool ring + soft shadow (the white accents) */
+  #scroller .nd{stroke:#B6C0CB;stroke-width:2px;filter:drop-shadow(0 1px 3px rgba(24,40,60,.20))}
+  #scroller .nd.t-g,#scroller .nd.t-i,#scroller .nd.t-m{fill:#FFFFFF}
+  #scroller .nd:hover{r:9}
+  #scroller .nd.hl{fill:var(--red);stroke:#fff;filter:drop-shadow(0 1px 5px rgba(225,27,42,.4))}
+  #scroller .baseline-cap{fill:#94A0AC}
+  #scroller .eralbl{fill:#A0AAB5}
+  #scroller .eraband{fill:#1C2A38;opacity:.02}
+  /* white cards float on the cool-gray field: soft cool-tinted shadow */
+  #scroller .ev{border-color:#E6EBF0;box-shadow:0 1px 2px rgba(24,40,60,.05),0 10px 26px -16px rgba(24,40,60,.28)}
+  #scroller .ev:hover,#scroller .ev.hl{box-shadow:0 16px 36px -14px rgba(24,40,60,.30);transform:translateX(-50%) translateY(-3px);border-color:#D2DAE2}
+  #scroller .morep{background:#FFFFFF;border-color:var(--slate);box-shadow:0 8px 22px -16px rgba(24,40,60,.30)}
+  #scroller .lgnd-sw.emp{border-top-color:#8791A0}
 </style>
 </head>
 <body>
