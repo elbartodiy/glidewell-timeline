@@ -1872,10 +1872,10 @@ function buildLayer(){
     }
     // --- Archival book photos: thumbnails ABOVE the line at their year; click → lightbox (no caption) ---
     if(typeof BOOK_PHOTOS!=='undefined' && BOOK_PHOTOS.length){
-      const PH=66, PW=Math.round(PH*16/9), GAP=7, TOP=JIMLINEY+8; let lastRight=-1e9;
+      const PH=66, PW=Math.round(PH*16/9), GAP=7, TOP=JIMLINEY+8, BOOKTOP=LINEY-108; let lastRight=-1e9;
       [...BOOK_PHOTOS].sort((a,b)=>a.yr-b.yr).forEach((p,i)=>{
         let left=yToX(p.yr)-PW/2; if(left<lastRight+GAP) left=lastRight+GAP; lastRight=left+PW;
-        h+='<div class="line-photo'+(p.film?' lp-film':'')+(p.archive?' lp-archive':'')+'" data-src="'+p.src+'"'+(p.film?' data-film="film.html"':'')+(p.archive?' data-archive="1"':'')+' style="left:'+left.toFixed(1)+'px;top:'+TOP+'px;width:'+PW+'px;height:'+PH+'px" title="'+(p.film?'About the film':p.archive?'Archive hunt':p.yr)+'">'
+        h+='<div class="line-photo'+(p.film?' lp-film':'')+(p.archive?' lp-archive':'')+'" data-src="'+p.src+'"'+(p.film?' data-film="film.html"':'')+(p.archive?' data-archive="1"':'')+' style="left:'+left.toFixed(1)+'px;top:'+((p.film||p.archive)?TOP:BOOKTOP)+'px;width:'+PW+'px;height:'+PH+'px" title="'+(p.film?'About the film':p.archive?'Archive hunt':p.yr)+'">'
           +'<img src="'+p.src+'" alt="" onerror="this.closest(\'.line-photo\').remove()">'
           +(p.film?'<span class="lp-badge">▶ The film</span>':'')
           +(p.archive?'<span class="lp-badge">🗄 Archive</span>':'')
