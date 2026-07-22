@@ -551,11 +551,21 @@
      Scoped to #scroller via token overrides.
      ============================================================ */
   #scroller{
-    --paper:#EAEEF2; --card:#FFFFFF; --line:#DCE2E8;
+    --paper:#EFF2F6; --card:#FFFFFF; --line:#DEE4EA;
     --ink:#10151A; --ink-2:#586472; --mute:#8791A0; --slate:#A6B0BB;
     --navy:#9AA6B2; --teal:#0E7C86;
-    background:#EAEEF2; color:var(--ink);
+    background:#EFF2F6; color:var(--ink);
   }
+  /* ---- detail polish (taste pass) ---- */
+  /* lane letters were bold/dark = debug-ish; make them a faint refined guide */
+  #scroller .laneltr{fill:#9AA6B2;fill-opacity:.45;font-size:10px;font-weight:400;letter-spacing:.08em}
+  /* film/archive thumbs: drop the heavy glowing colored borders → hairline + soft cool shadow */
+  #scroller .lp-film,#scroller .lp-archive{border:1px solid #E4E9EF;box-shadow:0 8px 20px -12px rgba(24,40,60,.38)}
+  #scroller .lp-film{position:relative}
+  #scroller .lp-film::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--red);z-index:3;border-radius:4px 4px 0 0}
+  /* line markers unified to one cool neutral (was saturated blue + gray = clip-arty) */
+  #scroller .bld .bld-ico,#scroller .ppl .ppl-ico{fill:#98A3AF}
+  #scroller .bld:hover .bld-ico,#scroller .ppl:hover .ppl-ico{fill:var(--red)}
   #scroller .stage{background:transparent;position:relative}
   /* whisper of cool grain so the light field isn't sterile-flat */
   #scroller .stage::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.025;mix-blend-mode:multiply;
