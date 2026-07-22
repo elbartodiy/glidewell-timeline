@@ -566,7 +566,7 @@
   /* line markers: thin outline (was filled clip-art), one cool neutral, hairline connectors */
   #scroller .bld .bld-ico,#scroller .ppl .ppl-ico{fill:none;stroke:#8B96A2;stroke-width:1.3px}
   #scroller .bld:hover .bld-ico,#scroller .ppl:hover .ppl-ico{fill:none;stroke:var(--red)}
-  #scroller .bld::after,#scroller .ppl::after{background:#AEB9C4;opacity:.6;height:20px}
+  #scroller .bld::after,#scroller .ppl::after{background:#AEB9C4;opacity:.6;height:11px}
   #scroller .stage{background:transparent;position:relative}
   /* whisper of cool grain so the light field isn't sterile-flat */
   #scroller .stage::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.025;mix-blend-mode:multiply;
@@ -1370,8 +1370,8 @@ const MORE_PEOPLE = [
     ]}
 ];
 
-const X0=190, DX=252, LINEY=200, PAD=190;
-const SPKROWY=512, FILMDIV=524, FBTOP=540, FBH=54, FILMLINEY=540, BEATDIV=616, BEATY=640, FRAMEDIV=678, FRAMETOP=690, FRAMEH=54, HERODIV=770, HEROW0=788, HERO_DY=22, PDIV=866, ACCY=888, PROW0=912, PROW_DY=24, CALDIV=866, CALTOP=888, CALH=46, JIMDIV=46, JIMLINEY=28, STAGEH=960;
+const X0=190, DX=252, LINEY=300, PAD=190;
+const SPKROWY=612, FILMDIV=624, FBTOP=640, FBH=54, FILMLINEY=640, BEATDIV=716, BEATY=740, FRAMEDIV=778, FRAMETOP=790, FRAMEH=54, HERODIV=870, HEROW0=888, HERO_DY=22, PDIV=966, ACCY=988, PROW0=1012, PROW_DY=24, CALDIV=966, CALTOP=988, CALH=46, JIMDIV=46, JIMLINEY=28, STAGEH=1060;
 BEATS.forEach((b,i)=>b.x=X0+i*DX);
 const STAGEW=X0+(BEATS.length-1)*DX+PAD;
 const stage=document.getElementById('stage'), draw=document.getElementById('draw'), layer=document.getElementById('layer');
@@ -1701,7 +1701,7 @@ function buildSVG(){
     const py=v=>{ v=String(v); if(/today|now|present/i.test(v))return 2026; const m=v.match(/(\d{4})/); if(m)return +m[1]; const d=v.match(/(\d0)s/); if(d){let base=+d[1],cent=base<=30?2000:1900,yr=cent+base; if(/mid/i.test(v))yr+=5;else if(/late/i.test(v))yr+=7;else if(/early/i.test(v))yr+=2; return yr;} return null; };
     const A=[[1970,2],[1985,5],[1995,9],[2003,15],[2009,26],[2013,42],[2018,60],[2021,74],[2023,86],[2026,100]];
     const gAt=y=>{ if(y<=A[0][0])return A[0][1]; for(let i=1;i<A.length;i++){ if(y<=A[i][0]){ const a=A[i-1],b=A[i]; return a[1]+(b[1]-a[1])*(y-a[0])/(b[0]-a[0]); } } return 100; };
-    const base=LINEY, peak=168, amp=base-peak;
+    const base=LINEY, peak=120, amp=base-peak;
     const pts=BEATS.map(b=>({x:b.x,yr:py(b.y)||1970})).filter(p=>p.yr>=1969).map(p=>({x:p.x,y:base-(gAt(p.yr)/100)*amp})).sort((p,q)=>p.x-q.x);
     if(pts.length>1){
       const line=pts.map(p=>p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' L ');
@@ -1713,8 +1713,8 @@ function buildSVG(){
   (function(){
     const py=v=>{ v=String(v); if(/today|now|present/i.test(v))return 2026; const m=v.match(/(\d{4})/); if(m)return +m[1]; const d=v.match(/(\d0)s/); if(d){let b=+d[1]; return (b<=30?2000:1900)+b;} return 1970; };
     const series=[
-      {A:[[1970,1],[1984,2],[1989,4],[1993,8],[2001,16],[2007,24],[2018,55],[2020,100],[2026,100]], peak:236, stroke:'#2C6E9E', dash:'', op:0.5},
-      {A:[[1970,0.5],[1984,1],[2007,30],[2018,50],[2020,95],[2026,100]], peak:300, stroke:'#5A5550', dash:'5 4', op:0.5}
+      {A:[[1970,1],[1984,2],[1989,4],[1993,8],[2001,16],[2007,24],[2018,55],[2020,100],[2026,100]], peak:155, stroke:'#2C6E9E', dash:'', op:0.5},
+      {A:[[1970,0.5],[1984,1],[2007,30],[2018,50],[2020,95],[2026,100]], peak:185, stroke:'#5A5550', dash:'5 4', op:0.5}
     ];
     series.forEach(function(S){
       const gAt=y=>{ if(y<=S.A[0][0])return S.A[0][1]; for(let i=1;i<S.A.length;i++){ if(y<=S.A[i][0]){ const a=S.A[i-1],b=S.A[i]; return a[1]+(b[1]-a[1])*(y-a[0])/(b[0]-a[0]); } } return 100; };
