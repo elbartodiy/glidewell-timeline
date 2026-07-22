@@ -2326,23 +2326,31 @@ const SCENE_QUOTES = {
 // Planned interviews per part: same card, dashed = NOT shot yet; items = questions to ask on this theme.
 // Grounded in each speaker's brief / public record (Chairside quotes, 2007-08 archive) — not generic.
 const SCENE_ASKS = {
-  1:[{spk:'venard', items:[
+  1:[{spk:'kosinski', items:[{h:{en:"Implants, the analog way",ru:"Импланты по-старому"}, q:"You placed implants when it was freehand — by feel and a 2D X-ray. What was that like, and what went wrong back then that guided surgery now prevents?"}]},
+   {spk:'venard', items:[
     {h:{en:"The analog era, firsthand",ru:"Аналоговая эра из первых рук"}, q:"Walk us through one crown, start to finish, as it was made in your early years at Glidewell — every station, every hand it passed through. · What could an experienced hand feel that a machine still can't? · What's physically gone from the lab today that you miss seeing?"}]},
    {spk:'ditolla', items:[
     {h:{en:"The last analog years",ru:"Последние аналоговые годы"}, q:"When did you first sense the analog way was ending — was there a day it became obvious? · What did dentists mail to the lab back then, and what came back two weeks later?"}]}],
-  2:[{spk:'farran', items:[
+  2:[{spk:'christensen', items:[{h:{en:"Who quality still misses",ru:"Кого качество не достаёт"}, q:"You've measured what patients actually receive for fifty years. Who does good dentistry still fail to reach — and is that a technology problem or an economics one?"}]},
+   {spk:'patel', items:[{h:{en:"The patient a metro never sees",ru:"Пациент, которого не видит метрополия"}, q:"You practice in small-town North Carolina and place mini implants. Who walks into your office that a big-city cosmetic practice never meets?"}]},
+   {spk:'farran', items:[
     {h:{en:"The gap in numbers",ru:"Разрыв в цифрах"}, q:"Your mantra is faster, easier, higher-quality, lower-cost. Where does the profession still fail the person who can't walk in? · Describe the patient dentistry never sees."}]},
    {spk:'dorfman', items:[
     {h:{en:"Fear and shame",ru:"Страх и стыд"}, q:"People hide their smiles every day. What have you learned about the shame side of dental access? · What does a new smile change first — the mouth or the person?"}]}],
-  3:[{spk:'chi', items:[
+  3:[{spk:'ditolla', items:[{h:{en:"Same-day, taught to a GP",ru:"Same-day глазами обычного врача"}, q:"You carried BruxZir to dentists for fifteen years. Walk a GP through their first same-day crown — what do they feel the first time the mill runs while the patient waits?"}]},
+   {spk:'chi', items:[
     {h:{en:"Same-day, live",ru:"Same-day вживую"}, q:"Walk us through a same-day crown at the chair — scan to seat — narrating what the patient feels at each step. · You wrote that same-visit restorations are best for the patient's health; defend that against 'it's just convenience'."}]},
    {spk:'park', items:[
     {h:{en:"Making it believable",ru:"Как в это поверить"}, q:"After hundreds of clinical demos: what makes a dentist believe same-day is real dentistry, not a gadget?"}]}],
-  4:[{spk:'kois', items:[
+  4:[{spk:'ditolla', items:[{h:{en:"The honest reason to stay analog",ru:"Честная причина остаться в аналоге"}, q:"You spent fifteen years analog, then fifteen digital. What is the honest reason a good dentist stays on impressions — fear, money, or something the profession won't admit?"}]},
+   {spk:'chi', items:[{h:{en:"Garbage in, garbage out",ru:"Мусор на входе — мусор на выходе"}, q:"You wrote 'garbage in, garbage out' about scanning. What must a dentist actually master to trust the scan — and how long does that really take?"}]},
+   {spk:'park', items:[{h:{en:"The sentence that flips a skeptic",ru:"Фраза, которая переубеждает скептика"}, q:"After hundreds of interviews with hesitant dentists — what is the one sentence that finally flips a skeptic to digital?"}]},
+   {spk:'kois', items:[
     {h:{en:"Evidence vs habit",ru:"Данные против привычки"}, q:"Half the profession still pours impressions. From an evidence standpoint — when is staying analog defensible, and when is it inertia?"}]},
    {spk:'spear', items:[
     {h:{en:"The psychology of resistance",ru:"Психология сопротивления"}, q:"You teach seasoned dentists. What is the real fear underneath 'I've done it this way for thirty years'?"}]}],
-  5:[{spk:'leeson', items:[
+  5:[{spk:'chi', items:[{h:{en:"Where the human overrides the AI",ru:"Где человек правит ИИ"}, q:"As a CDT you approve what the AI proposes. Where do you still override the machine — and what does that tell us about what 'automated' actually means?"}]},
+   {spk:'leeson', items:[
     {h:{en:"The invisible workforce",ru:"Невидимая рабочая сила"}, q:"Millions of physical impressions were scanned into data by human hands here. Show us where the craftsmen's knowledge lives inside the machines now."}]}],
   6:[{spk:'farran', items:[
     {h:{en:"Why they don't come",ru:"Почему не приходят"}, q:"Rank the three walls — cost, fear, time. Which one falls first when a town gets same-day dentistry?"}]},
@@ -2362,27 +2370,41 @@ const SCENE_ASKS = {
     {h:{en:"The price formula",ru:"Формула цены"}, q:"Break a crown's price into its parts — units × visits, lab, chair time, redos. Which line did digital actually erase?"}]},
    {spk:'christensen', items:[
     {h:{en:"Fees, then and now",ru:"Цены тогда и сейчас"}, q:"In 2007 you published the crown-fee spread — $650 to $1,095, average $808 (Chairside Vol. 2-1, 2007). Rerun that analysis for us today: did technology move the number?"}]}],
-  10:[{spk:'christensen', items:[
+  10:[{spk:'farran', items:[{h:{en:"Why self-disruptors survive",ru:"Почему выживают самоподрывники"}, q:"You interviewed Jim. What makes a lab that gives away education and disrupts its own business different from the ones that protected their margins and died?"}]},
+   {spk:'ditolla', items:[{h:{en:"Cannibalizing your own lab",ru:"Съесть собственную лабораторию"}, q:"Glidewell promotes chairside milling — which eats its own lab business. From the inside, why does deliberately disrupting yourself work?"}]},
+   {spk:'kois', items:[{h:{en:"Progress vs marketing",ru:"Прогресс против маркетинга"}, q:"Independent of any brand — how should a dentist judge whether a company's 'innovation' is real progress or just marketing?"}]},
+   {spk:'christensen', items:[
     {h:{en:"The independent verdict",ru:"Независимый вердикт"}, q:"TRAC followed monolithic zirconia for a decade. Say it plainly: what does the data show — and where would you say the industry over-claims?"}]},
    {spk:'rella', items:[
     {h:{en:"The proof",ru:"Доказательство"}, q:"You ran the studies. What surprised you most about how these restorations survived?"}]},
    {spk:'norton', items:[
     {h:{en:"Giving it away",ru:"Отдавать бесплатно"}, q:"Guiding Leaders is free. Why does a for-profit lab give education away — and what does the company honestly get back?"}]}],
-  11:[{spk:'leeson', items:[
+  11:[{spk:'chi', items:[{h:{en:"Where the hand is still needed",ru:"Где ещё нужна рука"}, q:"You bridge the lab and the chair. On the factory floor and in the office both — where is a human hand still genuinely indispensable?"}]},
+   {spk:'leeson', items:[
     {h:{en:"Walking the factory",ru:"Проход по фабрике"}, q:"Walk the line with us — from a scan arriving to a crown shipping. Where are the humans now, and what exactly do they do?"}]},
    {spk:'friebauer', items:[
     {h:{en:"Materials at scale",ru:"Материалы в масштабе"}, q:"A chalk-soft disc becomes a tooth harder than enamel. Explain the furnace and the 20% shrink like we're patients, not engineers."}]}],
-  12:[{spk:'friebauer', items:[
+  12:[{spk:'leeson', items:[{h:{en:"What the line does next",ru:"Что линия сделает дальше"}, q:"What can the factory do next year that it can't today — and what is the R&D bet that isn't public yet?"}]},
+   {spk:'chi', items:[{h:{en:"Where the lab ends",ru:"Где кончается лаборатория"}, q:"You've said the dental office becomes more self-sufficient. Ten years out — where does the lab end and the chair begin?"}]},
+   {spk:'manalili', items:[{h:{en:"Full-arch, for the fearful patient",ru:"Full-arch для боящегося пациента"}, q:"Digital full-arch implants — what changes for the patient who could never face conventional surgery?"}]},
+   {spk:'patel', items:[{h:{en:"The honest limit of guided surgery",ru:"Честный предел guided surgery"}, q:"Guided surgery moves the implant from specialist to GP. What should a GP still refer out — where is the honest limit?"}]},
+   {spk:'friebauer', items:[
     {h:{en:"What's next in materials",ru:"Что дальше в материалах"}, q:"What replaces zirconia — or does printing replace milling first? What's on your bench right now that isn't public yet?"}]},
    {spk:'resnik', items:[
     {h:{en:"Implants for the GP",ru:"Импланты для обычного врача"}, q:"You said the days of general dentists not placing implants are over. How does guided surgery move expertise from hands into the system — and where is the limit?"}]},
    {spk:'kosinski', items:[
     {h:{en:"Teaching the leap",ru:"Научить прыжку"}, q:"14,000 implants in — what can a weekend course safely teach a general dentist today that took you a career to learn?"}]}],
-  13:[{spk:'norton', items:[
+  13:[{spk:'leeson', items:[{h:{en:"What the young engineers build",ru:"Что строят молодые инженеры"}, q:"What are the young engineers building that you didn't — and what will they get right that your generation got wrong?"}]},
+   {spk:'park', items:[{h:{en:"What the next generation needs taught",ru:"Чему учить следующее поколение"}, q:"You built the education arm. What does the next generation of dentists need taught that yours never was?"}]},
+   {spk:'kois', items:[{h:{en:"What can't be handed to a screen",ru:"Что нельзя передать экрану"}, q:"You still teach every course yourself. What in this craft can never be handed off to a screen?"}]},
+   {spk:'norton', items:[
     {h:{en:"Transition → growth → retention",ru:"Переход → рост → удержание"}, q:"Follow one Guiding Leaders dentist for us: what changes between the first session and graduation — and what holds the change after they go home?"}]},
    {spk:'manalili', items:[
     {h:{en:"The next generation",ru:"Следующее поколение"}, q:"You were the first Glidewell Fellow. What does a young clinician learn here that school never taught — and what do the young teach the veterans back?"}]}],
-  14:[{spk:'christensen', items:[
+  14:[{spk:'park', items:[{h:{en:"What you got wrong",ru:"В чём вы ошиблись"}, q:"After years narrating the future of dentistry on camera — what did YOU get wrong, and what are you now sure of?"}]},
+   {spk:'kosinski', items:[{h:{en:"The GP of 2036",ru:"Обычный врач в 2036-м"}, q:"Fourteen thousand implants in — ten years out, what will a general dentist do routinely that only specialists do today?"}]},
+   {spk:'spear', items:[{h:{en:"The rest of the profession's life",ru:"Остаток жизни профессии"}, q:"Your keynote asked 'what are you going to do with the rest of your life?' Ask that question of the whole profession."}]},
+   {spk:'christensen', items:[
     {h:{en:"The 50-year view",ru:"Взгляд на 50 лет"}, q:"You've watched this profession for half a century — and in 2008 you called zirconia's win a year early (Chairside Vol. 3-1, 2008). Make one more prediction: what does a crown look like in 2040?"}]},
    {spk:'farran', items:[
     {h:{en:"The forecast",ru:"Прогноз"}, q:"Five and ten years out: what gets cheaper, what disappears, and what stays stubbornly human?"}]}]
