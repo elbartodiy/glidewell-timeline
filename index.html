@@ -545,47 +545,48 @@
   .line-photo{cursor:zoom-in}
   @media(prefers-reduced-motion:reduce){#lightbox,#lightbox figure{transition:none}}
   /* ============================================================
-     LINE CANVAS — light "lab white / precision" theme (2026-07-22)
-     Very-light cool-gray field so WHITE elements (cards, nodes) read
-     as raised accents. Cool, airy, futuristic; one brand-red accent.
-     Scoped to #scroller via token overrides.
+     LINE CANVAS — soft-UI / neumorphic white theme (2026-07-22)
+     Very-light cool-gray field; white pillowy panels with dual soft
+     shadows (light top-left, shadow bottom-right); one cool-blue accent.
+     Ref: soft AI-dashboard aesthetic. Scoped to #scroller.
      ============================================================ */
   #scroller{
-    --paper:#EFF2F6; --card:#FFFFFF; --line:#DEE4EA;
-    --ink:#10151A; --ink-2:#586472; --mute:#8791A0; --slate:#A6B0BB;
-    --navy:#9AA6B2; --teal:#0E7C86;
-    background:#EFF2F6; color:var(--ink);
+    --paper:#E7ECF3; --card:#F6F9FC; --line:#E7ECF3;
+    --ink:#28313D; --ink-2:#5C6675; --mute:#94A0B0; --slate:#AEB8C6;
+    --navy:#8A97A6; --teal:#3E7BD6; --accent:#5B8DEF;
+    --nm-lo:rgba(174,186,206,.55); --nm-hi:rgba(255,255,255,.92);
+    background:#E7ECF3; color:var(--ink);
   }
-  /* ---- detail polish (taste pass) ---- */
-  /* lane letters were bold/dark = debug-ish; make them a faint refined guide */
-  #scroller .laneltr{fill:#9AA6B2;fill-opacity:.45;font-size:10px;font-weight:400;letter-spacing:.08em}
-  /* film/archive thumbs: drop the heavy glowing colored borders → hairline + soft cool shadow */
-  #scroller .lp-film,#scroller .lp-archive{border:1px solid #E4E9EF;box-shadow:0 8px 20px -12px rgba(24,40,60,.38)}
-  #scroller .lp-film{position:relative}
-  #scroller .lp-film::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--red);z-index:3;border-radius:4px 4px 0 0}
-  /* line markers: thin outline (was filled clip-art), one cool neutral, hairline connectors */
-  #scroller .bld .bld-ico,#scroller .ppl .ppl-ico{fill:none;stroke:#8B96A2;stroke-width:1.3px}
-  #scroller .bld:hover .bld-ico,#scroller .ppl:hover .ppl-ico{fill:none;stroke:var(--red)}
-  #scroller .bld::after,#scroller .ppl::after{background:#AEB9C4;opacity:.6;height:11px}
   #scroller .stage{background:transparent;position:relative}
-  /* whisper of cool grain so the light field isn't sterile-flat */
-  #scroller .stage::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.025;mix-blend-mode:multiply;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");}
-  /* thin cool rail, softly embossed with a white highlight beneath */
-  #scroller .mainrail{stroke:#AFB9C4;filter:drop-shadow(0 1px 0 rgba(255,255,255,.95))}
-  /* milestone nodes = WHITE beads with a cool ring + soft shadow (the white accents) */
-  #scroller .nd{stroke:#B6C0CB;stroke-width:2px;filter:drop-shadow(0 1px 3px rgba(24,40,60,.20))}
-  #scroller .nd.t-g,#scroller .nd.t-i,#scroller .nd.t-m{fill:#FFFFFF}
+  /* rail = soft engraved channel */
+  #scroller .mainrail{stroke:#C4CDDA;stroke-width:3;filter:drop-shadow(0 1px 0 rgba(255,255,255,.95))}
+  /* nodes = soft embossed white beads */
+  #scroller .nd{stroke:#EEF2F8;stroke-width:3px;filter:drop-shadow(1.5px 1.5px 3px rgba(174,186,206,.75)) drop-shadow(-1.5px -1.5px 2px rgba(255,255,255,.9))}
+  #scroller .nd.t-g,#scroller .nd.t-i,#scroller .nd.t-m{fill:#FBFDFF}
   #scroller .nd:hover{r:9}
-  #scroller .nd.hl{fill:var(--red);stroke:#fff;filter:drop-shadow(0 1px 5px rgba(225,27,42,.4))}
-  #scroller .baseline-cap{fill:#94A0AC}
-  #scroller .eralbl{fill:#A0AAB5}
-  #scroller .eraband{fill:#1C2A38;opacity:.02}
-  /* white cards float on the cool-gray field: soft cool-tinted shadow */
-  #scroller .ev{border-color:#E6EBF0;box-shadow:0 1px 2px rgba(24,40,60,.05),0 10px 26px -16px rgba(24,40,60,.28)}
-  #scroller .ev:hover,#scroller .ev.hl{box-shadow:0 16px 36px -14px rgba(24,40,60,.30);transform:translateX(-50%) translateY(-3px);border-color:#D2DAE2}
-  #scroller .morep{background:#FFFFFF;border-color:var(--slate);box-shadow:0 8px 22px -16px rgba(24,40,60,.30)}
-  #scroller .lgnd-sw.emp{border-top-color:#8791A0}
+  #scroller .nd.hl{fill:var(--accent);stroke:#EAF1FF;filter:drop-shadow(0 2px 6px rgba(91,141,239,.5))}
+  /* milestone cards = pillowy raised panels; no hard border; soft top accent */
+  #scroller .ev{background:var(--card);border:0;border-radius:16px;box-shadow:7px 7px 18px var(--nm-lo),-7px -7px 16px var(--nm-hi)}
+  #scroller .ev::before{content:"";position:absolute;left:14px;right:14px;top:0;height:3px;border-radius:0 0 3px 3px;background:var(--accent);opacity:.85}
+  #scroller .ev.t-i::before{background:var(--slate)} #scroller .ev.t-m::before{background:var(--teal)}
+  #scroller .ev:hover,#scroller .ev.hl{box-shadow:9px 9px 24px var(--nm-lo),-9px -9px 20px var(--nm-hi);transform:translateX(-50%) translateY(-3px)}
+  #scroller .ev .yr{color:var(--accent)} #scroller .ev.t-i .yr{color:var(--slate)} #scroller .ev.t-m .yr{color:var(--teal)}
+  /* Personalities + legend + thumbs = soft raised pills */
+  #scroller .morep{background:var(--card);border:0;border-radius:14px;box-shadow:6px 6px 16px var(--nm-lo),-6px -6px 14px var(--nm-hi)}
+  #scroller .morep:hover{box-shadow:8px 8px 20px var(--nm-lo),-8px -8px 18px var(--nm-hi)}
+  #scroller .linelegend{background:var(--card);border-radius:14px;padding:11px 14px;box-shadow:6px 6px 16px var(--nm-lo),-6px -6px 14px var(--nm-hi)}
+  #scroller .lp-film,#scroller .lp-archive{border:0;border-radius:12px;box-shadow:6px 6px 16px var(--nm-lo),-6px -6px 14px var(--nm-hi)}
+  /* faint lane letters */
+  #scroller .laneltr{fill:#8A97A6;fill-opacity:.4;font-size:10px;font-weight:400;letter-spacing:.08em}
+  /* line markers: thin outline, one cool neutral, short connectors */
+  #scroller .bld .bld-ico,#scroller .ppl .ppl-ico{fill:none;stroke:#8A97A6;stroke-width:1.3px}
+  #scroller .bld:hover .bld-ico,#scroller .ppl:hover .ppl-ico{fill:none;stroke:var(--accent)}
+  #scroller .bld::after,#scroller .ppl::after{background:#B8C2D0;opacity:.6;height:11px}
+  #scroller .baseline-cap{fill:#94A0B0}
+  #scroller .eralbl{fill:#A6B0BE}
+  #scroller .eraband{fill:#28313D;opacity:.015}
+  /* metric legend swatches → blue family to match the accent */
+  #scroller .lgnd-sw.cap{border-top-color:#3E6FD6} #scroller .lgnd-sw.terr{border-top-color:#5B8DEF} #scroller .lgnd-sw.emp{border-top-color:#9AA6B2}
 </style>
 </head>
 <body>
@@ -1705,16 +1706,16 @@ function buildSVG(){
     const pts=BEATS.map(b=>({x:b.x,yr:py(b.y)||1970})).filter(p=>p.yr>=1969).map(p=>({x:p.x,y:base-(gAt(p.yr)/100)*amp})).sort((p,q)=>p.x-q.x);
     if(pts.length>1){
       const line=pts.map(p=>p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' L ');
-      s+='<path d="M '+pts[0].x.toFixed(1)+' '+base+' L '+line+' L '+pts[pts.length-1].x.toFixed(1)+' '+base+' Z" fill="#E11B2A" fill-opacity="0.06" stroke="none"/>';
-      s+='<path d="M '+line+'" fill="none" stroke="#E11B2A" stroke-opacity="0.22" stroke-width="1.5"/>';
+      s+='<path d="M '+pts[0].x.toFixed(1)+' '+base+' L '+line+' L '+pts[pts.length-1].x.toFixed(1)+' '+base+' Z" fill="#5B8DEF" fill-opacity="0.07" stroke="none"/>';
+      s+='<path d="M '+line+'" fill="none" stroke="#3E6FD6" stroke-opacity="0.32" stroke-width="1.6"/>';
     }
   })();
   // --- Territory (real, solid blue) + Employees (projection, dotted grey) growth lines ---
   (function(){
     const py=v=>{ v=String(v); if(/today|now|present/i.test(v))return 2026; const m=v.match(/(\d{4})/); if(m)return +m[1]; const d=v.match(/(\d0)s/); if(d){let b=+d[1]; return (b<=30?2000:1900)+b;} return 1970; };
     const series=[
-      {A:[[1970,1],[1984,2],[1989,4],[1993,8],[2001,16],[2007,24],[2018,55],[2020,100],[2026,100]], peak:155, stroke:'#2C6E9E', dash:'', op:0.5},
-      {A:[[1970,0.5],[1984,1],[2007,30],[2018,50],[2020,95],[2026,100]], peak:185, stroke:'#5A5550', dash:'5 4', op:0.5}
+      {A:[[1970,1],[1984,2],[1989,4],[1993,8],[2001,16],[2007,24],[2018,55],[2020,100],[2026,100]], peak:155, stroke:'#5B8DEF', dash:'', op:0.55},
+      {A:[[1970,0.5],[1984,1],[2007,30],[2018,50],[2020,95],[2026,100]], peak:185, stroke:'#9AA6B2', dash:'5 4', op:0.6}
     ];
     series.forEach(function(S){
       const gAt=y=>{ if(y<=S.A[0][0])return S.A[0][1]; for(let i=1;i<S.A.length;i++){ if(y<=S.A[i][0]){ const a=S.A[i-1],b=S.A[i]; return a[1]+(b[1]-a[1])*(y-a[0])/(b[0]-a[0]); } } return 100; };
