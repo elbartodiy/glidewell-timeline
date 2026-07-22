@@ -100,6 +100,8 @@
   .scq-h img{width:44px;height:44px;border-radius:50%;object-fit:cover}
   .scq-h b{cursor:pointer}
   .scq-ok{color:#1DA24A;font-weight:800}
+  .scq.plan{border-style:dashed}
+  .scq-ask{color:#B08F33;font-weight:800}
   .scq-d{color:var(--mute);font-size:12px}
   .scq-b{font-size:13.5px;line-height:1.55}
   .linelegend{position:absolute;z-index:5;font-family:var(--mono);white-space:nowrap}
@@ -2270,6 +2272,82 @@ const SCENE_QUOTES = {
    {spk:'abdul', d:{en:"from his 10 Jul interview",ru:"из интервью 10 июля"}, items:[
     {h:{en:"The counterpoint",ru:"Контрапункт"}, q:"“I don't think people would want to go to a robot to do their dental work. The human interaction is very crucial in our profession… That relationship, that human labor — I think we still have a pretty good runway before the machine takes over.”"}]}]
 };
+// Planned interviews per part: same card, dashed = NOT shot yet; items = questions to ask on this theme.
+// Grounded in each speaker's brief / public record (Chairside quotes, 2007-08 archive) — not generic.
+const SCENE_ASKS = {
+  1:[{spk:'venard', items:[
+    {h:{en:"The analog era, firsthand",ru:"Аналоговая эра из первых рук"}, q:"Walk us through one crown, start to finish, as it was made in your early years at Glidewell — every station, every hand it passed through. · What could an experienced hand feel that a machine still can't? · What's physically gone from the lab today that you miss seeing?"}]},
+   {spk:'ditolla', items:[
+    {h:{en:"The last analog years",ru:"Последние аналоговые годы"}, q:"When did you first sense the analog way was ending — was there a day it became obvious? · What did dentists mail to the lab back then, and what came back two weeks later?"}]}],
+  2:[{spk:'farran', items:[
+    {h:{en:"The gap in numbers",ru:"Разрыв в цифрах"}, q:"Your mantra is faster, easier, higher-quality, lower-cost. Where does the profession still fail the person who can't walk in? · Describe the patient dentistry never sees."}]},
+   {spk:'dorfman', items:[
+    {h:{en:"Fear and shame",ru:"Страх и стыд"}, q:"People hide their smiles every day. What have you learned about the shame side of dental access? · What does a new smile change first — the mouth or the person?"}]}],
+  3:[{spk:'chi', items:[
+    {h:{en:"Same-day, live",ru:"Same-day вживую"}, q:"Walk us through a same-day crown at the chair — scan to seat — narrating what the patient feels at each step. · You wrote that same-visit restorations are best for the patient's health; defend that against 'it's just convenience'."}]},
+   {spk:'park', items:[
+    {h:{en:"Making it believable",ru:"Как в это поверить"}, q:"After hundreds of clinical demos: what makes a dentist believe same-day is real dentistry, not a gadget?"}]}],
+  4:[{spk:'kois', items:[
+    {h:{en:"Evidence vs habit",ru:"Данные против привычки"}, q:"Half the profession still pours impressions. From an evidence standpoint — when is staying analog defensible, and when is it inertia?"}]},
+   {spk:'spear', items:[
+    {h:{en:"The psychology of resistance",ru:"Психология сопротивления"}, q:"You teach seasoned dentists. What is the real fear underneath 'I've done it this way for thirty years'?"}]}],
+  5:[{spk:'leeson', items:[
+    {h:{en:"The invisible workforce",ru:"Невидимая рабочая сила"}, q:"Millions of physical impressions were scanned into data by human hands here. Show us where the craftsmen's knowledge lives inside the machines now."}]}],
+  6:[{spk:'farran', items:[
+    {h:{en:"Why they don't come",ru:"Почему не приходят"}, q:"Rank the three walls — cost, fear, time. Which one falls first when a town gets same-day dentistry?"}]},
+   {spk:'dorfman', items:[
+    {h:{en:"The first visit back",ru:"Первый визит после паузы"}, q:"What actually gets a person who hasn't seen a dentist in ten years through the door?"}]}],
+  7:[{spk:'farran', items:[
+    {h:{en:"Slow & expensive, from the chair",ru:"Долго и дорого — из кресла"}, q:"Tell the economics of one crown from the patient's side: the visits, the time off work, the bill. How much of that was ever truly necessary?"}]},
+   {spk:'sasaki', items:[
+    {h:{en:"The honest math",ru:"Честная арифметика"}, q:"What did a crown cost a practice in 2005 — and today, adjusted? Where did the weeks and the dollars actually go?"}]}],
+  8:[{spk:'sasaki', items:[
+    {h:{en:"The flywheel in numbers",ru:"Маховик в цифрах"}, q:"Cheaper → more volume → reinvest → cheaper. Show us one real decision where Glidewell chose lower price over margin — and what happened next."}]},
+   {spk:'ditolla', items:[
+    {h:{en:"The BruxZir bet",ru:"Ставка BruxZir"}, q:"Tell the 2009 launch honestly — the recession, the skeptics, Robin Carden's process, Jim's bet. · In 2007 you interviewed Jim: he predicted 90% digital within ten years. Re-read that page with us on camera."}]},
+   {spk:'venard', items:[
+    {h:{en:"Jim, then",ru:"Джим тогда"}, q:"What was Jim like as a boss in the analog years — one story that shows how he made decisions?"}]}],
+  9:[{spk:'sasaki', items:[
+    {h:{en:"The price formula",ru:"Формула цены"}, q:"Break a crown's price into its parts — units × visits, lab, chair time, redos. Which line did digital actually erase?"}]},
+   {spk:'christensen', items:[
+    {h:{en:"Fees, then and now",ru:"Цены тогда и сейчас"}, q:"In 2007 you published the crown-fee spread — $650 to $1,095, average $808. Rerun that analysis for us today: did technology move the number?"}]}],
+  10:[{spk:'christensen', items:[
+    {h:{en:"The independent verdict",ru:"Независимый вердикт"}, q:"TRAC followed monolithic zirconia for a decade. Say it plainly: what does the data show — and where would you say the industry over-claims?"}]},
+   {spk:'rella', items:[
+    {h:{en:"The proof",ru:"Доказательство"}, q:"You ran the studies. What surprised you most about how these restorations survived?"}]},
+   {spk:'norton', items:[
+    {h:{en:"Giving it away",ru:"Отдавать бесплатно"}, q:"Guiding Leaders is free. Why does a for-profit lab give education away — and what does the company honestly get back?"}]}],
+  11:[{spk:'leeson', items:[
+    {h:{en:"Walking the factory",ru:"Проход по фабрике"}, q:"Walk the line with us — from a scan arriving to a crown shipping. Where are the humans now, and what exactly do they do?"}]},
+   {spk:'friebauer', items:[
+    {h:{en:"Materials at scale",ru:"Материалы в масштабе"}, q:"A chalk-soft disc becomes a tooth harder than enamel. Explain the furnace and the 20% shrink like we're patients, not engineers."}]}],
+  12:[{spk:'friebauer', items:[
+    {h:{en:"What's next in materials",ru:"Что дальше в материалах"}, q:"What replaces zirconia — or does printing replace milling first? What's on your bench right now that isn't public yet?"}]},
+   {spk:'resnik', items:[
+    {h:{en:"Implants for the GP",ru:"Импланты для обычного врача"}, q:"You said the days of general dentists not placing implants are over. How does guided surgery move expertise from hands into the system — and where is the limit?"}]},
+   {spk:'kosinski', items:[
+    {h:{en:"Teaching the leap",ru:"Научить прыжку"}, q:"14,000 implants in — what can a weekend course safely teach a general dentist today that took you a career to learn?"}]}],
+  13:[{spk:'norton', items:[
+    {h:{en:"Transition → growth → retention",ru:"Переход → рост → удержание"}, q:"Follow one Guiding Leaders dentist for us: what changes between the first session and graduation — and what holds the change after they go home?"}]},
+   {spk:'manalili', items:[
+    {h:{en:"The next generation",ru:"Следующее поколение"}, q:"You were the first Glidewell Fellow. What does a young clinician learn here that school never taught — and what do the young teach the veterans back?"}]}],
+  14:[{spk:'christensen', items:[
+    {h:{en:"The 50-year view",ru:"Взгляд на 50 лет"}, q:"You've watched this profession for half a century — and in 2008 you called zirconia's win a year early. Make one more prediction: what does a crown look like in 2040?"}]},
+   {spk:'farran', items:[
+    {h:{en:"The forecast",ru:"Прогноз"}, q:"Five and ten years out: what gets cheaper, what disappears, and what stays stubbornly human?"}]}]
+};
+function sceneAsksHtml(k){
+  if(typeof SCENE_ASKS==='undefined'||!SCENE_ASKS[k])return '';
+  return SCENE_ASKS[k].map(Q=>{
+    const sp=SPK[Q.spk];
+    const nm=sp?sp.nm:Q.spk;
+    const photo=SPK_IMG[Q.spk]||'';
+    const items=Q.items.map(it=>'<b>'+L(it.h)+':</b> '+it.q).join('<br><br>');
+    return '<div class="scq plan"><div class="scq-h">'+(photo?'<img src="'+photo+'" alt="" data-go="'+Q.spk+'">':'')
+      +'<b data-go="'+Q.spk+'">'+nm+'</b> <span class="scq-ask">?</span> <span class="scq-d">'+L({en:"not shot yet — questions for the interview",ru:"ещё не снят — вопросы к интервью"})+'</span></div>'
+      +'<div class="scq-b">'+items+'</div></div>';
+  }).join('');
+}
 function sceneQuotesHtml(k){
   if(typeof SCENE_QUOTES==='undefined'||!SCENE_QUOTES[k])return '';
   return SCENE_QUOTES[k].map(Q=>{
@@ -2303,6 +2381,7 @@ function openScene(k,keep){
     +(frames?'<div class="scframes">'+frames+'</div>':'')
     +'<p class="scdesc">'+L(SCENE_DESC[k])+'</p>'
     +sceneQuotesHtml(k)
+    +sceneAsksHtml(k)
     +'<dl><dt>'+L(UI.scThemes)+'</dt><dd><div class="scthemes">'+themes+'</div></dd>'
     +'<dt>'+L(UI.scPillars)+'</dt><dd>'+((SCENE_PILLARS[k]||[]).map(pk=>'<span style="color:'+PILLARS[pk].c+';font-weight:600">'+L(PILLARS[pk].nm)+'</span>').join(' · ')||'—')+'</dd>'
     +'<dt>'+L(UI.scAnchorFacts)+'</dt><dd><div class="who">'+facts+'</div></dd>'
