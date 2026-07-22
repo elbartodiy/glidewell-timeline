@@ -1325,8 +1325,8 @@ const MORE_PEOPLE = [
     ]}
 ];
 
-const X0=190, DX=252, LINEY=332, PAD=190;
-const SPKROWY=644, FILMDIV=656, FBTOP=672, FBH=54, FILMLINEY=672, BEATDIV=748, BEATY=772, FRAMEDIV=810, FRAMETOP=822, FRAMEH=54, HERODIV=902, HEROW0=920, HERO_DY=22, PDIV=998, ACCY=1020, PROW0=1044, PROW_DY=24, CALDIV=998, CALTOP=1020, CALH=46, JIMDIV=46, JIMLINEY=78, STAGEH=1092;
+const X0=190, DX=252, LINEY=250, PAD=190;
+const SPKROWY=562, FILMDIV=574, FBTOP=590, FBH=54, FILMLINEY=590, BEATDIV=666, BEATY=690, FRAMEDIV=728, FRAMETOP=740, FRAMEH=54, HERODIV=820, HEROW0=838, HERO_DY=22, PDIV=916, ACCY=938, PROW0=962, PROW_DY=24, CALDIV=916, CALTOP=938, CALH=46, JIMDIV=46, JIMLINEY=78, STAGEH=1010;
 BEATS.forEach((b,i)=>b.x=X0+i*DX);
 const STAGEW=X0+(BEATS.length-1)*DX+PAD;
 const stage=document.getElementById('stage'), draw=document.getElementById('draw'), layer=document.getElementById('layer');
@@ -1686,11 +1686,6 @@ function buildSVG(){
   s+='<g>';
   s+='<line x1="84" y1="'+LINEY+'" x2="'+(STAGEW-70)+'" y2="'+LINEY+'" stroke="#1C2024" stroke-width="2" stroke-linecap="round"/>';
   s+='<polyline points="'+(STAGEW-86)+','+(LINEY-9)+' '+(STAGEW-66)+','+LINEY+' '+(STAGEW-86)+','+(LINEY+9)+'" fill="none" stroke="#1C2024" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
-  Object.keys(byBeat).forEach(bi=>{
-    const x=BEATS[bi].x, n=byBeat[bi].length, topY=LINEY-72-(n-1)*50-16;
-    s+='<g class="stalk" id="st-'+bi+'"><line x1="'+x+'" y1="'+topY+'" x2="'+x+'" y2="'+(LINEY-8)+'"/>';
-    s+='<polyline points="'+(x-4)+','+(LINEY-15)+' '+x+','+(LINEY-6)+' '+(x+4)+','+(LINEY-15)+'"/></g>';
-  });
   s+='</g>';
   BEATS.forEach((b,i)=>{ s+='<circle class="nd t-'+b.tr+' tier-'+(b.tier||3)+'" id="nd-'+i+'" cx="'+b.x+'" cy="'+LINEY+'" r="6.5" data-beat="'+i+'"/>'; });
   s+='<text class="baseline-cap" x="84" y="'+(LINEY-14)+'">1907</text>';
@@ -1702,15 +1697,7 @@ function buildSVG(){
   for(let k=1;k<=14;k++){
     const x=sceneX[k], anc=sceneAnchors[k]||[];
     anc.forEach(bi=>{ s+='<line class="arl" data-scene="'+k+'" data-beat="'+bi+'" x1="'+x+'" y1="'+FBTOP+'" x2="'+BEATS[bi].x+'" y2="'+(LINEY+11)+'" marker-end="url(#ah)"/>'; });
-    // who covers this theme — light initials (variant A)
-    const ppl=sceneSpeakers[k]||[], W=23, x0=x-(ppl.length-1)*W/2;
-    ppl.forEach((id,i)=>{ const cx=x0+i*W;
-      s+='<g class="spkpill" data-spk="'+id+'" data-scene="'+k+'">';
-      s+='<rect class="spp-bg" x="'+(cx-10)+'" y="'+(SPKROWY-7)+'" width="20" height="14" rx="7"/>';
-      s+='<text class="spp-tx" x="'+cx+'" y="'+(SPKROWY+3)+'">'+spkInitials(SPK[id].nm)+'</text>';
-      s+='<text class="spp-nm" x="'+cx+'" y="'+(SPKROWY-13)+'">'+SPK[id].nm+'</text>';
-      s+='</g>';
-    });
+    // (speaker initials row removed 2026-07-22 — redundant with per-part casting)
   }
 
   // --- Jim's parallel life line --- (no divider above; caption goes BELOW the line)
@@ -1755,14 +1742,8 @@ function buildSVG(){
 }
 function buildLayer(){
   let h='';
-  Object.keys(byBeat).forEach(bi=>{
-    const x=BEATS[bi].x;
-    byBeat[bi].forEach((sp,row)=>{
-      const cy=LINEY-72-row*50;
-      h+='<div class="chip" style="left:'+x+'px;top:'+cy+'px" data-beat="'+bi+'" data-spk="'+sp.id+'">'
-        +'<span class="dot g-'+sp.g+'"></span><span>'+(SPK_MW[sp.id]?'<span class="mw">'+MW[SPK_MW[sp.id]].g+'</span> ':'')+'<span class="nm">'+sp.nm+'</span> <span class="rl">'+L(sp.rl)+'</span></span></div>';
-    });
-  });
+  // Speaker chips on the line removed (2026-07-22): speakers are now cast inside the parts
+  // with roles; byBeat data is kept for the "who can tell" list in each milestone card.
   BEATS.forEach((b,i)=>{
     h+='<div class="ev t-'+b.tr+' tier-'+(b.tier||3)+'" style="left:'+b.x+'px;top:'+(LINEY+28)+'px" data-beat="'+i+'">'
       +(b.star?'<span class="star">'+L(b.star)+'</span>':'')
@@ -1829,7 +1810,7 @@ function buildLayer(){
     }
   });
   h+='<div class="morep" data-pers="1" style="left:88px;top:116px"><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div><div class="mp-sub">'+L(UI.persSub)+' · '+Object.keys(SPK).length+' + '+MORE_PEOPLE.reduce((a,b)=>a+b.people.length,0)+'</div></div>';
-  h+='<div class="linelegend" style="left:90px;top:228px">'
+  h+='<div class="linelegend" style="left:90px;top:165px">'
     +'<div class="lgnd-row" data-metric="cap"><span class="lgnd-sw cap"></span>'+L(UI.legCap)+'</div>'
     +'<div class="lgnd-row" data-metric="territory"><span class="lgnd-sw terr"></span>'+L(UI.legTerr)+'</div>'
     +'<div class="lgnd-row" data-metric="employees"><span class="lgnd-sw emp"></span>'+L(UI.legEmp)+'</div>'
