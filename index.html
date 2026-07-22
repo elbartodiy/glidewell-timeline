@@ -563,9 +563,10 @@
   #scroller .lp-film,#scroller .lp-archive{border:1px solid #E4E9EF;box-shadow:0 8px 20px -12px rgba(24,40,60,.38)}
   #scroller .lp-film{position:relative}
   #scroller .lp-film::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--red);z-index:3;border-radius:4px 4px 0 0}
-  /* line markers unified to one cool neutral (was saturated blue + gray = clip-arty) */
-  #scroller .bld .bld-ico,#scroller .ppl .ppl-ico{fill:#98A3AF}
-  #scroller .bld:hover .bld-ico,#scroller .ppl:hover .ppl-ico{fill:var(--red)}
+  /* line markers: thin outline (was filled clip-art), one cool neutral, hairline connectors */
+  #scroller .bld .bld-ico,#scroller .ppl .ppl-ico{fill:none;stroke:#8B96A2;stroke-width:1.3px}
+  #scroller .bld:hover .bld-ico,#scroller .ppl:hover .ppl-ico{fill:none;stroke:var(--red)}
+  #scroller .bld::after,#scroller .ppl::after{background:#AEB9C4;opacity:.6;height:20px}
   #scroller .stage{background:transparent;position:relative}
   /* whisper of cool grain so the light field isn't sterile-flat */
   #scroller .stage::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.025;mix-blend-mode:multiply;
@@ -1856,13 +1857,13 @@ function buildLayer(){
     const py=v=>{ v=String(v); if(/today|now|present/i.test(v))return 2026; const m=v.match(/(\d{4})/); if(m)return +m[1]; const d=v.match(/(\d0)s/); if(d){let b=+d[1]; return (b<=30?2000:1900)+b;} return 1970; };
     const yp=BEATS.map(b=>({yr:py(b.y),x:b.x})).filter(p=>p.yr).sort((a,b)=>a.yr-b.yr);
     const yToX=y=>{ if(y<=yp[0].yr)return yp[0].x; for(let i=1;i<yp.length;i++){ if(y<=yp[i].yr){const a=yp[i-1],b=yp[i]; return a.x+(b.x-a.x)*(y-a.yr)/(b.yr-a.yr);} } return yp[yp.length-1].x; };
-    const ico='<svg width="18" height="18" viewBox="-7 -8 14 16" class="bld-ico" aria-hidden="true"><path fill-rule="evenodd" d="M-5,-5 H5 V6 H-5 Z M-3,-3 H-1 V-1 H-3 Z M1,-3 H3 V-1 H1 Z M-3,1 H-1 V3 H-3 Z M1,1 H3 V3 H1 Z"/></svg>';
+    const ico='<svg width="16" height="16" viewBox="-8 -8 16 16" class="bld-ico" aria-hidden="true"><path fill="none" stroke-width="1.25" stroke-linejoin="round" d="M-5,-5 H5 V6 H-5 Z M-3,-3 H-1 V-1 H-3 Z M1,-3 H3 V-1 H1 Z M-3,1 H-1 V3 H-3 Z M1,1 H3 V3 H1 Z"/></svg>';
     EXPANSIONS.forEach((e,i)=>{ const x=yToX(py(e.y));
       h+='<div class="bld" data-bld="'+i+'" style="left:'+x.toFixed(1)+'px;top:'+(LINEY-36)+'px" title="'+e.y+' · '+L({en:'territory expansion',ru:'расширение территории'})+'">'+ico+'</div>';
     });
     // employees — little-person icons in the SAME lane as buildings; if a building shares the year, sit beside it
     if(typeof EMPLOYEES!=='undefined'){
-      const pico='<svg width="15" height="18" viewBox="-6 -9 12 19" class="ppl-ico" aria-hidden="true"><circle cx="0" cy="-5" r="3"/><path d="M-4,9 V2 a4,4 0 0 1 8,0 V9 Z"/></svg>';
+      const pico='<svg width="15" height="17" viewBox="-6.5 -9 13 18" class="ppl-ico" aria-hidden="true"><circle cx="0" cy="-4.6" r="2.7" fill="none" stroke-width="1.25"/><path fill="none" stroke-width="1.25" stroke-linecap="round" d="M-4.2,8 V2.4 a4.2,4.2 0 0 1 8.4,0 V8"/></svg>';
       const expYears=new Set(EXPANSIONS.map(x=>py(x.y)));
       EMPLOYEES.forEach((e,i)=>{ const yr=py(e.y); const x=yToX(yr); const dup=expYears.has(yr); const left=dup?(x+14):x;
         h+='<div class="ppl" data-ppl="'+i+'" style="left:'+left.toFixed(1)+'px;top:'+(LINEY-36)+'px" title="'+e.y+' · '+L({en:'employees',ru:'сотрудники'})+'">'+pico+'</div>';
