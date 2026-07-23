@@ -105,6 +105,10 @@
   .scq-ok{color:#1DA24A;font-weight:800}
   .scq.plan{border-style:dashed}
   .scq-ask{color:#8A93A3;font-weight:800}
+  .qbank{margin:2px 0 0;padding-left:0;list-style:none}
+  .qbank li{font-size:13px;line-height:1.5;margin:7px 0;padding-left:2px}
+  .qs-src{font-family:var(--mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;border-radius:8px;padding:1px 6px;margin-right:7px;white-space:nowrap;color:#fff}
+  .qs-neil{background:#5B8DEF} .qs-az{background:#4F93A6} .qs-prep{background:#9AA6B2}
   .scq-role{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;border:1px solid;border-radius:9px;padding:1px 7px;white-space:nowrap}
   .scq-d{color:var(--mute);font-size:12px}
   .scq-b{font-size:13.5px;line-height:1.55}
@@ -2454,6 +2458,53 @@ const ROLES={
   access:{t:{en:"affordability edge",ru:"доступность"},c:"#C0453B"}
 };
 function roleTag(role){ if(!role||typeof ROLES==='undefined'||!ROLES[role])return ''; var R=ROLES[role]; return ' <span class="scq-role" style="color:'+R.c+';border-color:'+R.c+'">'+L(R.t)+'</span>'; }
+
+// ---- Per-part QUESTION BANK (reusable; grows over time) ----
+// Guiding questions saved inside each part so we don't reinvent them when briefing people.
+// s = source: "Neil (prep)", "Azernikov (asked)", "prep". Add freely.
+const SCENE_QUESTIONS = {
+  1:[
+    {q:"You came up when a crown meant an impression, plaster and a two-week wait — what did that world feel like, and did we lose anything leaving it?",s:"Neil"},
+    {q:"Is handmade really higher quality, or is the machine more accurate now? What did the old stone-model process get wrong that digital fixes?",s:"Azernikov"},
+    {q:"Walk me through how a crown used to be made by hand — step by step.",s:"prep"}],
+  2:[
+    {q:"What drives you in this work — what’s the goal beyond the paycheck?",s:"Azernikov"},
+    {q:"The bet is that better dentistry should be affordable and reach more people — is that actually happening, and who’s still left out?",s:"Neil"}],
+  3:[
+    {q:"The first time a dentist sees a crown scanned, designed and milled while the patient waits — what makes them believe it’s real dentistry, not a gadget?",s:"Neil"},
+    {q:"Walk me through the process from the moment a scan comes in — where does a human still touch it?",s:"Azernikov"}],
+  4:[
+    {q:"Half the profession still works the old way — what’s the real reason a good dentist doesn’t go digital, and what finally flips them?",s:"Neil"},
+    {q:"How long does it actually take to learn — what’s the hardest part?",s:"Azernikov"}],
+  5:[
+    {q:"Tell me your path — how did you come to build Glidewell’s own design software?",s:"Azernikov"},
+    {q:"How did a designer go from ~50 crowns a day to 200 — what changed?",s:"Azernikov"}],
+  8:[
+    {q:"It’s rarely about the product — leadership is bringing an advance forward. How did Glidewell make a premium thing the everyday standard?",s:"Neil"},
+    {q:"What can you tell us about Jim — his character, his vision?",s:"Azernikov"}],
+  10:[
+    {q:"Glidewell gives away education for free and promotes tools that compete with its own lab — why does that make sense?",s:"Neil"},
+    {q:"How important is the library of millions of cases — what does it give you that competitors can’t copy?",s:"Azernikov"},
+    {q:"As you automated, how did the company keep its people — where did they go?",s:"Azernikov"},
+    {q:"Do you feel you’re shaping the industry — and why doesn’t this company stagnate?",s:"Azernikov"}],
+  11:[
+    {q:"How much of what used to be ‘the future’ is just routine for a dentist now? What’s ordinary today that seemed impossible 15 years ago?",s:"Neil"}],
+  12:[
+    {q:"You’ve said the systems in an office don’t talk to each other — what does a truly connected practice look like next?",s:"Neil"},
+    {q:"Where does this go — agentic AI, robots at the chair? What’s realistic in 5–10 years?",s:"Azernikov"}],
+  13:[
+    {q:"You’ve spent decades building the courses that teach dentists new methods — what does the next generation need taught that yours never was?",s:"Neil"}],
+  14:[
+    {q:"Five or ten years out — what gets easier and cheaper for patients, and what stays stubbornly human about dentistry?",s:"Neil"},
+    {q:"With AI, how many more patients could you serve — where’s the ceiling?",s:"Azernikov"}]
+};
+function bankSrcClass(x){return x&&x.indexOf('Neil')===0?'qs-neil':(x&&x.indexOf('Azern')===0?'qs-az':'qs-prep');}
+function sceneBankHtml(k){
+  if(typeof SCENE_QUESTIONS==='undefined'||!SCENE_QUESTIONS[k]||!SCENE_QUESTIONS[k].length)return '';
+  var items=SCENE_QUESTIONS[k].map(function(o){return '<li><span class="qs-src '+bankSrcClass(o.s)+'">'+o.s+'</span>'+o.q+'</li>';}).join('');
+  return '<dt>'+L({en:"Question bank — reusable, grows over time",ru:"Банк вопросов — переиспользуем, пополняется"})+'</dt><dd><ul class="qbank">'+items+'</ul></dd>';
+}
+
 function sceneAsksHtml(k){
   if(typeof SCENE_ASKS==='undefined'||!SCENE_ASKS[k])return '';
   return SCENE_ASKS[k].map(Q=>{
@@ -2500,7 +2551,7 @@ function openScene(k,keep){
     +'<p class="scdesc">'+L(SCENE_DESC[k])+'</p>'
     +sceneQuotesHtml(k)
     +sceneAsksHtml(k)
-    +'<dl><dt>'+L(UI.scThemes)+'</dt><dd><div class="scthemes">'+themes+'</div></dd>'
+    +'<dl>'+sceneBankHtml(k)+'<dt>'+L(UI.scThemes)+'</dt><dd><div class="scthemes">'+themes+'</div></dd>'
     +'<dt>'+L(UI.scPillars)+'</dt><dd>'+((SCENE_PILLARS[k]||[]).map(pk=>'<span style="color:'+PILLARS[pk].c+';font-weight:600">'+L(PILLARS[pk].nm)+'</span>').join(' · ')||'—')+'</dd>'
     +'<dt>'+L(UI.scAnchorFacts)+'</dt><dd><div class="who">'+facts+'</div></dd>'
     +(typeof SCENE_CHAIRSIDE!=='undefined'&&SCENE_CHAIRSIDE[k]?'<dt>'+L({en:"From the Chairside archive",ru:"Из архива Chairside"})+'</dt><dd>'+chairsideLinks(SCENE_CHAIRSIDE[k])+'</dd>':'')
