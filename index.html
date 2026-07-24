@@ -362,6 +362,10 @@
   .cal-ev.star:hover .ce-dot{transform:rotate(45deg) scale(1.25)}
   .cal-ev .ce-lbl{font-family:var(--mono);font-size:10.5px;font-weight:700;line-height:1.1;text-shadow:0 0 3px var(--paper),0 0 3px var(--paper),0 0 3px var(--paper)}
   .cal-ev:hover .ce-lbl{text-decoration:underline}
+  .cal-daydot{position:absolute;transform:translate(-50%,-50%);width:6px;height:6px;border-radius:50%;background:#8A93A3;box-shadow:0 0 0 1.5px var(--paper,#EFF2F6);z-index:4;cursor:pointer;transition:transform .1s,background .1s}
+  .cal-daydot.tbc{background:var(--paper,#EFF2F6);border:1.5px solid #9AA6B2;box-shadow:none}
+  .cal-daydot:hover{transform:translate(-50%,-50%) scale(1.5);background:var(--red)}
+  .calmo-week{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.04em;color:#8A929B;background:#EEF1F4;border-radius:4px;padding:1px 5px;margin-right:5px;vertical-align:middle}
   .cal-ev.tent .ce-dot{border-style:dashed}
   .cal-ev.tent .ce-lbl{font-style:italic;font-weight:600;opacity:.92}
   .tent-banner{display:inline-block;margin:8px 0 2px;padding:3px 9px;border:1px dashed #5E77A6;border-radius:3px;background:rgba(189,106,69,.08);color:#5E77A6;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.02em}
@@ -1069,19 +1073,19 @@ const CAL_MONTH_DETAIL={
   ]},
   8:{ intro:{en:"Our busiest campus month — a GL session plus four symposia. Heavy shooting window.",ru:"Самый плотный кампусный месяц — GL-сессия плюс четыре симпозиума. Плотное окно съёмок."}, items:[
     {d:"6–7", kind:"gl", nm:{en:"Guiding Leaders session"+glTag(8),ru:"Сессия Guiding Leaders"+glTag(8)}, t:{en:"Cohort on campus — filming window for the cohort/heroes.",ru:"Группа на кампусе — окно съёмки группы/героев."}},
-    {d:"6–7", tbc:true, kind:"symp", nm:{en:"Full-Arch Implant Symposium",ru:"Full-Arch Implant Symposium"}, t:{en:"Same dates as the GL session; the high end of what's possible now (Ellen's HT-implant arc).",ru:"Те же даты, что и GL-сессия; верхняя планка того, что возможно сейчас (арка Эллен с имплантами HT)."}},
-    {d:"14–15", tbc:true, kind:"symp", nm:{en:"Esthetics: Creating Beautiful Smiles",ru:"Esthetics: Creating Beautiful Smiles"}, t:{en:"Patient-transformation visuals + speaker interviews.",ru:"Визуал «до/после» пациентов + интервью со спикерами."}},
+    {d:"6–7", kind:"symp", nm:{en:"Full-Arch Implant Symposium",ru:"Full-Arch Implant Symposium"}, t:{en:"Same dates as the GL session; the high end of what's possible now (Ellen's HT-implant arc).",ru:"Те же даты, что и GL-сессия; верхняя планка того, что возможно сейчас (арка Эллен с имплантами HT)."}},
+    {d:"14–15", kind:"symp", nm:{en:"Esthetics: Creating Beautiful Smiles",ru:"Esthetics: Creating Beautiful Smiles"}, t:{en:"Patient-transformation visuals + speaker interviews.",ru:"Визуал «до/после» пациентов + интервью со спикерами."}},
     {d:"21–22", tbc:true, kind:"ce", nm:{en:"Implant Surgery: A Comprehensive Review",ru:"Implant Surgery: A Comprehensive Review"}, t:{en:"Freehand & guided. Optional surgical B-roll.",ru:"Freehand и guided. Опциональный хирургический B-roll."}},
-    {d:"27–28", tbc:true, kind:"symp", nm:{en:"Summer IOX: The Digital Dentistry Experience",ru:"Summer IOX: The Digital Dentistry Experience"}, t:{en:"Digital-dentistry showcase day.",ru:"День-витрина цифровой стоматологии."}}
+    {d:"27–28", kind:"symp", nm:{en:"Summer IOX: The Digital Dentistry Experience",ru:"Summer IOX: The Digital Dentistry Experience"}, t:{en:"Digital-dentistry showcase day.",ru:"День-витрина цифровой стоматологии."}}
   ]},
   9:{ intro:{en:"GL session and our scanning symposium share the same days — combine into one shoot block.",ru:"GL-сессия и наш симпозиум по сканированию совпадают по датам — объединить в один съёмочный блок."}, items:[
     {d:"11–12", tbc:true, kind:"ce", nm:{en:"Esthetic Techniques: Anterior Crowns & Veneers",ru:"Esthetic Techniques: Anterior Crowns & Veneers"}, t:{en:"2nd run. Optional.",ru:"Второй прогон. Опционально."}},
     {d:"17–18", kind:"gl", nm:{en:"Guiding Leaders session"+glTag(9),ru:"Сессия Guiding Leaders"+glTag(9)}, t:{en:"Cohort on campus.",ru:"Группа на кампусе."}},
-    {d:"17–18", tbc:true, kind:"symp", nm:{en:"ScanForward: Digital Profitability",ru:"ScanForward: Digital Profitability"}, t:{en:"Scanners in hands, the analog→digital story. Same days as the GL session — one block. (A press release frames an Align Technology event ~Sep 18–19 — confirm if it's the same.)",ru:"Сканеры в руках, история аналог→цифра. Те же дни, что GL-сессия — один блок. (В пресс-релизе фигурирует событие с Align Technology ~18–19 сен — сверить, не то же ли это.)"}},
+    {d:"17–18", kind:"symp", nm:{en:"ScanForward: Digital Profitability",ru:"ScanForward: Digital Profitability"}, t:{en:"Scanners in hands, the analog→digital story. Same days as the GL session — one block. (A press release frames an Align Technology event ~Sep 18–19 — confirm if it's the same.)",ru:"Сканеры в руках, история аналог→цифра. Те же дни, что GL-сессия — один блок. (В пресс-релизе фигурирует событие с Align Technology ~18–19 сен — сверить, не то же ли это.)"}},
     {d:"25–26", tbc:true, kind:"ce", nm:{en:"Dental Sleep Medicine: Snoring & Sleep Apnea",ru:"Dental Sleep Medicine: храп и апноэ"}, t:{en:"Dar Radfar's “expanding what a dentist treats” theme; optional interview tie-in.",ru:"Тема Дара Радфара «расширяем, что лечит дантист»; опциональная привязка к интервью."}}
   ]},
   10:{ intro:{en:"The payoff month — the Fall IOX symposium, then the graduation (likely film climax).",ru:"Месяц расплаты — симпозиум Fall IOX, затем выпуск (вероятная кульминация фильма)."}, items:[
-    {d:"9–10", tbc:true, kind:"symp", nm:{en:"Fall IOX: The Digital Dentistry Experience",ru:"Fall IOX: The Digital Dentistry Experience"}, t:{en:"Digital-dentistry showcase day.",ru:"День-витрина цифровой стоматологии."}},
+    {d:"9–10", kind:"symp", nm:{en:"Fall IOX: The Digital Dentistry Experience",ru:"Fall IOX: The Digital Dentistry Experience"}, t:{en:"Digital-dentistry showcase day.",ru:"День-витрина цифровой стоматологии."}},
     {d:"15–16", kind:"grad", ev:true, nm:{en:"DOTR — “Dentistry on the Rise” graduation"+glTag(10),ru:"DOTR — выпуск «Dentistry on the Rise»"+glTag(10)}, t:{en:"The GL cohort's final session = the graduation (per Bobbie). Likely the film's climax. Full event — speakers, access, day-by-day — below.",ru:"Финальная сессия когорты GL = выпускной (со слов Бобби). Вероятная кульминация фильма. Полное событие — спикеры, доступ, по дням — ниже."}},
     {d:"30", tbc:true, kind:"ce", nm:{en:"Surgical Placement of Dental Implants",ru:"Surgical Placement of Dental Implants"}, t:{en:"Restorative-driven approach. After the climax; optional.",ru:"Restorative-driven подход. После кульминации; опционально."}}
   ]}
@@ -1981,6 +1985,19 @@ function buildLayer(){
           +'<span class="ce-lbl" style="color:'+e.c+'">'+lbl+'</span></div>';
       }
     });
+    // small dot on the lane for every event day inside the month details (incl. undefined/tbc) — so all event days are visible on the preview at a glance
+    if(typeof CAL_MONTH_DETAIL!=='undefined'){
+      Object.keys(CAL_MONTH_DETAIL).forEach(mk=>{
+        (CAL_MONTH_DETAIL[mk].items||[]).forEach(it=>{
+          if(it.ev) return; // already shown as a labeled marker above
+          const days=(it.d||'').match(/\d+/g)||[];
+          days.forEach(ds=>{
+            const x=evx(+mk,+ds);
+            h+='<div class="cal-daydot'+(it.tbc?' tbc':'')+'" data-cal-month="'+mk+'" title="'+ds+' · '+L(it.nm)+'" style="left:'+x.toFixed(1)+'px;top:'+(CALTOP+7)+'px"></div>';
+          });
+        });
+      });
+    }
   })();
   // story-beat ruler (Save the Cat) — between scenes and heroes, positioned by % of film
   const bx=p=>84+(p/100)*(STAGEW-154);
@@ -2305,12 +2322,13 @@ function openCalMonth(mk,keep){
     prep:{l:{en:'Prep',ru:'Подготовка'},c:'#8A929B'},
     setup:{l:{en:'Setup',ru:'Настройка'},c:'#8A929B'}
   };
+  const weekOf=s=>{const mm=(s||'').match(/\d+/);return mm?Math.ceil((+mm[0])/7):null;};
   const rows=(det.items||[]).map(it=>{
     const k=KIND[it.kind]||KIND.setup;
     let h='<div class="calmo-row'+(it.done?' done':'')+'"><div class="calmo-head">';
     h+='<span class="calmo-kind" style="background:'+k.c+'">'+L(k.l)+'</span>';
     h+='<span class="calmo-nm">'+L(it.nm)+'</span>';
-    if(it.d) h+='<span class="calmo-date">'+it.d+(it.tbc?' <span class="calmo-tbc">tbc</span>':'')+'</span>';
+    if(it.d) h+='<span class="calmo-date">'+(weekOf(it.d)?'<span class="calmo-week">'+L({en:'Wk',ru:'Нед.'})+' '+weekOf(it.d)+'</span> ':'')+it.d+(it.tbc?' <span class="calmo-tbc">tbc</span>':'')+'</span>';
     else if(it.tbc) h+='<span class="calmo-date"><span class="calmo-tbc">tbc</span></span>';
     h+='</div>';
     if(it.t&&L(it.t)) h+='<div class="calmo-detail">'+L(it.t)+'</div>';
