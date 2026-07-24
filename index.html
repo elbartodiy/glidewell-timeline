@@ -1997,8 +1997,8 @@ function buildLayer(){
         +'<span class="pin-lbl hi'+(B.pos===0?' lbl-edge':'')+'">'+L(B.nm)+'</span></div>';
     }
   });
-  h+='<div class="morep" data-pers="1" style="left:88px;top:42px"><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div><div class="mp-sub">'+L(UI.persSub)+' · '+Object.keys(SPK).filter(id=>SPK[id].status!=='canceled').length+' + '+MORE_PEOPLE.reduce((a,b)=>a+b.people.length,0)+'</div></div>';
-  h+='<div class="linelegend" style="left:270px;top:42px">'
+  h+='<div class="morep" data-pers="1" style="left:88px;top:'+(LINEY-112)+'px"><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div><div class="mp-sub">'+L(UI.persSub)+' · '+Object.keys(SPK).filter(id=>SPK[id].status!=='canceled').length+' + '+MORE_PEOPLE.reduce((a,b)=>a+b.people.length,0)+'</div></div>';
+  h+='<div class="linelegend" style="left:270px;top:'+(LINEY-116)+'px">'
     +'<div class="lgnd-row" data-metric="cap"><span class="lgnd-sw cap"></span>'+L(UI.legCap)+'</div>'
     +'<div class="lgnd-row" data-metric="territory"><span class="lgnd-sw terr"></span>'+L(UI.legTerr)+'</div>'
     +'<div class="lgnd-row" data-metric="employees"><span class="lgnd-sw emp"></span>'+L(UI.legEmp)+'</div>'
@@ -2023,7 +2023,7 @@ function buildLayer(){
     }
     // --- Archival book photos: thumbnails ABOVE the line at their year; click → lightbox (no caption) ---
     if(typeof BOOK_PHOTOS!=='undefined' && BOOK_PHOTOS.length){
-      const PH=66, PW=Math.round(PH*16/9), GAP=7, TOP=LINEY-72, BOOKTOP=LINEY-72; let lastRight=-1e9;
+      const PH=66, PW=Math.round(PH*16/9), GAP=7, TOP=LINEY-116, BOOKTOP=LINEY-116; let lastRight=445;
       [...BOOK_PHOTOS].sort((a,b)=>a.yr-b.yr).forEach((p,i)=>{
         let left=yToX(p.yr)-PW/2; if(left<lastRight+GAP) left=lastRight+GAP; lastRight=left+PW;
         h+='<div class="line-photo'+(p.film?' lp-film':'')+(p.archive?' lp-archive':'')+'" data-src="'+p.src+'"'+(p.film?' data-film="film.html"':'')+(p.archive?' data-archive="1"':'')+' style="left:'+left.toFixed(1)+'px;top:'+((p.film||p.archive)?TOP:BOOKTOP)+'px;width:'+PW+'px;height:'+PH+'px" title="'+(p.film?'About the film':p.archive?'Archive hunt':p.yr)+'">'
