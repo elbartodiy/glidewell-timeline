@@ -1518,8 +1518,8 @@ const MORE_PEOPLE = [
     ]}
 ];
 
-const X0=190, DX=252, LINEY=300, PAD=190;
-const SPKROWY=612, FILMDIV=624, FBTOP=640, FBH=54, FILMLINEY=640, BEATDIV=716, BEATY=740, FRAMEDIV=778, FRAMETOP=790, FRAMEH=54, HERODIV=870, HEROW0=888, HERO_DY=22, PDIV=966, ACCY=988, PROW0=1012, PROW_DY=24, CALDIV=966, CALTOP=988, CALH=46, JIMDIV=46, JIMLINEY=28, STAGEH=1038;
+const X0=190, DX=252, LINEY=220, PAD=190;
+const SPKROWY=532, FILMDIV=544, FBTOP=560, FBH=54, FILMLINEY=560, BEATDIV=636, BEATY=660, FRAMEDIV=698, FRAMETOP=710, FRAMEH=54, HERODIV=790, HEROW0=808, HERO_DY=22, PDIV=886, ACCY=908, PROW0=932, PROW_DY=24, CALDIV=886, CALTOP=908, CALH=46, JIMDIV=46, JIMLINEY=28, STAGEH=958;
 BEATS.forEach((b,i)=>b.x=X0+i*DX);
 const STAGEW=X0+(BEATS.length-1)*DX+PAD;
 const stage=document.getElementById('stage'), draw=document.getElementById('draw'), layer=document.getElementById('layer');
@@ -1997,8 +1997,8 @@ function buildLayer(){
         +'<span class="pin-lbl hi'+(B.pos===0?' lbl-edge':'')+'">'+L(B.nm)+'</span></div>';
     }
   });
-  h+='<div class="morep" data-pers="1" style="left:88px;top:66px"><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div><div class="mp-sub">'+L(UI.persSub)+' · '+Object.keys(SPK).filter(id=>SPK[id].status!=='canceled').length+' + '+MORE_PEOPLE.reduce((a,b)=>a+b.people.length,0)+'</div></div>';
-  h+='<div class="linelegend" style="left:90px;top:150px">'
+  h+='<div class="morep" data-pers="1" style="left:88px;top:'+(LINEY-128)+'px"><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div><div class="mp-sub">'+L(UI.persSub)+' · '+Object.keys(SPK).filter(id=>SPK[id].status!=='canceled').length+' + '+MORE_PEOPLE.reduce((a,b)=>a+b.people.length,0)+'</div></div>';
+  h+='<div class="linelegend" style="left:90px;top:'+(LINEY-84)+'px">'
     +'<div class="lgnd-row" data-metric="cap"><span class="lgnd-sw cap"></span>'+L(UI.legCap)+'</div>'
     +'<div class="lgnd-row" data-metric="territory"><span class="lgnd-sw terr"></span>'+L(UI.legTerr)+'</div>'
     +'<div class="lgnd-row" data-metric="employees"><span class="lgnd-sw emp"></span>'+L(UI.legEmp)+'</div>'
@@ -2023,7 +2023,7 @@ function buildLayer(){
     }
     // --- Archival book photos: thumbnails ABOVE the line at their year; click → lightbox (no caption) ---
     if(typeof BOOK_PHOTOS!=='undefined' && BOOK_PHOTOS.length){
-      const PH=66, PW=Math.round(PH*16/9), GAP=7, TOP=JIMLINEY+8, BOOKTOP=LINEY-108; let lastRight=-1e9;
+      const PH=66, PW=Math.round(PH*16/9), GAP=7, TOP=LINEY-96, BOOKTOP=LINEY-108; let lastRight=-1e9;
       [...BOOK_PHOTOS].sort((a,b)=>a.yr-b.yr).forEach((p,i)=>{
         let left=yToX(p.yr)-PW/2; if(left<lastRight+GAP) left=lastRight+GAP; lastRight=left+PW;
         h+='<div class="line-photo'+(p.film?' lp-film':'')+(p.archive?' lp-archive':'')+'" data-src="'+p.src+'"'+(p.film?' data-film="film.html"':'')+(p.archive?' data-archive="1"':'')+' style="left:'+left.toFixed(1)+'px;top:'+((p.film||p.archive)?TOP:BOOKTOP)+'px;width:'+PW+'px;height:'+PH+'px" title="'+(p.film?'About the film':p.archive?'Archive hunt':p.yr)+'">'
