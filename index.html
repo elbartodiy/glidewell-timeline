@@ -218,6 +218,15 @@
   #panel .metarow .loc{margin:0}
   #panel .st{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:14px}
   .st.ok{background:#E5F1EA;color:var(--ok)} .st.verify{background:#F6ECD8;color:var(--warn)} .st.limited{background:#ECEFF2;color:var(--mute)}
+  .st.canceled{background:#FBE4E4;color:#C0392B}
+  .x-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:8px;border:1.6px solid #C0392B;border-radius:50%;color:#C0392B;font-weight:800;font-size:12px;line-height:1;vertical-align:middle;cursor:default}
+  #panel .thspk-x{font-family:var(--body);font-size:13px;background:#FBE4E4;border:1px dashed #E3A6A6;color:#B23B3B;border-radius:10px;padding:6px 12px}
+  #panel .scq.plan.search .scq-h{opacity:1}
+  #panel .scq-qmark{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border:1.6px dashed #C0392B;border-radius:50%;color:#C0392B;font-weight:800;font-size:16px;margin-right:9px;flex:0 0 auto}
+  .cnc-card{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px dashed #E3A6A6;background:#FCF1F1;border-radius:12px;opacity:.9}
+  .cnc-card img{width:44px;height:44px;border-radius:50%;object-fit:cover;filter:grayscale(1);cursor:pointer}
+  .cnc-card .cnc-nm{font-weight:700;cursor:pointer}
+  .cnc-card .cnc-note{font-size:12px;color:#9A5B5B}
   #panel dl{margin:14px 0 0;border-top:1px solid var(--line);padding-top:12px}
   #panel dt{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-top:13px}
   #panel dt:first-child{margin-top:0}
@@ -625,7 +634,7 @@
 </div>
 
 <!-- SAVED FOR LATER (casting geography / one-trip logistics — removed from the visible footer but kept here & in UI.footL / UI.footR):
-     SoCal (local): Leeson · Azernikov · Friebauer · Venard · Park · Chi · Manalili · Sasaki · Dorfman · DiTolla (in-state)
+     SoCal (local): Leeson · Azernikov · Friebauer · Venard · Park · Chi · Manalili · Dorfman · DiTolla (in-state)
      One trip: AZ — Farran + Spear · NW — Kois · Mtn West — Christensen · MW/East — Kosinski · Resnik · Patel -->
 <footer id="footer"></footer>
 
@@ -671,8 +680,8 @@ const UI = {
   dBrief:{en:"Brief", ru:"Бриф"},
   dQuote:{en:"In their own words", ru:"Своими словами"},
   dGL:{en:"Guiding Leaders — meeting & hero candidates", ru:"Guiding Leaders — встреча и кандидаты-герои"},
-  footL:{en:"SoCal (local): Leeson · Azernikov · Friebauer · Venard · Park · Chi · Manalili · Sasaki · Dorfman · DiTolla (in-state)",
-         ru:"Южная Калифорния (локально): Leeson · Azernikov · Friebauer · Venard · Park · Chi · Manalili · Sasaki · Dorfman · DiTolla (в штате)"},
+  footL:{en:"SoCal (local): Leeson · Azernikov · Friebauer · Venard · Park · Chi · Manalili · Dorfman · DiTolla (in-state)",
+         ru:"Южная Калифорния (локально): Leeson · Azernikov · Friebauer · Venard · Park · Chi · Manalili · Dorfman · DiTolla (в штате)"},
   footR:{en:"One trip: AZ — Farran + Spear · NW — Kois · Mtn West — Christensen · MW/East — Kosinski · Resnik · Patel",
          ru:"По одной поездке: AZ — Farran + Spear · NW — Kois · Mtn West — Christensen · MW/East — Kosinski · Resnik · Patel"},
   madeWith:{en:"Made with",ru:"Сделано с помощью"},
@@ -1317,8 +1326,8 @@ const SPK = {
     loc:{en:"Phoenix, AZ",ru:"Phoenix, AZ"},
     theme:{en:"Accessibility / reach · his mantra is almost verbatim the film's thesis.",ru:"Доступность / охват · его мантра почти дословно совпадает с тезисом фильма."},
     access:{en:"Phoenix, AZ (travel). Warm and easy — a built-in distribution channel.",ru:"Phoenix, AZ (выезд). Тёплый и лёгкий — готовый канал дистрибуции."}},
-  sasaki:{nm:"Glenn Sasaki", a:27, sc:[9,10,14], g:"e", status:"ok",
-    brief:{en:"<b>Who he is.</b> Glenn Sasaki has been Glidewell’s Chief Financial Officer since June 2005 — the custodian of revenue, scale and growth numbers for a private company that publishes none of them. Background of the disciplined kind: senior manager at KPMG, then finance at Advanced Medical Optics (medical devices), CSU Long Beach behind him (business databases; verify internally — he has, tellingly, no public interviews we could find). Not a showman — and that is the point: when he states a figure, it lands as audited fact, not marketing.<br><br><b>Why this film.</b> Sasaki is the business voice of the flywheel (#8) and the price formula (#9), and a witness to the film’s central economic bet: he was in the CFO chair when BruxZir launched into the bottom of the 2009 recession as the affordable alternative to gold. Everything the film claims about “cheaper → wider → reinvest” is adjectives until he attaches numbers to it.<br><br><b>What only he gives.</b> The only person who can put actual, first-party numbers on the thesis on camera — twenty years of them — and the only one who can describe what staying private DOES economically: the freedom to price down and reinvest without a shareholder asking why margins fell.<br><br><b>What to ask.</b><br>1) “Cheaper → more volume → reinvest → cheaper. Walk us through one real decision where you priced down and the volume answered.” — why: turns the flywheel from a slogan into a case with numbers.<br>2) “June 2009: the economy is at the bottom, and the company launches its biggest product as the affordable crown. From the CFO chair — how scary was that bet?” — why: he lived the Midpoint moment; gives it stakes from the money side.<br>3) “What does ‘affordability’ look like on a spreadsheet — which cost lines did digital actually delete?” — why: hard content for #9; pairs with Christensen’s 2007 fee analysis (Chairside Vol. 2-1, 2007).<br>4) “What does staying private let you do that a public company can’t?” — why: the reinvestment freedom argument, told as finance, not philosophy (the never-sell theme itself belongs to the Jim film).<br>5) “Which number are you proudest of — and which one still bothers you?” — why: honesty beat; gives the numbers keeper a human face.<br><br><b>How to approach / caution.</b> Studio Day 2 (with Manalili and Friebauer). CRITICAL: pre-agree with him and Eric exactly which figures may be said on camera — private company, no revenue specifics without sign-off; our rule stands that any on-screen number must be his or comms-approved. Keep him off the never-IPO story on camera for THIS film (that is the Jim-film’s territory); here he speaks economics of access. He is the designated source of truth for every figure in our fact-check shield.<br><br><b>Verify before shooting.</b> Title and start date (June 2005) — business databases, confirm internally. KPMG / Advanced Medical Optics background — same. No public quotes exist to lift — everything must be gathered at the interview.<br><br><b>Confidence.</b> Role and tenure: high (multiple databases agree). Background details: medium — database-sourced, verify. All substantive content will be first-generation from our interview.",ru:"<b>Кто он.</b> Гленн Сасаки — финансовый директор Glidewell с июня 2005 года, хранитель цифр выручки, масштаба и роста частной компании, которая их не публикует. Бэкграунд дисциплинированного рода: senior manager в KPMG, затем финансы в Advanced Medical Optics (медустройства), за плечами CSU Long Beach (по бизнес-базам; подтвердить внутри — показательно, что ни одного публичного интервью мы не нашли). Не шоумен — и в этом суть: когда он называет цифру, она звучит как аудированный факт, а не маркетинг.<br><br><b>Зачем фильму.</b> Сасаки — деловой голос маховика (#8) и формулы цены (#9) и свидетель главной экономической ставки фильма: он сидел в кресле CFO, когда BruxZir запускался на дне рецессии 2009-го как доступная альтернатива золоту. Всё, что фильм утверждает про «дешевле → шире → реинвест», — прилагательные, пока он не подставит цифры.<br><br><b>Что только он даёт.</b> Единственный, кто может на камеру подкрепить тезис настоящими цифрами из первых рук — за двадцать лет, — и единственный, кто может объяснить, что экономически ДАЁТ частность: свободу снижать цену и реинвестировать без акционера, спрашивающего, почему упала маржа.<br><br><b>О чём спрашивать.</b><br>1) «Дешевле → больше объём → реинвест → ещё дешевле. Проведите нас через одно реальное решение, где вы снизили цену — и объём ответил.» — зачем: превращает маховик из лозунга в кейс с цифрами.<br>2) «Июнь 2009-го: экономика на дне, а компания запускает главный продукт как доступную коронку. Из кресла CFO — насколько страшной была эта ставка?» — зачем: он прожил момент Midpoint; даёт ему ставки со стороны денег.<br>3) «Как выглядит ‘доступность’ в таблице — какие строки затрат цифра реально удалила?» — зачем: твёрдое содержание для #9; в паре с анализом цен Кристенсена (Chairside Vol. 2-1, 2007).<br>4) «Что даёт частность из того, чего не может публичная компания?» — зачем: аргумент свободы реинвестирования, рассказанный как финансы, а не философия (сама тема never-sell — территория фильма о Джиме).<br>5) «Какой цифрой вы горды больше всего — и какая до сих пор беспокоит?» — зачем: бит честности; даёт хранителю цифр человеческое лицо.<br><br><b>Как заходить / осторожно.</b> Студийный день №2 (с Маналили и Фрибауэром). КРИТИЧНО: заранее согласовать с ним и Эриком, какие именно цифры можно произносить на камеру — компания частная, никакой конкретики по выручке без визы; наше правило в силе: любая экранная цифра — его или одобренная comms. На камеру для ЭТОГО фильма не заводить его в тему never-IPO (это территория фильма о Джиме); здесь он говорит про экономику доступности. Он — назначенный источник истины для каждой цифры фактчек-щита.<br><br><b>Проверить перед съёмкой.</b> Титул и дата старта (июнь 2005) — по бизнес-базам, подтвердить внутри. KPMG / Advanced Medical Optics — там же. Публичных цитат не существует — весь материал будет первого поколения, с нашего интервью.<br><br><b>Уверенность.</b> Роль и стаж: высокая (базы сходятся). Детали бэкграунда: средняя — из баз, проверить. Всё содержательное — только с интервью."},
+  sasaki:{nm:"Glenn Sasaki", a:27, sc:[9,10,14], g:"e", status:"canceled",
+    brief:{en:"<b style='color:#C0392B'>✕ CANCELED — removed from the interview list by Eldon (2026-07-24). Do not contact further.</b> Suggested replacement for the finance viewpoint: <b>Lisa Maxson</b> (pending our go-ahead to Eldon). His footprint is preserved here so nothing is lost — he was cast as the finance/economics voice in themes for parts #2, #7, #8, #9, #10, #14 and carried the interview questions for parts #7 (the honest math), #8 (the flywheel in numbers) and #9 (the price formula); those slots now show a “?” placeholder in the storyboard, seeking a replacement. The original dossier is kept below for reference.<br><br><b>Who he is.</b> Glenn Sasaki has been Glidewell’s Chief Financial Officer since June 2005 — the custodian of revenue, scale and growth numbers for a private company that publishes none of them. Background of the disciplined kind: senior manager at KPMG, then finance at Advanced Medical Optics (medical devices), CSU Long Beach behind him (business databases; verify internally — he has, tellingly, no public interviews we could find). Not a showman — and that is the point: when he states a figure, it lands as audited fact, not marketing.<br><br><b>Why this film.</b> Sasaki is the business voice of the flywheel (#8) and the price formula (#9), and a witness to the film’s central economic bet: he was in the CFO chair when BruxZir launched into the bottom of the 2009 recession as the affordable alternative to gold. Everything the film claims about “cheaper → wider → reinvest” is adjectives until he attaches numbers to it.<br><br><b>What only he gives.</b> The only person who can put actual, first-party numbers on the thesis on camera — twenty years of them — and the only one who can describe what staying private DOES economically: the freedom to price down and reinvest without a shareholder asking why margins fell.<br><br><b>What to ask.</b><br>1) “Cheaper → more volume → reinvest → cheaper. Walk us through one real decision where you priced down and the volume answered.” — why: turns the flywheel from a slogan into a case with numbers.<br>2) “June 2009: the economy is at the bottom, and the company launches its biggest product as the affordable crown. From the CFO chair — how scary was that bet?” — why: he lived the Midpoint moment; gives it stakes from the money side.<br>3) “What does ‘affordability’ look like on a spreadsheet — which cost lines did digital actually delete?” — why: hard content for #9; pairs with Christensen’s 2007 fee analysis (Chairside Vol. 2-1, 2007).<br>4) “What does staying private let you do that a public company can’t?” — why: the reinvestment freedom argument, told as finance, not philosophy (the never-sell theme itself belongs to the Jim film).<br>5) “Which number are you proudest of — and which one still bothers you?” — why: honesty beat; gives the numbers keeper a human face.<br><br><b>How to approach / caution.</b> Studio Day 2 (with Manalili and Friebauer). CRITICAL: pre-agree with him and Eric exactly which figures may be said on camera — private company, no revenue specifics without sign-off; our rule stands that any on-screen number must be his or comms-approved. Keep him off the never-IPO story on camera for THIS film (that is the Jim-film’s territory); here he speaks economics of access. He is the designated source of truth for every figure in our fact-check shield.<br><br><b>Verify before shooting.</b> Title and start date (June 2005) — business databases, confirm internally. KPMG / Advanced Medical Optics background — same. No public quotes exist to lift — everything must be gathered at the interview.<br><br><b>Confidence.</b> Role and tenure: high (multiple databases agree). Background details: medium — database-sourced, verify. All substantive content will be first-generation from our interview.",ru:"<b style='color:#C0392B'>✕ ОТМЕНЁН — убран из списка интервью Элдоном (2026-07-24). Больше не связываться.</b> Предлагаемая замена по финансовому углу: <b>Lisa Maxson</b> (ждём нашего «да» Элдону). След сохранён здесь, чтобы ничего не потерять: он был заложен как финансовый/экономический голос в темах частей #2, #7, #8, #9, #10, #14 и нёс вопросы к интервью для частей #7 (честная арифметика), #8 (маховик в цифрах) и #9 (формула цены); эти места в сториборде теперь помечены «?» — ищем замену. Оригинальное досье ниже — для справки.<br><br><b>Кто он.</b> Гленн Сасаки — финансовый директор Glidewell с июня 2005 года, хранитель цифр выручки, масштаба и роста частной компании, которая их не публикует. Бэкграунд дисциплинированного рода: senior manager в KPMG, затем финансы в Advanced Medical Optics (медустройства), за плечами CSU Long Beach (по бизнес-базам; подтвердить внутри — показательно, что ни одного публичного интервью мы не нашли). Не шоумен — и в этом суть: когда он называет цифру, она звучит как аудированный факт, а не маркетинг.<br><br><b>Зачем фильму.</b> Сасаки — деловой голос маховика (#8) и формулы цены (#9) и свидетель главной экономической ставки фильма: он сидел в кресле CFO, когда BruxZir запускался на дне рецессии 2009-го как доступная альтернатива золоту. Всё, что фильм утверждает про «дешевле → шире → реинвест», — прилагательные, пока он не подставит цифры.<br><br><b>Что только он даёт.</b> Единственный, кто может на камеру подкрепить тезис настоящими цифрами из первых рук — за двадцать лет, — и единственный, кто может объяснить, что экономически ДАЁТ частность: свободу снижать цену и реинвестировать без акционера, спрашивающего, почему упала маржа.<br><br><b>О чём спрашивать.</b><br>1) «Дешевле → больше объём → реинвест → ещё дешевле. Проведите нас через одно реальное решение, где вы снизили цену — и объём ответил.» — зачем: превращает маховик из лозунга в кейс с цифрами.<br>2) «Июнь 2009-го: экономика на дне, а компания запускает главный продукт как доступную коронку. Из кресла CFO — насколько страшной была эта ставка?» — зачем: он прожил момент Midpoint; даёт ему ставки со стороны денег.<br>3) «Как выглядит ‘доступность’ в таблице — какие строки затрат цифра реально удалила?» — зачем: твёрдое содержание для #9; в паре с анализом цен Кристенсена (Chairside Vol. 2-1, 2007).<br>4) «Что даёт частность из того, чего не может публичная компания?» — зачем: аргумент свободы реинвестирования, рассказанный как финансы, а не философия (сама тема never-sell — территория фильма о Джиме).<br>5) «Какой цифрой вы горды больше всего — и какая до сих пор беспокоит?» — зачем: бит честности; даёт хранителю цифр человеческое лицо.<br><br><b>Как заходить / осторожно.</b> Студийный день №2 (с Маналили и Фрибауэром). КРИТИЧНО: заранее согласовать с ним и Эриком, какие именно цифры можно произносить на камеру — компания частная, никакой конкретики по выручке без визы; наше правило в силе: любая экранная цифра — его или одобренная comms. На камеру для ЭТОГО фильма не заводить его в тему never-IPO (это территория фильма о Джиме); здесь он говорит про экономику доступности. Он — назначенный источник истины для каждой цифры фактчек-щита.<br><br><b>Проверить перед съёмкой.</b> Титул и дата старта (июнь 2005) — по бизнес-базам, подтвердить внутри. KPMG / Advanced Medical Optics — там же. Публичных цитат не существует — весь материал будет первого поколения, с нашего интервью.<br><br><b>Уверенность.</b> Роль и стаж: высокая (базы сходятся). Детали бэкграунда: средняя — из баз, проверить. Всё содержательное — только с интервью."},
     rl:{en:"CFO (since 2005)",ru:"финдиректор (с 2005)"},
     role:{en:"Chief Financial Officer (since 2005)",ru:"Финансовый директор (с 2005)"},
     loc:{en:"Orange County, CA",ru:"Orange County, CA"},
@@ -1415,10 +1424,10 @@ const SPK_IMG={
 ,
   norton:"gl_photos/norton.jpg"};
 const byBeat={};
-Object.entries(SPK).forEach(([id,s])=>{(byBeat[s.a]=byBeat[s.a]||[]).push(Object.assign({id},s));});
+Object.entries(SPK).forEach(([id,s])=>{if(s.status==='canceled')return;(byBeat[s.a]=byBeat[s.a]||[]).push(Object.assign({id},s));});
 // speakers covering each scene (theme) — for variant-A initials at scene x
 const sceneSpeakers={};
-Object.entries(SPK).forEach(([id,s])=>{(s.sc||[]).forEach(n=>{(sceneSpeakers[n]=sceneSpeakers[n]||[]).push(id);});});
+Object.entries(SPK).forEach(([id,s])=>{if(s.status==='canceled')return;(s.sc||[]).forEach(n=>{(sceneSpeakers[n]=sceneSpeakers[n]||[]).push(id);});});
 const spkInitials=nm=>nm.split(/[\s,]+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 // place a pillar name to the left of each cluster of its marks (no labels in empty space)
 function clusterLabels(xs,y,name,color,attr){
@@ -1478,11 +1487,13 @@ const PILLAR_DESC={
 };
 // Themes covered in each scene + suggested speakers per theme (draft — sparse for now, grows over time).
 // who: speaker ids from SPK. Empty who = theme noted, speaker not yet assigned.
+// FINX = a vacancy left by a canceled speaker: info kept, we're re-casting (option in the label).
+const FINX={search:{en:"? seeking a finance voice — opt: Lisa Maxson",ru:"? ищем финансовый голос — вар.: Lisa Maxson"}};
 const SCENE_THEMES={
   1:[ {t:{en:"Handcraft: how teeth were made in the 1970s (wax, plaster, weeks)",ru:"Ремесло руками: как делали зубы в 1970-х (воск, гипс, недели)"},who:["venard","ditolla"]},
       {t:{en:"Emotion / nostalgia: a vanishing analog world, the dignity of the craftsman",ru:"Эмоция / ностальгия: уходящий аналоговый мир, достоинство мастера"},who:["venard"]} ],
   2:[ {t:{en:"Psychology of the smile: hiding it, shame, self-esteem",ru:"Психология улыбки: как её прячут, стыд, самооценка"},who:["dorfman"]},
-      {t:{en:"The cost of inaccessibility: who is left without care",ru:"Цена недоступности: кто остаётся без помощи"},who:["farran","sasaki"]} ],
+      {t:{en:"The cost of inaccessibility: who is left without care",ru:"Цена недоступности: кто остаётся без помощи"},who:["farran",FINX]} ],
   3:[ {t:{en:"A single-visit monolithic crown (BruxZir, fastmill, scanner)",ru:"Монолитная коронка за один визит (BruxZir, fastmill, сканер)"},who:["chi","ditolla","friebauer"]},
       {t:{en:"Proof: long-term BruxZir survival data",ru:"Доказательство: данные по выживаемости BruxZir"},who:["christensen","rella"]},
       {t:{en:"Evidence-based way to judge a material",ru:"Доказательная оценка материала"},who:["kois"]} ],
@@ -1492,13 +1503,13 @@ const SCENE_THEMES={
       {t:{en:"The invisible workforce — people \"on the line\"",ru:"Невидимая рабочая сила — люди «на линии»"},who:[]} ],
   6:[ {t:{en:"Psychology of avoidance: fear, cost, time",ru:"Психология избегания: страх, стоимость, время"},who:["dorfman"]},
       {t:{en:"The emotional price: years of hiding a smile",ru:"Эмоциональная цена: годами прятать улыбку"},who:["dorfman"]} ],
-  7:[ {t:{en:"The economics of access: why care is slow and expensive",ru:"Экономика доступности: почему лечение долгое и дорогое"},who:["farran","sasaki"]} ],
+  7:[ {t:{en:"The economics of access: why care is slow and expensive",ru:"Экономика доступности: почему лечение долгое и дорогое"},who:["farran",FINX]} ],
   8:[ {t:{en:"Jim's climb from nothing → his principles",ru:"История Джима «с нуля» → его принципы"},who:["jim"]},
-      {t:{en:"The flywheel: cheaper → wider access → reinvest",ru:"Маховик: дешевле → шире доступ → реинвест"},who:["farran","sasaki"]},
+      {t:{en:"The flywheel: cheaper → wider access → reinvest",ru:"Маховик: дешевле → шире доступ → реинвест"},who:["farran",FINX]},
       {t:{en:"Memory of the analog era, from the inside",ru:"Память аналоговой эпохи изнутри"},who:["venard","ditolla"]} ],
-  9:[ {t:{en:"The cost formula: line items × visits",ru:"Формула стоимости: число позиций × визитов"},who:["sasaki","farran"]},
+  9:[ {t:{en:"The cost formula: line items × visits",ru:"Формула стоимости: число позиций × визитов"},who:[FINX,"farran"]},
       {t:{en:"How one visit collapses the price (chairside)",ru:"Как один визит схлопывает цену (chairside)"},who:["chi"]} ],
-  10:[ {t:{en:"Vertical integration & accessibility",ru:"Вертикальная интеграция и доступность"},who:["sasaki","ditolla"]},
+  10:[ {t:{en:"Vertical integration & accessibility",ru:"Вертикальная интеграция и доступность"},who:[FINX,"ditolla"]},
        {t:{en:"Education & reinvesting in the profession",ru:"Образование и реинвест в профессию"},who:["park","norton"]},
        {t:{en:"Implants as the standard of care",ru:"Импланты как стандарт лечения"},who:["resnik","patel","manalili"]},
        {t:{en:"Independent proof",ru:"Независимое доказательство"},who:["christensen","rella"]} ],
@@ -1509,7 +1520,7 @@ const SCENE_THEMES={
        {t:{en:"Education & mentorship (Guiding Leaders)",ru:"Обучение и менторство (Guiding Leaders)"},who:["norton","park"]},
        {t:{en:"Implants for the next generation",ru:"Импланты для нового поколения"},who:["kosinski"]},
        {t:{en:"Esthetics & continuity of the craft",ru:"Эстетика и преемственность ремесла"},who:["spear","manalili"]} ],
-  14:[ {t:{en:"The future of the industry and of access",ru:"Будущее индустрии и доступности"},who:["jim","sasaki"]},
+  14:[ {t:{en:"The future of the industry and of access",ru:"Будущее индустрии и доступности"},who:["jim",FINX]},
        {t:{en:"Emotion: the smiles that haven't lit up yet — hope",ru:"Эмоция: улыбки, которые ещё не засияли — надежда"},who:["dorfman"]} ]
 };
 // Archival book photos placed ON the line by year (above it). yr anchors the x; src = file in line_photos/.
@@ -2061,7 +2072,7 @@ function openSpeaker(id,keep){
   const svBack=_hasSurvey?'<button type="button" class="sv-back" data-go-pers="1">'+L({en:'← Back to the survey',ru:'← Назад к опросу'})+'<span class="sv-back-note">'+L({en:'your answers are saved',ru:'ваши ответы сохранены'})+'</span></button>':'';
   const themes=(s.sc||[]).map(n=>'<button data-go-scene="'+n+'">#'+n+' '+L(SCENES[n])+'</button>').join('') || '<span style="color:var(--mute)">—</span>';
   pin.innerHTML=(SPK_IMG[id]?'<img class="spk-avatar" src="'+SPK_IMG[id]+'" alt="">':'')+'<div class="kicker">'+L(UI.grp[s.g])+' · <span class="pers-back" data-go-pers="1">'+L(UI.allPers)+'</span></div>'+svBack
-    +'<h2>'+s.nm+gwBadge(s)+micBadge(id)+'</h2><div class="role">'+L(s.role)+'</div>'
+    +'<h2>'+s.nm+gwBadge(s)+micBadge(id)+(s.status==='canceled'?' <span class="x-badge" title="'+L({en:'Canceled',ru:'Отменён'})+'">✕</span>':'')+'</h2><div class="role">'+L(s.role)+'</div>'
     +'<div class="metarow"><span class="loc">'+L(s.loc)+'</span><span class="st '+s.status+'">'+s.status+'</span></div>'
     +(SPK_MW[id]?'<div class="mwline">'+MW[SPK_MW[id]].g+' '+L(MW[SPK_MW[id]].nm)+'</div>':'')
     +'<dl>'
@@ -2393,15 +2404,15 @@ const SCENE_ASKS = {
     {h:{en:"The first visit back",ru:"Первый визит после паузы"}, q:"What actually gets a person who hasn't seen a dentist in ten years through the door?"}]}],
   7:[{spk:'farran', role:'reach', items:[
     {h:{en:"Slow & expensive, from the chair",ru:"Долго и дорого — из кресла"}, q:"Tell the economics of one crown from the patient's side: the visits, the time off work, the bill. How much of that was ever truly necessary?"}]},
-   {spk:'sasaki', role:'economics', items:[
+   {search:1, role:'economics', items:[
     {h:{en:"The honest math",ru:"Честная арифметика"}, q:"What did a crown cost a practice in 2005 — and today, adjusted? Where did the weeks and the dollars actually go?"}]}],
-  8:[{spk:'sasaki', role:'economics', items:[
+  8:[{search:1, role:'economics', items:[
     {h:{en:"The flywheel in numbers",ru:"Маховик в цифрах"}, q:"Cheaper → more volume → reinvest → cheaper. Show us one real decision where Glidewell chose lower price over margin — and what happened next."}]},
    {spk:'ditolla', role:'witness', items:[
     {h:{en:"The BruxZir bet",ru:"Ставка BruxZir"}, q:"Tell the 2009 launch honestly — the recession, the skeptics, Robin Carden's process, Jim's bet. · In 2007 you interviewed Jim: he predicted 90% digital within ten years (Chairside Vol. 1-3, 2007). Re-read that page with us on camera."}]},
    {spk:'venard', role:'witness', items:[
     {h:{en:"Jim, then",ru:"Джим тогда"}, q:"What was Jim like as a boss in the analog years — one story that shows how he made decisions?"}]}],
-  9:[{spk:'sasaki', role:'anchor', items:[
+  9:[{search:1, role:'anchor', items:[
     {h:{en:"The price formula",ru:"Формула цены"}, q:"Break a crown's price into its parts — units × visits, lab, chair time, redos. Which line did digital actually erase?"}]},
    {spk:'christensen', role:'proof', items:[
     {h:{en:"Fees, then and now",ru:"Цены тогда и сейчас"}, q:"In 2007 you published the crown-fee spread — $650 to $1,095, average $808 (Chairside Vol. 2-1, 2007). Rerun that analysis for us today: did technology move the number?"}]}],
@@ -2511,10 +2522,16 @@ function sceneBankHtml(k){
 function sceneAsksHtml(k){
   if(typeof SCENE_ASKS==='undefined'||!SCENE_ASKS[k])return '';
   return SCENE_ASKS[k].map(Q=>{
+    const items=Q.items.map(it=>'<b>'+L(it.h)+':</b> '+it.q).join('<br><br>');
+    if(Q.search){
+      return '<div class="scq plan search"><div class="scq-h"><span class="scq-qmark">?</span>'
+        +'<b>'+L({en:"Looking for a speaker for this",ru:"Ищем спикера под эту тему"})+'</b>'+roleTag(Q.role)
+        +' <span class="scq-d">'+L({en:"vacant — option: Lisa Maxson (finance)",ru:"вакантно — вариант: Lisa Maxson (финансы)"})+'</span></div>'
+        +'<div class="scq-b">'+items+'</div></div>';
+    }
     const sp=SPK[Q.spk];
     const nm=sp?sp.nm:Q.spk;
     const photo=SPK_IMG[Q.spk]||'';
-    const items=Q.items.map(it=>'<b>'+L(it.h)+':</b> '+it.q).join('<br><br>');
     return '<div class="scq plan"><div class="scq-h">'+(photo?'<img src="'+photo+'" alt="" data-go="'+Q.spk+'">':'')
       +'<b data-go="'+Q.spk+'">'+nm+'</b>'+roleTag(Q.role)+' <span class="scq-ask">?</span> <span class="scq-d">'+L({en:"not shot yet — questions for the interview",ru:"ещё не снят — вопросы к интервью"})+'</span></div>'
       +'<div class="scq-b">'+items+'</div></div>';
@@ -2538,11 +2555,14 @@ function openScene(k,keep){
   if(!keep)openRef={type:'scene',id:k}; clearPin(); pinScene=k; setSceneHL(k,true);
   const facts=(sceneAnchors[k]||[]).map(bi=>'<button data-go-beat="'+bi+'"><b>'+BEATS[bi].y+'</b> · '+L(BEATS[bi].t)+'</button>').join('')
     || '<span class="nofacts">'+L(UI.scNoFacts)+'</span>';
-  const ppl=Object.entries(SPK).filter(([id,sp])=>(sp.sc||[]).indexOf(k)>=0)
+  const ppl=Object.entries(SPK).filter(([id,sp])=>sp.status!=='canceled'&&(sp.sc||[]).indexOf(k)>=0)
     .map(([id,sp])=>'<button class="whorow" data-go="'+id+'"><span class="wn">'+sp.nm+'</span><span class="wa">'+(ANG[id]?L(ANG[id]):L(sp.theme||{en:'',ru:''}))+'</span></button>').join('')
     || '<span style="color:var(--mute)">—</span>';
   const themes=(SCENE_THEMES[k]||[]).map(th=>{
-    const who=(th.who||[]).map(id=>SPK[id]?'<button class="thspk" data-go="'+id+'">'+SPK[id].nm+'</button>':'').join('');
+    const who=(th.who||[]).map(id=>{
+      if(id&&typeof id==='object'&&id.search) return '<span class="thspk-x" title="'+L({en:"looking for a speaker for this",ru:"ищем спикера под эту тему"})+'">'+L(id.search)+'</span>';
+      return SPK[id]&&SPK[id].status!=='canceled'?'<button class="thspk" data-go="'+id+'">'+SPK[id].nm+'</button>':'';
+    }).join('');
     return '<div class="scth"><div class="scth-t">'+L(th.t)+'</div><div class="scth-who">'+(who||'<span class="scth-none">'+L(UI.scNoSpk)+'</span>')+'</div></div>';
   }).join('') || '<span class="nofacts">'+L(UI.fsFill)+'</span>';
   const frames=(SCENE_FRAMES[k]||[]).map(fr=>
@@ -2751,7 +2771,7 @@ function svSubmit(){
     .catch(()=>{ if(st)st.textContent=L({en:'Send error — try again.',ru:'Ошибка отправки — ещё раз.'}); });
 }
 const SPK_GEO=[
-  {t:{en:"Glidewell — at the company now",ru:"Glidewell — сейчас работают в компании"}, ids:['jim','sasaki','leeson','azernikov','chi','manalili','friebauer','norton']},
+  {t:{en:"Glidewell — at the company now",ru:"Glidewell — сейчас работают в компании"}, ids:['jim','leeson','azernikov','chi','manalili','friebauer','norton']},
   {t:{en:"California — outside the company",ru:"Калифорния — вне компании"}, ids:['venard','dorfman','ditolla','park']},
   {t:{en:"Other states",ru:"Другие штаты"}, ids:['farran','spear','christensen','rella','kois','kosinski','resnik','patel']}
 ];
@@ -2771,9 +2791,17 @@ function openPersonalities(keep){
       +'</div></div>';
   };
   const placed={}; SPK_GEO.forEach(g=>g.ids.forEach(id=>placed[id]=1));
-  const leftovers=Object.keys(SPK).filter(id=>!placed[id]);
+  const canceled=Object.keys(SPK).filter(id=>SPK[id].status==='canceled');
+  const leftovers=Object.keys(SPK).filter(id=>!placed[id]&&SPK[id].status!=='canceled');
+  const cncCard=function(id){var sp=SPK[id];
+    return '<div class="cnc-card">'
+      +(SPK_IMG[id]?'<img src="'+SPK_IMG[id]+'" alt="" data-go="'+id+'">':'')
+      +'<div><div class="cnc-nm" data-go="'+id+'">'+sp.nm+' <span class="x-badge" title="'+L({en:'Canceled',ru:'Отменён'})+'">✕</span></div>'
+      +'<div class="cnc-note">'+L({en:'Removed from the interview list — see profile for where the info moved.',ru:'Убран из списка интервью — куда ушла инфа, см. профиль.'})+'</div></div></div>';
+  };
   const secs=SPK_GEO.map(g=>'<div class="cast-sec">'+L(g.t)+'</div><div class="pers-grid sv-grid">'+g.ids.filter(id=>SPK[id]).map(cardFor).join('')+'</div>').join('')
     +(leftovers.length?'<div class="cast-sec">'+L({en:'Unsorted',ru:'Вне групп'})+'</div><div class="pers-grid sv-grid">'+leftovers.map(cardFor).join('')+'</div>':'');
+  const cncSec=canceled.length?'<div class="cast-sec" style="margin-top:24px;color:#C0392B">'+L({en:'Canceled',ru:'Отменённые'})+'</div><div class="pers-grid">'+canceled.map(cncCard).join('')+'</div>':'';
   const moreBlocks=MORE_PEOPLE.map(b=>'<dt>'+L(b.g)+'</dt><dd>'+b.people.map(p=>'<div class="mp-row">'+(MORE_IMG[p.n]?'<img class="mp-av" src="'+MORE_IMG[p.n]+'" alt="">':'')+'<div class="mp-tx"><b>'+p.n+'</b>'+(p.r?' — '+L(p.r):'')+'</div></div>').join('')+'</dd>').join('');
   pin.innerHTML='<div class="kicker">'+L(UI.persKicker)+'</div>'
     +'<h2>'+L({en:'Speaker connections — survey',ru:'Связи со спикерами — опрос'})+'</h2>'
@@ -2782,7 +2810,8 @@ function openPersonalities(keep){
     +'<div class="sv-foot"><input class="sv-name" placeholder="'+L({en:'Your name',ru:'Ваше имя'})+'" value="'+svEsc(sv.name)+'"><button type="button" class="sv-send" id="sv-send">'+L({en:'Send',ru:'Отправить'})+'</button><span class="sv-status" id="sv-status"></span></div>'
     +'<div class="cast-sec" style="margin-top:22px">'+L(UI.moreTitle)+'</div>'
     +'<p class="scdesc">'+L(UI.moreIntro)+'</p>'
-    +'<dl>'+moreBlocks+'</dl>';
+    +'<dl>'+moreBlocks+'</dl>'
+    +cncSec;
   show();
 }
 function show(){panel.classList.add('open');panel.setAttribute('aria-hidden','false');}
