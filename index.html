@@ -1853,7 +1853,7 @@ function buildSVG(){
     const py=v=>{ v=String(v); if(/today|now|present/i.test(v))return 2026; const m=v.match(/(\d{4})/); if(m)return +m[1]; const d=v.match(/(\d0)s/); if(d){let base=+d[1],cent=base<=30?2000:1900,yr=cent+base; if(/mid/i.test(v))yr+=5;else if(/late/i.test(v))yr+=7;else if(/early/i.test(v))yr+=2; return yr;} return null; };
     const A=[[1970,2],[1985,5],[1995,9],[2003,15],[2009,26],[2013,42],[2018,60],[2021,74],[2023,86],[2026,100]];
     const gAt=y=>{ if(y<=A[0][0])return A[0][1]; for(let i=1;i<A.length;i++){ if(y<=A[i][0]){ const a=A[i-1],b=A[i]; return a[1]+(b[1]-a[1])*(y-a[0])/(b[0]-a[0]); } } return 100; };
-    const base=LINEY, peak=120, amp=base-peak;
+    const base=LINEY, peak=96, amp=base-peak;
     const pts=BEATS.map(b=>({x:b.x,yr:py(b.y)||1970})).filter(p=>p.yr>=1969).map(p=>({x:p.x,y:base-(gAt(p.yr)/100)*amp})).sort((p,q)=>p.x-q.x);
     if(pts.length>1){
       const line=pts.map(p=>p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' L ');
@@ -1865,8 +1865,8 @@ function buildSVG(){
   (function(){
     const py=v=>{ v=String(v); if(/today|now|present/i.test(v))return 2026; const m=v.match(/(\d{4})/); if(m)return +m[1]; const d=v.match(/(\d0)s/); if(d){let b=+d[1]; return (b<=30?2000:1900)+b;} return 1970; };
     const series=[
-      {A:[[1970,1],[1984,2],[1989,4],[1993,8],[2001,16],[2007,24],[2018,55],[2020,100],[2026,100]], peak:155, stroke:'#5B8DEF', dash:'', op:0.55},
-      {A:[[1970,0.5],[1984,1],[2007,30],[2018,50],[2020,95],[2026,100]], peak:185, stroke:'#9AA6B2', dash:'5 4', op:0.6}
+      {A:[[1970,1],[1984,2],[1989,4],[1993,8],[2001,16],[2007,24],[2018,55],[2020,100],[2026,100]], peak:124, stroke:'#5B8DEF', dash:'', op:0.55},
+      {A:[[1970,0.5],[1984,1],[2007,30],[2018,50],[2020,95],[2026,100]], peak:150, stroke:'#9AA6B2', dash:'5 4', op:0.6}
     ];
     series.forEach(function(S){
       const gAt=y=>{ if(y<=S.A[0][0])return S.A[0][1]; for(let i=1;i<S.A.length;i++){ if(y<=S.A[i][0]){ const a=S.A[i-1],b=S.A[i]; return a[1]+(b[1]-a[1])*(y-a[0])/(b[0]-a[0]); } } return 100; };
@@ -1997,8 +1997,8 @@ function buildLayer(){
         +'<span class="pin-lbl hi'+(B.pos===0?' lbl-edge':'')+'">'+L(B.nm)+'</span></div>';
     }
   });
-  h+='<div class="morep" data-pers="1" style="left:88px;top:'+(LINEY-112)+'px"><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div><div class="mp-sub">'+L(UI.persSub)+' · '+Object.keys(SPK).filter(id=>SPK[id].status!=='canceled').length+' + '+MORE_PEOPLE.reduce((a,b)=>a+b.people.length,0)+'</div></div>';
-  h+='<div class="linelegend" style="left:270px;top:'+(LINEY-116)+'px">'
+  h+='<div class="morep" data-pers="1" style="left:88px;top:26px"><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div><div class="mp-sub">'+L(UI.persSub)+' · '+Object.keys(SPK).filter(id=>SPK[id].status!=='canceled').length+' + '+MORE_PEOPLE.reduce((a,b)=>a+b.people.length,0)+'</div></div>';
+  h+='<div class="linelegend" style="left:270px;top:22px">'
     +'<div class="lgnd-row" data-metric="cap"><span class="lgnd-sw cap"></span>'+L(UI.legCap)+'</div>'
     +'<div class="lgnd-row" data-metric="territory"><span class="lgnd-sw terr"></span>'+L(UI.legTerr)+'</div>'
     +'<div class="lgnd-row" data-metric="employees"><span class="lgnd-sw emp"></span>'+L(UI.legEmp)+'</div>'
@@ -2023,7 +2023,7 @@ function buildLayer(){
     }
     // --- Archival book photos: thumbnails ABOVE the line at their year; click → lightbox (no caption) ---
     if(typeof BOOK_PHOTOS!=='undefined' && BOOK_PHOTOS.length){
-      const PH=66, PW=Math.round(PH*16/9), GAP=7, TOP=LINEY-116, BOOKTOP=LINEY-116; let lastRight=445;
+      const PH=66, PW=Math.round(PH*16/9), GAP=7, TOP=22, BOOKTOP=22; let lastRight=445;
       [...BOOK_PHOTOS].sort((a,b)=>a.yr-b.yr).forEach((p,i)=>{
         let left=yToX(p.yr)-PW/2; if(left<lastRight+GAP) left=lastRight+GAP; lastRight=left+PW;
         h+='<div class="line-photo'+(p.film?' lp-film':'')+(p.archive?' lp-archive':'')+'" data-src="'+p.src+'"'+(p.film?' data-film="film.html"':'')+(p.archive?' data-archive="1"':'')+' style="left:'+left.toFixed(1)+'px;top:'+((p.film||p.archive)?TOP:BOOKTOP)+'px;width:'+PW+'px;height:'+PH+'px" title="'+(p.film?'About the film':p.archive?'Archive hunt':p.yr)+'">'
