@@ -1407,7 +1407,7 @@ const MORE_PEOPLE = [
 ];
 
 const X0=190, DX=252, LINEY=300, PAD=190;
-const SPKROWY=612, FILMDIV=624, FBTOP=640, FBH=54, FILMLINEY=640, BEATDIV=716, BEATY=740, FRAMEDIV=778, FRAMETOP=790, FRAMEH=54, HERODIV=870, HEROW0=888, HERO_DY=22, PDIV=966, ACCY=988, PROW0=1012, PROW_DY=24, CALDIV=966, CALTOP=988, CALH=46, JIMDIV=46, JIMLINEY=28, STAGEH=1060;
+const SPKROWY=612, FILMDIV=624, FBTOP=640, FBH=54, FILMLINEY=640, BEATDIV=716, BEATY=740, FRAMEDIV=778, FRAMETOP=790, FRAMEH=54, HERODIV=870, HEROW0=888, HERO_DY=22, PDIV=966, ACCY=988, PROW0=1012, PROW_DY=24, CALDIV=966, CALTOP=988, CALH=46, JIMDIV=46, JIMLINEY=28, STAGEH=1038;
 BEATS.forEach((b,i)=>b.x=X0+i*DX);
 const STAGEW=X0+(BEATS.length-1)*DX+PAD;
 const stage=document.getElementById('stage'), draw=document.getElementById('draw'), layer=document.getElementById('layer');
@@ -2816,7 +2816,9 @@ function openPersonalities(keep){
       +'<div><div class="cnc-nm" data-go="'+id+'">'+sp.nm+' <span class="x-badge" title="'+L({en:'Canceled',ru:'Отменён'})+'">✕</span></div>'
       +'<div class="cnc-note">'+L({en:'Canceled — 2026-07-24',ru:'Отменён — 2026-07-24'})+'</div></div></div>';
   };
-  const talkFirst=ids=>ids.filter(id=>SPK[id]).slice().sort((a,b)=>(SPK[b].talking?1:0)-(SPK[a].talking?1:0));
+  // order inside each block: in-progress ✏️ (talking) on top → normal → already-shot ✓ (interviewed) at the bottom. Movement stays within the block.
+  const rankSpk=id=>SPK[id].talking?0:((typeof INTERVIEWED!=='undefined'&&INTERVIEWED[id])?2:1);
+  const talkFirst=ids=>ids.filter(id=>SPK[id]).slice().sort((a,b)=>rankSpk(a)-rankSpk(b));
   const secs=SPK_GEO.map(g=>'<div class="cast-sec">'+L(g.t)+'</div><div class="pers-grid sv-grid">'+talkFirst(g.ids).map(cardFor).join('')+'</div>').join('')
     +(leftovers.length?'<div class="cast-sec">'+L({en:'Unsorted',ru:'Вне групп'})+'</div><div class="pers-grid sv-grid">'+leftovers.map(cardFor).join('')+'</div>':'');
   const cncSec=canceled.length?'<div class="cast-sec" style="margin-top:24px">'+L({en:'Canceled',ru:'Отменённые'})+'</div><div class="pers-grid">'+canceled.map(cncCard).join('')+'</div>':'';
