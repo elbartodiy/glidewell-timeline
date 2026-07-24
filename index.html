@@ -1373,7 +1373,7 @@ const SPK = {
     loc:{en:"Phoenix, AZ",ru:"Phoenix, AZ"},
     theme:{en:"Accessibility / reach · his mantra is almost verbatim the film's thesis.",ru:"Доступность / охват · его мантра почти дословно совпадает с тезисом фильма."},
     access:{en:"Phoenix, AZ (travel). Warm and easy — a built-in distribution channel.",ru:"Phoenix, AZ (выезд). Тёплый и лёгкий — готовый канал дистрибуции."}},
-  ameduri:{nm:"Anna Ameduri", sc:[], g:"e", status:"ok", talking:1,
+  ameduri:{nm:"Anna Ameduri", sc:[5,10,11], g:"e", status:"ok", talking:1,
     prepQs:{en:[
       "Millions of cases move through here every year. Walk us through the journey of a single case, door to door.",
       "When you started 25 years ago, what did this operation look like — and what does its scale make possible now?",
@@ -1402,7 +1402,7 @@ const SPK = {
     loc:{en:"Irvine, CA",ru:"Irvine, CA"},
     theme:{en:"The invisible logistics engine behind Glidewell's scale.",ru:"Невидимый логистический движок за масштабом Glidewell."},
     access:{en:"In active scheduling — confirm day/time. Studio, Glidewell block.",ru:"В процессе согласования — подтвердить день/время. Студия, блок Glidewell."}},
-  labao:{nm:"Edsel Labao", sc:[], g:"e", status:"ok", talking:1,
+  labao:{nm:"Edsel Labao", sc:[5,11,12], g:"e", status:"ok", talking:1,
     prepQs:{en:[
       "Everything here now runs on data. Where does a single case actually 'live', from scan to shipped crown?",
       "For a patient — what has to be true, invisibly, for a crown designed in the cloud to be safe and private?",
@@ -1628,7 +1628,7 @@ const SCENE_THEMES={
   4:[ {t:{en:"Adoption barriers: ~$55K cost, learning curve, \"who do I call if it fails\"",ru:"Барьеры перехода: цена ~$55K, кривая обучения, «кому звонить, если не пройдёт»"},who:["kois","manalili"]},
       {t:{en:"Psychology of a clinician's resistance to change",ru:"Психология сопротивления переменам у врача"},who:["spear","kois"]} ],
   5:[ {t:{en:"Turning a physical impression into digital data; the data feeds the AI",ru:"Как физический слепок превращается в цифру; данные кормят ИИ"},who:["chi","azernikov"]},
-      {t:{en:"The invisible workforce — people \"on the line\"",ru:"Невидимая рабочая сила — люди «на линии»"},who:[]} ],
+      {t:{en:"The invisible workforce — people \"on the line\"",ru:"Невидимая рабочая сила — люди «на линии»"},who:["ameduri","labao"]} ],
   6:[ {t:{en:"Psychology of avoidance: fear, cost, time",ru:"Психология избегания: страх, стоимость, время"},who:["dorfman"]},
       {t:{en:"The emotional price: years of hiding a smile",ru:"Эмоциональная цена: годами прятать улыбку"},who:["dorfman"]} ],
   7:[ {t:{en:"The economics of access: why care is slow and expensive",ru:"Экономика доступности: почему лечение долгое и дорогое"},who:["farran",FINX]} ],
@@ -1637,13 +1637,13 @@ const SCENE_THEMES={
       {t:{en:"Memory of the analog era, from the inside",ru:"Память аналоговой эпохи изнутри"},who:["venard","ditolla"]} ],
   9:[ {t:{en:"The cost formula: line items × visits",ru:"Формула стоимости: число позиций × визитов"},who:[FINX,"farran"]},
       {t:{en:"How one visit collapses the price (chairside)",ru:"Как один визит схлопывает цену (chairside)"},who:["chi"]} ],
-  10:[ {t:{en:"Vertical integration & accessibility",ru:"Вертикальная интеграция и доступность"},who:[FINX,"ditolla"]},
+  10:[ {t:{en:"Vertical integration & accessibility",ru:"Вертикальная интеграция и доступность"},who:[FINX,"ameduri","ditolla"]},
        {t:{en:"Education & reinvesting in the profession",ru:"Образование и реинвест в профессию"},who:["park","norton"]},
        {t:{en:"Implants as the standard of care",ru:"Импланты как стандарт лечения"},who:["resnik","patel","manalili"]},
        {t:{en:"Independent proof",ru:"Независимое доказательство"},who:["christensen","rella"]} ],
-  11:[ {t:{en:"Automation & AI manufacturing (BruxZir Factory)",ru:"Автоматизация и ИИ-производство (фабрика BruxZir)"},who:["leeson","chi"]},
+  11:[ {t:{en:"Automation & AI manufacturing (BruxZir Factory)",ru:"Автоматизация и ИИ-производство (фабрика BruxZir)"},who:["leeson","chi","labao","ameduri"]},
        {t:{en:"New materials and appliances coming out",ru:"Новые материалы и аппараты"},who:["friebauer"]} ],
-  12:[ {t:{en:"R&D, patents, data as the engine of the future",ru:"R&D, патенты, данные как движок будущего"},who:["friebauer","azernikov","leeson"]} ],
+  12:[ {t:{en:"R&D, patents, data as the engine of the future",ru:"R&D, патенты, данные как движок будущего"},who:["friebauer","azernikov","leeson","labao"]} ],
   13:[ {t:{en:"The future of the craft — R&D and Jim casting forward",ru:"Будущее ремесла — R&D и взгляд Джима вперёд"},who:["jim","leeson","azernikov","friebauer"]},
        {t:{en:"Education & mentorship (Guiding Leaders)",ru:"Обучение и менторство (Guiding Leaders)"},who:["norton","park"]},
        {t:{en:"Implants for the next generation",ru:"Импланты для нового поколения"},who:["kosinski"]},
@@ -2527,7 +2527,11 @@ const SCENE_ASKS = {
     {h:{en:"The psychology of resistance",ru:"Психология сопротивления"}, q:"You teach seasoned dentists. What is the real fear underneath 'I've done it this way for thirty years'?"}]}],
   5:[{spk:'chi', role:'craft', items:[{h:{en:"Where the human overrides the AI",ru:"Где человек правит ИИ"}, q:"As a CDT you approve what the AI proposes. Where do you still override the machine — and what does that tell us about what 'automated' actually means?"}]},
    {spk:'leeson', role:'builder', items:[
-    {h:{en:"The invisible workforce",ru:"Невидимая рабочая сила"}, q:"Millions of physical impressions were scanned into data by human hands here. Show us where the craftsmen's knowledge lives inside the machines now."}]}],
+    {h:{en:"The invisible workforce",ru:"Невидимая рабочая сила"}, q:"Millions of physical impressions were scanned into data by human hands here. Show us where the craftsmen's knowledge lives inside the machines now."}]},
+   {spk:'ameduri', role:'builder', items:[
+    {h:{en:"The scale nobody sees",ru:"Масштаб, которого не видно"}, q:"Millions of physical cases move through your logistics before anyone scans them. Show us the human operation behind the numbers."}]},
+   {spk:'labao', role:'builder', items:[
+    {h:{en:"Where physical becomes data",ru:"Где физическое становится данными"}, q:"Millions of impressions became digital records here. Where does that conversion live — and what keeps it all connected?"}]}],
   6:[{spk:'farran', role:'reach', items:[
     {h:{en:"Why they don't come",ru:"Почему не приходят"}, q:"Rank the three walls — cost, fear, time. Which one falls first when a town gets same-day dentistry?"}]},
    {spk:'dorfman', role:'witness', items:[
@@ -2554,12 +2558,18 @@ const SCENE_ASKS = {
    {spk:'rella', items:[
     {h:{en:"The proof",ru:"Доказательство"}, q:"You ran the studies. What surprised you most about how these restorations survived?"}]},
    {spk:'norton', role:'builder', items:[
-    {h:{en:"Giving it away",ru:"Отдавать бесплатно"}, q:"Guiding Leaders is free. Why does a for-profit lab give education away — and what does the company honestly get back?"}]}],
+    {h:{en:"Giving it away",ru:"Отдавать бесплатно"}, q:"Guiding Leaders is free. Why does a for-profit lab give education away — and what does the company honestly get back?"}]},
+   {spk:'ameduri', role:'economics', items:[
+    {h:{en:"Scale into affordability",ru:"Масштаб в доступность"}, q:"Owning logistics end-to-end — where exactly does scale turn into a lower price for the patient?"}]}],
   11:[{spk:'chi', role:'guide', items:[{h:{en:"Where the hand is still needed",ru:"Где ещё нужна рука"}, q:"You bridge the lab and the chair. On the factory floor and in the office both — where is a human hand still genuinely indispensable?"}]},
    {spk:'leeson', role:'anchor', items:[
     {h:{en:"Walking the factory",ru:"Проход по фабрике"}, q:"Walk the line with us — from a scan arriving to a crown shipping. Where are the humans now, and what exactly do they do?"}]},
    {spk:'friebauer', role:'craft', items:[
-    {h:{en:"Materials at scale",ru:"Материалы в масштабе"}, q:"A chalk-soft disc becomes a tooth harder than enamel. Explain the furnace and the 20% shrink like we're patients, not engineers."}]}],
+    {h:{en:"Materials at scale",ru:"Материалы в масштабе"}, q:"A chalk-soft disc becomes a tooth harder than enamel. Explain the furnace and the 20% shrink like we're patients, not engineers."}]},
+   {spk:'labao', role:'builder', items:[
+    {h:{en:"Behind the robots",ru:"За роботами"}, q:"When the line runs itself, what are the systems and the data doing behind the robots?"}]},
+   {spk:'ameduri', role:'builder', items:[
+    {h:{en:"Automation beyond the factory",ru:"Автоматизация за пределами цеха"}, q:"Automation isn't only on the factory floor — where did it change logistics, and what did it free your people to do?"}]}],
   12:[{spk:'leeson', role:'anchor', items:[{h:{en:"What the line does next",ru:"Что линия сделает дальше"}, q:"What can the factory do next year that it can't today — and what is the R&D bet that isn't public yet?"}]},
    {spk:'chi', role:'guide', items:[{h:{en:"Where the lab ends",ru:"Где кончается лаборатория"}, q:"You've said the dental office becomes more self-sufficient. Ten years out — where does the lab end and the chair begin?"}]},
    {spk:'manalili', role:'nextgen', items:[{h:{en:"Full-arch, for the fearful patient",ru:"Full-arch для боящегося пациента"}, q:"Digital full-arch implants — what changes for the patient who could never face conventional surgery?"}]},
@@ -2569,7 +2579,9 @@ const SCENE_ASKS = {
    {spk:'resnik', role:'proof', items:[
     {h:{en:"Implants for the GP",ru:"Импланты для обычного врача"}, q:"You said the days of general dentists not placing implants are over. How does guided surgery move expertise from hands into the system — and where is the limit?"}]},
    {spk:'kosinski', role:'witness', items:[
-    {h:{en:"Teaching the leap",ru:"Научить прыжку"}, q:"14,000 implants in — what can a weekend course safely teach a general dentist today that took you a career to learn?"}]}],
+    {h:{en:"Teaching the leap",ru:"Научить прыжку"}, q:"14,000 implants in — what can a weekend course safely teach a general dentist today that took you a career to learn?"}]},
+   {spk:'labao', role:'builder', items:[
+    {h:{en:"Data as the raw material of what's next",ru:"Данные как сырьё для следующего"}, q:"Data is the raw material of everything coming next. Where is all of it heading — and what does that make possible?"}]}],
   13:[{spk:'leeson', role:'builder', items:[{h:{en:"What the young engineers build",ru:"Что строят молодые инженеры"}, q:"What are the young engineers building that you didn't — and what will they get right that your generation got wrong?"}]},
    {spk:'park', role:'builder', items:[{h:{en:"What the next generation needs taught",ru:"Чему учить следующее поколение"}, q:"You built the education arm. What does the next generation of dentists need taught that yours never was?"}]},
    {spk:'kois', role:'craft', items:[{h:{en:"What can't be handed to a screen",ru:"Что нельзя передать экрану"}, q:"You still teach every course yourself. What in this craft can never be handed off to a screen?"}]},
