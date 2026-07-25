@@ -2310,7 +2310,7 @@ function openCast(keep){
   const grp=p=>(!p.date?1:(p.date<today?2:0));
   const list=CAST_OUTREACH.slice().sort((a,b)=>{var ga=grp(a),gb=grp(b); if(ga!==gb)return ga-gb; if(ga===1)return 0; return a.date<b.date?-1:(a.date>b.date?1:0);});
   const MON={en:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],ru:['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек']};
-  const dlbl=p=>{ if(!p.date)return L({en:'date TBC',ru:'дата TBC'}); var m=+p.date.slice(5,7),d=+p.date.slice(8,10); return d+' '+MON[LANG][m-1]; };
+  const dlbl=p=>{ if(!p.date)return L({en:'date TBC',ru:'дата TBC'}); var m=+p.date.slice(5,7),d=+p.date.slice(8,10); return d+' '+MON[lang][m-1]; };
   const rows=list.map(p=>{ const s=ST[p.status]||ST.ready;
     const av=(typeof SPK_IMG!=='undefined'&&SPK_IMG[p.k])?'<img src="'+SPK_IMG[p.k]+'" alt="">':'<span class="ct-ph">'+p.nm.charAt(0)+'</span>';
     return '<tr data-go="'+p.k+'" title="'+L({en:'Open profile',ru:'Открыть профиль'})+'">'
