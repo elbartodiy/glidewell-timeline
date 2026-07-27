@@ -238,6 +238,15 @@
   #panel .ct-shoot{line-height:1.4}
   #panel .ct-strow{margin-top:6px}
   #panel .ct-st{font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap}
+  #panel .casttbl tbody tr.ct-main.open{background:var(--red-tint,#fbecec)}
+  #panel .ct-nmlink{cursor:pointer;border-bottom:1px solid transparent}
+  #panel .ct-nmlink:hover{border-bottom-color:currentColor}
+  #panel .ct-more{color:var(--mute);font-size:11px}
+  #panel .ct-detail{display:none}
+  #panel .ct-detail.show{display:table-row}
+  #panel .ct-detail td{background:var(--paper,#f2f5f8);padding:12px 16px}
+  #panel .ct-note{white-space:pre-line;font-size:13px;line-height:1.55;color:var(--ink)}
+  #panel .ct-note-empty{color:var(--mute);font-style:italic}
   .cast-link{color:inherit;text-decoration:none}
   .x-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:8px;border:1.6px solid #C0392B;border-radius:50%;color:#C0392B;font-weight:800;font-size:12px;line-height:1;vertical-align:middle;cursor:default}
   #panel .thspk-x{font-family:var(--body);font-size:13px;background:#FBE4E4;border:1px dashed #E3A6A6;color:#B23B3B;border-radius:10px;padding:6px 12px}
@@ -2286,15 +2295,15 @@ function openCalMonth(mk,keep){
 }
 // Cast outreach tracker — opened from the 'w' in the footer "Made with". k = SPK key (row links to the profile). date = primary shoot date (null = not set yet).
 const CAST_OUTREACH=[
-  {k:"park", date:"2026-07-31", nm:"Neil Park", staff:true, who:{en:"Glidewell · VP Clinical Affairs",ru:"Glidewell · VP Clinical Affairs"}, loc:"Irvine", status:"ready",
-   shoot:{en:"Fri Jul 31 on campus (during his talk): reportage of the walk-out + talk, then ~30-min walk-the-floor + ~90-min interview. Exact time with Eric.",ru:"Пт 31 июля на кампусе (во время доклада): репортаж выхода + доклад, затем ~30 мин прогулка по цеху + ~90 мин интервью. Время с Эриком."}},
+  {k:"park", date:"2026-07-31", nm:"Neil Park", staff:true, who:{en:"Glidewell · VP Clinical Affairs",ru:"Glidewell · VP Clinical Affairs"}, loc:"Irvine", status:"confirmed", note:{en:"His reply (Jul 24, 2026):\n\n“That sounds great. I will look forward to meeting you on Friday, and then we can schedule the sit down discussion for another time, perhaps the next week.”\n\n— Neil Park",ru:"Его ответ (24 июля 2026):\n\n«That sounds great. I will look forward to meeting you on Friday, and then we can schedule the sit down discussion for another time, perhaps the next week.»\n\n— Neil Park"},
+   shoot:{en:"Confirmed — replied yes. Fri Jul 31 on campus: we meet + grab reportage (his walk-out, the talk). The sit-down interview moves to the following week (early Aug) — day TBC.",ru:"Подтвердил — ответил «да». Пт 31 июля на кампусе: знакомимся + берём репортаж (выход, доклад). Само интервью — на следующую неделю (начало августа) — день уточняется."}},
   {k:"patel", date:"2026-08-06", nm:"Paresh Patel", staff:false, who:{en:"External · implants / access",ru:"Внешний · импланты / доступность"}, loc:"Raleigh area, NC", status:"sent",
    shoot:{en:"Interview at the Full-Arch Symposium (Irvine) Aug 6-7 + candid footage at the new Raleigh center Sep 11-12.",ru:"Интервью на симпозиуме Full-Arch (Ирвайн) 6-7 авг + живые кадры в новом центре Raleigh 11-12 сен."}},
   {k:"resnik", date:"2026-08-15", nm:"Randy Resnik", staff:false, who:{en:"External · implant education",ru:"Внешний · имплант-образование"}, loc:"Pittsburgh, PA", status:"confirmed",
    shoot:{en:"In Irvine in August and November — ~90-min interview on campus, ideally the August visit (day TBC).",ru:"В Ирвайне в августе и ноябре — ~90 мин интервью на кампусе, лучше в августовский визит (день уточняется)."}},
   {k:"kosinski", date:"2026-10-28", nm:"Tim Kosinski", staff:false, who:{en:"External · implants",ru:"Внешний · импланты"}, loc:"Bingham Farms, MI", status:"sent",
    shoot:{en:"After late October, or catch him at the new Raleigh, NC center. ~45-60 min interview + b-roll.",ru:"После конца окт или в новом центре Raleigh, NC. ~45-60 мин интервью + b-roll."}},
-  {k:"farran", date:null, nm:"Howard Farran", staff:false, who:{en:"External · Dentaltown",ru:"Внешний · Dentaltown"}, loc:"Phoenix, AZ", status:"confirmed",
+  {k:"farran", date:null, nm:"Howard Farran", staff:false, note:{en:"His reply (Jul 24, 2026):\n\n“You are much busier than I am, so rather than working around my schedule, I’d rather work around yours. Just tell me the best date and time for me to fly out to Glidewell, and I’ll be there. Whatever works best for you and your team works for me.\n\nI’m genuinely honored to be included in this project. Jim’s story deserves to be told, and I can’t think of anyone more deserving. He changed dentistry by making high quality care more affordable for millions of patients, and I believe that legacy will only become more appreciated with time.\n\nI’m looking forward to meeting you and helping in any way I can. Just let me know where you need me, when you need me there, and what you’d like me to do.\n\nWarm regards,\nHoward”",ru:"Его ответ (24 июля 2026):\n\n“You are much busier than I am, so rather than working around my schedule, I’d rather work around yours. Just tell me the best date and time for me to fly out to Glidewell, and I’ll be there. Whatever works best for you and your team works for me.\n\nI’m genuinely honored to be included in this project. Jim’s story deserves to be told, and I can’t think of anyone more deserving. He changed dentistry by making high quality care more affordable for millions of patients, and I believe that legacy will only become more appreciated with time.\n\nI’m looking forward to meeting you and helping in any way I can. Just let me know where you need me, when you need me there, and what you’d like me to do.\n\nWarm regards,\nHoward”"}, who:{en:"External · Dentaltown",ru:"Внешний · Dentaltown"}, loc:"Phoenix, AZ", status:"confirmed",
    shoot:{en:"Sold his practice → fully flexible. ~90-min interview on campus + b-roll at his Dentaltown studio; awaiting his dates.",ru:"Продал практику → полностью гибок. ~90 мин интервью на кампусе + b-roll в его студии Dentaltown; ждём его даты."}},
   {k:"ameduri", date:null, nm:"Anna Ameduri", staff:true, who:{en:"Glidewell · VP Global Logistics",ru:"Glidewell · VP глобальной логистики"}, loc:"Irvine", status:"ready",
    shoot:{en:"Studio 130 on one of our studio days — ~45-60 min interview + b-roll.",ru:"Studio 130 в один из студийных дней — ~45-60 мин интервью + b-roll."}},
@@ -2313,12 +2322,14 @@ function openCast(keep){
   const dlbl=p=>{ if(!p.date)return L({en:'date TBC',ru:'дата TBC'}); var m=+p.date.slice(5,7),d=+p.date.slice(8,10); return d+' '+MON[lang][m-1]; };
   const rows=list.map(p=>{ const s=ST[p.status]||ST.ready;
     const av=(typeof SPK_IMG!=='undefined'&&SPK_IMG[p.k])?'<img src="'+SPK_IMG[p.k]+'" alt="">':'<span class="ct-ph">'+p.nm.charAt(0)+'</span>';
-    return '<tr data-go="'+p.k+'" title="'+L({en:'Open profile',ru:'Открыть профиль'})+'">'
+    const note=p.note?L(p.note):'';
+    const detail='<tr class="ct-detail" id="ctd-'+p.k+'"><td colspan="4"><div class="ct-note'+(note?'':' ct-note-empty')+'">'+(note||L({en:'No saved notes yet.',ru:'Пока нет заметок.'}))+'</div></td></tr>';
+    return '<tr class="ct-main" data-row="'+p.k+'" title="'+L({en:'Click to expand · click the name to open the profile',ru:'Клик — развернуть · клик по имени — профиль'})+'">'
       +'<td class="ct-face">'+av+'</td>'
-      +'<td class="ct-nm">'+p.nm+'<div class="ct-date">'+dlbl(p)+'</div></td>'
+      +'<td class="ct-nm"><span class="ct-nmlink" data-go="'+p.k+'">'+p.nm+'</span>'+(p.note?' <span class="ct-more">▾</span>':'')+'<div class="ct-date">'+dlbl(p)+'</div></td>'
       +'<td class="ct-who">'+(p.staff?'🟢 ':'⚪ ')+L(p.who)+'<div class="ct-loc">'+p.loc+'</div></td>'
       +'<td class="ct-shoot">'+L(p.shoot)+'<div class="ct-strow"><span class="ct-st" style="color:'+s.c+'">'+s.e+' '+L(s.l)+'</span></div></td>'
-      +'</tr>';}).join('');
+      +'</tr>'+detail;}).join('');
   const done=CAST_OUTREACH.filter(p=>p.status==='sent'||p.status==='confirmed').length;
   pin.innerHTML='<div class="kicker">'+L({en:'Cast · outreach status',ru:'Каст · статус рассылки'})+'</div>'
     +'<h2>'+L({en:'Who we’re filming — status',ru:'Кого снимаем — статус'})+'</h2>'
@@ -3004,6 +3015,8 @@ pin.addEventListener('click',e=>{
   const gp=e.target.closest('[data-go-pers]'); if(gp){openPersonalities();return;}
   const gb=e.target.closest('[data-go-beat]'); if(gb){openBeat(+gb.dataset.goBeat);return;}
   const gs=e.target.closest('[data-go-scene]'); if(gs){openScene(+gs.dataset.goScene);return;}
+  const cn=e.target.closest('.casttbl [data-go]'); if(cn){openSpeaker(cn.dataset.go);return;}
+  const cr=e.target.closest('.casttbl tr.ct-main'); if(cr){var _d=document.getElementById('ctd-'+cr.dataset.row); if(_d)_d.classList.toggle('show'); cr.classList.toggle('open'); return;}
   const g=e.target.closest('[data-go]'); if(g)openSpeaker(g.dataset.go);
 });
 
