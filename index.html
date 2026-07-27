@@ -246,7 +246,7 @@
   #panel .ct-shoot{line-height:1.4}
   #panel .ct-strow{margin:0 0 6px;display:flex;align-items:center;flex-wrap:wrap}
   #panel .ct-st{font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap}
-  #panel .ct-ball{font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap;margin-right:12px}
+  #panel .ct-ball{font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap;margin-top:6px;display:inline-block}
   #panel .ct-next{font-family:var(--mono);font-size:12px;font-weight:700;color:#B4670F;margin:0 0 6px;line-height:1.4}
   #panel .casttbl tr.ct-ball-us td.ct-face{box-shadow:inset 4px 0 0 #E0902A}
   #panel .ct-ours{color:#B4670F;border-left:3px solid #E0902A;padding-left:10px}
@@ -2362,9 +2362,9 @@ function openCast(keep){
     const detail='<tr class="ct-detail" id="ctd-'+p.k+'"><td colspan="4"><div class="ct-note'+(note?'':' ct-note-empty')+'">'+(note||L({en:'No saved notes yet.',ru:'Пока нет заметок.'}))+'</div></td></tr>';
     return '<tr class="ct-main'+(bl==='us'?' ct-ball-us':'')+'" data-row="'+p.k+'" title="'+L({en:'Click to expand · click the name to open the profile',ru:'Клик — развернуть · клик по имени — профиль'})+'">'
       +'<td class="ct-face">'+av+'</td>'
-      +'<td class="ct-nm">'+((typeof SPK!=='undefined'&&p.k&&SPK[p.k])?'<span class="ct-nmlink" data-go="'+p.k+'">'+p.nm+'</span>':'<span class="ct-nm-plain">'+p.nm+'</span>')+(p.note?' <span class="ct-more">▾</span>':'')+'<div class="ct-date">'+dlbl(p)+'</div></td>'
+      +'<td class="ct-nm">'+((typeof SPK!=='undefined'&&p.k&&SPK[p.k])?'<span class="ct-nmlink" data-go="'+p.k+'">'+p.nm+'</span>':'<span class="ct-nm-plain">'+p.nm+'</span>')+(p.note?' <span class="ct-more">▾</span>':'')+'<div class="ct-date">'+dlbl(p)+'</div><div class="ct-ball" style="color:'+b.c+'">'+b.e+' '+L(b.l)+'</div></td>'
       +'<td class="ct-who">'+(p.staff?'🟢 ':'⚪ ')+L(p.who)+'<div class="ct-loc">'+p.loc+'</div></td>'
-      +'<td class="ct-shoot"><div class="ct-strow"><span class="ct-ball" style="color:'+b.c+'">'+b.e+' '+L(b.l)+'</span><span class="ct-st" style="color:'+s.c+'">'+s.e+' '+L(s.l)+'</span></div>'+(nxt?'<div class="ct-next">→ '+nxt+'</div>':'')+'<div class="ct-shoot-txt">'+L(p.shoot)+'</div></td>'
+      +'<td class="ct-shoot"><div class="ct-strow"><span class="ct-st" style="color:'+s.c+'">'+s.e+' '+L(s.l)+'</span></div>'+(nxt?'<div class="ct-next">→ '+nxt+'</div>':'')+'<div class="ct-shoot-txt">'+L(p.shoot)+'</div></td>'
       +'</tr>'+detail;}).join('');
   const done=CAST_OUTREACH.filter(p=>p.status==='sent'||p.status==='confirmed').length;
   const ours=list.filter(p=>ballFor(p)==='us').map(p=>p.nm);
