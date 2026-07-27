@@ -123,7 +123,8 @@
   .catrow:hover{background:transparent!important}
   .lgnd-sep{height:1px;background:var(--line,#d9d6cf);opacity:.7;margin:6px 5px}
   .persbig,.linelegend{min-height:128px;box-sizing:border-box}
-  .pers-ico{position:absolute;right:12px;bottom:10px;height:52px;width:auto;pointer-events:none}
+  .persbig{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center}
+  .pers-ico{height:37px;width:auto;pointer-events:none}
   .lgnd-sw.cap{border-top-color:#E11B2A}
   .lgnd-sw.terr{border-top-color:#2C6E9E}
   .lgnd-sw.emp{border-top-color:#5A5550;border-top-style:dashed}
@@ -1970,7 +1971,7 @@ function buildLayer(){
         +'<span class="pin-lbl hi'+(B.pos===0?' lbl-edge':'')+'">'+L(B.nm)+'</span></div>';
     }
   });
-  h+='<div class="morep persbig" data-pers="1" style="left:88px;top:22px"><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div><div class="mp-sub">'+L(UI.persSub)+' · '+Object.keys(SPK).filter(id=>SPK[id].status!=='canceled').length+' + '+MORE_PEOPLE.reduce((a,b)=>a+b.people.length,0)+'</div><img class="pers-ico" src="icons/pers.png" alt=""></div>';
+  h+='<div class="morep persbig" data-pers="1" style="left:88px;top:22px"><img class="pers-ico" src="icons/pers.png" alt=""><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div></div>';
   h+='<div class="linelegend" style="left:270px;top:22px">'
     +'<div class="lgnd-row" data-metric="cap"><span class="lgnd-sw cap"></span>'+L(UI.legCap)+'</div>'
     +'<div class="lgnd-row" data-metric="territory"><span class="lgnd-sw terr"></span>'+L(UI.legTerr)+'</div>'
