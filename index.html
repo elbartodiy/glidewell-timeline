@@ -49,7 +49,7 @@
   .bar button:hover{border-color:var(--red-bright);color:#fff}
   .bar .legend{margin-left:auto;display:flex;gap:14px;font-family:var(--mono);font-size:11px;flex-wrap:wrap}
   .bar .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle}
-  .lg-g i{background:var(--navy)} .lg-i i{background:var(--slate)} .lg-m i{background:var(--teal)} .lg-s i{background:#fff;border-radius:50%}
+  .lg-g i{background:var(--red)} .lg-i i{background:#3E7BD6} .lg-s i{background:#fff;border-radius:50%}
 
   .scroller{overflow-x:auto;overflow-y:hidden;cursor:grab}
   .scroller.grabbing{cursor:grabbing}
@@ -84,12 +84,12 @@
   .dot.g-g{background:var(--clay)} .dot.g-x,.dot.g-k,.dot.g-e{display:none}
 
   .ev{position:absolute;transform:translateX(-50%);width:226px;background:var(--card);border:1px solid var(--line);
-    border-radius:8px;border-top:3px solid var(--navy);padding:12px 13px;cursor:pointer;transition:box-shadow .15s,transform .15s,opacity .15s;z-index:4}
-  .ev.t-i{border-top-color:var(--slate)} .ev.t-m{border-top-color:var(--teal)}
+    border-radius:8px;border-top:3px solid var(--red);padding:12px 13px;cursor:pointer;transition:box-shadow .15s,transform .15s,opacity .15s;z-index:4}
+  .ev.t-i{border-top-color:var(--teal)}
   .ev:hover,.ev.hl{box-shadow:0 10px 28px -6px rgba(28,32,36,.20),0 2px 6px rgba(28,32,36,.08);transform:translateX(-50%) translateY(-3px);border-color:var(--slate)}
   .ev:focus-visible{outline:none;box-shadow:0 0 0 2px var(--clay);transform:translateX(-50%) translateY(-3px)}
-  .ev .yr{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--navy)}
-  .ev.t-i .yr{color:var(--slate)} .ev.t-m .yr{color:var(--teal)}
+  .ev .yr{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--red)}
+  .ev.t-i .yr{color:var(--teal)}
   .ev h3{font-size:18px;letter-spacing:-.01em;margin:3px 0 5px}
   .ev .d{font-size:12px;line-height:1.45;color:var(--ink-2)}
   .ev .th{font-size:11.5px;line-height:1.4;color:var(--teal);font-style:italic;margin-top:8px;border-top:1px dashed var(--line);padding-top:7px}
@@ -609,17 +609,15 @@
   #scroller .mainrail{stroke:#C4CDDA;stroke-width:3;filter:drop-shadow(0 1px 0 rgba(255,255,255,.95))}
   /* nodes = soft embossed white beads */
   #scroller .nd{stroke:#EEF2F8;stroke-width:3px;filter:drop-shadow(1.5px 1.5px 3px rgba(174,186,206,.75)) drop-shadow(-1.5px -1.5px 2px rgba(255,255,255,.9))}
-  #scroller .nd.t-g{fill:#FBFDFF;stroke:#1C2024;stroke-width:2.6px}
-  #scroller .nd.t-i{fill:#FBFDFF;stroke:#9098A0;stroke-width:2.6px}
-  #scroller .nd.t-m{fill:#FBFDFF;stroke:#137C7C;stroke-width:2.6px}
+  #scroller .nd.t-g,#scroller .nd.t-i,#scroller .nd.t-m{fill:#FBFDFF}
   #scroller .nd:hover{r:9}
   #scroller .nd.hl{fill:var(--accent);stroke:#EAF1FF;filter:drop-shadow(0 2px 6px rgba(91,141,239,.5))}
   /* milestone cards = pillowy raised panels; no hard border; soft top accent */
   #scroller .ev{background:var(--card);border:0;border-radius:16px;box-shadow:7px 7px 18px var(--nm-lo),-7px -7px 16px var(--nm-hi)}
-  #scroller .ev::before{content:"";position:absolute;left:14px;right:14px;top:0;height:3px;border-radius:0 0 3px 3px;background:var(--accent);opacity:.85}
-  #scroller .ev.t-i::before{background:var(--slate)} #scroller .ev.t-m::before{background:var(--teal)}
+  #scroller .ev::before{content:"";position:absolute;left:14px;right:14px;top:0;height:3px;border-radius:0 0 3px 3px;background:var(--red);opacity:.9}
+  #scroller .ev.t-i::before{background:var(--teal)}
   #scroller .ev:hover,#scroller .ev.hl{box-shadow:9px 9px 24px var(--nm-lo),-9px -9px 20px var(--nm-hi);transform:translateX(-50%) translateY(-3px)}
-  #scroller .ev .yr{color:var(--accent)} #scroller .ev.t-i .yr{color:var(--slate)} #scroller .ev.t-m .yr{color:var(--teal)}
+  #scroller .ev .yr{color:var(--red)} #scroller .ev.t-i .yr{color:var(--teal)}
   /* Personalities + legend + thumbs = soft raised pills */
   #scroller .morep{background:var(--card);border:0;border-radius:14px;box-shadow:6px 6px 16px var(--nm-lo),-6px -6px 14px var(--nm-hi)}
   #scroller .morep:hover{box-shadow:8px 8px 20px var(--nm-lo),-8px -8px 18px var(--nm-hi)}
@@ -805,7 +803,7 @@ const UI = {
 };
 
 const BEATS = [
-  {y:"1907", tr:"m", j:["restorative"],
+  {y:"1907", tr:"i", j:["restorative"],
     t:{en:"Lost-wax casting",ru:"Литьё по выплавляемым моделям"},
     d:{en:"Taggart brings lost-wax casting into dentistry — the analog century begins.",ru:"Таггарт переносит литьё по выплавляемым моделям в стоматологию — начинается аналоговый век."},
     th:{en:"The analog century: one restoration, many hands, weeks.",ru:"Аналоговый век: одна работа — много рук, недели."}},
@@ -840,7 +838,7 @@ const BEATS = [
     t:{en:"Consolidation",ru:"Консолидация"},
     d:{en:"Nine labs merge into one centralized plant in Orange (15,000 sq ft, 42 staff); mail now brings the majority of cases.",ru:"Девять лабораторий сливаются в одно централизованное производство в Оранже (15 000 кв. футов, 42 человека); почта приносит большинство кейсов."},
     th:{en:"One machine, fed nationally — the model that scales.",ru:"Одна машина, питаемая со всей страны — модель, которая масштабируется."}},
-  {y:"1985", tr:"m", j:["digital"],
+  {y:"1985", tr:"i", j:["digital"],
     t:{en:"CEREC",ru:"CEREC"},
     d:{en:"First chairside CAD/CAM (Mörmann & Brandestini). Digital cracks the analog monopoly.",ru:"Первый CAD/CAM в кресле (Mörmann & Brandestini). Цифра пробивает аналоговую монополию."},
     th:{en:"Glidewell didn't start digital — its bet isn't 'first,' it's 'for everyone.'",ru:"Цифру запустил не Glidewell — ставка не «первый», а «для всех»."}},
@@ -872,7 +870,7 @@ const BEATS = [
     d:{en:"The Chairside Perspectives newsletter begins — the seed of the Chairside magazine and Glidewell's teaching voice.",ru:"Стартует бюллетень Chairside Perspectives — зерно будущего журнала Chairside и обучающего голоса Glidewell."},
     th:{en:"Teaching becomes a channel — reach turns into trust.",ru:"Обучение становится каналом — охват превращается в доверие."},
     full:{en:"<b>What happened.</b> In August 1998 Glidewell began mailing a modest clinical newsletter to its dentist customers — “Chairside Perspectives” (exact title spelling and launch month to-confirm). It was short, practical, and unglamorous: proven tips and techniques shared by the lab's own on-staff clinicians, the dentists who practiced inside what was becoming the nation's largest dental laboratory. It ran in this newsletter form for roughly eight years before outgrowing the format.<br><br><b>Why it matters (a seed, not the harvest).</b> Be honest about scale: this is a connective beat, not a headline event. A few mailed pages did not move the industry in 1998. What matters is what it seeded — the founding instinct that Glidewell should not only make restorations but teach the dentist how to use them. That instinct is the through-line from the 1980 “education as a bond” beat to everything that follows. Reach, even small reach, was being converted into trust.<br><br><b>The link to the next generation.</b> The newsletter was the chrysalis. By early 2006 the short format could no longer hold the volume and detail Jim wanted to share, and it became “Chairside” magazine — Glidewell's first full-length, magazine-quality clinical publication, later the platform Neil Park edits and extends into Chairside Live. The 1998 leaflet is where that voice first learned to speak directly to a chair-side clinician.<br><br><b>Modern echo.</b> Today the same logic runs on video, webinars, and on-demand CE: teaching is a channel, and the channel builds the relationship that sells the product. One concrete way to fit this to our film — bridge Part 10 (the flywheel) and Part 13 (philosophy): show 1998 as the first turn of a teaching-to-trust flywheel — Glidewell teaches a technique, the dentist succeeds with it, the dentist returns, and that loop, not advertising, is how the best dentistry is made affordable at scale. Teaching becomes a channel; reach becomes trust; trust is the engine of access.<br><br><b>Who can speak to it.</b> Neil Park, as editor-in-chief of Chairside and host of Chairside Live, is the natural narrator of the publishing arc and can trace the editorial DNA from newsletter to magazine to live show. Phil Venard (40+ years, retired) can place 1998 in lived context — what dentists actually received in the mail and why a lab teaching its customers felt novel. Jim can speak to the original intent: why he wanted his clinicians, not marketers, doing the teaching.<br><br><b>Verify before screen.</b> Confirm the exact title (“Chairside Perspective” vs. “Chairside Perspectives”) and the precise launch date (August 1998 per public sources) from an original masthead or archived issue. Confirm the eight-year run and the early-2006 transition to Chairside magazine. Source a scan of an actual 1998 issue for B-roll, and verify who the on-staff clinical authors were at launch. Treat any claim that this was the “first” lab newsletter of its kind as unverified.<br><br><b>CE channels today (Eldon #46).</b> “CE” = Continuing Education — the ongoing courses and credits dentists take across their careers. Glidewell's channels, roughly by reach: <b>live courses</b> (the Symposium is the flagship); the <b>Online Study Club</b> (a weekly webinar — live for CE credit, or on-demand later); <b>online CE courses</b>; <b>Glidewell TV</b>; <b>Chairside magazine</b>; and <b>YouTube</b>. Use this whole spread when the film talks education — don't let Guiding Leaders stand in for all of it.",ru:"<b>Что произошло.</b> В августе 1998 года Glidewell начал рассылать дантистам-клиентам скромный клинический бюллетень — «Chairside Perspectives» (точное написание названия и месяц запуска — на подтверждение). Он был коротким, практичным и нарочито непарадным: проверенные приёмы и техники от собственных штатных клиницистов лаборатории — дантистов, практиковавших внутри будущей крупнейшей зуботехнической лаборатории страны. В формате бюллетеня он выходил около восьми лет, прежде чем перерос формат.<br><br><b>Почему это важно (это семя, а не урожай).</b> Будем честны о масштабе: это связующая веха, а не громкое событие. Несколько страниц по почте не сдвинули индустрию в 1998-м. Важно то, что отсюда выросло — изначальный инстинкт: Glidewell должен не только делать реставрации, но и учить дантиста ими пользоваться. Этот инстинкт — сквозная линия от вехи 1980 года («образование как связь») ко всему дальнейшему. Охват, пусть и малый, превращался в доверие.<br><br><b>Связь со следующим поколением.</b> Бюллетень был коконом. К началу 2006 года короткий формат уже не вмещал объём и детализацию, которыми хотел делиться Джим, и он стал журналом «Chairside» — первым полноформатным клиническим изданием Glidewell, позднее той площадкой, которую редактирует и развивает Нил Парк, вплоть до Chairside Live. Листовка 1998 года — то место, где этот голос впервые научился обращаться напрямую к клиницисту у кресла.<br><br><b>Современное эхо.</b> Сегодня та же логика работает на видео, вебинарах и CE по запросу: обучение — это канал, а канал строит отношения, которые продают продукт. Один конкретный ход для нашего фильма — связать Часть 10 (маховик) и Часть 13 (философия): показать 1998 год как первый оборот маховика «обучение → доверие» — Glidewell учит технике, дантист добивается успеха, дантист возвращается, и эта петля, а не реклама, делает лучшую стоматологию доступной в масштабе. Обучение становится каналом; охват становится доверием; доверие — двигатель доступа.<br><br><b>Кто может об этом рассказать.</b> Нил Парк как главный редактор Chairside и ведущий Chairside Live — естественный рассказчик издательской арки; он проследит редакционную ДНК от бюллетеня к журналу и к живому шоу. Фил Венард (40+ лет, на пенсии) поместит 1998 год в живой контекст — что именно дантисты получали по почте и почему лаборатория, обучающая своих клиентов, казалась чем-то новым. Джим расскажет об изначальном замысле: почему обучать должны были его клиницисты, а не маркетологи.<br><br><b>Проверить до эфира.</b> Подтвердить точное название («Chairside Perspective» или «Chairside Perspectives») и точную дату запуска (по открытым источникам — август 1998) по оригинальному выпуску или архивному скану. Подтвердить восьмилетний срок выхода и переход к журналу Chairside в начале 2006 года. Найти скан реального выпуска 1998 года для B-roll и проверить, кто были штатные клинические авторы на старте. Утверждение, что это был «первый» подобный лабораторный бюллетень, считать неподтверждённым.<br><br><b>Каналы CE сегодня (Eldon #46).</b> «CE» = Continuing Education — продолженное образование, курсы и кредиты, которые дантисты проходят по жизни. Каналы Glidewell, примерно по охвату: <b>живые курсы</b> (флагман — Symposium); <b>Online Study Club</b> (еженедельный вебинар — live за кредиты или запись потом); <b>онлайн-CE-курсы</b>; <b>Glidewell TV</b>; журнал <b>Chairside</b>; <b>YouTube</b>. Использовать весь этот спектр, когда фильм говорит об образовании — не давать Guiding Leaders подменять его собой."}},
-  {y:"1999", tr:"m", j:["restorative"],
+  {y:"1999", tr:"i", j:["restorative"],
     t:{en:"In-Ceram Zirconia",ru:"In-Ceram Zirconia"},
     d:{en:"In-Ceram Zirconia material arrives — zirconia enters the lab a full decade before BruxZir.",ru:"Появляется материал In-Ceram Zirconia — цирконий входит в лабораторию за целое десятилетие до BruxZir."},
     th:{en:"The zirconia story starts quietly, long before the revolution.",ru:"История циркония начинается тихо, задолго до революции."}},
@@ -2023,7 +2021,6 @@ function buildLegend(){
   document.getElementById('legend').innerHTML=
      '<span class="lg-g"><i></i>'+L(UI.legGlide)+'</span>'
     +'<span class="lg-i"><i></i>'+L(UI.legInd)+'</span>'
-    +'<span class="lg-m"><i></i>'+L(UI.legMat)+'</span>'
     +'<span class="lg-s"><i></i>'+L(UI.legSpk)+'</span>';
 }
 
