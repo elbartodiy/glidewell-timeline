@@ -122,9 +122,10 @@
   .catrow{cursor:default}
   .catrow:hover{background:transparent!important}
   .lgnd-sep{height:1px;background:var(--line,#d9d6cf);opacity:.7;margin:6px 5px}
-  .persbig,.linelegend{min-height:128px;box-sizing:border-box}
-  .persbig{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center}
-  .pers-ico{height:37px;width:auto;pointer-events:none}
+  .linelegend{min-height:128px;box-sizing:border-box}
+  .topbtn{width:158px;height:54px;box-sizing:border-box;display:flex;flex-direction:row;align-items:center;gap:10px;text-align:left}
+  .topbtn .mp-ttl{font-size:12px}
+  .pers-ico{height:30px;width:auto;pointer-events:none}
   .lgnd-sw.cap{border-top-color:#E11B2A}
   .lgnd-sw.terr{border-top-color:#2C6E9E}
   .lgnd-sw.emp{border-top-color:#5A5550;border-top-style:dashed}
@@ -1975,8 +1976,9 @@ function buildLayer(){
         +'<span class="pin-lbl hi'+(B.pos===0?' lbl-edge':'')+'">'+L(B.nm)+'</span></div>';
     }
   });
-  h+='<div class="morep persbig" data-pers="1" style="left:88px;top:22px"><img class="pers-ico" src="icons/pers.png" alt=""><div class="mp-ttl">'+L(UI.persBtnTitle)+'</div></div>';
-  h+='<div class="linelegend" style="left:270px;top:22px">'
+  h+='<div class="morep topbtn" data-pers="1" style="left:88px;top:22px"><img class="pers-ico" src="icons/pers.png" alt=""><div class="mp-ttl">'+L({en:'People',ru:'Люди'})+'</div></div>';
+  h+='<div class="morep topbtn" data-cast="1" style="left:88px;top:96px"><img class="pers-ico" src="icons/email.png" alt=""><div class="mp-ttl">'+L({en:'Conversation',ru:'Переписка'})+'</div></div>';
+  h+='<div class="linelegend" style="left:266px;top:22px">'
     +'<div class="lgnd-row" data-metric="cap"><span class="lgnd-sw cap"></span>'+L(UI.legCap)+'</div>'
     +'<div class="lgnd-row" data-metric="territory"><span class="lgnd-sw terr"></span>'+L(UI.legTerr)+'</div>'
     +'<div class="lgnd-row" data-metric="employees"><span class="lgnd-sw emp"></span>'+L(UI.legEmp)+'</div>'
@@ -3020,7 +3022,7 @@ stage.addEventListener('click',e=>{
   const bd=e.target.closest('.bld'); if(bd){openExpansion(+bd.dataset.bld);return;}
   const pp=e.target.closest('.ppl'); if(pp){openWorkforce(+pp.dataset.ppl);return;}
   const lg=e.target.closest('.lgnd-row'); if(lg){openMetric(lg.dataset.metric);return;}
-  const mp=e.target.closest('.morep'); if(mp){mp.dataset.pers?openPersonalities():openMorePeople();return;}
+  const mp=e.target.closest('.morep'); if(mp){mp.dataset.pers?openPersonalities():(mp.dataset.cast?openCast():openMorePeople());return;}
   const bk=e.target.closest('.beatblk,.beatpin'); if(bk){openBeatSheet(+bk.dataset.beatSheet);return;}
   const ce=e.target.closest('.cal-ev'); if(ce){openCalEvent(+ce.dataset.cal);return;}
   const cm=e.target.closest('.cal-month'); if(cm){openCalMonth(+cm.dataset.calMonth);return;}
