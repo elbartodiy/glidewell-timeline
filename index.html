@@ -244,8 +244,12 @@
   #panel .ct-who{font-family:var(--mono);font-size:11px;color:var(--mute);line-height:1.35}
   #panel .ct-loc{color:var(--slate,#8A929B);margin-top:2px}
   #panel .ct-shoot{line-height:1.4}
-  #panel .ct-strow{margin-top:6px}
+  #panel .ct-strow{margin:0 0 6px;display:flex;align-items:center;flex-wrap:wrap}
   #panel .ct-st{font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap}
+  #panel .ct-ball{font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap;margin-right:12px}
+  #panel .ct-next{font-family:var(--mono);font-size:12px;font-weight:700;color:#B4670F;margin:0 0 6px;line-height:1.4}
+  #panel .casttbl tr.ct-ball-us td.ct-face{box-shadow:inset 4px 0 0 #E0902A}
+  #panel .ct-ours{color:#B4670F;border-left:3px solid #E0902A;padding-left:10px}
   #panel .casttbl tbody tr.ct-main.open{background:var(--red-tint,#fbecec)}
   #panel .ct-nmlink{cursor:pointer;border-bottom:1px solid transparent}
   #panel .ct-nmlink:hover{border-bottom-color:currentColor}
@@ -2335,26 +2339,39 @@ const CAST_OUTREACH=[
 function openCast(keep){
   if(!keep)openRef={type:'cast'}; clearPin();
   const ST={confirmed:{l:{en:'Confirmed',ru:'Подтвердил'},e:'✅',c:'#1F7A57'}, sent:{l:{en:'Email sent',ru:'Письмо отправлено'},e:'📨',c:'#3B6EA5'}, ready:{l:{en:'Ready — not sent',ru:'Готово — не отправлено'},e:'✍️',c:'#B07A16'}, paused:{l:{en:'On hold',ru:'На паузе'},e:'⏸',c:'#8A929B'}};
-  const today='2026-07-24';
+  const today='2026-07-27';
+  const BALL={us:{l:{en:'Our move',ru:'Наш ход'},e:'🟠',c:'#B4670F'}, them:{l:{en:'Their move',ru:'Их ход'},e:'⏳',c:'#8A929B'}};
+  const NEXT={
+    'Neil Park':{en:'Propose the sit-down day (early Aug), via Eric',ru:'Предложить день сит-дауна (нач. авг), через Eric'},
+    'Tim Kosinski':{en:'Pick Thu Oct 29 or Thu Nov 5 and confirm',ru:'Выбрать чт 29 окт или чт 5 ноя и подтвердить'},
+    'Howard Farran':{en:'Send him the campus date to fly out',ru:'Дать ему дату прилёта на кампус'},
+    'Rella Christensen':{en:'Lock the Provo travel dates (team back Jul 27)',ru:'Согласовать даты выезда в Прово (команда с 27 июл)'},
+    'Gordon Christensen':{en:'First outreach — same trip as Rella',ru:'Первый контакт — тем же выездом, что и Rella'},
+    'Robert Brenneise':{en:'Schedule his studio day + confirm role',ru:'Назначить студийный день + уточнить роль'},
+    'Paul Feuerstein':{en:'Decide whether to pursue + who writes first',ru:'Решить: берём ли + кто пишет первым'}};
+  const themOverride={resnik:1};
+  const ballFor=p=>(p.status==='sent'||themOverride[p.k])?'them':'us';
   const grp=p=>(!p.date?1:(p.date<today?2:0));
   const srank={confirmed:0,sent:1,ready:2,paused:3};
   const list=CAST_OUTREACH.slice().sort((a,b)=>{var ga=grp(a),gb=grp(b); if(ga!==gb)return ga-gb; if(ga===1)return (srank[a.status]||9)-(srank[b.status]||9); return a.date<b.date?-1:(a.date>b.date?1:0);});
   const MON={en:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],ru:['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек']};
   const dlbl=p=>{ if(!p.date)return L({en:'date TBC',ru:'дата TBC'}); var m=+p.date.slice(5,7),d=+p.date.slice(8,10); return d+' '+MON[lang][m-1]; };
-  const rows=list.map(p=>{ const s=ST[p.status]||ST.ready;
+  const rows=list.map(p=>{ const s=ST[p.status]||ST.ready; const bl=ballFor(p); const b=BALL[bl]; const nxt=(bl==='us'&&NEXT[p.nm])?L(NEXT[p.nm]):'';
     const av=(typeof SPK_IMG!=='undefined'&&SPK_IMG[p.k])?'<img src="'+SPK_IMG[p.k]+'" alt="">':'<span class="ct-ph">'+p.nm.charAt(0)+'</span>';
     const note=p.note?L(p.note):'';
     const detail='<tr class="ct-detail" id="ctd-'+p.k+'"><td colspan="4"><div class="ct-note'+(note?'':' ct-note-empty')+'">'+(note||L({en:'No saved notes yet.',ru:'Пока нет заметок.'}))+'</div></td></tr>';
-    return '<tr class="ct-main" data-row="'+p.k+'" title="'+L({en:'Click to expand · click the name to open the profile',ru:'Клик — развернуть · клик по имени — профиль'})+'">'
+    return '<tr class="ct-main'+(bl==='us'?' ct-ball-us':'')+'" data-row="'+p.k+'" title="'+L({en:'Click to expand · click the name to open the profile',ru:'Клик — развернуть · клик по имени — профиль'})+'">'
       +'<td class="ct-face">'+av+'</td>'
       +'<td class="ct-nm">'+((typeof SPK!=='undefined'&&p.k&&SPK[p.k])?'<span class="ct-nmlink" data-go="'+p.k+'">'+p.nm+'</span>':'<span class="ct-nm-plain">'+p.nm+'</span>')+(p.note?' <span class="ct-more">▾</span>':'')+'<div class="ct-date">'+dlbl(p)+'</div></td>'
       +'<td class="ct-who">'+(p.staff?'🟢 ':'⚪ ')+L(p.who)+'<div class="ct-loc">'+p.loc+'</div></td>'
-      +'<td class="ct-shoot">'+L(p.shoot)+'<div class="ct-strow"><span class="ct-st" style="color:'+s.c+'">'+s.e+' '+L(s.l)+'</span></div></td>'
+      +'<td class="ct-shoot"><div class="ct-strow"><span class="ct-ball" style="color:'+b.c+'">'+b.e+' '+L(b.l)+'</span><span class="ct-st" style="color:'+s.c+'">'+s.e+' '+L(s.l)+'</span></div>'+(nxt?'<div class="ct-next">→ '+nxt+'</div>':'')+'<div class="ct-shoot-txt">'+L(p.shoot)+'</div></td>'
       +'</tr>'+detail;}).join('');
   const done=CAST_OUTREACH.filter(p=>p.status==='sent'||p.status==='confirmed').length;
+  const ours=list.filter(p=>ballFor(p)==='us').map(p=>p.nm);
   pin.innerHTML='<div class="kicker">'+L({en:'Cast · outreach status',ru:'Каст · статус рассылки'})+'</div>'
     +'<h2>'+L({en:'Who we’re filming — status',ru:'Кого снимаем — статус'})+'</h2>'
     +'<p class="scdesc">'+L({en:'Sorted by shoot date — soonest first; no date yet drops to the bottom, past dates lower still. Contacted: '+done+' of '+CAST_OUTREACH.length+'. Click a row to open the profile.',ru:'По дате съёмки — ближайшие сверху; без даты — вниз, прошедшие — ещё ниже. Связались: '+done+' из '+CAST_OUTREACH.length+'. Клик по строке — профиль.'})+'</p>'
+    +'<p class="scdesc ct-ours"><b>🟠 '+L({en:'Our move — waiting on us ('+ours.length+'): ',ru:'Наш ход — ждут нас ('+ours.length+'): '})+'</b>'+ours.join(', ')+'</p>'
     +'<table class="casttbl"><colgroup><col class="c-face"><col class="c-nm"><col class="c-who"><col class="c-shoot"></colgroup><thead><tr><th></th><th>'+L({en:'Name',ru:'Имя'})+'</th><th>'+L({en:'Who · location',ru:'Кто · локация'})+'</th><th>'+L({en:'Shoot · status',ru:'Съёмка · статус'})+'</th></tr></thead><tbody>'+rows+'</tbody></table>';
   show();
 }
