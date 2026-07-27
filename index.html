@@ -3015,8 +3015,8 @@ pin.addEventListener('click',e=>{
   const gp=e.target.closest('[data-go-pers]'); if(gp){openPersonalities();return;}
   const gb=e.target.closest('[data-go-beat]'); if(gb){openBeat(+gb.dataset.goBeat);return;}
   const gs=e.target.closest('[data-go-scene]'); if(gs){openScene(+gs.dataset.goScene);return;}
-  const cn=e.target.closest('.casttbl [data-go]'); if(cn){openSpeaker(cn.dataset.go);return;}
-  const cr=e.target.closest('.casttbl tr.ct-main'); if(cr){var _d=document.getElementById('ctd-'+cr.dataset.row); if(_d)_d.classList.toggle('show'); cr.classList.toggle('open'); return;}
+  const cstn=e.target.closest('.casttbl [data-go]'); if(cstn){openSpeaker(cstn.dataset.go);return;}
+  const cstr=e.target.closest('.casttbl tr.ct-main'); if(cstr){var _d=document.getElementById('ctd-'+cstr.dataset.row); if(_d)_d.classList.toggle('show'); cstr.classList.toggle('open'); return;}
   const g=e.target.closest('[data-go]'); if(g)openSpeaker(g.dataset.go);
 });
 
