@@ -90,7 +90,8 @@
   .ev:focus-visible{outline:none;box-shadow:0 0 0 2px var(--clay);transform:translateX(-50%) translateY(-3px)}
   .ev .yr{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--red)}
   .ev.t-i .yr{color:var(--teal)}
-  .ev h3{font-size:18px;letter-spacing:-.01em;margin:3px 0 5px}
+  .ev h3{font-size:18px;letter-spacing:-.01em;margin:3px 0 5px;padding-right:56px}
+  .ev-ico{position:absolute;top:10px;right:12px;width:52px;height:36px;object-fit:contain;object-position:center;pointer-events:none}
   .ev .d{font-size:12px;line-height:1.45;color:var(--ink-2)}
   .ev .th{font-size:11.5px;line-height:1.4;color:var(--teal);font-style:italic;margin-top:8px;border-top:1px dashed var(--line);padding-top:7px}
   .ev .star{position:absolute;top:-9px;right:-7px;background:var(--clay);color:#fff;font-family:var(--mono);font-size:9px;letter-spacing:.08em;padding:2px 7px;border-radius:10px}
@@ -1893,6 +1894,7 @@ function buildLayer(){
   // with roles; byBeat data is kept for the "who can tell" list in each milestone card.
   BEATS.forEach((b,i)=>{
     h+='<div class="ev t-'+b.tr+' tier-'+(b.tier||3)+(b.dual?' dual':'')+'" style="left:'+b.x+'px;top:'+(LINEY+28)+'px" data-beat="'+i+'">'
+      +'<img class="ev-ico" src="icons/beat-'+('0'+(i+1)).slice(-2)+'.png" alt="" loading="lazy">'
       +(b.star?'<span class="star">'+L(b.star)+'</span>':'')
       +(b.sc&&b.sc.length?'<div class="sc">'+b.sc.map(n=>'#'+n).join(' ')+'</div>':'')
       +'<div class="yr">'+b.y+'</div><h3>'+L(b.t)+'</h3><div class="d">'+L(b.d)+'</div><div class="th">'+L(b.th)+'</div></div>';
