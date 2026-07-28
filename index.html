@@ -2046,7 +2046,7 @@ function render(){
   document.documentElement.lang=lang;
   document.getElementById('h-title').innerHTML=L(UI.messages).map(function(m,i){var inner=(i===1)?'<a class="hmsg-link" href="https://elbartodiy.github.io/glidewell-timeline/" target="_blank" rel="noopener" title="Open the published timeline">'+m+'</a>':m;return '<span class="hmsg'+(i===1?' mid':'')+'">'+inner+'</span>';}).join('');
   var _mw=L(UI.madeWith);
-  var _mwHtml='<a class="sheetlink" href="https://docs.google.com/spreadsheets/d/1K0zPInMC3SgQakJCjt1289Loxbtsv_xke-AFiYAKDHQ/edit" target="_blank" rel="noopener">'+_mw.charAt(0)+'</a>'+_mw.slice(1,3)+'<a class="sheetlink" href="https://elbartodiy.github.io/glidewell-timeline/?u=eric#survey" target="_blank" rel="noopener">'+_mw.charAt(3)+'</a>'+_mw.slice(4);
+  var _mwHtml='<a class="sheetlink" href="https://docs.google.com/spreadsheets/d/1K0zPInMC3SgQakJCjt1289Loxbtsv_xke-AFiYAKDHQ/edit" target="_blank" rel="noopener">'+_mw.charAt(0)+'</a>'+_mw.slice(1,3)+_mw.slice(3);
   document.getElementById('footer').innerHTML='<div class="aimos"><span class="mw-txt">'+_mwHtml+'</span><img class="aimos-logo" alt="AIMOS" src="'+AIMOS_LOGO+'"></div>';
   draw.innerHTML=buildSVG();
   layer.innerHTML=buildLayer();
@@ -2929,10 +2929,8 @@ function gwLogVisit(){
     fetch(SURVEY_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
   }catch(e){}
 }
-gwLogVisit();
 // Deep-link: …#cast (or #survey / #personalities) opens the survey panel straight away.
 function gwAutoOpen(){ try{ var h=(location.hash||'').toLowerCase(); if(/cast|survey|person/.test(h)){ openPersonalities(); if(/full|survey/.test(h)){ panel.classList.add('full'); var b=document.getElementById('pfull'); if(b)b.textContent='⤡'; } } }catch(e){} }
-window.addEventListener('load', gwAutoOpen);
 const SURVEY_FAM=[
   {v:'no',    en:"Don't know", ru:'Не знаю'},
   {v:'know',  en:'Acquainted', ru:'Знаком'},
@@ -2964,16 +2962,10 @@ const SPK_GEO=[
 function openPersonalities(keep){
   if(!keep)openRef={type:'personalities'}; clearPin();
   const sv=svLoad();
-  const cardFor=function(id){var sp=SPK[id]; var a=(sv.answers&&sv.answers[id])||{};
-    var connected=!!SURVEY_CONNECTED[id];
-    var fam=connected
-      ? '<span class="sv-connected">'+L({en:'Connected',ru:'На связи'})+'</span>'
-      : SURVEY_FAM.map(f=>'<button type="button" class="sv-fam'+(a.fam===f.v?' on':'')+'" data-sv-id="'+id+'" data-sv-fam="'+f.v+'">'+L(f)+'</button>').join('');
-    return '<div class="pers-card sv-card">'
+  const cardFor=function(id){var sp=SPK[id];
+    return '<div class="pers-card">'
       +(SPK_IMG[id]?'<img src="'+SPK_IMG[id]+'" alt="" data-go="'+id+'" title="'+L({en:'Open profile',ru:'Открыть профиль'})+'">':'')
       +'<div class="pc-tx"><div class="pc-nm" data-go="'+id+'" title="'+L({en:'Open profile',ru:'Открыть профиль'})+'">'+sp.nm+gwBadge(sp)+micBadge(id)+dealBadge(sp)+'</div><div class="pc-role">'+L(sp.role)+'</div>'
-      +'<div class="sv-fams">'+fam+'</div>'
-      +(connected?'':'<input class="sv-connect" data-sv-id="'+id+'" placeholder="'+L({en:'Can you connect / via whom?',ru:'Могу свести / через кого?'})+'" value="'+svEsc(a.connect)+'">')
       +'</div></div>';
   };
   const placed={}; SPK_GEO.forEach(g=>g.ids.forEach(id=>placed[id]=1));
@@ -2993,10 +2985,8 @@ function openPersonalities(keep){
   const cncSec=canceled.length?'<div class="cast-sec" style="margin-top:24px">'+L({en:'Canceled',ru:'Отменённые'})+'</div><div class="pers-grid">'+canceled.map(cncCard).join('')+'</div>':'';
   const moreBlocks=MORE_PEOPLE.map(b=>'<dt>'+L(b.g)+'</dt><dd>'+b.people.map(p=>'<div class="mp-row">'+(MORE_IMG[p.n]?'<img class="mp-av" src="'+MORE_IMG[p.n]+'" alt="">':'')+'<div class="mp-tx"><b>'+p.n+'</b>'+(p.r?' — '+L(p.r):'')+'</div></div>').join('')+'</dd>').join('');
   pin.innerHTML='<div class="kicker">'+L(UI.persKicker)+'</div>'
-    +'<h2>'+L({en:'Speaker connections — survey',ru:'Связи со спикерами — опрос'})+'</h2>'
-    +'<p class="scdesc">'+L({en:'For each person: how well you know them, and whether you can connect us for an interview. Fill once, one <a class="sv-resplink" href="https://docs.google.com/spreadsheets/d/1K0zPInMC3SgQakJCjt1289Loxbtsv_xke-AFiYAKDHQ/edit" target="_blank" rel="noopener">Send</a><a href="cast-results.html" style="color:inherit;text-decoration:none;cursor:text">.</a>',ru:'По каждому: насколько знаете и можете ли свести для интервью. Заполните один раз, одна <a class="sv-resplink" href="https://docs.google.com/spreadsheets/d/1K0zPInMC3SgQakJCjt1289Loxbtsv_xke-AFiYAKDHQ/edit" target="_blank" rel="noopener">«Отправить»</a><a href="cast-results.html" style="color:inherit;text-decoration:none;cursor:text">.</a>'})+'</p>'
+    +'<h2>'+L({en:'People — the cast',ru:'Люди — каст'})+'</h2>'
     +secs
-    +'<div class="sv-foot"><input class="sv-name" placeholder="'+L({en:'Your name',ru:'Ваше имя'})+'" value="'+svEsc(sv.name)+'"><button type="button" class="sv-send" id="sv-send">'+L({en:'Send',ru:'Отправить'})+'</button><span class="sv-status" id="sv-status"></span></div>'
     +'<div class="cast-sec" style="margin-top:22px">'+L(UI.moreTitle)+'</div>'
     +'<p class="scdesc">'+L(UI.moreIntro)+'</p>'
     +'<dl>'+moreBlocks+'</dl>'
