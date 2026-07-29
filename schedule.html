@@ -62,6 +62,7 @@
   <span><i class="sw shoot"></i> Shoot</span>
   <span><i class="sw busy"></i> Busy / not available</span>
   <span><i class="sw tent"></i> Tentative</span>
+  <span id="syncst" style="margin-left:auto">…</span>
 </div>
 <div class="wrap"><table class="grid" id="grid"></table></div>
 <div class="hint" id="hint"></div>
@@ -93,8 +94,36 @@ const SEED=[
   {d:'2026-10-29',s:13,e:15,t:'tent',w:'Tim Kosinski — Irvine (backup)'}
 ];
 const KEY='gw_sched_v1';
+const ENDPOINT="https://script.google.com/macros/s/AKfycby3qKlPjAHdiTQEPBFtunNB2b_BDYf_dwzTpSKAy1pB6A302qxqKsJFZQk1Q--peCqw/exec";
 let added=[]; try{added=JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(added));}catch(e){}}
+/* --- shared sync via the same Apps Script used by the survey (sheet tab: "Schedule") --- */
+function setSync(msg,ok){var el=document.getElementById('syncst'); if(el){el.textContent=msg; el.style.color=ok===false?'#B4670F':'var(--mute)';}}
+function pushSlot(slot){
+  if(!ENDPOINT) return;
+  try{
+    fetch(ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({type:'slot',action:'add',slot:slot})});
+    setSync('Saved · shared');
+  }catch(e){ setSync('Saved locally (offline)',false); }
+}
+function pullSlots(){
+  if(!ENDPOINT) return;
+  fetch(ENDPOINT+'?type=slots',{method:'GET'})
+    .then(r=>r.ok?r.json():Promise.reject())
+    .then(d=>{
+      var rows=(d&&d.slots)||[];
+      if(!Array.isArray(rows)){ setSync('Local only — script needs the Schedule update',false); return; }
+      if(!rows.length){ setSync(d&&d.slots?'Synced · no shared slots yet':'Local only — script needs the Schedule update', !!(d&&d.slots)); return; }
+      var seen={}; added.forEach(x=>seen[x.d+x.s+x.e+(x.w||'')]=1);
+      rows.forEach(function(x){
+        var k=x.d+x.s+x.e+(x.w||''); if(seen[k]) return; seen[k]=1;
+        added.push({d:x.d,s:+x.s,e:+x.e,t:x.t||'shoot',w:x.w||'',by:x.by||''});
+      });
+      save(); render(); setSync('Synced · everyone sees these');
+    })
+    .catch(()=>setSync('Local only — shared sync not wired yet',false));
+}
 let mode='shoot';
 let weekStart=mondayOf(new Date(2026,7,3));
 function mondayOf(dt){const d=new Date(dt);const k=(d.getDay()+6)%7;d.setDate(d.getDate()-k);d.setHours(0,0,0,0);return d;}
@@ -131,8 +160,8 @@ document.getElementById('grid').addEventListener('click',e=>{
   if(label===null) return;
   let end=parseInt(prompt('End hour (24h, e.g. '+(+cell.dataset.h+1)+'):', String(Math.min(+cell.dataset.h+1,HOUR_END))),10);
   if(!end||end<=+cell.dataset.h) end=+cell.dataset.h+1;
-  added.push({d:cell.dataset.d,s:+cell.dataset.h,e:Math.min(end,HOUR_END),t:mode,w:label,by:document.getElementById('me').value.trim()});
-  save();render();
+  const slot={d:cell.dataset.d,s:+cell.dataset.h,e:Math.min(end,HOUR_END),t:mode,w:label,by:document.getElementById('me').value.trim()};
+  added.push(slot); save(); render(); pushSlot(slot);
 });
 document.querySelectorAll('.modebtn').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;document.querySelectorAll('.modebtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');});
 document.getElementById('prev').onclick=()=>{weekStart.setDate(weekStart.getDate()-7);render();};
@@ -141,6 +170,8 @@ document.getElementById('today').onclick=()=>{weekStart=mondayOf(new Date());ren
 const me=document.getElementById('me');me.value=localStorage.getItem('gw_me')||'';me.oninput=()=>localStorage.setItem('gw_me',me.value);
 document.getElementById('hint').textContent='Pre-filled with our current plan (Aug–Oct). Days across the top, hours down the side. Pick a mode, click a cell, add a label + end hour. No login needed. (Right now your added slots save in THIS browser only — shared sync so everyone sees each other is one wiring step away.)';
 render();
+pullSlots();
+setInterval(pullSlots, 60000);
 </script>
 </body>
 </html>
