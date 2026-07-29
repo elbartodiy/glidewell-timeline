@@ -251,6 +251,10 @@
   #panel .ct-next{font-family:var(--mono);font-size:12px;font-weight:700;color:#B4670F;margin:0 0 6px;line-height:1.4}
   #panel .casttbl tr.ct-ball-us td.ct-face{box-shadow:inset 4px 0 0 #E0902A}
   #panel .ct-ours{color:#B4670F;border-left:3px solid #E0902A;padding-left:10px}
+  #panel .ct-sort{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);margin:4px 0 10px}
+  #panel .ct-sortbtn{font-family:var(--mono);font-size:11px;padding:4px 11px;border-radius:999px;border:1px solid var(--line,#e5e3df);background:transparent;color:var(--ink-2,#55524d);cursor:pointer;transition:background .12s,color .12s,border-color .12s}
+  #panel .ct-sortbtn:hover{border-color:var(--slate,#8A929B)}
+  #panel .ct-sortbtn.on{background:var(--red,#E11B2A);color:#fff;border-color:var(--red,#E11B2A)}
   #panel .casttbl tbody tr.ct-main.open{background:var(--red-tint,#fbecec)}
   #panel .ct-nmlink{cursor:pointer;border-bottom:1px solid transparent}
   #panel .ct-nmlink:hover{border-bottom-color:currentColor}
@@ -860,7 +864,7 @@ const BEATS = [
     t:{en:"National leader",ru:"Национальный лидер"},
     d:{en:"Glidewell settles into 4141 MacArthur Blvd, Newport Beach (33,000 sq ft); 95% of cases now arrive by mail from 3,500+ dentists nationwide.",ru:"Glidewell закрепляется на 4141 MacArthur Blvd в Newport Beach (33 000 кв. футов); 95% кейсов приходят по почте от 3 500+ врачей по всей стране."},
     th:{en:"From a local lab to the national mail-order leader.",ru:"Из локальной лаборатории — в национального лидера почтовых заказов."}},
-  {y:"1993", tr:"g", j:[],
+  {y:"1993", tr:"g", j:[], ic:"npb",
     t:{en:"Newport Beach",ru:"Newport Beach"},
     d:{en:"The lab moves into a 71,000 sq ft building in Newport Beach, CA.",ru:"Лаборатория переезжает в здание 71 000 кв. футов в Newport Beach, CA."},
     th:{en:"Footprint follows volume — the plant keeps outgrowing itself.",ru:"Площадь следует за объёмом — производство всё время перерастает себя."}},
@@ -1896,7 +1900,7 @@ function buildLayer(){
   // with roles; byBeat data is kept for the "who can tell" list in each milestone card.
   BEATS.forEach((b,i)=>{
     h+='<div class="ev t-'+b.tr+' tier-'+(b.tier||3)+(b.dual?' dual':'')+'" style="left:'+b.x+'px;top:'+(LINEY+28)+'px" data-beat="'+i+'">'
-      +'<img class="ev-ico" src="icons/beat-'+('0'+(i+1)).slice(-2)+'.png" alt="" loading="lazy">'
+      +'<img class="ev-ico" src="icons/'+(b.ic||('beat-'+('0'+(i+1)).slice(-2)))+'.png" alt="" loading="lazy">'
       +(b.star?'<span class="star">'+L(b.star)+'</span>':'')
       +(b.sc&&b.sc.length?'<div class="sc">'+b.sc.map(n=>'#'+n).join(' ')+'</div>':'')
       +'<div class="yr">'+b.y+'</div><h3>'+L(b.t)+'</h3><div class="d">'+L(b.d)+'</div><div class="th">'+L(b.th)+'</div></div>';
@@ -2335,6 +2339,7 @@ const CAST_OUTREACH=[
   {k:"feuerstein", date:null, nm:"Paul Feuerstein", staff:false, who:{en:"External · dental-tech (Dentistry Today)",ru:"Внешний · дент-технологии (Dentistry Today)"}, loc:"Billerica, MA", status:"paused",
    shoot:{en:"Proposed at a planning meeting — Eldon hasn't invited him. Decide whether to pursue and who does the first outreach.",ru:"Предложен на планёрке — Эльдон не писал. Решить: пускаем ли и кто пишет первым."}}
 ];
+let castSort='date';
 function openCast(keep){
   if(!keep)openRef={type:'cast'}; clearPin();
   const ST={confirmed:{l:{en:'Confirmed',ru:'Подтвердил'},e:'✅',c:'#1F7A57'}, sent:{l:{en:'Email sent',ru:'Письмо отправлено'},e:'📨',c:'#3B6EA5'}, ready:{l:{en:'Ready — not sent',ru:'Готово — не отправлено'},e:'✍️',c:'#B07A16'}, paused:{l:{en:'On hold',ru:'На паузе'},e:'⏸',c:'#8A929B'}};
@@ -2352,7 +2357,10 @@ function openCast(keep){
   const ballFor=p=>p.ball?p.ball:((p.status==='sent'||themOverride[p.k])?'them':'us');
   const grp=p=>(!p.date?1:(p.date<today?2:0));
   const srank={confirmed:0,sent:1,ready:2,paused:3};
-  const list=CAST_OUTREACH.slice().sort((a,b)=>{var ga=grp(a),gb=grp(b); if(ga!==gb)return ga-gb; if(ga===1)return (srank[a.status]||9)-(srank[b.status]||9); return a.date<b.date?-1:(a.date>b.date?1:0);});
+  const byDate=(a,b)=>{var ga=grp(a),gb=grp(b); if(ga!==gb)return ga-gb; if(ga===1)return (srank[a.status]||9)-(srank[b.status]||9); return a.date<b.date?-1:(a.date>b.date?1:0);};
+  const list=CAST_OUTREACH.slice().sort(castSort==='ours'
+    ? (a,b)=>{var oa=ballFor(a)==='us'?0:1, ob=ballFor(b)==='us'?0:1; if(oa!==ob)return oa-ob; return byDate(a,b);}
+    : byDate);
   const MON={en:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],ru:['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек']};
   const dlbl=p=>{ if(!p.date)return L({en:'date TBC',ru:'дата TBC'}); var m=+p.date.slice(5,7),d=+p.date.slice(8,10); return d+' '+MON[lang][m-1]; };
   const rows=list.map(p=>{ const s=ST[p.status]||ST.ready; const bl=ballFor(p); const b=BALL[bl]; const nxt=(bl==='us'&&NEXT[p.nm])?L(NEXT[p.nm]):'';
@@ -2369,7 +2377,11 @@ function openCast(keep){
   const ours=list.filter(p=>ballFor(p)==='us').map(p=>p.nm);
   pin.innerHTML='<div class="kicker">'+L({en:'Cast · outreach status',ru:'Каст · статус рассылки'})+'</div>'
     +'<h2>'+L({en:'Who we’re filming — status',ru:'Кого снимаем — статус'})+'</h2>'
-    +'<p class="scdesc">'+L({en:'Sorted by shoot date — soonest first; no date yet drops to the bottom, past dates lower still. Contacted: '+done+' of '+CAST_OUTREACH.length+'. Click a row to open the profile.',ru:'По дате съёмки — ближайшие сверху; без даты — вниз, прошедшие — ещё ниже. Связались: '+done+' из '+CAST_OUTREACH.length+'. Клик по строке — профиль.'})+'</p>'
+    +'<div class="ct-sort">'+L({en:'Sort:',ru:'Сортировка:'})
+      +'<button type="button" class="ct-sortbtn'+(castSort==='date'?' on':'')+'" data-castsort="date">'+L({en:'By shoot date',ru:'По дате съёмки'})+'</button>'
+      +'<button type="button" class="ct-sortbtn'+(castSort==='ours'?' on':'')+'" data-castsort="ours">'+L({en:'Our move first',ru:'Сначала наш ход'})+'</button>'
+    +'</div>'
+    +'<p class="scdesc">'+L({en:(castSort==='ours'?'Our move first, then by shoot date.':'By shoot date — soonest first; no date drops to the bottom, past dates lower.')+' Contacted: '+done+' of '+CAST_OUTREACH.length+'. Click a row to open the profile.',ru:(castSort==='ours'?'Сначала наш ход, затем по дате съёмки.':'По дате съёмки — ближайшие сверху; без даты — вниз, прошедшие — ещё ниже.')+' Связались: '+done+' из '+CAST_OUTREACH.length+'. Клик по строке — профиль.'})+'</p>'
     +'<p class="scdesc ct-ours"><b>🟠 '+L({en:'Our move — waiting on us ('+ours.length+'): ',ru:'Наш ход — ждут нас ('+ours.length+'): '})+'</b>'+ours.join(', ')+'</p>'
     +'<table class="casttbl"><colgroup><col class="c-face"><col class="c-nm"><col class="c-who"><col class="c-shoot"></colgroup><thead><tr><th></th><th>'+L({en:'Name',ru:'Имя'})+'</th><th>'+L({en:'Who · location',ru:'Кто · локация'})+'</th><th>'+L({en:'Shoot · status',ru:'Съёмка · статус'})+'</th></tr></thead><tbody>'+rows+'</tbody></table>';
   show();
@@ -3042,6 +3054,7 @@ pin.addEventListener('click',e=>{
   const gp=e.target.closest('[data-go-pers]'); if(gp){openPersonalities();return;}
   const gb=e.target.closest('[data-go-beat]'); if(gb){openBeat(+gb.dataset.goBeat);return;}
   const gs=e.target.closest('[data-go-scene]'); if(gs){openScene(+gs.dataset.goScene);return;}
+  const cs=e.target.closest('[data-castsort]'); if(cs){ castSort=cs.dataset.castsort; openCast(true); return; }
   const cstn=e.target.closest('.casttbl [data-go]'); if(cstn){openSpeaker(cstn.dataset.go);return;}
   const cstr=e.target.closest('.casttbl tr.ct-main'); if(cstr){var _d=document.getElementById('ctd-'+cstr.dataset.row); if(_d)_d.classList.toggle('show'); cstr.classList.toggle('open'); return;}
   const g=e.target.closest('[data-go]'); if(g)openSpeaker(g.dataset.go);
