@@ -160,10 +160,16 @@ function pullBookings(){
     .catch(()=>setNote('Guest bookings save locally — sheet not wired for slots yet.',true));
 }
 function bookSlot(date,hour){
-  const nm=prompt('Who are you filming? (name)');if(nm===null||!nm.trim())return;
+  const nm=prompt('Who are you filming? (name)');if(nm===null)return;
+  if(!nm.trim()){alert('Please enter who you are filming.');return;}
   const loc=prompt('Where? (e.g. Studio 130, Campus, TRAVEL — city)','Studio 130');if(loc===null)return;
-  const by=prompt('Your name (who is booking)?',localStorage.getItem('gw_me')||'');if(by===null)return;
-  localStorage.setItem('gw_me',by||'');
+  let by=prompt('YOUR name — required to publish this slot:',localStorage.getItem('gw_me')||'');
+  if(by===null)return;
+  while(!by||!by.trim()){
+    by=prompt('A name is required to publish. Who is adding this slot?','');
+    if(by===null)return;
+  }
+  localStorage.setItem('gw_me',by.trim());
   let end=parseInt(prompt('End hour (24h)',String(Math.min(+hour.slice(0,2)+2,20))),10);
   if(!end||end<=+hour.slice(0,2))end=+hour.slice(0,2)+1;
   const slot={d:date,s:hour,e:('0'+end).slice(-2)+':00',t:'guest',nm:nm.trim(),loc:loc.trim(),w:'',by:(by||'').trim()};
@@ -231,7 +237,7 @@ function renderSlots(){
       +'<span class="nm">'+esc(x.nm||x.w)+'</span>'
       +(x.loc?'<span class="loc'+(travel?' travel':'')+'">'+(travel?'✈ ':'📍 ')+esc(x.loc)+'</span>':'')
       +(x.w?'<span class="dt">'+esc(x.w)+'</span>':'')
-      +(x.by?'<span class="who">'+esc(x.by)+'</span>':'')
+      +(x.by?'<span class="who">'+(x.t==='guest'?'added by '+esc(x.by):esc(x.by))+'</span>':'')
       +'</div>';}).join('');
 }
 
