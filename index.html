@@ -127,7 +127,7 @@
   .topbtn .mp-ttl{font-size:12px}
   .pers-ico{height:30px;width:auto;pointer-events:none}
   .calbtn{width:128px;height:128px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center}
-  .calbtn .cal-ico{font-size:34px;line-height:1}
+  .calbtn .cal-ico{height:46px;width:auto;pointer-events:none}
   .calbtn .mp-ttl{font-size:13px}
   #panel .cal-actions{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 4px}
   #panel .cal-btn{font-family:var(--mono);font-size:12px;text-decoration:none;border-radius:999px;padding:7px 14px;border:1px solid var(--line,#e5e3df);background:var(--card);color:var(--ink)}
@@ -1985,7 +1985,7 @@ function buildLayer(){
         +'<span class="pin-lbl hi'+(B.pos===0?' lbl-edge':'')+'">'+L(B.nm)+'</span></div>';
     }
   });
-  h+='<div class="morep calbtn" data-cal="1" style="left:88px;top:22px" title="'+L({en:'Shoot schedule',ru:'Расписание съёмок'})+'"><span class="cal-ico">📅</span><div class="mp-ttl">'+L({en:'Calendar',ru:'Календарь'})+'</div></div>';
+  h+='<div class="morep calbtn" data-cal="1" style="left:88px;top:22px" title="'+L({en:'Shoot schedule',ru:'Расписание съёмок'})+'"><img class="cal-ico" src="icons/cln.png" alt=""><div class="mp-ttl">'+L({en:'Calendar',ru:'Календарь'})+'</div></div>';
   h+='<div class="morep topbtn" data-pers="1" style="left:236px;top:22px"><img class="pers-ico" src="icons/pers.png" alt=""><div class="mp-ttl">'+L({en:'People',ru:'Люди'})+'</div></div>';
   h+='<div class="morep topbtn" data-cast="1" style="left:236px;top:96px"><img class="pers-ico" src="icons/email.png" alt=""><div class="mp-ttl">'+L({en:'Conversation',ru:'Переписка'})+'</div></div>';
   h+='<div class="linelegend" style="left:414px;top:22px">'
