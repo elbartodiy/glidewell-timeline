@@ -29,6 +29,8 @@
   table.cal td{text-align:center;padding:4px 0}
   .day{width:44px;height:44px;border-radius:50%;border:0;background:transparent;font-family:inherit;font-size:15px;color:#c3c9d0;cursor:default;display:inline-flex;align-items:center;justify-content:center;position:relative}
   .day.has{background:var(--bluelt);color:var(--blue);font-weight:600;cursor:pointer}
+  .day.open{cursor:pointer;color:#9aa3ad}
+  .day.open:hover{background:#f2f4f6;color:var(--ink)}
   .day.has:hover{background:#d6e6ff}
   .day.sel{background:var(--blue);color:#fff;font-weight:700}
   .day.today::after{content:"";position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:currentColor}
@@ -183,7 +185,8 @@ const SLOTS = [
 
 /* free weekdays we offered (Mon–Thu) — shown as bookable when nothing is on them */
 const OPEN_HOURS=['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
-function isOpenDay(dt){const w=dt.getDay();return w>=1&&w<=4;}
+function isOpenDay(dt){return true;}                 // any day can take a booking
+function isWeekday(dt){const w=dt.getDay();return w>=1&&w<=5;}
 
 /* ---- guest bookings: stored in the same Google Sheet (via the survey Apps Script) ---- */
 const ENDPOINT="https://script.google.com/macros/s/AKfycby3qKlPjAHdiTQEPBFtunNB2b_BDYf_dwzTpSKAy1pB6A302qxqKsJFZQk1Q--peCqw/exec";
@@ -277,12 +280,11 @@ function renderMonth(){
     const dt=new Date(view.getFullYear(),view.getMonth(),dnum), di=iso(dt);
     const dayslots=slotsFor(di);
     const booked=dayslots.length>0;
-    const has=booked||isOpenDay(dt);
-    const cls='day'+(has?' has':'')+(sel===di?' sel':'')+(di===todayIso?' today':'');
+    const has=booked||isWeekday(dt);              // blue = booked or a working day
+    const cls='day'+(has?' has':' open')+(sel===di?' sel':'')+(di===todayIso?' today':'');
     const COL={shoot:'#E11B2A',tent:'#B4670F',hold:'#9aa3ad',done:'#12805c'};
     const dots=booked?'<span class="dots">'+dayslots.slice(0,3).map(x=>'<i style="background:'+(COL[x.t]||'#9aa3ad')+'"></i>').join('')+'</span>':'';
-    row+='<td>'+(has?'<button class="'+cls+'" data-d="'+di+'">'+dnum+dots+'</button>'
-                    :'<span class="'+cls+'">'+dnum+'</span>')+'</td>';
+    row+='<td><button class="'+cls+'" data-d="'+di+'">'+dnum+dots+'</button></td>';
     cell++;
     if(cell%7===0){h+='<tr>'+row+'</tr>';row='';}
   }
