@@ -2399,9 +2399,9 @@ function openCalendar(keep){
   if(!keep) openRef={type:'schedule'}; clearPin();
   pin.innerHTML='<div class="kicker">'+L({en:'Shoot schedule',ru:'Расписание съёмок'})+'</div>'
     +'<h2>'+L({en:'Who films when',ru:'Кто когда снимает'})+'</h2>'
-    +'<div class="cal-actions"><a class="cal-btn" href="schedule.html" target="_blank" rel="noopener">⤢ '+L({en:'Open full page',ru:'Открыть на всю страницу'})+'</a></div>'
+    +'<div class="cal-actions"><a class="cal-btn" href="schedule.html?v='+Date.now()+'" target="_blank" rel="noopener">⤢ '+L({en:'Open full page',ru:'Открыть на всю страницу'})+'</a></div>'
     +'<p class="scdesc">'+L({en:'Days across the top, hours down the side. Anyone can open this and add their own slots — no login needed. Pick a mode, click a cell, give it a label and end hour.',ru:'Дни сверху, часы слева. Любой может открыть и вписать свои слоты — без логина. Выбери режим, кликни ячейку, впиши подпись и час окончания.'})+'</p>'
-    +'<div class="cal-embed"><iframe src="schedule.html" loading="lazy"></iframe></div>';
+    +'<div class="cal-embed"><iframe src="schedule.html?v='+Date.now()+'" loading="lazy"></iframe></div>';
   show();
 }
 function openArchive(keep){
