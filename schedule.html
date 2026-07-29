@@ -304,11 +304,6 @@ function renderSlots(){
   const dt=parse(sel);
   head.textContent=dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   const list=slotsFor(sel);
-  if(!list.length){
-    wrap.innerHTML=OPEN_HOURS.map(t=>'<div class="slot">'+ampm(t)+'</div>').join('')
-      +'<div class="empty">Open — nothing booked yet.</div>';
-    return;
-  }
   const mins=t=>+t.slice(0,2)*60 + +t.slice(3);
   const taken={};
   list.forEach(x=>{const a=mins(x.s),b=mins(x.e);
