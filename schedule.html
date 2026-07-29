@@ -126,8 +126,21 @@ function isOpenDay(dt){const w=dt.getDay();return w>=1&&w<=4;}
 /* ---- guest bookings: stored in the same Google Sheet (via the survey Apps Script) ---- */
 const ENDPOINT="https://script.google.com/macros/s/AKfycby3qKlPjAHdiTQEPBFtunNB2b_BDYf_dwzTpSKAy1pB6A302qxqKsJFZQk1Q--peCqw/exec";
 const LKEY='gw_sched_guest';
-let guest=[]; try{guest=JSON.parse(localStorage.getItem(LKEY)||'[]');}catch(e){}
+/* Sheets returns dates/times as full Date strings — normalise to YYYY-MM-DD / HH:MM */
+function asDate(v){const s=String(v||'');if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  const d=new Date(s);return isNaN(d)?s:d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+function asTime(v){const s=String(v||'');const m=s.match(/(\d{1,2}):(\d{2})/);
+  if(m)return ('0'+m[1]).slice(-2)+':'+m[2];const d=new Date(s);
+  return isNaN(d)?s:('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+function normalise(list){
+  const seen={},out=[];
+  (list||[]).forEach(x=>{const o={...x,d:asDate(x.d),s:asTime(x.s),e:asTime(x.e)};
+    const k=o.d+o.s+(o.nm||'');if(seen[k])return;seen[k]=1;out.push(o);});
+  return out;
+}
+let guest=[]; try{guest=normalise(JSON.parse(localStorage.getItem(LKEY)||'[]'));}catch(e){}
 function gsave(){try{localStorage.setItem(LKEY,JSON.stringify(guest));}catch(e){}}
+gsave();
 function setNote(msg,warn){const el=document.getElementById('syncnote');if(el){el.textContent=msg;el.style.color=warn?'#B4670F':'var(--mute)';}}
 function pushBooking(s){
   fetch(ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -140,9 +153,8 @@ function pullBookings(){
     .then(r=>r.ok?r.json():Promise.reject())
     .then(d=>{
       if(!d||!Array.isArray(d.slots)){setNote('Guest bookings save locally — sheet not wired for slots yet.',true);return;}
-      const seen={};guest.forEach(x=>seen[x.d+x.s+(x.nm||'')]=1);
-      d.slots.forEach(x=>{const k=x.d+x.s+(x.nm||'');if(seen[k])return;seen[k]=1;
-        guest.push({d:x.d,s:x.s,e:x.e,t:'guest',nm:x.nm||x.w||'Booked',loc:x.loc||'',w:x.w||'',by:x.by||''});});
+      const incoming=d.slots.map(x=>({d:x.d,s:x.s,e:x.e,t:'guest',nm:x.nm||x.w||'Booked',loc:x.loc||'',w:x.w||'',by:x.by||''}));
+      guest=normalise(guest.concat(incoming));
       gsave();renderMonth();renderSlots();setNote('Shared — everyone sees these bookings.');
     })
     .catch(()=>setNote('Guest bookings save locally — sheet not wired for slots yet.',true));
