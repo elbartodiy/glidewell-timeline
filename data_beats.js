@@ -50,7 +50,7 @@ const BEATS = [
     t:{en:"National leader",ru:"Национальный лидер"},
     d:{en:"Glidewell settles into 4141 MacArthur Blvd, Newport Beach (33,000 sq ft); 95% of cases now arrive by mail from 3,500+ dentists nationwide.",ru:"Glidewell закрепляется на 4141 MacArthur Blvd в Newport Beach (33 000 кв. футов); 95% кейсов приходят по почте от 3 500+ врачей по всей стране."},
     th:{en:"From a local lab to the national mail-order leader.",ru:"Из локальной лаборатории — в национального лидера почтовых заказов."}},
-  {y:"1993", tr:"g", j:[], ic:"npb",
+  {y:"1993", tr:"g", j:[], ic:"beat-13",
     t:{en:"Newport Beach",ru:"Newport Beach"},
     d:{en:"The lab moves into a 71,000 sq ft building in Newport Beach, CA.",ru:"Лаборатория переезжает в здание 71 000 кв. футов в Newport Beach, CA."},
     th:{en:"Footprint follows volume — the plant keeps outgrowing itself.",ru:"Площадь следует за объёмом — производство всё время перерастает себя."}},
