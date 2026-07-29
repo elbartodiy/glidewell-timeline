@@ -60,6 +60,24 @@
   .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:16px;font-size:11px;color:var(--mute);font-family:var(--mono)}
   .legend i{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:5px;vertical-align:-1px}
   .foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--mute);line-height:1.6}
+  /* booking dialog */
+  .dlgwrap{position:fixed;inset:0;background:rgba(20,24,28,.42);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .dlgwrap.open{display:flex}
+  .dlg{background:#fff;border-radius:14px;padding:24px 26px 20px;width:100%;max-width:430px;box-shadow:0 24px 60px rgba(0,0,0,.24)}
+  .dlg h2{font-size:19px;font-weight:700;margin:0 0 3px}
+  .dlg-when{font-size:13px;color:var(--mute);margin-bottom:16px}
+  .dlg label{display:block;font-size:12.5px;font-weight:600;margin:12px 0 5px}
+  .dlg label .req{font-weight:500;color:var(--mute)}
+  .dlg input,.dlg select{width:100%;font-family:inherit;font-size:15px;padding:10px 11px;border:1.5px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}
+  .dlg input:focus,.dlg select:focus{outline:none;border-color:var(--blue)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .dlg-err{color:#c02b2b;font-size:12.5px;min-height:18px;margin-top:10px}
+  .dlg-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+  .btn{font-family:inherit;font-size:14px;font-weight:600;padding:10px 18px;border-radius:7px;cursor:pointer;border:1.5px solid transparent}
+  .btn.ghost{background:#fff;border-color:var(--line);color:var(--ink)}
+  .btn.ghost:hover{background:#f5f7f9}
+  .btn.primary{background:var(--blue);color:#fff}
+  .btn.primary:hover{filter:brightness(.94)}
 </style>
 </head>
 <body>
@@ -93,6 +111,50 @@
   </div>
   <div class="foot" id="foot"></div>
   <div class="foot" id="syncnote" style="border:0;padding-top:4px;margin-top:0">…</div>
+</div>
+
+<div class="dlgwrap" id="bookdlg">
+  <div class="dlg">
+    <h2>Add a shoot</h2>
+    <div class="dlg-when" id="bk-when"></div>
+
+    <label>Who are you filming?</label>
+    <input id="bk-name" placeholder="e.g. Dr. Justin Chi" autocomplete="off">
+
+    <div class="row2">
+      <div>
+        <label>Start</label>
+        <select id="bk-start"></select>
+      </div>
+      <div>
+        <label>How long?</label>
+        <select id="bk-dur">
+          <option value="30">30 min</option>
+          <option value="60">1 hour</option>
+          <option value="90" selected>1½ hours</option>
+          <option value="120">2 hours</option>
+          <option value="180">3 hours</option>
+          <option value="480">All day</option>
+        </select>
+      </div>
+    </div>
+
+    <label>Where?</label>
+    <input id="bk-where" list="wherelist" placeholder="Studio 130" autocomplete="off">
+    <datalist id="wherelist">
+      <option>Studio 130</option><option>Campus</option><option>Irvine</option>
+      <option>TRAVEL — Raleigh, NC</option><option>TRAVEL — Provo, UT</option><option>Off-site</option>
+    </datalist>
+
+    <label>Your name <span class="req">— required to publish</span></label>
+    <input id="bk-by" placeholder="e.g. Eldar" autocomplete="off">
+
+    <div class="dlg-err" id="bk-err"></div>
+    <div class="dlg-actions">
+      <button class="btn ghost" id="bk-cancel">Cancel</button>
+      <button class="btn primary" id="bk-ok">Publish slot</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -160,20 +222,39 @@ function pullBookings(){
     .catch(()=>setNote('Guest bookings save locally — sheet not wired for slots yet.',true));
 }
 function bookSlot(date,hour){
-  const nm=prompt('Who are you filming? (name)');if(nm===null)return;
-  if(!nm.trim()){alert('Please enter who you are filming.');return;}
-  const loc=prompt('Where? (e.g. Studio 130, Campus, TRAVEL — city)','Studio 130');if(loc===null)return;
-  let by=prompt('YOUR name — required to publish this slot:',localStorage.getItem('gw_me')||'');
-  if(by===null)return;
-  while(!by||!by.trim()){
-    by=prompt('A name is required to publish. Who is adding this slot?','');
-    if(by===null)return;
+  const dlg=document.getElementById('bookdlg');
+  const dt=parse(date);
+  document.getElementById('bk-when').textContent=dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  // start-time options in 12h, every 30 min, 7am–8pm
+  const startSel=document.getElementById('bk-start'); startSel.innerHTML='';
+  for(let h=7;h<=20;h++) for(const m of ['00','30']){
+    const v=('0'+h).slice(-2)+':'+m;
+    startSel.insertAdjacentHTML('beforeend','<option value="'+v+'"'+(v===hour?' selected':'')+'>'+ampm(v)+'</option>');
   }
-  localStorage.setItem('gw_me',by.trim());
-  let end=parseInt(prompt('End hour (24h)',String(Math.min(+hour.slice(0,2)+2,20))),10);
-  if(!end||end<=+hour.slice(0,2))end=+hour.slice(0,2)+1;
-  const slot={d:date,s:hour,e:('0'+end).slice(-2)+':00',t:'guest',nm:nm.trim(),loc:loc.trim(),w:'',by:(by||'').trim()};
-  guest.push(slot);gsave();renderMonth();renderSlots();pushBooking(slot);
+  document.getElementById('bk-name').value='';
+  document.getElementById('bk-where').value='Studio 130';
+  document.getElementById('bk-by').value=localStorage.getItem('gw_me')||'';
+  document.getElementById('bk-dur').value='90';
+  document.getElementById('bk-err').textContent='';
+  dlg.dataset.date=date; dlg.classList.add('open');
+  setTimeout(()=>document.getElementById('bk-name').focus(),40);
+}
+function closeBook(){document.getElementById('bookdlg').classList.remove('open');}
+function submitBook(){
+  const dlg=document.getElementById('bookdlg'), err=document.getElementById('bk-err');
+  const nm=document.getElementById('bk-name').value.trim();
+  const where=document.getElementById('bk-where').value.trim();
+  const by=document.getElementById('bk-by').value.trim();
+  const start=document.getElementById('bk-start').value;
+  const dur=+document.getElementById('bk-dur').value;
+  if(!nm){err.textContent='Who are you filming?';return;}
+  if(!by){err.textContent='Your name is required to publish.';return;}
+  localStorage.setItem('gw_me',by);
+  const startMin=+start.slice(0,2)*60 + +start.slice(3);
+  const endMin=Math.min(startMin+dur, 21*60);
+  const e=('0'+Math.floor(endMin/60)).slice(-2)+':'+('0'+(endMin%60)).slice(-2);
+  const slot={d:dlg.dataset.date,s:start,e:e,t:'guest',nm:nm,loc:where,w:'',by:by};
+  guest.push(slot);gsave();closeBook();renderMonth();renderSlots();pushBooking(slot);
 }
 
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -246,6 +327,15 @@ document.getElementById('cal').addEventListener('click',e=>{
 });
 document.getElementById('slots').addEventListener('click',e=>{
   const b=e.target.closest('[data-book]');if(!b||!sel)return;bookSlot(sel,b.dataset.book);
+});
+document.getElementById('bk-cancel').onclick=closeBook;
+document.getElementById('bk-ok').onclick=submitBook;
+document.getElementById('bookdlg').addEventListener('click',e=>{if(e.target.id==='bookdlg')closeBook();});
+document.addEventListener('keydown',e=>{
+  const open=document.getElementById('bookdlg').classList.contains('open');
+  if(!open)return;
+  if(e.key==='Escape')closeBook();
+  if(e.key==='Enter'&&e.target.tagName!=='SELECT')submitBook();
 });
 document.getElementById('prev').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);renderMonth();};
 document.getElementById('next').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);renderMonth();};
