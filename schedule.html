@@ -53,6 +53,9 @@
   .slot.booked.hold{border-left:4px solid #9aa3ad}
   .slot.booked.tent{border-left:4px solid var(--amber);background:var(--ambertint)}
   .slot.booked.done{border-left:4px solid var(--green);background:var(--greentint)}
+  .slot.booked.guest{border-left:4px solid var(--blue);background:var(--bluetint)}
+  button.slot.free{width:100%;cursor:pointer;font-family:inherit}
+  button.slot.free:hover{background:var(--bluetint)}
   .empty{color:var(--mute);font-size:14px;padding:8px 0}
   .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:16px;font-size:11px;color:var(--mute);font-family:var(--mono)}
   .legend i{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:5px;vertical-align:-1px}
@@ -89,6 +92,7 @@
     </div>
   </div>
   <div class="foot" id="foot"></div>
+  <div class="foot" id="syncnote" style="border:0;padding-top:4px;margin-top:0">…</div>
 </div>
 
 <script>
@@ -119,6 +123,41 @@ const SLOTS = [
 const OPEN_HOURS=['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
 function isOpenDay(dt){const w=dt.getDay();return w>=1&&w<=4;}
 
+/* ---- guest bookings: stored in the same Google Sheet (via the survey Apps Script) ---- */
+const ENDPOINT="https://script.google.com/macros/s/AKfycby3qKlPjAHdiTQEPBFtunNB2b_BDYf_dwzTpSKAy1pB6A302qxqKsJFZQk1Q--peCqw/exec";
+const LKEY='gw_sched_guest';
+let guest=[]; try{guest=JSON.parse(localStorage.getItem(LKEY)||'[]');}catch(e){}
+function gsave(){try{localStorage.setItem(LKEY,JSON.stringify(guest));}catch(e){}}
+function setNote(msg,warn){const el=document.getElementById('syncnote');if(el){el.textContent=msg;el.style.color=warn?'#B4670F':'var(--mute)';}}
+function pushBooking(s){
+  fetch(ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({type:'slot',action:'add',slot:s})})
+   .then(()=>setNote('Saved to the shared sheet.'))
+   .catch(()=>setNote('Saved on this device (offline).',true));
+}
+function pullBookings(){
+  fetch(ENDPOINT+'?type=slots')
+    .then(r=>r.ok?r.json():Promise.reject())
+    .then(d=>{
+      if(!d||!Array.isArray(d.slots)){setNote('Guest bookings save locally — sheet not wired for slots yet.',true);return;}
+      const seen={};guest.forEach(x=>seen[x.d+x.s+(x.nm||'')]=1);
+      d.slots.forEach(x=>{const k=x.d+x.s+(x.nm||'');if(seen[k])return;seen[k]=1;
+        guest.push({d:x.d,s:x.s,e:x.e,t:'guest',nm:x.nm||x.w||'Booked',loc:x.loc||'',w:x.w||'',by:x.by||''});});
+      gsave();renderMonth();renderSlots();setNote('Shared — everyone sees these bookings.');
+    })
+    .catch(()=>setNote('Guest bookings save locally — sheet not wired for slots yet.',true));
+}
+function bookSlot(date,hour){
+  const nm=prompt('Who are you filming? (name)');if(nm===null||!nm.trim())return;
+  const loc=prompt('Where? (e.g. Studio 130, Campus, TRAVEL — city)','Studio 130');if(loc===null)return;
+  const by=prompt('Your name (who is booking)?',localStorage.getItem('gw_me')||'');if(by===null)return;
+  localStorage.setItem('gw_me',by||'');
+  let end=parseInt(prompt('End hour (24h)',String(Math.min(+hour.slice(0,2)+2,20))),10);
+  if(!end||end<=+hour.slice(0,2))end=+hour.slice(0,2)+1;
+  const slot={d:date,s:hour,e:('0'+end).slice(-2)+':00',t:'guest',nm:nm.trim(),loc:loc.trim(),w:'',by:(by||'').trim()};
+  guest.push(slot);gsave();renderMonth();renderSlots();pushBooking(slot);
+}
+
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 let view=new Date(2026,7,1), sel=null;
 
@@ -126,7 +165,7 @@ function iso(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+
 function parse(s){const p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function ampm(t){let[h,m]=t.split(':').map(Number);const s=h<12?'am':'pm';h=h%12||12;return h+(m?':'+('0'+m).slice(-2):'')+s;}
-function slotsFor(d){return SLOTS.filter(x=>x.d===d).sort((a,b)=>a.s<b.s?-1:1);}
+function slotsFor(d){return SLOTS.concat(guest).filter(x=>x.d===d).sort((a,b)=>a.s<b.s?-1:1);}
 
 function renderMonth(){
   document.getElementById('mtitle').textContent=MONTHS[view.getMonth()]+' '+view.getFullYear();
@@ -163,9 +202,18 @@ function renderSlots(){
       +'<div class="empty">Open — nothing booked yet.</div>';
     return;
   }
-  const taken={};list.forEach(x=>{for(let h=+x.s.slice(0,2);h<+x.e.slice(0,2);h++)taken[h]=1;});
-  let out=list.map(x=>{
-    const travel=/TRAVEL|Off-site/i.test(x.loc||'');
+  const mins=t=>+t.slice(0,2)*60 + +t.slice(3);
+  const taken={};
+  list.forEach(x=>{const a=mins(x.s),b=mins(x.e);
+    for(let h=0;h<24;h++){ if(h*60+60>a && h*60<b) taken[h]=1; }});
+  // merge booked + free hours into ONE chronological list
+  const rows=list.map(x=>({k:'b',min:+x.s.slice(0,2)*60+ +x.s.slice(3),x:x}));
+  if(isOpenDay(dt)) OPEN_HOURS.filter(t=>!taken[+t.slice(0,2)])
+    .forEach(t=>rows.push({k:'f',min:+t.slice(0,2)*60,t:t}));
+  rows.sort((a,b)=>a.min-b.min);
+  wrap.innerHTML=rows.map(r=>{
+    if(r.k==='f') return '<button class="slot free" data-book="'+r.t+'">'+ampm(r.t)+'</button>';
+    const x=r.x, travel=/TRAVEL|Off-site/i.test(x.loc||'');
     return '<div class="slot booked '+x.t+'">'
       +'<span class="tm">'+ampm(x.s)+' – '+ampm(x.e)+'</span>'
       +'<span class="nm">'+esc(x.nm||x.w)+'</span>'
@@ -173,13 +221,13 @@ function renderSlots(){
       +(x.w?'<span class="dt">'+esc(x.w)+'</span>':'')
       +(x.by?'<span class="who">'+esc(x.by)+'</span>':'')
       +'</div>';}).join('');
-  const free=OPEN_HOURS.filter(t=>!taken[+t.slice(0,2)]);
-  if(free.length&&isOpenDay(dt)) out+=free.map(t=>'<div class="slot">'+ampm(t)+'</div>').join('');
-  wrap.innerHTML=out;
 }
 
 document.getElementById('cal').addEventListener('click',e=>{
   const b=e.target.closest('[data-d]');if(!b)return;sel=b.dataset.d;renderMonth();renderSlots();
+});
+document.getElementById('slots').addEventListener('click',e=>{
+  const b=e.target.closest('[data-book]');if(!b||!sel)return;bookSlot(sel,b.dataset.book);
 });
 document.getElementById('prev').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);renderMonth();};
 document.getElementById('next').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);renderMonth();};
@@ -188,6 +236,8 @@ document.getElementById('foot').textContent='Booked days are highlighted; click 
 
 sel='2026-08-06';
 renderMonth();renderSlots();
+pullBookings();
+setInterval(pullBookings,60000);
 </script>
 </body>
 </html>
