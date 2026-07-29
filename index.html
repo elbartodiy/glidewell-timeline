@@ -126,6 +126,14 @@
   .topbtn{width:158px;height:54px;box-sizing:border-box;display:flex;flex-direction:row;align-items:center;gap:10px;text-align:left}
   .topbtn .mp-ttl{font-size:12px}
   .pers-ico{height:30px;width:auto;pointer-events:none}
+  .calbtn{width:128px;height:128px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center}
+  .calbtn .cal-ico{font-size:34px;line-height:1}
+  .calbtn .mp-ttl{font-size:13px}
+  #panel .cal-actions{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 4px}
+  #panel .cal-btn{font-family:var(--mono);font-size:12px;text-decoration:none;border-radius:999px;padding:7px 14px;border:1px solid var(--line,#e5e3df);background:var(--card);color:var(--ink)}
+  #panel .cal-btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+  #panel .cal-embed{margin-top:10px}
+  #panel .cal-embed iframe{width:100%;height:58vh;min-height:420px;border:0;border-radius:10px;background:#fff}
   .lgnd-sw.cap{border-top-color:#E11B2A}
   .lgnd-sw.terr{border-top-color:#2C6E9E}
   .lgnd-sw.emp{border-top-color:#5A5550;border-top-style:dashed}
@@ -668,7 +676,6 @@
     <h1 id="h-title"></h1>
     <div class="nav" id="nav"></div>
     <div class="viewtoggle"><button id="v-spine"></button><button id="v-full" aria-pressed="true"></button></div>
-    <a class="schedlink" href="schedule.html" title="Shoot schedule" style="font-family:var(--mono),ui-monospace,monospace;font-size:12px;text-decoration:none;color:#cfd6de;border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:6px 12px;white-space:nowrap">📅 Schedule</a>
     <div class="langtoggle"><button id="lang-en" aria-pressed="true">EN</button><button id="lang-ru" aria-pressed="false">RU</button></div>
   </div>
 </header>
@@ -1978,9 +1985,10 @@ function buildLayer(){
         +'<span class="pin-lbl hi'+(B.pos===0?' lbl-edge':'')+'">'+L(B.nm)+'</span></div>';
     }
   });
-  h+='<div class="morep topbtn" data-pers="1" style="left:88px;top:22px"><img class="pers-ico" src="icons/pers.png" alt=""><div class="mp-ttl">'+L({en:'People',ru:'Люди'})+'</div></div>';
-  h+='<div class="morep topbtn" data-cast="1" style="left:88px;top:96px"><img class="pers-ico" src="icons/email.png" alt=""><div class="mp-ttl">'+L({en:'Conversation',ru:'Переписка'})+'</div></div>';
-  h+='<div class="linelegend" style="left:266px;top:22px">'
+  h+='<div class="morep calbtn" data-cal="1" style="left:88px;top:22px" title="'+L({en:'Shoot schedule',ru:'Расписание съёмок'})+'"><span class="cal-ico">📅</span><div class="mp-ttl">'+L({en:'Calendar',ru:'Календарь'})+'</div></div>';
+  h+='<div class="morep topbtn" data-pers="1" style="left:236px;top:22px"><img class="pers-ico" src="icons/pers.png" alt=""><div class="mp-ttl">'+L({en:'People',ru:'Люди'})+'</div></div>';
+  h+='<div class="morep topbtn" data-cast="1" style="left:236px;top:96px"><img class="pers-ico" src="icons/email.png" alt=""><div class="mp-ttl">'+L({en:'Conversation',ru:'Переписка'})+'</div></div>';
+  h+='<div class="linelegend" style="left:414px;top:22px">'
     +'<div class="lgnd-row" data-metric="cap"><span class="lgnd-sw cap"></span>'+L(UI.legCap)+'</div>'
     +'<div class="lgnd-row" data-metric="territory"><span class="lgnd-sw terr"></span>'+L(UI.legTerr)+'</div>'
     +'<div class="lgnd-row" data-metric="employees"><span class="lgnd-sw emp"></span>'+L(UI.legEmp)+'</div>'
@@ -2058,7 +2066,7 @@ function render(){
   buildNav();
   document.getElementById('v-spine').textContent=L(UI.vSpine);
   document.getElementById('v-full').textContent=L(UI.vFull);
-  if(openRef) openRef.type==='expansion'?openExpansion(openRef.id,true):openRef.type==='workforce'?openWorkforce(openRef.id,true):openRef.type==='metric'?openMetric(openRef.id,true):openRef.type==='morepeople'?openMorePeople(true):openRef.type==='personalities'?openPersonalities(true):openRef.type==='spk'?openSpeaker(openRef.id,true):openRef.type==='journey'?openJourney(openRef.id,true):openRef.type==='jim'?openJim(openRef.id,true):openRef.type==='hero'?openHeroMoment(openRef.id,openRef.k,true):openRef.type==='pillar'?openPillar(openRef.id,true):openRef.type==='cal'?openCalEvent(openRef.id,true):openRef.type==='calmonth'?openCalMonth(openRef.id,true):openRef.type==='archive'?openArchive(true):openRef.type==='beatsheet'?openBeatSheet(openRef.id,true):openRef.type==='scene'?openScene(openRef.id,true):openRef.type==='allscenes'?openAllScenes(true):openRef.type==='allheroes'?openAllHeroes(true):openBeat(openRef.id,true);
+  if(openRef) openRef.type==='expansion'?openExpansion(openRef.id,true):openRef.type==='workforce'?openWorkforce(openRef.id,true):openRef.type==='metric'?openMetric(openRef.id,true):openRef.type==='morepeople'?openMorePeople(true):openRef.type==='personalities'?openPersonalities(true):openRef.type==='spk'?openSpeaker(openRef.id,true):openRef.type==='journey'?openJourney(openRef.id,true):openRef.type==='jim'?openJim(openRef.id,true):openRef.type==='hero'?openHeroMoment(openRef.id,openRef.k,true):openRef.type==='pillar'?openPillar(openRef.id,true):openRef.type==='cal'?openCalEvent(openRef.id,true):openRef.type==='calmonth'?openCalMonth(openRef.id,true):openRef.type==='schedule'?openCalendar(true):openRef.type==='archive'?openArchive(true):openRef.type==='beatsheet'?openBeatSheet(openRef.id,true):openRef.type==='scene'?openScene(openRef.id,true):openRef.type==='allscenes'?openAllScenes(true):openRef.type==='allheroes'?openAllHeroes(true):openBeat(openRef.id,true);
 }
 
 function setHL(bi,on){
@@ -2385,6 +2393,15 @@ function openCast(keep){
     +'<p class="scdesc">'+L({en:(castSort==='ours'?'Our move first, then by shoot date.':'By shoot date — soonest first; no date drops to the bottom, past dates lower.')+' Contacted: '+done+' of '+CAST_OUTREACH.length+'. Click a row to open the profile.',ru:(castSort==='ours'?'Сначала наш ход, затем по дате съёмки.':'По дате съёмки — ближайшие сверху; без даты — вниз, прошедшие — ещё ниже.')+' Связались: '+done+' из '+CAST_OUTREACH.length+'. Клик по строке — профиль.'})+'</p>'
     +'<p class="scdesc ct-ours"><b>🟠 '+L({en:'Our move — waiting on us ('+ours.length+'): ',ru:'Наш ход — ждут нас ('+ours.length+'): '})+'</b>'+ours.join(', ')+'</p>'
     +'<table class="casttbl"><colgroup><col class="c-face"><col class="c-nm"><col class="c-who"><col class="c-shoot"></colgroup><thead><tr><th></th><th>'+L({en:'Name',ru:'Имя'})+'</th><th>'+L({en:'Who · location',ru:'Кто · локация'})+'</th><th>'+L({en:'Shoot · status',ru:'Съёмка · статус'})+'</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  show();
+}
+function openCalendar(keep){
+  if(!keep) openRef={type:'schedule'}; clearPin();
+  pin.innerHTML='<div class="kicker">'+L({en:'Shoot schedule',ru:'Расписание съёмок'})+'</div>'
+    +'<h2>'+L({en:'Who films when',ru:'Кто когда снимает'})+'</h2>'
+    +'<div class="cal-actions"><a class="cal-btn" href="schedule.html" target="_blank" rel="noopener">⤢ '+L({en:'Open full page',ru:'Открыть на всю страницу'})+'</a></div>'
+    +'<p class="scdesc">'+L({en:'Days across the top, hours down the side. Anyone can open this and add their own slots — no login needed. Pick a mode, click a cell, give it a label and end hour.',ru:'Дни сверху, часы слева. Любой может открыть и вписать свои слоты — без логина. Выбери режим, кликни ячейку, впиши подпись и час окончания.'})+'</p>'
+    +'<div class="cal-embed"><iframe src="schedule.html" loading="lazy"></iframe></div>';
   show();
 }
 function openArchive(keep){
@@ -3022,7 +3039,7 @@ stage.addEventListener('click',e=>{
   const bd=e.target.closest('.bld'); if(bd){openExpansion(+bd.dataset.bld);return;}
   const pp=e.target.closest('.ppl'); if(pp){openWorkforce(+pp.dataset.ppl);return;}
   const lg=e.target.closest('.lgnd-row'); if(lg){openMetric(lg.dataset.metric);return;}
-  const mp=e.target.closest('.morep'); if(mp){mp.dataset.pers?openPersonalities():(mp.dataset.cast?openCast():openMorePeople());return;}
+  const mp=e.target.closest('.morep'); if(mp){mp.dataset.pers?openPersonalities():(mp.dataset.cast?openCast():(mp.dataset.cal?openCalendar():openMorePeople()));return;}
   const bk=e.target.closest('.beatblk,.beatpin'); if(bk){openBeatSheet(+bk.dataset.beatSheet);return;}
   const ce=e.target.closest('.cal-ev'); if(ce){openCalEvent(+ce.dataset.cal);return;}
   const cm=e.target.closest('.cal-month'); if(cm){openCalMonth(+cm.dataset.calMonth);return;}

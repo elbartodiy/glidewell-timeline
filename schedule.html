@@ -5,41 +5,142 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Glidewell Documentary — Shoot Schedule</title>
 <style>
-  :root{--paper:#EEF1F5;--card:#fff;--ink:#1C2024;--ink2:#55524d;--mute:#8A929B;--line:#dfe3e8;--red:#E11B2A;--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;--body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  :root{--paper:#EEF1F5;--card:#fff;--ink:#1C2024;--ink2:#55524d;--mute:#8A929B;--line:#dfe3e8;--red:#E11B2A;--redtint:#fbecec;--amber:#B4670F;--ambertint:#fbf1df;--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;--body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased}
-  header{background:#14181c;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-  header .logo{font-weight:800}header .logo b{color:var(--red)}
-  header h1{font-size:15px;font-weight:600;margin:0;color:#cfd6de}
-  header a.back{margin-left:auto;color:#cfd6de;text-decoration:none;font-family:var(--mono);font-size:12px;border:1px solid #3a4048;border-radius:999px;padding:5px 12px}
-  header a.back:hover{background:#20262c}
-  .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 20px}
-  .bar a.btn{font-family:var(--mono);font-size:12px;text-decoration:none;border-radius:999px;padding:7px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
-  .bar a.btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
-  .bar a.btn:hover{filter:brightness(.97)}
-  .note{padding:0 20px 12px;color:var(--ink2);font-size:13px;line-height:1.55;max-width:1000px}
-  .note b{color:var(--ink)}
-  .calwrap{padding:0 16px 28px}
-  .calframe{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 6px 20px rgba(28,32,36,.06)}
-  iframe{width:100%;height:74vh;min-height:560px;border:0;display:block}
+  html,body{margin:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased}
+  .moderow{display:flex;gap:8px;padding:12px 16px 4px;font-family:var(--mono);font-size:12px;align-items:center;flex-wrap:wrap}
+  .moderow .lbl{color:var(--mute)}
+  .modebtn{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;cursor:pointer;font-family:var(--mono);font-size:12px}
+  .modebtn.on.shoot{background:var(--red);color:#fff;border-color:var(--red)}
+  .modebtn.on.busy{background:#6b737c;color:#fff;border-color:#6b737c}
+  .modebtn.on.tent{background:var(--amber);color:#fff;border-color:var(--amber)}
+  .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 16px}
+  .navbtn{font-family:var(--mono);font-size:13px;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 12px;cursor:pointer}
+  .navbtn:hover{border-color:var(--mute)}
+  .wk{font-family:var(--mono);font-size:13px;font-weight:700;min-width:190px}
+  .who{display:flex;align-items:center;gap:8px;margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink2)}
+  .who input{font-family:var(--body);font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;min-width:150px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;padding:2px 16px 10px;font-family:var(--mono);font-size:11px;color:var(--mute)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+  .sw.shoot{background:var(--red)}.sw.busy{background:#9aa3ad}.sw.tent{background:var(--amber)}
+  .wrap{overflow:auto;padding:0 12px 30px}
+  table.grid{border-collapse:collapse;width:100%;min-width:820px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  table.grid th,table.grid td{border:1px solid var(--line);vertical-align:top}
+  table.grid thead th{background:#f5f7f9;font-family:var(--mono);font-size:11px;color:var(--ink2);padding:8px 6px;text-align:center;position:sticky;top:0;z-index:2}
+  table.grid thead th .dow{color:var(--mute);text-transform:uppercase;font-size:9.5px;display:block}
+  table.grid thead th.today{color:var(--red)}
+  td.hourlbl{font-family:var(--mono);font-size:11px;color:var(--mute);width:54px;text-align:right;padding:4px 8px;background:#f9fafb;white-space:nowrap}
+  td.cell{height:38px;cursor:pointer;padding:0;position:relative}
+  td.cell:hover{background:#f0f4f8}
+  .slot{font-family:var(--body);font-size:11px;line-height:1.2;padding:3px 5px;border-radius:5px;margin:1px;overflow:hidden;position:relative}
+  .slot.shoot{background:var(--redtint);border-left:3px solid var(--red);color:#7d1620}
+  .slot.busy{background:#eef1f4;border-left:3px solid #9aa3ad;color:#4b535c}
+  .slot.tent{background:var(--ambertint);border-left:3px solid var(--amber);color:#7a4a0e}
+  .slot .nm{display:block;font-family:var(--mono);font-size:9px;opacity:.7}
+  .slot .del{position:absolute;top:0;right:3px;cursor:pointer;opacity:.45;font-size:11px}
+  .slot .del:hover{opacity:1}
+  .hint{padding:0 16px 16px;color:var(--mute);font-size:12px;max-width:900px;line-height:1.5}
 </style>
 </head>
 <body>
-<header>
-  <span class="logo"><b>G</b> Glidewell</span>
-  <h1>Shoot Schedule — team calendar</h1>
-  <a class="back" href="index.html">← Timeline</a>
-</header>
-
-<div class="bar">
-  <a class="btn primary" href="https://calendar.google.com/calendar/u/0?cid=ZTU4ODU3ZDczOGI0NjNkODZhYWMxODUyMTlkNGUxMzhmNDhhNzJjYTNjZjRhNDRlNTM5ZjZhYmJiYjQzMWVhOEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t" target="_blank" rel="noopener">＋ Add / edit in Google Calendar</a>
-  <a class="btn" href="glidewell_shoots.ics" download>⬇ Import our shoots (.ics)</a>
+<div class="moderow">
+  <span class="lbl">Add as:</span>
+  <button class="modebtn shoot on" data-mode="shoot">🔴 Shoot</button>
+  <button class="modebtn busy" data-mode="busy">⬛ Busy</button>
+  <button class="modebtn tent" data-mode="tent">🟠 Tentative</button>
 </div>
-
-<p class="note">Days across the top, hours down the side — the week view below. Anyone can <b>see</b> it here; to <b>add your own slots</b>, open it in Google Calendar (top button) and drop an event on the day/time you need — mark it <b>Shoot</b>, <b>Busy</b> or <b>Tentative</b> in the title so we can read availability at a glance. If the grid below shows "no access", the calendar owner needs to set it <b>public (see all event details)</b> in the calendar's sharing settings.</p>
-
-<div class="calwrap"><div class="calframe">
-  <iframe src="https://calendar.google.com/calendar/embed?src=e588857d738b463d86aac185219d4e138f48a72ca3cf4a44e539f6abbb431ea8%40group.calendar.google.com&ctz=America%2FLos_Angeles&mode=WEEK&dates=20260803%2F20260809&showTitle=0&showPrint=0&showCalendars=0&showTz=0" loading="lazy"></iframe>
-</div></div>
+<div class="bar">
+  <button class="navbtn" id="prev">‹</button>
+  <button class="navbtn" id="today">Today</button>
+  <button class="navbtn" id="next">›</button>
+  <span class="wk" id="wklabel"></span>
+  <span class="who">Your name: <input id="me" placeholder="e.g. Eldar" autocomplete="off"></span>
+</div>
+<div class="legend">
+  <span><i class="sw shoot"></i> Shoot</span>
+  <span><i class="sw busy"></i> Busy / not available</span>
+  <span><i class="sw tent"></i> Tentative</span>
+</div>
+<div class="wrap"><table class="grid" id="grid"></table></div>
+<div class="hint" id="hint"></div>
+<script>
+const HOUR_START=7, HOUR_END=20, DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const SEED=[
+  {d:'2026-07-31',s:9,e:11,t:'shoot',w:'Neil Park — reportage @ his talk (campus)'},
+  {d:'2026-08-05',s:10,e:12,t:'shoot',w:'Neil Park — sit-down (campus)'},
+  {d:'2026-08-06',s:9,e:10,t:'busy',w:'Group scene (symposium) — Patel & Resnik in it'},
+  {d:'2026-08-06',s:10,e:12,t:'shoot',w:'Paresh Patel — Studio 130 (after his 9:15 talk)'},
+  {d:'2026-08-06',s:12,e:14,t:'shoot',w:'Randy Resnik — interview'},
+  {d:'2026-08-06',s:17,e:19,t:'busy',w:'Dinner — Mesa Manor'},
+  {d:'2026-08-07',s:12,e:14,t:'tent',w:'Backup slot — Patel / Resnik'},
+  {d:'2026-08-12',s:9,e:17,t:'shoot',w:'Studio 130 — Leeson · Chi · Brenneise'},
+  {d:'2026-08-19',s:9,e:17,t:'shoot',w:'Studio 130 — Sasaki · Manalili · Friebauer'},
+  {d:'2026-08-26',s:9,e:17,t:'shoot',w:'Studio 130 — Norton · Anna · Edsel'},
+  {d:'2026-08-27',s:9,e:17,t:'shoot',w:'Howard Farran — Summer IOX (campus)'},
+  {d:'2026-08-28',s:9,e:17,t:'shoot',w:'Summer IOX (day 2) / Farran b-roll'},
+  {d:'2026-08-28',s:9,e:17,t:'tent',w:'Kosinski + Patel — Raleigh (via Eldon)'},
+  {d:'2026-08-29',s:9,e:17,t:'tent',w:'Kosinski + Patel — Raleigh (via Eldon)'},
+  {d:'2026-09-02',s:9,e:17,t:'shoot',w:'Studio 130 — Ceranic · Fejzagic · Withrow'},
+  {d:'2026-10-04',s:12,e:17,t:'busy',w:'Fly to Provo + scout facilities w/ Rella'},
+  {d:'2026-10-06',s:9,e:17,t:'shoot',w:'Rella Christensen (+ Gordon?) — Provo lab'},
+  {d:'2026-10-07',s:9,e:17,t:'shoot',w:'Rella / Provo — day 2'},
+  {d:'2026-10-09',s:9,e:17,t:'busy',w:'Symposium (Oct 9–10)'},
+  {d:'2026-10-10',s:9,e:17,t:'busy',w:'Symposium (Oct 9–10)'},
+  {d:'2026-10-15',s:9,e:17,t:'shoot',w:'DOTR graduation — cohort + alumni'},
+  {d:'2026-10-16',s:9,e:17,t:'shoot',w:'DOTR graduation — cohort + alumni'},
+  {d:'2026-10-29',s:13,e:15,t:'tent',w:'Tim Kosinski — Irvine (backup)'}
+];
+const KEY='gw_sched_v1';
+let added=[]; try{added=JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(added));}catch(e){}}
+let mode='shoot';
+let weekStart=mondayOf(new Date(2026,7,3));
+function mondayOf(dt){const d=new Date(dt);const k=(d.getDay()+6)%7;d.setDate(d.getDate()-k);d.setHours(0,0,0,0);return d;}
+function iso(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+function all(){return SEED.map(x=>({...x,seed:true})).concat(added.map((x,i)=>({...x,seed:false,idx:i})));}
+function render(){
+  const days=[...Array(7)].map((_,i)=>{const d=new Date(weekStart);d.setDate(d.getDate()+i);return d;});
+  document.getElementById('wklabel').textContent=days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})+' – '+days[6].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const todayIso=iso(new Date());
+  let h='<thead><tr><th></th>';
+  days.forEach((d,i)=>{h+='<th class="'+(iso(d)===todayIso?'today':'')+'"><span class="dow">'+DAYS[i]+'</span>'+d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+'</th>';});
+  h+='</tr></thead><tbody>';
+  const items=all();
+  for(let hr=HOUR_START;hr<HOUR_END;hr++){
+    h+='<tr><td class="hourlbl">'+('0'+hr).slice(-2)+':00</td>';
+    days.forEach(d=>{const di=iso(d);
+      const starts=items.filter(x=>x.d===di&&x.s===hr);
+      const cover=items.some(x=>x.d===di&&x.s<hr&&x.e>hr);
+      let inner='';
+      starts.forEach(x=>{const span=x.e-x.s;
+        inner+='<div class="slot '+x.t+'" style="min-height:'+(span*38-4)+'px" title="'+esc(x.w)+'">'+esc(x.w)+(x.by?'<span class="nm">— '+esc(x.by)+'</span>':'')+(x.seed?'':'<span class="del" data-del="'+x.idx+'">✕</span>')+'</div>';});
+      h+='<td class="cell" data-d="'+di+'" data-h="'+hr+'"'+(cover&&!starts.length?' style="background:#f6f8fa"':'')+'>'+inner+'</td>';
+    });
+    h+='</tr>';
+  }
+  document.getElementById('grid').innerHTML=h+'</tbody>';
+}
+document.getElementById('grid').addEventListener('click',e=>{
+  const del=e.target.closest('[data-del]'); if(del){added.splice(+del.dataset.del,1);save();render();return;}
+  if(e.target.closest('.slot')) return;
+  const cell=e.target.closest('td.cell'); if(!cell) return;
+  const label=prompt('Slot label (e.g. "Interview — Dr. X" or "Busy — other shoot"):', mode==='busy'?'Busy':(mode==='tent'?'Tentative':'Shoot'));
+  if(label===null) return;
+  let end=parseInt(prompt('End hour (24h, e.g. '+(+cell.dataset.h+1)+'):', String(Math.min(+cell.dataset.h+1,HOUR_END))),10);
+  if(!end||end<=+cell.dataset.h) end=+cell.dataset.h+1;
+  added.push({d:cell.dataset.d,s:+cell.dataset.h,e:Math.min(end,HOUR_END),t:mode,w:label,by:document.getElementById('me').value.trim()});
+  save();render();
+});
+document.querySelectorAll('.modebtn').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;document.querySelectorAll('.modebtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');});
+document.getElementById('prev').onclick=()=>{weekStart.setDate(weekStart.getDate()-7);render();};
+document.getElementById('next').onclick=()=>{weekStart.setDate(weekStart.getDate()+7);render();};
+document.getElementById('today').onclick=()=>{weekStart=mondayOf(new Date());render();};
+const me=document.getElementById('me');me.value=localStorage.getItem('gw_me')||'';me.oninput=()=>localStorage.setItem('gw_me',me.value);
+document.getElementById('hint').textContent='Pre-filled with our current plan (Aug–Oct). Days across the top, hours down the side. Pick a mode, click a cell, add a label + end hour. No login needed. (Right now your added slots save in THIS browser only — shared sync so everyone sees each other is one wiring step away.)';
+render();
+</script>
 </body>
 </html>
