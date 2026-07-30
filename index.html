@@ -663,7 +663,7 @@
   #scroller .eralbl{fill:#A6B0BE}
   #scroller .eraband{fill:#28313D;opacity:.015}
   /* metric legend swatches → blue family to match the accent */
-  #scroller .lgnd-sw.cap{border-top-color:#FFFFFF;filter:drop-shadow(0 0 1.4px rgba(91,141,239,.85))} #scroller .lgnd-sw.terr{border-top-color:#5B8DEF} #scroller .lgnd-sw.emp{border-top-color:#9AA6B2}
+  #scroller .lgnd-sw.cap{border-top-color:#C3D6F7} #scroller .lgnd-sw.terr{border-top-color:#5B8DEF} #scroller .lgnd-sw.emp{border-top-color:#9AA6B2}
 </style>
 </head>
 <body>
@@ -1370,10 +1370,8 @@ function buildSVG(){
     if(pts.length>1){
       const line=pts.map(p=>p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' L ');
       s+='<path d="M '+pts[0].x.toFixed(1)+' '+base+' L '+line+' L '+pts[pts.length-1].x.toFixed(1)+' '+base+' Z" fill="#5B8DEF" fill-opacity="0.13" stroke="none"/>';
-      // Capitalization = the filled band. White line, with a soft casing so it reads
-      // both against the page and against its own fill underneath.
-      s+='<path d="M '+line+'" fill="none" stroke="#5B8DEF" stroke-opacity="0.45" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>';
-      s+='<path d="M '+line+'" fill="none" stroke="#FFFFFF" stroke-opacity="1" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>';
+      // Capitalization = the filled band, drawn as a clean white line (no casing).
+      s+='<path d="M '+line+'" fill="none" stroke="#FFFFFF" stroke-opacity="1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>';
     }
   })();
   // --- Territory (real, solid blue) + Employees (projection, dotted grey) growth lines ---
@@ -1389,10 +1387,7 @@ function buildSVG(){
       const pts=BEATS.map(b=>({x:b.x,yr:py(b.y)})).filter(p=>p.yr>=1969).map(p=>({x:p.x,y:base-(gAt(p.yr)/100)*amp})).sort((p,q)=>p.x-q.x);
       if(pts.length>1){
         const line=pts.map(p=>p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' L ');
-        // same casing language as the Capitalization band: every metric line gets a soft
-        // backing stroke so the three read as one family (here: pale casing, coloured core).
-        s+='<path d="M '+line+'" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>';
-        s+='<path d="M '+line+'" fill="none" stroke="'+S.stroke+'" stroke-opacity="'+S.op+'" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"'+(S.dash?' stroke-dasharray="'+S.dash+'"':'')+'/>';
+        s+='<path d="M '+line+'" fill="none" stroke="'+S.stroke+'" stroke-opacity="'+S.op+'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'+(S.dash?' stroke-dasharray="'+S.dash+'"':'')+'/>';
       }
     });
   })();
