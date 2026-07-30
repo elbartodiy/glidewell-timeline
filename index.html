@@ -110,6 +110,9 @@
   .qbank li{font-size:13px;line-height:1.5;margin:7px 0;padding-left:2px}
   .qs-src{font-family:var(--mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;border-radius:8px;padding:1px 6px;margin-right:7px;white-space:nowrap;color:#fff}
   .qs-neil{background:#5B8DEF} .qs-az{background:#4F93A6} .qs-prep{background:#9AA6B2}
+  .mline-hit{cursor:pointer;pointer-events:stroke}
+  .mline-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.62;cursor:pointer;pointer-events:auto;user-select:none}
+  .mline-hit:hover ~ .mline-lbl,.mline-lbl:hover{opacity:1}
   .scq-role{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;border:1px solid;border-radius:9px;padding:1px 7px;white-space:nowrap}
   .scq-d{color:var(--mute);font-size:12px}
   .scq-b{font-size:13.5px;line-height:1.55}
@@ -1357,6 +1360,26 @@ const HERO_DESC = {
   }
 };
 
+// Metric-line decoration: a wide invisible hit area (click → the metric panel) plus the
+// line's name repeated along it, so you still know which curve is which after scrolling
+// away from the legend.
+function mlineDeco(line, pts, key, label, colour){
+  let out='<path class="mline-hit" data-metric="'+key+'" d="M '+line+'" fill="none" stroke="transparent" stroke-width="16"><title>'+label+'</title></path>';
+  if(pts.length>1){
+    // The three curves sit almost on top of each other in the early years, so each metric
+    // gets its own horizontal phase and its own side of the line — labels never collide.
+    const PHASE={cap:0, territory:1, employees:2}[key]||0;
+    const DY={cap:-8, territory:-8, employees:13}[key]||-8;
+    const STEP=1650, first=pts[0].x, last=pts[pts.length-1].x;
+    for(let x=first+560+PHASE*(STEP/3); x<last-140; x+=STEP){
+      let p=pts[pts.length-1];
+      for(let i=1;i<pts.length;i++){ if(pts[i].x>=x){ const a=pts[i-1],b=pts[i];
+        const t=(x-a.x)/((b.x-a.x)||1); p={x:x,y:a.y+(b.y-a.y)*t}; break; } }
+      out+='<text class="mline-lbl" data-metric="'+key+'" x="'+x.toFixed(1)+'" y="'+(p.y+DY).toFixed(1)+'" fill="'+colour+'">'+label+'</text>';
+    }
+  }
+  return out;
+}
 function buildSVG(){
   let s='';
   // --- APPROXIMATE company-growth backdrop (illustrative; replace %s with real internal figures) ---
@@ -1372,14 +1395,15 @@ function buildSVG(){
       s+='<path d="M '+pts[0].x.toFixed(1)+' '+base+' L '+line+' L '+pts[pts.length-1].x.toFixed(1)+' '+base+' Z" fill="#5B8DEF" fill-opacity="0.13" stroke="none"/>';
       // Capitalization = the filled band, drawn as a clean white line (no casing).
       s+='<path d="M '+line+'" fill="none" stroke="#FFFFFF" stroke-opacity="1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>';
+      s+=mlineDeco(line,pts,'cap',L(UI.legCap),'#5B8DEF');
     }
   })();
   // --- Territory (real, solid blue) + Employees (projection, dotted grey) growth lines ---
   (function(){
     const py=v=>{ v=String(v); if(/today|now|present/i.test(v))return 2026; const m=v.match(/(\d{4})/); if(m)return +m[1]; const d=v.match(/(\d0)s/); if(d){let b=+d[1]; return (b<=30?2000:1900)+b;} return 1970; };
     const series=[
-      {A:[[1970,1],[1984,2],[1989,4],[1993,8],[2001,16],[2007,24],[2018,55],[2020,100],[2026,100]], peak:124, stroke:'#5B8DEF', dash:'', op:0.55},
-      {A:[[1970,0.5],[1984,1],[2007,30],[2018,50],[2020,95],[2026,100]], peak:150, stroke:'#9AA6B2', dash:'5 4', op:0.6}
+      {A:[[1970,1],[1984,2],[1989,4],[1993,8],[2001,16],[2007,24],[2018,55],[2020,100],[2026,100]], peak:124, stroke:'#5B8DEF', dash:'', op:0.55, key:'territory', label:UI.legTerr},
+      {A:[[1970,0.5],[1984,1],[2007,30],[2018,50],[2020,95],[2026,100]], peak:150, stroke:'#9AA6B2', dash:'5 4', op:0.6, key:'employees', label:UI.legEmp}
     ];
     series.forEach(function(S){
       const gAt=y=>{ if(y<=S.A[0][0])return S.A[0][1]; for(let i=1;i<S.A.length;i++){ if(y<=S.A[i][0]){ const a=S.A[i-1],b=S.A[i]; return a[1]+(b[1]-a[1])*(y-a[0])/(b[0]-a[0]); } } return 100; };
@@ -1388,6 +1412,7 @@ function buildSVG(){
       if(pts.length>1){
         const line=pts.map(p=>p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' L ');
         s+='<path d="M '+line+'" fill="none" stroke="'+S.stroke+'" stroke-opacity="'+S.op+'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'+(S.dash?' stroke-dasharray="'+S.dash+'"':'')+'/>';
+        s+=mlineDeco(line,pts,S.key,L(S.label),S.stroke);
       }
     });
   })();
@@ -2558,6 +2583,7 @@ pin.addEventListener('input',e=>{
   const n=e.target.closest('.sv-name'); if(n){ const d=svLoad(); d.name=n.value; svSave(d); }
 });
 draw.addEventListener('click',e=>{
+  const ml=e.target.closest('.mline-hit,.mline-lbl'); if(ml){openMetric(ml.dataset.metric);return;}
   const gh=e.target.closest('[data-go-allheroes]'); if(gh){openAllHeroes();return;}
   const sp=e.target.closest('.spkpill'); if(sp){openSpeaker(sp.dataset.spk);return;}
   const pl=e.target.closest('[data-pillar]'); if(pl){openPillar(pl.dataset.pillar);return;}
