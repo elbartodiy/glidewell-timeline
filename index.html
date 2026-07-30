@@ -1389,7 +1389,10 @@ function buildSVG(){
       const pts=BEATS.map(b=>({x:b.x,yr:py(b.y)})).filter(p=>p.yr>=1969).map(p=>({x:p.x,y:base-(gAt(p.yr)/100)*amp})).sort((p,q)=>p.x-q.x);
       if(pts.length>1){
         const line=pts.map(p=>p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' L ');
-        s+='<path d="M '+line+'" fill="none" stroke="'+S.stroke+'" stroke-opacity="'+S.op+'" stroke-width="1.6"'+(S.dash?' stroke-dasharray="'+S.dash+'"':'')+'/>';
+        // same casing language as the Capitalization band: every metric line gets a soft
+        // backing stroke so the three read as one family (here: pale casing, coloured core).
+        s+='<path d="M '+line+'" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>';
+        s+='<path d="M '+line+'" fill="none" stroke="'+S.stroke+'" stroke-opacity="'+S.op+'" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"'+(S.dash?' stroke-dasharray="'+S.dash+'"':'')+'/>';
       }
     });
   })();
