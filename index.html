@@ -1472,7 +1472,7 @@ function buildLayer(){
   // with roles; byBeat data is kept for the "who can tell" list in each milestone card.
   BEATS.forEach((b,i)=>{
     h+='<div class="ev t-'+b.tr+' tier-'+(b.tier||3)+(b.dual?' dual':'')+'" style="left:'+b.x+'px;top:'+(LINEY+28)+'px" data-beat="'+i+'">'
-      +'<img class="ev-ico" src="icons/'+(b.ic||('beat-'+('0'+(i+1)).slice(-2)))+'.png" alt="" loading="lazy">'
+      +(b.ic===''?'':'<img class="ev-ico" src="icons/'+(b.ic||('beat-'+('0'+(i+1)).slice(-2)))+'.png" alt="" loading="lazy">')
       +(b.star?'<span class="star">'+L(b.star)+'</span>':'')
       +(b.sc&&b.sc.length?'<div class="sc">'+b.sc.map(n=>'#'+n).join(' ')+'</div>':'')
       +'<div class="yr">'+b.y+'</div><h3>'+L(b.t)+'</h3><div class="d">'+L(b.d)+'</div><div class="th">'+L(b.th)+'</div></div>';
