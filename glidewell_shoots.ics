@@ -82,11 +82,18 @@ DTEND;VALUE=DATE:20260829
 SUMMARY:Shoot — Howard Farran @ Summer IOX (campus)
 END:VEVENT
 BEGIN:VEVENT
-UID:gw-raleigh@glidewell
-DTSTAMP:20260729T120000Z
-DTSTART;VALUE=DATE:20260828
-DTEND;VALUE=DATE:20260830
-SUMMARY:Tentative — Kosinski + Patel (Raleigh, via Eldon)
+UID:gw-kosinski-raleigh@glidewell
+DTSTAMP:20260803T120000Z
+DTSTART;TZID=America/Los_Angeles:20260919T090000
+DTEND;TZID=America/Los_Angeles:20260919T120000
+SUMMARY:Shoot — Tim Kosinski (Raleigh; Ivan on location, Eldar by video link)
+END:VEVENT
+BEGIN:VEVENT
+UID:gw-patel-raleigh@glidewell
+DTSTAMP:20260803T120000Z
+DTSTART;TZID=America/Los_Angeles:20260919T130000
+DTEND;TZID=America/Los_Angeles:20260919T170000
+SUMMARY:Tentative — Paresh Patel b-roll (his clinic, Raleigh area)
 END:VEVENT
 BEGIN:VEVENT
 UID:gw-studio-0902@glidewell
