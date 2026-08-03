@@ -82,39 +82,11 @@ DTEND;VALUE=DATE:20260829
 SUMMARY:Shoot — Howard Farran @ Summer IOX (campus)
 END:VEVENT
 BEGIN:VEVENT
-UID:gw-kosinski-raleigh@glidewell
-DTSTAMP:20260803T120000Z
-DTSTART;TZID=America/Los_Angeles:20260919T090000
-DTEND;TZID=America/Los_Angeles:20260919T120000
-SUMMARY:Shoot — Tim Kosinski (Raleigh; Ivan on location, Eldar by video link)
-END:VEVENT
-BEGIN:VEVENT
-UID:gw-patel-raleigh@glidewell
-DTSTAMP:20260803T120000Z
-DTSTART;TZID=America/Los_Angeles:20260919T130000
-DTEND;TZID=America/Los_Angeles:20260919T170000
-SUMMARY:Tentative — Paresh Patel b-roll (his clinic, Raleigh area)
-END:VEVENT
-BEGIN:VEVENT
 UID:gw-studio-0902@glidewell
 DTSTAMP:20260729T120000Z
 DTSTART;VALUE=DATE:20260902
 DTEND;VALUE=DATE:20260903
 SUMMARY:Shoot — Studio 130 day (Ceranic, Fejzagic, Withrow)
-END:VEVENT
-BEGIN:VEVENT
-UID:gw-provo-scout@glidewell
-DTSTAMP:20260729T120000Z
-DTSTART;VALUE=DATE:20261004
-DTEND;VALUE=DATE:20261005
-SUMMARY:Busy — Fly to Provo + scout facilities with Rella
-END:VEVENT
-BEGIN:VEVENT
-UID:gw-rella@glidewell
-DTSTAMP:20260729T120000Z
-DTSTART;VALUE=DATE:20261006
-DTEND;VALUE=DATE:20261008
-SUMMARY:Shoot — Rella Christensen (+ Gordon?) — Provo lab
 END:VEVENT
 BEGIN:VEVENT
 UID:gw-symp-oct@glidewell
@@ -131,10 +103,24 @@ DTEND;VALUE=DATE:20261017
 SUMMARY:Shoot — DOTR graduation (cohort + alumni)
 END:VEVENT
 BEGIN:VEVENT
-UID:gw-kosinski-backup@glidewell
-DTSTAMP:20260729T120000Z
-DTSTART;TZID=America/Los_Angeles:20261029T130000
-DTEND;TZID=America/Los_Angeles:20261029T150000
-SUMMARY:Tentative — Tim Kosinski (Irvine backup, if Raleigh slips)
+UID:gw-provo-scout@glidewell
+DTSTAMP:20260803T120000Z
+DTSTART;VALUE=DATE:20261028
+DTEND;VALUE=DATE:20261029
+SUMMARY:Provo — facility tour + pick the areas (with Rella)
+END:VEVENT
+BEGIN:VEVENT
+UID:gw-rella@glidewell
+DTSTAMP:20260803T120000Z
+DTSTART;VALUE=DATE:20261029
+DTEND;VALUE=DATE:20261030
+SUMMARY:Shoot — Rella Christensen + Clinical Studies Lab (Provo; Ivan on location, Eldar by video link)
+END:VEVENT
+BEGIN:VEVENT
+UID:gw-kosinski-irvine@glidewell
+DTSTAMP:20260803T120000Z
+DTSTART;TZID=America/Los_Angeles:20261105T130000
+DTEND;TZID=America/Los_Angeles:20261105T150000
+SUMMARY:Proposed — Tim Kosinski (Irvine, before the Nov 6-7 symposium)
 END:VEVENT
 END:VCALENDAR
