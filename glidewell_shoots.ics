@@ -13,17 +13,17 @@ SUMMARY:Shoot — Neil Park (reportage @ his campus talk)
 END:VEVENT
 BEGIN:VEVENT
 UID:gw-park-sitdown@glidewell
-DTSTAMP:20260729T120000Z
-DTSTART;TZID=America/Los_Angeles:20260805T100000
-DTEND;TZID=America/Los_Angeles:20260805T120000
-SUMMARY:Shoot — Neil Park (sit-down, campus)
+DTSTAMP:20260803T120000Z
+DTSTART;TZID=America/Los_Angeles:20260806T140000
+DTEND;TZID=America/Los_Angeles:20260806T153000
+SUMMARY:Shoot — Neil Park (sit-down, Studio 130)
 END:VEVENT
 BEGIN:VEVENT
 UID:gw-groupscene@glidewell
 DTSTAMP:20260729T120000Z
-DTSTART;TZID=America/Los_Angeles:20260806T090000
+DTSTART;TZID=America/Los_Angeles:20260806T083000
 DTEND;TZID=America/Los_Angeles:20260806T100000
-SUMMARY:Busy — Group scene (symposium, Patel & Resnik in it)
+SUMMARY:Shoot — Symposium floor, candid b-roll
 END:VEVENT
 BEGIN:VEVENT
 UID:gw-patel@glidewell
