@@ -256,7 +256,11 @@
   #panel .ct-who{font-family:var(--mono);font-size:11px;color:var(--mute);line-height:1.35}
   #panel .ct-loc{color:var(--slate,#8A929B);margin-top:2px}
   #panel .ct-shoot{line-height:1.4}
-  #panel .ct-shoot-txt{white-space:pre-line}
+  #panel .ct-fact{display:flex;gap:6px;margin-top:3px;font-size:12px;line-height:1.35}
+  #panel .ct-fk{flex:0 0 auto;min-width:78px;color:var(--mute);font-size:10px;letter-spacing:.5px;text-transform:uppercase;padding-top:1px}
+  #panel .ct-fv{color:var(--ink)}
+  #panel .ct-prose{white-space:pre-line;font-size:13px;line-height:1.55;color:var(--ink)}
+  #panel .ct-prose + .ct-note{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
   #panel .ct-strow{margin:0 0 6px;display:flex;align-items:center;flex-wrap:wrap}
   #panel .ct-st{font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap}
   #panel .ct-ball{font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap;margin-top:6px;display:inline-block}
@@ -1896,16 +1900,7 @@ function openCast(keep){
   const ST={confirmed:{l:{en:'Confirmed',ru:'Подтвердил'},e:'✅',c:'#1F7A57'}, sent:{l:{en:'Email sent',ru:'Письмо отправлено'},e:'📨',c:'#3B6EA5'}, ready:{l:{en:'Ready — not sent',ru:'Готово — не отправлено'},e:'✍️',c:'#B07A16'}, paused:{l:{en:'On hold',ru:'На паузе'},e:'⏸',c:'#8A929B'}};
   const today='2026-07-27';
   const BALL={us:{l:{en:'Our move',ru:'Наш ход'},e:'🟠',c:'#B4670F'}, them:{l:{en:'Their move',ru:'Их ход'},e:'⏳',c:'#8A929B'}};
-  const NEXT={
-    'Neil Park':{en:'Propose the sit-down day (early Aug), via Eric',ru:'Предложить день сит-дауна (нач. авг), через Eric'},
-    'Tim Kosinski':{en:'Pick Thu Oct 29 or Thu Nov 5 and confirm',ru:'Выбрать чт 29 окт или чт 5 ноя и подтвердить'},
-    'Howard Farran':{en:'Send him the campus date to fly out',ru:'Дать ему дату прилёта на кампус'},
-    'Rella Christensen':{en:'Lock the Provo travel dates (team back Jul 27)',ru:'Согласовать даты выезда в Прово (команда с 27 июл)'},
-    'Gordon Christensen':{en:'First outreach — same trip as Rella',ru:'Первый контакт — тем же выездом, что и Rella'},
-    'Robert Brenneise':{en:'Schedule his studio day + confirm role',ru:'Назначить студийный день + уточнить роль'},
-    'Paul Feuerstein':{en:'Decide whether to pursue + who writes first',ru:'Решить: берём ли + кто пишет первым'}};
-  const themOverride={resnik:1};
-  const ballFor=p=>p.ball?p.ball:((p.status==='sent'||themOverride[p.k])?'them':'us');
+  const ballFor=p=>p.ball?p.ball:(p.status==='sent'?'them':'us');
   const grp=p=>(!p.date?1:(p.date<today?2:0));
   const srank={confirmed:0,sent:1,ready:2,paused:3};
   const byDate=(a,b)=>{var ga=grp(a),gb=grp(b); if(ga!==gb)return ga-gb; if(ga===1)return (srank[a.status]||9)-(srank[b.status]||9); return a.date<b.date?-1:(a.date>b.date?1:0);};
@@ -1914,15 +1909,23 @@ function openCast(keep){
     : byDate);
   const MON={en:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],ru:['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек']};
   const dlbl=p=>{ if(!p.date)return L({en:'date TBC',ru:'дата TBC'}); var m=+p.date.slice(5,7),d=+p.date.slice(8,10); return d+' '+MON[lang][m-1]; };
-  const rows=list.map(p=>{ const s=ST[p.status]||ST.ready; const bl=ballFor(p); const b=BALL[bl]; const nxt=(bl==='us'&&NEXT[p.nm])?L(NEXT[p.nm]):'';
+  /* The row carries hard data only — when, where, who arranged it, one next step.
+     Prose lives under the ▾ so a long entry can't stretch the whole table. */
+  const FLD={when:{en:'When',ru:'Когда'}, where:{en:'Where',ru:'Где'}, via:{en:'Agreed',ru:'Договаривались'}};
+  const fact=(p,key)=>p[key]?'<div class="ct-fact"><span class="ct-fk">'+L(FLD[key])+'</span><span class="ct-fv">'+L(p[key])+'</span></div>':'';
+  const rows=list.map(p=>{ const s=ST[p.status]||ST.ready; const bl=ballFor(p); const b=BALL[bl];
+    const nxt=(bl==='us'&&p.next)?L(p.next):'';
     const av=(typeof SPK_IMG!=='undefined'&&SPK_IMG[p.k])?'<img src="'+SPK_IMG[p.k]+'" alt="">':'<span class="ct-ph">'+p.nm.charAt(0)+'</span>';
-    const note=p.note?L(p.note):'';
-    const detail='<tr class="ct-detail" id="ctd-'+p.k+'"><td colspan="4"><div class="ct-note'+(note?'':' ct-note-empty')+'">'+(note||L({en:'No saved notes yet.',ru:'Пока нет заметок.'}))+'</div></td></tr>';
+    const note=p.note?L(p.note):'', prose=p.shoot?L(p.shoot):'';
+    const body=(prose?'<div class="ct-prose">'+prose+'</div>':'')+(note?'<div class="ct-note">'+note+'</div>':'');
+    const detail='<tr class="ct-detail" id="ctd-'+p.k+'"><td colspan="4">'+(body||'<div class="ct-note ct-note-empty">'+L({en:'No saved notes yet.',ru:'Пока нет заметок.'})+'</div>')+'</td></tr>';
     return '<tr class="ct-main'+(bl==='us'?' ct-ball-us':'')+'" data-row="'+p.k+'" title="'+L({en:'Click to expand · click the name to open the profile',ru:'Клик — развернуть · клик по имени — профиль'})+'">'
       +'<td class="ct-face">'+av+'</td>'
-      +'<td class="ct-nm">'+((typeof SPK!=='undefined'&&p.k&&SPK[p.k])?'<span class="ct-nmlink" data-go="'+p.k+'">'+p.nm+'</span>':'<span class="ct-nm-plain">'+p.nm+'</span>')+(p.note?' <span class="ct-more">▾</span>':'')+'<div class="ct-date">'+dlbl(p)+'</div><div class="ct-ball" style="color:'+b.c+'">'+b.e+' '+L(b.l)+'</div></td>'
+      +'<td class="ct-nm">'+((typeof SPK!=='undefined'&&p.k&&SPK[p.k])?'<span class="ct-nmlink" data-go="'+p.k+'">'+p.nm+'</span>':'<span class="ct-nm-plain">'+p.nm+'</span>')+(body?' <span class="ct-more">▾</span>':'')+'<div class="ct-date">'+dlbl(p)+'</div><div class="ct-ball" style="color:'+b.c+'">'+b.e+' '+L(b.l)+'</div></td>'
       +'<td class="ct-who">'+(p.staff?'🟢 ':'⚪ ')+L(p.who)+'<div class="ct-loc">'+p.loc+'</div></td>'
-      +'<td class="ct-shoot"><div class="ct-strow"><span class="ct-st" style="color:'+s.c+'">'+s.e+' '+L(s.l)+'</span></div>'+(nxt?'<div class="ct-next">→ '+nxt+'</div>':'')+'<div class="ct-shoot-txt">'+L(p.shoot)+'</div></td>'
+      +'<td class="ct-shoot"><div class="ct-strow"><span class="ct-st" style="color:'+s.c+'">'+s.e+' '+L(s.l)+'</span></div>'
+        +fact(p,'when')+fact(p,'where')+fact(p,'via')
+        +(nxt?'<div class="ct-next">→ '+nxt+'</div>':'')+'</td>'
       +'</tr>'+detail;}).join('');
   const done=CAST_OUTREACH.filter(p=>p.status==='sent'||p.status==='confirmed').length;
   const ours=list.filter(p=>ballFor(p)==='us').map(p=>p.nm);
