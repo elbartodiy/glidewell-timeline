@@ -113,7 +113,7 @@ const BEATS = [
    th:'From a local lab to the national mail-order leader.',
    d:'Glidewell settles into 4141 MacArthur Blvd, Newport Beach (33,000 sq ft); 95% of cases now arrive by mail from 3,500+ dentists nationwide.',
    wall:[{img:'lab5move', w:460, dx:-470, cy:400, hero:true}],
-   table:[{img:'bizcard', w:290, dx:330, lz:200, rot:5}]},
+   table:[{img:'bizcard', w:290, dx:-320, lz:210, rot:5}]},
 
   /* ---- ERA 3 · the computer arrives, 1993–2007 ---- */
   {x:12800, y:'1993', t:'NEWPORT BEACH',
@@ -196,14 +196,14 @@ const SEGMENTS = [
    rail:'rgba(165,175,172,0.5)', railInk:'rgba(198,208,202,0.7)',
    light:{pool:'214,240,224', poolR:820, poolA:0.20},
    tube:{line:'228,255,238', glow:'212,245,228'},
-   bgc:[10,12,11], grain:0.038, wInsetR:320, bInsetR:340},
+   bgc:[10,12,11], grain:0.038, wInsetR:480, bInsetR:540},
   {x0:SEAM_2, x1:WORLD_END+900, z0:800, z1:940, wall:'wall3', bench:'bench3', front:'front3',
    font:'Verdana, Tahoma, "DejaVu Sans", sans-serif',
    ink:'226,232,238', lamp:'tube', dust:false,
    rail:'rgba(185,196,202,0.5)', railInk:'rgba(212,222,228,0.75)',
    light:{pool:'218,232,252', poolR:900, poolA:0.17},
    tube:{line:'238,246,255', glow:'216,230,250'},
-   bgc:[11,12,14], grain:0.028, wInsetL:320, bInsetL:340},
+   bgc:[11,12,14], grain:0.028, wInsetL:480, bInsetL:540},
 ];
 const SEAMS = [
   {x:SEAM_1, kind:'door',   back:'255,200,120', ahead:'210,240,225'},
@@ -780,49 +780,68 @@ function drawOutro(){
 
 /* the outside between two buildings — seen through the window seam */
 function makeOutside(){
-  const c = document.createElement('canvas'); c.width = 1100; c.height = 800;
+  const c = document.createElement('canvas'); c.width = 1400; c.height = 800;
   const g = c.getContext('2d');
-  const sky = g.createLinearGradient(0, 0, 0, 800);
-  sky.addColorStop(0, '#04060c'); sky.addColorStop(.55, '#0c141f'); sky.addColorStop(.8, '#1b2836'); sky.addColorStop(1, '#090c12');
-  g.fillStyle = sky; g.fillRect(0, 0, 1100, 800);
-  const R = rng(777);
-  g.fillStyle = 'rgba(255,255,255,0.5)';
-  for (let i = 0; i < 26; i++) g.fillRect(R()*1100, R()*300, 1.5, 1.5);   // stars
-  // building we are leaving (low, warm windows)
-  g.fillStyle = '#0b0c0e';
-  g.fillRect(0, 300, 400, 500);
-  g.fillRect(340, 380, 90, 420);
-  for (let r = 0; r < 5; r++) for (let col = 0; col < 6; col++){
-    if (R() < 0.45) continue;
-    g.fillStyle = `rgba(235,215,160,${0.25 + R()*0.3})`;
-    g.fillRect(28 + col*58, 330 + r*74, 34, 44);
+  // bright coastal sky
+  const sky = g.createLinearGradient(0, 0, 0, 560);
+  sky.addColorStop(0, '#7fb6e8'); sky.addColorStop(.6, '#aed3f0'); sky.addColorStop(1, '#e8ecda');
+  g.fillStyle = sky; g.fillRect(0, 0, 1400, 560);
+  // sun with glow
+  let sg = g.createRadialGradient(320, 130, 8, 320, 130, 190);
+  sg.addColorStop(0, 'rgba(255,252,235,0.95)'); sg.addColorStop(.2, 'rgba(255,244,200,0.55)'); sg.addColorStop(1, 'rgba(255,240,190,0)');
+  g.fillStyle = sg; g.fillRect(130, -60, 380, 380);
+  g.fillStyle = '#fffdf2';
+  g.beginPath(); g.arc(320, 130, 34, 0, 7); g.fill();
+  // the ocean
+  const sea = g.createLinearGradient(0, 470, 0, 620);
+  sea.addColorStop(0, '#3f7fae'); sea.addColorStop(.5, '#2f6a97'); sea.addColorStop(1, '#2a5d86');
+  g.fillStyle = sea; g.fillRect(0, 470, 1400, 150);
+  g.fillStyle = 'rgba(255,255,255,0.35)';
+  const R = rng(4242);
+  for (let i = 0; i < 90; i++) g.fillRect(R()*1400, 480 + R()*120, 6 + R()*16, 1.6);   // sparkle
+  g.fillStyle = 'rgba(255,248,220,0.30)';
+  g.fillRect(240, 476, 170, 90);   // sun path on water
+  // shoreline and ground
+  g.fillStyle = '#d9c9a4'; g.fillRect(0, 610, 1400, 40);
+  g.fillStyle = '#9aa08a'; g.fillRect(0, 645, 1400, 155);
+  // the 1993 building — white low-rise, right side
+  g.fillStyle = '#f0efe8'; g.fillRect(1010, 330, 390, 330);
+  g.fillStyle = '#dcdbd2'; g.fillRect(1010, 330, 390, 16);
+  for (let r = 0; r < 3; r++) for (let col = 0; col < 5; col++){
+    g.fillStyle = 'rgba(70,100,130,0.55)';
+    g.fillRect(1034 + col*72, 362 + r*88, 46, 56);
   }
-  // building we are entering (taller, cool windows)
-  g.fillStyle = '#0d1015';
-  g.fillRect(690, 170, 410, 630);
-  g.fillRect(620, 260, 90, 540);
-  for (let r = 0; r < 8; r++) for (let col = 0; col < 6; col++){
-    if (R() < 0.4) continue;
-    g.fillStyle = `rgba(175,205,240,${0.22 + R()*0.3})`;
-    g.fillRect(712 + col*62, 196 + r*72, 38, 42);
+  // palms
+  function palm(x, y, s, lean){
+    g.strokeStyle = '#4a3c28'; g.lineWidth = 7*s; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x, y);
+    g.quadraticCurveTo(x + 30*lean*s, y - 90*s, x + 55*lean*s, y - 150*s);
+    g.stroke();
+    const tx = x + 55*lean*s, ty = y - 150*s;
+    g.strokeStyle = '#2f5233'; g.lineWidth = 4.5*s;
+    for (let i = 0; i < 7; i++){
+      const a = -Math.PI*0.95 + i*(Math.PI*0.9/6);
+      g.beginPath(); g.moveTo(tx, ty);
+      g.quadraticCurveTo(tx + Math.cos(a)*46*s, ty + Math.sin(a)*30*s - 16*s,
+                         tx + Math.cos(a)*88*s, ty + Math.sin(a)*52*s + 14*s);
+      g.stroke();
+    }
   }
-  // ground between them: a yard with two pools of streetlight
-  g.fillStyle = '#05070a'; g.fillRect(380, 690, 330, 110);
-  for (const lx of [470, 620]){
-    const lg = g.createRadialGradient(lx, 730, 4, lx, 730, 90);
-    lg.addColorStop(0, 'rgba(255,220,150,0.30)'); lg.addColorStop(1, 'rgba(255,220,150,0)');
-    g.fillStyle = lg;
-    g.beginPath(); g.ellipse(lx, 730, 90, 26, 0, 0, 7); g.fill();
-    g.fillStyle = 'rgba(255,230,170,0.8)'; g.fillRect(lx-1.5, 660, 3, 66);
-  }
+  palm(150, 665, 1.15, 1);
+  palm(560, 655, 0.9, -1);
+  palm(880, 668, 1.05, 1);
+  // haze at the bottom so it sits into the room shadow
+  const hz = g.createLinearGradient(0, 640, 0, 800);
+  hz.addColorStop(0, 'rgba(20,22,20,0)'); hz.addColorStop(1, 'rgba(12,12,10,0.55)');
+  g.fillStyle = hz; g.fillRect(0, 640, 1400, 160);
   return c;
 }
 function drawOutside(){
   if (Math.abs(cam.x - SEAM_2) > 2500) return;
   const kk = k(1300);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
-  const sx = px(SEAM_2 - 780, kk);
-  ctx.drawImage(TEX.outside, sx, 0, 1560 * kk * SS, yBase);
+  const sx = px(SEAM_2 - 1150, kk);
+  ctx.drawImage(TEX.outside, sx, 0, 2300 * kk * SS, yBase);
 }
 
 /* doorways between eras — near-camera portals you pass through */
@@ -830,38 +849,97 @@ function drawDoorway(){
   const z = -460, kk = k(z);
   for (const seam of SEAMS){
     const cxSeam = px(seam.x, kk);
-    const span = 520 * kk * SS, soft = 130 * kk * SS;
-    const gap = (seam.kind === 'window' ? 175 : 140) * kk * SS;
-    if (cxSeam < -span - W || cxSeam > W + span + W) continue;
-    // left jamb mass
-    let g = ctx.createLinearGradient(cxSeam - span, 0, cxSeam - gap, 0);
-    g.addColorStop(0, 'rgba(4,3,2,0)');
-    g.addColorStop(Math.min(1, soft/(span-gap)), 'rgba(4,3,2,0.97)');
-    g.addColorStop(1, 'rgba(4,3,2,0.99)');
-    ctx.fillStyle = g;
-    ctx.fillRect(cxSeam - span, 0, span - gap, H);
-    // right jamb mass
-    g = ctx.createLinearGradient(cxSeam + span, 0, cxSeam + gap, 0);
-    g.addColorStop(0, 'rgba(4,3,2,0)');
-    g.addColorStop(Math.min(1, soft/(span-gap)), 'rgba(4,3,2,0.97)');
-    g.addColorStop(1, 'rgba(4,3,2,0.99)');
-    ctx.fillStyle = g;
-    ctx.fillRect(cxSeam + gap, 0, span - gap, H);
     if (seam.kind === 'window'){
-      // sill below and a center mullion: it is a window, not a door
+      /* the wall of the building itself, with a real window in it:
+         left of the opening — the wall we are leaving (era 2),
+         right — the wall we are flying into (era 3) */
+      const span = 1050 * kk * SS, gap = 260 * kk * SS;
+      if (cxSeam < -span - W || cxSeam > W + span + W) continue;
       const sillY = py(690, kk);
-      ctx.fillStyle = 'rgba(5,4,3,0.98)';
-      ctx.fillRect(cxSeam - gap - 2, sillY, gap*2 + 4, H - sillY);
-      ctx.fillStyle = 'rgba(215,230,245,0.20)';
-      ctx.fillRect(cxSeam - gap - 2, sillY, gap*2 + 4, 3*SS);
-      ctx.fillStyle = 'rgba(6,5,4,0.98)';
-      ctx.fillRect(cxSeam - 7*kk*SS, 0, 14*kk*SS, sillY);
+      const mass = (x0, x1, tex) => {
+        if (x1 < 0 || x0 > W) return;
+        ctx.save();
+        ctx.beginPath(); ctx.rect(x0, 0, x1 - x0, H); ctx.clip();
+        const tileW = 620;   // world units
+        const worldLeft = cam.x - (W/2) / (kk * SS);
+        let wx = Math.floor(worldLeft / tileW) * tileW;
+        for (; px(wx, kk) < x1 + 2; wx += tileW)
+          ctx.drawImage(tex, px(wx, kk), 0, tileW * kk * SS + 2, H);
+        ctx.fillStyle = 'rgba(8,7,5,0.5)';   // near wall sits in shadow against the day
+        ctx.fillRect(x0, 0, x1 - x0, H);
+        ctx.restore();
+      };
+      mass(cxSeam - span, cxSeam - gap, TEX.wall2);
+      mass(cxSeam + gap, cxSeam + span, TEX.wall3);
+      // the glass itself: through the opening you see only the day outside
+      ctx.save();
+      ctx.beginPath(); ctx.rect(cxSeam - gap, 0, gap*2, sillY + 16*kk*SS); ctx.clip();
+      ctx.fillStyle = '#8fbde8';   // sky base under the panorama edges
+      ctx.fillRect(cxSeam - gap, 0, gap*2, sillY + 16*kk*SS);
+      const ko = k(1300);
+      ctx.drawImage(TEX.outside, px(SEAM_2 - 2200, ko), 0, 4400 * ko * SS,
+                    sillY + 16*kk*SS);
+      // glass tint and a diagonal glare
+      ctx.fillStyle = 'rgba(210,230,245,0.07)';
+      ctx.fillRect(cxSeam - gap, 0, gap*2, sillY);
+      const gl = ctx.createLinearGradient(cxSeam - gap, 0, cxSeam + gap, sillY);
+      gl.addColorStop(0.30, 'rgba(255,255,255,0)');
+      gl.addColorStop(0.42, 'rgba(255,255,255,0.10)');
+      gl.addColorStop(0.47, 'rgba(255,255,255,0.02)');
+      gl.addColorStop(0.60, 'rgba(255,255,255,0.13)');
+      gl.addColorStop(0.72, 'rgba(255,255,255,0)');
+      ctx.fillStyle = gl;
+      ctx.fillRect(cxSeam - gap, 0, gap*2, sillY);
+      ctx.restore();
+      // white window frame
+      const trimW = 34 * kk * SS;
+      const trim = (x) => {
+        const tg = ctx.createLinearGradient(x, 0, x + trimW, 0);
+        tg.addColorStop(0, '#b8b4a6'); tg.addColorStop(.5, '#e2dfd2'); tg.addColorStop(1, '#a8a496');
+        ctx.fillStyle = tg;
+        ctx.fillRect(x, 0, trimW, H);
+      };
+      trim(cxSeam - gap - trimW);
+      trim(cxSeam + gap);
+      // center mullion
+      const mg = ctx.createLinearGradient(cxSeam - 10*kk*SS, 0, cxSeam + 10*kk*SS, 0);
+      mg.addColorStop(0, '#9d9a8d'); mg.addColorStop(.5, '#d8d5c8'); mg.addColorStop(1, '#8f8c80');
+      ctx.fillStyle = mg;
+      ctx.fillRect(cxSeam - 10*kk*SS, 0, 20*kk*SS, sillY);
+      // sill: lit top face, shaded front below
+      ctx.fillStyle = '#e6e3d6';
+      ctx.fillRect(cxSeam - gap - trimW, sillY, gap*2 + trimW*2, 16*kk*SS);
+      const sf = ctx.createLinearGradient(0, sillY + 16*kk*SS, 0, H);
+      sf.addColorStop(0, '#59564c'); sf.addColorStop(1, '#26241f');
+      ctx.fillStyle = sf;
+      ctx.fillRect(cxSeam - gap - trimW, sillY + 16*kk*SS, gap*2 + trimW*2, H - sillY);
+      // daylight spill on the inner trim edges
+      ctx.fillStyle = 'rgba(255,250,225,0.35)';
+      ctx.fillRect(cxSeam - gap - 3*SS, 0, 3*SS, sillY);
+      ctx.fillRect(cxSeam + gap, 0, 3*SS, sillY);
+    } else {
+      const span = 520 * kk * SS, soft = 130 * kk * SS, gap = 140 * kk * SS;
+      if (cxSeam < -span - W || cxSeam > W + span + W) continue;
+      // left jamb mass
+      let g = ctx.createLinearGradient(cxSeam - span, 0, cxSeam - gap, 0);
+      g.addColorStop(0, 'rgba(4,3,2,0)');
+      g.addColorStop(Math.min(1, soft/(span-gap)), 'rgba(4,3,2,0.97)');
+      g.addColorStop(1, 'rgba(4,3,2,0.99)');
+      ctx.fillStyle = g;
+      ctx.fillRect(cxSeam - span, 0, span - gap, H);
+      // right jamb mass
+      g = ctx.createLinearGradient(cxSeam + span, 0, cxSeam + gap, 0);
+      g.addColorStop(0, 'rgba(4,3,2,0)');
+      g.addColorStop(Math.min(1, soft/(span-gap)), 'rgba(4,3,2,0.97)');
+      g.addColorStop(1, 'rgba(4,3,2,0.99)');
+      ctx.fillStyle = g;
+      ctx.fillRect(cxSeam + gap, 0, span - gap, H);
+      // rim light on the jamb edges: the era behind, the era ahead
+      ctx.fillStyle = `rgba(${seam.back},0.20)`;
+      ctx.fillRect(cxSeam - gap - 3*SS, 0, 3*SS, H);
+      ctx.fillStyle = `rgba(${seam.ahead},0.22)`;
+      ctx.fillRect(cxSeam + gap, 0, 3*SS, H);
     }
-    // rim light on the jamb edges: the era behind, the era ahead
-    ctx.fillStyle = `rgba(${seam.back},0.20)`;
-    ctx.fillRect(cxSeam - gap - 3*SS, 0, 3*SS, H);
-    ctx.fillStyle = `rgba(${seam.ahead},0.22)`;
-    ctx.fillRect(cxSeam + gap, 0, 3*SS, H);
   }
 }
 
