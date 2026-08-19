@@ -28,12 +28,12 @@ const CFG = {
   benchDepth: 340,          // tabletop extends z 0..benchDepth
   dprCap: 1.5,
   friction: 2.4,            // exponential velocity decay per second
-  wheelGain: 2.2,           // wheel px -> world velocity impulse
-  maxVel: 2600,
+  wheelGain: 2.8,           // wheel px -> world velocity impulse
+  maxVel: 3100,
   magnetDist: 300, magnetK: 5.5, magnetVel: 120,
   idleToAttract: 45,        // seconds
-  attractCruise: 470,       // world units / s (equilibrium lands near ~290)
-  attractDwell: 3.5,        // seconds paused on a major beat
+  attractCruise: 560,       // world units / s (equilibrium lands near ~350)
+  attractDwell: 3.0,        // seconds paused on a major beat
   focusCamZ: 430,           // dolly-in depth on focus
 };
 
@@ -51,7 +51,7 @@ const BEATS = [
   {x:2450, y:'1969–70', t:'FOUNDED', tier:1, fly:true,
    th:'One man, one bench — betting that affordable was a business model.',
    d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
-   wall:[{img:'jim1970', w:460, dx:480, cy:400, hero:true}],
+   wall:[{img:'jim1970', w:420, dx:440, cy:400, hero:true}],
    table:[],
    album:{dx:390, lz:215, w:300, title:'THE FAMILY ALBUM',
           photos:[['father42','jim15'],['jim18','jim1970']]},
@@ -60,10 +60,10 @@ const BEATS = [
   {x:3450, y:'1970s', t:'PFM ERA',
    th:'The craft baseline every later machine is measured against.',
    d:'Cast metal hand-layered with porcelain — the hand-craft world Jim will spend his life automating.',
-   wall:[{img:'porc', w:360, dx:-430, cy:380, rot:0.6},
-         {img:'artic', w:360, dx:430, cy:380, rot:-1.3}],
-   table:[{img:'wax', w:300, dx:-320, lz:190, rot:5},
-          {img:'dietrim', w:300, dx:330, lz:230, rot:-6}]},
+   wall:[],
+   table:[{img:'wax', w:300, dx:330, lz:190, rot:5}],
+   album:{dx:-340, lz:215, w:310, title:'THE PFM CRAFT',
+          photos:[['porc','artic'],['dietrim','wax']]}},
 
   {x:4400, y:'1973', t:'SECOND LAB',
    th:'Growth by addition — before growth by system.',
@@ -104,82 +104,142 @@ const BEATS = [
    wall:[], table:[],
    props:[{kind:'crt', dx:-370, lz:180, w:290, col:'amber'}]},
 
-  {x:10400, y:'1988', t:'BIOTEMPS', minor:true,
+  {x:10280, y:'1988', t:'BIOTEMPS', minor:true,
    th:'A second product proves the lab can build categories, not just crowns.',
    d:'BioTemps provisional restorations — lab-made PMMA temporaries that doubled as an esthetic “blueprint” the patient could approve before the final.',
    wall:[], table:[]},
 
-  {x:11350, y:'1989', t:'NATIONAL LEADER',
+  {x:11050, y:'1989', t:'NATIONAL LEADER',
    th:'From a local lab to the national mail-order leader.',
    d:'Glidewell settles into 4141 MacArthur Blvd, Newport Beach (33,000 sq ft); 95% of cases now arrive by mail from 3,500+ dentists nationwide.',
    wall:[{img:'lab5move', w:460, dx:-470, cy:400, hero:true}],
    table:[{img:'bizcard', w:290, dx:-320, lz:210, rot:5}]},
 
   /* ---- ERA 3 · the computer arrives, 1993–2007 ---- */
-  {x:12800, y:'1993', t:'NEWPORT BEACH',
+  {x:12400, y:'1993', t:'NEWPORT BEACH',
    th:'Footprint follows volume — the plant keeps outgrowing itself.',
    d:'The lab moves into a 71,000 sq ft building in Newport Beach, CA.',
    wall:[], table:[]},
 
-  {x:13500, y:'1995', t:'OPERATORY · PLAYSAFE', minor:true,
+  {x:13020, y:'1995', t:'OPERATORY · PLAYSAFE', minor:true,
    th:'Test where dentists work — and step beyond the crown.',
    d:'An in-house operatory opens to test materials on real patients; PlaySafe mouthguards launch.',
    wall:[], table:[]},
 
-  {x:14180, y:'1996', t:'SILENT NITE', minor:true,
+  {x:13640, y:'1996', t:'SILENT NITE', minor:true,
    th:'Dentistry beyond repair: keeping problems from starting.',
    d:'Silent Nite anti-snoring appliances launch — Glidewell’s signature move into sleep and prevention.',
    wall:[], table:[]},
 
-  {x:14880, y:'1998', t:'CHAIRSIDE PERSPECTIVES', minor:true,
+  {x:14260, y:'1998', t:'CHAIRSIDE PERSPECTIVES', minor:true,
    th:'Teaching becomes a channel — reach turns into trust.',
    d:'The Chairside Perspectives newsletter begins — the seed of the Chairside magazine and Glidewell’s teaching voice.',
    wall:[], table:[]},
 
-  {x:15560, y:'1999', t:'IN-CERAM ZIRCONIA', minor:true,
+  {x:14880, y:'1999', t:'IN-CERAM ZIRCONIA', minor:true,
    th:'The zirconia story starts quietly, long before the revolution.',
    d:'In-Ceram Zirconia material arrives — zirconia enters the lab a full decade before BruxZir.',
    wall:[], table:[]},
 
-  {x:16500, y:'~2000', t:'R&D IS BORN', tier:1, fly:true,
+  {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true,
    th:'Own the science, so you can own the quality and the price.',
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir, and everything after.',
    wall:[{img:'rella', w:250, dx:-420, cy:350, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
    table:[],
    ped:{obj:'puck', dx:300}},
 
-  {x:17500, y:'~2000', t:'CAD REVOLUTION',
+  {x:16600, y:'~2000', t:'CAD REVOLUTION', sub:15700,
    th:'Craft gives way to design and the mill — the seed of BruxZir.',
    d:'Dental labs go digital: scanning, on-screen design and milling start to replace hand-built copings. Glidewell adopts it early — chasing zirconia at a PFM price.',
    wall:[], table:[],
    props:[{kind:'crt', dx:-400, lz:170, w:320}]},
 
-  {x:18200, y:'2000', t:'PLASTIC INJECTION', minor:true,
+  {x:17160, y:'2000', t:'PLASTIC INJECTION', minor:true, sub:15700,
    th:'Own the supply chain so you can own the price.',
    d:'An in-house plastic-injection division starts making boxes, articulators and supplies — the vertical-integration playbook.',
    wall:[], table:[]},
 
-  {x:18880, y:'2001', t:'WEB · CLINICAL VOICE', minor:true,
+  {x:17720, y:'2001', t:'WEB · CLINICAL VOICE', minor:true,
    th:'The lab learns to publish — online and on camera.',
    d:'The first Glidewell Laboratories website goes live; the brand gains its clinical-education voice on camera.',
    wall:[], table:[]},
 
-  {x:19560, y:'2005', t:'IPS e.max', minor:true,
+  {x:18280, y:'2005', t:'IPS e.max', minor:true,
    th:'The esthetic foil to BruxZir — beauty up front, zirconia strength for the rest.',
    d:'Ivoclar’s lithium disilicate becomes the go-to esthetic all-ceramic — pressable, millable, tooth-like. The metal-free front tooth finally has its material.',
    wall:[], table:[]},
 
-  {x:20500, y:'2007', t:'FIRST DIGITAL CASE', fly:true,
+  {x:19080, y:'2007', t:'FIRST DIGITAL CASE', fly:true,
    th:'Nobody called it AI training data yet — but that is what it was.',
    d:'The lab accepts its first intraoral scan instead of a physical impression — the moment the case archive starts becoming data.',
    wall:[], table:[],
    props:[{kind:'lcd', dx:390, lz:170, w:330}],
    ped:{obj:'scanner', dx:-310}},
+
+  /* ---- ERA 4 · the white room, 2009–2026 ---- */
+  {x:20400, y:'2009', t:'BRUXZIR', tier:1, fly:true,
+   th:'Revolution: the best, made affordable — and the default.',
+   d:'The monolithic solid-zirconia crown goes mainstream — the #1 brand; the biggest cost-and-speed inflection.',
+   wall:[], table:[],
+   ped:{obj:'crown2', dx:-300}},
+
+  {x:21020, y:'2009–13', t:'SCREW-RETAINED', minor:true,
+   th:'The barrier wasn’t the technique — it was the price of the parts.',
+   d:'Own-made Ti-bases, abutments and screws plus a flat lab fee — and BruxZir bonded to the Ti-base in the lab, so no cement goes in the patient’s mouth.',
+   wall:[], table:[]},
+
+  {x:21870, y:'2010s', t:'SCANNERS · SCALE',
+   th:'Scale through vertical integration.',
+   d:'iTero and TRIOS take intraoral scanning mainstream — the goopy physical impression starts to die. Glidewell becomes the world’s largest lab.',
+   wall:[], table:[]},
+
+  {x:22490, y:'2015', t:'GLIDEWELL HT', minor:true,
+   th:'The BruxZir move, applied to the most expensive tooth — premium, made affordable.',
+   d:'Glidewell’s own implant, co-designed with Dr. Jack Hahn — premium quality at a fraction of the price.',
+   wall:[], table:[]},
+
+  {x:23340, y:'2017–19', t:'GLIDEWELL.IO',
+   th:'Future: the lab moves into the chair.',
+   d:'In-office: fastdesign / fastmill / BruxZir NOW — single-visit crowns.',
+   wall:[{img:'fastmill', w:400, dx:440, cy:380, rot:-0.6}],
+   table:[],
+   ped:{obj:'millSt', dx:-310}},
+
+  {x:24190, y:'2019', t:'BRUXZIR FACTORY',
+   th:'The analog→digital climax: robots make crowns.',
+   d:'Automated, AI-designed, robotic monolithic production.',
+   wall:[], table:[],
+   plasma:{dx:440, cy:370, w:430, mode:'wave'}},
+
+  {x:24810, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24190,
+   th:'Reinvesting in the profession — and our channel for finding hero dentists.',
+   d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
+   wall:[], table:[]},
+
+  {x:25660, y:'2020–22', t:'MEMOIR · CEO · SCAN',
+   th:'A generational handover at the top; the scanner joins the ecosystem.',
+   d:'“Constant Change” (2020); new CEO (2021); fastscan.io with Medit (2022).',
+   wall:[{img:'jimnow', w:280, dx:-440, cy:360, rot:0.5, cap:'Jim Glidewell', style:'white'}],
+   table:[]},
+
+  {x:26510, y:'EARLY 20s', t:'AI · SCALE', tier:1,
+   th:'The flywheel: cheaper to make → wider access → reinvest.',
+   d:'CrownAI / MarginAI; ~500K units a month, 5,000+ staff — the largest dental lab in the world.',
+   wall:[{img:'todayai', w:430, dx:-460, cy:380, rot:-0.5, style:'white'}],
+   table:[],
+   plasma:{dx:430, cy:370, w:420, mode:'count'}},
+
+  {x:27500, y:'2026', t:'TODAY', tier:1, fly:true,
+   th:'An arc the length of one life: craft → digital → automation.',
+   d:'Automated monolithic milling is the norm; AI + robotics + single-visit define the frontier. The story keeps compounding.',
+   wall:[], table:[],
+   ped:{obj:'crown2', dx:-340, big:true}},
 ];
 const INTRO_X = 200;
-const WORLD_END = 21800;
+const WORLD_END = 29000;
+const SEAM_3 = 19750;          // era 3 -> era 4: the gate of light
 const SEAM_1 = 6100;           // era 1 -> era 2: the doorway
-const SEAM_2 = 12100;          // era 2 -> era 3
+const SEAM_2 = 11700;          // era 2 -> era 3
 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
@@ -197,17 +257,25 @@ const SEGMENTS = [
    light:{pool:'214,240,224', poolR:820, poolA:0.20},
    tube:{line:'228,255,238', glow:'212,245,228'},
    bgc:[10,12,11], grain:0.038, wInsetR:480, bInsetR:540},
-  {x0:SEAM_2, x1:WORLD_END+900, z0:800, z1:940, wall:'wall3', bench:'bench3', front:'front3',
+  {x0:SEAM_2, x1:SEAM_3, z0:800, z1:940, wall:'wall3', bench:'bench3', front:'front3',
    font:'Verdana, Tahoma, "DejaVu Sans", sans-serif',
    ink:'226,232,238', lamp:'tube', dust:false,
    rail:'rgba(185,196,202,0.5)', railInk:'rgba(212,222,228,0.75)',
    light:{pool:'218,232,252', poolR:900, poolA:0.17},
    tube:{line:'238,246,255', glow:'216,230,250'},
    bgc:[11,12,14], grain:0.028, wInsetL:480, bInsetL:540},
+  {x0:SEAM_3, x1:WORLD_END+900, z0:980, z1:1180, wall:'wall4', bench:'bench4', front:'front4',
+   font:'"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
+   ink:'55,64,76', lamp:'tube', dust:false,
+   rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
+   light:{pool:'225,240,255', poolR:1000, poolA:0.13},
+   tube:{line:'246,251,255', glow:'226,239,252'},
+   bgc:[15,16,19], grain:0.015, bInsetR:2200},
 ];
 const SEAMS = [
   {x:SEAM_1, kind:'door',   back:'255,200,120', ahead:'210,240,225'},
   {x:SEAM_2, kind:'window', back:'210,240,225', ahead:'225,238,255'},   // 1989 -> 1993: out one window, into the next
+  {x:SEAM_3, kind:'light',  back:'225,238,255', ahead:'160,230,255'},   // 2007 -> 2009: through the white light
 ];
 function segIdx(x){ for (let i = SEGMENTS.length-1; i > 0; i--) if (x >= SEGMENTS[i].x0) return i; return 0; }
 function segAt(x){ return SEGMENTS[segIdx(x)]; }
@@ -421,17 +489,19 @@ function formicaTexture({w=1200, h=512, base='#867f71'}){
 const Input = (() => {
   let impulse = 0, action = false, anyInput = false, dragging = false;
   const api = {
+    hover: null,   // last pointer position in canvas-buffer coords
     consume(){
       const out = {impulse, action, anyInput, dragging};
       impulse = 0; action = false; anyInput = false;
       return out;
     },
     push(dv){ impulse += dv; anyInput = true; },
-    act(){ action = true; anyInput = true; },
+    act(pt){ action = pt || true; anyInput = true; },
     setDragging(v){ dragging = v; anyInput = true; document.body.classList.toggle('dragging', v); },
   };
   return api;
 })();
+function toBuf(e){ return {x: e.clientX * (W / innerWidth), y: e.clientY * (H / innerHeight)}; }
 
 function attachMouseDriver(el){
   el.addEventListener('wheel', e => {
@@ -442,6 +512,7 @@ function attachMouseDriver(el){
   let lastX = 0, moved = 0, down = false;
   el.addEventListener('pointerdown', e => { down = true; moved = 0; lastX = e.clientX; Input.setDragging(true); el.setPointerCapture(e.pointerId); });
   el.addEventListener('pointermove', e => {
+    Input.hover = toBuf(e);
     if (!down) return;
     const dx = e.clientX - lastX; lastX = e.clientX; moved += Math.abs(dx);
     // convert screen drag to world velocity kick (grab the bench, z=0)
@@ -449,7 +520,7 @@ function attachMouseDriver(el){
   });
   el.addEventListener('pointerup', e => {
     down = false; Input.setDragging(false);
-    if (moved < 6) Input.act();          // a click = the button
+    if (moved < 6) Input.act(toBuf(e));  // a click = the button, aimed at a point
   });
   window.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight') Input.push(900);
@@ -466,6 +537,8 @@ const state = {
   idle: 0,
   attract: { phase: 'cruise', dwell: 0, beatIdx: -1, fade: 0 }, // fade 0..1 black
   focusBeat: -1,          // index of beat we are dollied into
+  albumLock: {},          // per-beat album override: true=open, false=closed
+  inspect: null,          // a photo lifted to the camera
   restBeat: -1, restTime: 0,
   time: 0,
 };
@@ -492,6 +565,18 @@ function resize(){
 window.addEventListener('resize', resize);
 
 let TEX = {};        // procedural textures
+let HITS = [];       // clickable screen rects, rebuilt every frame
+function pushHit(x, y, w, h, payload){
+  if (x > W || y > H || x + w < 0 || y + h < 0) return;
+  HITS.push({x, y, w, h, p: payload});
+}
+function hitAt(px_, py_){
+  for (let i = HITS.length - 1; i >= 0; i--){
+    const r = HITS[i];
+    if (px_ >= r.x && px_ <= r.x + r.w && py_ >= r.y && py_ <= r.y + r.h) return r.p;
+  }
+  return null;
+}
 const SPRITES = {};  // processed photo sprites
 const grains = [];
 
@@ -559,8 +644,8 @@ function drawBench(){
   const kf = k(0);
   const yTopF = py(CFG.benchY, kf);
   for (const seg of SEGMENTS){
-    const bx0 = seg.x0 <= -800 ? seg.x0 : seg.x0 + (seg.bInsetL || 140);   // each era gets its own table:
-    const bx1 = seg.x1 >= WORLD_END + 800 ? seg.x1 : seg.x1 - (seg.bInsetR || 140);  // a gap at every doorway
+    const bx0 = (seg.x0 <= -800 && !seg.bInsetL) ? seg.x0 : seg.x0 + (seg.bInsetL || 140);
+    const bx1 = (seg.x1 >= WORLD_END + 800 && !seg.bInsetR) ? seg.x1 : seg.x1 - (seg.bInsetR || 140);
     const sx0f = px(bx0, kf), sx1f = px(bx1, kf);
     if (sx1f <= 0 || sx0f >= W) continue;
     const tex = TEX[seg.bench];
@@ -617,16 +702,17 @@ function drawBench(){
       ctx.font = `${Math.round(26*SS)}px ${seg.font}`;
       ctx.fillStyle = seg.railInk;
       ctx.fillRect(bx - 1, yTopF + 2*SS, 2, 14*SS);
-      ctx.fillText(b.y, bx, yTopF + 42*SS);
+      if (!b.sub) ctx.fillText(b.y, bx, yTopF + 42*SS);
     }
   }
 }
 
-function drawSprite(sp, x, yCenter, z, wWorld, rotDeg, alpha){
+function drawSprite(sp, x, yCenter, z, wWorld, rotDeg, alpha, hit){
   const kk = k(z);
   const sx = px(x, kk), sy = py(yCenter, kk);
   if (sx < -600 || sx > W + 600) return;
   const scale = (wWorld / sp.inner.w) * kk * SS;
+  if (hit) pushHit(sx - sp.w*scale/2, sy - sp.h*scale/2, sp.w*scale, sp.h*scale, hit);
   ctx.save();
   ctx.globalAlpha = alpha == null ? 1 : alpha;
   ctx.translate(sx, sy);
@@ -635,13 +721,14 @@ function drawSprite(sp, x, yCenter, z, wWorld, rotDeg, alpha){
   ctx.restore();
 }
 
-function drawLyingPrint(sp, x, lz, wWorld, rotDeg){
+function drawLyingPrint(sp, x, lz, wWorld, rotDeg, hit){
   // print lying on the tabletop at depth lz — foreshortened
   const kk = k(lz);
   const sx = px(x, kk);
   if (sx < -600 || sx > W + 600) return;
   const sy = py(CFG.benchY, kk);
   const scale = (wWorld / sp.inner.w) * kk * SS;
+  if (hit) pushHit(sx - sp.w*scale/2, sy - sp.h*scale*0.42, sp.w*scale, sp.h*scale*0.42, hit);
   ctx.save();
   ctx.translate(sx, sy);
   ctx.rotate(rotDeg * Math.PI/180);
@@ -685,7 +772,7 @@ function drawBeatText(b, focusAmt){
       if (near > 0.3){
         ctx.font = eraFont(28 * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.3)/0.7 * 0.72 * alpha})`;
-        wrapText(b.th, cx, py(300 - rise, kk), 460 * kk * SS, 36 * kk * SS);
+        drawLines(b._th, cx, py(300 - rise, kk), 36 * kk * SS);
       }
       ctx.restore();
     }
@@ -696,10 +783,30 @@ function drawBeatText(b, focusAmt){
     if (cx > -900 && cx < W + 900){
       ctx.save();
       ctx.textAlign = 'center';
-      ctx.font = eraFont(170 * sc * kk * SS, '', seg.font);
-      ctx.fillStyle = `rgba(${seg.ink},${(0.5 + 0.45*near)*(b.minor?0.82:1)})`;
-      ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 3*SS;
-      ctx.fillText(b.y, cx, py(b.minor ? 170 : 140, kk));
+      if (b.sub){
+        // a satellite of its year-stand: an arrow grows from the leader's numeral
+        const lx = px(b.sub + 200, kk);
+        const aA = Math.max(0, near*1.6 - 0.2) * 0.5;
+        if (aA > 0.02){
+          const yL = py(150, kk);
+          ctx.strokeStyle = `rgba(${seg.ink},${aA})`;
+          ctx.lineWidth = 2*SS;
+          ctx.beginPath(); ctx.moveTo(lx, yL); ctx.lineTo(cx - 30*kk*SS, yL); ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(cx - 30*kk*SS, yL);
+          ctx.lineTo(cx - 48*kk*SS, yL - 9*SS);
+          ctx.lineTo(cx - 48*kk*SS, yL + 9*SS);
+          ctx.closePath();
+          ctx.fillStyle = `rgba(${seg.ink},${aA})`;
+          ctx.fill();
+          // the satellite hangs its title where the year would be
+        }
+      } else {
+        ctx.font = eraFont(170 * sc * kk * SS, '', seg.font);
+        ctx.fillStyle = `rgba(${seg.ink},${(0.5 + 0.45*near)*(b.minor?0.82:1)})`;
+        ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 3*SS;
+        ctx.fillText(b.y, cx, py(b.minor ? 170 : 140, kk));
+      }
       ctx.font = eraFont(46 * sc * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*sc*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
@@ -708,7 +815,7 @@ function drawBeatText(b, focusAmt){
       if (near > 0.25){
         ctx.font = eraFont(30 * (b.minor?0.8:1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
-        wrapText(b.th, cx, py(b.minor ? 254 : 262, kk), 500 * kk * SS, 38 * (b.minor?0.8:1) * kk * SS);
+        drawLines(b._th, cx, py(b.minor ? 254 : 262, kk), 38 * (b.minor?0.8:1) * kk * SS);
       }
       ctx.restore();
     }
@@ -723,12 +830,12 @@ function drawBeatText(b, focusAmt){
     ctx.textAlign = 'center';
     ctx.font = eraFont(26 * kw * SS, '', seg.font);
     ctx.fillStyle = `rgba(${seg.ink},${dAmt * 0.78})`;
-    wrapText(b.d, cw, py(655, kw), 700 * kw * SS, 34 * kw * SS);
+    drawLines(b._d, cw, py(655, kw), 34 * kw * SS);
     ctx.restore();
   }
 }
 
-function wrapText(text, cx, y, maxW, lh){
+function wrapCalc(text, maxW){
   const words = text.split(' ');
   let line = '', lines = [];
   for (const w of words){
@@ -737,7 +844,20 @@ function wrapText(text, cx, y, maxW, lh){
     else line = test;
   }
   if (line) lines.push(line);
-  lines.forEach((l, i) => ctx.fillText(l, cx, y + i*lh));
+  return lines;
+}
+function drawLines(lines, cx, y, lh){
+  for (let i = 0; i < lines.length; i++) ctx.fillText(lines[i], cx, y + i*lh);
+}
+/* line breaks are computed once at a reference size — they never re-flow */
+function cacheWrap(){
+  for (const b of BEATS){
+    const seg = segAt(b.x);
+    ctx.font = `italic 100px ${seg.font}`;
+    b._th = wrapCalc(b.th, 100 * 500/30);
+    ctx.font = `100px ${seg.font}`;
+    b._d = wrapCalc(b.d, 100 * 700/26);
+  }
 }
 
 function drawIntro(){
@@ -751,9 +871,6 @@ function drawIntro(){
   ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
   ctx.fillText('HOW GOOD DENTISTRY', cx, py(190, kk));
   ctx.fillText('STOPPED BEING A LUXURY', cx, py(268, kk));
-  ctx.font = eraFont(30 * kk * SS, 'italic');
-  ctx.fillStyle = 'rgba(210,182,140,0.8)';
-  ctx.fillText('Glidewell · 1907 → 2026', cx, py(340, kk));
   ctx.font = eraFont(26 * kk * SS);
   ctx.fillStyle = 'rgba(200,172,132,0.55)';
   ctx.fillText('travel →', cx, py(560, kk));
@@ -770,11 +887,12 @@ function drawOutro(){
   ctx.fillStyle = `rgba(${seg.ink},0.4)`;
   ctx.font = eraFont(60 * kk * SS, '', seg.font);
   try { ctx.letterSpacing = `${6*kk*SS}px`; } catch(e){}
-  ctx.fillText('2009 · BRUXZIR →', cx, py(230, kk));
+  ctx.fillText('THE BEST DENTISTRY —', cx, py(200, kk));
+  ctx.fillText('MADE AFFORDABLE', cx, py(275, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.font = eraFont(26 * kk * SS, 'italic', seg.font);
-  ctx.fillStyle = `rgba(${seg.ink},0.35)`;
-  ctx.fillText('to be continued', cx, py(300, kk));
+  ctx.fillStyle = `rgba(${seg.ink},0.5)`;
+  ctx.fillText('Glidewell · one bench → the world', cx, py(340, kk));
   ctx.restore();
 }
 
@@ -837,11 +955,10 @@ function makeOutside(){
   return c;
 }
 function drawOutside(){
-  if (Math.abs(cam.x - SEAM_2) > 2500) return;
+  if (Math.abs(cam.x - SEAM_2) > 3000) return;
   const kk = k(1300);
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
-  const sx = px(SEAM_2 - 1150, kk);
-  ctx.drawImage(TEX.outside, sx, 0, 2300 * kk * SS, yBase);
+  const sx = px(SEAM_2 - 2400, kk);
+  ctx.drawImage(TEX.outside, sx, 0, 4800 * kk * SS, H);
 }
 
 /* doorways between eras — near-camera portals you pass through */
@@ -850,73 +967,49 @@ function drawDoorway(){
   for (const seam of SEAMS){
     const cxSeam = px(seam.x, kk);
     if (seam.kind === 'window'){
-      /* the wall of the building itself, with a real window in it:
-         left of the opening — the wall we are leaving (era 2),
-         right — the wall we are flying into (era 3) */
-      const span = 1050 * kk * SS, gap = 260 * kk * SS;
+      /* per the floor plan there is no fourth wall: nothing sweeps past the
+         camera here. The rooms' end walls are seen edge-on — thin verticals
+         at the far-wall depth, each carrying its window jamb; between them
+         the yard is completely open. */
+      const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+      for (const [wx, side, tex] of [[seam.x - 480, 1, TEX.wall2], [seam.x + 480, -1, TEX.wall3]]){
+        const kw = k(wallZAt(wx - side*4));
+        const sxw = px(wx, kw);
+        const jambW = 30 * kw * SS;
+        if (sxw < -200 || sxw > W + 200) continue;
+        // the wall's cross-section edge
+        const eg = ctx.createLinearGradient(sxw - (side>0 ? jambW : 0), 0, sxw + (side>0 ? 0 : jambW), 0);
+        if (side > 0){ eg.addColorStop(0, '#8f8b7d'); eg.addColorStop(1, '#e7e4d6'); }
+        else { eg.addColorStop(0, '#eceadd'); eg.addColorStop(1, '#8f8b7d'); }
+        ctx.fillStyle = eg;
+        ctx.fillRect(side > 0 ? sxw - jambW : sxw, 0, jambW, yBase);
+        // thin bright rim right on the edge — the window jamb catching the sun
+        ctx.fillStyle = 'rgba(255,252,235,0.85)';
+        ctx.fillRect(side > 0 ? sxw - 2.5*SS : sxw, 0, 2.5*SS, yBase);
+        // daylight bleeding onto the wall inside the room
+        const bl = ctx.createLinearGradient(sxw, 0, sxw - side * 260 * kw * SS, 0);
+        bl.addColorStop(0, 'rgba(255,248,215,0.22)');
+        bl.addColorStop(1, 'rgba(255,248,215,0)');
+        ctx.fillStyle = bl;
+        ctx.fillRect(side > 0 ? sxw - 260*kw*SS : sxw, 0, 260*kw*SS, yBase);
+      }
+    } else if (seam.kind === 'light'){
+      // the gate into the white room: a wall of soft light you pass through
+      const span = 460 * kk * SS, gap = 130 * kk * SS;
       if (cxSeam < -span - W || cxSeam > W + span + W) continue;
-      const sillY = py(690, kk);
-      const mass = (x0, x1, tex) => {
-        if (x1 < 0 || x0 > W) return;
-        ctx.save();
-        ctx.beginPath(); ctx.rect(x0, 0, x1 - x0, H); ctx.clip();
-        const tileW = 620;   // world units
-        const worldLeft = cam.x - (W/2) / (kk * SS);
-        let wx = Math.floor(worldLeft / tileW) * tileW;
-        for (; px(wx, kk) < x1 + 2; wx += tileW)
-          ctx.drawImage(tex, px(wx, kk), 0, tileW * kk * SS + 2, H);
-        ctx.fillStyle = 'rgba(8,7,5,0.5)';   // near wall sits in shadow against the day
-        ctx.fillRect(x0, 0, x1 - x0, H);
-        ctx.restore();
-      };
-      mass(cxSeam - span, cxSeam - gap, TEX.wall2);
-      mass(cxSeam + gap, cxSeam + span, TEX.wall3);
-      // the glass itself: through the opening you see only the day outside
-      ctx.save();
-      ctx.beginPath(); ctx.rect(cxSeam - gap, 0, gap*2, sillY + 16*kk*SS); ctx.clip();
-      ctx.fillStyle = '#8fbde8';   // sky base under the panorama edges
-      ctx.fillRect(cxSeam - gap, 0, gap*2, sillY + 16*kk*SS);
-      const ko = k(1300);
-      ctx.drawImage(TEX.outside, px(SEAM_2 - 2200, ko), 0, 4400 * ko * SS,
-                    sillY + 16*kk*SS);
-      // glass tint and a diagonal glare
-      ctx.fillStyle = 'rgba(210,230,245,0.07)';
-      ctx.fillRect(cxSeam - gap, 0, gap*2, sillY);
-      const gl = ctx.createLinearGradient(cxSeam - gap, 0, cxSeam + gap, sillY);
-      gl.addColorStop(0.30, 'rgba(255,255,255,0)');
-      gl.addColorStop(0.42, 'rgba(255,255,255,0.10)');
-      gl.addColorStop(0.47, 'rgba(255,255,255,0.02)');
-      gl.addColorStop(0.60, 'rgba(255,255,255,0.13)');
-      gl.addColorStop(0.72, 'rgba(255,255,255,0)');
-      ctx.fillStyle = gl;
-      ctx.fillRect(cxSeam - gap, 0, gap*2, sillY);
-      ctx.restore();
-      // white window frame
-      const trimW = 34 * kk * SS;
-      const trim = (x) => {
-        const tg = ctx.createLinearGradient(x, 0, x + trimW, 0);
-        tg.addColorStop(0, '#b8b4a6'); tg.addColorStop(.5, '#e2dfd2'); tg.addColorStop(1, '#a8a496');
-        ctx.fillStyle = tg;
-        ctx.fillRect(x, 0, trimW, H);
-      };
-      trim(cxSeam - gap - trimW);
-      trim(cxSeam + gap);
-      // center mullion
-      const mg = ctx.createLinearGradient(cxSeam - 10*kk*SS, 0, cxSeam + 10*kk*SS, 0);
-      mg.addColorStop(0, '#9d9a8d'); mg.addColorStop(.5, '#d8d5c8'); mg.addColorStop(1, '#8f8c80');
-      ctx.fillStyle = mg;
-      ctx.fillRect(cxSeam - 10*kk*SS, 0, 20*kk*SS, sillY);
-      // sill: lit top face, shaded front below
-      ctx.fillStyle = '#e6e3d6';
-      ctx.fillRect(cxSeam - gap - trimW, sillY, gap*2 + trimW*2, 16*kk*SS);
-      const sf = ctx.createLinearGradient(0, sillY + 16*kk*SS, 0, H);
-      sf.addColorStop(0, '#59564c'); sf.addColorStop(1, '#26241f');
-      ctx.fillStyle = sf;
-      ctx.fillRect(cxSeam - gap - trimW, sillY + 16*kk*SS, gap*2 + trimW*2, H - sillY);
-      // daylight spill on the inner trim edges
-      ctx.fillStyle = 'rgba(255,250,225,0.35)';
-      ctx.fillRect(cxSeam - gap - 3*SS, 0, 3*SS, sillY);
-      ctx.fillRect(cxSeam + gap, 0, 3*SS, sillY);
+      for (const dir of [-1, 1]){
+        const x0 = cxSeam + dir*gap, x1 = cxSeam + dir*span;
+        const g = ctx.createLinearGradient(x0, 0, x1, 0);
+        g.addColorStop(0, 'rgba(240,248,255,0.96)');
+        g.addColorStop(.5, 'rgba(235,245,255,0.92)');
+        g.addColorStop(1, 'rgba(235,245,255,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(Math.min(x0,x1), 0, Math.abs(x1-x0), H);
+      }
+      // neon edges of the gate
+      ctx.fillStyle = `rgba(${seam.ahead},0.5)`;
+      ctx.fillRect(cxSeam - gap - 3*SS, 0, 3*SS, H);
+      ctx.fillRect(cxSeam + gap, 0, 3*SS, H);
     } else {
       const span = 520 * kk * SS, soft = 130 * kk * SS, gap = 140 * kk * SS;
       if (cxSeam < -span - W || cxSeam > W + span + W) continue;
@@ -1220,6 +1313,7 @@ function drawMonitor(p, x, z, wWorld, t){
   const scale = (wWorld / mon.w) * kk * SS;
   const syFoot = py(CFG.benchY - 2, kk);
   const dx = sx - mon.w*scale/2, dy = syFoot - mon.foot*scale;
+  pushHit(dx, dy, mon.w*scale, mon.h*scale, {type:'focus', beat: BEATS.findIndex(bb => (bb.props||[]).includes(p))});
   ctx.drawImage(mon.c, dx, dy, mon.w*scale, mon.h*scale);
   // live screen
   const r = {x: dx + mon.screen.x*scale, y: dy + mon.screen.y*scale,
@@ -1292,6 +1386,19 @@ function makeProp(kind){
     g.beginPath(); g.roundRect(22,20,106,78,4); g.fill();
     g.fillStyle = 'rgba(140,180,160,0.10)'; g.fillRect(28,26,40,30);
     g.fillStyle = '#3a362e'; g.fillRect(52,112,46,20);
+  } else if (kind === 'palmNear'){ S(340,520);
+    g.strokeStyle = '#2e2a20'; g.lineWidth = 16; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(150, 512);
+    g.quadraticCurveTo(185, 330, 216, 190);
+    g.stroke();
+    g.strokeStyle = '#243d28'; g.lineWidth = 9;
+    for (let i = 0; i < 8; i++){
+      const a = -Math.PI*0.98 + i*(Math.PI*0.96/7);
+      g.beginPath(); g.moveTo(216, 190);
+      g.quadraticCurveTo(216 + Math.cos(a)*70, 190 + Math.sin(a)*46 - 26,
+                         216 + Math.cos(a)*135, 190 + Math.sin(a)*82 + 24);
+      g.stroke();
+    }
   } else if (kind === 'mill'){ S(300,260);
     g.fillStyle = '#23252a';
     g.beginPath(); g.roundRect(6,20,288,234,10); g.fill();
@@ -1399,22 +1506,23 @@ function makeFigure(seed, seated){
 
 const PROPS = [], SHEETS = [], FIGURES = [];
 function initDecor(){
-  for (const kind of ['jar','plaster','toolbox','mailtray','box','papers','crtOff','mill'])
+  for (const kind of ['jar','plaster','toolbox','mailtray','box','papers','crtOff','mill','palmNear'])
     PROP_SPRITES[kind] = makeProp(kind);
-  const eraProps = [['jar','plaster','toolbox','plaster'], ['mailtray','box','mailtray','plaster'], ['papers','crtOff','box','papers']];
+  const eraProps = [['jar','plaster','toolbox','plaster'], ['mailtray','box','mailtray','plaster'], ['papers','crtOff','box','papers'], []];
   const R = rng(20260819);
   // bench props between beats
   for (let si = 0; si < SEGMENTS.length; si++){
     const s = SEGMENTS[si];
     const a = Math.max(700, s.x0 + 350), b = Math.min(WORLD_END - 300, s.x1 - 350);
     for (let x = a; x < b; x += 260 + R()*260){
+      if (!eraProps[si].length) break;
       if (BEATS.some(bt => Math.abs(bt.x - x) < 430)) continue;
       const kinds = eraProps[si];
       PROPS.push({x, z: 210 + R()*110, kind: kinds[(R()*kinds.length)|0],
                   w: 95 + R()*60, flip: R() > 0.5});
     }
-    // pinned sheets between beats
-    for (let x = a + 300; x < b; x += 620 + R()*480){
+    // pinned sheets between beats (not in the white room)
+    for (let x = a + 300; si < 3 && x < b; x += 620 + R()*480){
       if (BEATS.some(bt => Math.abs(bt.x - x) < 560)) continue;
       SHEETS.push({x, cy: 210 + R()*230, era: si, rot: (R()-0.5)*7,
                    w: 130 + R()*60, sprite: makeSheet(si, (x|0))});
@@ -1425,9 +1533,24 @@ function initDecor(){
   FIGURES.push({x: 8340, z: 545, h: 680, sprite: makeFigure(2)});
   for (let r = 0; r < 2; r++)                                              // 1998 · a small classroom
     for (let i = 0; i < 4; i++)
-      FIGURES.push({x: 15150 + i*100 + r*40, z: 690 + r*85, h: 330,
+      FIGURES.push({x: 15020 + i*100 + r*40, z: 700 + r*85, h: 330,
                     sprite: makeFigure(40 + r*10 + i, true), seated: true});
-  FIGURES.push({x: 17010, z: 520, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
+  FIGURES.push({x: 16150, z: 540, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
+  // palms in the yard between the two buildings
+  PROPS.push({x: SEAM_2 + 170, z: 640, kind: 'palmNear', w: 330, mid: true});
+  PROPS.push({x: SEAM_2 - 210, z: 820, kind: 'palmNear', w: 260, mid: true, flip: true});
+  // guiding leaders — a trio in the depth
+  for (let i = 0; i < 3; i++)
+    FIGURES.push({x: 25150 + i*115, z: 720 + i*30, h: 660, sprite: makeFigure(80 + i)});
+  // the symposium audience at the finale, facing the stage
+  for (let i = 0; i < 5; i++)
+    FIGURES.push({x: 28060 + i*175 + (i%2)*40, z: 310 + (i%3)*70, h: 630 + (i%3)*30, sprite: makeFigure(60 + i)});
+  JIM_FIG = makeFigure(99);
+  BOOK_SPRITE = makeBookPyramid();
+  for (let v = 0; v < 3; v++){
+    FG_SPRITES['plant' + v] = makeFgSprite('plant', v);
+    FG_SPRITES['person' + v] = makeFgSprite('person', v + 7);
+  }
   FIGURES.sort((f1, f2) => f2.z - f1.z);
 }
 function drawSheets(){
@@ -1554,7 +1677,10 @@ function initAlbums(){
 }
 function drawAlbum(b, i, t, dt){
   const A = ALBUM_SPRITES[i]; if (!A) return;
-  const open = (state.restBeat === i && state.restTime > 0.5) || state.focusBeat === i;
+  const lockV = state.albumLock[i];
+  if (Math.abs(b.x - cam.x) > 900) delete state.albumLock[i];
+  const open = lockV === true ||
+    (lockV !== false && ((state.restBeat === i && state.restTime > 0.5) || state.focusBeat === i));
   albumAnim[i] += ((open ? 1 : 0) - albumAnim[i]) * Math.min(1, dt*4);
   const a = albumAnim[i];
   const kk = k(b.album.lz);
@@ -1562,6 +1688,8 @@ function drawAlbum(b, i, t, dt){
   if (sx < -600 || sx > W + 600) return;
   const sy = py(CFG.benchY, kk);
   const ease = a*a*(3-2*a);
+  const hw = b.album.w * (1 + 0.9*ease) * kk * SS;
+  pushHit(sx - hw/2, sy - hw*0.5, hw, hw*0.52, {type:'album', beat: i});
   ctx.save();
   ctx.translate(sx, sy);
   ctx.rotate(-4 * Math.PI/180);
@@ -1605,6 +1733,41 @@ function makePedObj(kind){
     g.fillStyle = 'rgba(255,255,255,0.65)';
     g.beginPath(); g.ellipse(-26, -26, 9, 15, -0.5, 0, 7); g.fill();
     g.restore();
+  } else if (kind === 'crown2'){
+    c.width = 170; c.height = 150;
+    g.save(); g.translate(85, 78);
+    const lg = g.createLinearGradient(-55, -60, 55, 60);
+    lg.addColorStop(0, '#fbfdff'); lg.addColorStop(.55, '#e2ecf2'); lg.addColorStop(1, '#b8c8d4');
+    g.fillStyle = lg;
+    g.beginPath();
+    g.moveTo(-52, 48);
+    g.bezierCurveTo(-60, 8, -54, -28, -38, -46);
+    g.quadraticCurveTo(-26, -58, -14, -46);
+    g.quadraticCurveTo(-6, -36, 0, -46);
+    g.quadraticCurveTo(6, -56, 16, -46);
+    g.quadraticCurveTo(28, -58, 40, -44);
+    g.bezierCurveTo(56, -24, 60, 10, 50, 48);
+    g.quadraticCurveTo(0, 62, -52, 48);
+    g.closePath(); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.85)';
+    g.beginPath(); g.ellipse(-26, -26, 9, 15, -0.5, 0, 7); g.fill();
+    g.fillStyle = 'rgba(140,220,255,0.30)';
+    g.beginPath(); g.ellipse(24, 20, 14, 22, 0.4, 0, 7); g.fill();
+    g.restore();
+  } else if (kind === 'millSt'){
+    c.width = 190; c.height = 160;
+    // fastmill.io — compact chairside mill
+    const bg = g.createLinearGradient(0, 10, 0, 150);
+    bg.addColorStop(0, '#f2f3f5'); bg.addColorStop(.7, '#d8dadd'); bg.addColorStop(1, '#b9bcc0');
+    g.fillStyle = bg;
+    g.beginPath(); g.roundRect(20, 12, 150, 136, 20); g.fill();
+    g.fillStyle = '#10161c';
+    g.beginPath(); g.roundRect(38, 40, 114, 78, 10); g.fill();   // window
+    g.fillStyle = 'rgba(120,220,255,0.5)';
+    g.fillRect(90, 52, 5, 44);                                    // spindle
+    g.fillStyle = 'rgba(200,240,255,0.85)'; g.fillRect(84, 92, 17, 5);
+    g.fillStyle = 'rgba(90,200,250,0.9)';
+    g.fillRect(38, 130, 40, 4);                                   // status LED
   } else if (kind === 'scanner'){
     c.width = 150; c.height = 170;
     // intraoral scanner wand resting on its cradle
@@ -1644,10 +1807,12 @@ function drawPedestal(b, t, hero){
   const z = -90, kk = k(z);
   const x = b.x + (ped.dx || -300);
   const sx = px(x, kk);
-  const colW = 165 * kk * SS;
+  const colW = 165 * (ped.big ? 1.5 : 1) * kk * SS;
   if (sx < -colW*2 || sx > W + colW*2) return;
   const era = segIdx(b.x);
-  const yTop = py(535, kk);
+  const big = ped.big ? 1.6 : 1;
+  const yTop = py(ped.big ? 470 : 535, kk);
+  pushHit(sx - colW*0.7*big, yTop - 150*kk*SS*big, colW*1.4*big, H - yTop + 150*kk*SS, {type:'focus', beat: BEATS.indexOf(b)});
   const warmC = era === 0 ? '255,215,140' : '225,240,255';
   // the spotlight beam from above, strongest when the world is dimmed
   if (hero > 0.02){
@@ -1666,19 +1831,21 @@ function drawPedestal(b, t, hero){
   const cg = ctx.createLinearGradient(sx - colW/2, 0, sx + colW/2, 0);
   if (era === 0){
     cg.addColorStop(0, '#241408'); cg.addColorStop(.45, '#43290f'); cg.addColorStop(1, '#180d05');
+  } else if (era === 3){
+    cg.addColorStop(0, '#c3c8cc'); cg.addColorStop(.45, '#eef1f3'); cg.addColorStop(1, '#a9aeb3');
   } else {
     cg.addColorStop(0, '#5e6266'); cg.addColorStop(.45, '#9aa0a4'); cg.addColorStop(1, '#4a4e52');
   }
   ctx.fillStyle = cg;
   ctx.fillRect(sx - colW/2, yTop, colW, H - yTop);
   // top plate
-  ctx.fillStyle = era === 0 ? '#5b3a17' : '#c9ced2';
+  ctx.fillStyle = era === 0 ? '#5b3a17' : (era === 3 ? '#f4f6f8' : '#c9ced2');
   ctx.beginPath();
   ctx.ellipse(sx, yTop, colW*0.62, 10*kk*SS, 0, 0, 7);
   ctx.fill();
   // the object
   const obj = PED_SPRITES[ped.obj];
-  const ow = 120 * kk * SS, oh = ow * obj.h / obj.w;
+  const ow = 120 * big * kk * SS, oh = ow * obj.h / obj.w;
   ctx.drawImage(obj.c, sx - ow/2, yTop - oh - 4*kk*SS, ow, oh);
   // glass dome
   ctx.strokeStyle = 'rgba(235,245,255,0.28)';
@@ -1697,22 +1864,283 @@ function drawPedestal(b, t, hero){
   ctx.fillRect(sx - colW*1.5, yTop - oh*0.6 - colW*1.5, colW*3, colW*3);
 }
 
-/* foreground occluders — dark blurred posts passing close to camera */
-const FG_POSTS = [800, 1950, 2950, 3950, 4900, 7300, 8250, 9250, 10050, 10900,
-                  13150, 14550, 16050, 17050, 18550, 20050, 21200];
+/* ---------------- PLASMAS · living wall screens of the white room ---------------- */
+function drawPlasmaPanel(b, t){
+  const p = b.plasma;
+  const kk = k(wallZAt(b.x) - 14);
+  const sx = px(b.x + p.dx, kk), sy = py(p.cy, kk);
+  const w = p.w * kk * SS, h = w * 0.58;
+  if (sx < -w || sx > W + w) return;
+  pushHit(sx - w/2, sy - h/2, w, h, {type:'focus', beat: BEATS.indexOf(b)});
+  // cyan halo
+  const hg = ctx.createRadialGradient(sx, sy, h*0.2, sx, sy, w*0.95);
+  hg.addColorStop(0, 'rgba(90,200,250,0.10)');
+  hg.addColorStop(1, 'rgba(90,200,250,0)');
+  ctx.fillStyle = hg;
+  ctx.fillRect(sx - w, sy - w, w*2, w*2);
+  // panel
+  ctx.fillStyle = '#0c0f14';
+  ctx.beginPath(); ctx.roundRect(sx - w/2, sy - h/2, w, h, 6*SS); ctx.fill();
+  ctx.strokeStyle = 'rgba(180,195,210,0.5)'; ctx.lineWidth = 1.5*SS;
+  ctx.strokeRect(sx - w/2, sy - h/2, w, h);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(sx - w/2 + 4*SS, sy - h/2 + 4*SS, w - 8*SS, h - 8*SS); ctx.clip();
+  if (p.mode === 'wave'){
+    ctx.strokeStyle = 'rgba(90,210,255,0.22)'; ctx.lineWidth = 1;
+    for (let i = 1; i < 5; i++){
+      ctx.beginPath(); ctx.moveTo(sx - w/2, sy - h/2 + h*i/5); ctx.lineTo(sx + w/2, sy - h/2 + h*i/5); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(110,225,255,0.9)'; ctx.lineWidth = Math.max(1.2, h*0.012);
+    ctx.beginPath();
+    for (let i = 0; i <= 60; i++){
+      const xx = sx - w/2 + w*i/60;
+      const ph = t*2.2 + i*0.35;
+      const yy = sy + h*0.10 + Math.sin(ph)*h*0.16 + Math.sin(ph*0.37 + 1)*h*0.10;
+      i ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy);
+    }
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(140,225,255,0.8)';
+    ctx.font = `${Math.max(9, h*0.09)}px "Helvetica Neue", Arial, sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText('BRUXZIR FACTORY · ROBOTIC LINE · LIVE', sx - w/2 + w*0.05, sy + h/2 - h*0.09);
+  } else {
+    const items = ['500,000+ / mo', '5,000+ people', '#1 lab worldwide'];
+    const idx = (t/3 | 0) % items.length;
+    const ph = (t % 3) / 3;
+    const a = ph < 0.15 ? ph/0.15 : (ph > 0.85 ? (1-ph)/0.15 : 1);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = `rgba(150,230,255,${0.92*a})`;
+    ctx.font = `600 ${h*0.22}px "Helvetica Neue", Arial, sans-serif`;
+    ctx.fillText(items[idx], sx, sy + h*0.07);
+    ctx.fillStyle = 'rgba(140,225,255,0.55)';
+    ctx.font = `${Math.max(9, h*0.09)}px "Helvetica Neue", Arial, sans-serif`;
+    ctx.fillText('GLIDEWELL · TODAY', sx, sy + h/2 - h*0.10);
+  }
+  ctx.restore();
+}
+
+/* ---------------- FINALE · the stage and the book ---------------- */
+let BOOK_SPRITE = null;
+function makeBookPyramid(){
+  const c = document.createElement('canvas'); c.width = 460; c.height = 320;
+  const g = c.getContext('2d');
+  const bw = 92, bh = 26;
+  const rows = [4, 3, 2];
+  g.save();
+  g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 14; g.shadowOffsetY = 6;
+  rows.forEach((n, r) => {
+    for (let i = 0; i < n; i++){
+      const x = 230 - n*bw/2 + i*bw + (r%2)*3;
+      const y = 300 - (r+1)*bh;
+      const lg = g.createLinearGradient(x, y, x, y+bh);
+      lg.addColorStop(0, '#5c2119'); lg.addColorStop(1, '#38120c');
+      g.fillStyle = lg;
+      g.fillRect(x + 2, y, bw - 4, bh - 2);
+      g.fillStyle = '#e8dcc2'; g.fillRect(x + 6, y + bh*0.38, bw - 12, 2.5);
+    }
+  });
+  // one copy standing upright, cover out
+  const sx = 230 - 60, sy = 300 - 3*bh - 168;
+  const cg = g.createLinearGradient(sx, sy, sx+120, sy+168);
+  cg.addColorStop(0, '#6b271d'); cg.addColorStop(1, '#401410');
+  g.fillStyle = cg;
+  g.fillRect(sx, sy, 120, 168);
+  g.restore();
+  g.strokeStyle = 'rgba(235,210,160,0.7)'; g.lineWidth = 1.5;
+  g.strokeRect(sx+8, sy+8, 104, 152);
+  g.fillStyle = 'rgba(240,220,175,0.95)';
+  g.textAlign = 'center';
+  g.font = '600 17px Georgia, serif';
+  g.fillText('CONSTANT', sx+60, sy+56);
+  g.fillText('CHANGE', sx+60, sy+78);
+  g.font = '11px Georgia, serif';
+  g.fillText('JIM GLIDEWELL', sx+60, sy+134);
+  // QR stand: white card
+  g.save();
+  g.shadowColor = 'rgba(0,0,0,0.3)'; g.shadowBlur = 8; g.shadowOffsetY = 4;
+  g.fillStyle = '#f4f4ef'; g.fillRect(356, 190, 86, 108);
+  g.restore();
+  const R = rng(9001);
+  g.fillStyle = '#1a1c20';
+  for (let yy = 0; yy < 9; yy++) for (let xx = 0; xx < 9; xx++)
+    if (R() < 0.45) g.fillRect(364 + xx*7.5, 200 + yy*7.5, 6.4, 6.4);
+  g.fillStyle = '#3c4048';
+  g.font = '10px "Helvetica Neue", Arial, sans-serif';
+  g.fillText('GET THE BOOK', 399, 289);
+  return {c, w: c.width, h: c.height};
+}
+function drawBookPyramid(b, t){
+  const kk = k(210);
+  const sx = px(b.x + 400, kk);
+  if (sx < -400 || sx > W + 400) return;
+  const wWorld = 340;
+  const scale = (wWorld / BOOK_SPRITE.w) * kk * SS;
+  const sy = py(CFG.benchY - 2, kk);
+  pushHit(sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale, BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale,
+          {type:'focus', beat: BEATS.indexOf(b)});
+  ctx.drawImage(BOOK_SPRITE.c, sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale,
+                BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale);
+}
+/* a freestanding table plane, rotated in plan — any yaw, anywhere on the floor */
+function drawYawedTable(cx, cz, yawDeg, wW, dW, topY, hW, tone){
+  const a = yawDeg * Math.PI/180, ca = Math.cos(a), sa = Math.sin(a);
+  const P = (lx, lz) => {                     // local table coords -> screen
+    const wx = cx + lx*ca - lz*sa, wz = cz + lx*sa + lz*ca;
+    return {x: px(wx, k(wz)), kt: k(wz), z: wz};
+  };
+  const c1 = P(-wW/2, -dW/2), c2 = P(wW/2, -dW/2), c3 = P(wW/2, dW/2), c4 = P(-wW/2, dW/2);
+  const top = (p) => py(topY, p.kt), bot = (p) => py(topY + hW, p.kt);
+  // legs/skirt: the two faces whose outer edge is nearest the camera
+  const faces = [[c1, c2], [c2, c3], [c3, c4], [c4, c1]]
+    .filter(([p, q]) => (p.z + q.z)/2 <= cz)       // faces angled toward us
+    .sort((f, g) => (g[0].z + g[1].z) - (f[0].z + f[1].z));
+  for (const [p, q] of faces){
+    const g = ctx.createLinearGradient(0, top(p), 0, bot(p));
+    g.addColorStop(0, tone.side0); g.addColorStop(1, tone.side1);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(p.x, top(p)); ctx.lineTo(q.x, top(q));
+    ctx.lineTo(q.x, bot(q)); ctx.lineTo(p.x, bot(p));
+    ctx.closePath(); ctx.fill();
+  }
+  // the top plane
+  ctx.fillStyle = tone.top;
+  ctx.beginPath();
+  ctx.moveTo(c1.x, top(c1)); ctx.lineTo(c2.x, top(c2));
+  ctx.lineTo(c3.x, top(c3)); ctx.lineTo(c4.x, top(c4));
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = tone.edge; ctx.lineWidth = 1.5*SS;
+  ctx.stroke();
+  return {c1, c2, c3, c4, P};
+}
+const STAGE_X = 28150;
+let JIM_FIG = null;
+function drawStage(t){
+  if (Math.abs(cam.x - STAGE_X) > 2700) return;
+  // platform
+  const kT = k(530), kF = k(430);
+  const halfW = 460;
+  const xT0 = px(STAGE_X - halfW, kT), xT1 = px(STAGE_X + halfW, kT);
+  const xF0 = px(STAGE_X - halfW, kF), xF1 = px(STAGE_X + halfW, kF);
+  const yT = py(950, kT), yF = py(950, kF), yB = py(1080, kF);
+  ctx.fillStyle = '#c9cdd1';
+  ctx.beginPath();
+  ctx.moveTo(xT0, yT); ctx.lineTo(xT1, yT); ctx.lineTo(xF1, yF); ctx.lineTo(xF0, yF);
+  ctx.closePath(); ctx.fill();
+  const fg = ctx.createLinearGradient(0, yF, 0, yB);
+  fg.addColorStop(0, '#9aa0a6'); fg.addColorStop(1, '#5e646a');
+  ctx.fillStyle = fg;
+  ctx.fillRect(xF0, yF, xF1 - xF0, yB - yF);
+  // the angled side table in the recreation zone (per the green-board sketch)
+  const T = drawYawedTable(27690, 300, 34, 620, 260, 820, 260,
+    {top:'#dfe2e5', side0:'#b7bbbf', side1:'#82878c', edge:'rgba(255,255,255,0.5)'});
+  // a round stand on it
+  const kS = k(280);
+  const sxS = px(27620, kS);
+  const yS = py(820, kS);
+  ctx.fillStyle = '#c7cbd0';
+  ctx.fillRect(sxS - 26*kS*SS, yS - 60*kS*SS, 52*kS*SS, 60*kS*SS);
+  ctx.beginPath(); ctx.ellipse(sxS, yS - 60*kS*SS, 34*kS*SS, 9*kS*SS, 0, 0, 7);
+  ctx.fillStyle = '#eceff2'; ctx.fill();
+  pushHit(sxS - 40*kS*SS, yS - 120*kS*SS, 80*kS*SS, 120*kS*SS, {type:'focus', beat: BEATS.length - 1});
+
+  // Jim on stage — a presence, later a generated-video moment
+  const kJ = k(480);
+  const jx = px(STAGE_X, kJ);
+  const jh = 690 * (kJ * SS) / JIM_FIG.h * JIM_FIG.h;
+  const jscale = 690 / JIM_FIG.h * kJ * SS;
+  const jw = JIM_FIG.w * jscale, jhh = JIM_FIG.h * jscale;
+  const jFoot = py(950, kJ);
+  pushHit(jx - jw/2, jFoot - jhh, jw, jhh, {type:'focus', beat: BEATS.length - 1});
+  // spotlight cone
+  const cg = ctx.createLinearGradient(0, 0, 0, jFoot);
+  cg.addColorStop(0, 'rgba(255,248,225,0.05)');
+  cg.addColorStop(1, 'rgba(255,244,210,0.30)');
+  ctx.fillStyle = cg;
+  ctx.beginPath();
+  ctx.moveTo(jx - 60*kJ*SS, 0); ctx.lineTo(jx + 60*kJ*SS, 0);
+  ctx.lineTo(jx + 260*kJ*SS, jFoot); ctx.lineTo(jx - 260*kJ*SS, jFoot);
+  ctx.closePath(); ctx.fill();
+  ctx.drawImage(JIM_FIG.c, jx - jw/2, jFoot - jhh, jw, jhh);
+  // pool of light at his feet
+  const pg = ctx.createRadialGradient(jx, jFoot, 6, jx, jFoot, 260*kJ*SS);
+  pg.addColorStop(0, 'rgba(255,244,210,0.35)');
+  pg.addColorStop(1, 'rgba(255,244,210,0)');
+  ctx.save();
+  ctx.translate(jx, jFoot); ctx.scale(1, 0.25); ctx.translate(-jx, -jFoot);
+  ctx.fillStyle = pg;
+  ctx.fillRect(jx - 260*kJ*SS, jFoot - 260*kJ*SS, 520*kJ*SS, 520*kJ*SS);
+  ctx.restore();
+}
+
+/* foreground occluders — soft dark shapes passing close to camera:
+   mostly potted plants and people, the odd structural post */
+const FG_ITEMS = [800, 1950, 2950, 3950, 4900, 7300, 8250, 9250, 10000, 10650,
+                  12730, 13330, 13950, 16150, 16900, 17450, 18700, 19700, 21450,
+                  22950, 24500, 26100, 27050]
+  .map((x, i) => ({x, kind: ['plant','person','plant','person','post'][i % 5], seed: i}));
+const FG_SPRITES = {};
+function makeFgSprite(kind, seed){
+  const R = rng(seed*31337 + 5);
+  const c = document.createElement('canvas'); const g = c.getContext('2d');
+  g.filter = 'blur(5px)';
+  g.fillStyle = '#050403';
+  if (kind === 'plant'){
+    c.width = 360; c.height = 520; g.filter = 'blur(5px)'; g.fillStyle = '#050403';
+    // pot
+    g.beginPath();
+    g.moveTo(115, 380); g.lineTo(245, 380); g.lineTo(225, 505); g.lineTo(135, 505);
+    g.closePath(); g.fill();
+    // fan of leaves
+    for (let i = 0; i < 9; i++){
+      const a = -Math.PI/2 + (i - 4) * 0.24 + (R()-0.5)*0.1;
+      const len = 190 + R()*120;
+      const tx = 180 + Math.cos(a)*len, ty = 385 + Math.sin(a)*len;
+      g.save();
+      g.translate(tx, ty);
+      g.rotate(a + Math.PI/2);
+      g.beginPath(); g.ellipse(0, 0, 26 + R()*12, 95 + R()*40, 0, 0, 7); g.fill();
+      g.restore();
+      g.beginPath();
+      g.moveTo(180, 390);
+      g.lineTo(tx, ty);
+      g.lineWidth = 10; g.strokeStyle = '#050403'; g.stroke();
+    }
+  } else {
+    c.width = 260; c.height = 640; g.filter = 'blur(6px)'; g.fillStyle = '#050403';
+    const hx = 130 + (R()-0.5)*20, lean = (R()-0.5)*24;
+    g.beginPath(); g.arc(hx, 74, 44 + R()*6, 0, 7); g.fill();
+    g.beginPath();
+    g.moveTo(hx - 88, 640); g.lineTo(hx - 74 + lean, 210);
+    g.quadraticCurveTo(hx - 70 + lean, 128, hx, 122);
+    g.quadraticCurveTo(hx + 70 + lean, 128, hx + 74 + lean, 210);
+    g.lineTo(hx + 88, 640); g.closePath(); g.fill();
+  }
+  return {c, w: c.width, h: c.height};
+}
 function drawForeground(){
   const kk = k(-560);
-  for (const x of FG_POSTS){
-    const sx = px(x, kk);
-    const w = 120 * kk * SS;
-    if (sx < -w*2 || sx > W + w*2) continue;
-    const g = ctx.createLinearGradient(sx - w, 0, sx + w, 0);
-    g.addColorStop(0, 'rgba(8,4,1,0)');
-    g.addColorStop(0.35, 'rgba(8,4,1,0.92)');
-    g.addColorStop(0.65, 'rgba(8,4,1,0.92)');
-    g.addColorStop(1, 'rgba(8,4,1,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(sx - w, 0, w*2, H);
+  for (const it of FG_ITEMS){
+    const sx = px(it.x, kk);
+    if (it.kind === 'post'){
+      const w = 120 * kk * SS;
+      if (sx < -w*2 || sx > W + w*2) continue;
+      const g = ctx.createLinearGradient(sx - w, 0, sx + w, 0);
+      g.addColorStop(0, 'rgba(8,4,1,0)');
+      g.addColorStop(0.35, 'rgba(8,4,1,0.92)');
+      g.addColorStop(0.65, 'rgba(8,4,1,0.92)');
+      g.addColorStop(1, 'rgba(8,4,1,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(sx - w, 0, w*2, H);
+    } else {
+      const sp = FG_SPRITES[it.kind + (it.seed % 3)];
+      const h = it.kind === 'plant' ? H*0.52 : H*1.06;
+      const w = h * sp.w / sp.h;
+      if (sx < -w || sx > W + w) continue;
+      ctx.globalAlpha = 0.93;
+      ctx.drawImage(sp.c, sx - w/2, H - h + (it.kind === 'plant' ? 6*SS : 30*SS), w, h);
+      ctx.globalAlpha = 1;
+    }
   }
 }
 
@@ -1728,6 +2156,44 @@ function drawGrade(t){
   ctx.fillStyle = g.pat || (g.pat = ctx.createPattern(g.c, 'repeat'));
   ctx.fillRect(0, 0, W, H);
   ctx.globalAlpha = 1;
+}
+
+function drawInspect(){
+  const I = state.inspect; if (!I) return;
+  I.amt += ((I.closing ? 0 : 1) - I.amt) * Math.min(1, (state.dt || 0.016) * 5);
+  if (I.closing && I.amt < 0.03){ state.inspect = null; return; }
+  const e = I.amt*I.amt*(3-2*I.amt);
+  const sp = I.sp;
+  // source: where the photo lives in the world right now
+  let sx0, sy0, sw0, sh0;
+  if (I.table){
+    const kk = k(I.lz);
+    const scale = (I.w / sp.inner.w) * kk * SS;
+    sw0 = sp.w*scale; sh0 = sp.h*scale*0.42;
+    sx0 = px(I.wx, kk) - sw0/2; sy0 = py(CFG.benchY, kk) - sh0;
+  } else {
+    const kk = k(I.z);
+    const scale = (I.w / sp.inner.w) * kk * SS;
+    sw0 = sp.w*scale; sh0 = sp.h*scale;
+    sx0 = px(I.wx, kk) - sw0/2; sy0 = py(I.cy, kk) - sh0/2;
+  }
+  // target: filling the view
+  const th = Math.min(H*0.78, W*0.72*sp.h/sp.w);
+  const tw = th * sp.w/sp.h;
+  const tx = W/2 - tw/2, ty = H*0.46 - th/2;
+  ctx.fillStyle = `rgba(3,2,2,${0.62*e})`;
+  ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(sp.c, mixN(sx0,tx,e), mixN(sy0,ty,e), mixN(sw0,tw,e), mixN(sh0,th,e));
+  if (e > 0.6){
+    const b = BEATS[I.beat];
+    const seg = segAt(b.x);
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = eraFont(30*SS, '', seg.font);
+    ctx.fillStyle = `rgba(${seg.ink},${(e-0.6)/0.4 * 0.9})`;
+    ctx.fillText(I.cap || (b.y + ' · ' + b.t), W/2, ty + th + 52*SS);
+    ctx.restore();
+  }
 }
 
 function drawAttractHint(t){
@@ -1764,11 +2230,34 @@ function update(dt){
   }
 
   if (state.mode === 'live'){
-    cam.vel += inp.impulse;
-    if (inp.action){
-      const nb = nearestBeat(cam.x);
-      if (state.focusBeat === nb.i){ state.focusBeat = -1; cam.zTarget = 0; }
-      else if (nb.d < 500){ state.focusBeat = nb.i; cam.zTarget = CFG.focusCamZ; cam.vel = 0; }
+    if (state.inspect){
+      // a photo is up close: any strong scroll or click puts it back
+      if (inp.action || Math.abs(inp.impulse) > 260) state.inspect.closing = true;
+      cam.vel = 0;
+    } else {
+      cam.vel += inp.impulse;
+    }
+    if (inp.action && !state.inspect){
+      const aimed = (typeof inp.action === 'object') ? hitAt(inp.action.x, inp.action.y) : null;
+      if (aimed && aimed.type === 'photo'){
+        state.inspect = {sp: aimed.sp, wx: aimed.wx, cy: aimed.cy, z: aimed.z, w: aimed.w,
+                         cap: aimed.cap, beat: aimed.beat, table: false, amt: 0};
+        cam.vel = 0;
+      } else if (aimed && aimed.type === 'photoTable'){
+        state.inspect = {sp: aimed.sp, wx: aimed.wx, lz: aimed.lz, w: aimed.w,
+                         cap: aimed.cap, beat: aimed.beat, table: true, amt: 0};
+        cam.vel = 0;
+      } else if (aimed && aimed.type === 'album'){
+        const open = (albumAnim[aimed.beat] || 0) > 0.5;
+        state.albumLock[aimed.beat] = !open;
+      } else if (aimed && aimed.type === 'focus'){
+        if (state.focusBeat === aimed.beat){ state.focusBeat = -1; cam.zTarget = 0; }
+        else { state.focusBeat = aimed.beat; cam.zTarget = CFG.focusCamZ; cam.vel = 0; }
+      } else {
+        const nb = nearestBeat(cam.x);
+        if (state.focusBeat === nb.i){ state.focusBeat = -1; cam.zTarget = 0; }
+        else if (nb.d < 500){ state.focusBeat = nb.i; cam.zTarget = CFG.focusCamZ; cam.vel = 0; }
+      }
     }
     if (state.focusBeat >= 0){
       if (Math.abs(inp.impulse) > 250){ state.focusBeat = -1; cam.zTarget = 0; }
@@ -1835,6 +2324,7 @@ function update(dt){
 /* ---------------- FRAME ---------------- */
 function frame(){
   const t = state.time;
+  HITS = [];
   BR = Math.sin(t*0.32)*6 + Math.sin(t*0.11)*3;
   // base — ambient color drifts cooler era by era
   const amb = ambient(cam.x);
@@ -1852,6 +2342,11 @@ function frame(){
   drawOutro();
   drawSheets();
 
+  // mid-ground first: people and machines live BEHIND the floating text layer
+  drawStage(t);
+  drawFigures();
+  drawProps(true);
+
   // beat wall content
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
@@ -1860,7 +2355,8 @@ function frame(){
     for (const it of b.wall){
       const sp = SPRITES[it.img]; if (!sp) continue;
       const wz = wallZAt(b.x) - 12;
-      drawSprite(sp, b.x + it.dx, it.cy, wz, it.w, it.rot || 0);
+      drawSprite(sp, b.x + it.dx, it.cy, wz, it.w, it.rot || 0, null,
+                 {type:'photo', sp, wx: b.x + it.dx, cy: it.cy, z: wz, w: it.w, cap: it.cap, beat: i});
       if (it.cap){
         const kk = k(wz);
         const seg = segAt(b.x);
@@ -1873,12 +2369,9 @@ function frame(){
         ctx.restore();
       }
     }
+    if (b.plasma) drawPlasmaPanel(b, t);
     drawBeatText(b, focusAmt);
   }
-
-  // mid-ground: people and machines on the floor between bench and wall
-  drawFigures();
-  drawProps(true);
 
   drawBench();
 
@@ -1889,10 +2382,12 @@ function frame(){
     if (Math.abs(b.x - cam.x) > 2400) continue;
     for (const it of b.table){
       const sp = SPRITES[it.img]; if (!sp) continue;
-      drawLyingPrint(sp, b.x + it.dx, it.lz, it.w, it.rot || 0);
+      drawLyingPrint(sp, b.x + it.dx, it.lz, it.w, it.rot || 0,
+                     {type:'photoTable', sp, wx: b.x + it.dx, lz: it.lz, w: it.w, cap: it.cap, beat: i});
     }
     for (const p of (b.props || [])) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
+    if (b.y === '2020–22') drawBookPyramid(b, t);
   }
 
   // lamps + dust + foreground
@@ -1921,7 +2416,12 @@ function frame(){
   drawForeground();
   drawDoorway();
   drawGrade(t);
+  drawInspect();
   drawAttractHint(t);
+  // pointer affordance
+  if (Input.hover && state.mode === 'live'){
+    document.body.style.cursor = (!state.inspect && hitAt(Input.hover.x, Input.hover.y)) ? 'pointer' : '';
+  }
 
   // attract fade
   if (state.attract.fade > 0){
@@ -1960,6 +2460,10 @@ async function boot(){
   TEX.wall3 = panelTexture({w:1400, h:900, base:'#71746c', groove:470});
   TEX.bench3 = formicaTexture({w:1200, h:512, base:'#a09a8e'});
   TEX.front3 = panelTexture({w:1200, h:600, base:'#45463f', groove:240});
+  TEX.wall4 = panelTexture({w:1400, h:900, base:'#b6b9ba', groove:600});
+  TEX.bench4 = formicaTexture({w:1200, h:512, base:'#d3d5d6'});
+  TEX.front4 = panelTexture({w:1200, h:600, base:'#a3a7aa', groove:420});
+  cacheWrap();
   TEX.outside = makeOutside();
   MONS.crt = makeMonitor('crt');
   MONS.lcd = makeMonitor('lcd');
@@ -1969,6 +2473,7 @@ async function boot(){
     {wall:'frame',   table:'print',  tone:'sepia(0.55) saturate(0.7) contrast(1.05) brightness(0.95)'},
     {wall:'metal',   table:'print2', tone:'sepia(0.22) saturate(0.82) contrast(1.03)'},
     {wall:'plastic', table:'print2', tone:'saturate(0.9) contrast(1.02)'},
+    {wall:'white',   table:'print2', tone:'saturate(0.96) contrast(1.02)'},
   ];
   const spec = {};
   for (const b of BEATS){
@@ -1983,6 +2488,8 @@ async function boot(){
   PED_SPRITES.crown = makePedObj('crown');
   PED_SPRITES.puck = makePedObj('puck');
   PED_SPRITES.scanner = makePedObj('scanner');
+  PED_SPRITES.crown2 = makePedObj('crown2');
+  PED_SPRITES.millSt = makePedObj('millSt');
   initAlbums();
   initDust();
   initDecor();
@@ -1997,6 +2504,7 @@ window.ASSETS = {artic:"data:image/jpeg;base64,",
 bizcard:"data:image/jpeg;base64,",
 cast:"data:image/jpeg;base64,",
 dietrim:"data:image/jpeg;base64,",
+fastmill:"data:image/jpeg;base64,",
 father42:"data:image/jpeg;base64,",
 furnace:"data:image/jpeg;base64,",
 invest:"data:image/jpeg;base64,",
@@ -2004,6 +2512,7 @@ jim15:"data:image/jpeg;base64,",
 jim18:"data:image/jpeg;base64,",
 jim1970:"data:image/jpeg;base64,",
 jim76:"data:image/jpeg;base64,",
+jimnow:"data:image/jpeg;base64,",
 joeha:"data:image/jpeg;base64,",
 lab3ben:"data:image/jpeg;base64,",
 lab3ext:"data:image/jpeg;base64,",
@@ -2014,6 +2523,7 @@ lab5move:"data:image/jpeg;base64,",
 porc:"data:image/jpeg;base64,",
 rella:"data:image/jpeg;base64,",
 rose:"data:image/jpeg;base64,",
+todayai:"data:image/jpeg;base64,",
 wax:"data:image/jpeg;base64,"};
 //</ASSETS>
 </script>
