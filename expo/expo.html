@@ -214,7 +214,10 @@ const BEATS = [
   {x:24810, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24190,
    th:'Reinvesting in the profession — and our channel for finding hero dentists.',
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
-   wall:[], table:[]},
+   wall:[],
+   table:[{img:'ellen', w:220, dx:-280, lz:195, rot:-5, cap:'Dr. Ellen Paulisick · GL alum'},
+          {img:'nadia', w:220, dx:-10, lz:235, rot:4, cap:'Dr. Nadia Rodriguez · GL alum'},
+          {img:'bianca', w:220, dx:255, lz:205, rot:-3, cap:'Dr. Bianca Clark · GL alum'}]},
 
   {x:25660, y:'2020–22', t:'MEMOIR · CEO · SCAN',
    th:'A generational handover at the top; the scanner joins the ecosystem.',
@@ -898,67 +901,191 @@ function drawOutro(){
 
 /* the outside between two buildings — seen through the window seam */
 function makeOutside(){
-  const c = document.createElement('canvas'); c.width = 1400; c.height = 800;
+  const c = document.createElement('canvas'); c.width = 1400; c.height = 900;
   const g = c.getContext('2d');
-  // bright coastal sky
-  const sky = g.createLinearGradient(0, 0, 0, 560);
-  sky.addColorStop(0, '#7fb6e8'); sky.addColorStop(.6, '#aed3f0'); sky.addColorStop(1, '#e8ecda');
-  g.fillStyle = sky; g.fillRect(0, 0, 1400, 560);
-  // sun with glow
-  let sg = g.createRadialGradient(320, 130, 8, 320, 130, 190);
-  sg.addColorStop(0, 'rgba(255,252,235,0.95)'); sg.addColorStop(.2, 'rgba(255,244,200,0.55)'); sg.addColorStop(1, 'rgba(255,240,190,0)');
-  g.fillStyle = sg; g.fillRect(130, -60, 380, 380);
-  g.fillStyle = '#fffdf2';
-  g.beginPath(); g.arc(320, 130, 34, 0, 7); g.fill();
-  // the ocean
-  const sea = g.createLinearGradient(0, 470, 0, 620);
-  sea.addColorStop(0, '#3f7fae'); sea.addColorStop(.5, '#2f6a97'); sea.addColorStop(1, '#2a5d86');
-  g.fillStyle = sea; g.fillRect(0, 470, 1400, 150);
-  g.fillStyle = 'rgba(255,255,255,0.35)';
-  const R = rng(4242);
-  for (let i = 0; i < 90; i++) g.fillRect(R()*1400, 480 + R()*120, 6 + R()*16, 1.6);   // sparkle
-  g.fillStyle = 'rgba(255,248,220,0.30)';
-  g.fillRect(240, 476, 170, 90);   // sun path on water
-  // shoreline and ground
-  g.fillStyle = '#d9c9a4'; g.fillRect(0, 610, 1400, 40);
-  g.fillStyle = '#9aa08a'; g.fillRect(0, 645, 1400, 155);
-  // the 1993 building — white low-rise, right side
-  g.fillStyle = '#f0efe8'; g.fillRect(1010, 330, 390, 330);
-  g.fillStyle = '#dcdbd2'; g.fillRect(1010, 330, 390, 16);
-  for (let r = 0; r < 3; r++) for (let col = 0; col < 5; col++){
-    g.fillStyle = 'rgba(70,100,130,0.55)';
-    g.fillRect(1034 + col*72, 362 + r*88, 46, 56);
+  const VX = 700, VY = 470;                     // vanishing point of the street
+  // sky
+  const sky = g.createLinearGradient(0, 0, 0, VY);
+  sky.addColorStop(0, '#8fc0ec'); sky.addColorStop(.75, '#c4dced'); sky.addColorStop(1, '#e2ecf0');
+  g.fillStyle = sky; g.fillRect(0, 0, 1400, VY + 2);
+  let sg = g.createRadialGradient(560, 150, 10, 560, 150, 220);
+  sg.addColorStop(0, 'rgba(255,252,238,0.9)'); sg.addColorStop(1, 'rgba(255,250,225,0)');
+  g.fillStyle = sg; g.fillRect(340, -70, 440, 440);
+  // hills with haze
+  g.fillStyle = '#b7c3ab';
+  g.beginPath(); g.moveTo(0, VY);
+  for (let x = 0; x <= 1400; x += 70) g.lineTo(x, VY - 26 - 30*Math.sin(x*0.006) - 14*Math.sin(x*0.017+2));
+  g.lineTo(1400, VY); g.closePath(); g.fill();
+  g.fillStyle = 'rgba(150,164,135,0.85)';
+  g.beginPath(); g.moveTo(0, VY);
+  for (let x = 0; x <= 1400; x += 60) g.lineTo(x, VY - 10 - 16*Math.sin(x*0.01+1) - 8*Math.sin(x*0.03));
+  g.lineTo(1400, VY); g.closePath(); g.fill();
+  // distant campus buildings flanking the street
+  const R = rng(1212);
+  const bldg = (x0, w, h, tone) => {
+    g.fillStyle = tone; g.fillRect(x0, VY - h, w, h);
+    g.fillStyle = 'rgba(80,110,140,0.5)';
+    for (let r = 0; r < Math.floor(h/22); r++)
+      g.fillRect(x0 + 5, VY - h + 7 + r*22, w - 10, 9);
+  };
+  bldg(300, 190, 88, '#e9eae4'); bldg(120, 150, 60, '#dfe1da'); bldg(510, 110, 52, '#e8eae3');
+  bldg(910, 200, 92, '#eceee8'); bldg(1130, 150, 64, '#e0e2db'); bldg(820, 80, 46, '#e6e8e1');
+  // ground
+  const gr = g.createLinearGradient(0, VY, 0, 900);
+  gr.addColorStop(0, '#aab389'); gr.addColorStop(.4, '#8ea06b'); gr.addColorStop(1, '#5f7a4a');
+  g.fillStyle = gr; g.fillRect(0, VY, 1400, 430);
+  // the road
+  const roadHalf = t => 26 + 306 * t;
+  const roadY = t => VY + 430 * Math.pow(t, 1.35);
+  const rd = g.createLinearGradient(0, VY, 0, 900);
+  rd.addColorStop(0, '#8a9096'); rd.addColorStop(.5, '#5c6167'); rd.addColorStop(1, '#3c4045');
+  g.fillStyle = rd;
+  g.beginPath();
+  g.moveTo(VX - roadHalf(0), roadY(0)); g.lineTo(VX + roadHalf(0), roadY(0));
+  g.lineTo(VX + roadHalf(1), 900); g.lineTo(VX - roadHalf(1), 900);
+  g.closePath(); g.fill();
+  // curbs and side lines
+  for (const s of [-1, 1]){
+    g.strokeStyle = 'rgba(240,242,238,0.85)'; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(VX + s*(roadHalf(0.04)+2), roadY(0.04));
+    g.lineTo(VX + s*(roadHalf(1)+6), 900); g.stroke();
+    g.strokeStyle = 'rgba(200,205,196,0.7)'; g.lineWidth = 6;
+    g.beginPath(); g.moveTo(VX + s*(roadHalf(0.05)+9), roadY(0.05));
+    g.lineTo(VX + s*(roadHalf(1)+30), 900); g.stroke();
   }
-  // palms
+  // dashed center line
+  g.fillStyle = 'rgba(245,246,240,0.9)';
+  for (let i = 0; i < 9; i++){
+    const t0 = 0.055 + i*0.105, t1 = t0 + 0.045;
+    if (t1 > 1) break;
+    const w0 = 1.5 + 8*t0, w1 = 1.5 + 8*t1;
+    g.beginPath();
+    g.moveTo(VX - w0, roadY(t0)); g.lineTo(VX + w0, roadY(t0));
+    g.lineTo(VX + w1, roadY(t1)); g.lineTo(VX - w1, roadY(t1));
+    g.closePath(); g.fill();
+  }
+  // low agaves near the road
+  const agave = (x, y, s, tone) => {
+    g.strokeStyle = tone; g.lineWidth = 3.5*s; g.lineCap = 'round';
+    for (let i = 0; i < 7; i++){
+      const a = -Math.PI/2 + (i-3)*0.38;
+      g.beginPath(); g.moveTo(x, y);
+      g.quadraticCurveTo(x + Math.cos(a)*16*s, y + Math.sin(a)*22*s, x + Math.cos(a)*30*s, y + Math.sin(a)*34*s);
+      g.stroke();
+    }
+  };
+  // palm alley along both sides
   function palm(x, y, s, lean){
-    g.strokeStyle = '#4a3c28'; g.lineWidth = 7*s; g.lineCap = 'round';
+    g.strokeStyle = '#57452c'; g.lineWidth = 6.5*s; g.lineCap = 'round';
     g.beginPath(); g.moveTo(x, y);
-    g.quadraticCurveTo(x + 30*lean*s, y - 90*s, x + 55*lean*s, y - 150*s);
+    g.quadraticCurveTo(x + 24*lean*s, y - 80*s, x + 46*lean*s, y - 138*s);
     g.stroke();
-    const tx = x + 55*lean*s, ty = y - 150*s;
-    g.strokeStyle = '#2f5233'; g.lineWidth = 4.5*s;
+    const tx = x + 46*lean*s, ty = y - 138*s;
+    g.strokeStyle = '#33613a'; g.lineWidth = 4*s;
     for (let i = 0; i < 7; i++){
       const a = -Math.PI*0.95 + i*(Math.PI*0.9/6);
       g.beginPath(); g.moveTo(tx, ty);
-      g.quadraticCurveTo(tx + Math.cos(a)*46*s, ty + Math.sin(a)*30*s - 16*s,
-                         tx + Math.cos(a)*88*s, ty + Math.sin(a)*52*s + 14*s);
+      g.quadraticCurveTo(tx + Math.cos(a)*42*s, ty + Math.sin(a)*27*s - 15*s,
+                         tx + Math.cos(a)*80*s, ty + Math.sin(a)*48*s + 13*s);
       g.stroke();
     }
   }
-  palm(150, 665, 1.15, 1);
-  palm(560, 655, 0.9, -1);
-  palm(880, 668, 1.05, 1);
-  // haze at the bottom so it sits into the room shadow
-  const hz = g.createLinearGradient(0, 640, 0, 800);
-  hz.addColorStop(0, 'rgba(20,22,20,0)'); hz.addColorStop(1, 'rgba(12,12,10,0.55)');
-  g.fillStyle = hz; g.fillRect(0, 640, 1400, 160);
+  for (const t of [0.14, 0.3, 0.52, 0.8]){
+    const s = 0.35 + t*1.15;
+    palm(VX - roadHalf(t) - 46 - 60*t, roadY(t) + 6, s, 1);
+    palm(VX + roadHalf(t) + 46 + 60*t, roadY(t) + 6, s, -1);
+    agave(VX - roadHalf(t) - 110*t - 20, roadY(t) + 16*t, 0.5 + t, '#3f5f3c');
+    agave(VX + roadHalf(t) + 110*t + 20, roadY(t) + 16*t, 0.5 + t, '#46683f');
+  }
+  // ambient shadow at the very bottom, where the rooms' floor meets the yard
+  const hz = g.createLinearGradient(0, 760, 0, 900);
+  hz.addColorStop(0, 'rgba(14,14,12,0)'); hz.addColorStop(1, 'rgba(10,10,9,0.5)');
+  g.fillStyle = hz; g.fillRect(0, 760, 1400, 140);
   return c;
 }
 function drawOutside(){
   if (Math.abs(cam.x - SEAM_2) > 3000) return;
   const kk = k(1300);
-  const sx = px(SEAM_2 - 2400, kk);
-  ctx.drawImage(TEX.outside, sx, 0, 4800 * kk * SS, H);
+  const sx = px(SEAM_2 - 1300, kk);
+  ctx.drawImage(TEX.outside, sx, 0, 2600 * kk * SS, H);
+}
+
+/* building sections: at each wall end the house is cut open — floors,
+   ceiling lights, a hint of furniture (per the reference render) */
+const SECTIONS = {};
+function makeSection(side){
+  const c = document.createElement('canvas'); c.width = 220; c.height = 1100;
+  const g = c.getContext('2d');
+  const warm = side === 'old';
+  const bg = g.createLinearGradient(0, 0, 0, 1100);
+  if (warm){ bg.addColorStop(0, '#8d846f'); bg.addColorStop(1, '#6c6552'); }
+  else { bg.addColorStop(0, '#c6cbce'); bg.addColorStop(1, '#9da3a7'); }
+  g.fillStyle = bg; g.fillRect(0, 0, 220, 1100);
+  const floors = [[70, 480], [530, 1000]];    // two storeys [top, bottom]
+  // slab between storeys and at bottom
+  for (const yy of [480, 1000]){
+    g.fillStyle = warm ? '#cdc4b0' : '#e4e7e9';
+    g.fillRect(0, yy, 220, 34);
+    g.fillStyle = 'rgba(0,0,0,0.35)';
+    g.fillRect(0, yy + 34, 220, 8);
+  }
+  for (const [top, bot] of floors){
+    // ceiling light strips
+    for (let i = 0; i < 3; i++){
+      g.fillStyle = 'rgba(255,255,250,0.85)';
+      g.fillRect(18 + i*66, top + 12, 46, 5);
+    }
+    // furniture hints
+    g.fillStyle = warm ? '#3d3527' : '#5a6166';
+    g.fillRect(24, bot - 120, 92, 120);            // desk / cabinet
+    g.fillRect(140, bot - 88, 56, 88);
+    g.fillStyle = warm ? '#20242c' : '#22303a';
+    g.fillRect(40, bot - 168, 52, 44);             // a monitor
+    // a plant
+    g.fillStyle = '#3c6140';
+    g.beginPath();
+    g.ellipse(186, bot - 130, 18, 34, 0.2, 0, 7); g.fill();
+    g.fillStyle = warm ? '#4a3423' : '#7c8287';
+    g.fillRect(176, bot - 104, 20, 26);
+  }
+  if (warm){
+    // the team photo on the wall, upper floor
+    g.fillStyle = '#efe9da'; g.fillRect(70, 170, 108, 78);
+    const R = rng(313);
+    for (let i = 0; i < 24; i++){
+      g.fillStyle = `hsl(${(R()*360)|0} 45% ${(38 + R()*28)|0}%)`;
+      g.fillRect(76 + (i%8)*12.4, 178 + ((i/8)|0)*21, 10, 17);
+    }
+  } else {
+    // glass wall band
+    g.fillStyle = 'rgba(140,190,215,0.30)';
+    g.fillRect(28, 120, 164, 300);
+    g.fillStyle = 'rgba(255,255,255,0.35)';
+    g.fillRect(40, 132, 22, 276);
+  }
+  return c;
+}
+
+/* a full-screen video insert can live on the seam: drop a clip in and it
+   fades in as you cross (slot — no clip embedded yet) */
+let SEAM_VIDEO = null;
+function initSeamVideo(){
+  if (!window.ASSETS || !ASSETS.flyover) return;
+  const v = document.createElement('video');
+  v.src = ASSETS.flyover; v.muted = true; v.loop = true; v.playsInline = true;
+  v.play().catch(()=>{});
+  SEAM_VIDEO = v;
+}
+function drawSeamVideo(){
+  if (!SEAM_VIDEO) return;
+  const d = Math.abs(cam.x - SEAM_2);
+  if (d > 620) return;
+  const a = Math.min(1, (1 - d/620) * 1.6);
+  ctx.globalAlpha = a;
+  const vw = SEAM_VIDEO.videoWidth || 16, vh = SEAM_VIDEO.videoHeight || 9;
+  const s = Math.max(W/vw, H/vh);
+  ctx.drawImage(SEAM_VIDEO, W/2 - vw*s/2, H/2 - vh*s/2, vw*s, vh*s);
+  ctx.globalAlpha = 1;
 }
 
 /* doorways between eras — near-camera portals you pass through */
@@ -972,26 +1099,22 @@ function drawDoorway(){
          at the far-wall depth, each carrying its window jamb; between them
          the yard is completely open. */
       const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
-      for (const [wx, side, tex] of [[seam.x - 480, 1, TEX.wall2], [seam.x + 480, -1, TEX.wall3]]){
+      for (const [wx, side, sec] of [[seam.x - 480, 1, SECTIONS.old], [seam.x + 480, -1, SECTIONS.neu]]){
         const kw = k(wallZAt(wx - side*4));
         const sxw = px(wx, kw);
-        const jambW = 30 * kw * SS;
-        if (sxw < -200 || sxw > W + 200) continue;
-        // the wall's cross-section edge
-        const eg = ctx.createLinearGradient(sxw - (side>0 ? jambW : 0), 0, sxw + (side>0 ? 0 : jambW), 0);
-        if (side > 0){ eg.addColorStop(0, '#8f8b7d'); eg.addColorStop(1, '#e7e4d6'); }
-        else { eg.addColorStop(0, '#eceadd'); eg.addColorStop(1, '#8f8b7d'); }
-        ctx.fillStyle = eg;
-        ctx.fillRect(side > 0 ? sxw - jambW : sxw, 0, jambW, yBase);
-        // thin bright rim right on the edge — the window jamb catching the sun
-        ctx.fillStyle = 'rgba(255,252,235,0.85)';
-        ctx.fillRect(side > 0 ? sxw - 2.5*SS : sxw, 0, 2.5*SS, yBase);
+        const secW = 150 * kw * SS;
+        if (sxw < -secW*2 || sxw > W + secW*2) continue;
+        // the building cut open: floors, lights, furniture — full height
+        ctx.drawImage(sec, side > 0 ? sxw - secW : sxw, 0, secW, H);
+        // thin bright rim right on the edge — the jamb catching the sun
+        ctx.fillStyle = 'rgba(255,252,235,0.9)';
+        ctx.fillRect(side > 0 ? sxw - 3*SS : sxw, 0, 3*SS, H);
         // daylight bleeding onto the wall inside the room
-        const bl = ctx.createLinearGradient(sxw, 0, sxw - side * 260 * kw * SS, 0);
-        bl.addColorStop(0, 'rgba(255,248,215,0.22)');
+        const bl = ctx.createLinearGradient(sxw - side*secW, 0, sxw - side * 340 * kw * SS, 0);
+        bl.addColorStop(0, 'rgba(255,248,215,0.20)');
         bl.addColorStop(1, 'rgba(255,248,215,0)');
         ctx.fillStyle = bl;
-        ctx.fillRect(side > 0 ? sxw - 260*kw*SS : sxw, 0, 260*kw*SS, yBase);
+        ctx.fillRect(side > 0 ? sxw - 340*kw*SS : sxw + secW - 340*kw*SS*0, 0, 340*kw*SS, yBase);
       }
     } else if (seam.kind === 'light'){
       // the gate into the white room: a wall of soft light you pass through
@@ -1536,9 +1659,6 @@ function initDecor(){
       FIGURES.push({x: 15020 + i*100 + r*40, z: 700 + r*85, h: 330,
                     sprite: makeFigure(40 + r*10 + i, true), seated: true});
   FIGURES.push({x: 16150, z: 540, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
-  // palms in the yard between the two buildings
-  PROPS.push({x: SEAM_2 + 170, z: 640, kind: 'palmNear', w: 330, mid: true});
-  PROPS.push({x: SEAM_2 - 210, z: 820, kind: 'palmNear', w: 260, mid: true, flip: true});
   // guiding leaders — a trio in the depth
   for (let i = 0; i < 3; i++)
     FIGURES.push({x: 25150 + i*115, z: 720 + i*30, h: 660, sprite: makeFigure(80 + i)});
@@ -1955,15 +2075,12 @@ function makeBookPyramid(){
   g.fillText('CHANGE', sx+60, sy+78);
   g.font = '11px Georgia, serif';
   g.fillText('JIM GLIDEWELL', sx+60, sy+134);
-  // QR stand: white card
+  // QR stand: white card with a real, scannable code
   g.save();
   g.shadowColor = 'rgba(0,0,0,0.3)'; g.shadowBlur = 8; g.shadowOffsetY = 4;
-  g.fillStyle = '#f4f4ef'; g.fillRect(356, 190, 86, 108);
+  g.fillStyle = '#f4f4ef'; g.fillRect(352, 182, 94, 118);
   g.restore();
-  const R = rng(9001);
-  g.fillStyle = '#1a1c20';
-  for (let yy = 0; yy < 9; yy++) for (let xx = 0; xx < 9; xx++)
-    if (R() < 0.45) g.fillRect(364 + xx*7.5, 200 + yy*7.5, 6.4, 6.4);
+  if (IMGS.qr) g.drawImage(IMGS.qr.el, 358, 188, 82, 82);
   g.fillStyle = '#3c4048';
   g.font = '10px "Helvetica Neue", Arial, sans-serif';
   g.fillText('GET THE BOOK', 399, 289);
@@ -2415,6 +2532,7 @@ function frame(){
 
   drawForeground();
   drawDoorway();
+  drawSeamVideo();
   drawGrade(t);
   drawInspect();
   drawAttractHint(t);
@@ -2465,6 +2583,9 @@ async function boot(){
   TEX.front4 = panelTexture({w:1200, h:600, base:'#a3a7aa', groove:420});
   cacheWrap();
   TEX.outside = makeOutside();
+  SECTIONS.old = makeSection('old');
+  SECTIONS.neu = makeSection('neu');
+  initSeamVideo();
   MONS.crt = makeMonitor('crt');
   MONS.lcd = makeMonitor('lcd');
   for (let i = 0; i < 3; i++) grains.push({c: noiseTile(256, 1)});
@@ -2501,9 +2622,11 @@ window.addEventListener('load', boot);   // assets block sits below — wait for
 <script>
 //<ASSETS>
 window.ASSETS = {artic:"data:image/jpeg;base64,",
+bianca:"data:image/jpeg;base64,",
 bizcard:"data:image/jpeg;base64,",
 cast:"data:image/jpeg;base64,",
 dietrim:"data:image/jpeg;base64,",
+ellen:"data:image/jpeg;base64,",
 fastmill:"data:image/jpeg;base64,",
 father42:"data:image/jpeg;base64,",
 furnace:"data:image/jpeg;base64,",
@@ -2520,7 +2643,9 @@ lab3rec:"data:image/jpeg;base64,",
 lab4ext:"data:image/jpeg;base64,",
 lab4int:"data:image/jpeg;base64,",
 lab5move:"data:image/jpeg;base64,",
+nadia:"data:image/jpeg;base64,",
 porc:"data:image/jpeg;base64,",
+qr:"data:image/png;base64,",
 rella:"data:image/jpeg;base64,",
 rose:"data:image/jpeg;base64,",
 todayai:"data:image/jpeg;base64,",
