@@ -48,7 +48,7 @@ const BEATS = [
          {img:'furnace', w:360, dx:430, cy:380, rot:1.2}],
    table:[{img:'invest', w:300, dx:-320, lz:200, rot:-7}]},
 
-  {x:2450, y:'1969–70', t:'FOUNDED', tier:1,
+  {x:2450, y:'1969–70', t:'FOUNDED', tier:1, fly:true,
    th:'One man, one bench — betting that affordable was a business model.',
    d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
    wall:[{img:'jim1970', w:460, dx:480, cy:400, hero:true}],
@@ -141,7 +141,7 @@ const BEATS = [
    d:'In-Ceram Zirconia material arrives — zirconia enters the lab a full decade before BruxZir.',
    wall:[], table:[]},
 
-  {x:16500, y:'~2000', t:'R&D IS BORN', tier:1,
+  {x:16500, y:'~2000', t:'R&D IS BORN', tier:1, fly:true,
    th:'Own the science, so you can own the quality and the price.',
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir, and everything after.',
    wall:[{img:'rella', w:250, dx:-420, cy:350, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
@@ -169,7 +169,7 @@ const BEATS = [
    d:'Ivoclar’s lithium disilicate becomes the go-to esthetic all-ceramic — pressable, millable, tooth-like. The metal-free front tooth finally has its material.',
    wall:[], table:[]},
 
-  {x:20500, y:'2007', t:'FIRST DIGITAL CASE',
+  {x:20500, y:'2007', t:'FIRST DIGITAL CASE', fly:true,
    th:'Nobody called it AI training data yet — but that is what it was.',
    d:'The lab accepts its first intraoral scan instead of a physical impression — the moment the case archive starts becoming data.',
    wall:[], table:[],
@@ -657,34 +657,61 @@ function drawBeatText(b, focusAmt){
   const wz = wallZAt(b.x);
   const dxW = b.x - cam.x;
   const near = Math.max(0, 1 - Math.abs(dxW)/1300);
-  const passed = Math.max(0, Math.min(1, -dxW/560));   // 1 = far behind us
   const sc = b.minor ? 0.6 : 1;
-  // the title block floats: far away it sits at the wall, then comes
-  // forward through the air to meet you, and dissolves upward once passed
-  let zT = 150 + (wz - 150) * Math.pow(1 - near, 1.7);
-  if (b.minor) zT = Math.max(zT, 400);
-  const kk = k(zT);
-  const cx = px(b.x, kk);
-  const rise = 70 * passed;
-  const alpha = Math.min(1, near*2.4) * (1 - passed);
-  if (alpha > 0.01 && cx > -1200 && cx < W + 1200){
-    ctx.save();
-    ctx.textAlign = 'center';
-    ctx.font = eraFont(150 * sc * kk * SS, '', seg.font);
-    ctx.fillStyle = `rgba(${seg.ink},${(0.55 + 0.4*near) * alpha * (b.minor?0.82:1)})`;
-    ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
-    ctx.fillText(b.y, cx, py((b.minor ? 205 : 185) - rise, kk));
-    ctx.font = eraFont(42 * sc * kk * SS, '', seg.font);
-    try { ctx.letterSpacing = `${9*sc*kk*SS}px`; } catch(e){}
-    ctx.fillStyle = `rgba(${seg.ink},${(0.5 + 0.45*near) * 0.92 * alpha})`;
-    ctx.fillText(b.t, cx, py((b.minor ? 245 : 248) - rise, kk));
-    try { ctx.letterSpacing = '0px'; } catch(e){}
-    if (near > 0.3){
-      ctx.font = eraFont(28 * (b.minor?0.8:1) * kk * SS, 'italic', seg.font);
-      ctx.fillStyle = `rgba(${seg.ink},${(near-0.3)/0.7 * 0.72 * alpha})`;
-      wrapText(b.th, cx, py((b.minor ? 285 : 300) - rise, kk), 460 * kk * SS, 36 * (b.minor?0.8:1) * kk * SS);
+  // only the flagged landmark beats fly out — and only the nearest one at a time;
+  // everything else stays painted on the wall
+  let fly = !!b.fly;
+  if (fly) for (const o of BEATS)
+    if (o !== b && o.fly && Math.abs(o.x - cam.x) < Math.abs(dxW)){ fly = false; break; }
+  if (fly){
+    const passed = Math.max(0, Math.min(1, -dxW/560));   // 1 = far behind us
+    const zT = 150 + (wz - 150) * Math.pow(1 - near, 1.7);
+    const kk = k(zT);
+    const cx = px(b.x, kk);
+    const rise = 70 * passed;
+    const alpha = Math.min(1, near*2.4) * (1 - passed);
+    if (alpha > 0.01 && cx > -1200 && cx < W + 1200){
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.font = eraFont(150 * kk * SS, '', seg.font);
+      ctx.fillStyle = `rgba(${seg.ink},${(0.55 + 0.4*near) * alpha})`;
+      ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
+      ctx.fillText(b.y, cx, py(185 - rise, kk));
+      ctx.font = eraFont(42 * kk * SS, '', seg.font);
+      try { ctx.letterSpacing = `${9*kk*SS}px`; } catch(e){}
+      ctx.fillStyle = `rgba(${seg.ink},${(0.5 + 0.45*near) * 0.92 * alpha})`;
+      ctx.fillText(b.t, cx, py(248 - rise, kk));
+      try { ctx.letterSpacing = '0px'; } catch(e){}
+      if (near > 0.3){
+        ctx.font = eraFont(28 * kk * SS, 'italic', seg.font);
+        ctx.fillStyle = `rgba(${seg.ink},${(near-0.3)/0.7 * 0.72 * alpha})`;
+        wrapText(b.th, cx, py(300 - rise, kk), 460 * kk * SS, 36 * kk * SS);
+      }
+      ctx.restore();
     }
-    ctx.restore();
+  } else {
+    // static wall text, as it always was
+    const kk = k(wz - 8);
+    const cx = px(b.x, kk);
+    if (cx > -900 && cx < W + 900){
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.font = eraFont(170 * sc * kk * SS, '', seg.font);
+      ctx.fillStyle = `rgba(${seg.ink},${(0.5 + 0.45*near)*(b.minor?0.82:1)})`;
+      ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 3*SS;
+      ctx.fillText(b.y, cx, py(b.minor ? 170 : 140, kk));
+      ctx.font = eraFont(46 * sc * kk * SS, '', seg.font);
+      try { ctx.letterSpacing = `${9*sc*kk*SS}px`; } catch(e){}
+      ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
+      ctx.fillText(b.t, cx, py(b.minor ? 212 : 208, kk));
+      try { ctx.letterSpacing = '0px'; } catch(e){}
+      if (near > 0.25){
+        ctx.font = eraFont(30 * (b.minor?0.8:1) * kk * SS, 'italic', seg.font);
+        ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
+        wrapText(b.th, cx, py(b.minor ? 254 : 262, kk), 500 * kk * SS, 38 * (b.minor?0.8:1) * kk * SS);
+      }
+      ctx.restore();
+    }
   }
   // description — anchored to the wall, appears at rest / focus
   let dAmt = Math.max(focusAmt, state.restBeat === BEATS.indexOf(b) ? Math.min(1, Math.max(0, (state.restTime - 0.7)/0.8)) : 0);
@@ -1534,7 +1561,7 @@ function makePedObj(kind){
   }
   return {c, w: c.width, h: c.height};
 }
-function drawPedestal(b, t){
+function drawPedestal(b, t, hero){
   const ped = b.ped; if (!ped) return;
   const z = -90, kk = k(z);
   const x = b.x + (ped.dx || -300);
@@ -1543,6 +1570,20 @@ function drawPedestal(b, t){
   if (sx < -colW*2 || sx > W + colW*2) return;
   const era = segIdx(b.x);
   const yTop = py(535, kk);
+  const warmC = era === 0 ? '255,215,140' : '225,240,255';
+  // the spotlight beam from above, strongest when the world is dimmed
+  if (hero > 0.02){
+    const beam = ctx.createLinearGradient(0, 0, 0, yTop);
+    beam.addColorStop(0, `rgba(${warmC},${(0.05*hero).toFixed(3)})`);
+    beam.addColorStop(1, `rgba(${warmC},${(0.22*hero).toFixed(3)})`);
+    ctx.fillStyle = beam;
+    ctx.beginPath();
+    ctx.moveTo(sx - colW*0.5, 0);
+    ctx.lineTo(sx + colW*0.5, 0);
+    ctx.lineTo(sx + colW*1.15, yTop);
+    ctx.lineTo(sx - colW*1.15, yTop);
+    ctx.closePath(); ctx.fill();
+  }
   // column
   const cg = ctx.createLinearGradient(sx - colW/2, 0, sx + colW/2, 0);
   if (era === 0){
@@ -1569,12 +1610,11 @@ function drawPedestal(b, t){
   ctx.stroke();
   ctx.fillStyle = 'rgba(255,255,255,0.14)';
   ctx.beginPath(); ctx.ellipse(sx - colW*0.2, yTop - oh*1.5, colW*0.09, oh*0.32, -0.4, 0, 7); ctx.fill();
-  // halo of its own little spotlight
-  const inten = 0.9 + 0.1*Math.sin(t*3 + b.x);
+  // halo of its own little spotlight — swells with the hero pass
+  const inten = (0.9 + 0.1*Math.sin(t*3 + b.x)) * (1 + (hero||0)*1.4);
   const hg = ctx.createRadialGradient(sx, yTop - oh*0.6, 4, sx, yTop - oh*0.6, colW*1.5);
-  const warm = era === 0 ? '255,215,140' : '225,240,255';
-  hg.addColorStop(0, `rgba(${warm},${0.16*inten})`);
-  hg.addColorStop(1, `rgba(${warm},0)`);
+  hg.addColorStop(0, `rgba(${warmC},${0.16*inten})`);
+  hg.addColorStop(1, `rgba(${warmC},0)`);
   ctx.fillStyle = hg;
   ctx.fillRect(sx - colW*1.5, yTop - oh*0.6 - colW*1.5, colW*3, colW*3);
 }
@@ -1775,7 +1815,6 @@ function frame(){
     }
     for (const p of (b.props || [])) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
-    if (b.ped) drawPedestal(b, t);
   }
 
   // lamps + dust + foreground
@@ -1786,6 +1825,21 @@ function frame(){
     else drawLamp(b.x, t, i+1);
   }
   drawDust(t);
+
+  // hero pass: as you pass a landmark stand, the world dims and a spotlight takes it
+  let hero = 0;
+  for (const b of BEATS){
+    if (!b.ped) continue;
+    const d = Math.abs(b.x + (b.ped.dx || -300) - cam.x);
+    const h = Math.max(0, 1 - d/520);
+    hero = Math.max(hero, h*h*(3-2*h));
+  }
+  if (hero > 0.01){
+    ctx.fillStyle = `rgba(2,2,3,${(0.38*hero).toFixed(3)})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+  for (const b of BEATS) if (b.ped && Math.abs(b.x - cam.x) < 2000) drawPedestal(b, t, hero);
+
   drawForeground();
   drawDoorway();
   drawGrade(t);
