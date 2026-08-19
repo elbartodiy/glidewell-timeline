@@ -1134,27 +1134,21 @@ function drawDoorway(){
       ctx.fillRect(cxSeam - gap - 3*SS, 0, 3*SS, H);
       ctx.fillRect(cxSeam + gap, 0, 3*SS, H);
     } else {
-      const span = 520 * kk * SS, soft = 130 * kk * SS, gap = 140 * kk * SS;
-      if (cxSeam < -span - W || cxSeam > W + span + W) continue;
-      // left jamb mass
-      let g = ctx.createLinearGradient(cxSeam - span, 0, cxSeam - gap, 0);
+      // a single column on the threshold — one pillar, light passing on both sides
+      const halfC = 210 * kk * SS, core = 92 * kk * SS;
+      if (cxSeam < -halfC - W || cxSeam > W + halfC + W) continue;
+      const g = ctx.createLinearGradient(cxSeam - halfC, 0, cxSeam + halfC, 0);
       g.addColorStop(0, 'rgba(4,3,2,0)');
-      g.addColorStop(Math.min(1, soft/(span-gap)), 'rgba(4,3,2,0.97)');
-      g.addColorStop(1, 'rgba(4,3,2,0.99)');
+      g.addColorStop(0.5 - core/(2*halfC), 'rgba(4,3,2,0.97)');
+      g.addColorStop(0.5 + core/(2*halfC), 'rgba(4,3,2,0.97)');
+      g.addColorStop(1, 'rgba(4,3,2,0)');
       ctx.fillStyle = g;
-      ctx.fillRect(cxSeam - span, 0, span - gap, H);
-      // right jamb mass
-      g = ctx.createLinearGradient(cxSeam + span, 0, cxSeam + gap, 0);
-      g.addColorStop(0, 'rgba(4,3,2,0)');
-      g.addColorStop(Math.min(1, soft/(span-gap)), 'rgba(4,3,2,0.97)');
-      g.addColorStop(1, 'rgba(4,3,2,0.99)');
-      ctx.fillStyle = g;
-      ctx.fillRect(cxSeam + gap, 0, span - gap, H);
-      // rim light on the jamb edges: the era behind, the era ahead
-      ctx.fillStyle = `rgba(${seam.back},0.20)`;
-      ctx.fillRect(cxSeam - gap - 3*SS, 0, 3*SS, H);
-      ctx.fillStyle = `rgba(${seam.ahead},0.22)`;
-      ctx.fillRect(cxSeam + gap, 0, 3*SS, H);
+      ctx.fillRect(cxSeam - halfC, 0, halfC*2, H);
+      // rim light on the column: the era behind on one flank, the era ahead on the other
+      ctx.fillStyle = `rgba(${seam.back},0.22)`;
+      ctx.fillRect(cxSeam - core - 3*SS, 0, 3*SS, H);
+      ctx.fillStyle = `rgba(${seam.ahead},0.24)`;
+      ctx.fillRect(cxSeam + core, 0, 3*SS, H);
     }
   }
 }
