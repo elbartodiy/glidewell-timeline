@@ -3,3 +3,7 @@ DEPLOY.md
 .DS_Store
 */.DS_Store
 Source_Photos/
+._*
+.AppleDouble/
+.Spotlight-V100/
+.Trashes/
