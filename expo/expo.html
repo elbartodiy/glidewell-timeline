@@ -227,7 +227,7 @@ const BEATS = [
    wall:[], table:[],
    ped:{obj:'crown2', dx:0, big:true}},
 ];
-const INTRO_X = -800;
+const INTRO_X = -650;
 const WORLD_END = 29680;
 const SEAM_3 = 19980;
 const REC2_L = SEAM_3 - 540, REC2_R = SEAM_3 + 540;   // the Digital Revolution recreation
@@ -581,7 +581,7 @@ function attachMouseDriver(el){
 }
 
 /* ---------------- CAMERA / STATE ---------------- */
-const cam = { x: INTRO_X, vel: 0, z: 340, zTarget: 340 };   // the tour opens zoomed on the title
+const cam = { x: INTRO_X, vel: 0, z: 430, zTarget: 430 };   // the tour opens zoomed tight on the still life
 const state = {
   mode: 'attract',        // 'attract' | 'live'
   idle: 0,
@@ -617,7 +617,7 @@ let LIGHT_GRID = [];
 function initLights(){
   LIGHT_GRID = [];
   for (const seg of SEGMENTS){
-    const a = Math.max(-400, seg.x0 + 120), b = Math.min(WORLD_END + 300, seg.x1 - 120);
+    const a = Math.max(seg === SEGMENTS[0] ? 950 : -400, seg.x0 + 120), b = Math.min(WORLD_END + 300, seg.x1 - 120);
     const n = Math.max(1, Math.round((b - a) / 940));
     const step = (b - a) / n;
     for (let i = 0; i < n; i++){
@@ -632,7 +632,7 @@ function initLights(){
       LIGHT_GRID.push({x: lx, seg});
     }
   }
-  LIGHT_GRID.push({x: INTRO_X - 60, seg: SEGMENTS[0]});   // the welcome title keeps its own lamp
+  LIGHT_GRID.push({x: INTRO_X, seg: SEGMENTS[0]});   // the welcome lamp, dead over the inscription
 }
 function initTables(){
   // every pedestal claims a wide gap of its own, centered on it
@@ -1222,12 +1222,12 @@ function drawIntro(){
   ctx.fillStyle = 'rgba(236,210,165,0.95)';
   ctx.font = eraFont(64 * kk * SS);
   ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
-  ctx.fillText('HOW GOOD DENTISTRY', cx, py(190, kk));
-  ctx.fillText('STOPPED BEING A LUXURY', cx, py(268, kk));
+  ctx.fillText('HOW GOOD DENTISTRY', cx, py(508, kk));
+  ctx.fillText('STOPPED BEING A LUXURY', cx, py(586, kk));
   ctx.font = eraFont(24 * kk * SS);
   try { ctx.letterSpacing = `${5*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(200,172,132,0.6)';
-  ctx.fillText('GLIDEWELL HISTORY TOUR →', cx, py(540, kk));
+  ctx.fillText('GLIDEWELL HISTORY TOUR →', cx, py(655, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.restore();
 }
@@ -2275,6 +2275,11 @@ function initDecor(){
                     sprite: makeFigure(40 + r*10 + i, true), seated: true});
   FIGURES.push({x: 16650, z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
   // mills receding behind the factory line
+  // the welcome still life — placeholder heirlooms of the craft century
+  PROPS.push({x: INTRO_X - 210, z: 150, kind: 'toolbox', w: 150});
+  PROPS.push({x: INTRO_X - 60,  z: 90,  kind: 'jaw1', w: 120});
+  PROPS.push({x: INTRO_X + 165, z: 200, kind: 'jar', w: 80});
+  PROPS.push({x: INTRO_X + 230, z: 120, kind: 'plaster', w: 150, flip: true});
   PROPS.push({x: FACT_X - 120, z: 620, kind: 'mill', w: 470, mid: true});
   PROPS.push({x: FACT_X + 330, z: 700, kind: 'mill', w: 440, mid: true});
   // guiding leaders — a trio in the depth
@@ -3556,7 +3561,7 @@ function update(dt){
     } else if (A.phase === 'fadeout'){
       cam.vel *= Math.pow(0.01, dt);
       A.fade = Math.min(1, A.fade + dt*1.2);
-      if (A.fade >= 1){ cam.x = INTRO_X; cam.vel = 0; cam.z = 340; cam.zTarget = 340; state.introHold = true; A.phase = 'fadein'; A.beatIdx = -1; }
+      if (A.fade >= 1){ cam.x = INTRO_X; cam.vel = 0; cam.z = 430; cam.zTarget = 430; state.introHold = true; A.phase = 'fadein'; A.beatIdx = -1; }
     } else if (A.phase === 'fadein'){
       A.fade = Math.max(0, A.fade - dt*1.2);
       if (A.fade <= 0){ A.phase = 'dwell'; A.dwell = -2.2; }
