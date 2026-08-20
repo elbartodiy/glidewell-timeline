@@ -1221,18 +1221,17 @@ function drawIntro(){
   ctx.fillStyle = 'rgba(236,210,165,0.95)';
   ctx.font = eraFont(64 * kk * SS);
   ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
-  // the apex of the welcome pyramid: a small brand mark, air above it
+  // the apex of the welcome pyramid: the real Glidewell mark, air above it
   {
-    const ms = 40 * kk * SS;
+    const ms = 44 * kk * SS;
     const my = py(352, kk);
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
-    ctx.fillStyle = '#c23430';
-    ctx.beginPath(); ctx.roundRect(cx - ms/2, my - ms/2, ms, ms, 6*kk*SS); ctx.fill();
-    ctx.restore();
-    ctx.fillStyle = 'rgba(255,250,242,0.96)';
-    ctx.font = `700 ${Math.round(26*kk*SS)}px "Helvetica Neue", Arial, sans-serif`;
-    ctx.fillText('G', cx, my + 9*kk*SS);
+    if (IMGS.logo2026){
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
+      ctx.beginPath(); ctx.roundRect(cx - ms/2, my - ms/2, ms, ms, 5*kk*SS); ctx.clip();
+      ctx.drawImage(IMGS.logo2026.el, cx - ms/2, my - ms/2, ms, ms);
+      ctx.restore();
+    }
     ctx.font = eraFont(17 * kk * SS);
     try { ctx.letterSpacing = `${4*kk*SS}px`; } catch(e){}
     ctx.fillStyle = 'rgba(200,172,132,0.7)';
@@ -4000,6 +3999,7 @@ lab4ext:"data:image/jpeg;base64,",
 lab4int:"data:image/jpeg;base64,",
 lab5move:"data:image/jpeg;base64,",
 logo1970:"data:image/jpeg;base64,",
+logo2026:"data:image/jpeg;base64,",
 nadia:"data:image/jpeg;base64,",
 porc:"data:image/jpeg;base64,",
 qr:"data:image/png;base64,",
