@@ -262,7 +262,7 @@ const SEGMENTS = [
    light:{pool:'218,232,252', poolR:900, poolA:0.17},
    tube:{line:'238,246,255', glow:'216,230,250'},
    bgc:[11,12,14], grain:0.028},
-  {x0:REC2_R, x1:WORLD_END+900, z0:1400, z1:1400, wall:'wall4', bench:'bench4', front:'front4',
+  {x0:REC2_R, x1:WORLD_END+900, z0:1400, z1:1400, wInsetR:280, wall:'wall4', bench:'bench4', front:'front4',
    font:'"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'55,64,76', lamp:'tube', dust:false,
    rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
@@ -738,18 +738,22 @@ const FLOOR_TONES = [
   ['#485042', '#1e2119'],   // workshop: worn linoleum
   ['#3e434b', '#1b1d22'],   // office: carpet-tile grey
   ['#686d75', '#31353b'],   // white room: polished light concrete
+  ['#9aa27f', '#5c6650'],   // the plaza outside: sunlit ground
 ];
 function drawFloor(){
   const kSeam = k(CFG.benchDepth);
   const yTop = py(CFG.benchY + 240, kSeam);
   const kNear = k(-40);
   // floor spans split at the recreation midlines
+  // the new era's floor starts where its recreation starts — the seam is
+  // visible beside the carpet, never hidden underneath it
   const cuts = [SEGMENTS[0].x0 - 900,
-                (REC_L + REC_R) / 2,
-                (REC3_L + REC3_R) / 2,
-                SEAM_3,
-                SEGMENTS[3].x1];
-  for (let i = 0; i < 4; i++){
+                REC_L,
+                REC3_L,
+                REC2_L,
+                EXIT_X,
+                SEGMENTS[3].x1 + 900];
+  for (let i = 0; i < 5; i++){
     const xTL = px(cuts[i], kSeam), xTR = px(cuts[i+1], kSeam);
     const xBL = px(cuts[i], kNear), xBR = px(cuts[i+1], kNear);
     if (Math.max(xTR, xBR) < 0 || Math.min(xTL, xBL) > W) continue;
@@ -765,6 +769,70 @@ function drawFloor(){
     ctx.fill();
     ctx.restore();
   }
+}
+
+/* the end of the building: the hall is cut open — daylight, the street
+   placeholder and a fountain (all of it a slot for generated art later) */
+const EXIT_X = WORLD_END + 620;
+function drawExit(t){
+  const kw = k(SEGMENTS[3].z0 - 10);
+  const x0 = px(EXIT_X, kw);
+  if (x0 > W + 120) return;
+  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, 0, W + 120 - x0, yBase); ctx.clip();
+  // the street beyond the cut — sky down to the yard ground
+  const o = TEX.outside;
+  const sw = Math.max(W + 120 - x0, 900 * kw * SS);
+  ctx.drawImage(o, x0, 0, sw, yBase);
+  // the fountain: basin, column, animated jet
+  const fx = x0 + 330 * kw * SS;
+  const fy = yBase - 88 * kw * SS;
+  const bw = 340 * kw * SS;
+  ctx.fillStyle = '#9aa0a6';
+  ctx.beginPath(); ctx.ellipse(fx, fy, bw/2, bw*0.16, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#7d8388';
+  ctx.beginPath(); ctx.ellipse(fx, fy - 4*SS, bw/2 - 8*SS, bw*0.16 - 6*SS, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#aebfd0';
+  ctx.beginPath(); ctx.ellipse(fx, fy - 5*SS, bw/2 - 16*SS, bw*0.16 - 9*SS, 0, 0, Math.PI*2); ctx.fill();
+  // pedestal and jet
+  const jh = (195 + 14*Math.sin(t*2.4)) * kw * SS;
+  ctx.fillStyle = '#8d9399';
+  ctx.fillRect(fx - 10*kw*SS, fy - 44*kw*SS, 20*kw*SS, 44*kw*SS);
+  const jg = ctx.createLinearGradient(0, fy - 44*kw*SS - jh, 0, fy - 44*kw*SS);
+  jg.addColorStop(0, 'rgba(235,246,255,0.0)');
+  jg.addColorStop(0.25, 'rgba(225,240,252,0.85)');
+  jg.addColorStop(1, 'rgba(205,228,246,0.9)');
+  ctx.fillStyle = jg;
+  ctx.beginPath();
+  ctx.moveTo(fx - 3*SS, fy - 44*kw*SS);
+  ctx.quadraticCurveTo(fx - 5*SS, fy - 44*kw*SS - jh*0.7, fx - 12*SS, fy - 44*kw*SS - jh);
+  ctx.lineTo(fx + 12*SS, fy - 44*kw*SS - jh);
+  ctx.quadraticCurveTo(fx + 5*SS, fy - 44*kw*SS - jh*0.7, fx + 3*SS, fy - 44*kw*SS);
+  ctx.closePath(); ctx.fill();
+  // falling spray arcs
+  ctx.strokeStyle = 'rgba(220,238,252,0.55)'; ctx.lineWidth = 1.6*SS;
+  for (const s of [-1, 1]) for (let i = 0; i < 3; i++){
+    const ph = t*2.4 + i*2.1;
+    const r = (26 + i*14 + 5*Math.sin(ph)) * kw * SS;
+    ctx.beginPath();
+    ctx.moveTo(fx, fy - 44*kw*SS - jh*0.95);
+    ctx.quadraticCurveTo(fx + s*r*0.9, fy - 44*kw*SS - jh*0.55, fx + s*r, fy - 8*kw*SS);
+    ctx.stroke();
+  }
+  ctx.restore();
+  // the building's cut edge: one clean pillar between the hall and the daylight
+  const cw = 120 * kw * SS;
+  if (x0 > -cw && x0 < W + cw){
+    const cg = ctx.createLinearGradient(x0 - cw*0.5, 0, x0 + cw*0.5, 0);
+    cg.addColorStop(0, '#43474d'); cg.addColorStop(0.45, '#888f96'); cg.addColorStop(1, '#31353a');
+    ctx.fillStyle = cg;
+    ctx.fillRect(x0 - cw*0.5, 0, cw, yBase);
+    ctx.fillStyle = 'rgba(255,252,240,0.28)';
+    ctx.fillRect(x0 + cw*0.5 - 4*SS, 0, 4*SS, yBase);
+  }
+  // daylight spills onto the hall floor by the exit
+  drawGlow('225,240,255', x0 - 60*SS, yBase, 340 * kw * SS, 0.16);
 }
 
 function drawLampPool(x, intensity){
@@ -3425,6 +3493,7 @@ function frame(){
   drawRec3(t);
   drawRec2(t);
   drawWall();
+  drawExit(t);
 
   // lamp pools on wall (behind photos) — one per ceiling fixture
   for (let i = 0; i < LIGHT_GRID.length; i++) drawLampPool(LIGHT_GRID[i].x, lampFlicker(t, i+1));
