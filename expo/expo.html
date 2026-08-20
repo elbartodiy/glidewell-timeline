@@ -2313,6 +2313,24 @@ function initDecor(){
   const AUD = [[29180, 380, 640], [29300, 620, 580], [29400, 340, 650], [29500, 460, 615], [29580, 360, 640]];
   AUD.forEach(([ax, az, ah], i) => FIGURES.push({x: ax, z: az, h: ah, sprite: makeFigure(60 + i)}));
 
+  // ambient props obey gravity too: full footprint on a real table span,
+  // or they leave the hall (background décor is optional, levitation is not)
+  for (let i = PROPS.length - 1; i >= 0; i--){
+    const p = PROPS[i];
+    if (p.mid) continue;                       // floor machines stand on the floor
+    const half = (p.w || 120) * 0.5 + 16;
+    if (TABLES.some(tb => p.x - half >= tb.x0 + 14 && p.x + half <= tb.x1 - 14)) continue;
+    let best = null, bestD = 1e9;
+    for (const tb of TABLES){
+      if (tb.x1 - tb.x0 < half*2 + 40) continue;
+      const cx = Math.max(tb.x0 + 14 + half, Math.min(tb.x1 - 14 - half, p.x));
+      const d = Math.abs(cx - p.x);
+      if (d < bestD){ bestD = d; best = cx; }
+    }
+    if (best != null && bestD < 260) p.x = best;
+    else PROPS.splice(i, 1);
+  }
+
   JIM_FIG = makeFigure(99);
   BOOK_SPRITE = makeBookPyramid();
   BOOK_CARD = makeBookCard();
