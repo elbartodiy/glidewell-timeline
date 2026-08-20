@@ -219,7 +219,7 @@ const BEATS = [
    d:'CrownAI / MarginAI; ~500K units a month, 5,000+ staff — the largest dental lab in the world.',
    wall:[],
    table:[],
-   plasma:{dx:40, cy:505, w:420, mode:'count'}},
+   plasma:{dx:-120, cy:505, w:420, mode:'count'}},
 
   {x:28180, y:'2026', t:'TODAY', tier:1, fly:true,
    th:'An arc the length of one life: craft → digital → automation.',
@@ -1235,19 +1235,21 @@ function drawIntro(){
 function drawOutro(){
   const seg = SEGMENTS[SEGMENTS.length - 1];
   const kk = k(wallZAt(WORLD_END) - 8);
-  const cx = px(WORLD_END, kk);
+  // shifted right and lifted high: Jim on stage and his audience stay below,
+  // the closing line stays readable from both final stops
+  const cx = px(WORLD_END + 400, kk);
   if (cx < -900 || cx > W + 900) return;
   ctx.save();
   ctx.textAlign = 'center';
   ctx.fillStyle = `rgba(${seg.ink},0.4)`;
   ctx.font = eraFont(60 * kk * SS, '', seg.font);
   try { ctx.letterSpacing = `${6*kk*SS}px`; } catch(e){}
-  ctx.fillText('THE BEST DENTISTRY —', cx, py(200, kk));
-  ctx.fillText('MADE AFFORDABLE', cx, py(275, kk));
+  ctx.fillText('THE BEST DENTISTRY —', cx, py(100, kk));
+  ctx.fillText('MADE AFFORDABLE', cx, py(175, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.font = eraFont(26 * kk * SS, 'italic', seg.font);
   ctx.fillStyle = `rgba(${seg.ink},0.5)`;
-  ctx.fillText('Glidewell · one bench → the world', cx, py(340, kk));
+  ctx.fillText('Glidewell · one bench → the world', cx, py(238, kk));
   ctx.restore();
 }
 
@@ -2999,7 +3001,7 @@ function initBanners(){
     {x: 21505, w: 550, sp: makeBanner('BRUXZIR®', 'The best dentistry — made affordable', 'THE #1 CROWN')},
     {x: 22860, w: 550, sp: makeBanner('GLIDEWELL HT™', 'Premium implant, a fraction of the price', 'PREMIUM · AFFORDABLE')},
     {x: 23595, w: 240, cy: 590, sp: makeBannerVert('GLIDEWELL.IO', 'The lab moves\ninto your office', 'SINGLE-VISIT', 'fastmill')},
-    {x: 27700, w: 480, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
+    {x: 27560, w: 480, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
   ];
 }
 function drawBanners(t){
@@ -3798,16 +3800,19 @@ function frame(){
 
 /* ---------------- MAIN LOOP ---------------- */
 const DEBUG = /debug/.test(location.search);
-let last = 0, fps = 60, qFrames = 0;
+let last = 0, fps = 60, qFrames = 0, qCool = 0;
 function loop(ts){
   const dt = Math.min(0.05, (ts - last)/1000 || 0.016);
   last = ts;
   fps = fps*0.95 + (1/Math.max(dt,1e-3))*0.05;
-  // adaptive quality: weak hardware renders smaller, CSS upscales
-  if (++qFrames > 150){
+  // adaptive quality: weak hardware renders smaller, CSS upscales.
+  // wide hysteresis + a long cool-down — the buffer must never oscillate,
+  // reallocating it mid-motion is what reads as a doubled frame
+  if (qCool > 0) qCool--;
+  else if (++qFrames > 150){
     qFrames = 0;
-    if (fps < 40 && RQ > 0.55){ RQ = Math.max(0.55, RQ - 0.15); resize(); }
-    else if (fps > 56 && RQ < 1){ RQ = Math.min(1, RQ + 0.15); resize(); }
+    if (fps < 36 && RQ > 0.55){ RQ = Math.max(0.55, RQ - 0.15); resize(); qCool = 900; }
+    else if (fps > 59 && RQ < 1){ RQ = Math.min(1, RQ + 0.15); resize(); qCool = 900; }
   }
   update(dt);
   frame();
