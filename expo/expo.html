@@ -82,8 +82,7 @@ const BEATS = [
   {x:6900, y:'1979', t:'NINE LABS', ink:'64,54,40',
    th:'',
    d:'Jim owns and runs nine labs across Southern California.',
-   wall:[], table:[],
-   ped:{obj:'crown', dx:0, low:true}},
+   wall:[], table:[]},
 
   {x:7750, y:'1980', t:'STUDY PROGRAM',
    th:'Education as a bond — long before it was a marketing channel.',
@@ -1256,6 +1255,38 @@ function drawSeamVideo(){
     ctx.fillStyle = `rgba(240,246,252,${(0.97 * e * e).toFixed(3)})`;
     ctx.fillRect(0, 0, W, H);
   }
+}
+
+/* after the world dims, the 1979 map gets its crossed beams — and is redrawn
+   on top so it never loses its contrast */
+function drawMapHero(t, h){
+  if (h < 0.02 || !MAP_SPRITE) return;
+  const mid = (REC_L + REC_R) / 2;
+  const kk = k(610);
+  const sp = MAP_SPRITE;
+  const w = 440 * kk * SS, hh = w * sp.h / sp.w;
+  const cx = px(mid, kk), cyS = py(450, kk);
+  // twin beams crossing on the map
+  const yEnd = cyS + hh * 1.4;
+  for (const s of [-1, 1]){
+    const fx = px(mid + s * 470, kk);
+    const xEnd = fx + ((cx - fx) * (yEnd / Math.max(1, cyS))) * Math.min(1, h * 1.7);
+    const beam = ctx.createLinearGradient(0, 0, 0, yEnd);
+    beam.addColorStop(0, `rgba(255,246,220,${(0.03*h).toFixed(3)})`);
+    beam.addColorStop(Math.max(0.05, Math.min(0.9, cyS/yEnd)), `rgba(255,246,220,${(0.15*h).toFixed(3)})`);
+    beam.addColorStop(1, 'rgba(255,246,220,0)');
+    ctx.fillStyle = beam;
+    ctx.beginPath();
+    ctx.moveTo(fx - 26*SS, 0); ctx.lineTo(fx + 26*SS, 0);
+    ctx.lineTo(xEnd + 90*kk*SS, yEnd); ctx.lineTo(xEnd - 90*kk*SS, yEnd);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(20,20,22,0.9)';
+    ctx.fillRect(fx - 9*SS, 0, 18*SS, 12*SS);
+    ctx.fillStyle = `rgba(255,246,220,${(0.75*h).toFixed(2)})`;
+    ctx.fillRect(fx - 5*SS, 10*SS, 10*SS, 4*SS);
+  }
+  // the map itself rides above the dim and the light — crisp
+  ctx.drawImage(sp.c, cx - w/2, cyS - hh/2, w, hh);
 }
 
 /* the 1979 panel: a light wall between two columns, carrying the map of
@@ -3307,17 +3338,23 @@ function frame(){
     const h = Math.max(0, 1 - d/680);
     hero = Math.max(hero, h*h*(3-2*h));
   }
-  // the factory line and the stage have their apex at center too
+  // the factory line, the stage and the 1979 map have their apex at center too
   for (const hx of [FACT_X, STAGE_X]){
     const h = Math.max(0, 1 - Math.abs(hx - cam.x)/680);
     hero = Math.max(hero, h*h*(3-2*h) * 0.7);
   }
+  const hMap = (() => {
+    const h = Math.max(0, 1 - Math.abs((REC_L + REC_R)/2 - cam.x)/680);
+    return h*h*(3-2*h);
+  })();
+  hero = Math.max(hero, hMap * 0.85);
   state.hero = hero;
   if (hero > 0.01){
     ctx.fillStyle = `rgba(2,2,3,${(0.38*hero).toFixed(3)})`;
     ctx.fillRect(0, 0, W, H);
   }
   for (const b of BEATS) if (b.ped && Math.abs(b.x - cam.x) < 2000) drawPedestal(b, t, hero);
+  drawMapHero(t, hMap);
 
   drawForeground();
   drawDoorway();
