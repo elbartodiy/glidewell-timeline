@@ -706,6 +706,14 @@ function drawBench(){
       ctx.fillStyle = seg.railInk;
       ctx.fillRect(bx - 1, yTopF + 2*SS, 2, 14*SS);
       if (!b.sub) ctx.fillText(b.y, bx, yTopF + 42*SS);
+      if (b.t === 'TODAY'){
+        const pulse = 0.55 + 0.35*Math.sin(state.time*2.4);
+        ctx.fillStyle = `rgba(120,215,255,${pulse})`;
+        ctx.beginPath(); ctx.arc(bx, yTopF - 8*SS, 5*SS, 0, 7); ctx.fill();
+        ctx.font = `${Math.round(20*SS)}px ${seg.font}`;
+        ctx.fillStyle = `rgba(120,215,255,${0.5 + 0.3*Math.sin(state.time*2.4)})`;
+        ctx.fillText('— WE ARE HERE —', bx, yTopF + 68*SS);
+      }
     }
   }
 }
@@ -1005,9 +1013,16 @@ function makeOutside(){
 }
 function drawOutside(){
   if (Math.abs(cam.x - SEAM_2) > 3000) return;
+  // hard-clipped to the slot between the two buildings — the street can
+  // never bleed into the rooms, whatever the camera does
+  const kwL = k(wallZAt(SEAM_2 - 484)), kwR = k(wallZAt(SEAM_2 + 484));
+  const x0 = px(SEAM_2 - 480, kwL), x1 = px(SEAM_2 + 480, kwR);
+  if (x1 <= 0 || x0 >= W) return;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, 0, x1 - x0, H); ctx.clip();
   const kk = k(1300);
-  const sx = px(SEAM_2 - 1300, kk);
-  ctx.drawImage(TEX.outside, sx, 0, 2600 * kk * SS, H);
+  ctx.drawImage(TEX.outside, px(SEAM_2 - 1300, kk), 0, 2600 * kk * SS, H);
+  ctx.restore();
 }
 
 /* building sections: at each wall end the house is cut open — floors,
@@ -1117,22 +1132,19 @@ function drawDoorway(){
         ctx.fillRect(side > 0 ? sxw - 340*kw*SS : sxw + secW - 340*kw*SS*0, 0, 340*kw*SS, yBase);
       }
     } else if (seam.kind === 'light'){
-      // the gate into the white room: a wall of soft light you pass through
-      const span = 460 * kk * SS, gap = 130 * kk * SS;
-      if (cxSeam < -span - W || cxSeam > W + span + W) continue;
-      for (const dir of [-1, 1]){
-        const x0 = cxSeam + dir*gap, x1 = cxSeam + dir*span;
-        const g = ctx.createLinearGradient(x0, 0, x1, 0);
-        g.addColorStop(0, 'rgba(240,248,255,0.96)');
-        g.addColorStop(.5, 'rgba(235,245,255,0.92)');
-        g.addColorStop(1, 'rgba(235,245,255,0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(Math.min(x0,x1), 0, Math.abs(x1-x0), H);
-      }
-      // neon edges of the gate
-      ctx.fillStyle = `rgba(${seam.ahead},0.5)`;
-      ctx.fillRect(cxSeam - gap - 3*SS, 0, 3*SS, H);
-      ctx.fillRect(cxSeam + gap, 0, 3*SS, H);
+      // the gate into the white room: one luminous column on the threshold
+      const halfC = 230 * kk * SS, core = 100 * kk * SS;
+      if (cxSeam < -halfC - W || cxSeam > W + halfC + W) continue;
+      const g = ctx.createLinearGradient(cxSeam - halfC, 0, cxSeam + halfC, 0);
+      g.addColorStop(0, 'rgba(238,246,255,0)');
+      g.addColorStop(0.5 - core/(2*halfC), 'rgba(244,250,255,0.96)');
+      g.addColorStop(0.5 + core/(2*halfC), 'rgba(244,250,255,0.96)');
+      g.addColorStop(1, 'rgba(238,246,255,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(cxSeam - halfC, 0, halfC*2, H);
+      ctx.fillStyle = `rgba(${seam.ahead},0.55)`;
+      ctx.fillRect(cxSeam - core - 3*SS, 0, 3*SS, H);
+      ctx.fillRect(cxSeam + core, 0, 3*SS, H);
     } else {
       // a single column on the threshold — one pillar, light passing on both sides
       const halfC = 210 * kk * SS, core = 92 * kk * SS;
@@ -1659,6 +1671,10 @@ function initDecor(){
   // the symposium audience at the finale, facing the stage
   for (let i = 0; i < 5; i++)
     FIGURES.push({x: 28060 + i*175 + (i%2)*40, z: 310 + (i%3)*70, h: 630 + (i%3)*30, sprite: makeFigure(60 + i)});
+  // our time is crowded: people of today between AI·SCALE and 2026
+  for (let i = 0; i < 6; i++)
+    FIGURES.push({x: 26680 + i*145 + (i%2)*35, z: 480 + (i*97)%260, h: 600 + (i%4)*35,
+                  sprite: makeFigure(110 + i)});
   JIM_FIG = makeFigure(99);
   BOOK_SPRITE = makeBookPyramid();
   for (let v = 0; v < 3; v++){
@@ -2018,7 +2034,7 @@ function drawPlasmaPanel(b, t){
     ctx.textAlign = 'left';
     ctx.fillText('BRUXZIR FACTORY · ROBOTIC LINE · LIVE', sx - w/2 + w*0.05, sy + h/2 - h*0.09);
   } else {
-    const items = ['500,000+ / mo', '5,000+ people', '#1 lab worldwide'];
+    const items = ['500,000+ / mo', '5,000+ people', 'CrownAI · MarginAI', 'fastscan.io · 2022', 'single-visit crowns', '#1 lab worldwide'];
     const idx = (t/3 | 0) % items.length;
     const ph = (t % 3) / 3;
     const a = ph < 0.15 ? ph/0.15 : (ph > 0.85 ? (1-ph)/0.15 : 1);
