@@ -110,11 +110,12 @@ const BEATS = [
    d:'BioTemps provisional restorations — lab-made PMMA temporaries that doubled as an esthetic “blueprint” the patient could approve before the final.',
    wall:[], table:[]},
 
-  {x:11050, y:'1989', t:'NATIONAL LEADER',
-   th:'From a local lab to the national mail-order leader.',
+  {x:11150, y:'1989', t:'NATIONAL LEADER', tier:1, fly:true, ink:'56,58,64',
+   th:'',
    d:'Glidewell settles into 4141 MacArthur Blvd, Newport Beach (33,000 sq ft); 95% of cases now arrive by mail from 3,500+ dentists nationwide.',
-   wall:[{img:'lab5move', w:460, dx:-470, cy:400, hero:true}],
-   table:[], st:[{img:'bizcard', w:280, dx:-320, lz:155}]},
+   wall:[{img:'lab5move', w:300, dx:-350, cy:400, rot:-0.6, style:'white'}],
+   table:[],
+   ped:{obj:'bizcard', dx:0, low:true}},
 
   /* ---- ERA 3 · the computer arrives, 1995–2007
           (1993 · Newport Beach happens inside the video splice) ---- */
@@ -174,41 +175,41 @@ const BEATS = [
    ped:{obj:'scanner', dx:-430}},
 
   /* ---- ERA 4 · the white room, 2009–2026 ---- */
-  {x:20400, y:'2009', t:'BRUXZIR', tier:1, fly:true,
+  {x:21080, y:'2009', t:'BRUXZIR', tier:1, fly:true,
    th:'Revolution: the best, made affordable — and the default.',
    d:'The monolithic solid-zirconia crown goes mainstream — the #1 brand; the biggest cost-and-speed inflection.',
    wall:[], table:[],
    ped:{obj:'crown2', dx:-430}},
 
-  {x:21250, y:'2009–13', t:'SCREW-RETAINED', minor:true,
+  {x:21930, y:'2009–13', t:'SCREW-RETAINED', minor:true,
    th:'The barrier wasn’t the technique — it was the price of the parts.',
    d:'Own-made Ti-bases, abutments and screws plus a flat lab fee — and BruxZir bonded to the Ti-base in the lab, so no cement goes in the patient’s mouth.',
    wall:[], table:[]},
 
-  {x:21870, y:'2010s', t:'SCANNERS · SCALE',
+  {x:22550, y:'2010s', t:'SCANNERS · SCALE',
    th:'Scale through vertical integration.',
    d:'iTero and TRIOS take intraoral scanning mainstream — the goopy physical impression starts to die. Glidewell becomes the world’s largest lab.',
    wall:[], table:[]},
 
-  {x:22490, y:'2015', t:'GLIDEWELL HT', minor:true,
+  {x:23170, y:'2015', t:'GLIDEWELL HT', minor:true,
    th:'The BruxZir move, applied to the most expensive tooth — premium, made affordable.',
    d:'Glidewell’s own implant, co-designed with Dr. Jack Hahn — premium quality at a fraction of the price.',
    wall:[], table:[]},
 
-  {x:23340, y:'2017–19', t:'GLIDEWELL.IO',
+  {x:24020, y:'2017–19', t:'GLIDEWELL.IO',
    th:'Future: the lab moves into the chair.',
    d:'In-office: fastdesign / fastmill / BruxZir NOW — single-visit crowns.',
    wall:[],
    table:[],
    ped:{obj:'millSt', dx:-430}},
 
-  {x:24190, y:'2019', t:'BRUXZIR FACTORY',
+  {x:24870, y:'2019', t:'BRUXZIR FACTORY',
    th:'The analog→digital climax: robots make crowns.',
    d:'Automated, AI-designed, robotic monolithic production.',
    wall:[], table:[],
    plasma:{dx:440, cy:370, w:430, mode:'wave'}},
 
-  {x:24810, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24190,
+  {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870,
    th:'Reinvesting in the profession — and our channel for finding hero dentists.',
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
    wall:[],
@@ -217,30 +218,31 @@ const BEATS = [
        {img:'nadia', w:190, dx:-15, lz:180, cap:'Dr. Nadia Rodriguez · GL alum'},
        {img:'bianca', w:190, dx:250, lz:150, cap:'Dr. Bianca Clark · GL alum'}]},
 
-  {x:25660, y:'2020–22', t:'MEMOIR · CEO · SCAN',
+  {x:26340, y:'2020–22', t:'MEMOIR · CEO · SCAN',
    th:'A generational handover at the top; the scanner joins the ecosystem.',
    d:'“Constant Change” (2020); new CEO (2021); fastscan.io with Medit (2022).',
    wall:[{img:'jimnow', w:280, dx:-440, cy:360, rot:0.5, cap:'Jim Glidewell', style:'white'}],
    table:[], pyr:{dx:400, w:340}},
 
-  {x:26510, y:'EARLY 20s', t:'AI · SCALE', tier:1,
+  {x:27190, y:'2020s', t:'AI · SCALE', tier:1,
    th:'The flywheel: cheaper to make → wider access → reinvest.',
    d:'CrownAI / MarginAI; ~500K units a month, 5,000+ staff — the largest dental lab in the world.',
    wall:[],
    table:[],
    plasma:{dx:430, cy:370, w:420, mode:'count'}},
 
-  {x:27500, y:'2026', t:'TODAY', tier:1, fly:true,
+  {x:28180, y:'2026', t:'TODAY', tier:1, fly:true,
    th:'An arc the length of one life: craft → digital → automation.',
    d:'Automated monolithic milling is the norm; AI + robotics + single-visit define the frontier. The story keeps compounding.',
    wall:[], table:[],
    ped:{obj:'crown2', dx:-430, big:true}},
 ];
 const INTRO_X = 200;
-const WORLD_END = 29000;
-const SEAM_3 = 19480;          // era 3 -> era 4: the gate of light
+const WORLD_END = 29680;
+const SEAM_3 = 19980;
+const REC2_L = SEAM_3 - 540, REC2_R = SEAM_3 + 540;   // the Digital Revolution recreation
 const REC_L = 6350, REC_R = 7450;   // era 1 ends; the 1979 recreation; era 2 begins
-const SEAM_2 = 11700;          // era 2 -> era 3
+const REC3_L = 10600, REC3_R = 11700;   // the 1989 National Leader recreation
 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
@@ -251,21 +253,21 @@ const SEGMENTS = [
    rail:'rgba(190,150,80,0.55)', railInk:'rgba(230,195,130,0.7)',
    light:{pool:'255,196,110', poolR:620, poolA:0.34},
    bgc:[13,9,6], grain:0.055},
-  {x0:REC_R, x1:SEAM_2, z0:610, z1:740, wall:'wall2', bench:'bench2', front:'front2',
+  {x0:REC_R, x1:REC3_L, z0:610, z1:730, wall:'wall2', bench:'bench2', front:'front2',
    font:'"Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'223,226,214', lamp:'tube', dust:false,
    rail:'rgba(165,175,172,0.5)', railInk:'rgba(198,208,202,0.7)',
    light:{pool:'214,240,224', poolR:820, poolA:0.20},
    tube:{line:'228,255,238', glow:'212,245,228'},
-   bgc:[10,12,11], grain:0.038, bInsetR:540},
-  {x0:SEAM_2, x1:SEAM_3, z0:800, z1:940, wall:'wall3', bench:'bench3', front:'front3',
+   bgc:[10,12,11], grain:0.038},
+  {x0:REC3_R, x1:REC2_L, z0:730, z1:960, wall:'wall3', bench:'bench3', front:'front3',
    font:'Verdana, Tahoma, "DejaVu Sans", sans-serif',
    ink:'226,232,238', lamp:'tube', dust:false,
    rail:'rgba(185,196,202,0.5)', railInk:'rgba(212,222,228,0.75)',
    light:{pool:'218,232,252', poolR:900, poolA:0.17},
    tube:{line:'238,246,255', glow:'216,230,250'},
-   bgc:[11,12,14], grain:0.028, bInsetL:540},
-  {x0:SEAM_3, x1:WORLD_END+900, z0:1350, z1:1700, wall:'wall4', bench:'bench4', front:'front4',
+   bgc:[11,12,14], grain:0.028},
+  {x0:REC2_R, x1:WORLD_END+900, z0:1000, z1:1700, wall:'wall4', bench:'bench4', front:'front4',
    font:'"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'55,64,76', lamp:'tube', dust:false,
    rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
@@ -273,16 +275,12 @@ const SEGMENTS = [
    tube:{line:'246,251,255', glow:'226,239,252'},
    bgc:[30,33,38], grain:0.012, bInsetR:2200, shade:0.30, floor:true, tScale:1.15},
 ];
-const SEAMS = [
-  {x:SEAM_2, kind:'video', back:'210,240,225', ahead:'225,238,255'},    // 1989 -> 1993: the yard lives in the video splice
-  {x:SEAM_3, kind:'light',  back:'225,238,255', ahead:'160,230,255'},   // 2007 -> 2009: through the white light
-];
-/* the yard is a video splice: the rail stops while the first building still
-   fills the frame (= the clip's first frame); the clip plays; its last frame
-   is the second building already filling the frame */
+const SEAMS = [];   // era changes happen through the recreations now
+/* (dormant) the generated flyover clip can still play across the 1989
+   recreation later — the mechanic stays, the trigger is parked far away */
 const SPLICE = {dur: 1.5};
 function spliceEdges(){
-  return {inL: 11050, outR: 12500};   // 1989 composition -> clip -> run-up into 1995
+  return {inL: -99999, outR: -99990};
 }
 function segIdx(x){ for (let i = SEGMENTS.length-1; i > 0; i--) if (x >= SEGMENTS[i].x0) return i; return 0; }
 function segAt(x){ return SEGMENTS[segIdx(x)]; }
@@ -564,9 +562,9 @@ function nearestBeat(x){
 }
 
 /* the long bench is really a row of separate tables */
-const BENCH_BREAKS = [1980, 3830, 7350, 9250, 13100, 17900, 21600, 26050]
+const BENCH_BREAKS = [1980, 3830, 7350, 9250, 13100, 17900, 22280, 26730]
   .map(x => ({x, half: 65}));
-BENCH_BREAKS.push({x: 24190, half: 560});   // the BruxZir Factory line replaces the table
+BENCH_BREAKS.push({x: 24870, half: 560});   // the BruxZir Factory line replaces the table
 let TABLES = [];
 let LIGHT_GRID = [];
 function initLights(){
@@ -575,7 +573,12 @@ function initLights(){
     const a = Math.max(-400, seg.x0 + 120), b = Math.min(WORLD_END + 300, seg.x1 - 120);
     const n = Math.max(1, Math.round((b - a) / 940));
     const step = (b - a) / n;
-    for (let i = 0; i < n; i++) LIGHT_GRID.push({x: a + step * (i + 0.5), seg});
+    for (let i = 0; i < n; i++){
+      let lx = a + step * (i + 0.5);
+      for (const bt of BEATS)
+        if (bt.fly && Math.abs(bt.x - lx) < 300) lx = bt.x + (lx >= bt.x ? 300 : -300);
+      LIGHT_GRID.push({x: lx, seg});
+    }
   }
 }
 function initTables(){
@@ -891,7 +894,7 @@ function drawBeatText(b, focusAmt){
       ctx.save();
       ctx.textAlign = 'center';
       ctx.font = eraFont(170 * ts * kk * SS, '', seg.font);
-      ctx.fillStyle = `rgba(${seg.ink},${0.5 + 0.45*near})`;
+      ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
       ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
       ctx.fillText(b.y, cx, py(140, kk));
       ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
@@ -1005,6 +1008,12 @@ function cacheWrap(){
     const lane = Math.min(i > 0 ? b.x - BEATS[i-1].x : 1e9,
                           i < BEATS.length-1 ? BEATS[i+1].x - b.x : 1e9) - 90;
     b._ys = Math.min(1, lane / Math.max(1, w));
+  }
+  // one shared year scale per era — identical sizes inside each space
+  for (const seg of SEGMENTS){
+    const era = BEATS.filter(b => b.x >= seg.x0 && b.x < seg.x1 && !b.sub);
+    const m = Math.min(1, ...era.map(b => b._ys));
+    era.forEach(b => b._ys = m);
   }
 }
 
@@ -1151,16 +1160,17 @@ function makeOutside(){
   return c;
 }
 function drawOutside(){
-  if (Math.abs(cam.x - SEAM_2) > 3000) return;
+  return;   // dormant with the parked video splice
+  if (Math.abs(cam.x - (REC3_L+550)) > 3000) return;
   // hard-clipped to the slot between the two buildings — the street can
   // never bleed into the rooms, whatever the camera does
-  const kwL = k(wallZAt(SEAM_2 - 484)), kwR = k(wallZAt(SEAM_2 + 484));
-  const x0 = px(SEAM_2 - 480, kwL), x1 = px(SEAM_2 + 480, kwR);
+  const kwL = k(wallZAt(REC3_L)), kwR = k(wallZAt(REC3_R));
+  const x0 = px(REC3_L, kwL), x1 = px(REC3_R, kwR);
   if (x1 <= 0 || x0 >= W) return;
   ctx.save();
   ctx.beginPath(); ctx.rect(x0, 0, x1 - x0, H); ctx.clip();
   const kk = k(1300);
-  ctx.drawImage(TEX.outside, px(SEAM_2 - 1300, kk), 0, 2600 * kk * SS, H);
+  ctx.drawImage(TEX.outside, px(REC3_L, kk), 0, 2600 * kk * SS, H);
   ctx.restore();
 }
 
@@ -1329,6 +1339,136 @@ function drawMapWall(t){
     ctx.fillStyle = cg;
     ctx.fillRect(sxc - cw/2, 0, cw, yBase);
     ctx.fillStyle = 'rgba(255,230,180,0.12)';
+    ctx.fillRect(sxc - cw/2 + 3*SS, 0, 3*SS, yBase);
+  }
+}
+
+/* the Digital Revolution recreation: grey era | column | a backlit white
+   panel carrying a giant glowing crown | column | the white era */
+function drawRec2(t){
+  const mid = (REC2_L + REC2_R) / 2;
+  if (Math.abs(cam.x - mid) > 2800) return;
+  const kk = k(970);
+  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const x0 = px(REC2_L, kk), x1 = px(REC2_R, kk);
+  // the luminous panel
+  const wg = ctx.createLinearGradient(0, 0, 0, yBase);
+  wg.addColorStop(0, '#dfe5ea');
+  wg.addColorStop(0.45, '#f2f6f9');
+  wg.addColorStop(1, '#c2c9cf');
+  ctx.fillStyle = wg;
+  ctx.fillRect(x0, 0, x1 - x0, yBase);
+  // a dark display niche, and the crown glowing inside it
+  const sp = PED_SPRITES.crown2;
+  const w = 360 * kk * SS, h = w * sp.h / sp.w;
+  const cx = px(mid, kk), cyS = py(400, kk);
+  const nw = 520 * kk * SS, nh = 470 * kk * SS;
+  const ng = ctx.createLinearGradient(0, cyS - nh/2, 0, cyS + nh/2);
+  ng.addColorStop(0, '#1f242b'); ng.addColorStop(1, '#2c333c');
+  ctx.fillStyle = ng;
+  ctx.beginPath(); ctx.roundRect(cx - nw/2, cyS - nh/2, nw, nh, 10*SS); ctx.fill();
+  drawGlow('160,220,255', cx, cyS, w * 1.15, 0.6);
+  ctx.drawImage(sp.c, cx - w/2, cyS - h/2, w, h);
+  pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp: Object.assign({inner:{w:sp.w,h:sp.h}}, sp),
+          wx: mid, cy: 400, z: 968, w: 360, cap: '2009 · the digital revolution',
+          beat: BEATS.findIndex(b => b.t === 'BRUXZIR')});
+  // the inscription
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = eraFont(34 * kk * SS, '', SEGMENTS[3].font);
+  try { ctx.letterSpacing = `${8*kk*SS}px`; } catch(e){}
+  ctx.fillStyle = 'rgba(58,68,80,0.85)';
+  ctx.fillText('THE DIGITAL REVOLUTION', cx, py(688, kk));
+  try { ctx.letterSpacing = '0px'; } catch(e){}
+  ctx.restore();
+  // pilaster columns, cool tone, same plane
+  for (const wxc of [REC2_L, REC2_R]){
+    const kc = k(964);
+    const sxc = px(wxc, kc);
+    const cw = 120 * kc * SS;
+    if (sxc < -cw || sxc > W + cw) continue;
+    const cg = ctx.createLinearGradient(sxc - cw/2, 0, sxc + cw/2, 0);
+    cg.addColorStop(0, '#3c4046'); cg.addColorStop(0.45, '#7e858c'); cg.addColorStop(1, '#2e3238');
+    ctx.fillStyle = cg;
+    ctx.fillRect(sxc - cw/2, 0, cw, yBase);
+    ctx.fillStyle = 'rgba(200,235,255,0.16)';
+    ctx.fillRect(sxc - cw/2 + 3*SS, 0, 3*SS, yBase);
+  }
+}
+
+/* the 1989 recreation: era 2 ends; a light panel carries the USA mail map;
+   era 3 begins on the far side */
+let USA_SPRITE = null;
+function makeUsaSprite(){
+  const c = document.createElement('canvas'); c.width = 980; c.height = 620;
+  const g = c.getContext('2d');
+  g.save();
+  g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 18; g.shadowOffsetY = 8;
+  g.fillStyle = '#2c2e33'; g.fillRect(14, 14, 952, 592);
+  g.restore();
+  g.fillStyle = '#e8e6dc'; g.fillRect(34, 34, 912, 552);
+  // a simplified continental outline
+  g.strokeStyle = 'rgba(70,80,95,0.8)'; g.lineWidth = 4; g.lineJoin = 'round';
+  g.beginPath();
+  g.moveTo(120, 180); g.lineTo(180, 130); g.lineTo(320, 110); g.lineTo(470, 120);
+  g.lineTo(620, 105); g.lineTo(780, 130); g.lineTo(870, 190); g.lineTo(880, 280);
+  g.lineTo(830, 360); g.lineTo(840, 440); g.lineTo(760, 470); g.lineTo(660, 450);
+  g.lineTo(560, 490); g.lineTo(430, 470); g.lineTo(300, 480); g.lineTo(210, 420);
+  g.lineTo(140, 330); g.lineTo(100, 250); g.closePath();
+  g.stroke();
+  g.fillStyle = 'rgba(140,160,185,0.12)'; g.fill();
+  // the hub in Southern California, routes across the country
+  const hub = [178, 330];
+  const dots = [[300,200],[420,160],[560,150],[700,170],[810,220],[830,330],[760,410],[620,420],[480,410],[350,390],[260,300],[520,270],[660,300]];
+  g.strokeStyle = 'rgba(190,60,45,0.4)'; g.lineWidth = 2;
+  for (const [dx, dy] of dots){
+    g.beginPath(); g.moveTo(hub[0], hub[1]);
+    g.quadraticCurveTo((hub[0]+dx)/2, Math.min(hub[1], dy) - 60, dx, dy);
+    g.stroke();
+  }
+  for (const [dx, dy] of dots){
+    g.fillStyle = '#c23a2c';
+    g.beginPath(); g.arc(dx, dy, 6, 0, 7); g.fill();
+  }
+  g.fillStyle = 'rgba(190,60,45,0.3)';
+  g.beginPath(); g.arc(hub[0], hub[1], 20, 0, 7); g.fill();
+  g.fillStyle = '#c23a2c';
+  g.beginPath(); g.arc(hub[0], hub[1], 9, 0, 7); g.fill();
+  g.fillStyle = 'rgba(60,66,76,0.9)';
+  g.textAlign = 'center';
+  g.font = '600 30px "Helvetica Neue", Arial, sans-serif';
+  try { g.letterSpacing = '5px'; } catch(e){}
+  g.fillText('3,500+ DENTISTS · NATIONWIDE · BY MAIL', 490, 560);
+  return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
+}
+function drawRec3(t){
+  const mid = (REC3_L + REC3_R) / 2;
+  if (Math.abs(cam.x - mid) > 2800) return;
+  const kk = k(728);
+  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const x0 = px(REC3_L, kk), x1 = px(REC3_R, kk);
+  const wg = ctx.createLinearGradient(0, 0, 0, yBase);
+  wg.addColorStop(0, '#7d8894');
+  wg.addColorStop(0.4, '#9aa5b0');
+  wg.addColorStop(1, '#5f6873');
+  ctx.fillStyle = wg;
+  ctx.fillRect(x0, 0, x1 - x0, yBase);
+  const sp = USA_SPRITE;
+  const w = 470 * kk * SS, h = w * sp.h / sp.w;
+  const cx = px(mid, kk), cyS = py(465, kk);
+  pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp, wx: mid, cy: 465, z: 726, w: 470,
+          cap: '1989 · 95% of cases arrive by mail', beat: BEATS.findIndex(b => b.y === '1989')});
+  ctx.drawImage(sp.c, cx - w/2, cyS - h/2, w, h);
+  for (const wxc of [REC3_L, REC3_R]){
+    const kc = k(722);
+    const sxc = px(wxc, kc);
+    const cw = 120 * kc * SS;
+    if (sxc < -cw || sxc > W + cw) continue;
+    const cg = ctx.createLinearGradient(sxc - cw/2, 0, sxc + cw/2, 0);
+    cg.addColorStop(0, '#23262b'); cg.addColorStop(0.45, '#5c636b'); cg.addColorStop(1, '#1b1e22');
+    ctx.fillStyle = cg;
+    ctx.fillRect(sxc - cw/2, 0, cw, yBase);
+    ctx.fillStyle = 'rgba(210,235,255,0.14)';
     ctx.fillRect(sxc - cw/2 + 3*SS, 0, 3*SS, yBase);
   }
 }
@@ -1869,13 +2009,14 @@ function initDecor(){
   PROPS.push({x: FACT_X + 330, z: 700, kind: 'mill', w: 440, mid: true});
   // guiding leaders — a trio in the depth
   for (let i = 0; i < 3; i++)
-    FIGURES.push({x: 25150 + i*115, z: 720 + i*30, h: 660, sprite: makeFigure(80 + i)});
+    FIGURES.push({x: 25830 + i*115, z: 720 + i*30, h: 660, sprite: makeFigure(80 + i)});
   // the symposium audience at the finale — spaced so the stage stays visible
-  const AUD = [[27870, 380, 640], [28060, 620, 580], [28430, 340, 650], [28660, 460, 615], [28900, 360, 640]];
+  const AUD = [[28550, 380, 640], [28740, 620, 580], [29110, 340, 650], [29340, 460, 615], [29580, 360, 640]];
   AUD.forEach(([ax, az, ah], i) => FIGURES.push({x: ax, z: az, h: ah, sprite: makeFigure(60 + i)}));
 
   JIM_FIG = makeFigure(99);
   BOOK_SPRITE = makeBookPyramid();
+  BOOK_CARD = makeBookCard();
   for (let v = 0; v < 3; v++){
     FG_SPRITES['plant' + v] = makeFgSprite('plant', v);
     FG_SPRITES['person' + v] = makeFgSprite('person', v + 7);
@@ -1896,8 +2037,6 @@ function auditPlacements(){
     }
     if (!b.minor) guards.push({c: b.x, r: 420});
   }
-  guards.push({c: 11050, r: 620});   // the splice stop
-  guards.push({c: 12500, r: 620});   // the splice resume
   // near plane: a passer-by parks at screen center when cam ≈ its x
   for (let i = FG_ITEMS.length - 1; i >= 0; i--){
     if (guards.some(g => Math.abs(FG_ITEMS[i].x - g.c) < g.r * 1.3)){
@@ -2126,6 +2265,21 @@ function makePedObj(kind){
     }
     g.strokeStyle = 'rgba(255,255,255,0.18)'; g.lineWidth = 1.5;
     g.beginPath(); g.roundRect(20.5, 12.5, 149, 149, 6); g.stroke();
+  } else if (kind === 'bizcard'){
+    c.width = 220; c.height = 150;
+    g.save();
+    g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 12; g.shadowOffsetY = 6;
+    g.fillStyle = '#f2f2ee';
+    g.beginPath(); g.roundRect(15, 15, 190, 118, 5); g.fill();
+    g.restore();
+    if (IMGS.bizcard){
+      g.save();
+      g.beginPath(); g.roundRect(17, 17, 186, 114, 4); g.clip();
+      g.drawImage(IMGS.bizcard.el, 17, 17, 186, 114);
+      g.restore();
+    }
+    g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 1.5;
+    g.beginPath(); g.roundRect(15.5, 15.5, 189, 117, 5); g.stroke();
   } else if (kind === 'logoG'){
     c.width = 170; c.height = 160;
     // the mark itself, monumental
@@ -2344,30 +2498,28 @@ function drawPlasmaPanel(b, t){
 /* ---------------- FINALE · the stage and the book ---------------- */
 let BOOK_SPRITE = null;
 function makeBookPyramid(){
-  const c = document.createElement('canvas'); c.width = 460; c.height = 340;
+  const c = document.createElement('canvas'); c.width = 420; c.height = 360;
   const g = c.getContext('2d');
   const spine = IMGS.bookspine, front = IMGS.bookfront;
-  const bw = 96, bh = 24;
+  const bw = 100, bh = 25;
   const rows = [4, 3, 2];
-  // stacked copies, real spines out
   g.save();
   g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 12; g.shadowOffsetY = 5;
   g.fillStyle = '#101010';
-  g.fillRect(230 - 4*bw/2, 320 - 3*bh, 4*bw, 3*bh);
+  g.fillRect(210 - 4*bw/2, 340 - 3*bh, 4*bw, 3*bh);
   g.restore();
   rows.forEach((n, r) => {
     for (let i = 0; i < n; i++){
-      const x = 230 - n*bw/2 + i*bw + (r%2)*3;
-      const y = 320 - (r+1)*bh;
+      const x = 210 - n*bw/2 + i*bw + (r%2)*3;
+      const y = 340 - (r+1)*bh;
       if (spine) g.drawImage(spine.el, x + 1, y + 1, bw - 2, bh - 2);
       g.strokeStyle = 'rgba(0,0,0,0.55)'; g.lineWidth = 1;
       g.strokeRect(x + 1, y + 1, bw - 2, bh - 2);
     }
   });
-  // one copy standing upright, the real cover out
   if (front){
-    const fw = 128, fh = fw * front.h / front.w;
-    const sx = 230 - 66, sy = 320 - 3*bh - fh - 2;
+    const fw = 140, fh = fw * front.h / front.w;
+    const sx = 210 - fw/2, sy = 340 - 3*bh - fh - 2;
     g.save();
     g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 14; g.shadowOffsetY = 7;
     g.fillStyle = '#0c0c0c'; g.fillRect(sx, sy, fw, fh);
@@ -2376,27 +2528,73 @@ function makeBookPyramid(){
     g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = 1;
     g.strokeRect(sx + 0.5, sy + 0.5, fw - 1, fh - 1);
   }
-  // QR stand: white card with a real, scannable code
-  g.save();
-  g.shadowColor = 'rgba(0,0,0,0.3)'; g.shadowBlur = 8; g.shadowOffsetY = 4;
-  g.fillStyle = '#f4f4ef'; g.fillRect(356, 200, 94, 118);
-  g.restore();
-  if (IMGS.qr) g.drawImage(IMGS.qr.el, 362, 206, 82, 82);
-  g.fillStyle = '#3c4048';
-  g.textAlign = 'center';
-  g.font = '10px "Helvetica Neue", Arial, sans-serif';
-  g.fillText('GET THE BOOK', 403, 307);
   return {c, w: c.width, h: c.height};
+}
+/* the book card: cover, story, code — a product card without the price tag */
+let BOOK_CARD = null;
+function makeBookCard(){
+  const c = document.createElement('canvas'); c.width = 1240; c.height = 720;
+  const g = c.getContext('2d');
+  g.save();
+  g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 26; g.shadowOffsetY = 12;
+  g.fillStyle = '#fbfcfd'; g.fillRect(20, 20, 1200, 680);
+  g.restore();
+  g.strokeStyle = 'rgba(90,200,250,0.5)'; g.lineWidth = 3;
+  g.strokeRect(20, 20, 1200, 680);
+  if (IMGS.bookfront){
+    const im = IMGS.bookfront;
+    const dh = 600, dw = dh * im.w / im.h;
+    g.save();
+    g.shadowColor = 'rgba(0,0,0,0.4)'; g.shadowBlur = 18; g.shadowOffsetY = 8;
+    g.fillStyle = '#111'; g.fillRect(60, 60, dw, dh);
+    g.restore();
+    g.drawImage(im.el, 60, 60, dw, dh);
+  }
+  const tx = 540;
+  g.fillStyle = '#22262c';
+  g.font = '700 58px Georgia, serif';
+  g.fillText('Constant Change', tx, 130);
+  g.fillStyle = '#5a616a';
+  g.font = 'italic 28px Georgia, serif';
+  g.fillText('Adventures in Business and Life', tx, 175);
+  g.font = '24px "Helvetica Neue", Arial, sans-serif';
+  g.fillText('Jim Glidewell · 2020', tx, 215);
+  g.strokeStyle = 'rgba(0,0,0,0.15)'; g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(tx, 245); g.lineTo(1160, 245); g.stroke();
+  g.fillStyle = '#3c434c';
+  g.font = '26px "Helvetica Neue", Arial, sans-serif';
+  const blurb = 'The memoir: from a kitchen-table lab in 1970 to the largest dental laboratory in the world. A latchkey kid from Kentucky bets that affordable can be a business model - and spends fifty years proving it.';
+  let line = '', yy = 295;
+  for (const wrd of blurb.split(' ')){
+    const test = line ? line + ' ' + wrd : wrd;
+    if (g.measureText(test).width > 590 && line){ g.fillText(line, tx, yy); yy += 38; line = wrd; }
+    else line = test;
+  }
+  if (line) g.fillText(line, tx, yy);
+  if (IMGS.qr){
+    g.save();
+    g.shadowColor = 'rgba(0,0,0,0.25)'; g.shadowBlur = 10; g.shadowOffsetY = 4;
+    g.fillStyle = '#f4f4ef'; g.fillRect(tx, 480, 180, 180);
+    g.restore();
+    g.drawImage(IMGS.qr.el, tx + 10, 490, 160, 160);
+    g.fillStyle = '#5a616a';
+    g.font = '600 24px "Helvetica Neue", Arial, sans-serif';
+    g.fillText('Scan the code — the book is free to take home', tx + 210, 570);
+    g.font = '22px "Helvetica Neue", Arial, sans-serif';
+    g.fillText('Paper copies live right here at the booth.', tx + 210, 606);
+  }
+  return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
 }
 function drawBookPyramid(b, t){
   const kk = k(155);
   const sx = px(b.x + b.pyr.dx, kk);
-  if (sx < -400 || sx > W + 400) return;
-  const wWorld = b.pyr.w;
+  if (sx < -600 || sx > W + 600) return;
+  const wWorld = b.pyr.w * 2;
   const scale = (wWorld / BOOK_SPRITE.w) * kk * SS;
   const sy = py(CFG.benchY - 2, kk);
   pushHit(sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale, BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale,
-          {type:'focus', beat: BEATS.indexOf(b), anchor: b.x + b.pyr.dx});
+          {type:'photo', sp: BOOK_CARD, wx: b.x + b.pyr.dx, cy: CFG.benchY - 190, z: 155, w: 420,
+           beat: BEATS.indexOf(b)});
   ctx.drawImage(BOOK_SPRITE.c, sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale,
                 BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale);
 }
@@ -2531,10 +2729,10 @@ function makeBannerVert(title, sub, cta, imgName){
 }
 function initBanners(){
   BANNERS = [
-    {x: 20780, w: 640, sp: makeBanner('BRUXZIR®', 'The best dentistry — made affordable', 'THE #1 CROWN')},
-    {x: 22150, w: 560, sp: makeBanner('GLIDEWELL HT™', 'Premium implant, a fraction of the price', 'PREMIUM · AFFORDABLE')},
-    {x: 22890, w: 300, sp: makeBannerVert('GLIDEWELL.IO', 'The lab moves\ninto your office', 'SINGLE-VISIT', 'fastmill')},
-    {x: 26060, w: 660, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
+    {x: 21460, w: 640, sp: makeBanner('BRUXZIR®', 'The best dentistry — made affordable', 'THE #1 CROWN')},
+    {x: 22830, w: 560, sp: makeBanner('GLIDEWELL HT™', 'Premium implant, a fraction of the price', 'PREMIUM · AFFORDABLE')},
+    {x: 23570, w: 300, sp: makeBannerVert('GLIDEWELL.IO', 'The lab moves\ninto your office', 'SINGLE-VISIT', 'fastmill')},
+    {x: 26740, w: 660, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
   ];
 }
 function drawBanners(t){
@@ -2559,7 +2757,7 @@ function drawBanners(t){
 }
 
 /* BruxZir Factory: collaborative arms pick shade blocks and feed the mills */
-const FACT_X = 24190;
+const FACT_X = 24870;
 function drawRobotArm(bx, bz, t, phase){
   const kk = k(bz);
   const X = wx => px(wx, kk), Y = wy => py(wy, kk);
@@ -2640,7 +2838,7 @@ function drawFactory(t){
   pushHit(px(FACT_X - 480, kk), py(560, kk), (960)*kk*SS, py(1080,kk)-py(560,kk),
           {type:'focus', beat: BEATS.indexOf(b), anchor: FACT_X});
 }
-const STAGE_X = 28150;
+const STAGE_X = 28830;
 let JIM_FIG = null;
 function drawStage(t){
   if (Math.abs(cam.x - STAGE_X) > 2700) return;
@@ -2659,17 +2857,17 @@ function drawStage(t){
   ctx.fillStyle = fg;
   ctx.fillRect(xF0, yF, xF1 - xF0, yB - yF);
   // the angled side table in the recreation zone (per the green-board sketch)
-  const T = drawYawedTable(27690, 300, 34, 620, 260, 820, 260,
+  const T = drawYawedTable(28370, 300, 34, 620, 260, 820, 260,
     {top:'#dfe2e5', side0:'#b7bbbf', side1:'#82878c', edge:'rgba(255,255,255,0.5)'});
   // a round stand on it
   const kS = k(280);
-  const sxS = px(27620, kS);
+  const sxS = px(28300, kS);
   const yS = py(820, kS);
   ctx.fillStyle = '#c7cbd0';
   ctx.fillRect(sxS - 26*kS*SS, yS - 60*kS*SS, 52*kS*SS, 60*kS*SS);
   ctx.beginPath(); ctx.ellipse(sxS, yS - 60*kS*SS, 34*kS*SS, 9*kS*SS, 0, 0, 7);
   ctx.fillStyle = '#eceff2'; ctx.fill();
-  pushHit(sxS - 40*kS*SS, yS - 120*kS*SS, 80*kS*SS, 120*kS*SS, {type:'focus', beat: BEATS.length - 1, anchor: 27620});
+  pushHit(sxS - 40*kS*SS, yS - 120*kS*SS, 80*kS*SS, 120*kS*SS, {type:'focus', beat: BEATS.length - 1, anchor: 28300});
 
   // Jim on stage — a presence, later a generated-video moment
   const kJ = k(480);
@@ -3018,6 +3216,8 @@ function frame(){
   ctx.fillRect(0, 0, W, H);
 
   drawMapWall(t);
+  drawRec3(t);
+  drawRec2(t);
   drawWall();
 
   // lamp pools on wall (behind photos) — one per ceiling fixture
@@ -3182,6 +3382,7 @@ async function boot(){
   SECTIONS.neu = makeSection('neu');
   initSeamVideo();
   MAP_SPRITE = makeMapSprite();
+  USA_SPRITE = makeUsaSprite();
   MONS.crt = makeMonitor('crt');
   MONS.lcd = makeMonitor('lcd');
   for (let i = 0; i < 3; i++) grains.push({c: noiseTile(256, 1)});
@@ -3206,6 +3407,7 @@ async function boot(){
   PED_SPRITES.crown = makePedObj('crown');
   PED_SPRITES.logo1970 = makePedObj('logo1970');
   PED_SPRITES.logoG = makePedObj('logoG');
+  PED_SPRITES.bizcard = makePedObj('bizcard');
   PED_SPRITES.puck = makePedObj('puck');
   PED_SPRITES.scanner = makePedObj('scanner');
   PED_SPRITES.crown2 = makePedObj('crown2');
