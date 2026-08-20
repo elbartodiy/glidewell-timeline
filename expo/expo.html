@@ -53,9 +53,9 @@ const BEATS = [
    d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
    wall:[{img:'jim1970', w:420, dx:440, cy:400, hero:true}],
    table:[],
-   album:{dx:320, lz:160, w:300, title:'THE FAMILY ALBUM',
+   album:{dx:-650, lz:160, w:300, title:'THE FAMILY ALBUM',
           photos:[['father42','jim15'],['jim18','jim1970']]},
-   ped:{obj:'logo1970', dx:-430}},
+   ped:{obj:'logo1970', dx:0}},
 
   {x:3450, y:'1970s', t:'PFM ERA',
    th:'The craft baseline every later machine is measured against.',
@@ -143,7 +143,7 @@ const BEATS = [
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir. Labs go digital: scanning, on-screen design, milling.',
    wall:[{img:'rella', w:250, dx:380, cy:350, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
    table:[],
-   ped:{obj:'puck', dx:-430},
+   ped:{obj:'puck', dx:0},
    props:[{kind:'crt', dx:700, lz:150, w:320, label:'CAD REVOLUTION'}]},
 
   {x:17160, y:'2000', t:'PLASTIC INJECTION', minor:true, sub:15700,
@@ -165,15 +165,15 @@ const BEATS = [
    th:'Nobody called it AI training data yet — but that is what it was.',
    d:'The lab accepts its first intraoral scan instead of a physical impression — the moment the case archive starts becoming data.',
    wall:[], table:[],
-   props:[{kind:'lcd', dx:390, lz:150, w:330}],
-   ped:{obj:'scanner', dx:-430}},
+   props:[{kind:'lcd', dx:-430, lz:150, w:330}],
+   ped:{obj:'scanner', dx:0}},
 
   /* ---- ERA 4 · the white room, 2009–2026 ---- */
   {x:21080, y:'2009', t:'BRUXZIR', tier:1, fly:true,
    th:'Revolution: the best, made affordable — and the default.',
    d:'The monolithic solid-zirconia crown goes mainstream — the #1 brand; the biggest cost-and-speed inflection.',
    wall:[], table:[],
-   ped:{obj:'crown2', dx:-430}},
+   ped:{obj:'crown2', dx:0}},
 
   {x:21930, y:'2009–13', t:'SCREW-RETAINED', minor:true,
    th:'The barrier wasn’t the technique — it was the price of the parts.',
@@ -195,7 +195,7 @@ const BEATS = [
    d:'In-office: fastdesign / fastmill / BruxZir NOW — single-visit crowns.',
    wall:[],
    table:[],
-   ped:{obj:'millSt', dx:-430}},
+   ped:{obj:'millSt', dx:0}},
 
   {x:24870, y:'2019', t:'BRUXZIR FACTORY',
    th:'The analog→digital climax: robots make crowns.',
@@ -229,7 +229,7 @@ const BEATS = [
    th:'An arc the length of one life: craft → digital → automation.',
    d:'Automated monolithic milling is the norm; AI + robotics + single-visit define the frontier. The story keeps compounding.',
    wall:[], table:[],
-   ped:{obj:'crown2', dx:-430, big:true}},
+   ped:{obj:'crown2', dx:0, big:true}},
 ];
 const INTRO_X = 200;
 const WORLD_END = 29680;
@@ -569,8 +569,13 @@ function initLights(){
     const step = (b - a) / n;
     for (let i = 0; i < n; i++){
       let lx = a + step * (i + 0.5);
-      for (const bt of BEATS)
+      for (const bt of BEATS){
         if (bt.fly && Math.abs(bt.x - lx) < 300) lx = bt.x + (lx >= bt.x ? 300 : -300);
+        if (bt.ped){
+          const px_ = bt.x + (bt.ped.dx ?? 0);
+          if (Math.abs(px_ - lx) < 320) lx = px_ + (lx >= px_ ? 320 : -320);
+        }
+      }
       LIGHT_GRID.push({x: lx, seg});
     }
   }
@@ -2894,17 +2899,17 @@ function drawStage(t){
   ctx.fillStyle = fg;
   ctx.fillRect(xF0, yF, xF1 - xF0, yB - yF);
   // the angled side table in the recreation zone (per the green-board sketch)
-  const T = drawYawedTable(28370, 300, 34, 620, 260, 820, 260,
+  const T = drawYawedTable(27690, 300, 34, 620, 260, 820, 260,
     {top:'#dfe2e5', side0:'#b7bbbf', side1:'#82878c', edge:'rgba(255,255,255,0.5)'});
   // a round stand on it
   const kS = k(280);
-  const sxS = px(28300, kS);
+  const sxS = px(27620, kS);
   const yS = py(820, kS);
   ctx.fillStyle = '#c7cbd0';
   ctx.fillRect(sxS - 26*kS*SS, yS - 60*kS*SS, 52*kS*SS, 60*kS*SS);
   ctx.beginPath(); ctx.ellipse(sxS, yS - 60*kS*SS, 34*kS*SS, 9*kS*SS, 0, 0, 7);
   ctx.fillStyle = '#eceff2'; ctx.fill();
-  pushHit(sxS - 40*kS*SS, yS - 120*kS*SS, 80*kS*SS, 120*kS*SS, {type:'focus', beat: BEATS.length - 1, anchor: 28300});
+  pushHit(sxS - 40*kS*SS, yS - 120*kS*SS, 80*kS*SS, 120*kS*SS, {type:'focus', beat: BEATS.length - 1, anchor: 27620});
 
   // Jim on stage — a presence, later a generated-video moment
   const kJ = k(480);
