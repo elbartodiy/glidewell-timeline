@@ -98,12 +98,6 @@ const BEATS = [
          {img:'lab3rec', w:380, dx:440, cy:380, rot:-0.9}],
    table:[]},
 
-  {x:9700, y:'1985', t:'CEREC',
-   th:'Glidewell didn’t start digital — its bet isn’t “first,” it’s “for everyone.”',
-   d:'First chairside CAD/CAM (Mörmann & Brandestini). Digital cracks the analog monopoly.',
-   wall:[], table:[],
-   props:[{kind:'crt', dx:-160, lz:150, w:290, col:'amber'}]},
-
   {x:10280, y:'1988', t:'BIOTEMPS',
    th:'A second product proves the lab can build categories, not just crowns.',
    d:'BioTemps provisional restorations — lab-made PMMA temporaries that doubled as an esthetic “blueprint” the patient could approve before the final.',
@@ -122,7 +116,8 @@ const BEATS = [
   {x:13020, y:'1995', t:'OPERATORY · PLAYSAFE', minor:true,
    th:'Test where dentists work — and step beyond the crown.',
    d:'An in-house operatory opens to test materials on real patients; PlaySafe mouthguards launch.',
-   wall:[], table:[]},
+   wall:[], table:[],
+   props:[{kind:'crt', dx:-160, lz:150, w:290, col:'amber'}]},
 
   {x:13640, y:'1996', t:'SILENT NITE', minor:true,
    th:'Dentistry beyond repair: keeping problems from starting.',
@@ -1921,7 +1916,7 @@ function drawScreenCAD(g, r, t, amber){
   g.fillStyle = amber ? 'rgba(255,205,120,0.85)' : 'rgba(140,240,175,0.85)';
   g.font = `${Math.max(8, 9*s)}px monospace`;
   g.textAlign = 'left';
-  g.fillText(amber ? 'CEREC 1 · chairside' : 'CAD · crown 14 · milling queue', r.x + 8*s, r.y + r.h - 8*s);
+  g.fillText(amber ? 'Glidewell · chairside' : 'CAD · crown 14 · milling queue', r.x + 8*s, r.y + r.h - 8*s);
   // scanlines
   g.fillStyle = 'rgba(0,0,0,0.16)';
   for (let y = r.y; y < r.y + r.h; y += 3) g.fillRect(r.x, y, r.w, 1);
