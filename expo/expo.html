@@ -140,16 +140,11 @@ const BEATS = [
 
   {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true,
    th:'Own the science, so you can own the quality and the price.',
-   d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir, and everything after.',
-   wall:[{img:'rella', w:250, dx:430, cy:350, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
+   d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir. Labs go digital: scanning, on-screen design, milling.',
+   wall:[{img:'rella', w:250, dx:380, cy:350, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
    table:[],
-   ped:{obj:'puck', dx:-430}},
-
-  {x:16600, y:'~2000', t:'CAD REVOLUTION', sub:15700,
-   th:'Craft gives way to design and the mill — the seed of BruxZir.',
-   d:'Dental labs go digital: scanning, on-screen design and milling start to replace hand-built copings. Glidewell adopts it early — chasing zirconia at a PFM price.',
-   wall:[], table:[],
-   props:[{kind:'crt', dx:-400, lz:150, w:320}]},
+   ped:{obj:'puck', dx:-430},
+   props:[{kind:'crt', dx:700, lz:150, w:320, label:'CAD REVOLUTION'}]},
 
   {x:17160, y:'2000', t:'PLASTIC INJECTION', minor:true, sub:15700,
    th:'Own the supply chain so you can own the price.',
@@ -1804,6 +1799,17 @@ function drawMonitor(p, x, z, wWorld, t){
   const dx = sx - mon.w*scale/2, dy = syFoot - mon.foot*scale;
   pushHit(dx, dy, mon.w*scale, mon.h*scale, {type:'focus', beat: BEATS.findIndex(bb => (bb.props||[]).includes(p)), anchor: x});
   ctx.drawImage(mon.c, dx, dy, mon.w*scale, mon.h*scale);
+  if (p.label){
+    const segL = segAt(x);
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = `600 ${Math.round(17*kk*SS)}px ${segL.font}`;
+    try { ctx.letterSpacing = `${4*kk*SS}px`; } catch(e){}
+    ctx.fillStyle = `rgba(${segL.ink},0.6)`;
+    ctx.fillText(p.label, sx, syFoot + 34*kk*SS);
+    try { ctx.letterSpacing = '0px'; } catch(e){}
+    ctx.restore();
+  }
   // live screen
   const r = {x: dx + mon.screen.x*scale, y: dy + mon.screen.y*scale,
              w: mon.screen.w*scale, h: mon.screen.h*scale};
