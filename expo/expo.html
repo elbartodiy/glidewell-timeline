@@ -1881,7 +1881,7 @@ function auditPlacements(){
   for (const b of BEATS){
     if (b.ped){
       const pedX = b.x + (b.ped.dx ?? -430);
-      guards.push({c: pedX + (b.x - pedX) * 0.35, r: 750, pedX, pedZ: -90});
+      guards.push({c: pedX, r: 750, pedX, pedZ: -90});
     }
     if (!b.minor) guards.push({c: b.x, r: 420});
   }
@@ -3094,10 +3094,14 @@ function frame(){
   for (const b of BEATS){
     if (!b.ped) continue;
     const pedX = b.x + (b.ped.dx ?? -430);
-    const focusX = pedX + (b.x - pedX) * 0.35;   // sweet spot between stand and beat
-    const d = Math.abs(focusX - cam.x);
+    const d = Math.abs(pedX - cam.x);            // catharsis lands dead center
     const h = Math.max(0, 1 - d/680);
     hero = Math.max(hero, h*h*(3-2*h));
+  }
+  // the factory line and the stage have their apex at center too
+  for (const hx of [FACT_X, STAGE_X]){
+    const h = Math.max(0, 1 - Math.abs(hx - cam.x)/680);
+    hero = Math.max(hero, h*h*(3-2*h) * 0.7);
   }
   state.hero = hero;
   if (hero > 0.01){
