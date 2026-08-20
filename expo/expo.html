@@ -224,7 +224,7 @@ const BEATS = [
    d:'CrownAI / MarginAI; ~500K units a month, 5,000+ staff — the largest dental lab in the world.',
    wall:[],
    table:[],
-   plasma:{dx:430, cy:492, w:420, mode:'count'}},
+   plasma:{dx:40, cy:505, w:420, mode:'count'}},
 
   {x:28180, y:'2026', t:'TODAY', tier:1, fly:true,
    th:'An arc the length of one life: craft → digital → automation.',
@@ -242,27 +242,27 @@ const REC3_L = 10600, REC3_R = 11700;   // the 1989 National Leader recreation
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
 const SEGMENTS = [
-  {x0:-2600, x1:REC_L, z0:490, z1:610, wall:'wall1', bench:'bench1', front:'front1',
+  {x0:-2600, x1:REC_L, z0:550, z1:550, wall:'wall1', bench:'bench1', front:'front1',
    font:'Georgia, "Iowan Old Style", "Palatino Linotype", serif',
    ink:'232,205,160', lamp:'bulb', dust:true,
    rail:'rgba(190,150,80,0.55)', railInk:'rgba(230,195,130,0.7)',
    light:{pool:'255,196,110', poolR:620, poolA:0.34},
    bgc:[13,9,6], grain:0.055},
-  {x0:REC_R, x1:REC3_L, z0:610, z1:730, wall:'wall2', bench:'bench2', front:'front2',
+  {x0:REC_R, x1:REC3_L, z0:680, z1:680, wall:'wall2', bench:'bench2', front:'front2',
    font:'"Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'223,226,214', lamp:'tube', dust:false,
    rail:'rgba(165,175,172,0.5)', railInk:'rgba(198,208,202,0.7)',
    light:{pool:'214,240,224', poolR:820, poolA:0.20},
    tube:{line:'228,255,238', glow:'212,245,228'},
    bgc:[10,12,11], grain:0.038},
-  {x0:REC3_R, x1:REC2_L, z0:730, z1:960, wall:'wall3', bench:'bench3', front:'front3',
+  {x0:REC3_R, x1:REC2_L, z0:850, z1:850, wall:'wall3', bench:'bench3', front:'front3',
    font:'Verdana, Tahoma, "DejaVu Sans", sans-serif',
    ink:'226,232,238', lamp:'tube', dust:false,
    rail:'rgba(185,196,202,0.5)', railInk:'rgba(212,222,228,0.75)',
    light:{pool:'218,232,252', poolR:900, poolA:0.17},
    tube:{line:'238,246,255', glow:'216,230,250'},
    bgc:[11,12,14], grain:0.028},
-  {x0:REC2_R, x1:WORLD_END+900, z0:1000, z1:1700, wall:'wall4', bench:'bench4', front:'front4',
+  {x0:REC2_R, x1:WORLD_END+900, z0:1400, z1:1400, wall:'wall4', bench:'bench4', front:'front4',
    font:'"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'55,64,76', lamp:'tube', dust:false,
    rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
@@ -280,11 +280,10 @@ function spliceEdges(){
 function segIdx(x){ for (let i = SEGMENTS.length-1; i > 0; i--) if (x >= SEGMENTS[i].x0) return i; return 0; }
 function segAt(x){ return SEGMENTS[segIdx(x)]; }
 function mixN(a,b,t){ return a+(b-a)*t; }
-/* the wall recedes continuously within each era */
+/* the wall runs parallel to the rail: one constant depth per era,
+   stepping further from the bench at each recreation */
 function wallZAt(x){
-  const s = segAt(x);
-  const t = Math.max(0, Math.min(1, (x - s.x0) / (s.x1 - s.x0)));
-  return s.z0 + (s.z1 - s.z0) * t;
+  return segAt(x).z0;
 }
 /* ambient color/grain, blended across seam zones */
 function ambient(x){
@@ -731,6 +730,39 @@ function drawWall(){
   }
 }
 
+/* the floor: each era has its own material tone; the change lands exactly
+   on the recreation line — the ground is part of the aging, not a black hole */
+const FLOOR_TONES = [
+  ['#3a2513', '#180e06'],   // craft: dark oiled wood
+  ['#3a3f34', '#181b14'],   // workshop: worn linoleum
+  ['#33373d', '#16181c'],   // office: carpet-tile grey
+  ['#5e636a', '#2b2e33'],   // white room: polished light concrete
+];
+function drawFloor(){
+  const kSeam = k(CFG.benchDepth);
+  const yTop = py(CFG.benchY + 240, kSeam);
+  const kNear = k(-40);
+  // floor spans split at the recreation midlines
+  const cuts = [SEGMENTS[0].x0 - 900,
+                (REC_L + REC_R) / 2,
+                (REC3_L + REC3_R) / 2,
+                SEAM_3,
+                SEGMENTS[3].x1];
+  for (let i = 0; i < 4; i++){
+    const xTL = px(cuts[i], kSeam), xTR = px(cuts[i+1], kSeam);
+    const xBL = px(cuts[i], kNear), xBR = px(cuts[i+1], kNear);
+    if (Math.max(xTR, xBR) < 0 || Math.min(xTL, xBL) > W) continue;
+    const g = ctx.createLinearGradient(0, yTop, 0, H);
+    g.addColorStop(0, FLOOR_TONES[i][0]);
+    g.addColorStop(1, FLOOR_TONES[i][1]);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(xTL, yTop); ctx.lineTo(xTR, yTop);
+    ctx.lineTo(xBR, H); ctx.lineTo(xBL, H);
+    ctx.closePath(); ctx.fill();
+  }
+}
+
 function drawLampPool(x, intensity){
   // pool of light on the wall behind a beat, colored by its era
   const seg = segAt(x);
@@ -883,6 +915,7 @@ function drawBeatText(b, focusAmt){
   const dxW = b.x - cam.x;
   const near = Math.max(0, 1 - Math.abs(dxW)/1300);
   const sc = b.minor ? 0.6 : 1;
+  const tY = segIdx(b.x) === 0 ? 232 : 208;   // the serif era breathes wider under its numerals
   // flagged landmark beats fly: at distance they rest on the wall in the
   // standard typography, grow to full size at screen center, then settle back
   if (b.fly){
@@ -908,12 +941,12 @@ function drawBeatText(b, focusAmt){
       ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
-      ctx.fillText(b.t, cx, py(208, kk));
+      ctx.fillText(b.t, cx, py(tY, kk));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th){
         ctx.font = eraFont(30 * (seg.tScale || 1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
-        drawLines(b._th, cx, py(262, kk), 38 * kk * SS);
+        drawLines(b._th, cx, py(tY + 54, kk), 38 * kk * SS);
       }
       ctx.restore();
     }
@@ -961,12 +994,12 @@ function drawBeatText(b, focusAmt){
       ctx.font = eraFont(46 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*sc*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
-      ctx.fillText(b.t, cx, py(b.minor ? 212 : 208, kk));
+      ctx.fillText(b.t, cx, py(b.minor ? tY + 4 : tY, kk));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th){
         ctx.font = eraFont(30 * (b.minor?0.8:1) * (seg.tScale||1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
-        drawLines(b._th, cx, py(b.minor ? 254 : 262, kk), 38 * (b.minor?0.8:1) * kk * SS);
+        drawLines(b._th, cx, py(b.minor ? tY + 46 : tY + 54, kk), 38 * (b.minor?0.8:1) * kk * SS);
       }
       ctx.restore();
       ctx.globalAlpha = 1;
@@ -1444,12 +1477,12 @@ function drawRec2(t){
   ctx.fillStyle = 'rgba(88,98,110,0.8)';
   ctx.fillText('the impression becomes a scan \u00b7 the crown becomes a file', cx, py(730, kk));
   // era markers on the panel shoulders: what ends, what begins
-  ctx.font = eraFont(24 * kk * SS, '700', SEGMENTS[3].font);
+  ctx.font = eraFont(22 * kk * SS, '700', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(120,130,142,0.55)';
   ctx.textAlign = 'left';
-  ctx.fillText('\u2190 THE ANALOG CENTURY', x0 + 26*kk*SS, py(170, kk));
+  ctx.fillText('\u2190 THE ANALOG CENTURY', x0 + 26*kk*SS, py(104, kk));
   ctx.textAlign = 'right';
-  ctx.fillText('THE DIGITAL AGE \u2192', x1 - 26*kk*SS, py(170, kk));
+  ctx.fillText('THE DIGITAL AGE \u2192', x1 - 26*kk*SS, py(104, kk));
   ctx.restore();
   // pilaster columns, cool tone, same plane
   for (const wxc of [REC2_L, REC2_R]){
@@ -2809,36 +2842,34 @@ function makeBannerVert(title, sub, cta, imgName){
 }
 function initBanners(){
   BANNERS = [
-    {x: 21690, w: 640, sp: makeBanner('BRUXZIR®', 'The best dentistry — made affordable', 'THE #1 CROWN')},
-    {x: 22830, w: 560, sp: makeBanner('GLIDEWELL HT™', 'Premium implant, a fraction of the price', 'PREMIUM · AFFORDABLE')},
-    {x: 23570, w: 300, sp: makeBannerVert('GLIDEWELL.IO', 'The lab moves\ninto your office', 'SINGLE-VISIT', 'fastmill')},
-    {x: 27850, w: 660, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
+    {x: 21505, w: 550, sp: makeBanner('BRUXZIR®', 'The best dentistry — made affordable', 'THE #1 CROWN')},
+    {x: 22860, w: 550, sp: makeBanner('GLIDEWELL HT™', 'Premium implant, a fraction of the price', 'PREMIUM · AFFORDABLE')},
+    {x: 23595, w: 240, cy: 590, sp: makeBannerVert('GLIDEWELL.IO', 'The lab moves\ninto your office', 'SINGLE-VISIT', 'fastmill')},
+    {x: 27700, w: 480, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
   ];
 }
 function drawBanners(t){
-  const bnA = Math.max(0, 1 - (state.hero || 0) * 1.5);   // banners clear the stage for hero moments
-  if (bnA <= 0.02) return;
-  ctx.save(); ctx.globalAlpha = bnA;
+  // banners hang just off the wall, below the text band — wall furniture:
+  // they share the wall's depth, never cross the floating text, never blink
   for (const bn of BANNERS){
-    if (Math.abs(bn.x - cam.x) > 2400) continue;
-    const kk = k(680);
+    if (Math.abs(bn.x - cam.x) > 3400) continue;
+    const zB = wallZAt(bn.x) - 25;
+    const kk = k(zB);
     const sx = px(bn.x, kk);
     if (sx < -700 || sx > W + 700) continue;
     const h = bn.w * bn.sp.h / bn.sp.w;
-    const cy = 528 + 8*Math.sin(t*0.5 + bn.x);         // a breath of suspension, clear below the text band
+    const cy = (bn.cy || 560) + 6*Math.sin(t*0.5 + bn.x);   // a breath of suspension
     const sw = bn.w * kk * SS, shh = h * kk * SS;
     const syC = py(cy, kk);
     // cables
-    ctx.strokeStyle = 'rgba(120,128,136,0.6)'; ctx.lineWidth = 1.6*SS;
+    ctx.strokeStyle = 'rgba(120,128,136,0.6)'; ctx.lineWidth = 1.4*SS;
     for (const s of [-0.38, 0.38]){
       ctx.beginPath(); ctx.moveTo(sx + sw*s, 0); ctx.lineTo(sx + sw*s, syC - shh/2); ctx.stroke();
     }
     pushHit(sx - sw/2, syC - shh/2, sw, shh,
-            {type:'photo', sp: bn.sp, wx: bn.x, cy, z: 680, w: bn.w, beat: nearestBeat(bn.x).i});
+            {type:'photo', sp: bn.sp, wx: bn.x, cy, z: zB, w: bn.w, beat: nearestBeat(bn.x).i});
     ctx.drawImage(bn.sp.c, sx - sw/2, syC - shh/2, sw, shh);
   }
-
-  ctx.restore();
 }
 
 /* BruxZir Factory: collaborative arms pick shade blocks and feed the mills */
@@ -3401,6 +3432,7 @@ function frame(){
   ctx.fillStyle = `rgb(${amb.bg[0]|0},${amb.bg[1]|0},${amb.bg[2]|0})`;
   ctx.fillRect(0, 0, W, H);
 
+  drawFloor();
   drawMapWall(t);
   drawRec3(t);
   drawRec2(t);
