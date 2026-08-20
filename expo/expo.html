@@ -127,8 +127,9 @@ const BEATS = [
   {x:14260, y:'1998', t:'CHAIRSIDE PERSPECTIVES', minor:true,
    th:'Teaching becomes a channel — reach turns into trust.',
    d:'The Chairside Perspectives newsletter begins — the seed of the Chairside magazine and Glidewell’s teaching voice.',
-   wall:[{img:'chairmag', w:240, dx:-380, cy:360, rot:-0.5, style:'white', cap:'Chairside Perspectives · 1998'},
-         {img:'chairv1', w:250, dx:380, cy:360, rot:0.4, style:'white', cap:'…grown into Chairside Magazine · Vol 1, Issue 1'}], table:[]},
+   wall:[{img:'chairv1', w:230, dx:-340, cy:360, rot:-0.4, style:'white', cap:'Vol 1, Issue 1 · 2006'},
+         {img:'chairv12', w:230, dx:0, cy:360, style:'white', cap:'Vol 12 · 2017'},
+         {img:'chairv21', w:230, dx:340, cy:360, rot:0.4, style:'white', cap:'Vol 21 · 2026'}], table:[]},
 
   {x:14880, y:'1999', t:'IN-CERAM ZIRCONIA', minor:true,
    th:'The zirconia story starts quietly, long before the revolution.',
@@ -143,14 +144,14 @@ const BEATS = [
    ped:{obj:'puck', dx:0},
    props:[{kind:'crt', dx:700, lz:150, w:320, label:'CAD REVOLUTION'}]},
 
-  {x:17160, y:'2000', t:'PLASTIC INJECTION', minor:true, sub:15700, under:true,
-   th:'Own the supply chain so you can own the price.',
-   d:'An in-house plastic-injection division starts making boxes, articulators and supplies — the vertical-integration playbook.',
-   wall:[], table:[]},
-
   {x:16700, y:'2001', t:'WEB · CLINICAL VOICE', minor:true,
    th:'The lab learns to publish — online and on camera.',
    d:'The first Glidewell Laboratories website goes live; the brand gains its clinical-education voice on camera.',
+   wall:[], table:[]},
+
+  {x:17160, y:'2000', t:'PLASTIC INJECTION', minor:true, sub:15700, under:true,
+   th:'Own the supply chain so you can own the price.',
+   d:'An in-house plastic-injection division starts making boxes, articulators and supplies — the vertical-integration playbook.',
    wall:[], table:[]},
 
   {x:17700, y:'2005', t:'IPS e.max', minor:true,
@@ -190,7 +191,7 @@ const BEATS = [
   {x:24020, y:'2017–19', t:'GLIDEWELL.IO',
    th:'Future: the lab moves into the chair.',
    d:'In-office: fastdesign / fastmill / BruxZir NOW — single-visit crowns.',
-   wall:[{img:'chairv12', w:260, dx:430, cy:360, rot:-0.4, style:'white', cap:'Chairside · Jim at the first Symposium · 2017'}],
+   wall:[],
    table:[],
    ped:{obj:'millSt', dx:0}},
 
@@ -218,7 +219,7 @@ const BEATS = [
   {x:27190, y:'2020s', t:'AI · SCALE', tier:1,
    th:'The flywheel: cheaper to make → wider access → reinvest.',
    d:'CrownAI / MarginAI; ~500K units a month, 5,000+ staff — the largest dental lab in the world.',
-   wall:[{img:'chairv21', w:260, dx:-520, cy:360, rot:0.4, style:'white', cap:'Chairside · Innovations Issue · 2026'}],
+   wall:[],
    table:[],
    plasma:{dx:-120, cy:505, w:420, mode:'count'}},
 
@@ -323,46 +324,6 @@ function loadAssets(){
     el.onerror = () => { console.warn('asset failed', n); res(); };
     el.src = ASSETS[n];
   })));
-}
-
-/* a placeholder cover of the 1998 Chairside Perspectives newsletter —
-   swapped for a real scan when marketing's PDFs arrive */
-function makeMagCover(){
-  const c = document.createElement('canvas'); c.width = 640; c.height = 860;
-  const g = c.getContext('2d');
-  g.fillStyle = '#f2eee2'; g.fillRect(0, 0, 640, 860);
-  g.strokeStyle = '#9a2f2f'; g.lineWidth = 6; g.strokeRect(14, 14, 612, 832);
-  g.fillStyle = '#8c1f24';
-  g.font = '700 74px Georgia, serif'; g.textAlign = 'center';
-  g.fillText('CHAIRSIDE', 320, 108);
-  g.font = '400 30px Georgia, serif'; g.fillStyle = '#5a5548';
-  try { g.letterSpacing = '14px'; } catch(e){}
-  g.fillText('PERSPECTIVES', 320, 150);
-  try { g.letterSpacing = '0px'; } catch(e){}
-  g.strokeStyle = '#b9b2a0'; g.lineWidth = 2;
-  g.beginPath(); g.moveTo(50, 172); g.lineTo(590, 172); g.stroke();
-  // duotone photo plate
-  const ph = IMGS.porc || IMGS.wax || IMGS.rella;
-  if (ph){
-    const pw = 520, phh = 400;
-    g.save();
-    g.filter = 'grayscale(1) sepia(0.35) contrast(0.95)';
-    const s = Math.max(pw / ph.w, phh / ph.h);
-    g.beginPath(); g.rect(60, 196, pw, phh); g.clip();
-    g.drawImage(ph.el, 320 - ph.w*s/2, 196 + phh/2 - ph.h*s/2, ph.w*s, ph.h*s);
-    g.restore();
-    g.strokeStyle = '#4a463c'; g.lineWidth = 2; g.strokeRect(60, 196, pw, phh);
-  }
-  g.textAlign = 'left'; g.fillStyle = '#3c382e';
-  g.font = '700 26px Georgia, serif';
-  g.fillText('Full-contour restorations:', 60, 660);
-  g.fillText('what the mail is telling us', 60, 692);
-  g.font = 'italic 20px Georgia, serif'; g.fillStyle = '#6a6455';
-  g.fillText('Case selection · Shade matching · Turnaround times', 60, 726);
-  g.strokeStyle = '#b9b2a0'; g.beginPath(); g.moveTo(50, 760); g.lineTo(590, 760); g.stroke();
-  g.font = '18px Georgia, serif'; g.fillStyle = '#8c1f24'; g.textAlign = 'center';
-  g.fillText('A CLINICAL NEWSLETTER FROM GLIDEWELL LABORATORIES \u00b7 WINTER 1998', 320, 796);
-  return {el: c, w: 640, h: 860};
 }
 
 /* Preprocess: tone + paper/frame + baked shadow, all into offscreen canvases. */
@@ -683,6 +644,25 @@ function initTables(){
       start = Math.max(start, R);
     }
     if (bx1 > start + 240) TABLES.push({x0: start, x1: bx1, seg});
+  }
+  // the law of gravity: every table object stands on an actual table span,
+  // full footprint inside — nothing rides a gap, nothing levitates
+  for (const b of BEATS){
+    const items = [...(b.st||[]), ...(b.table||[]), ...(b.props||[]),
+                   ...(b.album?[b.album]:[]), ...(b.pyr?[b.pyr]:[])];
+    for (const it of items){
+      const half = (it.w || 300) * 0.5 + 20;
+      const x = b.x + it.dx;
+      if (TABLES.some(tb => x - half >= tb.x0 + 16 && x + half <= tb.x1 - 16)) continue;
+      let best = null, bestD = 1e9;
+      for (const tb of TABLES){
+        if (tb.x1 - tb.x0 < half*2 + 48) continue;
+        const cx = Math.max(tb.x0 + 16 + half, Math.min(tb.x1 - 16 - half, x));
+        const d = Math.abs(cx - x);
+        if (d < bestD){ bestD = d; best = cx; }
+      }
+      if (best != null) it.dx = best - b.x;
+    }
   }
 }
 
@@ -1094,13 +1074,14 @@ function drawBeatText(b, focusAmt){
     // its resting state is the standard wall typography, same as every other year
     const zT = 265 + (wz - 8 - 265) * Math.pow(1 - near, 1.7);   // apex plane keeps the numerals fully in frame
     const kk = k(zT);
-    let cx = px(b.x, kk);
+    // riveted to the wall: the numeral grows straight toward the camera,
+    // it never slides left or right off its own spot
+    let cx = px(b.x, k(b.pinZ || (wz - 8)));
     const ts = (seg.tScale || 1) * (b._ys || 1);
     if (cx > -1200 && cx < W + 1200){
       ctx.save();
       ctx.textAlign = 'center';
       ctx.font = eraFont(170 * ts * kk * SS, '', seg.font);
-      if (b.pinZ) cx = px(b.x, k(b.pinZ));   // glued to its panel's center at every camera
       ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
       ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
       ctx.fillText(b.y, cx, py(140, kk));
@@ -1156,18 +1137,37 @@ function drawBeatText(b, focusAmt){
       ctx.globalAlpha = 1;
     }
   }
-  // description — anchored to the wall, appears at rest / focus
-  let dAmt = Math.max(focusAmt, state.restBeat === BEATS.indexOf(b) ? Math.min(1, Math.max(0, (state.restTime - 0.7)/0.8)) : 0);
-  if (b.album) dAmt *= 1 - (albumAnim[BEATS.indexOf(b)] || 0);
-  if (dAmt > 0.02){
-    // the reading line sits on the bench face, under the etched year —
-    // never across the photos and exhibits above
-    const kf = k(0);
-    const cw = px(b.x, kf);
+}
+
+/* rest-descriptions live on the bench face, under the etched year line —
+   drawn above everything, era ink, so no pedestal or prop ever hides them */
+function drawBenchDescs(){
+  const kf = k(0);
+  for (let i = 0; i < BEATS.length; i++){
+    const b = BEATS[i];
+    if (b.under || Math.abs(b.x - cam.x) > 2400) continue;
+    const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
+    let dAmt = Math.max(focusAmt, state.restBeat === i ? Math.min(1, Math.max(0, (state.restTime - 0.45)/0.7)) : 0);
+    if (b.album) dAmt *= 1 - (albumAnim[i] || 0);
+    if (dAmt < 0.02) continue;
+    const seg = segAt(b.x);
+    let cw = px(b.x, kf);
+    // pinned to the beat's own table span — the line never crosses a gap
+    let tb = null, tbd = 1e9;
+    for (const t of TABLES){
+      const d = b.x < t.x0 ? t.x0 - b.x : (b.x > t.x1 ? b.x - t.x1 : 0);
+      if (d < tbd){ tbd = d; tb = t; }
+    }
+    if (tb){
+      const half = 350*SS;
+      const lo = px(tb.x0, kf) + half, hi = px(tb.x1, kf) - half;
+      if (lo < hi) cw = Math.max(lo, Math.min(hi, cw));
+    }
     ctx.save();
     ctx.textAlign = 'center';
     ctx.font = eraFont(23 * SS, '', seg.font);
-    ctx.fillStyle = `rgba(215,219,224,${dAmt * 0.8})`;
+    ctx.fillStyle = `rgba(${seg.ink},${(dAmt * 0.85).toFixed(3)})`;
+    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 2*SS;
     drawLines(b._d, cw, py(CFG.benchY, kf) + 78*SS, 32 * SS);
     ctx.restore();
   }
@@ -1200,8 +1200,8 @@ function cacheWrap(){
     const fs = 170 * (seg.tScale || 1);
     ctx.font = `${Math.round(fs)}px ${seg.font}`;
     const w = ctx.measureText(b.y).width;
-    const lane = Math.min(i > 0 ? b.x - BEATS[i-1].x : 1e9,
-                          i < BEATS.length-1 ? BEATS[i+1].x - b.x : 1e9) - 90;
+    const lane = Math.max(160, Math.min(i > 0 ? b.x - BEATS[i-1].x : 1e9,
+                          i < BEATS.length-1 ? BEATS[i+1].x - b.x : 1e9) - 90);
     b._ys = Math.min(1, lane / Math.max(1, w));
   }
   // one shared year scale per era — identical sizes inside each space
@@ -2286,10 +2286,11 @@ function initDecor(){
   FIGURES.push({x: 16460, z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
   // mills receding behind the factory line
   // the welcome still life — placeholder heirlooms of the craft century
-  PROPS.push({x: INTRO_X - 210, z: 150, kind: 'toolbox', w: 150});
-  PROPS.push({x: INTRO_X - 60,  z: 90,  kind: 'jaw1', w: 120});
-  PROPS.push({x: INTRO_X + 165, z: 200, kind: 'jar', w: 80});
-  PROPS.push({x: INTRO_X + 230, z: 120, kind: 'plaster', w: 150, flip: true});
+  // a tight triangle: the cast jaw is the hero dead under the title,
+  // the toolbox and the plaster molds are its shoulders
+  PROPS.push({x: INTRO_X - 155, z: 170, kind: 'toolbox', w: 165});
+  PROPS.push({x: INTRO_X - 5,   z: 90,  kind: 'jaw1', w: 135});
+  PROPS.push({x: INTRO_X + 150, z: 140, kind: 'plaster', w: 160, flip: true});
   PROPS.push({x: FACT_X - 120, z: 620, kind: 'mill', w: 470, mid: true});
   PROPS.push({x: FACT_X + 330, z: 700, kind: 'mill', w: 440, mid: true});
   // guiding leaders — a trio in the depth
@@ -3777,6 +3778,7 @@ function frame(){
   }
   for (const b of BEATS) if (b.ped && Math.abs(b.x - cam.x) < 2000) drawPedestal(b, t, hero);
   drawMapHero(t, hMap);
+  drawBenchDescs();
 
   drawForeground();
   drawDoorway();
@@ -3843,7 +3845,6 @@ function loop(ts){
 async function boot(){
   resize();
   await loadAssets();
-  IMGS.chairmag = makeMagCover();
   TEX.wall1 = woodTexture({plank:'v', plankSize:150, base:'#20150b', light:'#372712', w:1400, h:900});
   TEX.bench1 = woodTexture({plank:'h', plankSize:110, base:'#3a2812', light:'#5a4020', w:1200, h:512});
   TEX.front1 = woodTexture({plank:'v', plankSize:190, base:'#170f07', light:'#2a1c0c', w:1200, h:600});
