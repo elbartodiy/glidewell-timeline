@@ -55,7 +55,7 @@ const BEATS = [
    table:[],
    album:{dx:390, lz:160, w:300, title:'THE FAMILY ALBUM',
           photos:[['father42','jim15'],['jim18','jim1970']]},
-   ped:{obj:'crown', dx:-430}},
+   ped:{obj:'logo1970', dx:-430}},
 
   {x:3450, y:'1970s', t:'PFM ERA',
    th:'The craft baseline every later machine is measured against.',
@@ -79,16 +79,17 @@ const BEATS = [
    table:[]},
 
   /* ---- ERA 2 · the mail-order workshop, 1979–1989 ---- */
-  {x:6800, y:'1979', t:'NINE LABS',
+  {x:6900, y:'1979', t:'NINE LABS',
    th:'Scattered scale — powerful, but not yet one machine.',
    d:'Jim owns and runs nine labs across Southern California.',
-   wall:[{img:'lab3ext', w:380, dx:-430, cy:380, rot:0.5}],
-   table:[]},
+   wall:[], table:[],
+   ped:{obj:'logoG', dx:0}},
 
   {x:7750, y:'1980', t:'STUDY PROGRAM',
    th:'Education as a bond — long before it was a marketing channel.',
    d:'An International Study Program brings dentists in from Japan and abroad to train in the US — the root of Jim’s lifelong belief in teaching and symposia.',
-   wall:[{img:'joeha', w:280, dx:-420, cy:350, rot:-0.8}],
+   wall:[{img:'joeha', w:280, dx:-420, cy:350, rot:-0.8},
+         {img:'lab3ext', w:380, dx:430, cy:380, rot:0.5}],
    table:[]},
 
   {x:8750, y:'1984', t:'CONSOLIDATION',
@@ -104,7 +105,7 @@ const BEATS = [
    wall:[], table:[],
    props:[{kind:'crt', dx:-370, lz:150, w:290, col:'amber'}]},
 
-  {x:10280, y:'1988', t:'BIOTEMPS', minor:true,
+  {x:10280, y:'1988', t:'BIOTEMPS',
    th:'A second product proves the lab can build categories, not just crowns.',
    d:'BioTemps provisional restorations — lab-made PMMA temporaries that doubled as an esthetic “blueprint” the patient could approve before the final.',
    wall:[], table:[]},
@@ -238,19 +239,19 @@ const BEATS = [
 const INTRO_X = 200;
 const WORLD_END = 29000;
 const SEAM_3 = 19750;          // era 3 -> era 4: the gate of light
-const SEAM_1 = 6100;           // era 1 -> era 2: the doorway
+const REC_L = 6350, REC_R = 7450;   // era 1 ends; the 1979 recreation; era 2 begins
 const SEAM_2 = 11700;          // era 2 -> era 3
 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
 const SEGMENTS = [
-  {x0:-900, x1:SEAM_1, z0:490, z1:580, wall:'wall1', bench:'bench1', front:'front1',
+  {x0:-2600, x1:REC_L, z0:490, z1:580, wall:'wall1', bench:'bench1', front:'front1',
    font:'Georgia, "Iowan Old Style", "Palatino Linotype", serif',
    ink:'232,205,160', lamp:'bulb', dust:true,
    rail:'rgba(190,150,80,0.55)', railInk:'rgba(230,195,130,0.7)',
    light:{pool:'255,196,110', poolR:620, poolA:0.34},
    bgc:[13,9,6], grain:0.055},
-  {x0:SEAM_1, x1:SEAM_2, z0:640, z1:740, wall:'wall2', bench:'bench2', front:'front2',
+  {x0:REC_R, x1:SEAM_2, z0:640, z1:740, wall:'wall2', bench:'bench2', front:'front2',
    font:'"Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'223,226,214', lamp:'tube', dust:false,
    rail:'rgba(165,175,172,0.5)', railInk:'rgba(198,208,202,0.7)',
@@ -273,7 +274,6 @@ const SEGMENTS = [
    bgc:[30,33,38], grain:0.012, bInsetR:2200, shade:0.30, floor:true, tScale:1.15},
 ];
 const SEAMS = [
-  {x:SEAM_1, kind:'door',   back:'255,200,120', ahead:'210,240,225'},
   {x:SEAM_2, kind:'video', back:'210,240,225', ahead:'225,238,255'},    // 1989 -> 1993: the yard lives in the video splice
   {x:SEAM_3, kind:'light',  back:'225,238,255', ahead:'160,230,255'},   // 2007 -> 2009: through the white light
 ];
@@ -538,7 +538,7 @@ function attachMouseDriver(el){
 }
 
 /* ---------------- CAMERA / STATE ---------------- */
-const cam = { x: -80, vel: 0, z: 0, zTarget: 0 };
+const cam = { x: 200, vel: 0, z: 0, zTarget: 0 };
 const state = {
   mode: 'attract',        // 'attract' | 'live'
   idle: 0,
@@ -570,6 +570,13 @@ function initTables(){
   // every pedestal claims a wide gap of its own, centered on it
   for (const b of BEATS)
     if (b.ped) BENCH_BREAKS.push({x: b.x + (b.ped.dx || -430), half: 330});
+  // small breaks inside a pedestal zone would skew its centering — drop them
+  const wide = BENCH_BREAKS.filter(v => v.half > 200);
+  for (let i = BENCH_BREAKS.length - 1; i >= 0; i--){
+    const br = BENCH_BREAKS[i];
+    if (br.half <= 200 && wide.some(p => Math.abs(p.x - br.x) < p.half + 430))
+      BENCH_BREAKS.splice(i, 1);
+  }
   // fixed table objects step aside from any gap they would straddle,
   // then a spread pass keeps them from piling onto each other
   for (const b of BEATS){
@@ -597,7 +604,7 @@ function initTables(){
   }
   TABLES = [];
   for (const seg of SEGMENTS){
-    const bx0 = (seg.x0 <= -800 && !seg.bInsetL) ? seg.x0 : seg.x0 + (seg.bInsetL || 140);
+    const bx0 = (seg.x0 <= -2500 && !seg.bInsetL) ? seg.x0 : seg.x0 + (seg.bInsetL || 140);
     const bx1 = (seg.x1 >= WORLD_END + 800 && !seg.bInsetR) ? seg.x1 : seg.x1 - (seg.bInsetR || 140);
     let start = bx0;
     for (const br of BENCH_BREAKS.filter(v => v.x + v.half > bx0 && v.x - v.half < bx1).sort((a,b)=>a.x-b.x)){
@@ -1231,6 +1238,27 @@ function drawSeamVideo(){
   }
 }
 
+/* the 1979 recreation: era 1 simply ends; an open lit pause, then era 2 */
+function drawRecreation(t){
+  const mid = (REC_L + REC_R) / 2;
+  if (Math.abs(cam.x - mid) > 2600) return;
+  const kk = k(1250);
+  for (const wxr of [mid - 290, mid + 290]){
+    const sx = px(wxr, kk);
+    const w = 190 * kk * SS;
+    const yT = py(60, kk), yB = py(1080, kk);
+    const wg = ctx.createLinearGradient(sx - w/2, 0, sx + w/2, 0);
+    wg.addColorStop(0, 'rgba(255,244,214,0.05)');
+    wg.addColorStop(0.5, 'rgba(255,248,226,0.55)');
+    wg.addColorStop(1, 'rgba(255,244,214,0.05)');
+    ctx.fillStyle = wg;
+    ctx.fillRect(sx - w/2, yT, w, yB - yT);
+    ctx.fillStyle = 'rgba(30,26,20,0.5)';
+    ctx.fillRect(sx - 3*SS, yT, 6*SS, yB - yT);
+    drawGlow('255,244,210', sx, py(1050, k(700)), 300 * k(700) * SS, 0.14, 0.3);
+  }
+}
+
 /* doorways between eras — near-camera portals you pass through */
 function drawDoorway(){
   const z = -460, kk = k(z);
@@ -1738,7 +1766,7 @@ function initDecor(){
   // bench props between beats
   for (let si = 0; si < SEGMENTS.length; si++){
     const s = SEGMENTS[si];
-    const bx0 = (s.x0 <= -800 && !s.bInsetL) ? s.x0 : s.x0 + (s.bInsetL || 140);
+    const bx0 = (s.x0 <= -2500 && !s.bInsetL) ? s.x0 : s.x0 + (s.bInsetL || 140);
     const bx1 = (s.x1 >= WORLD_END + 800 && !s.bInsetR) ? s.x1 : s.x1 - (s.bInsetR || 140);
     const a = Math.max(700, bx0 + 250), b = Math.min(WORLD_END - 300, bx1 - 250);
     for (let x = a; x < b; x += 260 + R()*260){
@@ -2001,6 +2029,38 @@ function makePedObj(kind){
     g.fillStyle = 'rgba(255,255,255,0.65)';
     g.beginPath(); g.ellipse(-26, -26, 9, 15, -0.5, 0, 7); g.fill();
     g.restore();
+  } else if (kind === 'logo1970'){
+    c.width = 180; c.height = 140;
+    // the early lab's desk plaque — walnut, gold bead, a script G
+    g.save();
+    g.shadowColor = 'rgba(0,0,0,0.4)'; g.shadowBlur = 10; g.shadowOffsetY = 5;
+    const wg = g.createLinearGradient(0, 20, 0, 130);
+    wg.addColorStop(0, '#4b2f16'); wg.addColorStop(1, '#2a1809');
+    g.fillStyle = wg;
+    g.beginPath(); g.roundRect(16, 22, 148, 100, 10); g.fill();
+    g.restore();
+    g.strokeStyle = 'rgba(235,195,120,0.75)'; g.lineWidth = 2.5;
+    g.beginPath(); g.roundRect(26, 32, 128, 80, 7); g.stroke();
+    g.fillStyle = '#eac57e';
+    g.textAlign = 'center';
+    g.font = 'italic 700 52px Georgia, serif';
+    g.fillText('G', 90, 84);
+    g.font = 'italic 15px Georgia, serif';
+    g.fillText('Glidewell Dental Lab', 90, 103);
+    g.textAlign = 'left';
+  } else if (kind === 'logoG'){
+    c.width = 170; c.height = 160;
+    // the mark itself, monumental
+    g.save();
+    g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 12; g.shadowOffsetY = 6;
+    g.fillStyle = '#d0342c';
+    g.beginPath(); g.roundRect(25, 20, 120, 120, 16); g.fill();
+    g.restore();
+    g.fillStyle = '#ffffff';
+    g.textAlign = 'center';
+    g.font = '800 82px "Helvetica Neue", Arial, sans-serif';
+    g.fillText('G', 85, 110);
+    g.textAlign = 'left';
   } else if (kind === 'crown2'){
     c.width = 170; c.height = 150;
     g.save(); g.translate(85, 78);
@@ -2136,14 +2196,17 @@ function drawPedestal(b, t, hero){
   const obj = PED_SPRITES[ped.obj];
   const ow = 120 * big * kk * SS, oh = ow * obj.h / obj.w;
   ctx.drawImage(obj.c, sx - ow/2, yTop - oh - 4*kk*SS, ow, oh);
-  // glass dome
-  ctx.strokeStyle = 'rgba(235,245,255,0.28)';
+  // glass dome: one clean outline, the sheen lives on the glass itself
+  ctx.strokeStyle = 'rgba(235,245,255,0.30)';
   ctx.lineWidth = 1.6*SS;
   ctx.beginPath();
-  ctx.ellipse(sx, yTop - 6*kk*SS, colW*0.52, oh*1.18, 0, Math.PI, 0);
+  ctx.ellipse(sx, yTop - 4*kk*SS, colW*0.52, oh*1.22, 0, Math.PI, 0);
   ctx.stroke();
-  ctx.fillStyle = 'rgba(255,255,255,0.14)';
-  ctx.beginPath(); ctx.ellipse(sx - colW*0.2, yTop - oh*1.5, colW*0.09, oh*0.32, -0.4, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 3*SS;
+  ctx.beginPath();
+  ctx.ellipse(sx, yTop - 4*kk*SS, colW*0.42, oh*1.04, 0, Math.PI*1.12, Math.PI*1.42);
+  ctx.stroke();
   // halo of its own little spotlight — swells with the hero pass
   const inten = (0.9 + 0.1*Math.sin(t*3 + b.x)) * (1 + (hero||0)*1.4);
   drawGlow(warmC, sx, yTop - oh*0.6, colW*1.5, 0.16*inten);
@@ -2783,7 +2846,7 @@ function update(dt){
     } else if (A.phase === 'fadeout'){
       cam.vel *= Math.pow(0.01, dt);
       A.fade = Math.min(1, A.fade + dt*1.2);
-      if (A.fade >= 1){ cam.x = -80; cam.vel = 0; A.phase = 'fadein'; A.beatIdx = -1; }
+      if (A.fade >= 1){ cam.x = 200; cam.vel = 0; A.phase = 'fadein'; A.beatIdx = -1; }
     } else if (A.phase === 'fadein'){
       A.fade = Math.max(0, A.fade - dt*1.2);
       if (A.fade <= 0) A.phase = 'cruise';
@@ -2869,6 +2932,7 @@ function frame(){
   ctx.fillStyle = `rgb(${amb.bg[0]|0},${amb.bg[1]|0},${amb.bg[2]|0})`;
   ctx.fillRect(0, 0, W, H);
 
+  drawRecreation(t);
   drawWall();
 
   // lamp pools on wall (behind photos)
@@ -3051,6 +3115,8 @@ async function boot(){
     if (sp) SPRITES[n] = sp;
   }
   PED_SPRITES.crown = makePedObj('crown');
+  PED_SPRITES.logo1970 = makePedObj('logo1970');
+  PED_SPRITES.logoG = makePedObj('logoG');
   PED_SPRITES.puck = makePedObj('puck');
   PED_SPRITES.scanner = makePedObj('scanner');
   PED_SPRITES.crown2 = makePedObj('crown2');
