@@ -220,7 +220,7 @@ const BEATS = [
    th:'A generational handover at the top; the scanner joins the ecosystem.',
    d:'“Constant Change” (2020); new CEO (2021); fastscan.io with Medit (2022).',
    wall:[{img:'jimnow', w:280, dx:-440, cy:360, rot:0.5, cap:'Jim Glidewell', style:'white'}],
-   table:[]},
+   table:[], pyr:{dx:400, w:340}},
 
   {x:26510, y:'EARLY 20s', t:'AI · SCALE', tier:1,
    th:'The flywheel: cheaper to make → wider access → reinvest.',
@@ -570,17 +570,28 @@ function initTables(){
   // every pedestal claims a wide gap of its own, centered on it
   for (const b of BEATS)
     if (b.ped) BENCH_BREAKS.push({x: b.x + (b.ped.dx || -430), half: 330});
-  // fixed table objects step aside from any gap they would straddle
+  // fixed table objects step aside from any gap they would straddle,
+  // then a spread pass keeps them from piling onto each other
   for (const b of BEATS){
-    const items = [...(b.st||[]), ...(b.table||[]), ...(b.props||[]), ...(b.album?[b.album]:[])];
-    for (const it of items){
-      const half = (it.w || 300) * 0.75 + 40;
+    const items = [...(b.st||[]), ...(b.table||[]), ...(b.props||[]),
+                   ...(b.album?[b.album]:[]), ...(b.pyr?[b.pyr]:[])];
+    const dodge = it => {
+      const half = (it.w || 300) * 0.9 + 40;
       for (const br of BENCH_BREAKS){
         const x = b.x + it.dx;
         if (Math.abs(x - br.x) < br.half + half){
           const dir = x >= br.x ? 1 : -1;
           it.dx = br.x + dir * (br.half + half) - b.x;
         }
+      }
+    };
+    items.forEach(dodge);
+    items.sort((p, q) => p.dx - q.dx);
+    for (let n = 1; n < items.length; n++){
+      const need = ((items[n-1].w||300) + (items[n].w||300)) * 0.5 + 60;
+      if (items[n].dx - items[n-1].dx < need){
+        items[n].dx = items[n-1].dx + need;
+        dodge(items[n]);
       }
     }
   }
@@ -914,7 +925,7 @@ function drawBeatText(b, focusAmt){
           // the satellite hangs its title where the year would be
         }
       } else {
-        ctx.font = eraFont(170 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
+        ctx.font = eraFont(170 * sc * (seg.tScale||1) * (b._ys||1) * kk * SS, '', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(0.5 + 0.45*near)*(b.minor?0.82:1)})`;
         ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 3*SS;
         ctx.fillText(b.y, cx, py(b.minor ? 170 : 140, kk));
@@ -964,12 +975,21 @@ function drawLines(lines, cx, y, lh){
 }
 /* line breaks are computed once at a reference size — they never re-flow */
 function cacheWrap(){
-  for (const b of BEATS){
+  for (let i = 0; i < BEATS.length; i++){
+    const b = BEATS[i];
     const seg = segAt(b.x);
     ctx.font = `italic 100px ${seg.font}`;
     b._th = wrapCalc(b.th, 100 * 500/30);
     ctx.font = `100px ${seg.font}`;
     b._d = wrapCalc(b.d, 100 * 700/26);
+    // year lane: half the distance to the nearest neighbour, minus breathing room
+    const sc = (b.minor ? 0.6 : 1) * (seg.tScale || 1);
+    const fs = 170 * sc;
+    ctx.font = `${Math.round(fs)}px ${seg.font}`;
+    const w = ctx.measureText(b.y).width;
+    const lane = Math.min(i > 0 ? b.x - BEATS[i-1].x : 1e9,
+                          i < BEATS.length-1 ? BEATS[i+1].x - b.x : 1e9) - 90;
+    b._ys = Math.min(1, lane / Math.max(1, w));
   }
 }
 
@@ -2229,9 +2249,9 @@ function makeBookPyramid(){
 }
 function drawBookPyramid(b, t){
   const kk = k(155);
-  const sx = px(b.x + 400, kk);
+  const sx = px(b.x + b.pyr.dx, kk);
   if (sx < -400 || sx > W + 400) return;
-  const wWorld = 340;
+  const wWorld = b.pyr.w;
   const scale = (wWorld / BOOK_SPRITE.w) * kk * SS;
   const sy = py(CFG.benchY - 2, kk);
   pushHit(sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale, BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale,
@@ -2339,7 +2359,7 @@ function drawBanners(t){
     const sx = px(bn.x, kk);
     if (sx < -700 || sx > W + 700) continue;
     const h = bn.w * bn.sp.h / bn.sp.w;
-    const cy = 430 + 8*Math.sin(t*0.5 + bn.x);         // a breath of suspension
+    const cy = 485 + 8*Math.sin(t*0.5 + bn.x);         // a breath of suspension, below the year line
     const sw = bn.w * kk * SS, shh = h * kk * SS;
     const syC = py(cy, kk);
     // cables
