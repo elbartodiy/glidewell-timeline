@@ -2101,24 +2101,21 @@ function makePedObj(kind){
     g.beginPath(); g.ellipse(-26, -26, 9, 15, -0.5, 0, 7); g.fill();
     g.restore();
   } else if (kind === 'logo1970'){
-    c.width = 180; c.height = 140;
-    // the early lab's desk plaque — walnut, gold bead, a script G
+    c.width = 190; c.height = 180;
+    // the real early-70s GL mark, mounted as a small display plaque
     g.save();
-    g.shadowColor = 'rgba(0,0,0,0.4)'; g.shadowBlur = 10; g.shadowOffsetY = 5;
-    const wg = g.createLinearGradient(0, 20, 0, 130);
-    wg.addColorStop(0, '#4b2f16'); wg.addColorStop(1, '#2a1809');
-    g.fillStyle = wg;
-    g.beginPath(); g.roundRect(16, 22, 148, 100, 10); g.fill();
+    g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 12; g.shadowOffsetY = 6;
+    g.fillStyle = '#5e0f22';
+    g.beginPath(); g.roundRect(20, 12, 150, 150, 6); g.fill();
     g.restore();
-    g.strokeStyle = 'rgba(235,195,120,0.75)'; g.lineWidth = 2.5;
-    g.beginPath(); g.roundRect(26, 32, 128, 80, 7); g.stroke();
-    g.fillStyle = '#eac57e';
-    g.textAlign = 'center';
-    g.font = 'italic 700 52px Georgia, serif';
-    g.fillText('G', 90, 84);
-    g.font = 'italic 15px Georgia, serif';
-    g.fillText('Glidewell Dental Lab', 90, 103);
-    g.textAlign = 'left';
+    if (IMGS.logo1970){
+      g.save();
+      g.beginPath(); g.roundRect(20, 12, 150, 150, 6); g.clip();
+      g.drawImage(IMGS.logo1970.el, 20, 12, 150, 150);
+      g.restore();
+    }
+    g.strokeStyle = 'rgba(255,255,255,0.18)'; g.lineWidth = 1.5;
+    g.beginPath(); g.roundRect(20.5, 12.5, 149, 149, 6); g.stroke();
   } else if (kind === 'logoG'){
     c.width = 170; c.height = 160;
     // the mark itself, monumental
@@ -3256,6 +3253,7 @@ lab3rec:"data:image/jpeg;base64,",
 lab4ext:"data:image/jpeg;base64,",
 lab4int:"data:image/jpeg;base64,",
 lab5move:"data:image/jpeg;base64,",
+logo1970:"data:image/jpeg;base64,",
 nadia:"data:image/jpeg;base64,",
 porc:"data:image/jpeg;base64,",
 qr:"data:image/png;base64,",
