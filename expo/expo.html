@@ -46,30 +46,30 @@ const BEATS = [
    d:'Taggart brings lost-wax casting into dentistry — the analog century begins.',
    wall:[{img:'cast', w:360, dx:-430, cy:380, rot:-0.8},
          {img:'furnace', w:360, dx:430, cy:380, rot:1.2}],
-   table:[], st:[{img:'invest', w:280, dx:-320, lz:210}]},
+   table:[], st:[{img:'invest', w:280, dx:-320, lz:155}]},
 
   {x:2450, y:'1969–70', t:'FOUNDED', tier:1, fly:true,
    th:'One man, one bench — betting that affordable was a business model.',
    d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
    wall:[{img:'jim1970', w:420, dx:440, cy:400, hero:true}],
    table:[],
-   album:{dx:390, lz:215, w:300, title:'THE FAMILY ALBUM',
+   album:{dx:390, lz:160, w:300, title:'THE FAMILY ALBUM',
           photos:[['father42','jim15'],['jim18','jim1970']]},
-   ped:{obj:'crown', dx:-300}},
+   ped:{obj:'crown', dx:-430}},
 
   {x:3450, y:'1970s', t:'PFM ERA',
    th:'The craft baseline every later machine is measured against.',
    d:'Cast metal hand-layered with porcelain — the hand-craft world Jim will spend his life automating.',
    wall:[],
-   table:[], st:[{img:'wax', w:280, dx:330, lz:200}],
-   album:{dx:-340, lz:215, w:310, title:'THE PFM CRAFT',
+   table:[], st:[{img:'wax', w:280, dx:330, lz:150}],
+   album:{dx:-340, lz:160, w:310, title:'THE PFM CRAFT',
           photos:[['porc','artic'],['dietrim','wax']]}},
 
   {x:4400, y:'1973', t:'SECOND LAB',
    th:'Growth by addition — before growth by system.',
    d:'Jim opens a second lab in El Toro — the one-man bench starts to multiply.',
    wall:[{img:'lab4ext', w:320, dx:-430, cy:360, hero:true}],
-   table:[], st:[{img:'rose', w:280, dx:330, lz:210}]},
+   table:[], st:[{img:'rose', w:280, dx:330, lz:155}]},
 
   {x:5400, y:'1976', t:'DIRECT-MAIL',
    th:'Reach is the lever — the flywheel’s first turn.',
@@ -102,7 +102,7 @@ const BEATS = [
    th:'Glidewell didn’t start digital — its bet isn’t “first,” it’s “for everyone.”',
    d:'First chairside CAD/CAM (Mörmann & Brandestini). Digital cracks the analog monopoly.',
    wall:[], table:[],
-   props:[{kind:'crt', dx:-370, lz:180, w:290, col:'amber'}]},
+   props:[{kind:'crt', dx:-370, lz:150, w:290, col:'amber'}]},
 
   {x:10280, y:'1988', t:'BIOTEMPS', minor:true,
    th:'A second product proves the lab can build categories, not just crowns.',
@@ -113,7 +113,7 @@ const BEATS = [
    th:'From a local lab to the national mail-order leader.',
    d:'Glidewell settles into 4141 MacArthur Blvd, Newport Beach (33,000 sq ft); 95% of cases now arrive by mail from 3,500+ dentists nationwide.',
    wall:[{img:'lab5move', w:460, dx:-470, cy:400, hero:true}],
-   table:[], st:[{img:'bizcard', w:280, dx:-320, lz:210}]},
+   table:[], st:[{img:'bizcard', w:280, dx:-320, lz:155}]},
 
   /* ---- ERA 3 · the computer arrives, 1993–2007 ---- */
   {x:12400, y:'1993', t:'NEWPORT BEACH',
@@ -146,13 +146,13 @@ const BEATS = [
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir, and everything after.',
    wall:[{img:'rella', w:250, dx:-420, cy:350, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
    table:[],
-   ped:{obj:'puck', dx:300}},
+   ped:{obj:'puck', dx:430}},
 
   {x:16600, y:'~2000', t:'CAD REVOLUTION', sub:15700,
    th:'Craft gives way to design and the mill — the seed of BruxZir.',
    d:'Dental labs go digital: scanning, on-screen design and milling start to replace hand-built copings. Glidewell adopts it early — chasing zirconia at a PFM price.',
    wall:[], table:[],
-   props:[{kind:'crt', dx:-400, lz:170, w:320}]},
+   props:[{kind:'crt', dx:-400, lz:150, w:320}]},
 
   {x:17160, y:'2000', t:'PLASTIC INJECTION', minor:true, sub:15700,
    th:'Own the supply chain so you can own the price.',
@@ -173,15 +173,15 @@ const BEATS = [
    th:'Nobody called it AI training data yet — but that is what it was.',
    d:'The lab accepts its first intraoral scan instead of a physical impression — the moment the case archive starts becoming data.',
    wall:[], table:[],
-   props:[{kind:'lcd', dx:390, lz:170, w:330}],
-   ped:{obj:'scanner', dx:-310}},
+   props:[{kind:'lcd', dx:390, lz:150, w:330}],
+   ped:{obj:'scanner', dx:-430}},
 
   /* ---- ERA 4 · the white room, 2009–2026 ---- */
   {x:20400, y:'2009', t:'BRUXZIR', tier:1, fly:true,
    th:'Revolution: the best, made affordable — and the default.',
    d:'The monolithic solid-zirconia crown goes mainstream — the #1 brand; the biggest cost-and-speed inflection.',
    wall:[], table:[],
-   ped:{obj:'crown2', dx:-300}},
+   ped:{obj:'crown2', dx:-430}},
 
   {x:21250, y:'2009–13', t:'SCREW-RETAINED', minor:true,
    th:'The barrier wasn’t the technique — it was the price of the parts.',
@@ -203,7 +203,7 @@ const BEATS = [
    d:'In-office: fastdesign / fastmill / BruxZir NOW — single-visit crowns.',
    wall:[{img:'fastmill', w:400, dx:440, cy:380, rot:-0.6}],
    table:[],
-   ped:{obj:'millSt', dx:-310}},
+   ped:{obj:'millSt', dx:-430}},
 
   {x:24190, y:'2019', t:'BRUXZIR FACTORY',
    th:'The analog→digital climax: robots make crowns.',
@@ -216,9 +216,9 @@ const BEATS = [
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
    wall:[],
    table:[],
-   st:[{img:'ellen', w:190, dx:-280, lz:200, cap:'Dr. Ellen Paulisick · GL alum'},
-       {img:'nadia', w:190, dx:-15, lz:235, cap:'Dr. Nadia Rodriguez · GL alum'},
-       {img:'bianca', w:190, dx:250, lz:210, cap:'Dr. Bianca Clark · GL alum'}]},
+   st:[{img:'ellen', w:190, dx:-280, lz:140, cap:'Dr. Ellen Paulisick · GL alum'},
+       {img:'nadia', w:190, dx:-15, lz:180, cap:'Dr. Nadia Rodriguez · GL alum'},
+       {img:'bianca', w:190, dx:250, lz:150, cap:'Dr. Bianca Clark · GL alum'}]},
 
   {x:25660, y:'2020–22', t:'MEMOIR · CEO · SCAN',
    th:'A generational handover at the top; the scanner joins the ecosystem.',
@@ -237,7 +237,7 @@ const BEATS = [
    th:'An arc the length of one life: craft → digital → automation.',
    d:'Automated monolithic milling is the norm; AI + robotics + single-visit define the frontier. The story keeps compounding.',
    wall:[], table:[],
-   ped:{obj:'crown2', dx:-340, big:true}},
+   ped:{obj:'crown2', dx:-430, big:true}},
 ];
 const INTRO_X = 200;
 const WORLD_END = 29000;
@@ -274,7 +274,7 @@ const SEGMENTS = [
    rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
    light:{pool:'225,240,255', poolR:1000, poolA:0.13},
    tube:{line:'246,251,255', glow:'226,239,252'},
-   bgc:[15,16,19], grain:0.015, bInsetR:2200},
+   bgc:[30,33,38], grain:0.012, bInsetR:2200, shade:0.30},
 ];
 const SEAMS = [
   {x:SEAM_1, kind:'door',   back:'255,200,120', ahead:'210,240,225'},
@@ -557,19 +557,39 @@ function nearestBeat(x){
 }
 
 /* the long bench is really a row of separate tables */
-const BENCH_BREAKS = [1980, 3830, 7350, 9250, 13100, 15150, 17900, 21600, 23800, 26050];
+const BENCH_BREAKS = [1980, 3830, 7350, 9250, 13100, 17900, 21600, 23800, 26050]
+  .map(x => ({x, half: 65}));
 let TABLES = [];
 function initTables(){
+  // every pedestal claims a wide gap of its own, centered on it
+  for (const b of BEATS)
+    if (b.ped) BENCH_BREAKS.push({x: b.x + (b.ped.dx || -430), half: 330});
+  // fixed table objects step aside from any gap they would straddle
+  for (const b of BEATS){
+    const items = [...(b.st||[]), ...(b.table||[]), ...(b.props||[]), ...(b.album?[b.album]:[])];
+    for (const it of items){
+      const half = (it.w || 300) * 0.75 + 40;
+      for (const br of BENCH_BREAKS){
+        const x = b.x + it.dx;
+        if (Math.abs(x - br.x) < br.half + half){
+          const dir = x >= br.x ? 1 : -1;
+          it.dx = br.x + dir * (br.half + half) - b.x;
+        }
+      }
+    }
+  }
   TABLES = [];
   for (const seg of SEGMENTS){
     const bx0 = (seg.x0 <= -800 && !seg.bInsetL) ? seg.x0 : seg.x0 + (seg.bInsetL || 140);
     const bx1 = (seg.x1 >= WORLD_END + 800 && !seg.bInsetR) ? seg.x1 : seg.x1 - (seg.bInsetR || 140);
     let start = bx0;
-    for (const br of BENCH_BREAKS.filter(v => v > bx0 + 200 && v < bx1 - 200).sort((a,b)=>a-b)){
-      TABLES.push({x0: start, x1: br - 65, seg});
-      start = br + 65;
+    for (const br of BENCH_BREAKS.filter(v => v.x + v.half > bx0 && v.x - v.half < bx1).sort((a,b)=>a.x-b.x)){
+      const L = br.x - br.half, R = br.x + br.half;
+      if (R <= start + 120) continue;
+      if (L > start + 240) TABLES.push({x0: start, x1: L, seg});
+      start = Math.max(start, R);
     }
-    TABLES.push({x0: start, x1: bx1, seg});
+    if (bx1 > start + 240) TABLES.push({x0: start, x1: bx1, seg});
   }
 }
 
@@ -577,15 +597,36 @@ function initTables(){
 const cv = document.getElementById('view');
 const ctx = cv.getContext('2d', {alpha:false});
 let W = 0, H = 0, SS = 1;  // canvas px, and scale ref->canvas
+let RQ = 1;   // adaptive render quality (drops on weak hardware)
 function resize(){
   const dpr = Math.min(window.devicePixelRatio || 1, CFG.dprCap);
-  W = cv.width = Math.round(innerWidth * dpr);
-  H = cv.height = Math.round(innerHeight * dpr);
+  W = cv.width = Math.round(innerWidth * dpr * RQ);
+  H = cv.height = Math.round(innerHeight * dpr * RQ);
   SS = H / CFG.refH;
+  VIG = null;
 }
 window.addEventListener('resize', resize);
 
 let TEX = {};        // procedural textures
+const GLOWS = {};
+function glowSprite(col){
+  if (GLOWS[col]) return GLOWS[col];
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  const rg = g.createRadialGradient(128, 128, 2, 128, 128, 128);
+  rg.addColorStop(0, `rgba(${col},1)`);
+  rg.addColorStop(0.45, `rgba(${col},0.30)`);
+  rg.addColorStop(1, `rgba(${col},0)`);
+  g.fillStyle = rg; g.fillRect(0, 0, 256, 256);
+  return GLOWS[col] = c;
+}
+function drawGlow(col, cx, cy, r, alpha, squashY){
+  if (alpha <= 0.004 || r <= 0) return;
+  const sy = squashY || 1;
+  ctx.globalAlpha = Math.min(1, alpha);
+  ctx.drawImage(glowSprite(col), cx - r, cy - r*sy, r*2, r*2*sy);
+  ctx.globalAlpha = 1;
+}
 let HITS = [];       // clickable screen rects, rebuilt every frame
 function pushHit(x, y, w, h, payload){
   if (x > W || y > H || x + w < 0 || y + h < 0) return;
@@ -623,12 +664,13 @@ function drawWall(){
       const kk = k(wallZAt(wx + tileW/2));   // per-tile depth: smooth recession
       ctx.drawImage(tex, px(wx, kk), 0, tileW * kk * SS * 1.03, yBase);
     }
-    // ambient darkening top and bottom of wall
+    // ambient darkening top and bottom of wall — each era keeps its own gloom
+    const sh = seg.shade != null ? seg.shade : 1;
     const gr = ctx.createLinearGradient(0, 0, 0, yBase);
-    gr.addColorStop(0, 'rgba(5,2,0,0.85)');
-    gr.addColorStop(0.3, 'rgba(5,2,0,0.25)');
-    gr.addColorStop(0.75, 'rgba(5,2,0,0.18)');
-    gr.addColorStop(1, 'rgba(5,2,0,0.6)');
+    gr.addColorStop(0, `rgba(5,2,0,${0.85*sh})`);
+    gr.addColorStop(0.3, `rgba(5,2,0,${0.25*sh})`);
+    gr.addColorStop(0.75, `rgba(5,2,0,${0.18*sh})`);
+    gr.addColorStop(1, `rgba(5,2,0,${0.6*sh})`);
     ctx.fillStyle = gr; ctx.fillRect(sx0, 0, sx1 - sx0, yBase);
     ctx.restore();
   }
@@ -641,13 +683,7 @@ function drawLampPool(x, intensity){
   const cx = px(x, kk), cy = py(330, kk);
   const r = seg.light.poolR * kk * SS;
   if (cx < -r || cx > W + r) return;
-  const col = seg.light.pool;
-  const g = ctx.createRadialGradient(cx, cy - r*0.25, r*0.08, cx, cy, r);
-  g.addColorStop(0, `rgba(${col},${seg.light.poolA*intensity})`);
-  g.addColorStop(0.5, `rgba(${col},${seg.light.poolA*0.38*intensity})`);
-  g.addColorStop(1, `rgba(${col},0)`);
-  ctx.fillStyle = g;
-  ctx.fillRect(cx - r, cy - r, r*2, r*2);
+  drawGlow(seg.light.pool, cx, cy - r*0.12, r, seg.light.poolA * intensity);
 }
 
 function benchTiles(tex, kk, srcY, srcH, dy, dh, wx0, wx1){
@@ -661,7 +697,7 @@ function benchTiles(tex, kk, srcY, srcH, dy, dh, wx0, wx1){
   }
 }
 function drawBench(){
-  const slices = 22;
+  const slices = 14;
   const kf = k(0);
   const yTopF = py(CFG.benchY, kf);
   for (const tb of TABLES){
@@ -675,7 +711,7 @@ function drawBench(){
       const z0 = CFG.benchDepth * (1 - (s+1)/slices);
       const k1 = k(z1), k0 = k(z0);
       const y1 = py(CFG.benchY, k1), y0 = py(CFG.benchY, k0);
-      const cx0 = Math.max(0, px(bx0, k0)), cx1 = Math.min(W, px(bx1, k0));
+      const cx0 = Math.max(0, px(bx0, kf)), cx1 = Math.min(W, px(bx1, kf));
       if (cx1 <= 0 || cx0 >= W || cx1 <= cx0) continue;
       ctx.save();
       ctx.beginPath(); ctx.rect(cx0, y1, cx1 - cx0, (y0 - y1) + 1); ctx.clip();
@@ -691,10 +727,11 @@ function drawBench(){
       ctx.beginPath(); ctx.rect(fx0, yTopF, fx1 - fx0, H - yTopF); ctx.clip();
       const texF = TEX[seg.front];
       benchTiles(texF, kf, 0, texF.height, yTopF, H - yTopF, bx0, bx1);
+      const shF = seg.shade != null ? seg.shade : 1;
       const gr = ctx.createLinearGradient(0, yTopF, 0, H);
       gr.addColorStop(0, 'rgba(255,220,160,0.10)');
       gr.addColorStop(0.08, 'rgba(0,0,0,0.0)');
-      gr.addColorStop(1, 'rgba(0,0,0,0.75)');
+      gr.addColorStop(1, `rgba(0,0,0,${0.75*shF})`);
       ctx.fillStyle = gr; ctx.fillRect(fx0, yTopF, fx1 - fx0, H - yTopF);
       // year rail on the table edge
       ctx.fillStyle = seg.rail;
@@ -1262,12 +1299,7 @@ function drawLamp(x, t, seed){
   ctx.closePath(); ctx.fill();
   // bulb glow
   const r = 34*kk*SS;
-  const g = ctx.createRadialGradient(sx, bulbY + r*0.5, 1, sx, bulbY + r*0.5, r*2.2);
-  g.addColorStop(0, `rgba(255,232,170,${0.95*inten})`);
-  g.addColorStop(0.35, `rgba(255,200,110,${0.4*inten})`);
-  g.addColorStop(1, 'rgba(255,180,90,0)');
-  ctx.fillStyle = g;
-  ctx.fillRect(sx - r*2.2, bulbY - r, r*4.4, r*3.4);
+  drawGlow('255,225,155', sx, bulbY + r*0.5, r*2.2, 0.85*inten);
   // light cone
   const coneG = ctx.createLinearGradient(0, bulbY, 0, py(CFG.benchY, k(120)));
   coneG.addColorStop(0, `rgba(255,210,130,${0.13*inten})`);
@@ -1281,14 +1313,7 @@ function drawLamp(x, t, seed){
   ctx.closePath(); ctx.fill();
   // pool on the table
   const kf = k(160);
-  const pyT = py(CFG.benchY - 4, kf);
-  const pg = ctx.createRadialGradient(px(x,kf), pyT, 4, px(x,kf), pyT, 300*kf*SS);
-  pg.addColorStop(0, `rgba(255,205,120,${0.16*inten})`);
-  pg.addColorStop(1, 'rgba(255,190,110,0)');
-  ctx.fillStyle = pg;
-  ctx.save(); ctx.translate(px(x,kf), pyT); ctx.scale(1, 0.28); ctx.translate(-px(x,kf), -pyT);
-  ctx.fillRect(px(x,kf) - 300*kf*SS, pyT - 300*kf*SS, 600*kf*SS, 600*kf*SS);
-  ctx.restore();
+  drawGlow('255,205,120', px(x,kf), py(CFG.benchY - 4, kf), 300*kf*SS, 0.16*inten, 0.28);
   return inten;
 }
 
@@ -1314,15 +1339,7 @@ function drawTube(x, t, seed){
   ctx.fillStyle = tg;
   ctx.fillRect(sx - halfW, yF, halfW*2, 6*kk*SS);
   // halo
-  const hr = halfW * 1.35;
-  const hg = ctx.createRadialGradient(sx, yF, 8, sx, yF, hr);
-  hg.addColorStop(0, `rgba(${tc.glow},${0.28*inten})`);
-  hg.addColorStop(1, `rgba(${tc.glow},0)`);
-  ctx.save();
-  ctx.translate(sx, yF); ctx.scale(1, 0.45); ctx.translate(-sx, -yF);
-  ctx.fillStyle = hg;
-  ctx.fillRect(sx - hr, yF - hr, hr*2, hr*2);
-  ctx.restore();
+  drawGlow(tc.glow, sx, yF, halfW * 1.35, 0.28*inten, 0.45);
   // broad cone
   const yTable = py(CFG.benchY, k(120));
   const cg = ctx.createLinearGradient(0, yF, 0, yTable);
@@ -1337,15 +1354,7 @@ function drawTube(x, t, seed){
   ctx.closePath(); ctx.fill();
   // pool on the table
   const kf = k(160);
-  const pyT = py(CFG.benchY - 4, kf);
-  const pr = 380 * kf * SS;
-  const pg = ctx.createRadialGradient(px(x,kf), pyT, 4, px(x,kf), pyT, pr);
-  pg.addColorStop(0, `rgba(${tc.glow},${0.13*inten})`);
-  pg.addColorStop(1, `rgba(${tc.glow},0)`);
-  ctx.fillStyle = pg;
-  ctx.save(); ctx.translate(px(x,kf), pyT); ctx.scale(1, 0.26); ctx.translate(-px(x,kf), -pyT);
-  ctx.fillRect(px(x,kf) - pr, pyT - pr, pr*2, pr*2);
-  ctx.restore();
+  drawGlow(tc.glow, px(x,kf), py(CFG.benchY - 4, kf), 380*kf*SS, 0.13*inten, 0.26);
 }
 
 /* ---------------- MONITORS · era 3 living screens ---------------- */
@@ -1424,10 +1433,11 @@ function projMesh(rot){
   }
   return out;
 }
-function drawScreenCAD(g, r, t){
-  // green phosphor wireframe crown, slowly turning
-  g.fillStyle = '#06130a'; g.fillRect(r.x, r.y, r.w, r.h);
-  g.strokeStyle = 'rgba(70,160,110,0.25)'; g.lineWidth = 1;
+function drawScreenCAD(g, r, t, amber){
+  // phosphor wireframe crown, slowly turning — green or amber
+  const dim = amber ? 'rgba(160,120,40,0.25)' : 'rgba(70,160,110,0.25)';
+  g.fillStyle = amber ? '#130d04' : '#06130a'; g.fillRect(r.x, r.y, r.w, r.h);
+  g.strokeStyle = dim; g.lineWidth = 1;
   for (let i = 1; i < 6; i++){ // faint grid
     g.beginPath(); g.moveTo(r.x, r.y + r.h*i/6); g.lineTo(r.x + r.w, r.y + r.h*i/6); g.stroke();
     g.beginPath(); g.moveTo(r.x + r.w*i/6, r.y); g.lineTo(r.x + r.w*i/6, r.y + r.h); g.stroke();
@@ -1439,7 +1449,7 @@ function drawScreenCAD(g, r, t){
     const a = pts[m], b = pts[(m+1) % MESH.M];
     for (let p = 0; p < MESH.P; p++){
       const depth = (a[p][2] + 70) / 140;   // 0 near .. 1 far
-      g.strokeStyle = `rgba(120,235,160,${(0.75 - 0.55*depth).toFixed(2)})`;
+      g.strokeStyle = `rgba(${amber ? '255,190,90' : '120,235,160'},${(0.75 - 0.55*depth).toFixed(2)})`;
       if (p < MESH.P-1){
         g.beginPath(); g.moveTo(cx + a[p][0]*s, cy + a[p][1]*s);
         g.lineTo(cx + a[p+1][0]*s, cy + a[p+1][1]*s); g.stroke();
@@ -1448,10 +1458,10 @@ function drawScreenCAD(g, r, t){
       g.lineTo(cx + b[p][0]*s, cy + b[p][1]*s); g.stroke();
     }
   }
-  g.fillStyle = 'rgba(140,240,175,0.85)';
+  g.fillStyle = amber ? 'rgba(255,205,120,0.85)' : 'rgba(140,240,175,0.85)';
   g.font = `${Math.max(8, 9*s)}px monospace`;
   g.textAlign = 'left';
-  g.fillText('CAD · crown 14 · milling queue', r.x + 8*s, r.y + r.h - 8*s);
+  g.fillText(amber ? 'CEREC 1 · chairside' : 'CAD · crown 14 · milling queue', r.x + 8*s, r.y + r.h - 8*s);
   // scanlines
   g.fillStyle = 'rgba(0,0,0,0.16)';
   for (let y = r.y; y < r.y + r.h; y += 3) g.fillRect(r.x, y, r.w, 1);
@@ -1493,17 +1503,12 @@ function drawMonitor(p, x, z, wWorld, t){
              w: mon.screen.w*scale, h: mon.screen.h*scale};
   ctx.save();
   ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.clip();
-  if (p.kind === 'crt') drawScreenCAD(ctx, r, t); else drawScreenScan(ctx, r, t);
+  if (p.kind === 'crt') drawScreenCAD(ctx, r, t, p.col === 'amber'); else drawScreenScan(ctx, r, t);
   ctx.restore();
   // screen light spills into the room
-  const glow = p.kind === 'crt' ? '110,220,150' : '110,180,255';
-  const gr = r.w * 1.6;
-  const gg = ctx.createRadialGradient(r.x + r.w/2, r.y + r.h/2, r.h*0.2, r.x + r.w/2, r.y + r.h/2, gr);
+  const glow = p.kind === 'crt' ? (p.col === 'amber' ? '235,170,80' : '110,220,150') : '110,180,255';
   const flick = 0.8 + 0.2*Math.sin(t*9 + x);
-  gg.addColorStop(0, `rgba(${glow},${0.10*flick})`);
-  gg.addColorStop(1, `rgba(${glow},0)`);
-  ctx.fillStyle = gg;
-  ctx.fillRect(r.x + r.w/2 - gr, r.y + r.h/2 - gr, gr*2, gr*2);
+  drawGlow(glow, r.x + r.w/2, r.y + r.h/2, r.w*1.6, 0.10*flick);
 }
 
 /* ---------------- DECOR · the space between the beats ----------------
@@ -1704,9 +1709,9 @@ function initDecor(){
     for (let x = a; x < b; x += 260 + R()*260){
       if (!eraProps[si].length) break;
       if (BEATS.some(bt => Math.abs(bt.x - x) < 430)) continue;
-      if (BENCH_BREAKS.some(v => Math.abs(v - x) < 170)) continue;
+      if (BENCH_BREAKS.some(v => Math.abs(v.x - x) < v.half + 130)) continue;
       const kinds = eraProps[si];
-      PROPS.push({x, z: 210 + R()*110, kind: kinds[(R()*kinds.length)|0],
+      PROPS.push({x, z: 100 + R()*120, kind: kinds[(R()*kinds.length)|0],
                   w: 95 + R()*60, flip: R() > 0.5});
     }
     // pinned sheets between beats (not in the white room)
@@ -2003,23 +2008,30 @@ function drawPedestal(b, t, hero){
   const yTop = py(ped.big ? 470 : 535, kk);
   pushHit(sx - colW*0.7*big, yTop - 150*kk*SS*big, colW*1.4*big, H - yTop + 150*kk*SS, {type:'focus', beat: BEATS.indexOf(b)});
   const warmC = era === 0 ? '255,215,140' : '225,240,255';
-  // two side spotlights: they hang straight down, then swing their beams
-  // onto the exhibit as it reaches the center — and let it go as it leaves
+  // two side spotlights swing in and lock their beams exactly on the exhibit;
+  // brightness peaks AT the object, then the light falls away
   if (hero > 0.02){
-    const yEnd = yTop + (H - yTop) * 0.55;
+    const lock = Math.min(1, hero * 1.7);
+    const objSprite = PED_SPRITES[ped.obj];
+    const objH = 120 * (ped.big ? 1.6 : 1) * kk * SS * objSprite.h / objSprite.w;
+    const yObj = yTop - objH * 0.6;
+    const yEnd = yTop + (H - yTop) * 0.5;
     for (const s of [-1, 1]){
       const fx = sx + s * colW * 3.0;                    // the fixture, up top
-      const aimX = fx + (sx - fx) * hero;                // beam foot: down -> the exhibit
+      // beam direction: straight down -> through the exhibit, by lock
+      const xEnd = fx + ((sx - fx) * (yEnd / Math.max(1, yObj))) * lock;
+      const tObj = Math.max(0.05, Math.min(0.92, yObj / yEnd));
       const beam = ctx.createLinearGradient(0, 0, 0, yEnd);
-      beam.addColorStop(0, `rgba(${warmC},${(0.04*hero).toFixed(3)})`);
-      beam.addColorStop(Math.max(0.01, (yTop/yEnd) * 0.82), `rgba(${warmC},${(0.16*hero).toFixed(3)})`);
+      beam.addColorStop(0, `rgba(${warmC},${(0.03*hero).toFixed(3)})`);
+      beam.addColorStop(tObj, `rgba(${warmC},${(0.22*hero*lock).toFixed(3)})`);
+      beam.addColorStop(Math.min(1, tObj + 0.25), `rgba(${warmC},${(0.07*hero).toFixed(3)})`);
       beam.addColorStop(1, `rgba(${warmC},0)`);
       ctx.fillStyle = beam;
       ctx.beginPath();
       ctx.moveTo(fx - colW*0.22, 0);
       ctx.lineTo(fx + colW*0.22, 0);
-      ctx.lineTo(aimX + colW*0.75, yEnd);
-      ctx.lineTo(aimX - colW*0.75, yEnd);
+      ctx.lineTo(xEnd + colW*0.62, yEnd);
+      ctx.lineTo(xEnd - colW*0.62, yEnd);
       ctx.closePath(); ctx.fill();
       // the fixture itself
       ctx.fillStyle = 'rgba(20,20,22,0.9)';
@@ -2027,6 +2039,8 @@ function drawPedestal(b, t, hero){
       ctx.fillStyle = `rgba(${warmC},${(0.75*hero).toFixed(2)})`;
       ctx.fillRect(fx - 5*SS, 10*SS, 10*SS, 4*SS);
     }
+    // the hot spot where both beams meet the exhibit
+    drawGlow(warmC, sx, yObj, objH * 1.6, 0.22 * lock * hero);
   }
   // column
   const cg = ctx.createLinearGradient(sx - colW/2, 0, sx + colW/2, 0);
@@ -2058,11 +2072,7 @@ function drawPedestal(b, t, hero){
   ctx.beginPath(); ctx.ellipse(sx - colW*0.2, yTop - oh*1.5, colW*0.09, oh*0.32, -0.4, 0, 7); ctx.fill();
   // halo of its own little spotlight — swells with the hero pass
   const inten = (0.9 + 0.1*Math.sin(t*3 + b.x)) * (1 + (hero||0)*1.4);
-  const hg = ctx.createRadialGradient(sx, yTop - oh*0.6, 4, sx, yTop - oh*0.6, colW*1.5);
-  hg.addColorStop(0, `rgba(${warmC},${0.16*inten})`);
-  hg.addColorStop(1, `rgba(${warmC},0)`);
-  ctx.fillStyle = hg;
-  ctx.fillRect(sx - colW*1.5, yTop - oh*0.6 - colW*1.5, colW*3, colW*3);
+  drawGlow(warmC, sx, yTop - oh*0.6, colW*1.5, 0.16*inten);
 }
 
 /* ---------------- PLASMAS · living wall screens of the white room ---------------- */
@@ -2074,11 +2084,7 @@ function drawPlasmaPanel(b, t){
   if (sx < -w || sx > W + w) return;
   pushHit(sx - w/2, sy - h/2, w, h, {type:'focus', beat: BEATS.indexOf(b)});
   // cyan halo
-  const hg = ctx.createRadialGradient(sx, sy, h*0.2, sx, sy, w*0.95);
-  hg.addColorStop(0, 'rgba(90,200,250,0.10)');
-  hg.addColorStop(1, 'rgba(90,200,250,0)');
-  ctx.fillStyle = hg;
-  ctx.fillRect(sx - w, sy - w, w*2, w*2);
+  drawGlow('90,200,250', sx, sy, w*0.95, 0.10);
   // panel
   ctx.fillStyle = '#0c0f14';
   ctx.beginPath(); ctx.roundRect(sx - w/2, sy - h/2, w, h, 6*SS); ctx.fill();
@@ -2168,7 +2174,7 @@ function makeBookPyramid(){
   return {c, w: c.width, h: c.height};
 }
 function drawBookPyramid(b, t){
-  const kk = k(210);
+  const kk = k(155);
   const sx = px(b.x + 400, kk);
   if (sx < -400 || sx > W + 400) return;
   const wWorld = 340;
@@ -2284,23 +2290,23 @@ function makeFgSprite(kind, seed){
   g.filter = 'blur(5px)';
   g.fillStyle = '#050403';
   if (kind === 'plant'){
-    c.width = 360; c.height = 520; g.filter = 'blur(5px)'; g.fillStyle = '#050403';
+    c.width = 760; c.height = 720; g.filter = 'blur(5px)'; g.fillStyle = '#050403';
     // pot
     g.beginPath();
-    g.moveTo(115, 380); g.lineTo(245, 380); g.lineTo(225, 505); g.lineTo(135, 505);
+    g.moveTo(315, 560); g.lineTo(445, 560); g.lineTo(425, 700); g.lineTo(335, 700);
     g.closePath(); g.fill();
-    // fan of leaves
+    // fan of leaves — well inside the canvas, no clipping
     for (let i = 0; i < 9; i++){
       const a = -Math.PI/2 + (i - 4) * 0.24 + (R()-0.5)*0.1;
-      const len = 190 + R()*120;
-      const tx = 180 + Math.cos(a)*len, ty = 385 + Math.sin(a)*len;
+      const len = 190 + R()*110;
+      const tx = 380 + Math.cos(a)*len, ty = 555 + Math.sin(a)*len;
       g.save();
       g.translate(tx, ty);
       g.rotate(a + Math.PI/2);
-      g.beginPath(); g.ellipse(0, 0, 26 + R()*12, 95 + R()*40, 0, 0, 7); g.fill();
+      g.beginPath(); g.ellipse(0, 0, 26 + R()*12, 90 + R()*36, 0, 0, 7); g.fill();
       g.restore();
       g.beginPath();
-      g.moveTo(180, 390);
+      g.moveTo(380, 565);
       g.lineTo(tx, ty);
       g.lineWidth = 10; g.strokeStyle = '#050403'; g.stroke();
     }
@@ -2332,7 +2338,7 @@ function drawForeground(){
       ctx.fillRect(sx - w, 0, w*2, H);
     } else {
       const sp = FG_SPRITES[it.kind + (it.seed % 3)];
-      const h = it.kind === 'plant' ? H*0.52 : H*1.06;
+      const h = it.kind === 'plant' ? H*0.72 : H*1.06;
       const w = h * sp.w / sp.h;
       if (sx < -w || sx > W + w) continue;
       ctx.globalAlpha = 0.93;
@@ -2342,12 +2348,21 @@ function drawForeground(){
   }
 }
 
-function drawGrade(t){
-  // vignette
-  const vg = ctx.createRadialGradient(W/2, H*0.46, H*0.35, W/2, H*0.52, H*0.95);
+let VIG = null;
+function makeVignette(){
+  VIG = document.createElement('canvas'); VIG.width = Math.max(2, W>>1); VIG.height = Math.max(2, H>>1);
+  const g = VIG.getContext('2d');
+  const vg = g.createRadialGradient(VIG.width/2, VIG.height*0.46, VIG.height*0.35, VIG.width/2, VIG.height*0.52, VIG.height*0.95);
   vg.addColorStop(0, 'rgba(0,0,0,0)');
   vg.addColorStop(1, 'rgba(4,1,0,0.62)');
-  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  g.fillStyle = vg; g.fillRect(0, 0, VIG.width, VIG.height);
+}
+function drawGrade(t){
+  if (!VIG) makeVignette();
+  const sh = segAt(cam.x).shade != null ? segAt(cam.x).shade : 1;
+  ctx.globalAlpha = 0.35 + 0.65*sh;
+  ctx.drawImage(VIG, 0, 0, W, H);
+  ctx.globalAlpha = 1;
   // film grain — settles down as time moves forward
   const g = grains[(t*10|0) % grains.length];
   ctx.globalAlpha = ambient(cam.x).grain;
@@ -2540,16 +2555,10 @@ function frame(){
   drawOutro();
   drawSheets();
 
-  // mid-ground first: people and machines live BEHIND the floating text layer
-  drawStage(t);
-  drawFigures();
-  drawProps(true);
-
-  // beat wall content
+  // wall layer: photos and panels sit deepest
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
     if (Math.abs(b.x - cam.x) > 2400) continue;
-    const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
     for (const it of b.wall){
       const sp = SPRITES[it.img]; if (!sp) continue;
       const wz = wallZAt(b.x) - 12;
@@ -2568,6 +2577,18 @@ function frame(){
       }
     }
     if (b.plasma) drawPlasmaPanel(b, t);
+  }
+
+  // mid-ground: people and machines stand in front of the wall...
+  drawStage(t);
+  drawFigures();
+  drawProps(true);
+
+  // ...and the floating text reads above everything
+  for (let i = 0; i < BEATS.length; i++){
+    const b = BEATS[i];
+    if (Math.abs(b.x - cam.x) > 2400) continue;
+    const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
     drawBeatText(b, focusAmt);
   }
 
@@ -2642,11 +2663,17 @@ function frame(){
 
 /* ---------------- MAIN LOOP ---------------- */
 const DEBUG = /debug/.test(location.search);
-let last = 0, fps = 60;
+let last = 0, fps = 60, qFrames = 0;
 function loop(ts){
   const dt = Math.min(0.05, (ts - last)/1000 || 0.016);
   last = ts;
   fps = fps*0.95 + (1/Math.max(dt,1e-3))*0.05;
+  // adaptive quality: weak hardware renders smaller, CSS upscales
+  if (++qFrames > 150){
+    qFrames = 0;
+    if (fps < 40 && RQ > 0.55){ RQ = Math.max(0.55, RQ - 0.15); resize(); }
+    else if (fps > 56 && RQ < 1){ RQ = Math.min(1, RQ + 0.15); resize(); }
+  }
   update(dt);
   frame();
   requestAnimationFrame(loop);
@@ -2665,9 +2692,9 @@ async function boot(){
   TEX.wall3 = panelTexture({w:1400, h:900, base:'#71746c', groove:470});
   TEX.bench3 = formicaTexture({w:1200, h:512, base:'#a09a8e'});
   TEX.front3 = panelTexture({w:1200, h:600, base:'#45463f', groove:240});
-  TEX.wall4 = panelTexture({w:1400, h:900, base:'#b6b9ba', groove:600});
-  TEX.bench4 = formicaTexture({w:1200, h:512, base:'#d3d5d6'});
-  TEX.front4 = panelTexture({w:1200, h:600, base:'#a3a7aa', groove:420});
+  TEX.wall4 = panelTexture({w:1400, h:900, base:'#e0e3e6', groove:600});
+  TEX.bench4 = formicaTexture({w:1200, h:512, base:'#eef0f2'});
+  TEX.front4 = panelTexture({w:1200, h:600, base:'#c8ccd0', groove:420});
   cacheWrap();
   TEX.outside = makeOutside();
   SECTIONS.old = makeSection('old');
