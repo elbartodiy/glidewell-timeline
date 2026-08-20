@@ -544,6 +544,7 @@ const state = {
   idle: 0,
   attract: { phase: 'dwell', dwell: -2.2, beatIdx: -1, fade: 0 }, // opens holding the title close-up
   focusBeat: -1,          // index of beat we are dollied into
+  focusAnchor: null,      // world x the dolly centers on (defaults to the beat)
   albumLock: {},          // per-beat album override: true=open, false=closed
   inspect: null,          // a photo lifted to the camera
   restBeat: -1, restTime: 0,
@@ -1618,7 +1619,7 @@ function drawMonitor(p, x, z, wWorld, t){
   const scale = (wWorld / mon.w) * kk * SS;
   const syFoot = py(CFG.benchY - 2, kk);
   const dx = sx - mon.w*scale/2, dy = syFoot - mon.foot*scale;
-  pushHit(dx, dy, mon.w*scale, mon.h*scale, {type:'focus', beat: BEATS.findIndex(bb => (bb.props||[]).includes(p))});
+  pushHit(dx, dy, mon.w*scale, mon.h*scale, {type:'focus', beat: BEATS.findIndex(bb => (bb.props||[]).includes(p)), anchor: x});
   ctx.drawImage(mon.c, dx, dy, mon.w*scale, mon.h*scale);
   // live screen
   const r = {x: dx + mon.screen.x*scale, y: dy + mon.screen.y*scale,
@@ -2210,7 +2211,7 @@ function drawPedestal(b, t, hero){
   const era = segIdx(b.x);
   const big = ped.big ? 1.6 : 1;
   const yTop = py(ped.big ? 470 : (ped.low ? 668 : 535), kk);
-  pushHit(sx - colW*0.7*big, yTop - 150*kk*SS*big, colW*1.4*big, H - yTop + 150*kk*SS, {type:'focus', beat: BEATS.indexOf(b)});
+  pushHit(sx - colW*0.7*big, yTop - 150*kk*SS*big, colW*1.4*big, H - yTop + 150*kk*SS, {type:'focus', beat: BEATS.indexOf(b), anchor: x});
   const warmC = era === 0 ? '255,215,140' : '225,240,255';
   // two side spotlights swing in and lock their beams exactly on the exhibit;
   // brightness peaks AT the object, then the light falls away
@@ -2289,7 +2290,7 @@ function drawPlasmaPanel(b, t){
   const sx = px(b.x + p.dx, kk), sy = py(p.cy, kk);
   const w = p.w * kk * SS, h = w * 0.58;
   if (sx < -w || sx > W + w) return;
-  pushHit(sx - w/2, sy - h/2, w, h, {type:'focus', beat: BEATS.indexOf(b)});
+  pushHit(sx - w/2, sy - h/2, w, h, {type:'focus', beat: BEATS.indexOf(b), anchor: b.x + p.dx});
   // cyan halo
   drawGlow('90,200,250', sx, sy, w*0.95, 0.10);
   // panel
@@ -2388,7 +2389,7 @@ function drawBookPyramid(b, t){
   const scale = (wWorld / BOOK_SPRITE.w) * kk * SS;
   const sy = py(CFG.benchY - 2, kk);
   pushHit(sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale, BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale,
-          {type:'focus', beat: BEATS.indexOf(b)});
+          {type:'focus', beat: BEATS.indexOf(b), anchor: b.x + b.pyr.dx});
   ctx.drawImage(BOOK_SPRITE.c, sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale,
                 BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale);
 }
@@ -2630,7 +2631,7 @@ function drawFactory(t){
   drawRobotArm(FACT_X + 250, 220, t, 2.4);
   const kk = k(190);
   pushHit(px(FACT_X - 480, kk), py(560, kk), (960)*kk*SS, py(1080,kk)-py(560,kk),
-          {type:'focus', beat: BEATS.indexOf(b)});
+          {type:'focus', beat: BEATS.indexOf(b), anchor: FACT_X});
 }
 const STAGE_X = 28150;
 let JIM_FIG = null;
@@ -2661,7 +2662,7 @@ function drawStage(t){
   ctx.fillRect(sxS - 26*kS*SS, yS - 60*kS*SS, 52*kS*SS, 60*kS*SS);
   ctx.beginPath(); ctx.ellipse(sxS, yS - 60*kS*SS, 34*kS*SS, 9*kS*SS, 0, 0, 7);
   ctx.fillStyle = '#eceff2'; ctx.fill();
-  pushHit(sxS - 40*kS*SS, yS - 120*kS*SS, 80*kS*SS, 120*kS*SS, {type:'focus', beat: BEATS.length - 1});
+  pushHit(sxS - 40*kS*SS, yS - 120*kS*SS, 80*kS*SS, 120*kS*SS, {type:'focus', beat: BEATS.length - 1, anchor: 27620});
 
   // Jim on stage — a presence, later a generated-video moment
   const kJ = k(480);
@@ -2670,7 +2671,7 @@ function drawStage(t){
   const jscale = 690 / JIM_FIG.h * kJ * SS;
   const jw = JIM_FIG.w * jscale, jhh = JIM_FIG.h * jscale;
   const jFoot = py(950, kJ);
-  pushHit(jx - jw/2, jFoot - jhh, jw, jhh, {type:'focus', beat: BEATS.length - 1});
+  pushHit(jx - jw/2, jFoot - jhh, jw, jhh, {type:'focus', beat: BEATS.length - 1, anchor: STAGE_X});
   // spotlight cone
   const cg = ctx.createLinearGradient(0, 0, 0, jFoot);
   cg.addColorStop(0, 'rgba(255,248,225,0.05)');
@@ -2880,20 +2881,22 @@ function update(dt){
         const open = (albumAnim[aimed.beat] || 0) > 0.5;
         state.albumLock[aimed.beat] = !open;
       } else if (aimed && aimed.type === 'focus'){
-        if (state.focusBeat === aimed.beat){ state.focusBeat = -1; cam.zTarget = 0; }
-        else { state.focusBeat = aimed.beat; cam.zTarget = CFG.focusCamZ; cam.vel = 0; }
+        if (state.focusBeat === aimed.beat){ state.focusBeat = -1; state.focusAnchor = null; cam.zTarget = 0; }
+        else { state.focusBeat = aimed.beat; state.focusAnchor = aimed.anchor != null ? aimed.anchor : null;
+               cam.zTarget = CFG.focusCamZ; cam.vel = 0; }
       } else {
         const nb = nearestBeat(cam.x);
-        if (state.focusBeat === nb.i){ state.focusBeat = -1; cam.zTarget = 0; }
-        else if (nb.d < 500){ state.focusBeat = nb.i; cam.zTarget = CFG.focusCamZ; cam.vel = 0; }
+        if (state.focusBeat === nb.i){ state.focusBeat = -1; state.focusAnchor = null; cam.zTarget = 0; }
+        else if (nb.d < 500){ state.focusBeat = nb.i; state.focusAnchor = null; cam.zTarget = CFG.focusCamZ; cam.vel = 0; }
       }
     }
     if (state.focusBeat >= 0){
-      if (Math.abs(inp.impulse) > 250){ state.focusBeat = -1; cam.zTarget = 0; }
+      if (Math.abs(inp.impulse) > 250){ state.focusBeat = -1; state.focusAnchor = null; cam.zTarget = 0; }
       else {
-        // glued to the beat while focused
+        // glued to what was clicked while focused
         const b = BEATS[state.focusBeat];
-        cam.x += (b.x - cam.x) * Math.min(1, dt*4);
+        const ax = state.focusAnchor != null ? state.focusAnchor : b.x;
+        cam.x += (ax - cam.x) * Math.min(1, dt*4);
         cam.vel = 0;
       }
     }
