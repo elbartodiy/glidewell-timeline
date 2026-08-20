@@ -1221,6 +1221,26 @@ function drawIntro(){
   ctx.fillStyle = 'rgba(236,210,165,0.95)';
   ctx.font = eraFont(64 * kk * SS);
   ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
+  // the apex of the welcome pyramid: a small brand mark, air above it
+  {
+    const ms = 40 * kk * SS;
+    const my = py(352, kk);
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
+    ctx.fillStyle = '#c23430';
+    ctx.beginPath(); ctx.roundRect(cx - ms/2, my - ms/2, ms, ms, 6*kk*SS); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = 'rgba(255,250,242,0.96)';
+    ctx.font = `700 ${Math.round(26*kk*SS)}px "Helvetica Neue", Arial, sans-serif`;
+    ctx.fillText('G', cx, my + 9*kk*SS);
+    ctx.font = eraFont(17 * kk * SS);
+    try { ctx.letterSpacing = `${4*kk*SS}px`; } catch(e){}
+    ctx.fillStyle = 'rgba(200,172,132,0.7)';
+    ctx.fillText('GLIDEWELL · 2026', cx, py(412, kk));
+    try { ctx.letterSpacing = '0px'; } catch(e){}
+    ctx.fillStyle = 'rgba(236,210,165,0.95)';
+  }
+  ctx.font = eraFont(64 * kk * SS);
   ctx.fillText('HOW GOOD DENTISTRY', cx, py(508, kk));
   ctx.fillText('STOPPED BEING A LUXURY', cx, py(586, kk));
   ctx.font = eraFont(24 * kk * SS);
