@@ -1221,11 +1221,13 @@ function drawIntro(){
   ctx.fillStyle = 'rgba(236,210,165,0.95)';
   ctx.font = eraFont(64 * kk * SS);
   ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
-  // the apex of the welcome pyramid: the Glidewell mark alone, up under the ceiling
-  if (IMGS.logo2026){
+  // the apex of the welcome pyramid: the Glidewell mark alone, up under the
+  // ceiling — it belongs to the close-up and dissolves away with the zoom-out
+  if (IMGS.logo2026 && state.introFade > 0.02){
     const ms = 44 * kk * SS;
     const my = py(88, kk);
     ctx.save();
+    ctx.globalAlpha = state.introFade;
     ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
     ctx.beginPath(); ctx.roundRect(cx - ms/2, my - ms/2, ms, ms, 5*kk*SS); ctx.clip();
     ctx.drawImage(IMGS.logo2026.el, cx - ms/2, my - ms/2, ms, ms);
@@ -3360,110 +3362,142 @@ function drawStudy(){
   if (S.closing && S.amt < 0.03){ state.study = null; return; }
   const e = S.amt*S.amt*(3-2*S.amt);
   const b = BEATS[S.beat];
-  const seg = segAt(b.x);
-  ctx.fillStyle = `rgba(6,7,9,${(0.95*e).toFixed(3)})`;
+  const era = segIdx(b.x);
+  /* each era reads its file in its own window: yellowed typewritten paper,
+     office memo stock, a system window from the nineties, frosted glass */
+  const SKINS = [
+    {bg:'rgba(236,224,192,0.97)', edge:'rgba(120,96,58,0.55)', r:3,
+     ink:'58,42,24', dim:'96,74,44', accent:'150,40,34', rule:'rgba(120,96,58,0.4)',
+     font:(s,st)=>`${st||''} ${Math.round(s*0.94)}px "American Typewriter","Courier New",monospace`.trim()},
+    {bg:'rgba(238,238,230,0.97)', edge:'rgba(96,102,96,0.5)', r:3,
+     ink:'46,52,50', dim:'96,104,100', accent:'160,52,40', rule:'rgba(96,102,96,0.35)',
+     font:(s,st)=>`${st||''} ${Math.round(s*0.94)}px "American Typewriter","Courier New",monospace`.trim()},
+    {bg:'rgba(214,217,221,0.96)', edge:'rgba(58,64,72,0.6)', r:5,
+     ink:'32,36,42', dim:'92,100,110', accent:'26,96,160', rule:'rgba(58,64,72,0.3)',
+     font:(s,st)=>`${st||''} ${Math.round(s)}px Verdana, Tahoma, sans-serif`.trim()},
+    {bg:'rgba(250,252,255,0.16)', edge:'rgba(255,255,255,0.4)', r:22, glass:true,
+     ink:'240,244,248', dim:'196,204,212', accent:'140,205,250', rule:'rgba(255,255,255,0.25)',
+     font:(s,st)=>`${st||''} ${Math.round(s)}px "Avenir Next","Helvetica Neue",Arial,sans-serif`.trim()},
+  ];
+  const K = SKINS[era];
+  // the hall dims but stays present behind the window — the space breathes
+  ctx.fillStyle = `rgba(4,5,7,${(0.55*e).toFixed(3)})`;
   ctx.fillRect(0, 0, W, H);
   if (e < 0.35) return;
   const a = (e - 0.35) / 0.65;
-  const colW = Math.min(W * 0.72, 1250 * SS);
+  const colW = Math.min(W * 0.62, 1100 * SS);
   const left = W/2 - colW/2;
-  let y = H * 0.16 - S.scroll * SS + (1 - a) * 40 * SS;
+  const padX = 76 * SS;
+  const wx0 = left - padX, ww = colW + padX*2;
+  const wy0 = H * 0.075 + (1 - a) * 36 * SS, wh = H * 0.85;
   ctx.save();
   ctx.globalAlpha = a;
+  // the window itself: shadow, body, visible border
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 42*SS; ctx.shadowOffsetY = 14*SS;
+  ctx.fillStyle = K.bg;
+  ctx.beginPath(); ctx.roundRect(wx0, wy0, ww, wh, K.r*SS); ctx.fill();
+  ctx.restore();
+  if (K.glass){
+    // frosted: a second veil and a hairline highlight along the top
+    ctx.fillStyle = 'rgba(230,238,246,0.10)';
+    ctx.beginPath(); ctx.roundRect(wx0, wy0, ww, wh, K.r*SS); ctx.fill();
+    const gg = ctx.createLinearGradient(0, wy0, 0, wy0 + 120*SS);
+    gg.addColorStop(0, 'rgba(255,255,255,0.16)'); gg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gg;
+    ctx.beginPath(); ctx.roundRect(wx0, wy0, ww, 120*SS, K.r*SS); ctx.fill();
+  }
+  ctx.strokeStyle = K.edge; ctx.lineWidth = (K.glass ? 1.4 : 2) * SS;
+  ctx.beginPath(); ctx.roundRect(wx0 + SS, wy0 + SS, ww - 2*SS, wh - 2*SS, K.r*SS); ctx.stroke();
+  if (era === 2){
+    // the nineties window keeps its title bar
+    ctx.fillStyle = 'rgba(52,74,112,0.9)';
+    ctx.beginPath(); ctx.roundRect(wx0 + 3*SS, wy0 + 3*SS, ww - 6*SS, 40*SS, 3*SS); ctx.fill();
+    ctx.fillStyle = 'rgba(235,240,246,0.95)';
+    ctx.font = K.font(19);
+    ctx.textAlign = 'left';
+    ctx.fillText(b.y + ' — ' + b.t + '.txt', wx0 + 20*SS, wy0 + 30*SS);
+  }
+  // content clips inside the window
+  ctx.beginPath(); ctx.roundRect(wx0 + 2*SS, wy0 + (era === 2 ? 46*SS : 2*SS), ww - 4*SS, wh - (era === 2 ? 50*SS : 4*SS), K.r*SS); ctx.clip();
+  let y = wy0 + (era === 2 ? 168 : 130) * SS - S.scroll * SS;
+  const topClip = wy0 - 80*SS, botClip = wy0 + wh + 80*SS;
   ctx.textAlign = 'left';
-  ctx.font = eraFont(170 * SS, '', seg.font);
-  ctx.fillStyle = 'rgba(238,240,244,0.98)';
-  ctx.fillText(b.y, left, y); y += 64 * SS;
-  ctx.font = eraFont(44 * SS, '', seg.font);
-  try { ctx.letterSpacing = `${8*SS}px`; } catch(err){}
-  ctx.fillStyle = 'rgba(225,228,233,0.95)';
+  ctx.font = K.font(130);
+  ctx.fillStyle = `rgba(${K.ink},0.98)`;
+  ctx.fillText(b.y, left, y); y += 58 * SS;
+  ctx.font = K.font(38);
+  try { ctx.letterSpacing = `${7*SS}px`; } catch(err){}
+  ctx.fillStyle = `rgba(${K.ink},0.92)`;
   ctx.fillText(b.t, left, y);
   try { ctx.letterSpacing = '0px'; } catch(err){}
-  y += 58 * SS;
+  y += 54 * SS;
   if (b.th){
-    ctx.font = eraFont(30 * SS, 'italic', seg.font);
-    ctx.fillStyle = 'rgba(200,205,212,0.9)';
-    ctx.fillText(b.th, left, y); y += 52 * SS;
+    ctx.font = K.font(27, 'italic');
+    ctx.fillStyle = `rgba(${K.dim},0.95)`;
+    ctx.fillText(b.th, left, y); y += 48 * SS;
   }
-  ctx.fillStyle = 'rgba(255,255,255,0.18)';
-  ctx.fillRect(left, y, colW, 1.5*SS); y += 44 * SS;
-  ctx.font = eraFont(29 * SS, '', seg.font);
-  ctx.fillStyle = 'rgba(212,216,222,0.95)';
+  ctx.fillStyle = K.rule;
+  ctx.fillRect(left, y, colW, 1.5*SS); y += 42 * SS;
+  ctx.font = K.font(27);
+  ctx.fillStyle = `rgba(${K.ink},0.95)`;
   let line = '';
   for (const wd of b.d.split(' ')){
     const test = line ? line + ' ' + wd : wd;
-    if (ctx.measureText(test).width > colW && line){ ctx.fillText(line, left, y); y += 42*SS; line = wd; }
+    if (ctx.measureText(test).width > colW && line){ ctx.fillText(line, left, y); y += 40*SS; line = wd; }
     else line = test;
   }
-  if (line){ ctx.fillText(line, left, y); y += 42*SS; }
-  y += 40 * SS;
-  // the long read: facts gathered from the documentary timeline
+  if (line){ ctx.fillText(line, left, y); y += 40*SS; }
+  y += 36 * SS;
   const more = STUDY_MORE[b.x];
   if (more){
-    ctx.font = eraFont(26 * SS, '', seg.font);
-    ctx.fillStyle = 'rgba(196,201,208,0.92)';
+    ctx.font = K.font(24);
+    ctx.fillStyle = `rgba(${K.ink},0.85)`;
     for (const para of more.split('\n\n')){
       for (const rawLine of para.split('\n')){
         let ln = '';
         for (const wd of rawLine.split(' ')){
           const test = ln ? ln + ' ' + wd : wd;
-          if (ctx.measureText(test).width > colW && ln){ if (y > -60 && y < H + 60) ctx.fillText(ln, left, y); y += 38*SS; ln = wd; }
+          if (ctx.measureText(test).width > colW && ln){ if (y > topClip && y < botClip) ctx.fillText(ln, left, y); y += 36*SS; ln = wd; }
           else ln = test;
         }
-        if (ln){ if (y > -60 && y < H + 60) ctx.fillText(ln, left, y); y += 38*SS; }
+        if (ln){ if (y > topClip && y < botClip) ctx.fillText(ln, left, y); y += 36*SS; }
       }
-      y += 26 * SS;
+      y += 24 * SS;
     }
     y += 10 * SS;
   }
-  // people of this beat — tap a name to meet them
   const ppl = BEAT_PEOPLE[b.x];
   if (ppl && ppl.length){
-    ctx.fillStyle = 'rgba(255,255,255,0.18)';
-    ctx.fillRect(left, y, colW, 1.5*SS); y += 40 * SS;
-    ctx.font = eraFont(21 * SS, '', seg.font);
-    ctx.fillStyle = 'rgba(170,176,184,0.7)';
-    ctx.fillText('PEOPLE OF THIS MOMENT', left, y); y += 44 * SS;
+    ctx.fillStyle = K.rule;
+    ctx.fillRect(left, y, colW, 1.5*SS); y += 38 * SS;
+    ctx.font = K.font(19);
+    ctx.fillStyle = `rgba(${K.dim},0.9)`;
+    ctx.fillText('PEOPLE OF THIS MOMENT', left, y); y += 42 * SS;
     let px_ = left;
-    ctx.font = eraFont(26 * SS, '', seg.font);
+    ctx.font = K.font(24);
     for (const pid of ppl){
       const P = PEOPLE[pid]; if (!P) continue;
-      const label = P.name + '  \u2192';
-      const wLbl = ctx.measureText(label).width + 44*SS;
-      if (px_ + wLbl > left + colW){ px_ = left; y += 62*SS; }
-      ctx.fillStyle = 'rgba(120,190,240,0.14)';
-      ctx.beginPath(); ctx.roundRect(px_, y - 30*SS, wLbl, 46*SS, 23*SS); ctx.fill();
-      ctx.fillStyle = 'rgba(150,210,250,0.95)';
-      ctx.fillText(label, px_ + 22*SS, y + 2*SS);
-      pushHit(px_, y - 30*SS, wLbl, 46*SS, {type:'person', id: pid});
-      px_ += wLbl + 18*SS;
+      const label = P.name + '  →';
+      const wLbl = ctx.measureText(label).width + 40*SS;
+      if (px_ + wLbl > left + colW){ px_ = left; y += 58*SS; }
+      ctx.fillStyle = `rgba(${K.accent},0.16)`;
+      ctx.beginPath(); ctx.roundRect(px_, y - 28*SS, wLbl, 44*SS, 22*SS); ctx.fill();
+      ctx.strokeStyle = `rgba(${K.accent},0.5)`; ctx.lineWidth = 1.2*SS;
+      ctx.beginPath(); ctx.roundRect(px_, y - 28*SS, wLbl, 44*SS, 22*SS); ctx.stroke();
+      ctx.fillStyle = `rgba(${K.accent},0.98)`;
+      ctx.fillText(label, px_ + 20*SS, y + 2*SS);
+      pushHit(px_, y - 28*SS, wLbl, 44*SS, {type:'person', id: pid});
+      px_ += wLbl + 16*SS;
     }
-    y += 56 * SS;
+    y += 52 * SS;
   }
-  for (const im of S.imgs){
-    const iw = Math.min(colW, 900 * SS);
-    let dw, dh, draw;
-    if (im.sp){ dw = iw; dh = iw * im.sp.h / im.sp.w; const yy = y;
-                draw = () => ctx.drawImage(im.sp.c, left, yy, dw, dh); }
-    else { dw = Math.min(iw, im.raw.w * 1.4 * SS); dh = dw * im.raw.h / im.raw.w; const yy = y;
-           draw = () => { ctx.fillStyle = '#eee9dc'; ctx.fillRect(left - 8*SS, yy - 8*SS, dw + 16*SS, dh + 16*SS);
-                          ctx.drawImage(im.raw.el, left, yy, dw, dh); }; }
-    if (y + dh > 0 && y < H) draw();
-    y += dh + 16 * SS;
-    if (im.cap){
-      ctx.font = eraFont(22 * SS, '', seg.font);
-      ctx.fillStyle = 'rgba(190,195,202,0.8)';
-      ctx.fillText(im.cap, left, y + 8*SS);
-      y += 34 * SS;
-    }
-    y += 30 * SS;
-  }
-  ctx.font = eraFont(20 * SS, '', seg.font);
+  ctx.font = K.font(18);
   ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(170,176,184,0.55)';
-  ctx.fillText('· scroll to explore · tap to return ·', W/2, y + 30*SS);
+  ctx.fillStyle = `rgba(${K.dim},0.7)`;
+  ctx.fillText('· scroll to explore · tap to return ·', W/2, y + 28*SS);
   ctx.restore();
-  S.maxScroll = Math.max(1, (y + 140*SS + S.scroll * SS - H) / SS);
+  S.maxScroll = Math.max(1, (y + 170*SS + S.scroll * SS - (wy0 + wh)) / SS);
 }
 
 function drawAttractHint(t){
