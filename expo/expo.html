@@ -2003,22 +2003,30 @@ function drawPedestal(b, t, hero){
   const yTop = py(ped.big ? 470 : 535, kk);
   pushHit(sx - colW*0.7*big, yTop - 150*kk*SS*big, colW*1.4*big, H - yTop + 150*kk*SS, {type:'focus', beat: BEATS.indexOf(b)});
   const warmC = era === 0 ? '255,215,140' : '225,240,255';
-  // the spotlight swivels from the side toward vertical as the visitor arrives
+  // two side spotlights: they hang straight down, then swing their beams
+  // onto the exhibit as it reaches the center — and let it go as it leaves
   if (hero > 0.02){
-    const tilt = Math.max(-1, Math.min(1, (cam.x - x) / 620));
-    const topShift = -tilt * colW * 1.3;
     const yEnd = yTop + (H - yTop) * 0.55;
-    const beam = ctx.createLinearGradient(0, 0, 0, yEnd);
-    beam.addColorStop(0, `rgba(${warmC},${(0.05*hero).toFixed(3)})`);
-    beam.addColorStop(Math.max(0.01, (yTop/yEnd) * 0.82), `rgba(${warmC},${(0.20*hero).toFixed(3)})`);
-    beam.addColorStop(1, `rgba(${warmC},0)`);
-    ctx.fillStyle = beam;
-    ctx.beginPath();
-    ctx.moveTo(sx + topShift - colW*0.5, 0);
-    ctx.lineTo(sx + topShift + colW*0.5, 0);
-    ctx.lineTo(sx + colW*1.3, yEnd);
-    ctx.lineTo(sx - colW*1.3, yEnd);
-    ctx.closePath(); ctx.fill();
+    for (const s of [-1, 1]){
+      const fx = sx + s * colW * 3.0;                    // the fixture, up top
+      const aimX = fx + (sx - fx) * hero;                // beam foot: down -> the exhibit
+      const beam = ctx.createLinearGradient(0, 0, 0, yEnd);
+      beam.addColorStop(0, `rgba(${warmC},${(0.04*hero).toFixed(3)})`);
+      beam.addColorStop(Math.max(0.01, (yTop/yEnd) * 0.82), `rgba(${warmC},${(0.16*hero).toFixed(3)})`);
+      beam.addColorStop(1, `rgba(${warmC},0)`);
+      ctx.fillStyle = beam;
+      ctx.beginPath();
+      ctx.moveTo(fx - colW*0.22, 0);
+      ctx.lineTo(fx + colW*0.22, 0);
+      ctx.lineTo(aimX + colW*0.75, yEnd);
+      ctx.lineTo(aimX - colW*0.75, yEnd);
+      ctx.closePath(); ctx.fill();
+      // the fixture itself
+      ctx.fillStyle = 'rgba(20,20,22,0.9)';
+      ctx.fillRect(fx - 9*SS, 0, 18*SS, 12*SS);
+      ctx.fillStyle = `rgba(${warmC},${(0.75*hero).toFixed(2)})`;
+      ctx.fillRect(fx - 5*SS, 10*SS, 10*SS, 4*SS);
+    }
   }
   // column
   const cg = ctx.createLinearGradient(sx - colW/2, 0, sx + colW/2, 0);
