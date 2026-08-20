@@ -201,7 +201,7 @@ const BEATS = [
   {x:23340, y:'2017–19', t:'GLIDEWELL.IO',
    th:'Future: the lab moves into the chair.',
    d:'In-office: fastdesign / fastmill / BruxZir NOW — single-visit crowns.',
-   wall:[{img:'fastmill', w:400, dx:440, cy:380, rot:-0.6}],
+   wall:[],
    table:[],
    ped:{obj:'millSt', dx:-430}},
 
@@ -229,7 +229,7 @@ const BEATS = [
   {x:26510, y:'EARLY 20s', t:'AI · SCALE', tier:1,
    th:'The flywheel: cheaper to make → wider access → reinvest.',
    d:'CrownAI / MarginAI; ~500K units a month, 5,000+ staff — the largest dental lab in the world.',
-   wall:[{img:'todayai', w:430, dx:-460, cy:380, rot:-0.5, style:'white'}],
+   wall:[],
    table:[],
    plasma:{dx:430, cy:370, w:420, mode:'count'}},
 
@@ -268,7 +268,7 @@ const SEGMENTS = [
    light:{pool:'218,232,252', poolR:900, poolA:0.17},
    tube:{line:'238,246,255', glow:'216,230,250'},
    bgc:[11,12,14], grain:0.028, wInsetL:480, bInsetL:540},
-  {x0:SEAM_3, x1:WORLD_END+900, z0:980, z1:1180, wall:'wall4', bench:'bench4', front:'front4',
+  {x0:SEAM_3, x1:WORLD_END+900, z0:1150, z1:1420, wall:'wall4', bench:'bench4', front:'front4',
    font:'"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'55,64,76', lamp:'tube', dust:false,
    rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
@@ -557,8 +557,9 @@ function nearestBeat(x){
 }
 
 /* the long bench is really a row of separate tables */
-const BENCH_BREAKS = [1980, 3830, 7350, 9250, 13100, 17900, 21600, 23800, 26050]
+const BENCH_BREAKS = [1980, 3830, 7350, 9250, 13100, 17900, 21600, 26050]
   .map(x => ({x, half: 65}));
+BENCH_BREAKS.push({x: 24190, half: 560});   // the BruxZir Factory line replaces the table
 let TABLES = [];
 function initTables(){
   // every pedestal claims a wide gap of its own, centered on it
@@ -754,6 +755,7 @@ function drawBench(){
   for (const b of BEATS){
     const bx = px(b.x, kf);
     if (bx > -100 && bx < W + 100){
+      if (!TABLES.some(tb => b.x >= tb.x0 && b.x <= tb.x1)) continue;  // no table — no etched year
       const seg = segAt(b.x);
       ctx.font = `${Math.round(26*SS)}px ${seg.font}`;
       ctx.fillStyle = seg.railInk;
@@ -1213,19 +1215,14 @@ function drawDoorway(){
         ctx.fillRect(side > 0 ? sxw - 340*kw*SS : sxw + secW - 340*kw*SS*0, 0, 340*kw*SS, yBase);
       }
     } else if (seam.kind === 'light'){
-      // the gate into the white room: one luminous column on the threshold
-      const halfC = 230 * kk * SS, core = 100 * kk * SS;
-      if (cxSeam < -halfC - W || cxSeam > W + halfC + W) continue;
-      const g = ctx.createLinearGradient(cxSeam - halfC, 0, cxSeam + halfC, 0);
-      g.addColorStop(0, 'rgba(238,246,255,0)');
-      g.addColorStop(0.5 - core/(2*halfC), 'rgba(244,250,255,0.96)');
-      g.addColorStop(0.5 + core/(2*halfC), 'rgba(244,250,255,0.96)');
-      g.addColorStop(1, 'rgba(238,246,255,0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(cxSeam - halfC, 0, halfC*2, H);
-      ctx.fillStyle = `rgba(${seam.ahead},0.55)`;
-      ctx.fillRect(cxSeam - core - 3*SS, 0, 3*SS, H);
-      ctx.fillRect(cxSeam + core, 0, 3*SS, H);
+      // crossing into the white era is pure light: a soft veil, no geometry
+      const d = Math.abs(cam.x + BR - seam.x);
+      const v = Math.max(0, 1 - d/420);
+      if (v > 0.01){
+        const e = v*v*(3-2*v);
+        ctx.fillStyle = `rgba(244,250,255,${(0.85*e).toFixed(3)})`;
+        ctx.fillRect(0, 0, W, H);
+      }
     } else {
       // a single column on the threshold — one pillar, light passing on both sides
       const halfC = 210 * kk * SS, core = 92 * kk * SS;
@@ -1728,16 +1725,19 @@ function initDecor(){
     for (let i = 0; i < 4; i++)
       FIGURES.push({x: 15020 + i*100 + r*40, z: 700 + r*85, h: 330,
                     sprite: makeFigure(40 + r*10 + i, true), seated: true});
-  FIGURES.push({x: 16150, z: 540, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
+  FIGURES.push({x: 16650, z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
+  // mills receding behind the factory line
+  PROPS.push({x: FACT_X - 120, z: 620, kind: 'mill', w: 470, mid: true});
+  PROPS.push({x: FACT_X + 330, z: 700, kind: 'mill', w: 440, mid: true});
   // guiding leaders — a trio in the depth
   for (let i = 0; i < 3; i++)
     FIGURES.push({x: 25150 + i*115, z: 720 + i*30, h: 660, sprite: makeFigure(80 + i)});
   // the symposium audience at the finale, facing the stage
   for (let i = 0; i < 5; i++)
     FIGURES.push({x: 28060 + i*175 + (i%2)*40, z: 310 + (i%3)*70, h: 630 + (i%3)*30, sprite: makeFigure(60 + i)});
-  // our time is crowded: people of today between AI·SCALE and 2026
+  // our time is crowded: people of today around the AI beat, clear of the sculpture
   for (let i = 0; i < 6; i++)
-    FIGURES.push({x: 26680 + i*145 + (i%2)*35, z: 480 + (i*97)%260, h: 600 + (i%4)*35,
+    FIGURES.push({x: 25900 + i*115 + (i%2)*30, z: 500 + (i*97)%240, h: 600 + (i%4)*35,
                   sprite: makeFigure(110 + i)});
   JIM_FIG = makeFigure(99);
   BOOK_SPRITE = makeBookPyramid();
@@ -2217,6 +2217,170 @@ function drawYawedTable(cx, cz, yawDeg, wW, dW, topY, hW, tone){
   ctx.stroke();
   return {c1, c2, c3, c4, P};
 }
+/* hanging product banners of the white era — retail-scale signage */
+let BANNERS = [];
+function makeBanner(title, sub, cta, imgName){
+  const c = document.createElement('canvas'); c.width = 1040; c.height = 560;
+  const g = c.getContext('2d');
+  g.save();
+  g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 22; g.shadowOffsetY = 10;
+  const bg = g.createLinearGradient(0, 0, 0, 560);
+  bg.addColorStop(0, '#fdfefe'); bg.addColorStop(1, '#e8edf0');
+  g.fillStyle = bg;
+  g.fillRect(14, 14, 1012, 532);
+  g.restore();
+  g.strokeStyle = 'rgba(90,200,250,0.65)'; g.lineWidth = 3;
+  g.strokeRect(14, 14, 1012, 532);
+  const hasImg = imgName && IMGS[imgName];
+  const textW = hasImg ? 560 : 960;
+  if (hasImg){
+    const im = IMGS[imgName];
+    const dw = 400, dh = 480;
+    const s = Math.max(dw/im.w, dh/im.h);
+    g.save();
+    g.beginPath(); g.roundRect(596, 40, dw, dh, 10); g.clip();
+    g.drawImage(im.el, 596 + dw/2 - im.w*s/2, 40 + dh/2 - im.h*s/2, im.w*s, im.h*s);
+    g.restore();
+    g.strokeStyle = 'rgba(0,0,0,0.15)'; g.lineWidth = 1.5;
+    g.strokeRect(596, 40, dw, dh);
+  }
+  // brand mark
+  g.fillStyle = '#d0342c'; g.fillRect(48, 48, 44, 44);
+  g.fillStyle = '#fff';
+  g.font = '700 30px "Helvetica Neue", Arial, sans-serif';
+  g.textAlign = 'center'; g.fillText('G', 70, 80);
+  g.textAlign = 'left';
+  g.fillStyle = '#4a5058';
+  g.font = '600 26px "Helvetica Neue", Arial, sans-serif';
+  g.fillText('Glidewell', 106, 78);
+  // title, up to two lines
+  g.fillStyle = '#23282e';
+  g.font = '800 84px "Helvetica Neue", Arial, sans-serif';
+  const lines = title.split('\n');
+  lines.forEach((ln, i) => g.fillText(ln, 48, 210 + i*92));
+  // sub
+  g.fillStyle = '#5a616a';
+  g.font = '400 33px "Helvetica Neue", Arial, sans-serif';
+  g.fillText(sub, 48, 240 + lines.length*92);
+  // cta chip
+  g.fillStyle = '#12b7e2';
+  g.beginPath(); g.roundRect(48, 448, 24 + cta.length*17, 62, 31); g.fill();
+  g.fillStyle = '#ffffff';
+  g.font = '700 30px "Helvetica Neue", Arial, sans-serif';
+  g.fillText(cta, 66, 489);
+  return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
+}
+function initBanners(){
+  BANNERS = [
+    {x: 20780, w: 640, sp: makeBanner('BRUXZIR®', 'The best dentistry — made affordable', 'THE #1 CROWN')},
+    {x: 22150, w: 560, sp: makeBanner('GLIDEWELL HT™', 'Premium implant, a fraction of the price', 'PREMIUM · AFFORDABLE')},
+    {x: 23790, w: 660, sp: makeBanner('GLIDEWELL.IO', 'The lab moves into your office', 'SINGLE-VISIT CROWNS', 'fastmill')},
+    {x: 26060, w: 660, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
+  ];
+}
+function drawBanners(t){
+  for (const bn of BANNERS){
+    if (Math.abs(bn.x - cam.x) > 2400) continue;
+    const kk = k(680);
+    const sx = px(bn.x, kk);
+    if (sx < -700 || sx > W + 700) continue;
+    const h = bn.w * bn.sp.h / bn.sp.w;
+    const cy = 430 + 8*Math.sin(t*0.5 + bn.x);         // a breath of suspension
+    const sw = bn.w * kk * SS, shh = h * kk * SS;
+    const syC = py(cy, kk);
+    // cables
+    ctx.strokeStyle = 'rgba(120,128,136,0.6)'; ctx.lineWidth = 1.6*SS;
+    for (const s of [-0.38, 0.38]){
+      ctx.beginPath(); ctx.moveTo(sx + sw*s, 0); ctx.lineTo(sx + sw*s, syC - shh/2); ctx.stroke();
+    }
+    pushHit(sx - sw/2, syC - shh/2, sw, shh,
+            {type:'photo', sp: bn.sp, wx: bn.x, cy, z: 680, w: bn.w, beat: nearestBeat(bn.x).i});
+    ctx.drawImage(bn.sp.c, sx - sw/2, syC - shh/2, sw, shh);
+  }
+}
+
+/* BruxZir Factory: collaborative arms pick shade blocks and feed the mills */
+const FACT_X = 24190;
+function drawRobotArm(bx, bz, t, phase){
+  const kk = k(bz);
+  const X = wx => px(wx, kk), Y = wy => py(wy, kk);
+  const sx = X(bx);
+  if (sx < -400 || sx > W + 400) return;
+  // plinth
+  ctx.fillStyle = '#c9cdd1';
+  ctx.fillRect(X(bx-70), Y(950), (140)*kk*SS, Y(1080)-Y(950));
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.fillRect(X(bx-70), Y(1062), 140*kk*SS, Y(1080)-Y(1062));
+  // animated joints (a slow pick -> place cycle)
+  const w = t*0.9 + phase;
+  const a1 = -0.35 + 0.62*Math.sin(w);                 // shoulder, from vertical
+  const a2 = 0.95 + 0.55*Math.sin(w + 1.1);            // elbow, relative
+  const L1 = 300, L2 = 250;
+  const sxw = bx, syw = 930;
+  const e1x = sxw + Math.sin(a1)*L1, e1y = syw - Math.cos(a1)*L1;
+  const a12 = a1 + a2 - 1.3;
+  const e2x = e1x + Math.sin(a12)*L2, e2y = e1y - Math.cos(a12)*L2;
+  const seg = (x0,y0,x1,y1,wd,col) => {
+    ctx.strokeStyle = col; ctx.lineWidth = wd*kk*SS; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(X(x0), Y(y0)); ctx.lineTo(X(x1), Y(y1)); ctx.stroke();
+  };
+  seg(sxw, syw, e1x, e1y, 58, '#33373c');              // dark inner shadow pass
+  seg(sxw, syw, e1x, e1y, 46, '#e3e6e9');
+  seg(e1x, e1y, e2x, e2y, 48, '#33373c');
+  seg(e1x, e1y, e2x, e2y, 38, '#dfe2e5');
+  // joints with the collaborative-blue caps
+  for (const [jx, jy, r] of [[sxw, syw, 42], [e1x, e1y, 36], [e2x, e2y, 26]]){
+    ctx.fillStyle = '#2c3036';
+    ctx.beginPath(); ctx.arc(X(jx), Y(jy), r*kk*SS, 0, 7); ctx.fill();
+    ctx.fillStyle = '#4a90d9';
+    ctx.beginPath(); ctx.arc(X(jx), Y(jy), r*0.45*kk*SS, 0, 7); ctx.fill();
+  }
+  // the zirconia block in the gripper, when the arm is carrying
+  const carry = Math.max(0, Math.sin(w + 0.5));
+  if (carry > 0.25){
+    ctx.globalAlpha = Math.min(1, (carry-0.25)*3);
+    ctx.fillStyle = '#f0f2ef';
+    ctx.fillRect(X(e2x) - 16*kk*SS, Y(e2y) + 10*kk*SS, 32*kk*SS, 24*kk*SS);
+    ctx.globalAlpha = 1;
+  }
+}
+function drawFactory(t){
+  if (Math.abs(cam.x - FACT_X) > 2500) return;
+  const b = BEATS.find(bb => bb.t === 'BRUXZIR FACTORY');
+  // shade dispenser tower, left
+  const kd = k(210);
+  const dx0 = px(FACT_X - 470, kd);
+  if (dx0 > -300 && dx0 < W + 300){
+    ctx.fillStyle = '#d5d8db';
+    ctx.fillRect(dx0 - 60*kd*SS, py(700, kd), 120*kd*SS, py(1080,kd)-py(700,kd));
+    for (let i = 0; i < 6; i++){
+      ctx.fillStyle = `hsl(${38 + i*3} ${28 + i*6}% ${86 - i*5}%)`;
+      ctx.fillRect(dx0 - 40*kd*SS, py(730 + i*52, kd), 80*kd*SS, 34*kd*SS);
+    }
+  }
+  // conveyor with finished crowns drifting off to the right
+  const kc = k(150);
+  const cy0 = py(1005, kc);
+  const c0 = px(FACT_X - 380, kc), c1 = px(FACT_X + 520, kc);
+  ctx.fillStyle = '#3a3e43';
+  ctx.fillRect(c0, cy0, c1 - c0, 26*kc*SS);
+  ctx.fillStyle = '#23262a';
+  ctx.fillRect(c0, cy0 + 26*kc*SS, c1 - c0, 10*kc*SS);
+  for (let i = 0; i < 7; i++){
+    const wxc = FACT_X - 360 + ((i*130 + t*60) % 860);
+    const sxc = px(wxc, kc);
+    if (sxc > c0 && sxc < c1){
+      ctx.fillStyle = '#eef0ed';
+      ctx.beginPath(); ctx.arc(sxc, cy0 - 8*kc*SS, 10*kc*SS, Math.PI, 0); ctx.fill();
+    }
+  }
+  // two arms working out of phase
+  drawRobotArm(FACT_X - 140, 190, t, 0);
+  drawRobotArm(FACT_X + 250, 220, t, 2.4);
+  const kk = k(190);
+  pushHit(px(FACT_X - 480, kk), py(560, kk), (960)*kk*SS, py(1080,kk)-py(560,kk),
+          {type:'focus', beat: BEATS.indexOf(b)});
+}
 const STAGE_X = 28150;
 let JIM_FIG = null;
 function drawStage(t){
@@ -2279,9 +2443,8 @@ function drawStage(t){
 
 /* foreground occluders — soft dark shapes passing close to camera:
    mostly potted plants and people, the odd structural post */
-const FG_ITEMS = [800, 1950, 2950, 3950, 4900, 7300, 8250, 9250, 10000, 10650,
-                  12730, 13330, 13950, 16150, 16900, 17450, 18700, 19700, 21450,
-                  22950, 24500, 26100, 27050]
+const FG_ITEMS = [1000, 3080, 4650, 5800, 7350, 8300, 9350, 10050, 10700,
+                  12750, 13350, 13980, 15300, 17000, 18020, 21500, 26150]
   .map((x, i) => ({x, kind: ['plant','person','plant','person','post'][i % 5], seed: i}));
 const FG_SPRITES = {};
 function makeFgSprite(kind, seed){
@@ -2578,6 +2741,7 @@ function frame(){
     }
     if (b.plasma) drawPlasmaPanel(b, t);
   }
+  drawBanners(t);
 
   // mid-ground: people and machines stand in front of the wall...
   drawStage(t);
@@ -2595,6 +2759,7 @@ function frame(){
   drawBench();
 
   // table items
+  drawFactory(t);
   drawProps(false);
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
@@ -2628,8 +2793,10 @@ function frame(){
   let hero = 0;
   for (const b of BEATS){
     if (!b.ped) continue;
-    const d = Math.abs(b.x + (b.ped.dx || -300) - cam.x);
-    const h = Math.max(0, 1 - d/520);
+    const pedX = b.x + (b.ped.dx || -430);
+    const focusX = pedX + (b.x - pedX) * 0.35;   // sweet spot between stand and beat
+    const d = Math.abs(focusX - cam.x);
+    const h = Math.max(0, 1 - d/680);
     hero = Math.max(hero, h*h*(3-2*h));
   }
   if (hero > 0.01){
@@ -2736,6 +2903,7 @@ async function boot(){
       it.cy = 360 + h/2;
     }
   }
+  initBanners();
   initTables();
   initDust();
   initDecor();
