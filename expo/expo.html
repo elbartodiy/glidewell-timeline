@@ -53,7 +53,7 @@ const BEATS = [
    d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
    wall:[{img:'jim1970', w:420, dx:440, cy:400, hero:true}],
    table:[],
-   album:{dx:390, lz:160, w:300, title:'THE FAMILY ALBUM',
+   album:{dx:320, lz:160, w:300, title:'THE FAMILY ALBUM',
           photos:[['father42','jim15'],['jim18','jim1970']]},
    ped:{obj:'logo1970', dx:-430}},
 
@@ -62,7 +62,7 @@ const BEATS = [
    d:'Cast metal hand-layered with porcelain — the hand-craft world Jim will spend his life automating.',
    wall:[],
    table:[], st:[{img:'wax', w:280, dx:330, lz:150}],
-   album:{dx:-340, lz:160, w:310, title:'THE PFM CRAFT',
+   album:{dx:-160, lz:160, w:310, title:'THE PFM CRAFT',
           photos:[['porc','artic'],['dietrim','wax']]}},
 
   {x:4400, y:'1973', t:'SECOND LAB',
@@ -79,11 +79,11 @@ const BEATS = [
    table:[]},
 
   /* ---- ERA 2 · the mail-order workshop, 1979–1989 ---- */
-  {x:6900, y:'1979', t:'NINE LABS',
+  {x:6900, y:'1979', t:'NINE LABS', ink:'64,54,40',
    th:'Scattered scale — powerful, but not yet one machine.',
    d:'Jim owns and runs nine labs across Southern California.',
    wall:[], table:[],
-   ped:{obj:'logoG', dx:0}},
+   ped:{obj:'logoG', dx:0, low:true}},
 
   {x:7750, y:'1980', t:'STUDY PROGRAM',
    th:'Education as a bond — long before it was a marketing channel.',
@@ -103,7 +103,7 @@ const BEATS = [
    th:'Glidewell didn’t start digital — its bet isn’t “first,” it’s “for everyone.”',
    d:'First chairside CAD/CAM (Mörmann & Brandestini). Digital cracks the analog monopoly.',
    wall:[], table:[],
-   props:[{kind:'crt', dx:-370, lz:150, w:290, col:'amber'}]},
+   props:[{kind:'crt', dx:-160, lz:150, w:290, col:'amber'}]},
 
   {x:10280, y:'1988', t:'BIOTEMPS',
    th:'A second product proves the lab can build categories, not just crowns.',
@@ -569,7 +569,7 @@ let TABLES = [];
 function initTables(){
   // every pedestal claims a wide gap of its own, centered on it
   for (const b of BEATS)
-    if (b.ped) BENCH_BREAKS.push({x: b.x + (b.ped.dx || -430), half: 330});
+    if (b.ped) BENCH_BREAKS.push({x: b.x + (b.ped.dx ?? -430), half: 330});
   // small breaks inside a pedestal zone would skew its centering — drop them
   const wide = BENCH_BREAKS.filter(v => v.half > 200);
   for (let i = BENCH_BREAKS.length - 1; i >= 0; i--){
@@ -861,7 +861,7 @@ function drawLyingPrint(sp, x, lz, wWorld, rotDeg, hit){
 function eraFont(sz, style, fam){ return `${style||''} ${Math.round(sz)}px ${fam || SEGMENTS[0].font}`.trim(); }
 
 function drawBeatText(b, focusAmt){
-  const seg = segAt(b.x);
+  const seg = b.ink ? Object.assign({}, segAt(b.x), {ink: b.ink}) : segAt(b.x);
   const wz = wallZAt(b.x);
   const dxW = b.x - cam.x;
   const near = Math.max(0, 1 - Math.abs(dxW)/1300);
@@ -1238,24 +1238,88 @@ function drawSeamVideo(){
   }
 }
 
-/* the 1979 recreation: era 1 simply ends; an open lit pause, then era 2 */
-function drawRecreation(t){
+/* the 1979 panel: a light wall between two columns, carrying the map of
+   Southern California with the nine labs on it */
+let MAP_SPRITE = null, MAPWALL_TEX = null;
+function makeMapSprite(){
+  const c = document.createElement('canvas'); c.width = 920; c.height = 660;
+  const g = c.getContext('2d');
+  g.save();
+  g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 20; g.shadowOffsetY = 9;
+  g.fillStyle = '#2e1f10'; g.fillRect(16, 16, 888, 628);
+  g.restore();
+  g.fillStyle = '#e9e0c8'; g.fillRect(40, 40, 840, 580);
+  g.fillStyle = 'rgba(150,120,70,0.08)';
+  for (let i = 0; i < 5; i++) g.fillRect(40, 40 + i*116, 840, 58);
+  // the coast of Southern California
+  g.strokeStyle = 'rgba(70,90,110,0.85)'; g.lineWidth = 5; g.lineJoin = 'round';
+  g.beginPath();
+  g.moveTo(70, 150);
+  g.lineTo(210, 190); g.lineTo(300, 250); g.lineTo(360, 310);
+  g.lineTo(430, 350); g.lineTo(520, 420); g.lineTo(560, 490); g.lineTo(600, 560);
+  g.stroke();
+  g.fillStyle = 'rgba(120,160,190,0.20)';
+  g.beginPath();
+  g.moveTo(70, 150); g.lineTo(210, 190); g.lineTo(300, 250); g.lineTo(360, 310);
+  g.lineTo(430, 350); g.lineTo(520, 420); g.lineTo(560, 490); g.lineTo(600, 560);
+  g.lineTo(40, 560); g.lineTo(40, 150); g.closePath(); g.fill();
+  // faint inland grid
+  g.strokeStyle = 'rgba(90,70,40,0.15)'; g.lineWidth = 1.5;
+  for (let i = 1; i < 8; i++){
+    g.beginPath(); g.moveTo(40 + i*105, 40); g.lineTo(40 + i*105, 620); g.stroke();
+    if (i < 6){ g.beginPath(); g.moveTo(40, 40 + i*97); g.lineTo(880, 40 + i*97); g.stroke(); }
+  }
+  // the nine labs
+  const dots = [[470,330],[520,300],[560,350],[500,390],[590,300],[620,380],[545,255],[660,330],[610,430]];
+  g.strokeStyle = 'rgba(190,60,45,0.35)'; g.lineWidth = 2;
+  for (let i = 1; i < dots.length; i++){
+    g.beginPath(); g.moveTo(dots[0][0], dots[0][1]); g.lineTo(dots[i][0], dots[i][1]); g.stroke();
+  }
+  for (const [dx, dy] of dots){
+    g.fillStyle = 'rgba(190,60,45,0.25)';
+    g.beginPath(); g.arc(dx, dy, 16, 0, 7); g.fill();
+    g.fillStyle = '#c23a2c';
+    g.beginPath(); g.arc(dx, dy, 7, 0, 7); g.fill();
+  }
+  g.fillStyle = 'rgba(80,60,35,0.9)';
+  g.textAlign = 'center';
+  g.font = '600 34px Georgia, serif';
+  try { g.letterSpacing = '6px'; } catch(e){}
+  g.fillText('SOUTHERN CALIFORNIA', 460, 590);
+  return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
+}
+function drawMapWall(t){
   const mid = (REC_L + REC_R) / 2;
-  if (Math.abs(cam.x - mid) > 2600) return;
-  const kk = k(1250);
-  for (const wxr of [mid - 290, mid + 290]){
-    const sx = px(wxr, kk);
-    const w = 190 * kk * SS;
-    const yT = py(60, kk), yB = py(1080, kk);
-    const wg = ctx.createLinearGradient(sx - w/2, 0, sx + w/2, 0);
-    wg.addColorStop(0, 'rgba(255,244,214,0.05)');
-    wg.addColorStop(0.5, 'rgba(255,248,226,0.55)');
-    wg.addColorStop(1, 'rgba(255,244,214,0.05)');
-    ctx.fillStyle = wg;
-    ctx.fillRect(sx - w/2, yT, w, yB - yT);
-    ctx.fillStyle = 'rgba(30,26,20,0.5)';
-    ctx.fillRect(sx - 3*SS, yT, 6*SS, yB - yT);
-    drawGlow('255,244,210', sx, py(1050, k(700)), 300 * k(700) * SS, 0.14, 0.3);
+  if (Math.abs(cam.x - mid) > 2800) return;
+  const kk = k(610);
+  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const x0 = px(REC_L, kk), x1 = px(REC_R, kk);
+  // the light wall panel
+  const wg = ctx.createLinearGradient(0, 0, 0, yBase);
+  wg.addColorStop(0, '#6d6455');
+  wg.addColorStop(0.4, '#8a8070');
+  wg.addColorStop(1, '#5c5346');
+  ctx.fillStyle = wg;
+  ctx.fillRect(x0, 0, x1 - x0, yBase);
+  // the map, centered
+  const sp = MAP_SPRITE;
+  const w = 440 * kk * SS, h = w * sp.h / sp.w;
+  const cx = px(mid, kk), cyS = py(450, kk);
+  pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp, wx: mid, cy: 450, z: 610, w: 440,
+          cap: '1979 · nine labs across Southern California', beat: BEATS.findIndex(b => b.y === '1979')});
+  ctx.drawImage(sp.c, cx - w/2, cyS - h/2, w, h);
+  // columns on both edges
+  for (const wxc of [REC_L, REC_R]){
+    const kc = k(430);
+    const sxc = px(wxc, kc);
+    const cw = 110 * kc * SS;
+    if (sxc < -cw || sxc > W + cw) continue;
+    const cg = ctx.createLinearGradient(sxc - cw/2, 0, sxc + cw/2, 0);
+    cg.addColorStop(0, '#2a2118'); cg.addColorStop(0.45, '#5a4c38'); cg.addColorStop(1, '#1d1710');
+    ctx.fillStyle = cg;
+    ctx.fillRect(sxc - cw/2, 0, cw, H);
+    ctx.fillStyle = 'rgba(255,230,180,0.12)';
+    ctx.fillRect(sxc - cw/2 + 3*SS, 0, 3*SS, H);
   }
 }
 
@@ -1789,7 +1853,7 @@ function initDecor(){
   FIGURES.push({x: 8340, z: 545, h: 680, sprite: makeFigure(2)});
   for (let r = 0; r < 2; r++)                                              // 1998 · a small classroom
     for (let i = 0; i < 4; i++)
-      FIGURES.push({x: 15020 + i*100 + r*40, z: 700 + r*85, h: 330,
+      FIGURES.push({x: 13940 + i*100 + r*40, z: 700 + r*85, h: 330,
                     sprite: makeFigure(40 + r*10 + i, true), seated: true});
   FIGURES.push({x: 16650, z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
   // mills receding behind the factory line
@@ -1819,7 +1883,7 @@ function auditPlacements(){
   const guards = [];
   for (const b of BEATS){
     if (b.ped){
-      const pedX = b.x + (b.ped.dx || -430);
+      const pedX = b.x + (b.ped.dx ?? -430);
       guards.push({c: pedX + (b.x - pedX) * 0.35, r: 750, pedX, pedZ: -90});
     }
     if (!b.minor) guards.push({c: b.x, r: 420});
@@ -1833,18 +1897,27 @@ function auditPlacements(){
       FG_ITEMS.splice(i, 1);
     }
   }
-  // mid plane: a figure crosses a pedestal on screen at one camera position —
-  // that position must not fall inside the pedestal's hero window
+  // mid plane: a figure crosses a pedestal or a wall photo on screen at one
+  // camera position — that position must stay outside the guarded window
   const kOf = z => 900 / (900 + z);
+  const crossTargets = guards.filter(g => g.pedX)
+    .map(g => ({x: g.pedX, z: g.pedZ, c: g.c, r: g.r}));
+  for (const b of BEATS)
+    for (const it of b.wall)
+      crossTargets.push({x: b.x + it.dx, z: wallZAt(b.x) - 12, c: b.x, r: 520});
   for (const f of FIGURES){
-    for (const g of guards){
-      if (!g.pedX) continue;
-      const kP = kOf(g.pedZ), kF = kOf(f.z);
-      for (let tries = 0; tries < 8; tries++){
-        const cross = (g.pedX * kP - f.x * kF) / (kP - kF);
+    for (const g of crossTargets){
+      const kP = kOf(g.z), kF = kOf(f.z);
+      if (Math.abs(kP - kF) < 0.05){
+        // near-same depth: they simply must not overlap in world space
+        for (let tries = 0; tries < 10 && Math.abs(f.x - g.x) < 430; tries++) f.x += 240;
+        continue;
+      }
+      for (let tries = 0; tries < 10; tries++){
+        const cross = (g.x * kP - f.x * kF) / (kP - kF);
         if (Math.abs(cross - g.c) > g.r * 1.05) break;
-        f.x += 260;
-        if (tries === 7) console.warn('audit: figure could not fully clear pedestal near', g.pedX);
+        f.x += 240;
+        if (tries === 9) console.warn('audit: figure could not fully clear target near', g.x);
       }
     }
   }
@@ -2133,13 +2206,13 @@ function makePedObj(kind){
 function drawPedestal(b, t, hero){
   const ped = b.ped; if (!ped) return;
   const z = -90, kk = k(z);
-  const x = b.x + (ped.dx || -300);
+  const x = b.x + (ped.dx ?? -430);
   const sx = px(x, kk);
   const colW = 165 * (ped.big ? 1.5 : 1) * kk * SS;
   if (sx < -colW*2 || sx > W + colW*2) return;
   const era = segIdx(b.x);
   const big = ped.big ? 1.6 : 1;
-  const yTop = py(ped.big ? 470 : 535, kk);
+  const yTop = py(ped.big ? 470 : (ped.low ? 668 : 535), kk);
   pushHit(sx - colW*0.7*big, yTop - 150*kk*SS*big, colW*1.4*big, H - yTop + 150*kk*SS, {type:'focus', beat: BEATS.indexOf(b)});
   const warmC = era === 0 ? '255,215,140' : '225,240,255';
   // two side spotlights swing in and lock their beams exactly on the exhibit;
@@ -2624,9 +2697,8 @@ function drawStage(t){
 
 /* foreground occluders — soft dark shapes passing close to camera:
    mostly potted plants and people, the odd structural post */
-const FG_ITEMS = [1000, 3080, 4650, 5800, 7350, 8300, 9350, 10050, 10700,
-                  12750, 13350, 13980, 15300, 17000, 18020, 21500, 24950]
-  .map((x, i) => ({x, kind: ['plant','person','plant','person','post'][i % 5], seed: i}));
+const FG_ITEMS = [4900, 8250]
+  .map((x, i) => ({x, kind: ['plant','person'][i % 2], seed: i}));
 const FG_SPRITES = {};
 function makeFgSprite(kind, seed){
   const R = rng(seed*31337 + 5);
@@ -2926,13 +2998,13 @@ function update(dt){
 function frame(){
   const t = state.time;
   HITS = [];
-  BR = Math.sin(t*0.32)*6 + Math.sin(t*0.11)*3;
+  BR = (Math.sin(t*0.32)*6 + Math.sin(t*0.11)*3) * Math.min(1, Math.abs(cam.vel)/140);
   // base — ambient color drifts cooler era by era
   const amb = ambient(cam.x);
   ctx.fillStyle = `rgb(${amb.bg[0]|0},${amb.bg[1]|0},${amb.bg[2]|0})`;
   ctx.fillRect(0, 0, W, H);
 
-  drawRecreation(t);
+  drawMapWall(t);
   drawWall();
 
   // lamp pools on wall (behind photos)
@@ -2973,14 +3045,6 @@ function frame(){
   drawFigures();
   drawProps(true);
 
-  // ...and the floating text reads above everything
-  for (let i = 0; i < BEATS.length; i++){
-    const b = BEATS[i];
-    if (Math.abs(b.x - cam.x) > 2400) continue;
-    const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
-    drawBeatText(b, focusAmt);
-  }
-
   drawBench();
 
   // table items
@@ -3005,6 +3069,14 @@ function frame(){
     if (b.y === '2020–22') drawBookPyramid(b, t);
   }
 
+  // the floating text reads above everything on the walls and tables
+  for (let i = 0; i < BEATS.length; i++){
+    const b = BEATS[i];
+    if (Math.abs(b.x - cam.x) > 2400) continue;
+    const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
+    drawBeatText(b, focusAmt);
+  }
+
   // lamps + dust + foreground
   drawLamp(INTRO_X, t, 0);
   for (let i = 0; i < BEATS.length; i++){
@@ -3018,7 +3090,7 @@ function frame(){
   let hero = 0;
   for (const b of BEATS){
     if (!b.ped) continue;
-    const pedX = b.x + (b.ped.dx || -430);
+    const pedX = b.x + (b.ped.dx ?? -430);
     const focusX = pedX + (b.x - pedX) * 0.35;   // sweet spot between stand and beat
     const d = Math.abs(focusX - cam.x);
     const h = Math.max(0, 1 - d/680);
@@ -3093,6 +3165,7 @@ async function boot(){
   SECTIONS.old = makeSection('old');
   SECTIONS.neu = makeSection('neu');
   initSeamVideo();
+  MAP_SPRITE = makeMapSprite();
   MONS.crt = makeMonitor('crt');
   MONS.lcd = makeMonitor('lcd');
   for (let i = 0; i < 3; i++) grains.push({c: noiseTile(256, 1)});
@@ -3122,13 +3195,20 @@ async function boot(){
   PED_SPRITES.crown2 = makePedObj('crown2');
   PED_SPRITES.millSt = makePedObj('millSt');
   initAlbums();
-  // wall photos live in the band below the text: top edge at 360, bottom by 690
+  // wall photos live in the band below the text (top 360, bottom 690) —
+  // and always on an actual wall, never over a gap or a column
   for (const b of BEATS){
+    const seg = segAt(b.x);
+    const wallL = seg.x0 + (seg.wInsetL || 0), wallR = seg.x1 - (seg.wInsetR || 0);
     for (const it of b.wall){
       const sp = SPRITES[it.img]; if (!sp) continue;
       let h = sp.h * (it.w / sp.inner.w);
       if (h > 330){ it.w *= 330 / h; h = 330; }
       it.cy = 360 + h/2;
+      const half = sp.w * (it.w / sp.inner.w) / 2 + 30;
+      const x = b.x + it.dx;
+      if (x - half < wallL) it.dx = wallL + half - b.x;
+      if (x + half > wallR) it.dx = wallR - half - b.x;
     }
   }
   initBanners();
