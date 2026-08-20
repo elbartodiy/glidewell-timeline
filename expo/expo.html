@@ -115,12 +115,8 @@ const BEATS = [
    wall:[{img:'lab5move', w:460, dx:-470, cy:400, hero:true}],
    table:[], st:[{img:'bizcard', w:280, dx:-320, lz:155}]},
 
-  /* ---- ERA 3 · the computer arrives, 1993–2007 ---- */
-  {x:12400, y:'1993', t:'NEWPORT BEACH',
-   th:'Footprint follows volume — the plant keeps outgrowing itself.',
-   d:'The lab moves into a 71,000 sq ft building in Newport Beach, CA.',
-   wall:[], table:[]},
-
+  /* ---- ERA 3 · the computer arrives, 1995–2007
+          (1993 · Newport Beach happens inside the video splice) ---- */
   {x:13020, y:'1995', t:'OPERATORY · PLAYSAFE', minor:true,
    th:'Test where dentists work — and step beyond the crown.',
    d:'An in-house operatory opens to test materials on real patients; PlaySafe mouthguards launch.',
@@ -286,7 +282,7 @@ const SEAMS = [
    is the second building already filling the frame */
 const SPLICE = {dur: 1.5};
 function spliceEdges(){
-  return {inL: SEAM_2 - 350, outR: SEAM_2 + 350};
+  return {inL: 11050, outR: 12500};   // 1989 composition -> clip -> run-up into 1995
 }
 function segIdx(x){ for (let i = SEGMENTS.length-1; i > 0; i--) if (x >= SEGMENTS[i].x0) return i; return 0; }
 function segAt(x){ return SEGMENTS[segIdx(x)]; }
@@ -1222,9 +1218,9 @@ function drawDoorway(){
     const cxSeam = px(seam.x, kk);
     if (seam.kind === 'video'){
       // the hall sinks into darkness at its end — the yard is hidden until the clip plays
-      const kw = k(wallZAt(seam.x));
-      const cxS = px(seam.x, kw);
-      const halfD = 720 * kw * SS;
+      const kw = k(wallZAt(seam.x + 400));
+      const cxS = px(seam.x + 400, kw);
+      const halfD = 540 * kw * SS;
       if (cxS > -halfD - W && cxS < W + halfD + W){
         const g = ctx.createLinearGradient(cxS - halfD, 0, cxS + halfD, 0);
         g.addColorStop(0, 'rgba(3,3,3,0)');
@@ -1765,6 +1761,45 @@ function initDecor(){
     FG_SPRITES['person' + v] = makeFgSprite('person', v + 7);
   }
   FIGURES.sort((f1, f2) => f2.z - f1.z);
+  auditPlacements();
+}
+
+/* Every important camera moment is a guarded zone. Anything from the near or
+   mid plane that would sit across it gets moved or removed — checked in code,
+   not by eye, so new content can never reintroduce the collision. */
+function auditPlacements(){
+  const guards = [];
+  for (const b of BEATS){
+    if (b.ped){
+      const pedX = b.x + (b.ped.dx || -430);
+      guards.push({c: pedX + (b.x - pedX) * 0.35, r: 750, pedX, pedZ: -90});
+    }
+    if (!b.minor) guards.push({c: b.x, r: 420});
+  }
+  guards.push({c: 11050, r: 620});   // the splice stop
+  guards.push({c: 12500, r: 620});   // the splice resume
+  // near plane: a passer-by parks at screen center when cam ≈ its x
+  for (let i = FG_ITEMS.length - 1; i >= 0; i--){
+    if (guards.some(g => Math.abs(FG_ITEMS[i].x - g.c) < g.r * 1.3)){
+      console.warn('audit: foreground item removed at', FG_ITEMS[i].x);
+      FG_ITEMS.splice(i, 1);
+    }
+  }
+  // mid plane: a figure crosses a pedestal on screen at one camera position —
+  // that position must not fall inside the pedestal's hero window
+  const kOf = z => 900 / (900 + z);
+  for (const f of FIGURES){
+    for (const g of guards){
+      if (!g.pedX) continue;
+      const kP = kOf(g.pedZ), kF = kOf(f.z);
+      for (let tries = 0; tries < 8; tries++){
+        const cross = (g.pedX * kP - f.x * kF) / (kP - kF);
+        if (Math.abs(cross - g.c) > g.r * 1.05) break;
+        f.x += 260;
+        if (tries === 7) console.warn('audit: figure could not fully clear pedestal near', g.pedX);
+      }
+    }
+  }
 }
 function drawSheets(){
   for (const sh of SHEETS){
@@ -2505,6 +2540,9 @@ function makeFgSprite(kind, seed){
   return {c, w: c.width, h: c.height};
 }
 function drawForeground(){
+  // the near plane clears the view whenever an exhibit takes the stage
+  const fgA = Math.max(0, 1 - (state.hero || 0) * 1.5);
+  if (fgA <= 0.02) return;
   const kk = k(-560);
   for (const it of FG_ITEMS){
     const sx = px(it.x, kk);
@@ -2513,8 +2551,8 @@ function drawForeground(){
       if (sx < -w*2 || sx > W + w*2) continue;
       const g = ctx.createLinearGradient(sx - w, 0, sx + w, 0);
       g.addColorStop(0, 'rgba(8,4,1,0)');
-      g.addColorStop(0.35, 'rgba(8,4,1,0.92)');
-      g.addColorStop(0.65, 'rgba(8,4,1,0.92)');
+      g.addColorStop(0.35, `rgba(8,4,1,${0.92*fgA})`);
+      g.addColorStop(0.65, `rgba(8,4,1,${0.92*fgA})`);
       g.addColorStop(1, 'rgba(8,4,1,0)');
       ctx.fillStyle = g;
       ctx.fillRect(sx - w, 0, w*2, H);
@@ -2523,7 +2561,7 @@ function drawForeground(){
       const h = it.kind === 'plant' ? H*0.72 : H*1.06;
       const w = h * sp.w / sp.h;
       if (sx < -w || sx > W + w) continue;
-      ctx.globalAlpha = 0.93;
+      ctx.globalAlpha = 0.93 * fgA;
       ctx.drawImage(sp.c, sx - w/2, H - h + (it.kind === 'plant' ? 6*SS : 30*SS), w, h);
       ctx.globalAlpha = 1;
     }
@@ -2714,15 +2752,22 @@ function update(dt){
       state.splice = null;
     }
   } else {
-    if (cam.x < SE.inL) state.spliceSide = 'L';
-    else if (cam.x > SE.outR) state.spliceSide = 'R';
+    if (cam.x < SE.inL - 2){ state.spliceSide = 'L'; state.spliceArm = 0; }
+    else if (cam.x > SE.outR + 2){ state.spliceSide = 'R'; state.spliceArm = 0; }
     else {
-      // reached the threshold: stop dead — this is the clip's first frame
+      // the rail ends here: hold the composition — this is the clip's first frame
       const dir = state.spliceSide === 'L' ? 1 : -1;
       const from = dir > 0 ? SE.inL : SE.outR;
       cam.x = from; cam.vel = 0;
-      state.splice = {dir, t: 0, from, to: dir > 0 ? SE.outR : SE.inL};
-      if (SEAM_VIDEO){ try { SEAM_VIDEO.currentTime = 0; SEAM_VIDEO.play(); } catch(err){} }
+      state.spliceArm = (state.spliceArm || 0) + dt;
+      const push = dir > 0 ? inp.impulse > 140 : inp.impulse < -140;
+      const go = state.mode === 'live'
+        ? (push && state.spliceArm > 0.3)
+        : state.spliceArm > 3.0;
+      if (go){
+        state.splice = {dir, t: 0, from, to: dir > 0 ? SE.outR : SE.inL};
+        if (SEAM_VIDEO){ try { SEAM_VIDEO.currentTime = 0; SEAM_VIDEO.play(); } catch(err){} }
+      }
     }
   }
   if (state.splice && inp.action) state.splice.skip = true;
@@ -2851,6 +2896,7 @@ function frame(){
     const h = Math.max(0, 1 - d/680);
     hero = Math.max(hero, h*h*(3-2*h));
   }
+  state.hero = hero;
   if (hero > 0.01){
     ctx.fillStyle = `rgba(2,2,3,${(0.38*hero).toFixed(3)})`;
     ctx.fillRect(0, 0, W, H);
