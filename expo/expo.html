@@ -68,8 +68,8 @@ const BEATS = [
   {x:4400, y:'1973', t:'SECOND LAB',
    th:'Growth by addition — before growth by system.',
    d:'Jim opens a second lab in El Toro — the one-man bench starts to multiply.',
-   wall:[{img:'lab4ext', w:320, dx:-430, cy:360, hero:true}],
-   table:[], st:[{img:'rose', w:280, dx:330, lz:155}]},
+   wall:[{img:'rose', w:300, dx:-430, cy:360, rot:0.4}],
+   table:[], st:[{img:'lab4ext', w:250, dx:0, lz:155, cap:'El Toro — the second lab'}]},
 
   {x:5400, y:'1976', t:'DIRECT-MAIL',
    th:'Reach is the lever — the flywheel’s first turn.',
@@ -84,10 +84,10 @@ const BEATS = [
    d:'Jim owns and runs nine labs across Southern California.',
    wall:[], table:[]},
 
-  {x:7750, y:'1980', t:'STUDY PROGRAM',
+  {x:7990, y:'1980', t:'STUDY PROGRAM',
    th:'Education as a bond — long before it was a marketing channel.',
    d:'An International Study Program brings dentists in from Japan and abroad to train in the US — the root of Jim’s lifelong belief in teaching and symposia.',
-   wall:[{img:'joeha', w:280, dx:-420, cy:350, rot:-0.8},
+   wall:[{img:'joeha', w:280, dx:-240, cy:350, rot:-0.8},
          {img:'lab3ext', w:380, dx:430, cy:380, rot:0.5}],
    table:[]},
 
@@ -104,10 +104,10 @@ const BEATS = [
    wall:[], table:[]},
 
   {x:11150, y:'1989', t:'NATIONAL LEADER', tier:1, fly:true, ink:'56,58,64',
-   clampL:10600+60, clampR:11700-60,   // the flying year never leaves the recreation panel
+   pinZ:728,   // the numeral is riveted to the recreation panel: it grows in place, never drifts
    th:'',
    d:'Glidewell settles into 4141 MacArthur Blvd, Newport Beach (33,000 sq ft); 95% of cases now arrive by mail from 3,500+ dentists nationwide.',
-   wall:[{img:'lab5move', w:300, dx:-350, cy:400, rot:-0.6, style:'white'}],
+   wall:[{img:'lab5move', w:300, dx:-850, cy:400, rot:-0.6, style:'white'}],
    table:[],
    ped:{obj:'bizcard', dx:0, low:true}},
 
@@ -138,7 +138,7 @@ const BEATS = [
   {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true,
    th:'Own the science, so you can own the quality and the price.',
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir. Labs go digital: scanning, on-screen design, milling.',
-   wall:[{img:'rella', w:250, dx:380, cy:350, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
+   wall:[{img:'rella', w:250, dx:290, cy:350, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
    table:[],
    ped:{obj:'puck', dx:0},
    props:[{kind:'crt', dx:700, lz:150, w:320, label:'CAD REVOLUTION'}]},
@@ -148,12 +148,12 @@ const BEATS = [
    d:'An in-house plastic-injection division starts making boxes, articulators and supplies — the vertical-integration playbook.',
    wall:[], table:[]},
 
-  {x:17480, y:'2001', t:'WEB · CLINICAL VOICE', minor:true,
+  {x:16700, y:'2001', t:'WEB · CLINICAL VOICE', minor:true,
    th:'The lab learns to publish — online and on camera.',
    d:'The first Glidewell Laboratories website goes live; the brand gains its clinical-education voice on camera.',
    wall:[], table:[]},
 
-  {x:17960, y:'2005', t:'IPS e.max', minor:true,
+  {x:17700, y:'2005', t:'IPS e.max', minor:true,
    th:'The esthetic foil to BruxZir — beauty up front, zirconia strength for the rest.',
    d:'Ivoclar’s lithium disilicate becomes the go-to esthetic all-ceramic — pressable, millable, tooth-like. The metal-free front tooth finally has its material.',
    wall:[], table:[]},
@@ -162,7 +162,7 @@ const BEATS = [
    th:'Nobody called it AI training data yet — but that is what it was.',
    d:'The lab accepts its first intraoral scan instead of a physical impression — the moment the case archive starts becoming data.',
    wall:[], table:[],
-   props:[{kind:'lcd', dx:535, lz:150, w:300}],
+   props:[{kind:'lcd', dx:535, lz:60, w:300}],
    ped:{obj:'scanner', dx:0}},
 
   /* ---- ERA 4 · the white room, 2009–2026 ---- */
@@ -238,33 +238,33 @@ const REC3_L = 10600, REC3_R = 11700;   // the 1989 National Leader recreation
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
 const SEGMENTS = [
-  {x0:-2600, x1:REC_L, z0:550, z1:550, wall:'wall1', bench:'bench1', front:'front1',
+  {x0:-2600, x1:REC_L, z0:550, z1:550, tz:550, wall:'wall1', bench:'bench1', front:'front1',
    font:'Georgia, "Iowan Old Style", "Palatino Linotype", serif',
    ink:'232,205,160', lamp:'bulb', dust:true,
    rail:'rgba(190,150,80,0.55)', railInk:'rgba(230,195,130,0.7)',
    light:{pool:'255,196,110', poolR:620, poolA:0.34},
    bgc:[13,9,6], grain:0.055},
-  {x0:REC_R, x1:REC3_L, z0:680, z1:680, wall:'wall2', bench:'bench2', front:'front2',
+  {x0:REC_R, x1:REC3_L, z0:680, z1:680, tz:680, wall:'wall2', bench:'bench2', front:'front2',
    font:'"Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'223,226,214', lamp:'tube', dust:false,
    rail:'rgba(165,175,172,0.5)', railInk:'rgba(198,208,202,0.7)',
    light:{pool:'214,240,224', poolR:820, poolA:0.20},
    tube:{line:'228,255,238', glow:'212,245,228'},
    bgc:[10,12,11], grain:0.038},
-  {x0:REC3_R, x1:REC2_L, z0:850, z1:850, wall:'wall3', bench:'bench3', front:'front3',
+  {x0:REC3_R, x1:REC2_L, z0:850, z1:850, tz:680, wall:'wall3', bench:'bench3', front:'front3',
    font:'Verdana, Tahoma, "DejaVu Sans", sans-serif',
    ink:'226,232,238', lamp:'tube', dust:false,
    rail:'rgba(185,196,202,0.5)', railInk:'rgba(212,222,228,0.75)',
    light:{pool:'218,232,252', poolR:900, poolA:0.17},
    tube:{line:'238,246,255', glow:'216,230,250'},
    bgc:[11,12,14], grain:0.028},
-  {x0:REC2_R, x1:WORLD_END+900, z0:1400, z1:1400, wInsetR:280, wall:'wall4', bench:'bench4', front:'front4',
+  {x0:REC2_R, x1:WORLD_END+900, z0:1400, z1:1400, wInsetR:280, tz:680, wall:'wall4', bench:'bench4', front:'front4',
    font:'"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'55,64,76', lamp:'tube', dust:false,
    rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
    light:{pool:'225,240,255', poolR:1350, poolA:0.12},
    tube:{line:'246,251,255', glow:'226,239,252'},
-   bgc:[30,33,38], grain:0.012, bInsetR:2200, shade:0.30, floor:true, tScale:1.15},
+   bgc:[30,33,38], grain:0.012, bInsetR:2200, shade:0.30, floor:true},
 ];
 const SEAMS = [];   // era changes happen through the recreations now
 /* (dormant) the generated flyover clip can still play across the 1989
@@ -963,10 +963,10 @@ function drawBench(){
         if (ex <= -800 || ex >= WORLD_END + 800) continue;
         const exs = px(ex, kf);
         if (exs < -40 || exs > W + 40) continue;
-        ctx.fillStyle = 'rgba(0,0,0,0.55)';
-        ctx.fillRect(edge > 0 ? exs : exs - 9*SS, yTopF, 9*SS, H - yTopF);
-        ctx.fillStyle = 'rgba(255,240,210,0.14)';
-        ctx.fillRect(edge > 0 ? exs + 9*SS : exs - 11*SS, yTopF, 2*SS, H - yTopF);
+        ctx.fillStyle = 'rgba(0,0,0,0.26)';
+        ctx.fillRect(edge > 0 ? exs : exs - 5*SS, yTopF, 5*SS, H - yTopF);
+        ctx.fillStyle = 'rgba(255,240,210,0.10)';
+        ctx.fillRect(edge > 0 ? exs + 5*SS : exs - 7*SS, yTopF, 2*SS, H - yTopF);
       }
     }
   }
@@ -1082,7 +1082,7 @@ function drawBeatText(b, focusAmt){
     return;
   }
   const seg = b.ink ? Object.assign({}, segAt(b.x), {ink: b.ink}) : segAt(b.x);
-  const wz = wallZAt(b.x);
+  const wz = seg.tz || wallZAt(b.x);   // one shared text plane per era group — equal type everywhere
   const dxW = b.x - cam.x;
   const near = Math.max(0, 1 - Math.abs(dxW)/1300);
   const sc = b.minor ? 0.6 : 1;
@@ -1100,11 +1100,7 @@ function drawBeatText(b, focusAmt){
       ctx.save();
       ctx.textAlign = 'center';
       ctx.font = eraFont(170 * ts * kk * SS, '', seg.font);
-      if (b.clampL !== undefined){
-        // the year stays readable: pinned inside its own panel while flying
-        const half = ctx.measureText(b.y).width / 2;
-        cx = Math.max(px(b.clampL, kk) + half, Math.min(px(b.clampR, kk) - half, cx));
-      }
+      if (b.pinZ) cx = px(b.x, k(b.pinZ));   // glued to its panel's center at every camera
       ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
       ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
       ctx.fillText(b.y, cx, py(140, kk));
@@ -1164,13 +1160,15 @@ function drawBeatText(b, focusAmt){
   let dAmt = Math.max(focusAmt, state.restBeat === BEATS.indexOf(b) ? Math.min(1, Math.max(0, (state.restTime - 0.7)/0.8)) : 0);
   if (b.album) dAmt *= 1 - (albumAnim[BEATS.indexOf(b)] || 0);
   if (dAmt > 0.02){
-    const kw = k(wz - 8);
-    const cw = px(b.x, kw);
+    // the reading line sits on the bench face, under the etched year —
+    // never across the photos and exhibits above
+    const kf = k(0);
+    const cw = px(b.x, kf);
     ctx.save();
     ctx.textAlign = 'center';
-    ctx.font = eraFont(26 * (seg.tScale||1) * kw * SS, '', seg.font);
-    ctx.fillStyle = `rgba(${seg.ink},${dAmt * 0.78})`;
-    drawLines(b._d, cw, py(655, kw), 34 * kw * SS);
+    ctx.font = eraFont(23 * SS, '', seg.font);
+    ctx.fillStyle = `rgba(215,219,224,${dAmt * 0.8})`;
+    drawLines(b._d, cw, py(CFG.benchY, kf) + 78*SS, 32 * SS);
     ctx.restore();
   }
 }
@@ -1630,16 +1628,16 @@ function drawRec2(t){
   ctx.fillStyle = 'rgba(58,68,80,0.85)';
   ctx.fillText('THE DIGITAL REVOLUTION', cx, py(688, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
-  ctx.font = eraFont(21 * kk * SS, '', SEGMENTS[3].font);
-  ctx.fillStyle = 'rgba(88,98,110,0.8)';
-  ctx.fillText('the impression becomes a scan \u00b7 the crown becomes a file', cx, py(730, kk));
-  // era markers on the panel shoulders: what ends, what begins
-  ctx.font = eraFont(22 * kk * SS, '700', SEGMENTS[3].font);
-  ctx.fillStyle = 'rgba(120,130,142,0.55)';
+  ctx.font = eraFont(27 * kk * SS, '', SEGMENTS[3].font);
+  ctx.fillStyle = 'rgba(66,76,88,0.95)';
+  ctx.fillText('the impression becomes a scan \u00b7 the crown becomes a file', cx, py(734, kk));
+  // era markers on the panel shoulders: inside the panel, clear of the columns
+  ctx.font = eraFont(24 * kk * SS, '700', SEGMENTS[3].font);
+  ctx.fillStyle = 'rgba(110,120,132,0.7)';
   ctx.textAlign = 'left';
-  ctx.fillText('\u2190 THE ANALOG CENTURY', x0 + 26*kk*SS, py(104, kk));
+  ctx.fillText('\u2190 THE ANALOG CENTURY', x0 + 100*kk*SS, py(104, kk));
   ctx.textAlign = 'right';
-  ctx.fillText('THE DIGITAL AGE \u2192', x1 - 26*kk*SS, py(104, kk));
+  ctx.fillText('THE DIGITAL AGE \u2192', x1 - 100*kk*SS, py(104, kk));
   ctx.restore();
   // pilaster columns, cool tone, same plane
   for (const wxc of [REC2_L, REC2_R]){
@@ -1900,14 +1898,14 @@ function makeMonitor(kind){
   const g = c.getContext('2d');
   if (kind === 'crt'){
     c.width = 340 + sh*2; c.height = 330 + sh*2;
-    g.save();
-    g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 20; g.shadowOffsetY = 8;
-    g.fillStyle = '#000'; g.fillRect(sh+8, sh+6, 324, 258); g.restore();
-    // beige body
+    // beige body — the shadow rides the rounded path itself, corners stay clear
     const bg = g.createLinearGradient(sh, sh, sh, sh+264);
     bg.addColorStop(0, '#d3ccba'); bg.addColorStop(.6, '#c2bba9'); bg.addColorStop(1, '#a59e8c');
+    g.save();
+    g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 20; g.shadowOffsetY = 8;
     g.fillStyle = bg;
     g.beginPath(); g.roundRect(sh+8, sh+6, 324, 258, 14); g.fill();
+    g.restore();
     // screen bezel + glass
     g.fillStyle = '#8f8877';
     g.beginPath(); g.roundRect(sh+34, sh+30, 272, 200, 8); g.fill();
@@ -1927,13 +1925,13 @@ function makeMonitor(kind){
   } else {
     // slim lcd on a stand
     c.width = 380 + sh*2; c.height = 300 + sh*2;
-    g.save();
-    g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 18; g.shadowOffsetY = 8;
-    g.fillStyle = '#000'; g.fillRect(sh+6, sh+4, 368, 232); g.restore();
     const bg = g.createLinearGradient(sh, sh, sh, sh+232);
     bg.addColorStop(0, '#3a3d42'); bg.addColorStop(1, '#26282c');
+    g.save();
+    g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 18; g.shadowOffsetY = 8;
     g.fillStyle = bg;
     g.beginPath(); g.roundRect(sh+6, sh+4, 368, 232, 8); g.fill();
+    g.restore();
     g.fillStyle = '#0a0e14';
     g.beginPath(); g.roundRect(sh+22, sh+18, 336, 204, 4); g.fill();
     // stand
@@ -1945,11 +1943,22 @@ function makeMonitor(kind){
 }
 /* crown-ish lathe mesh for the wireframe / point cloud */
 const MESH = (() => {
-  const prof = [[0,66],[30,62],[42,48],[46,26],[42,2],[34,-18],[30,-38],[36,-56],[20,-64],[0,-66]];
-  const M = 14, rings = [];
+  // a molar crown, not a vase: the lathe profile is modulated per meridian —
+  // a superellipse plan (rounded-square, like a real molar footprint), four
+  // cusps lifting the occlusal rim, and a pole kept low as the central fossa
+  const prof = [[0,44],[27,58],[42,50],[47,28],[48,2],[45,-24],[38,-46],[24,-60],[0,-64]];
+  const M = 16, rings = [];
   for (let m = 0; m < M; m++){
-    const a = m/M * Math.PI*2, ring = [];
-    for (const [r, y] of prof) ring.push([r*Math.cos(a), -y, r*Math.sin(a)]);
+    const a = m/M * Math.PI*2;
+    const sq = 1 / Math.pow(Math.pow(Math.abs(Math.cos(a)), 3) + Math.pow(Math.abs(Math.sin(a)), 3), 1/3);
+    const cusp = Math.pow(Math.cos(2*a + Math.PI/4), 2);
+    const ring = [];
+    for (let p = 0; p < prof.length; p++){
+      let r = prof[p][0], y = prof[p][1];
+      r *= 0.88 + 0.14*sq;
+      if (p === 1) y += 7*cusp - 3;
+      ring.push([r*Math.cos(a), -y, r*Math.sin(a)]);
+    }
     rings.push(ring);
   }
   return {rings, M, P: prof.length};
@@ -2274,7 +2283,7 @@ function initDecor(){
     for (let i = 0; i < 4; i++)
       FIGURES.push({x: 13940 + i*100 + r*40, z: 700 + r*85, h: 330,
                     sprite: makeFigure(40 + r*10 + i, true), seated: true});
-  FIGURES.push({x: 16650, z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
+  FIGURES.push({x: 16460, z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
   // mills receding behind the factory line
   // the welcome still life — placeholder heirlooms of the craft century
   PROPS.push({x: INTRO_X - 210, z: 150, kind: 'toolbox', w: 150});
@@ -3081,10 +3090,6 @@ function drawRobotArm(bx, bz, t, phase){
 }
 function drawFactory(t){
   if (Math.abs(cam.x - FACT_X) > 2500) return;
-  // the factory is never the hero itself — it yields the stage to neighbours
-  const fA = Math.max(0, 1 - (state.hero || 0) * 1.3);
-  if (fA <= 0.02) return;
-  ctx.save(); ctx.globalAlpha = fA;
   const b = BEATS.find(bb => bb.t === 'BRUXZIR FACTORY');
   // shade dispenser tower, left
   const kd = k(210);
@@ -3119,7 +3124,6 @@ function drawFactory(t){
   const kk = k(190);
   pushHit(px(FACT_X - 480, kk), py(560, kk), (960)*kk*SS, py(1080,kk)-py(560,kk),
           {type:'focus', beat: BEATS.indexOf(b), anchor: FACT_X});
-  ctx.restore();
 }
 const STAGE_X = 28830;
 let JIM_FIG = null;
@@ -3264,7 +3268,13 @@ function makeVignette(){
 }
 function drawGrade(t){
   if (!VIG) makeVignette();
-  const sh = segAt(cam.x).shade != null ? segAt(cam.x).shade : 1;
+  // the vignette never pops at the era seam: it holds through the BruxZir
+  // hero and eases away only as you leave the crown behind
+  let sh = segAt(cam.x).shade != null ? segAt(cam.x).shade : 1;
+  if (cam.x > REC2_L && SEGMENTS[3].shade != null){
+    const tt = Math.max(0, Math.min(1, (cam.x - 21150) / 900));
+    sh = 1 + (SEGMENTS[3].shade - 1) * (tt*tt*(3-2*tt));
+  }
   ctx.globalAlpha = 0.35 + 0.65*sh;
   ctx.drawImage(VIG, 0, 0, W, H);
   ctx.globalAlpha = 1;
