@@ -157,12 +157,12 @@ const BEATS = [
    d:'The first Glidewell Laboratories website goes live; the brand gains its clinical-education voice on camera.',
    wall:[], table:[]},
 
-  {x:18280, y:'2005', t:'IPS e.max', minor:true,
+  {x:18180, y:'2005', t:'IPS e.max', minor:true,
    th:'The esthetic foil to BruxZir — beauty up front, zirconia strength for the rest.',
    d:'Ivoclar’s lithium disilicate becomes the go-to esthetic all-ceramic — pressable, millable, tooth-like. The metal-free front tooth finally has its material.',
    wall:[], table:[]},
 
-  {x:19080, y:'2007', t:'FIRST DIGITAL CASE', fly:true,
+  {x:18700, y:'2007', t:'FIRST DIGITAL CASE', fly:true,
    th:'Nobody called it AI training data yet — but that is what it was.',
    d:'The lab accepts its first intraoral scan instead of a physical impression — the moment the case archive starts becoming data.',
    wall:[], table:[],
@@ -276,6 +276,22 @@ const SEAMS = [];   // era changes happen through the recreations now
 const SPLICE = {dur: 1.5};
 function spliceEdges(){
   return {inL: -99999, outR: -99990};
+}
+/* where the guided tour is allowed to stop: every stop is a finished
+   composition whose apex belongs at the exact center of the screen */
+let ATTRACT_STOPS = [];
+function initAttractStops(){
+  const s = new Set();
+  for (const b of BEATS){
+    if (b.ped) s.add(b.x + (b.ped.dx ?? -430));
+    else if (b.tier === 1) s.add(b.x);
+  }
+  s.add((REC_L + REC_R) / 2);       // 1979 · the map wall
+  s.add((REC3_L + REC3_R) / 2);     // 1989 · national leader
+  s.add((REC2_L + REC2_R) / 2);     // the digital revolution
+  s.add(FACT_X);                    // the robotic line
+  s.add(STAGE_X);                   // Jim on stage
+  ATTRACT_STOPS = [...s].sort((a, b) => a - b);
 }
 function segIdx(x){ for (let i = SEGMENTS.length-1; i > 0; i--) if (x >= SEGMENTS[i].x0) return i; return 0; }
 function segAt(x){ return SEGMENTS[segIdx(x)]; }
@@ -3378,14 +3394,22 @@ function update(dt){
       }
     }
   } else {
-    // attract autopilot
+    // attract autopilot: it stops only at real compositions — landmark
+    // stands, recreations, the factory, the stage — and it brakes so the
+    // apex lands exactly at screen center, never short, never past
     const A = state.attract;
     if (A.phase === 'cruise'){
-      const nb = nearestBeat(cam.x + 240);
-      const target = CFG.attractCruise;
+      if (A.stopX == null){
+        let best = null;
+        for (const sx of ATTRACT_STOPS) if (sx > cam.x + 60 && (best == null || sx < best)) best = sx;
+        A.stopX = best != null ? best : WORLD_END + 9999;
+      }
+      const d = A.stopX - cam.x;
+      const target = Math.min(CFG.attractCruise, Math.max(70, d * 1.15));
       cam.vel += (target - cam.vel) * Math.min(1, dt*4);
-      if (nb.d < 18 && nb.i !== A.beatIdx && !BEATS[nb.i].minor){
-        A.phase = 'dwell'; A.dwell = 0; A.beatIdx = nb.i;
+      if (d < 6){
+        cam.x = A.stopX; cam.vel = 0;
+        A.phase = 'dwell'; A.dwell = 0; A.stopX = null;
       }
       if (cam.x > WORLD_END - 600) A.phase = 'fadeout';
     } else if (A.phase === 'dwell'){
@@ -3755,6 +3779,7 @@ async function boot(){
   initBanners();
   initTables();
   initLights();
+  initAttractStops();
   initDust();
   initDecor();
   attachMouseDriver(document.body);
