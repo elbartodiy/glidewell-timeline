@@ -80,7 +80,7 @@ const BEATS = [
 
   /* ---- ERA 2 · the mail-order workshop, 1979–1989 ---- */
   {x:6900, y:'1979', t:'NINE LABS', ink:'64,54,40',
-   th:'Scattered scale — powerful, but not yet one machine.',
+   th:'',
    d:'Jim owns and runs nine labs across Southern California.',
    wall:[], table:[],
    ped:{obj:'crown', dx:0, low:true}},
@@ -238,7 +238,7 @@ const BEATS = [
 ];
 const INTRO_X = 200;
 const WORLD_END = 29000;
-const SEAM_3 = 19750;          // era 3 -> era 4: the gate of light
+const SEAM_3 = 19480;          // era 3 -> era 4: the gate of light
 const REC_L = 6350, REC_R = 7450;   // era 1 ends; the 1979 recreation; era 2 begins
 const SEAM_2 = 11700;          // era 2 -> era 3
 
@@ -568,6 +568,16 @@ const BENCH_BREAKS = [1980, 3830, 7350, 9250, 13100, 17900, 21600, 26050]
   .map(x => ({x, half: 65}));
 BENCH_BREAKS.push({x: 24190, half: 560});   // the BruxZir Factory line replaces the table
 let TABLES = [];
+let LIGHT_GRID = [];
+function initLights(){
+  LIGHT_GRID = [];
+  for (const seg of SEGMENTS){
+    const a = Math.max(-400, seg.x0 + 120), b = Math.min(WORLD_END + 300, seg.x1 - 120);
+    const n = Math.max(1, Math.round((b - a) / 940));
+    const step = (b - a) / n;
+    for (let i = 0; i < n; i++) LIGHT_GRID.push({x: a + step * (i + 0.5), seg});
+  }
+}
 function initTables(){
   // every pedestal claims a wide gap of its own, centered on it
   for (const b of BEATS)
@@ -889,7 +899,7 @@ function drawBeatText(b, focusAmt){
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
       ctx.fillText(b.t, cx, py(208, kk));
       try { ctx.letterSpacing = '0px'; } catch(e){}
-      if (near > 0.25){
+      if (near > 0.25 && b.th){
         ctx.font = eraFont(30 * (seg.tScale || 1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
         drawLines(b._th, cx, py(262, kk), 38 * kk * SS);
@@ -904,6 +914,8 @@ function drawBeatText(b, focusAmt){
       const nF = Math.max(0, 1 - Math.abs(f.x - cam.x)/1300);
       flyDim = Math.min(flyDim, 1 - 0.7 * Math.pow(nF, 1.4));
     }
+    if (state.focusBeat >= 0 && BEATS[state.focusBeat] !== b)
+      flyDim = Math.min(flyDim, 0.3);   // a focused exhibit owns the frame
     const kk = k(wz - 8);
     const cx = px(b.x, kk);
     if (cx > -900 && cx < W + 900){
@@ -939,7 +951,7 @@ function drawBeatText(b, focusAmt){
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
       ctx.fillText(b.t, cx, py(b.minor ? 212 : 208, kk));
       try { ctx.letterSpacing = '0px'; } catch(e){}
-      if (near > 0.25){
+      if (near > 0.25 && b.th){
         ctx.font = eraFont(30 * (b.minor?0.8:1) * (seg.tScale||1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
         drawLines(b._th, cx, py(b.minor ? 254 : 262, kk), 38 * (b.minor?0.8:1) * kk * SS);
@@ -1343,7 +1355,7 @@ function drawDoorway(){
     } else if (seam.kind === 'light'){
       // crossing into the white era is pure light: a soft veil, no geometry
       const d = Math.abs(cam.x + BR - seam.x);
-      const v = Math.max(0, 1 - d/420);
+      const v = Math.max(0, 1 - d/300);
       if (v > 0.01){
         const e = v*v*(3-2*v);
         ctx.fillStyle = `rgba(244,250,255,${(0.85*e).toFixed(3)})`;
@@ -1372,7 +1384,7 @@ function drawDoorway(){
 /* dust motes drifting in the lamp light */
 const DUST = [];
 function initDust(){
-  for (const b of [{x:INTRO_X}, ...BEATS.filter(b => segAt(b.x).dust)]){
+  for (const b of LIGHT_GRID.filter(L => L.seg.dust)){
     for (let i = 0; i < 14; i++){
       DUST.push({
         bx: b.x, ox: (Math.random()*2-1)*330, y: 60 + Math.random()*560,
@@ -1847,8 +1859,6 @@ function initDecor(){
     }
   }
   // mid-ground people & machines (the wall is far enough now)
-  FIGURES.push({x: 8180, z: 500, h: 700, sprite: makeFigure(1)});          // 1980 · study program
-  FIGURES.push({x: 8340, z: 545, h: 680, sprite: makeFigure(2)});
   for (let r = 0; r < 2; r++)                                              // 1998 · a small classroom
     for (let i = 0; i < 4; i++)
       FIGURES.push({x: 13940 + i*100 + r*40, z: 700 + r*85, h: 330,
@@ -3010,9 +3020,8 @@ function frame(){
   drawMapWall(t);
   drawWall();
 
-  // lamp pools on wall (behind photos)
-  drawLampPool(INTRO_X, lampFlicker(t, 0));
-  for (let i = 0; i < BEATS.length; i++) drawLampPool(BEATS[i].x, lampFlicker(t, i+1));
+  // lamp pools on wall (behind photos) — one per ceiling fixture
+  for (let i = 0; i < LIGHT_GRID.length; i++) drawLampPool(LIGHT_GRID[i].x, lampFlicker(t, i+1));
 
   drawIntro();
   drawOutro();
@@ -3073,12 +3082,11 @@ function frame(){
   }
 
 
-  // lamps + dust + foreground
-  drawLamp(INTRO_X, t, 0);
-  for (let i = 0; i < BEATS.length; i++){
-    const b = BEATS[i];
-    if (segAt(b.x).lamp === 'tube') drawTube(b.x, t, i+1);
-    else drawLamp(b.x, t, i+1);
+  // lamps + dust + foreground — evenly spaced fixtures per era
+  for (let i = 0; i < LIGHT_GRID.length; i++){
+    const L = LIGHT_GRID[i];
+    if (L.seg.lamp === 'tube') drawTube(L.x, t, i+1);
+    else drawLamp(L.x, t, i+1);
   }
   drawDust(t);
 
@@ -3221,6 +3229,7 @@ async function boot(){
   }
   initBanners();
   initTables();
+  initLights();
   initDust();
   initDecor();
   attachMouseDriver(document.body);
