@@ -260,27 +260,34 @@ const SEGMENTS = [
    rail:'rgba(165,175,172,0.5)', railInk:'rgba(198,208,202,0.7)',
    light:{pool:'214,240,224', poolR:820, poolA:0.20},
    tube:{line:'228,255,238', glow:'212,245,228'},
-   bgc:[10,12,11], grain:0.038, wInsetR:480, bInsetR:540},
+   bgc:[10,12,11], grain:0.038, bInsetR:540},
   {x0:SEAM_2, x1:SEAM_3, z0:800, z1:940, wall:'wall3', bench:'bench3', front:'front3',
    font:'Verdana, Tahoma, "DejaVu Sans", sans-serif',
    ink:'226,232,238', lamp:'tube', dust:false,
    rail:'rgba(185,196,202,0.5)', railInk:'rgba(212,222,228,0.75)',
    light:{pool:'218,232,252', poolR:900, poolA:0.17},
    tube:{line:'238,246,255', glow:'216,230,250'},
-   bgc:[11,12,14], grain:0.028, wInsetL:480, bInsetL:540},
-  {x0:SEAM_3, x1:WORLD_END+900, z0:1150, z1:1420, wall:'wall4', bench:'bench4', front:'front4',
+   bgc:[11,12,14], grain:0.028, bInsetL:540},
+  {x0:SEAM_3, x1:WORLD_END+900, z0:1350, z1:1700, wall:'wall4', bench:'bench4', front:'front4',
    font:'"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'55,64,76', lamp:'tube', dust:false,
    rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
-   light:{pool:'225,240,255', poolR:1000, poolA:0.13},
+   light:{pool:'225,240,255', poolR:1350, poolA:0.12},
    tube:{line:'246,251,255', glow:'226,239,252'},
-   bgc:[30,33,38], grain:0.012, bInsetR:2200, shade:0.30},
+   bgc:[30,33,38], grain:0.012, bInsetR:2200, shade:0.30, floor:true, tScale:1.15},
 ];
 const SEAMS = [
   {x:SEAM_1, kind:'door',   back:'255,200,120', ahead:'210,240,225'},
-  {x:SEAM_2, kind:'window', back:'210,240,225', ahead:'225,238,255'},   // 1989 -> 1993: out one window, into the next
+  {x:SEAM_2, kind:'video', back:'210,240,225', ahead:'225,238,255'},    // 1989 -> 1993: the yard lives in the video splice
   {x:SEAM_3, kind:'light',  back:'225,238,255', ahead:'160,230,255'},   // 2007 -> 2009: through the white light
 ];
+/* the yard is a video splice: the rail stops while the first building still
+   fills the frame (= the clip's first frame); the clip plays; its last frame
+   is the second building already filling the frame */
+const SPLICE = {dur: 1.5};
+function spliceEdges(){
+  return {inL: SEAM_2 - 350, outR: SEAM_2 + 350};
+}
 function segIdx(x){ for (let i = SEGMENTS.length-1; i > 0; i--) if (x >= SEGMENTS[i].x0) return i; return 0; }
 function segAt(x){ return SEGMENTS[segIdx(x)]; }
 function mixN(a,b,t){ return a+(b-a)*t; }
@@ -544,6 +551,8 @@ const state = {
   albumLock: {},          // per-beat album override: true=open, false=closed
   inspect: null,          // a photo lifted to the camera
   restBeat: -1, restTime: 0,
+  splice: null,           // {dir, t} while the yard splice is playing
+  spliceSide: 'L',        // which side of the yard we were on
   time: 0,
 };
 
@@ -663,7 +672,21 @@ function drawWall(){
     let wx = wx0 + Math.max(0, Math.floor((worldLeft - wx0) / tileW)) * tileW;
     for (; px(wx, k(wallZAt(wx))) < sx1 + 2; wx += tileW){
       const kk = k(wallZAt(wx + tileW/2));   // per-tile depth: smooth recession
-      ctx.drawImage(tex, px(wx, kk), 0, tileW * kk * SS * 1.03, yBase);
+      const yBot = seg.floor ? Math.min(yBase, py(1080, kk)) : yBase;
+      ctx.drawImage(tex, px(wx, kk), 0, tileW * kk * SS * 1.03, yBot);
+    }
+    // the far wall stands on a visible floor — the room reads huge
+    if (seg.floor){
+      const kk2 = k(wallZAt((wx0 + wx1) / 2));
+      const yWallBase = py(1080, kk2);
+      if (yWallBase < yBase){
+        const fg = ctx.createLinearGradient(0, yWallBase, 0, yBase);
+        fg.addColorStop(0, '#a9aeb3');
+        fg.addColorStop(0.12, '#8f959a');
+        fg.addColorStop(1, '#54585d');
+        ctx.fillStyle = fg;
+        ctx.fillRect(sx0, yWallBase, sx1 - sx0, yBase - yWallBase);
+      }
     }
     // ambient darkening top and bottom of wall — each era keeps its own gloom
     const sh = seg.shade != null ? seg.shade : 1;
@@ -839,7 +862,7 @@ function drawBeatText(b, focusAmt){
     const zT = 150 + (wz - 150) * Math.pow(1 - near, 1.7);
     const kk = k(zT);
     const cx = px(b.x, kk);
-    const rise = 70 * passed;
+    const rise = 0;   // dissolve in place — no climbing into the lamps
     const alpha = Math.min(1, near*2.4) * (1 - passed);
     if (alpha > 0.01 && cx > -1200 && cx < W + 1200){
       ctx.save();
@@ -895,18 +918,18 @@ function drawBeatText(b, focusAmt){
           // the satellite hangs its title where the year would be
         }
       } else {
-        ctx.font = eraFont(170 * sc * kk * SS, '', seg.font);
+        ctx.font = eraFont(170 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(0.5 + 0.45*near)*(b.minor?0.82:1)})`;
         ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 3*SS;
         ctx.fillText(b.y, cx, py(b.minor ? 170 : 140, kk));
       }
-      ctx.font = eraFont(46 * sc * kk * SS, '', seg.font);
+      ctx.font = eraFont(46 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*sc*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
       ctx.fillText(b.t, cx, py(b.minor ? 212 : 208, kk));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25){
-        ctx.font = eraFont(30 * (b.minor?0.8:1) * kk * SS, 'italic', seg.font);
+        ctx.font = eraFont(30 * (b.minor?0.8:1) * (seg.tScale||1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
         drawLines(b._th, cx, py(b.minor ? 254 : 262, kk), 38 * (b.minor?0.8:1) * kk * SS);
       }
@@ -922,7 +945,7 @@ function drawBeatText(b, focusAmt){
     const cw = px(b.x, kw);
     ctx.save();
     ctx.textAlign = 'center';
-    ctx.font = eraFont(26 * kw * SS, '', seg.font);
+    ctx.font = eraFont(26 * (seg.tScale||1) * kw * SS, '', seg.font);
     ctx.fillStyle = `rgba(${seg.ink},${dAmt * 0.78})`;
     drawLines(b._d, cw, py(655, kw), 34 * kw * SS);
     ctx.restore();
@@ -1170,20 +1193,26 @@ let SEAM_VIDEO = null;
 function initSeamVideo(){
   if (!window.ASSETS || !ASSETS.flyover) return;
   const v = document.createElement('video');
-  v.src = ASSETS.flyover; v.muted = true; v.loop = true; v.playsInline = true;
-  v.play().catch(()=>{});
+  v.src = ASSETS.flyover; v.muted = true; v.playsInline = true;
   SEAM_VIDEO = v;
 }
 function drawSeamVideo(){
-  if (!SEAM_VIDEO) return;
-  const d = Math.abs(cam.x - SEAM_2);
-  if (d > 620) return;
-  const a = Math.min(1, (1 - d/620) * 1.6);
-  ctx.globalAlpha = a;
-  const vw = SEAM_VIDEO.videoWidth || 16, vh = SEAM_VIDEO.videoHeight || 9;
-  const s = Math.max(W/vw, H/vh);
-  ctx.drawImage(SEAM_VIDEO, W/2 - vw*s/2, H/2 - vh*s/2, vw*s, vh*s);
-  ctx.globalAlpha = 1;
+  const S = state.splice;
+  if (!S) return;
+  if (SEAM_VIDEO && SEAM_VIDEO.videoWidth){
+    // the generated clip carries the whole transition
+    const a = Math.min(1, S.t * 4);
+    ctx.globalAlpha = a;
+    const vw = SEAM_VIDEO.videoWidth, vh = SEAM_VIDEO.videoHeight;
+    const sc = Math.max(W/vw, H/vh);
+    ctx.drawImage(SEAM_VIDEO, W/2 - vw*sc/2, H/2 - vh*sc/2, vw*sc, vh*sc);
+    ctx.globalAlpha = 1;
+  } else {
+    // placeholder: a veil of light carries us across
+    const e = Math.max(0, Math.min(1, Math.min(S.t * 3.4, (SPLICE.dur - S.t) * 3.4)));
+    ctx.fillStyle = `rgba(240,246,252,${(0.97 * e * e).toFixed(3)})`;
+    ctx.fillRect(0, 0, W, H);
+  }
 }
 
 /* doorways between eras — near-camera portals you pass through */
@@ -1191,28 +1220,19 @@ function drawDoorway(){
   const z = -460, kk = k(z);
   for (const seam of SEAMS){
     const cxSeam = px(seam.x, kk);
-    if (seam.kind === 'window'){
-      /* per the floor plan there is no fourth wall: nothing sweeps past the
-         camera here. The rooms' end walls are seen edge-on — thin verticals
-         at the far-wall depth, each carrying its window jamb; between them
-         the yard is completely open. */
-      const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
-      for (const [wx, side, sec] of [[seam.x - 480, 1, SECTIONS.old], [seam.x + 480, -1, SECTIONS.neu]]){
-        const kw = k(wallZAt(wx - side*4));
-        const sxw = px(wx, kw);
-        const secW = 150 * kw * SS;
-        if (sxw < -secW*2 || sxw > W + secW*2) continue;
-        // the building cut open: floors, lights, furniture — full height
-        ctx.drawImage(sec, side > 0 ? sxw - secW : sxw, 0, secW, H);
-        // thin bright rim right on the edge — the jamb catching the sun
-        ctx.fillStyle = 'rgba(255,252,235,0.9)';
-        ctx.fillRect(side > 0 ? sxw - 3*SS : sxw, 0, 3*SS, H);
-        // daylight bleeding onto the wall inside the room
-        const bl = ctx.createLinearGradient(sxw - side*secW, 0, sxw - side * 340 * kw * SS, 0);
-        bl.addColorStop(0, 'rgba(255,248,215,0.20)');
-        bl.addColorStop(1, 'rgba(255,248,215,0)');
-        ctx.fillStyle = bl;
-        ctx.fillRect(side > 0 ? sxw - 340*kw*SS : sxw + secW - 340*kw*SS*0, 0, 340*kw*SS, yBase);
+    if (seam.kind === 'video'){
+      // the hall sinks into darkness at its end — the yard is hidden until the clip plays
+      const kw = k(wallZAt(seam.x));
+      const cxS = px(seam.x, kw);
+      const halfD = 720 * kw * SS;
+      if (cxS > -halfD - W && cxS < W + halfD + W){
+        const g = ctx.createLinearGradient(cxS - halfD, 0, cxS + halfD, 0);
+        g.addColorStop(0, 'rgba(3,3,3,0)');
+        g.addColorStop(0.32, 'rgba(3,3,3,0.985)');
+        g.addColorStop(0.68, 'rgba(3,3,3,0.985)');
+        g.addColorStop(1, 'rgba(3,3,3,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(cxS - halfD, 0, halfD*2, H);
       }
     } else if (seam.kind === 'light'){
       // crossing into the white era is pure light: a soft veil, no geometry
@@ -2443,7 +2463,7 @@ function drawStage(t){
 /* foreground occluders — soft dark shapes passing close to camera:
    mostly potted plants and people, the odd structural post */
 const FG_ITEMS = [1000, 3080, 4650, 5800, 7350, 8300, 9350, 10050, 10700,
-                  12750, 13350, 13980, 15300, 17000, 18020, 21500, 26150]
+                  12750, 13350, 13980, 15300, 17000, 18020, 21500, 24950]
   .map((x, i) => ({x, kind: ['plant','person','plant','person','post'][i % 5], seed: i}));
 const FG_SPRITES = {};
 function makeFgSprite(kind, seed){
@@ -2673,6 +2693,40 @@ function update(dt){
   cam.vel *= Math.pow(Math.E, -CFG.friction * dt);
   cam.x += cam.vel * dt;
 
+  // ---- the yard video splice ----
+  const SE = spliceEdges();
+  if (state.splice){
+    const S = state.splice;
+    S.t += dt;
+    cam.vel = 0;
+    if (SEAM_VIDEO && SEAM_VIDEO.videoWidth){
+      cam.x = S.from;
+      if (SEAM_VIDEO.ended || S.skip) S.done = true;
+    } else {
+      // placeholder until the clip exists: a breath of light, and we are there
+      cam.x = S.t < SPLICE.dur/2 ? S.from : S.to;
+      if (S.t >= SPLICE.dur || S.skip) S.done = true;
+    }
+    if (S.done){
+      cam.x = S.to + S.dir * 8;
+      cam.vel = S.dir * 260;
+      state.spliceSide = S.dir > 0 ? 'R' : 'L';
+      state.splice = null;
+    }
+  } else {
+    if (cam.x < SE.inL) state.spliceSide = 'L';
+    else if (cam.x > SE.outR) state.spliceSide = 'R';
+    else {
+      // reached the threshold: stop dead — this is the clip's first frame
+      const dir = state.spliceSide === 'L' ? 1 : -1;
+      const from = dir > 0 ? SE.inL : SE.outR;
+      cam.x = from; cam.vel = 0;
+      state.splice = {dir, t: 0, from, to: dir > 0 ? SE.outR : SE.inL};
+      if (SEAM_VIDEO){ try { SEAM_VIDEO.currentTime = 0; SEAM_VIDEO.play(); } catch(err){} }
+    }
+  }
+  if (state.splice && inp.action) state.splice.skip = true;
+
   // soft bounds
   if (cam.x < -300){ cam.x = -300; cam.vel = Math.max(0, cam.vel); }
   if (cam.x > WORLD_END + 300){ cam.x = WORLD_END + 300; cam.vel = Math.min(0, cam.vel); }
@@ -2706,7 +2760,6 @@ function frame(){
   ctx.fillStyle = `rgb(${amb.bg[0]|0},${amb.bg[1]|0},${amb.bg[2]|0})`;
   ctx.fillRect(0, 0, W, H);
 
-  drawOutside();
   drawWall();
 
   // lamp pools on wall (behind photos)
