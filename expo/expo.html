@@ -141,9 +141,9 @@ const BEATS = [
   {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true,
    th:'Own the science, so you can own the quality and the price.',
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir, and everything after.',
-   wall:[{img:'rella', w:250, dx:-420, cy:350, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
+   wall:[{img:'rella', w:250, dx:430, cy:350, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
    table:[],
-   ped:{obj:'puck', dx:430}},
+   ped:{obj:'puck', dx:-430}},
 
   {x:16600, y:'~2000', t:'CAD REVOLUTION', sub:15700,
    th:'Craft gives way to design and the mill — the seed of BruxZir.',
@@ -3072,13 +3072,6 @@ function frame(){
     if (b.y === '2020–22') drawBookPyramid(b, t);
   }
 
-  // the floating text reads above everything on the walls and tables
-  for (let i = 0; i < BEATS.length; i++){
-    const b = BEATS[i];
-    if (Math.abs(b.x - cam.x) > 2400) continue;
-    const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
-    drawBeatText(b, focusAmt);
-  }
 
   // lamps + dust + foreground
   drawLamp(INTRO_X, t, 0);
@@ -3088,6 +3081,14 @@ function frame(){
     else drawLamp(b.x, t, i+1);
   }
   drawDust(t);
+
+  // the floating text reads above everything — walls, tables, even the lamps
+  for (let i = 0; i < BEATS.length; i++){
+    const b = BEATS[i];
+    if (Math.abs(b.x - cam.x) > 2400) continue;
+    const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
+    drawBeatText(b, focusAmt);
+  }
 
   // hero pass: as you pass a landmark stand, the world dims and a spotlight takes it
   let hero = 0;
