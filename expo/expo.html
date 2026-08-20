@@ -2344,11 +2344,55 @@ function makeBanner(title, sub, cta, imgName){
   g.fillText(cta, 66, 489);
   return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
 }
+function makeBannerVert(title, sub, cta, imgName){
+  const c = document.createElement('canvas'); c.width = 560; c.height = 1000;
+  const g = c.getContext('2d');
+  g.save();
+  g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 22; g.shadowOffsetY = 10;
+  const bg = g.createLinearGradient(0, 0, 0, 1000);
+  bg.addColorStop(0, '#fdfefe'); bg.addColorStop(1, '#e8edf0');
+  g.fillStyle = bg;
+  g.fillRect(12, 12, 536, 976);
+  g.restore();
+  g.strokeStyle = 'rgba(90,200,250,0.65)'; g.lineWidth = 3;
+  g.strokeRect(12, 12, 536, 976);
+  g.fillStyle = '#d0342c'; g.fillRect(40, 42, 40, 40);
+  g.fillStyle = '#fff'; g.textAlign = 'center';
+  g.font = '700 27px "Helvetica Neue", Arial, sans-serif';
+  g.fillText('G', 60, 71);
+  g.textAlign = 'left';
+  g.fillStyle = '#4a5058';
+  g.font = '600 24px "Helvetica Neue", Arial, sans-serif';
+  g.fillText('Glidewell', 92, 70);
+  g.fillStyle = '#23282e';
+  g.font = '800 64px "Helvetica Neue", Arial, sans-serif';
+  title.split('\n').forEach((ln, i) => g.fillText(ln, 40, 160 + i*70));
+  g.fillStyle = '#5a616a';
+  g.font = '400 27px "Helvetica Neue", Arial, sans-serif';
+  sub.split('\n').forEach((ln, i) => g.fillText(ln, 40, 210 + i*36));
+  if (imgName && IMGS[imgName]){
+    const im = IMGS[imgName];
+    const dw = 480, dh = 560;
+    const s = Math.max(dw/im.w, dh/im.h);
+    g.save();
+    g.beginPath(); g.roundRect(40, 300, dw, dh, 10); g.clip();
+    g.drawImage(im.el, 40 + dw/2 - im.w*s/2, 300 + dh/2 - im.h*s/2, im.w*s, im.h*s);
+    g.restore();
+    g.strokeStyle = 'rgba(0,0,0,0.15)'; g.lineWidth = 1.5;
+    g.strokeRect(40, 300, dw, dh);
+  }
+  g.fillStyle = '#12b7e2';
+  g.beginPath(); g.roundRect(40, 896, 20 + cta.length*15, 56, 28); g.fill();
+  g.fillStyle = '#ffffff';
+  g.font = '700 27px "Helvetica Neue", Arial, sans-serif';
+  g.fillText(cta, 56, 933);
+  return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
+}
 function initBanners(){
   BANNERS = [
     {x: 20780, w: 640, sp: makeBanner('BRUXZIR®', 'The best dentistry — made affordable', 'THE #1 CROWN')},
     {x: 22150, w: 560, sp: makeBanner('GLIDEWELL HT™', 'Premium implant, a fraction of the price', 'PREMIUM · AFFORDABLE')},
-    {x: 23790, w: 660, sp: makeBanner('GLIDEWELL.IO', 'The lab moves into your office', 'SINGLE-VISIT CROWNS', 'fastmill')},
+    {x: 22890, w: 300, sp: makeBannerVert('GLIDEWELL.IO', 'The lab moves\ninto your office', 'SINGLE-VISIT', 'fastmill')},
     {x: 26060, w: 660, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
   ];
 }
