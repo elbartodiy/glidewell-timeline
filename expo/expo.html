@@ -749,41 +749,51 @@ function drawWall(){
 
 /* the floor: each era has its own material tone; the change lands exactly
    on the recreation line — the ground is part of the aging, not a black hole */
-const FLOOR_TONES = [
-  ['#4a2f17', '#1d1108'],   // craft: dark oiled wood
-  ['#485042', '#1e2119'],   // workshop: worn linoleum
-  ['#3e434b', '#1b1d22'],   // office: carpet-tile grey
-  ['#686d75', '#31353b'],   // white room: polished light concrete
-  ['#9aa27f', '#5c6650'],   // the plaza outside: sunlit ground
-];
+const FLOOR_TONES = {
+  era: [
+    ['#4a2f17', '#1d1108'],   // craft: dark oiled wood
+    ['#485042', '#1e2119'],   // workshop: worn linoleum
+    ['#3e434b', '#1b1d22'],   // office: carpet-tile grey
+    ['#686d75', '#31353b'],   // white room: polished light concrete
+  ],
+  rec: [
+    ['#d6cfc0', '#8f8778'],   // 1979: pale stone, toned to the panel
+    ['#d3d1c9', '#8b897f'],   // 1989: the national-leader threshold
+    ['#dde1e6', '#989ea6'],   // digital revolution: cool light stone
+  ],
+  plaza: ['#9aa27f', '#5c6650'],  // outside: sunlit ground
+};
+/* the floor: every era owns its tone, and each recreation stands on its own
+   light slab running column to column — the carpet lies on that slab, the
+   era seams land visibly at the slab's edges */
 function drawFloor(){
   const kSeam = k(CFG.benchDepth);
   const yTop = py(CFG.benchY + 240, kSeam);
   const kNear = k(-40);
-  // floor spans split at the recreation midlines
-  // the new era's floor starts where its recreation starts — the seam is
-  // visible beside the carpet, never hidden underneath it
-  const cuts = [SEGMENTS[0].x0 - 900,
-                REC_L,
-                REC3_L,
-                REC2_L,
-                EXIT_X,
-                SEGMENTS[3].x1 + 900];
-  for (let i = 0; i < 5; i++){
-    const xTL = px(cuts[i], kSeam), xTR = px(cuts[i+1], kSeam);
-    const xBL = px(cuts[i], kNear), xBR = px(cuts[i+1], kNear);
+  const T = FLOOR_TONES;
+  const spans = [
+    [SEGMENTS[0].x0 - 900, REC_L,  T.era[0]],
+    [REC_L,  REC_R,  T.rec[0]],
+    [REC_R,  REC3_L, T.era[1]],
+    [REC3_L, REC3_R, T.rec[1]],
+    [REC3_R, REC2_L, T.era[2]],
+    [REC2_L, REC2_R, T.rec[2]],
+    [REC2_R, EXIT_X, T.era[3]],
+    [EXIT_X, SEGMENTS[3].x1 + 900, T.plaza],
+  ];
+  for (const [a, b, tone] of spans){
+    const xTL = px(a, kSeam), xTR = px(b, kSeam);
+    const xBL = px(a, kNear), xBR = px(b, kNear);
     if (Math.max(xTR, xBR) < 0 || Math.min(xTL, xBL) > W) continue;
     const g = ctx.createLinearGradient(0, yTop, 0, H);
-    g.addColorStop(0, FLOOR_TONES[i][0]);
-    g.addColorStop(1, FLOOR_TONES[i][1]);
-    ctx.save();
+    g.addColorStop(0, tone[0]);
+    g.addColorStop(1, tone[1]);
     ctx.beginPath();
     ctx.moveTo(xTL, yTop); ctx.lineTo(xTR, yTop);
     ctx.lineTo(xBR, H); ctx.lineTo(xBL, H);
     ctx.closePath();
     ctx.fillStyle = g;
     ctx.fill();
-    ctx.restore();
   }
 }
 
