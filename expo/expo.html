@@ -867,12 +867,9 @@ function drawBeatText(b, focusAmt){
   const dxW = b.x - cam.x;
   const near = Math.max(0, 1 - Math.abs(dxW)/1300);
   const sc = b.minor ? 0.6 : 1;
-  // only the flagged landmark beats fly out — and only the nearest one at a time;
-  // everything else stays painted on the wall
-  let fly = !!b.fly;
-  if (fly) for (const o of BEATS)
-    if (o !== b && o.fly && Math.abs(o.x - cam.x) < Math.abs(dxW)){ fly = false; break; }
-  if (fly){
+  // flagged landmark beats fly: at distance they rest on the wall in the
+  // standard typography, grow to full size at screen center, then settle back
+  if (b.fly){
     // the year lifts off the wall as you approach and settles back afterwards —
     // its resting state is the standard wall typography, same as every other year
     const zT = 150 + (wz - 8 - 150) * Math.pow(1 - near, 1.7);
@@ -931,10 +928,10 @@ function drawBeatText(b, focusAmt){
           // the satellite hangs its title where the year would be
         }
       } else {
-        ctx.font = eraFont(170 * sc * (seg.tScale||1) * (b._ys||1) * kk * SS, '', seg.font);
-        ctx.fillStyle = `rgba(${seg.ink},${(0.5 + 0.45*near)*(b.minor?0.82:1)})`;
+        ctx.font = eraFont(170 * (seg.tScale||1) * (b._ys||1) * kk * SS, '', seg.font);
+        ctx.fillStyle = `rgba(${seg.ink},${0.5 + 0.45*near})`;
         ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 3*SS;
-        ctx.fillText(b.y, cx, py(b.minor ? 170 : 140, kk));
+        ctx.fillText(b.y, cx, py(140, kk));
       }
       ctx.font = eraFont(46 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*sc*kk*SS}px`; } catch(e){}
@@ -989,8 +986,7 @@ function cacheWrap(){
     ctx.font = `100px ${seg.font}`;
     b._d = wrapCalc(b.d, 100 * 700/26);
     // year lane: half the distance to the nearest neighbour, minus breathing room
-    const sc = (b.minor ? 0.6 : 1) * (seg.tScale || 1);
-    const fs = 170 * sc;
+    const fs = 170 * (seg.tScale || 1);
     ctx.font = `${Math.round(fs)}px ${seg.font}`;
     const w = ctx.measureText(b.y).width;
     const lane = Math.min(i > 0 ? b.x - BEATS[i-1].x : 1e9,
