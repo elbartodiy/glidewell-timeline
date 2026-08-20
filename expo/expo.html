@@ -110,6 +110,7 @@ const BEATS = [
    wall:[], table:[]},
 
   {x:11150, y:'1989', t:'NATIONAL LEADER', tier:1, fly:true, ink:'56,58,64',
+   clampL:10600+60, clampR:11700-60,   // the flying year never leaves the recreation panel
    th:'',
    d:'Glidewell settles into 4141 MacArthur Blvd, Newport Beach (33,000 sq ft); 95% of cases now arrive by mail from 3,500+ dentists nationwide.',
    wall:[{img:'lab5move', w:300, dx:-350, cy:400, rot:-0.6, style:'white'}],
@@ -201,7 +202,7 @@ const BEATS = [
    th:'The analog→digital climax: robots make crowns.',
    d:'Automated, AI-designed, robotic monolithic production.',
    wall:[], table:[],
-   plasma:{dx:440, cy:370, w:430, mode:'wave'}},
+   plasma:{dx:330, cy:492, w:430, mode:'wave'}},
 
   {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870,
    th:'Reinvesting in the profession — and our channel for finding hero dentists.',
@@ -216,14 +217,14 @@ const BEATS = [
    th:'A generational handover at the top; the scanner joins the ecosystem.',
    d:'“Constant Change” (2020); new CEO (2021); fastscan.io with Medit (2022).',
    wall:[{img:'jimnow', w:280, dx:-440, cy:360, rot:0.5, cap:'Jim Glidewell', style:'white'}],
-   table:[], pyr:{dx:400, w:340}},
+   table:[], pyr:{dx:380, w:460}},
 
   {x:27190, y:'2020s', t:'AI · SCALE', tier:1,
    th:'The flywheel: cheaper to make → wider access → reinvest.',
    d:'CrownAI / MarginAI; ~500K units a month, 5,000+ staff — the largest dental lab in the world.',
    wall:[],
    table:[],
-   plasma:{dx:430, cy:370, w:420, mode:'count'}},
+   plasma:{dx:430, cy:492, w:420, mode:'count'}},
 
   {x:28180, y:'2026', t:'TODAY', tier:1, fly:true,
    th:'An arc the length of one life: craft → digital → automation.',
@@ -539,8 +540,10 @@ const state = {
   focusAnchor: null,      // world x the dolly centers on (defaults to the beat)
   albumLock: {},          // per-beat album override: true=open, false=closed
   inspect: null,          // a photo lifted to the camera
+  study: null,            // the era reading page {beat, imgs, scroll, amt}
   restBeat: -1, restTime: 0,
   introHold: true,        // holding the opening close-up until the first move,
+  introFade: 1,           // darkness over the hall until the tour begins
   splice: null,           // {dir, t} while the yard splice is playing
   spliceSide: 'L',        // which side of the yard we were on
   time: 0,
@@ -556,7 +559,7 @@ function nearestBeat(x){
 }
 
 /* the long bench is really a row of separate tables */
-const BENCH_BREAKS = [1980, 3830, 7350, 9250, 13100, 17900, 22280, 26730]
+const BENCH_BREAKS = [1980, 3830, 7350, 9250, 13100, 17900, 22280]
   .map(x => ({x, half: 65}));
 BENCH_BREAKS.push({x: 24870, half: 560});   // the BruxZir Factory line replaces the table
 let TABLES = [];
@@ -885,17 +888,23 @@ function drawBeatText(b, focusAmt){
   if (b.fly){
     // the year lifts off the wall as you approach and settles back afterwards —
     // its resting state is the standard wall typography, same as every other year
-    const zT = 150 + (wz - 8 - 150) * Math.pow(1 - near, 1.7);
+    const zT = 265 + (wz - 8 - 265) * Math.pow(1 - near, 1.7);   // apex plane keeps the numerals fully in frame
     const kk = k(zT);
-    const cx = px(b.x, kk);
+    let cx = px(b.x, kk);
     const ts = (seg.tScale || 1) * (b._ys || 1);
     if (cx > -1200 && cx < W + 1200){
       ctx.save();
       ctx.textAlign = 'center';
       ctx.font = eraFont(170 * ts * kk * SS, '', seg.font);
+      if (b.clampL !== undefined){
+        // the year stays readable: pinned inside its own panel while flying
+        const half = ctx.measureText(b.y).width / 2;
+        cx = Math.max(px(b.clampL, kk) + half, Math.min(px(b.clampR, kk) - half, cx));
+      }
       ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
       ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
       ctx.fillText(b.y, cx, py(140, kk));
+      pushHit(cx - 340*kk*SS, py(20, kk), 680*kk*SS, py(330, kk) - py(20, kk), {type:'study', beat: BEATS.indexOf(b)});
       ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
@@ -948,6 +957,7 @@ function drawBeatText(b, focusAmt){
         ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 3*SS;
         ctx.fillText(b.y, cx, py(140, kk));
       }
+      pushHit(cx - 320*kk*SS, py(20, kk), 640*kk*SS, py(330, kk) - py(20, kk), {type:'study', beat: BEATS.indexOf(b)});
       ctx.font = eraFont(46 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*sc*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
@@ -1359,6 +1369,25 @@ function drawMapWall(t){
   pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp, wx: mid, cy: 450, z: 610, w: 440,
           cap: '1979 · nine labs across Southern California', beat: BEATS.findIndex(b => b.y === '1979')});
   ctx.drawImage(sp.c, cx - w/2, cyS - h/2, w, h);
+  // the red carpet running up to the map
+  {
+    const kNear = k(-40), kFar = k(590);
+    const yNear = H, yFar = py(1064, kFar);
+    const cxN = px(mid, kNear), cxF = px(mid, kFar);
+    const wN = 330 * kNear * SS, wF = 150 * kFar * SS;
+    const cg = ctx.createLinearGradient(0, yFar, 0, yNear);
+    cg.addColorStop(0, '#5a0f18');
+    cg.addColorStop(0.6, '#7c1622');
+    cg.addColorStop(1, '#8f1a27');
+    ctx.fillStyle = cg;
+    ctx.beginPath();
+    ctx.moveTo(cxN - wN, yNear); ctx.lineTo(cxF - wF, yFar);
+    ctx.lineTo(cxF + wF, yFar); ctx.lineTo(cxN + wN, yNear);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(235,195,120,0.4)'; ctx.lineWidth = 2.5*SS;
+    ctx.beginPath(); ctx.moveTo(cxN - wN + 10*SS, yNear); ctx.lineTo(cxF - wF + 5*SS, yFar); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cxN + wN - 10*SS, yNear); ctx.lineTo(cxF + wF - 5*SS, yFar); ctx.stroke();
+  }
   // pilaster columns on both edges — same plane as the walls they join
   for (const wxc of [REC_L, REC_R]){
     const kc = k(604);
@@ -1411,6 +1440,16 @@ function drawRec2(t){
   ctx.fillStyle = 'rgba(58,68,80,0.85)';
   ctx.fillText('THE DIGITAL REVOLUTION', cx, py(688, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
+  ctx.font = eraFont(21 * kk * SS, '', SEGMENTS[3].font);
+  ctx.fillStyle = 'rgba(88,98,110,0.8)';
+  ctx.fillText('the impression becomes a scan \u00b7 the crown becomes a file', cx, py(730, kk));
+  // era markers on the panel shoulders: what ends, what begins
+  ctx.font = eraFont(24 * kk * SS, '700', SEGMENTS[3].font);
+  ctx.fillStyle = 'rgba(120,130,142,0.55)';
+  ctx.textAlign = 'left';
+  ctx.fillText('\u2190 THE ANALOG CENTURY', x0 + 26*kk*SS, py(170, kk));
+  ctx.textAlign = 'right';
+  ctx.fillText('THE DIGITAL AGE \u2192', x1 - 26*kk*SS, py(170, kk));
   ctx.restore();
   // pilaster columns, cool tone, same plane
   for (const wxc of [REC2_L, REC2_R]){
@@ -2051,9 +2090,9 @@ function initDecor(){
   PROPS.push({x: FACT_X + 330, z: 700, kind: 'mill', w: 440, mid: true});
   // guiding leaders — a trio in the depth
   for (let i = 0; i < 3; i++)
-    FIGURES.push({x: 25830 + i*115, z: 720 + i*30, h: 660, sprite: makeFigure(80 + i)});
+    FIGURES.push({x: 25480 + i*115, z: 740 + i*30, h: 650, sprite: makeFigure(80 + i)});
   // the symposium audience at the finale — spaced so the stage stays visible
-  const AUD = [[28550, 380, 640], [28740, 620, 580], [29110, 340, 650], [29340, 460, 615], [29580, 360, 640]];
+  const AUD = [[29180, 380, 640], [29300, 620, 580], [29400, 340, 650], [29500, 460, 615], [29580, 360, 640]];
   AUD.forEach(([ax, az, ah], i) => FIGURES.push({x: ax, z: az, h: ah, sprite: makeFigure(60 + i)}));
 
   JIM_FIG = makeFigure(99);
@@ -2113,7 +2152,7 @@ function auditPlacements(){
 }
 function drawSheets(){
   for (const sh of SHEETS){
-    if (Math.abs(sh.x - cam.x) > 2200) continue;
+    if (Math.abs(sh.x - cam.x) > 3200) continue;
     const kk = k(wallZAt(sh.x) - 10);
     const sx = px(sh.x, kk);
     if (sx < -300 || sx > W + 300) continue;
@@ -2543,30 +2582,29 @@ function makeBookPyramid(){
   const c = document.createElement('canvas'); c.width = 420; c.height = 360;
   const g = c.getContext('2d');
   const spine = IMGS.bookspine, front = IMGS.bookfront;
-  const bw = 100, bh = 25;
-  const rows = [4, 3, 2];
+  const bw = 64, bh = 16;
+  const rows = [6, 5, 4, 3];
   g.save();
-  g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 12; g.shadowOffsetY = 5;
-  g.fillStyle = '#101010';
-  g.fillRect(210 - 4*bw/2, 340 - 3*bh, 4*bw, 3*bh);
+  g.filter = 'blur(7px)';
+  g.fillStyle = 'rgba(0,0,0,0.30)';
+  g.beginPath(); g.ellipse(210, 344, 6*bw/2 + 14, 11, 0, 0, Math.PI*2); g.fill();
   g.restore();
   rows.forEach((n, r) => {
     for (let i = 0; i < n; i++){
-      const x = 210 - n*bw/2 + i*bw + (r%2)*3;
+      const x = 210 - n*bw/2 + i*bw + (r%2)*2;
       const y = 340 - (r+1)*bh;
-      if (spine) g.drawImage(spine.el, x + 1, y + 1, bw - 2, bh - 2);
+      if (spine) g.drawImage(spine.el, x + 1, y + 1, bw - 2, bh - 1);
       g.strokeStyle = 'rgba(0,0,0,0.55)'; g.lineWidth = 1;
-      g.strokeRect(x + 1, y + 1, bw - 2, bh - 2);
+      g.strokeRect(x + 1, y + 1, bw - 2, bh - 1);
     }
   });
   if (front){
-    const fw = 140, fh = fw * front.h / front.w;
-    const sx = 210 - fw/2, sy = 340 - 3*bh - fh - 2;
+    const fw = 96, fh = fw * front.h / front.w;
+    const sx = 210 - fw/2, sy = 340 - 4*bh - fh - 2;
     g.save();
     g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 14; g.shadowOffsetY = 7;
-    g.fillStyle = '#0c0c0c'; g.fillRect(sx, sy, fw, fh);
-    g.restore();
     g.drawImage(front.el, sx, sy, fw, fh);
+    g.restore();
     g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = 1;
     g.strokeRect(sx + 0.5, sy + 0.5, fw - 1, fh - 1);
   }
@@ -2631,7 +2669,7 @@ function drawBookPyramid(b, t){
   const kk = k(155);
   const sx = px(b.x + b.pyr.dx, kk);
   if (sx < -600 || sx > W + 600) return;
-  const wWorld = b.pyr.w * 2;
+  const wWorld = b.pyr.w;
   const scale = (wWorld / BOOK_SPRITE.w) * kk * SS;
   const sy = py(CFG.benchY - 2, kk);
   pushHit(sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale, BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale,
@@ -2771,20 +2809,23 @@ function makeBannerVert(title, sub, cta, imgName){
 }
 function initBanners(){
   BANNERS = [
-    {x: 21460, w: 640, sp: makeBanner('BRUXZIR®', 'The best dentistry — made affordable', 'THE #1 CROWN')},
+    {x: 21690, w: 640, sp: makeBanner('BRUXZIR®', 'The best dentistry — made affordable', 'THE #1 CROWN')},
     {x: 22830, w: 560, sp: makeBanner('GLIDEWELL HT™', 'Premium implant, a fraction of the price', 'PREMIUM · AFFORDABLE')},
     {x: 23570, w: 300, sp: makeBannerVert('GLIDEWELL.IO', 'The lab moves\ninto your office', 'SINGLE-VISIT', 'fastmill')},
-    {x: 26740, w: 660, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
+    {x: 27850, w: 660, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
   ];
 }
 function drawBanners(t){
+  const bnA = Math.max(0, 1 - (state.hero || 0) * 1.5);   // banners clear the stage for hero moments
+  if (bnA <= 0.02) return;
+  ctx.save(); ctx.globalAlpha = bnA;
   for (const bn of BANNERS){
     if (Math.abs(bn.x - cam.x) > 2400) continue;
     const kk = k(680);
     const sx = px(bn.x, kk);
     if (sx < -700 || sx > W + 700) continue;
     const h = bn.w * bn.sp.h / bn.sp.w;
-    const cy = 485 + 8*Math.sin(t*0.5 + bn.x);         // a breath of suspension, below the year line
+    const cy = 528 + 8*Math.sin(t*0.5 + bn.x);         // a breath of suspension, clear below the text band
     const sw = bn.w * kk * SS, shh = h * kk * SS;
     const syC = py(cy, kk);
     // cables
@@ -2796,6 +2837,8 @@ function drawBanners(t){
             {type:'photo', sp: bn.sp, wx: bn.x, cy, z: 680, w: bn.w, beat: nearestBeat(bn.x).i});
     ctx.drawImage(bn.sp.c, sx - sw/2, syC - shh/2, sw, shh);
   }
+
+  ctx.restore();
 }
 
 /* BruxZir Factory: collaborative arms pick shade blocks and feed the mills */
@@ -2845,6 +2888,10 @@ function drawRobotArm(bx, bz, t, phase){
 }
 function drawFactory(t){
   if (Math.abs(cam.x - FACT_X) > 2500) return;
+  // the factory is never the hero itself — it yields the stage to neighbours
+  const fA = Math.max(0, 1 - (state.hero || 0) * 1.3);
+  if (fA <= 0.02) return;
+  ctx.save(); ctx.globalAlpha = fA;
   const b = BEATS.find(bb => bb.t === 'BRUXZIR FACTORY');
   // shade dispenser tower, left
   const kd = k(210);
@@ -2879,6 +2926,7 @@ function drawFactory(t){
   const kk = k(190);
   pushHit(px(FACT_X - 480, kk), py(560, kk), (960)*kk*SS, py(1080,kk)-py(560,kk),
           {type:'focus', beat: BEATS.indexOf(b), anchor: FACT_X});
+  ctx.restore();
 }
 const STAGE_X = 28830;
 let JIM_FIG = null;
@@ -3073,6 +3121,90 @@ function drawInspect(){
   }
 }
 
+function openStudy(i){
+  const b = BEATS[i];
+  const imgs = [];
+  const seen = new Set();
+  const push = (sp, cap, raw) => { imgs.push({sp, cap, raw}); };
+  for (const it of [...(b.wall||[]), ...(b.st||[]), ...(b.table||[])]){
+    if (SPRITES[it.img] && !seen.has(it.img)){ seen.add(it.img); push(SPRITES[it.img], it.cap); }
+  }
+  if (b.album) for (const pair of b.album.photos) for (const n of pair)
+    if (IMGS[n] && !seen.has(n)){ seen.add(n); push(null, null, IMGS[n]); }
+  if (b.pyr && BOOK_CARD) push(BOOK_CARD);
+  if (b.y === '1979' && MAP_SPRITE) push(MAP_SPRITE, 'Nine labs across Southern California');
+  if (b.y === '1989' && USA_SPRITE) push(USA_SPRITE, '95% of cases arrive by mail');
+  state.study = {beat: i, imgs, scroll: 0, amt: 0, maxScroll: 1};
+}
+function drawStudy(){
+  const S = state.study; if (!S) return;
+  S.amt += ((S.closing ? 0 : 1) - S.amt) * Math.min(1, (state.dt || 0.016) * 5);
+  if (S.closing && S.amt < 0.03){ state.study = null; return; }
+  const e = S.amt*S.amt*(3-2*S.amt);
+  const b = BEATS[S.beat];
+  const seg = segAt(b.x);
+  ctx.fillStyle = `rgba(6,7,9,${(0.95*e).toFixed(3)})`;
+  ctx.fillRect(0, 0, W, H);
+  if (e < 0.35) return;
+  const a = (e - 0.35) / 0.65;
+  const colW = Math.min(W * 0.72, 1250 * SS);
+  const left = W/2 - colW/2;
+  let y = H * 0.16 - S.scroll * SS + (1 - a) * 40 * SS;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.textAlign = 'left';
+  ctx.font = eraFont(170 * SS, '', seg.font);
+  ctx.fillStyle = 'rgba(238,240,244,0.98)';
+  ctx.fillText(b.y, left, y); y += 64 * SS;
+  ctx.font = eraFont(44 * SS, '', seg.font);
+  try { ctx.letterSpacing = `${8*SS}px`; } catch(err){}
+  ctx.fillStyle = 'rgba(225,228,233,0.95)';
+  ctx.fillText(b.t, left, y);
+  try { ctx.letterSpacing = '0px'; } catch(err){}
+  y += 58 * SS;
+  if (b.th){
+    ctx.font = eraFont(30 * SS, 'italic', seg.font);
+    ctx.fillStyle = 'rgba(200,205,212,0.9)';
+    ctx.fillText(b.th, left, y); y += 52 * SS;
+  }
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.fillRect(left, y, colW, 1.5*SS); y += 44 * SS;
+  ctx.font = eraFont(29 * SS, '', seg.font);
+  ctx.fillStyle = 'rgba(212,216,222,0.95)';
+  let line = '';
+  for (const wd of b.d.split(' ')){
+    const test = line ? line + ' ' + wd : wd;
+    if (ctx.measureText(test).width > colW && line){ ctx.fillText(line, left, y); y += 42*SS; line = wd; }
+    else line = test;
+  }
+  if (line){ ctx.fillText(line, left, y); y += 42*SS; }
+  y += 40 * SS;
+  for (const im of S.imgs){
+    const iw = Math.min(colW, 900 * SS);
+    let dw, dh, draw;
+    if (im.sp){ dw = iw; dh = iw * im.sp.h / im.sp.w; const yy = y;
+                draw = () => ctx.drawImage(im.sp.c, left, yy, dw, dh); }
+    else { dw = Math.min(iw, im.raw.w * 1.4 * SS); dh = dw * im.raw.h / im.raw.w; const yy = y;
+           draw = () => { ctx.fillStyle = '#eee9dc'; ctx.fillRect(left - 8*SS, yy - 8*SS, dw + 16*SS, dh + 16*SS);
+                          ctx.drawImage(im.raw.el, left, yy, dw, dh); }; }
+    if (y + dh > 0 && y < H) draw();
+    y += dh + 16 * SS;
+    if (im.cap){
+      ctx.font = eraFont(22 * SS, '', seg.font);
+      ctx.fillStyle = 'rgba(190,195,202,0.8)';
+      ctx.fillText(im.cap, left, y + 8*SS);
+      y += 34 * SS;
+    }
+    y += 30 * SS;
+  }
+  ctx.font = eraFont(20 * SS, '', seg.font);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(170,176,184,0.55)';
+  ctx.fillText('· scroll to explore · tap to return ·', W/2, y + 30*SS);
+  ctx.restore();
+  S.maxScroll = Math.max(1, (y + 140*SS + S.scroll * SS - H) / SS);
+}
+
 function drawAttractHint(t){
   if (state.mode !== 'attract') return;
   const a = 0.35 + 0.2*Math.sin(t*1.8);
@@ -3080,7 +3212,8 @@ function drawAttractHint(t){
   ctx.textAlign = 'center';
   ctx.font = eraFont(24*SS);
   try { ctx.letterSpacing = `${5*SS}px`; } catch(e){}
-  ctx.fillStyle = `rgba(225,198,155,${a})`;
+  // warm ink only in the craft era; translucent white once 1979 is crossed
+  ctx.fillStyle = cam.x < REC_L ? `rgba(225,198,155,${a})` : `rgba(255,255,255,${(a*0.85).toFixed(3)})`;
   ctx.fillText('TURN THE WHEEL · TRAVEL THROUGH TIME', W/2, H - 34*SS);
   ctx.restore();
 }
@@ -3101,6 +3234,7 @@ function update(dt){
     state.idle += dt;
     if (state.mode === 'live' && state.idle > CFG.idleToAttract){
       state.mode = 'attract';
+      state.study = null;
       state.attract.phase = 'cruise';
       state.focusBeat = -1; cam.zTarget = 0;
     }
@@ -3111,10 +3245,17 @@ function update(dt){
       // a photo is up close: any strong scroll or click puts it back
       if (inp.action || Math.abs(inp.impulse) > 260) state.inspect.closing = true;
       cam.vel = 0;
+    } else if (state.study){
+      // the reading page: the wheel scrolls the page, a click or a pull-up closes
+      const S = state.study;
+      S.scroll += inp.impulse * 0.55 * dt * 60 / 60;
+      if (S.scroll < -90 || inp.action) S.closing = true;
+      S.scroll = Math.max(-120, Math.min(S.maxScroll, S.scroll));
+      cam.vel = 0;
     } else {
       cam.vel += inp.impulse;
     }
-    if (inp.action && !state.inspect){
+    if (inp.action && !state.inspect && !state.study){
       const aimed = (typeof inp.action === 'object') ? hitAt(inp.action.x, inp.action.y) : null;
       if (aimed && aimed.type === 'photo'){
         state.inspect = {sp: aimed.sp, wx: aimed.wx, cy: aimed.cy, z: aimed.z, w: aimed.w,
@@ -3131,10 +3272,12 @@ function update(dt){
         if (state.focusBeat === aimed.beat){ state.focusBeat = -1; state.focusAnchor = null; cam.zTarget = 0; }
         else { state.focusBeat = aimed.beat; state.focusAnchor = aimed.anchor != null ? aimed.anchor : null;
                cam.zTarget = CFG.focusCamZ; cam.vel = 0; }
+      } else if (aimed && aimed.type === 'study'){
+        openStudy(aimed.beat);
       } else {
         const nb = nearestBeat(cam.x);
-        if (state.focusBeat === nb.i){ state.focusBeat = -1; state.focusAnchor = null; cam.zTarget = 0; }
-        else if (nb.d < 500){ state.focusBeat = nb.i; state.focusAnchor = null; cam.zTarget = CFG.focusCamZ; cam.vel = 0; }
+        if (state.focusBeat >= 0){ state.focusBeat = -1; state.focusAnchor = null; cam.zTarget = 0; }
+        else if (nb.d < 500) openStudy(nb.i);
       }
     }
     if (state.focusBeat >= 0){
@@ -3242,6 +3385,7 @@ function update(dt){
     state.introHold = false;
     cam.zTarget = 0;
   }
+  state.introFade += ((state.introHold ? 1 : 0) - state.introFade) * Math.min(1, dt*2.2);
 
   // dolly
   cam.z += (cam.zTarget - cam.z) * Math.min(1, dt*3);
@@ -3272,7 +3416,7 @@ function frame(){
   // wall layer: photos and panels sit deepest
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    if (Math.abs(b.x - cam.x) > 2400) continue;
+    if (Math.abs(b.x - cam.x) > 3400) continue;
     for (const it of b.wall){
       const sp = SPRITES[it.img]; if (!sp) continue;
       const wz = wallZAt(b.x) - 12;
@@ -3306,7 +3450,7 @@ function frame(){
   drawProps(false);
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    if (Math.abs(b.x - cam.x) > 2400) continue;
+    if (Math.abs(b.x - cam.x) > 3400) continue;
     for (const it of b.table){
       const sp = SPRITES[it.img]; if (!sp) continue;
       drawLyingPrint(sp, b.x + it.dx, it.lz, it.w, it.rot || 0,
@@ -3335,7 +3479,7 @@ function frame(){
   // the floating text reads above everything — walls, tables, even the lamps
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    if (Math.abs(b.x - cam.x) > 2400) continue;
+    if (Math.abs(b.x - cam.x) > 3400) continue;
     const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
     drawBeatText(b, focusAmt);
   }
@@ -3369,9 +3513,26 @@ function frame(){
 
   drawForeground();
   drawDoorway();
+  if (state.introFade > 0.01){
+    // the welcome screen: darkness curtains both sides of the title
+    const IF = state.introFade;
+    const edge = 400*SS, soft = 140*SS;
+    for (const s of [-1, 1]){
+      const x0 = W/2 + s*edge, x1 = W/2 + s*(edge + soft);
+      const g = ctx.createLinearGradient(x0, 0, x1, 0);
+      g.addColorStop(0, 'rgba(6,4,2,0)');
+      g.addColorStop(1, `rgba(6,4,2,${(0.97*IF).toFixed(3)})`);
+      ctx.fillStyle = g;
+      ctx.fillRect(Math.min(x0,x1), 0, soft, H);
+      ctx.fillStyle = `rgba(6,4,2,${(0.97*IF).toFixed(3)})`;
+      if (s > 0) ctx.fillRect(x1, 0, Math.max(0, W - x1), H);
+      else ctx.fillRect(0, 0, Math.max(0, x1), H);
+    }
+  }
   drawSeamVideo();
   drawGrade(t);
   drawInspect();
+  drawStudy();
   drawAttractHint(t);
   // pointer affordance
   if (Input.hover && state.mode === 'live'){
@@ -3475,6 +3636,31 @@ async function boot(){
       const x = b.x + it.dx;
       if (x - half < wallL) it.dx = wallL + half - b.x;
       if (x + half > wallR) it.dx = wallR - half - b.x;
+    }
+  }
+  // cross-beat pass: no two wall photos may overlap anywhere on the line —
+  // greedy left-to-right separation inside each photo's own wall extents
+  {
+    const items = [];
+    for (const b of BEATS)
+      for (const it of b.wall){
+        const sp = SPRITES[it.img]; if (!sp) continue;
+        const half = sp.w * (it.w / sp.inner.w) / 2 + 30;
+        const seg = segAt(b.x);
+        items.push({b, it, half,
+                    wallL: seg.x0 + (seg.wInsetL || 0), wallR: seg.x1 - (seg.wInsetR || 0)});
+      }
+    items.sort((p, q) => (p.b.x + p.it.dx) - (q.b.x + q.it.dx));
+    for (let i = 1; i < items.length; i++){
+      const a = items[i-1], c = items[i];
+      const gap = (c.b.x + c.it.dx - c.half) - (a.b.x + a.it.dx + a.half);
+      if (gap >= 24) continue;
+      const need = 24 - gap;
+      const cMax = c.wallR - c.half - (c.b.x + c.it.dx);   // room to the right
+      const push = Math.min(need, Math.max(0, cMax));
+      c.it.dx += push;
+      const rest = need - push;
+      if (rest > 0) a.it.dx -= Math.min(rest, Math.max(0, (a.b.x + a.it.dx - a.half) - a.wallL));
     }
   }
   initBanners();
