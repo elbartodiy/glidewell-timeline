@@ -46,7 +46,7 @@ const BEATS = [
    d:'Taggart brings lost-wax casting into dentistry — the analog century begins.',
    wall:[{img:'cast', w:360, dx:-430, cy:380, rot:-0.8},
          {img:'furnace', w:360, dx:430, cy:380, rot:1.2}],
-   table:[{img:'invest', w:300, dx:-320, lz:200, rot:-7}]},
+   table:[], st:[{img:'invest', w:280, dx:-320, lz:210}]},
 
   {x:2450, y:'1969–70', t:'FOUNDED', tier:1, fly:true,
    th:'One man, one bench — betting that affordable was a business model.',
@@ -61,7 +61,7 @@ const BEATS = [
    th:'The craft baseline every later machine is measured against.',
    d:'Cast metal hand-layered with porcelain — the hand-craft world Jim will spend his life automating.',
    wall:[],
-   table:[{img:'wax', w:300, dx:330, lz:190, rot:5}],
+   table:[], st:[{img:'wax', w:280, dx:330, lz:200}],
    album:{dx:-340, lz:215, w:310, title:'THE PFM CRAFT',
           photos:[['porc','artic'],['dietrim','wax']]}},
 
@@ -69,7 +69,7 @@ const BEATS = [
    th:'Growth by addition — before growth by system.',
    d:'Jim opens a second lab in El Toro — the one-man bench starts to multiply.',
    wall:[{img:'lab4ext', w:320, dx:-430, cy:360, hero:true}],
-   table:[{img:'rose', w:300, dx:330, lz:210, rot:-5}]},
+   table:[], st:[{img:'rose', w:280, dx:330, lz:210}]},
 
   {x:5400, y:'1976', t:'DIRECT-MAIL',
    th:'Reach is the lever — the flywheel’s first turn.',
@@ -113,7 +113,7 @@ const BEATS = [
    th:'From a local lab to the national mail-order leader.',
    d:'Glidewell settles into 4141 MacArthur Blvd, Newport Beach (33,000 sq ft); 95% of cases now arrive by mail from 3,500+ dentists nationwide.',
    wall:[{img:'lab5move', w:460, dx:-470, cy:400, hero:true}],
-   table:[{img:'bizcard', w:290, dx:-320, lz:210, rot:5}]},
+   table:[], st:[{img:'bizcard', w:280, dx:-320, lz:210}]},
 
   /* ---- ERA 3 · the computer arrives, 1993–2007 ---- */
   {x:12400, y:'1993', t:'NEWPORT BEACH',
@@ -183,7 +183,7 @@ const BEATS = [
    wall:[], table:[],
    ped:{obj:'crown2', dx:-300}},
 
-  {x:21020, y:'2009–13', t:'SCREW-RETAINED', minor:true,
+  {x:21250, y:'2009–13', t:'SCREW-RETAINED', minor:true,
    th:'The barrier wasn’t the technique — it was the price of the parts.',
    d:'Own-made Ti-bases, abutments and screws plus a flat lab fee — and BruxZir bonded to the Ti-base in the lab, so no cement goes in the patient’s mouth.',
    wall:[], table:[]},
@@ -215,9 +215,10 @@ const BEATS = [
    th:'Reinvesting in the profession — and our channel for finding hero dentists.',
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
    wall:[],
-   table:[{img:'ellen', w:220, dx:-280, lz:195, rot:-5, cap:'Dr. Ellen Paulisick · GL alum'},
-          {img:'nadia', w:220, dx:-10, lz:235, rot:4, cap:'Dr. Nadia Rodriguez · GL alum'},
-          {img:'bianca', w:220, dx:255, lz:205, rot:-3, cap:'Dr. Bianca Clark · GL alum'}]},
+   table:[],
+   st:[{img:'ellen', w:190, dx:-280, lz:200, cap:'Dr. Ellen Paulisick · GL alum'},
+       {img:'nadia', w:190, dx:-15, lz:235, cap:'Dr. Nadia Rodriguez · GL alum'},
+       {img:'bianca', w:190, dx:250, lz:210, cap:'Dr. Bianca Clark · GL alum'}]},
 
   {x:25660, y:'2020–22', t:'MEMOIR · CEO · SCAN',
    th:'A generational handover at the top; the scanner joins the ecosystem.',
@@ -555,6 +556,23 @@ function nearestBeat(x){
   return {i: best, d: bd};
 }
 
+/* the long bench is really a row of separate tables */
+const BENCH_BREAKS = [1980, 3830, 7350, 9250, 13100, 15150, 17900, 21600, 23800, 26050];
+let TABLES = [];
+function initTables(){
+  TABLES = [];
+  for (const seg of SEGMENTS){
+    const bx0 = (seg.x0 <= -800 && !seg.bInsetL) ? seg.x0 : seg.x0 + (seg.bInsetL || 140);
+    const bx1 = (seg.x1 >= WORLD_END + 800 && !seg.bInsetR) ? seg.x1 : seg.x1 - (seg.bInsetR || 140);
+    let start = bx0;
+    for (const br of BENCH_BREAKS.filter(v => v > bx0 + 200 && v < bx1 - 200).sort((a,b)=>a-b)){
+      TABLES.push({x0: start, x1: br - 65, seg});
+      start = br + 65;
+    }
+    TABLES.push({x0: start, x1: bx1, seg});
+  }
+}
+
 /* ---------------- RENDER SETUP ---------------- */
 const cv = document.getElementById('view');
 const ctx = cv.getContext('2d', {alpha:false});
@@ -646,14 +664,12 @@ function drawBench(){
   const slices = 22;
   const kf = k(0);
   const yTopF = py(CFG.benchY, kf);
-  for (const seg of SEGMENTS){
-    const bx0 = (seg.x0 <= -800 && !seg.bInsetL) ? seg.x0 : seg.x0 + (seg.bInsetL || 140);
-    const bx1 = (seg.x1 >= WORLD_END + 800 && !seg.bInsetR) ? seg.x1 : seg.x1 - (seg.bInsetR || 140);
+  for (const tb of TABLES){
+    const seg = tb.seg, bx0 = tb.x0, bx1 = tb.x1;
     const sx0f = px(bx0, kf), sx1f = px(bx1, kf);
     if (sx1f <= 0 || sx0f >= W) continue;
     const tex = TEX[seg.bench];
-    // tabletop: horizontal slices from back (benchDepth) to front (0);
-    // each slice clipped at the segment boundary in its own depth
+    // tabletop: horizontal slices from back (benchDepth) to front (0)
     for (let s = 0; s < slices; s++){
       const z1 = CFG.benchDepth * (1 - s/slices);
       const z0 = CFG.benchDepth * (1 - (s+1)/slices);
@@ -680,11 +696,11 @@ function drawBench(){
       gr.addColorStop(0.08, 'rgba(0,0,0,0.0)');
       gr.addColorStop(1, 'rgba(0,0,0,0.75)');
       ctx.fillStyle = gr; ctx.fillRect(fx0, yTopF, fx1 - fx0, H - yTopF);
-      // year rail on the bench edge
+      // year rail on the table edge
       ctx.fillStyle = seg.rail;
       ctx.fillRect(fx0, yTopF + 6*SS, fx1 - fx0, 3*SS);
       ctx.restore();
-      // visible table ends at the era gaps
+      // visible table ends
       for (const [ex, edge] of [[bx0, 1], [bx1, -1]]){
         if (ex <= -800 || ex >= WORLD_END + 800) continue;
         const exs = px(ex, kf);
@@ -732,6 +748,24 @@ function drawSprite(sp, x, yCenter, z, wWorld, rotDeg, alpha, hit){
   ctx.restore();
 }
 
+function drawStandingPrint(sp, x, lz, wWorld, hit){
+  const kk = k(lz);
+  const sx = px(x, kk);
+  if (sx < -500 || sx > W + 500) return;
+  const scale = (wWorld / sp.inner.w) * kk * SS;
+  const sw = sp.w * scale, sh = sp.h * scale;
+  const syFoot = py(CFG.benchY - 2, kk);
+  if (hit) pushHit(sx - sw/2, syFoot - sh, sw, sh, hit);
+  // contact shadow
+  ctx.save();
+  ctx.translate(sx, syFoot); ctx.scale(1, 0.22); ctx.translate(-sx, -syFoot);
+  const sg = ctx.createRadialGradient(sx, syFoot, 2, sx, syFoot, sw*0.55);
+  sg.addColorStop(0, 'rgba(0,0,0,0.4)'); sg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sg;
+  ctx.fillRect(sx - sw*0.55, syFoot - sw*0.55, sw*1.1, sw*1.1);
+  ctx.restore();
+  ctx.drawImage(sp.c, sx - sw/2, syFoot - sh + 6*kk*SS, sw, sh);
+}
 function drawLyingPrint(sp, x, lz, wWorld, rotDeg, hit){
   // print lying on the tabletop at depth lz — foreshortened
   const kk = k(lz);
@@ -788,10 +822,19 @@ function drawBeatText(b, focusAmt){
       ctx.restore();
     }
   } else {
-    // static wall text, as it always was
+    // static wall text; it steps back while a flying neighbour holds the air
+    let flyDim = 1;
+    for (const f of BEATS){
+      if (!f.fly || Math.abs(f.x - b.x) > 1200) continue;
+      const dxF = f.x - cam.x;
+      const nF = Math.max(0, 1 - Math.abs(dxF)/1300);
+      const pF = Math.max(0, Math.min(1, -dxF/560));
+      flyDim = Math.min(flyDim, 1 - 0.78 * Math.min(1, nF*2.4) * (1 - pF));
+    }
     const kk = k(wz - 8);
     const cx = px(b.x, kk);
     if (cx > -900 && cx < W + 900){
+      ctx.globalAlpha = flyDim;
       ctx.save();
       ctx.textAlign = 'center';
       if (b.sub){
@@ -829,6 +872,7 @@ function drawBeatText(b, focusAmt){
         drawLines(b._th, cx, py(b.minor ? 254 : 262, kk), 38 * (b.minor?0.8:1) * kk * SS);
       }
       ctx.restore();
+      ctx.globalAlpha = 1;
     }
   }
   // description — anchored to the wall, appears at rest / focus
@@ -1515,6 +1559,20 @@ function makeProp(kind){
     g.beginPath(); g.roundRect(22,20,106,78,4); g.fill();
     g.fillStyle = 'rgba(140,180,160,0.10)'; g.fillRect(28,26,40,30);
     g.fillStyle = '#3a362e'; g.fillRect(52,112,46,20);
+  } else if (kind === 'jaw1' || kind === 'jaw2'){ S(150,100);
+    const stone = kind === 'jaw1';
+    // dental cast: a base with an arch of teeth
+    g.fillStyle = stone ? '#a89878' : '#c48b96';
+    g.beginPath(); g.roundRect(18, 56, 114, 36, 8); g.fill();
+    g.fillStyle = 'rgba(0,0,0,0.22)'; g.fillRect(18, 84, 114, 8);
+    g.fillStyle = stone ? '#e6dfcc' : '#f2f0ea';
+    for (let i = 0; i < 8; i++){
+      const a = Math.PI + i*(Math.PI/7);
+      const tx = 75 + Math.cos(a)*46, ty = 58 + Math.sin(a)*26;
+      g.beginPath(); g.roundRect(tx-8, ty-9, 16, 20, 5); g.fill();
+    }
+    g.fillStyle = 'rgba(255,255,255,0.5)';
+    g.beginPath(); g.ellipse(48, 40, 5, 9, -0.4, 0, 7); g.fill();
   } else if (kind === 'palmNear'){ S(340,520);
     g.strokeStyle = '#2e2a20'; g.lineWidth = 16; g.lineCap = 'round';
     g.beginPath(); g.moveTo(150, 512);
@@ -1635,9 +1693,9 @@ function makeFigure(seed, seated){
 
 const PROPS = [], SHEETS = [], FIGURES = [];
 function initDecor(){
-  for (const kind of ['jar','plaster','toolbox','mailtray','box','papers','crtOff','mill','palmNear'])
+  for (const kind of ['jar','plaster','toolbox','mailtray','box','papers','crtOff','mill','palmNear','jaw1','jaw2'])
     PROP_SPRITES[kind] = makeProp(kind);
-  const eraProps = [['jar','plaster','toolbox','plaster'], ['mailtray','box','mailtray','plaster'], ['papers','crtOff','box','papers'], []];
+  const eraProps = [['jar','jaw1','toolbox','plaster','jaw1'], ['mailtray','jaw1','box','plaster'], ['papers','jaw2','crtOff','jaw2'], ['jaw2','papers']];
   const R = rng(20260819);
   // bench props between beats
   for (let si = 0; si < SEGMENTS.length; si++){
@@ -1646,6 +1704,7 @@ function initDecor(){
     for (let x = a; x < b; x += 260 + R()*260){
       if (!eraProps[si].length) break;
       if (BEATS.some(bt => Math.abs(bt.x - x) < 430)) continue;
+      if (BENCH_BREAKS.some(v => Math.abs(v - x) < 170)) continue;
       const kinds = eraProps[si];
       PROPS.push({x, z: 210 + R()*110, kind: kinds[(R()*kinds.length)|0],
                   w: 95 + R()*60, flip: R() > 0.5});
@@ -1944,17 +2003,21 @@ function drawPedestal(b, t, hero){
   const yTop = py(ped.big ? 470 : 535, kk);
   pushHit(sx - colW*0.7*big, yTop - 150*kk*SS*big, colW*1.4*big, H - yTop + 150*kk*SS, {type:'focus', beat: BEATS.indexOf(b)});
   const warmC = era === 0 ? '255,215,140' : '225,240,255';
-  // the spotlight beam from above, strongest when the world is dimmed
+  // the spotlight swivels from the side toward vertical as the visitor arrives
   if (hero > 0.02){
-    const beam = ctx.createLinearGradient(0, 0, 0, yTop);
+    const tilt = Math.max(-1, Math.min(1, (cam.x - x) / 620));
+    const topShift = -tilt * colW * 1.3;
+    const yEnd = yTop + (H - yTop) * 0.55;
+    const beam = ctx.createLinearGradient(0, 0, 0, yEnd);
     beam.addColorStop(0, `rgba(${warmC},${(0.05*hero).toFixed(3)})`);
-    beam.addColorStop(1, `rgba(${warmC},${(0.22*hero).toFixed(3)})`);
+    beam.addColorStop(Math.max(0.01, (yTop/yEnd) * 0.82), `rgba(${warmC},${(0.20*hero).toFixed(3)})`);
+    beam.addColorStop(1, `rgba(${warmC},0)`);
     ctx.fillStyle = beam;
     ctx.beginPath();
-    ctx.moveTo(sx - colW*0.5, 0);
-    ctx.lineTo(sx + colW*0.5, 0);
-    ctx.lineTo(sx + colW*1.15, yTop);
-    ctx.lineTo(sx - colW*1.15, yTop);
+    ctx.moveTo(sx + topShift - colW*0.5, 0);
+    ctx.lineTo(sx + topShift + colW*0.5, 0);
+    ctx.lineTo(sx + colW*1.3, yEnd);
+    ctx.lineTo(sx - colW*1.3, yEnd);
     ctx.closePath(); ctx.fill();
   }
   // column
@@ -2512,6 +2575,12 @@ function frame(){
       drawLyingPrint(sp, b.x + it.dx, it.lz, it.w, it.rot || 0,
                      {type:'photoTable', sp, wx: b.x + it.dx, lz: it.lz, w: it.w, cap: it.cap, beat: i});
     }
+    for (const it of (b.st || [])){
+      const sp = SPRITES[it.img]; if (!sp) continue;
+      const hW = sp.h * (it.w / sp.inner.w);
+      drawStandingPrint(sp, b.x + it.dx, it.lz, it.w,
+        {type:'photo', sp, wx: b.x + it.dx, cy: CFG.benchY - hW/2, z: it.lz, w: it.w, cap: it.cap, beat: i});
+    }
     for (const p of (b.props || [])) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
     if (b.y === '2020–22') drawBookPyramid(b, t);
@@ -2610,6 +2679,7 @@ async function boot(){
   for (const b of BEATS){
     const es = eraStyle[segIdx(b.x)];
     for (const it of b.wall) spec[it.img] = {style: it.style || es.wall, tone:es.tone};
+    for (const it of (b.st || [])) spec[it.img] = {style: it.style || es.wall, tone:es.tone};
     for (const it of b.table) spec[it.img] = {style:es.table, tone:es.tone};
   }
   for (const [n, o] of Object.entries(spec)){
@@ -2622,6 +2692,16 @@ async function boot(){
   PED_SPRITES.crown2 = makePedObj('crown2');
   PED_SPRITES.millSt = makePedObj('millSt');
   initAlbums();
+  // wall photos live in the band below the text: top edge at 360, bottom by 690
+  for (const b of BEATS){
+    for (const it of b.wall){
+      const sp = SPRITES[it.img]; if (!sp) continue;
+      let h = sp.h * (it.w / sp.inner.w);
+      if (h > 330){ it.w *= 330 / h; h = 330; }
+      it.cy = 360 + h/2;
+    }
+  }
+  initTables();
   initDust();
   initDecor();
   attachMouseDriver(document.body);
