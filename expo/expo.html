@@ -2336,48 +2336,48 @@ function drawPlasmaPanel(b, t){
 /* ---------------- FINALE · the stage and the book ---------------- */
 let BOOK_SPRITE = null;
 function makeBookPyramid(){
-  const c = document.createElement('canvas'); c.width = 460; c.height = 320;
+  const c = document.createElement('canvas'); c.width = 460; c.height = 340;
   const g = c.getContext('2d');
-  const bw = 92, bh = 26;
+  const spine = IMGS.bookspine, front = IMGS.bookfront;
+  const bw = 96, bh = 24;
   const rows = [4, 3, 2];
+  // stacked copies, real spines out
   g.save();
-  g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 14; g.shadowOffsetY = 6;
+  g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 12; g.shadowOffsetY = 5;
+  g.fillStyle = '#101010';
+  g.fillRect(230 - 4*bw/2, 320 - 3*bh, 4*bw, 3*bh);
+  g.restore();
   rows.forEach((n, r) => {
     for (let i = 0; i < n; i++){
       const x = 230 - n*bw/2 + i*bw + (r%2)*3;
-      const y = 300 - (r+1)*bh;
-      const lg = g.createLinearGradient(x, y, x, y+bh);
-      lg.addColorStop(0, '#5c2119'); lg.addColorStop(1, '#38120c');
-      g.fillStyle = lg;
-      g.fillRect(x + 2, y, bw - 4, bh - 2);
-      g.fillStyle = '#e8dcc2'; g.fillRect(x + 6, y + bh*0.38, bw - 12, 2.5);
+      const y = 320 - (r+1)*bh;
+      if (spine) g.drawImage(spine.el, x + 1, y + 1, bw - 2, bh - 2);
+      g.strokeStyle = 'rgba(0,0,0,0.55)'; g.lineWidth = 1;
+      g.strokeRect(x + 1, y + 1, bw - 2, bh - 2);
     }
   });
-  // one copy standing upright, cover out
-  const sx = 230 - 60, sy = 300 - 3*bh - 168;
-  const cg = g.createLinearGradient(sx, sy, sx+120, sy+168);
-  cg.addColorStop(0, '#6b271d'); cg.addColorStop(1, '#401410');
-  g.fillStyle = cg;
-  g.fillRect(sx, sy, 120, 168);
-  g.restore();
-  g.strokeStyle = 'rgba(235,210,160,0.7)'; g.lineWidth = 1.5;
-  g.strokeRect(sx+8, sy+8, 104, 152);
-  g.fillStyle = 'rgba(240,220,175,0.95)';
-  g.textAlign = 'center';
-  g.font = '600 17px Georgia, serif';
-  g.fillText('CONSTANT', sx+60, sy+56);
-  g.fillText('CHANGE', sx+60, sy+78);
-  g.font = '11px Georgia, serif';
-  g.fillText('JIM GLIDEWELL', sx+60, sy+134);
+  // one copy standing upright, the real cover out
+  if (front){
+    const fw = 128, fh = fw * front.h / front.w;
+    const sx = 230 - 66, sy = 320 - 3*bh - fh - 2;
+    g.save();
+    g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 14; g.shadowOffsetY = 7;
+    g.fillStyle = '#0c0c0c'; g.fillRect(sx, sy, fw, fh);
+    g.restore();
+    g.drawImage(front.el, sx, sy, fw, fh);
+    g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = 1;
+    g.strokeRect(sx + 0.5, sy + 0.5, fw - 1, fh - 1);
+  }
   // QR stand: white card with a real, scannable code
   g.save();
   g.shadowColor = 'rgba(0,0,0,0.3)'; g.shadowBlur = 8; g.shadowOffsetY = 4;
-  g.fillStyle = '#f4f4ef'; g.fillRect(352, 182, 94, 118);
+  g.fillStyle = '#f4f4ef'; g.fillRect(356, 200, 94, 118);
   g.restore();
-  if (IMGS.qr) g.drawImage(IMGS.qr.el, 358, 188, 82, 82);
+  if (IMGS.qr) g.drawImage(IMGS.qr.el, 362, 206, 82, 82);
   g.fillStyle = '#3c4048';
+  g.textAlign = 'center';
   g.font = '10px "Helvetica Neue", Arial, sans-serif';
-  g.fillText('GET THE BOOK', 399, 289);
+  g.fillText('GET THE BOOK', 403, 307);
   return {c, w: c.width, h: c.height};
 }
 function drawBookPyramid(b, t){
@@ -3232,6 +3232,8 @@ window.addEventListener('load', boot);   // assets block sits below — wait for
 window.ASSETS = {artic:"data:image/jpeg;base64,",
 bianca:"data:image/jpeg;base64,",
 bizcard:"data:image/jpeg;base64,",
+bookfront:"data:image/jpeg;base64,",
+bookspine:"data:image/jpeg;base64,",
 cast:"data:image/jpeg;base64,",
 dietrim:"data:image/jpeg;base64,",
 ellen:"data:image/jpeg;base64,",
