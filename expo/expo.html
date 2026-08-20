@@ -245,13 +245,13 @@ const SEAM_2 = 11700;          // era 2 -> era 3
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
 const SEGMENTS = [
-  {x0:-2600, x1:REC_L, z0:490, z1:580, wall:'wall1', bench:'bench1', front:'front1',
+  {x0:-2600, x1:REC_L, z0:490, z1:610, wall:'wall1', bench:'bench1', front:'front1',
    font:'Georgia, "Iowan Old Style", "Palatino Linotype", serif',
    ink:'232,205,160', lamp:'bulb', dust:true,
    rail:'rgba(190,150,80,0.55)', railInk:'rgba(230,195,130,0.7)',
    light:{pool:'255,196,110', poolR:620, poolA:0.34},
    bgc:[13,9,6], grain:0.055},
-  {x0:REC_R, x1:SEAM_2, z0:640, z1:740, wall:'wall2', bench:'bench2', front:'front2',
+  {x0:REC_R, x1:SEAM_2, z0:610, z1:740, wall:'wall2', bench:'bench2', front:'front2',
    font:'"Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'223,226,214', lamp:'tube', dust:false,
    rail:'rgba(165,175,172,0.5)', railInk:'rgba(198,208,202,0.7)',
@@ -873,28 +873,28 @@ function drawBeatText(b, focusAmt){
   if (fly) for (const o of BEATS)
     if (o !== b && o.fly && Math.abs(o.x - cam.x) < Math.abs(dxW)){ fly = false; break; }
   if (fly){
-    const passed = Math.max(0, Math.min(1, -dxW/560));   // 1 = far behind us
-    const zT = 150 + (wz - 150) * Math.pow(1 - near, 1.7);
+    // the year lifts off the wall as you approach and settles back afterwards —
+    // its resting state is the standard wall typography, same as every other year
+    const zT = 150 + (wz - 8 - 150) * Math.pow(1 - near, 1.7);
     const kk = k(zT);
     const cx = px(b.x, kk);
-    const rise = 0;   // dissolve in place — no climbing into the lamps
-    const alpha = Math.min(1, near*2.4) * (1 - passed);
-    if (alpha > 0.01 && cx > -1200 && cx < W + 1200){
+    const ts = (seg.tScale || 1) * (b._ys || 1);
+    if (cx > -1200 && cx < W + 1200){
       ctx.save();
       ctx.textAlign = 'center';
-      ctx.font = eraFont(150 * kk * SS, '', seg.font);
-      ctx.fillStyle = `rgba(${seg.ink},${(0.55 + 0.4*near) * alpha})`;
+      ctx.font = eraFont(170 * ts * kk * SS, '', seg.font);
+      ctx.fillStyle = `rgba(${seg.ink},${0.5 + 0.45*near})`;
       ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
-      ctx.fillText(b.y, cx, py(185 - rise, kk));
-      ctx.font = eraFont(42 * kk * SS, '', seg.font);
+      ctx.fillText(b.y, cx, py(140, kk));
+      ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*kk*SS}px`; } catch(e){}
-      ctx.fillStyle = `rgba(${seg.ink},${(0.5 + 0.45*near) * 0.92 * alpha})`;
-      ctx.fillText(b.t, cx, py(248 - rise, kk));
+      ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
+      ctx.fillText(b.t, cx, py(208, kk));
       try { ctx.letterSpacing = '0px'; } catch(e){}
-      if (near > 0.3){
-        ctx.font = eraFont(28 * kk * SS, 'italic', seg.font);
-        ctx.fillStyle = `rgba(${seg.ink},${(near-0.3)/0.7 * 0.72 * alpha})`;
-        drawLines(b._th, cx, py(300 - rise, kk), 36 * kk * SS);
+      if (near > 0.25){
+        ctx.font = eraFont(30 * (seg.tScale || 1) * kk * SS, 'italic', seg.font);
+        ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
+        drawLines(b._th, cx, py(262, kk), 38 * kk * SS);
       }
       ctx.restore();
     }
@@ -903,10 +903,8 @@ function drawBeatText(b, focusAmt){
     let flyDim = 1;
     for (const f of BEATS){
       if (!f.fly || Math.abs(f.x - b.x) > 1200) continue;
-      const dxF = f.x - cam.x;
-      const nF = Math.max(0, 1 - Math.abs(dxF)/1300);
-      const pF = Math.max(0, Math.min(1, -dxF/560));
-      flyDim = Math.min(flyDim, 1 - 0.78 * Math.min(1, nF*2.4) * (1 - pF));
+      const nF = Math.max(0, 1 - Math.abs(f.x - cam.x)/1300);
+      flyDim = Math.min(flyDim, 1 - 0.7 * Math.pow(nF, 1.4));
     }
     const kk = k(wz - 8);
     const cx = px(b.x, kk);
@@ -1311,18 +1309,18 @@ function drawMapWall(t){
   pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp, wx: mid, cy: 450, z: 610, w: 440,
           cap: '1979 · nine labs across Southern California', beat: BEATS.findIndex(b => b.y === '1979')});
   ctx.drawImage(sp.c, cx - w/2, cyS - h/2, w, h);
-  // columns on both edges
+  // pilaster columns on both edges — same plane as the walls they join
   for (const wxc of [REC_L, REC_R]){
-    const kc = k(430);
+    const kc = k(604);
     const sxc = px(wxc, kc);
-    const cw = 110 * kc * SS;
+    const cw = 120 * kc * SS;
     if (sxc < -cw || sxc > W + cw) continue;
     const cg = ctx.createLinearGradient(sxc - cw/2, 0, sxc + cw/2, 0);
     cg.addColorStop(0, '#2a2118'); cg.addColorStop(0.45, '#5a4c38'); cg.addColorStop(1, '#1d1710');
     ctx.fillStyle = cg;
-    ctx.fillRect(sxc - cw/2, 0, cw, H);
+    ctx.fillRect(sxc - cw/2, 0, cw, yBase);
     ctx.fillStyle = 'rgba(255,230,180,0.12)';
-    ctx.fillRect(sxc - cw/2 + 3*SS, 0, 3*SS, H);
+    ctx.fillRect(sxc - cw/2 + 3*SS, 0, 3*SS, yBase);
   }
 }
 
