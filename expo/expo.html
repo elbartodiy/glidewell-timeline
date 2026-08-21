@@ -1181,8 +1181,11 @@ function drawBenchDescs(){
       // whatever the counters allow, the line must live on the screen
       cw = Math.max(385*SS, Math.min(W - 385*SS, cw));
     } else {
-      // a recreation beat: the line reads off the light floor slab in dark ink
-      ink = '52,58,66'; shadow = false; slabDrop = 130*SS;
+      // a recreation beat: the line reads off the light floor slab in dark ink —
+      // except 1979, where the red runner underfoot asks for light ink
+      const onCarpet = b.x > REC_L && b.x < REC_R;
+      ink = onCarpet ? '236,228,218' : '52,58,66';
+      shadow = onCarpet; slabDrop = 130*SS;
     }
     ctx.save();
     ctx.textAlign = 'center';
