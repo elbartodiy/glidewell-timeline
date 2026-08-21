@@ -46,14 +46,14 @@ const BEATS = [
    d:'Taggart brings lost-wax casting into dentistry — the analog century begins.',
    wall:[{img:'cast', w:360, dx:-430, cy:380, rot:-0.8},
          {img:'furnace', w:360, dx:430, cy:380, rot:1.2}],
-   table:[], st:[{img:'invest', w:280, dx:-320, lz:155}]},
+   table:[], st:[{img:'invest', w:280, dx:-320, lz:80}]},
 
   {x:2450, y:'1970', t:'FOUNDED', tier:1, fly:true,
    th:'One man, one bench — betting that affordable was a business model.',
    d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
    wall:[{img:'jim1970', w:420, dx:440, cy:400, hero:true}],
    table:[],
-   album:{dx:-650, lz:160, w:300, title:'THE FAMILY ALBUM',
+   album:{dx:-650, lz:85, w:300, title:'THE FAMILY ALBUM',
           photos:[['father42','jim15'],['jim18','jim1970']]},
    ped:{obj:'logo1970', dx:0}},
 
@@ -61,15 +61,15 @@ const BEATS = [
    th:'The craft baseline every later machine is measured against.',
    d:'Cast metal hand-layered with porcelain — the hand-craft world Jim will spend his life automating.',
    wall:[],
-   table:[], st:[{img:'wax', w:280, dx:330, lz:150}],
-   album:{dx:-160, lz:160, w:310, title:'THE PFM CRAFT',
+   table:[], st:[{img:'wax', w:280, dx:330, lz:75}],
+   album:{dx:-160, lz:85, w:310, title:'THE PFM CRAFT',
           photos:[['porc','artic'],['dietrim','wax']]}},
 
   {x:4400, y:'1973', t:'SECOND LAB',
    th:'Growth by addition — before growth by system.',
    d:'Jim opens a second lab in El Toro — the one-man bench starts to multiply.',
    wall:[{img:'rose', w:300, dx:-430, cy:360, rot:0.4}],
-   table:[], st:[{img:'lab4ext', w:250, dx:0, lz:155, cap:'El Toro — the second lab'}]},
+   table:[], st:[{img:'lab4ext', w:250, dx:0, lz:80, cap:'El Toro — the second lab'}]},
 
   {x:5400, y:'1976', t:'DIRECT-MAIL',
    th:'Reach is the lever — the flywheel’s first turn.',
@@ -117,7 +117,7 @@ const BEATS = [
    th:'Test where dentists work — and step beyond the crown.',
    d:'An in-house operatory opens to test materials on real patients; PlaySafe mouthguards launch.',
    wall:[], table:[],
-   props:[{kind:'crt', dx:-160, lz:150, w:290, col:'amber'}]},
+   props:[{kind:'crt', dx:-160, lz:75, w:290, col:'amber'}]},
 
   {x:13370, y:'1996', t:'SILENT NITE', minor:true,
    th:'Dentistry beyond repair: keeping problems from starting.',
@@ -142,7 +142,7 @@ const BEATS = [
    wall:[{img:'rella', w:250, dx:290, cy:350, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
    table:[],
    ped:{obj:'puck', dx:0},
-   props:[{kind:'crt', dx:700, lz:150, w:320, label:'CAD REVOLUTION'}]},
+   props:[{kind:'crt', dx:700, lz:75, w:320, label:'CAD REVOLUTION'}]},
 
   {x:16700, y:'2001', t:'WEB · CLINICAL VOICE', minor:true,
    th:'The lab learns to publish — online and on camera.',
@@ -163,7 +163,7 @@ const BEATS = [
    th:'Nobody called it AI training data yet — but that is what it was.',
    d:'The lab accepts its first intraoral scan instead of a physical impression — the moment the case archive starts becoming data.',
    wall:[], table:[],
-   props:[{kind:'lcd', dx:535, lz:60, w:300}],
+   props:[{kind:'lcd', dx:535, lz:55, w:300}],
    ped:{obj:'scanner', dx:0}},
 
   /* ---- ERA 4 · the white room, 2009–2026 ---- */
@@ -208,7 +208,7 @@ const BEATS = [
    table:[],
    st:[{img:'ellen', w:190, dx:-280, lz:140, cap:'Dr. Ellen Paulisick · GL alum'},
        {img:'nadia', w:190, dx:-15, lz:180, cap:'Dr. Nadia Rodriguez · GL alum'},
-       {img:'bianca', w:190, dx:250, lz:150, cap:'Dr. Bianca Clark · GL alum'}]},
+       {img:'bianca', w:190, dx:250, lz:75, cap:'Dr. Bianca Clark · GL alum'}]},
 
   {x:26340, y:'2020–22', t:'MEMOIR · CEO · SCAN',
    th:'A generational handover at the top; the scanner joins the ecosystem.',
@@ -259,13 +259,13 @@ const SEGMENTS = [
    light:{pool:'218,232,252', poolR:900, poolA:0.17},
    tube:{line:'238,246,255', glow:'216,230,250'},
    bgc:[11,12,14], grain:0.028},
-  {x0:REC2_R, x1:WORLD_END+900, z0:1400, z1:1400, wInsetR:280, tz:680, wall:'wall4', bench:'bench4', front:'front4',
+  {x0:REC2_R, x1:WORLD_END+2800, z0:1400, z1:1400, tz:680, wall:'wall4', bench:'bench4', front:'front4',
    font:'"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'55,64,76', lamp:'tube', dust:false,
    rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
    light:{pool:'225,240,255', poolR:1350, poolA:0.12},
    tube:{line:'246,251,255', glow:'226,239,252'},
-   bgc:[30,33,38], grain:0.012, bInsetR:2200, shade:0.30, floor:true},
+   bgc:[30,33,38], grain:0.012, bInsetR:4100, shade:0.30, floor:true},
 ];
 const SEAMS = [];   // era changes happen through the recreations now
 /* (dormant) the generated flyover clip can still play across the 1989
@@ -288,6 +288,7 @@ function initAttractStops(){
   s.add((REC2_L + REC2_R) / 2);     // the digital revolution
   s.add(FACT_X);                    // the robotic line
   s.add(STAGE_X);                   // Jim on stage
+  s.add(FIN_X);                     // the product still life closes the tour
   ATTRACT_STOPS = [...s].sort((a, b) => a - b);
 }
 function segIdx(x){ for (let i = SEGMENTS.length-1; i > 0; i--) if (x >= SEGMENTS[i].x0) return i; return 0; }
@@ -595,6 +596,7 @@ function initLights(){
     }
   }
   LIGHT_GRID.push({x: INTRO_X, seg: SEGMENTS[0]});   // the welcome lamp, dead over the inscription
+  LIGHT_GRID.push({x: FIN_X, seg: SEGMENTS[3]});     // and its mirror over the finale
 }
 function initTables(){
   // every pedestal claims a wide gap of its own, centered on it
@@ -794,8 +796,7 @@ function drawFloor(){
     [REC3_L, REC3_R, T.rec[1]],
     [REC3_R, REC2_L, T.era[2]],
     [REC2_L, REC2_R, T.rec[2]],
-    [REC2_R, EXIT_X, T.era[3]],
-    [EXIT_X, SEGMENTS[3].x1 + 900, T.plaza],
+    [REC2_R, SEGMENTS[3].x1 + 900, T.era[3]],
   ];
   for (const [a, b, tone] of spans){
     const xTL = px(a, kSeam), xTR = px(b, kSeam);
@@ -811,70 +812,6 @@ function drawFloor(){
     ctx.fillStyle = g;
     ctx.fill();
   }
-}
-
-/* the end of the building: the hall is cut open — daylight, the street
-   placeholder and a fountain (all of it a slot for generated art later) */
-const EXIT_X = WORLD_END + 620;
-function drawExit(t){
-  const kw = k(SEGMENTS[3].z0 - 10);
-  const x0 = px(EXIT_X, kw);
-  if (x0 > W + 120) return;
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
-  ctx.save();
-  ctx.beginPath(); ctx.rect(x0, 0, W + 120 - x0, yBase); ctx.clip();
-  // the street beyond the cut — sky down to the yard ground
-  const o = TEX.outside;
-  const sw = Math.max(W + 120 - x0, 900 * kw * SS);
-  ctx.drawImage(o, x0, 0, sw, yBase);
-  // the fountain: basin, column, animated jet
-  const fx = x0 + 330 * kw * SS;
-  const fy = yBase - 88 * kw * SS;
-  const bw = 340 * kw * SS;
-  ctx.fillStyle = '#9aa0a6';
-  ctx.beginPath(); ctx.ellipse(fx, fy, bw/2, bw*0.16, 0, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#7d8388';
-  ctx.beginPath(); ctx.ellipse(fx, fy - 4*SS, bw/2 - 8*SS, bw*0.16 - 6*SS, 0, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#aebfd0';
-  ctx.beginPath(); ctx.ellipse(fx, fy - 5*SS, bw/2 - 16*SS, bw*0.16 - 9*SS, 0, 0, Math.PI*2); ctx.fill();
-  // pedestal and jet
-  const jh = (195 + 14*Math.sin(t*2.4)) * kw * SS;
-  ctx.fillStyle = '#8d9399';
-  ctx.fillRect(fx - 10*kw*SS, fy - 44*kw*SS, 20*kw*SS, 44*kw*SS);
-  const jg = ctx.createLinearGradient(0, fy - 44*kw*SS - jh, 0, fy - 44*kw*SS);
-  jg.addColorStop(0, 'rgba(235,246,255,0.0)');
-  jg.addColorStop(0.25, 'rgba(225,240,252,0.85)');
-  jg.addColorStop(1, 'rgba(205,228,246,0.9)');
-  ctx.fillStyle = jg;
-  ctx.beginPath();
-  ctx.moveTo(fx - 3*SS, fy - 44*kw*SS);
-  ctx.quadraticCurveTo(fx - 5*SS, fy - 44*kw*SS - jh*0.7, fx - 12*SS, fy - 44*kw*SS - jh);
-  ctx.lineTo(fx + 12*SS, fy - 44*kw*SS - jh);
-  ctx.quadraticCurveTo(fx + 5*SS, fy - 44*kw*SS - jh*0.7, fx + 3*SS, fy - 44*kw*SS);
-  ctx.closePath(); ctx.fill();
-  // falling spray arcs
-  ctx.strokeStyle = 'rgba(220,238,252,0.55)'; ctx.lineWidth = 1.6*SS;
-  for (const s of [-1, 1]) for (let i = 0; i < 3; i++){
-    const ph = t*2.4 + i*2.1;
-    const r = (26 + i*14 + 5*Math.sin(ph)) * kw * SS;
-    ctx.beginPath();
-    ctx.moveTo(fx, fy - 44*kw*SS - jh*0.95);
-    ctx.quadraticCurveTo(fx + s*r*0.9, fy - 44*kw*SS - jh*0.55, fx + s*r, fy - 8*kw*SS);
-    ctx.stroke();
-  }
-  ctx.restore();
-  // the building's cut edge: one clean pillar between the hall and the daylight
-  const cw = 120 * kw * SS;
-  if (x0 > -cw && x0 < W + cw){
-    const cg = ctx.createLinearGradient(x0 - cw*0.5, 0, x0 + cw*0.5, 0);
-    cg.addColorStop(0, '#43474d'); cg.addColorStop(0.45, '#888f96'); cg.addColorStop(1, '#31353a');
-    ctx.fillStyle = cg;
-    ctx.fillRect(x0 - cw*0.5, 0, cw, yBase);
-    ctx.fillStyle = 'rgba(255,252,240,0.28)';
-    ctx.fillRect(x0 + cw*0.5 - 4*SS, 0, 4*SS, yBase);
-  }
-  // daylight spills onto the hall floor by the exit
-  drawGlow('225,240,255', x0 - 60*SS, yBase, 340 * kw * SS, 0.16);
 }
 
 function drawLampPool(x, intensity){
@@ -1244,25 +1181,68 @@ function drawIntro(){
   ctx.restore();
 }
 
+const FIN_X = 29750;
 function drawOutro(){
-  const seg = SEGMENTS[SEGMENTS.length - 1];
-  const kk = k(wallZAt(WORLD_END) - 8);
-  // shifted right and lifted high: Jim on stage and his audience stay below,
-  // the closing line stays readable from both final stops
-  const cx = px(WORLD_END + 400, kk);
-  if (cx < -900 || cx > W + 900) return;
+  // the finale is the mirror of the welcome: the mark under the ceiling,
+  // the closing line, and a lit still life of today's products below
+  if (Math.abs(cam.x - FIN_X) > 2800) return;
+  const seg = SEGMENTS[3];
+  const kw = k((seg.tz || 680) - 8);
+  const cx = px(FIN_X, kw);
   ctx.save();
   ctx.textAlign = 'center';
-  ctx.fillStyle = `rgba(${seg.ink},0.4)`;
-  ctx.font = eraFont(60 * kk * SS, '', seg.font);
-  try { ctx.letterSpacing = `${6*kk*SS}px`; } catch(e){}
-  ctx.fillText('THE BEST DENTISTRY —', cx, py(100, kk));
-  ctx.fillText('MADE AFFORDABLE', cx, py(175, kk));
+  if (IMGS.logo2026){
+    const ms = 42 * kw * SS, my = py(92, kw);
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
+    ctx.beginPath(); ctx.roundRect(cx - ms/2, my - ms/2, ms, ms, 5*kw*SS); ctx.clip();
+    ctx.drawImage(IMGS.logo2026.el, cx - ms/2, my - ms/2, ms, ms);
+    ctx.restore();
+  }
+  ctx.fillStyle = `rgba(${seg.ink},0.6)`;
+  ctx.font = eraFont(56 * kw * SS, '', seg.font);
+  try { ctx.letterSpacing = `${6*kw*SS}px`; } catch(e){}
+  ctx.fillText('THE BEST DENTISTRY \u2014', cx, py(300, kw));
+  ctx.fillText('MADE AFFORDABLE', cx, py(372, kw));
   try { ctx.letterSpacing = '0px'; } catch(e){}
-  ctx.font = eraFont(26 * kk * SS, 'italic', seg.font);
-  ctx.fillStyle = `rgba(${seg.ink},0.5)`;
-  ctx.fillText('Glidewell · one bench → the world', cx, py(238, kk));
+  ctx.font = eraFont(24 * kw * SS, 'italic', seg.font);
+  ctx.fillStyle = `rgba(${seg.ink},0.55)`;
+  ctx.fillText('Glidewell \u00b7 one bench \u2192 the world', cx, py(430, kw));
   ctx.restore();
+}
+function drawFinaleTable(t){
+  if (Math.abs(cam.x - FIN_X) > 2600) return;
+  // the modern lit table
+  drawYawedTable(FIN_X, 150, 0, 900, 240, 700, 380,
+    {side0:'#eef1f4', side1:'#c6ccd2', top:'#f7f9fb', edge:'rgba(120,130,140,0.5)'});
+  // light breathing under the tabletop edge
+  const ke = k(32);
+  const y0 = py(700, ke) + 6*SS;
+  const g2 = ctx.createLinearGradient(0, y0, 0, y0 + 26*SS);
+  g2.addColorStop(0, `rgba(150,215,255,${(0.45 + 0.15*Math.sin(t*1.6)).toFixed(3)})`);
+  g2.addColorStop(1, 'rgba(150,215,255,0)');
+  ctx.fillStyle = g2;
+  ctx.fillRect(px(FIN_X - 450, ke), y0, 900*ke*SS, 26*SS);
+  // the products, composed as a still life
+  const GOODS = [
+    {sp:'puck',    dx:-330, z:95, w:110, cap:'BruxZir\u00ae solid zirconia'},
+    {sp:'scanner', dx:-165, z:70, w:150, cap:'fastscan.io\u2122'},
+    {sp:'crown2',  dx:10,   z:45, w:175, cap:'BruxZir\u00ae crown'},
+    {sp:'millSt',  dx:205,  z:75, w:185, cap:'fastmill.io\u2122'},
+  ];
+  for (const gd of GOODS){
+    const sp = PED_SPRITES[gd.sp]; if (!sp) continue;
+    const kk = k(gd.z);
+    const sx = px(FIN_X + gd.dx, kk);
+    const w = gd.w * kk * SS, h = w * sp.h / sp.w;
+    const yF = py(CFG.benchY - 2, kk);
+    drawGlow('190,225,255', sx, yF - h*0.45, w*1.5, 0.10);
+    ctx.drawImage(sp.c, sx - w/2, yF - h, w, h);
+    pushHit(sx - w/2, yF - h, w, h,
+            {type:'photo', sp: Object.assign({inner:{w:sp.w, h:sp.h}}, sp),
+             wx: FIN_X + gd.dx, cy: CFG.benchY - 120, z: gd.z, w: gd.w * 2.2,
+             cap: gd.cap, beat: BEATS.length - 1});
+  }
 }
 
 /* the outside between two buildings — seen through the window seam */
@@ -2281,7 +2261,7 @@ function initDecor(){
       if (BEATS.some(bt => Math.abs(bt.x - x) < 430)) continue;
       if (BENCH_BREAKS.some(v => Math.abs(v.x - x) < v.half + 130)) continue;
       const kinds = eraProps[si];
-      PROPS.push({x, z: 100 + R()*120, kind: kinds[(R()*kinds.length)|0],
+      PROPS.push({x, z: 45 + R()*60, kind: kinds[(R()*kinds.length)|0],
                   w: 95 + R()*60, flip: R() > 0.5});
     }
     // pinned sheets between beats (not in the white room)
@@ -2301,16 +2281,16 @@ function initDecor(){
   // the welcome still life — placeholder heirlooms of the craft century
   // a tight triangle: the cast jaw is the hero dead under the title,
   // the toolbox and the plaster molds are its shoulders
-  PROPS.push({x: INTRO_X - 155, z: 170, kind: 'toolbox', w: 165});
-  PROPS.push({x: INTRO_X - 5,   z: 90,  kind: 'jaw1', w: 135});
-  PROPS.push({x: INTRO_X + 150, z: 140, kind: 'plaster', w: 160, flip: true});
+  PROPS.push({x: INTRO_X - 155, z: 105, kind: 'toolbox', w: 165});
+  PROPS.push({x: INTRO_X - 5,   z: 45,  kind: 'jaw1', w: 135});
+  PROPS.push({x: INTRO_X + 150, z: 80, kind: 'plaster', w: 160, flip: true});
   PROPS.push({x: FACT_X - 120, z: 620, kind: 'mill', w: 470, mid: true});
   PROPS.push({x: FACT_X + 330, z: 700, kind: 'mill', w: 440, mid: true});
   // guiding leaders — a trio in the depth
   for (let i = 0; i < 3; i++)
     FIGURES.push({x: 25480 + i*115, z: 740 + i*30, h: 650, sprite: makeFigure(80 + i)});
   // the symposium audience at the finale — spaced so the stage stays visible
-  const AUD = [[29180, 380, 640], [29300, 620, 580], [29400, 340, 650], [29500, 460, 615], [29580, 360, 640]];
+  const AUD = [[28960, 380, 640], [29060, 620, 580], [29140, 340, 650], [29220, 460, 615], [29060, 300, 660]];
   AUD.forEach(([ax, az, ah], i) => FIGURES.push({x: ax, z: az, h: ah, sprite: makeFigure(60 + i)}));
 
   // ambient props obey gravity too: full footprint on a real table span,
@@ -3628,7 +3608,7 @@ function update(dt){
         cam.x = A.stopX; cam.vel = 0;
         A.phase = 'dwell'; A.dwell = 0; A.stopX = null;
       }
-      if (cam.x > WORLD_END - 600) A.phase = 'fadeout';
+      if (cam.x > WORLD_END + 220) A.phase = 'fadeout';
     } else if (A.phase === 'dwell'){
       cam.vel *= Math.pow(0.001, dt);
       A.dwell += dt;
@@ -3735,7 +3715,6 @@ function frame(){
   drawMapWall(t);
   drawRec3(t);
   drawRec2(t);
-  drawExit(t);
 
   // lamp pools on wall (behind photos) — one per ceiling fixture
   for (let i = 0; i < LIGHT_GRID.length; i++) drawLampPool(LIGHT_GRID[i].x, lampFlicker(t, i+1));
@@ -3778,6 +3757,7 @@ function frame(){
 
   // table items
   drawFactory(t);
+  drawFinaleTable(t);
   drawProps(false);
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
