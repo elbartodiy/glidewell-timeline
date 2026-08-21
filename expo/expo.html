@@ -3664,7 +3664,13 @@ function drawStudy(){
   if (b.th){
     ctx.font = K.font(27, 'italic');
     ctx.fillStyle = `rgba(${K.dim},0.95)`;
-    ctx.fillText(b.th, left, y); y += 48 * SS;
+    let tl = '';
+    for (const wd of b.th.split(' ')){
+      const test = tl ? tl + ' ' + wd : wd;
+      if (ctx.measureText(test).width > textW && tl){ ctx.fillText(tl, left, y); y += 38*SS; tl = wd; }
+      else tl = test;
+    }
+    if (tl){ ctx.fillText(tl, left, y); y += 48 * SS; }
   }
   ctx.fillStyle = K.rule;
   ctx.fillRect(left, y, colW, 1.5*SS); y += 42 * SS;
