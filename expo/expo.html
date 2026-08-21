@@ -696,6 +696,7 @@ const state = {
   restBeat: -1, restTime: 0,
   introHold: true,        // holding the opening close-up until the first move,
   introFade: 1,           // darkness over the hall until the tour begins
+  ruleA: 0,               // the century rule fades in once the tour is under way
   splice: null,           // {dir, t} while the yard splice is playing
   spliceSide: 'L',        // which side of the yard we were on
   time: 0,
@@ -1651,6 +1652,83 @@ function initSeamVideo(){
   v.src = ASSETS.flyover; v.muted = true; v.playsInline = true;
   SEAM_VIDEO = v;
 }
+/* THE CENTURY RULE — a quiet hairline at the foot of the frame answering one
+   question: how far along the hundred years are we. Deliberately not a
+   scrollbar: no track, no thumb, nothing to grab. It is drawn furniture that
+   knows the hall's real structure — each era is its own division in its own
+   ink, the breaks are the recreations you actually walk through, every beat
+   leaves a tick, and a lit marker rides the rule with the year beside it. It
+   bows out whenever the hall has something better to say: the welcome, an open
+   reading page, a playing clip, the closing packshot. */
+function drawProgress(t){
+  const busy = state.study || state.inspect || state.clip || state.introHold;
+  const hidden = Math.max(state.introFade || 0, state.finFade || 0, state.attract.fade || 0);
+  const want = busy ? 0 : (1 - hidden);
+  state.ruleA += (want - state.ruleA) * Math.min(1, (state.dt || 0.016) * 6);
+  const A = state.ruleA;
+  if (A < 0.02) return;
+
+  const x0 = W * 0.13, x1 = W * 0.87, span = x1 - x0;
+  const y = H - 40 * SS;
+  const W0 = INTRO_X, W1 = FIN_X;
+  const at = wx => x0 + span * Math.max(0, Math.min(1, (wx - W0) / (W1 - W0)));
+  const RECS = [[REC_L, REC_R], [REC3_L, REC3_R], [REC2_L, REC2_R], [REC4_L, REC4_R]];
+
+  ctx.save();
+  ctx.lineCap = 'butt';
+  // each era draws its own stretch in its own ink; the recreations are the gaps
+  for (const seg of SEGMENTS){
+    const a0 = Math.max(seg.x0, W0), a1 = Math.min(seg.x1, W1);
+    if (a1 <= a0) continue;
+    let cuts = [[a0, a1]];
+    for (const [rl, rr] of RECS){
+      const next = [];
+      for (const [c0, c1] of cuts){
+        if (rr <= c0 || rl >= c1) { next.push([c0, c1]); continue; }
+        if (rl > c0) next.push([c0, rl]);
+        if (rr < c1) next.push([rr, c1]);
+      }
+      cuts = next;
+    }
+    ctx.strokeStyle = `rgba(${seg.ink},${(0.30 * A).toFixed(3)})`;
+    ctx.lineWidth = 2 * SS;
+    for (const [c0, c1] of cuts){
+      ctx.beginPath(); ctx.moveTo(at(c0), y); ctx.lineTo(at(c1), y); ctx.stroke();
+    }
+  }
+  // the portals: a brighter pip where the hall changes era
+  for (const [rl, rr] of RECS){
+    const cx = at((rl + rr) / 2);
+    ctx.fillStyle = `rgba(235,225,205,${(0.34 * A).toFixed(3)})`;
+    ctx.beginPath(); ctx.moveTo(cx, y - 5 * SS); ctx.lineTo(cx + 3.4 * SS, y);
+    ctx.lineTo(cx, y + 5 * SS); ctx.lineTo(cx - 3.4 * SS, y); ctx.closePath(); ctx.fill();
+  }
+  // a tick per beat; the landmark years stand a little taller
+  for (const b of BEATS){
+    if (b.under) continue;
+    const bx = at(b.x), tall = (b.tier === 1 || b.fly) ? 5 : 3;
+    ctx.strokeStyle = `rgba(${segAt(b.x).ink},${((b.minor ? 0.22 : 0.40) * A).toFixed(3)})`;
+    ctx.lineWidth = 1.4 * SS;
+    ctx.beginPath(); ctx.moveTo(bx, y - tall * SS); ctx.lineTo(bx, y + tall * SS); ctx.stroke();
+  }
+  // the marker, and the year it is standing in
+  const segNow = segAt(cam.x);
+  const mx = at(cam.x);
+  drawGlow(segNow.light ? segNow.light.pool : '255,220,170', mx, y, 92 * SS, 0.30 * A);
+  ctx.fillStyle = `rgba(250,244,232,${(0.92 * A).toFixed(3)})`;
+  ctx.beginPath(); ctx.roundRect(mx - 1.6 * SS, y - 8 * SS, 3.2 * SS, 16 * SS, 1.6 * SS); ctx.fill();
+  const nb = nearestBeat(cam.x);
+  if (nb.i >= 0 && BEATS[nb.i].y){
+    ctx.font = eraFont(17 * SS, '', segNow.font);
+    ctx.textAlign = 'center';
+    try { ctx.letterSpacing = `${3 * SS}px`; } catch(e){}
+    ctx.fillStyle = `rgba(${segNow.ink},${(0.62 * A).toFixed(3)})`;
+    ctx.fillText(BEATS[nb.i].y, mx, y - 17 * SS);
+    try { ctx.letterSpacing = '0px'; } catch(e){}
+  }
+  ctx.restore();
+}
+
 function drawSeamVideo(){
   const S = state.splice;
   if (!S) return;
@@ -4584,6 +4662,7 @@ function frame(){
   }
   drawSeamVideo();
   drawGrade(t);
+  drawProgress(t);
   drawStudy();
   drawClip();      // the speaker's voice — a video window above the page
   drawInspect();   // a person card opens above the reading page
