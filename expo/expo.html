@@ -1687,7 +1687,21 @@ function initProjectors(){
     const v = document.createElement('video');
     v.src = p.src; v.muted = true; v.loop = true; v.playsInline = true;
     v.preload = 'auto';
-    v.addEventListener('loadeddata', () => { p.ready = true; });
+    v.addEventListener('loadeddata', () => {
+      p.ready = true;
+      // the reel is pillarboxed: measure the black ears once and never throw them
+      try {
+        const c = document.createElement('canvas'); c.width = 96; c.height = 54;
+        const g = c.getContext('2d', {willReadFrequently: true});
+        g.drawImage(v, 0, 0, 96, 54);
+        const d = g.getImageData(0, 0, 96, 54).data;
+        const lum = x => { let m = 0; for (let y = 4; y < 50; y++){ const i = (y*96+x)*4; m = Math.max(m, (d[i]+d[i+1]+d[i+2])/3); } return m; };
+        let a0 = 0, a1 = 95;
+        while (a0 < 40 && lum(a0) < 14) a0++;
+        while (a1 > 56 && lum(a1) < 14) a1--;
+        p.crop = {x0: a0 / 96, x1: (a1 + 1) / 96};
+      } catch(e){ p.crop = {x0: 0, x1: 1}; }
+    });
     v.play().catch(() => {                      // a browser that wants a gesture first
       const go = () => { v.play().catch(()=>{}); window.removeEventListener('pointerdown', go); };
       window.addEventListener('pointerdown', go);
@@ -1695,7 +1709,7 @@ function initProjectors(){
     p.v = v;
   }
 }
-function drawProjectors(t){
+function drawProjectors(t, phase){
   for (const p of PROJECTORS){
     // a kiosk PC should not decode a reel nobody is looking at
     const near = Math.abs(p.x - cam.x) < 3600;
@@ -1725,6 +1739,7 @@ function drawProjectors(t){
     const mxp = px(p.x + p.wallDX, kp), myp = py(CFG.benchY - 2, kp);
     const bw = 150 * kp * SS, bh = 74 * kp * SS;
 
+    if (phase === 'machine'){ projMachine(p, t, lamp, mxp, myp, bw, bh, kp); continue; }
     ctx.save();
     // 1 — the beam: apex at the lens, spreading to the frame on the wall
     const beam = ctx.createLinearGradient(0, myp - bh * 0.45, 0, sy);
@@ -1746,46 +1761,49 @@ function drawProjectors(t){
       ctx.beginPath(); ctx.arc(bx, by, (0.9 + 0.8 * u) * SS, 0, 7); ctx.fill();
     }
 
-    // 2 — the picture, painted as LIGHT: 'lighter' lets the wall through
+    // 2 — the picture is assembled on its own transparent sheet and then ADDED
+    //     to the wall. Feathering it in place would erase the masonry with it
+    //     and read as a dark border round the frame — light never does that.
     const gx0 = sx - vw / 2 + wx2, gy0 = sy - vh / 2 + wy2;
-    // keystone: the machine sits below its picture, so the top edge is wider
-    const key = 0.018 * vw;
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(gx0 - key, gy0); ctx.lineTo(gx0 + vw + key, gy0);
-    ctx.lineTo(gx0 + vw, gy0 + vh); ctx.lineTo(gx0, gy0 + vh);
-    ctx.closePath(); ctx.clip();
-    // the wall first takes a wash of lamp light — a lit rectangle even in black frames
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.fillStyle = `rgba(46,42,34,${(0.55 * lamp).toFixed(3)})`;
-    ctx.fillRect(gx0 - key, gy0, vw + key * 2, vh);
-    if (live){
-      ctx.globalAlpha = 0.92 * lamp;
-      ctx.drawImage(p.v, gx0 - key, gy0, vw + key * 2, vh);
-      ctx.globalAlpha = 1;
+    const key = 0.018 * vw;   // the machine sits below its picture: top edge wider
+    const ow = Math.max(8, Math.ceil(vw + key * 2)), oh = Math.max(8, Math.ceil(vh));
+    if (!p.off || p.off.width !== ow || p.off.height !== oh){
+      p.off = document.createElement('canvas'); p.off.width = ow; p.off.height = oh;
+      p.og = p.off.getContext('2d');
     }
-    // hot centre, falling away to the corners, the way a lens actually throws
-    const hot = ctx.createRadialGradient(gx0 + vw / 2, gy0 + vh * 0.44, vh * 0.12,
-                                         gx0 + vw / 2, gy0 + vh * 0.5, vw * 0.72);
+    const g2 = p.og;
+    g2.clearRect(0, 0, ow, oh);
+    // a lit rectangle even where the reel is black — the lamp is always on
+    g2.fillStyle = `rgba(52,47,38,${(0.60 * lamp).toFixed(3)})`;
+    g2.fillRect(0, 0, ow, oh);
+    if (live){
+      const c = p.crop || {x0: 0, x1: 1};
+      const sw0 = p.v.videoWidth || 1280, sh0 = p.v.videoHeight || 720;
+      g2.globalAlpha = 0.95 * lamp;
+      g2.drawImage(p.v, sw0 * c.x0, 0, sw0 * (c.x1 - c.x0), sh0, 0, 0, ow, oh);
+      g2.globalAlpha = 1;
+    }
+    // hot centre, falling away the way a lens actually throws
+    const hot = g2.createRadialGradient(ow/2, oh*0.44, oh*0.12, ow/2, oh*0.5, ow*0.72);
     hot.addColorStop(0, `rgba(255,250,235,${(0.10 * lamp).toFixed(3)})`);
     hot.addColorStop(1, 'rgba(255,250,235,0)');
-    ctx.fillStyle = hot; ctx.fillRect(gx0 - key, gy0, vw + key * 2, vh);
-    ctx.restore();
-
-    // 3 — the edges: light has no border, it just runs out
-    ctx.save();
-    ctx.globalCompositeOperation = 'destination-out';
-    const F = 12 * kk * SS;
-    for (const [gx, gy, gw, gh, dir] of [
-      [gx0 - key, gy0, vw + key * 2, F, 'v0'], [gx0 - key, gy0 + vh - F, vw + key * 2, F, 'v1'],
-      [gx0 - key, gy0, F, vh, 'h0'], [gx0 + vw + key - F, gy0, F, vh, 'h1']]){
-      const g = dir[0] === 'v'
-        ? ctx.createLinearGradient(0, gy, 0, gy + gh)
-        : ctx.createLinearGradient(gx, 0, gx + gw, 0);
-      const a0 = (dir === 'v0' || dir === 'h0') ? 1 : 0;
-      g.addColorStop(0, `rgba(0,0,0,${a0})`); g.addColorStop(1, `rgba(0,0,0,${1 - a0})`);
-      ctx.fillStyle = g; ctx.fillRect(gx, gy, gw, gh);
+    g2.fillStyle = hot; g2.fillRect(0, 0, ow, oh);
+    // the edges run out into transparency ON THE SHEET, where erasing is free
+    g2.save();
+    g2.globalCompositeOperation = 'destination-out';
+    const F = Math.max(2, 11 * kk * SS);
+    for (const [ex, ey, ew, eh, vert, near] of [
+      [0, 0, ow, F, 1, 1], [0, oh - F, ow, F, 1, 0],
+      [0, 0, F, oh, 0, 1], [ow - F, 0, F, oh, 0, 0]]){
+      const g = vert ? g2.createLinearGradient(0, ey, 0, ey + eh)
+                     : g2.createLinearGradient(ex, 0, ex + ew, 0);
+      g.addColorStop(0, `rgba(0,0,0,${near})`); g.addColorStop(1, `rgba(0,0,0,${1 - near})`);
+      g2.fillStyle = g; g2.fillRect(ex, ey, ew, eh);
     }
+    g2.restore();
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.drawImage(p.off, gx0 - key, gy0);
     ctx.restore();
 
     // 4 — halation: the wall around the frame catches the spill
@@ -1794,27 +1812,31 @@ function drawProjectors(t){
     spill.addColorStop(1, 'rgba(255,244,214,0)');
     ctx.fillStyle = spill; ctx.fillRect(sx - vw, sy - vh, vw * 2, vh * 2);
 
-    // 5 — the machine itself
-    ctx.fillStyle = '#2b2723';
-    ctx.beginPath(); ctx.roundRect(mxp - bw / 2, myp - bh, bw, bh, 5 * kp * SS); ctx.fill();
-    ctx.fillStyle = '#43403a';
-    ctx.fillRect(mxp - bw * 0.42, myp - bh * 0.92, bw * 0.84, bh * 0.16);
-    // the two reels
-    for (const s of [-1, 1]){
-      ctx.strokeStyle = 'rgba(190,186,176,0.75)'; ctx.lineWidth = 2 * kp * SS;
-      ctx.beginPath(); ctx.arc(mxp + s * bw * 0.26, myp - bh * 1.30, bw * 0.20, 0, 7); ctx.stroke();
-      ctx.fillStyle = 'rgba(30,28,25,0.9)';
-      ctx.beginPath(); ctx.arc(mxp + s * bw * 0.26, myp - bh * 1.30, bw * 0.055, 0, 7); ctx.fill();
-    }
-    // the lens, glowing with the lamp behind it
-    drawGlow('255,240,200', mxp, myp - bh * 0.45, 34 * kp * SS, 0.5 * lamp);
-    ctx.fillStyle = `rgba(255,246,224,${(0.85 * lamp).toFixed(2)})`;
-    ctx.beginPath(); ctx.arc(mxp, myp - bh * 0.45, 5 * kp * SS, 0, 7); ctx.fill();
     ctx.restore();
 
     pushHit(sx - vw / 2, sy - vh / 2, vw, vh,
             {type: 'focus', beat: nearestBeat(p.x).i, anchor: p.x});
   }
+}
+/* the machine stands ON the bench, so it is painted after it — while the
+   picture it throws was painted before, and the bench crops it the way a real
+   counter crops a projection that falls behind it */
+function projMachine(p, t, lamp, mxp, myp, bw, bh, kp){
+  ctx.save();
+  ctx.fillStyle = '#2b2723';
+  ctx.beginPath(); ctx.roundRect(mxp - bw / 2, myp - bh, bw, bh, 5 * kp * SS); ctx.fill();
+  ctx.fillStyle = '#43403a';
+  ctx.fillRect(mxp - bw * 0.42, myp - bh * 0.92, bw * 0.84, bh * 0.16);
+  for (const s of [-1, 1]){
+    ctx.strokeStyle = 'rgba(190,186,176,0.75)'; ctx.lineWidth = 2 * kp * SS;
+    ctx.beginPath(); ctx.arc(mxp + s * bw * 0.26, myp - bh * 1.30, bw * 0.20, 0, 7); ctx.stroke();
+    ctx.fillStyle = 'rgba(30,28,25,0.9)';
+    ctx.beginPath(); ctx.arc(mxp + s * bw * 0.26, myp - bh * 1.30, bw * 0.055, 0, 7); ctx.fill();
+  }
+  drawGlow('255,240,200', mxp, myp - bh * 0.45, 34 * kp * SS, 0.5 * lamp);
+  ctx.fillStyle = `rgba(255,246,224,${(0.85 * lamp).toFixed(2)})`;
+  ctx.beginPath(); ctx.arc(mxp, myp - bh * 0.45, 5 * kp * SS, 0, 7); ctx.fill();
+  ctx.restore();
 }
 
 function initSeamVideo(){
@@ -2884,6 +2906,22 @@ async function loadPlates(){
 }
 /* drawn straight after the bench, so the plate's own counter and cabinets
    stand in for the procedural ones inside the niche */
+/* A plate owns its bay: the hall's ambient furniture — bench props, pinned
+   sheets, passers-by — must not stand inside the picture it brings, or they
+   read as junk floating over someone's workbench. Culled at boot, by data. */
+function clearPlateBays(){
+  const bays = PLATES.map(p => {
+    const half = (p.sw || 1390) / 2 + 40;      // world units at the bench plane
+    return [p.x - half, p.x + half];
+  });
+  if (!bays.length) return;
+  const inBay = x => bays.some(([a, b]) => x > a && x < b);
+  for (let i = PROPS.length - 1; i >= 0; i--) if (inBay(PROPS[i].x)) PROPS.splice(i, 1);
+  for (let i = SHEETS.length - 1; i >= 0; i--) if (inBay(SHEETS[i].x)) SHEETS.splice(i, 1);
+  for (let i = FIGURES.length - 1; i >= 0; i--) if (inBay(FIGURES[i].x)) FIGURES.splice(i, 1);
+  for (let i = FG_ITEMS.length - 1; i >= 0; i--) if (inBay(FG_ITEMS[i].x)) FG_ITEMS.splice(i, 1);
+}
+
 function drawPlates(t){
   for (const p of PLATES){
     const layers = p.layers || [];
@@ -2898,7 +2936,7 @@ function drawPlates(t){
     // counter continues the hall's counter instead of stepping away from it
     const frontZ = layers[layers.length - 1].z ?? wallZ;
     const y0 = py(CFG.benchY, k(frontZ)) - sh * bf;
-    const fade = 0.06;
+    const fade = 0.012;
     for (const L of layers){
       const z = L.z != null ? L.z : wallZ;
       const kk = k(z);
@@ -2941,12 +2979,14 @@ const PHOTO_TEX = {};
 /* the procedural era walls (tools/make_wall.py) stand in for the drawn ones —
    same slot, same tiling, so drawWall never learns the difference */
 function applyPhotoTextures(){
-  for (const [slot, key] of [['wall1','wall_e1'], ['wall2','wall_e2'], ['wall3','wall_e3'], ['wall4','wall_e4']])
+  for (const [slot, key] of [['wall1','wall_e1'], ['wall2','wall_e2'], ['wall3','wall_e3'], ['wall4','wall_e4'],
+                             ['bench1','bench_top_e1'], ['front1','bench_face_e1']])
     if (PHOTO_TEX[key]) TEX[slot] = PHOTO_TEX[key];
 }
 async function loadPhotoSkin(){
   const want = {
     wall_e1: 'wall_e1.jpg', wall_e2: 'wall_e2.jpg', wall_e3: 'wall_e3.jpg', wall_e4: 'wall_e4.jpg',
+    bench_top_e1: 'bench_top_e1.jpg', bench_face_e1: 'bench_face_e1.jpg',
     ph_furnace: 'furnace_0.png',
     ph_articulator: 'articulator_0.png',
     ph_jars: 'jars_0.png',
@@ -4496,7 +4536,8 @@ function drawAttractHint(t){
   try { ctx.letterSpacing = `${5*SS}px`; } catch(e){}
   // warm ink only in the craft era; translucent white once 1979 is crossed
   ctx.fillStyle = cam.x < REC_L ? `rgba(225,198,155,${a})` : `rgba(255,255,255,${(a*0.85).toFixed(3)})`;
-  ctx.fillText('TURN THE WHEEL · TRAVEL THROUGH TIME', W/2, H - 34*SS);
+  // the rule owns the foot of the frame; the invitation stands above it
+  ctx.fillText('TURN THE WHEEL · TRAVEL THROUGH TIME', W/2, H - 78*SS);
   ctx.restore();
 }
 
@@ -4778,6 +4819,7 @@ function frame(){
     if (b.plasma) drawPlasmaPanel(b, t);
   }
   drawBanners(t);
+  drawProjectors(t, 'light');   // light lands on the WALL; the bench will crop it
 
   // mid-ground: people and machines stand in front of the wall...
   drawStage(t);
@@ -4785,7 +4827,7 @@ function frame(){
   drawProps(true);
 
   drawBench();
-  drawProjectors(t);      // the machine stands on the bench, so it comes after it
+  drawProjectors(t, 'machine');   // it stands on the bench, so it comes after it
   drawPlates(t);
 
   // table items
@@ -5041,6 +5083,7 @@ async function boot(){
   initAttractStops();
   initDust();
   initDecor();
+  clearPlateBays();
   attachMouseDriver(document.body);
   auditStatics();
   window.__photoSkinReady = true;
