@@ -1697,7 +1697,13 @@ function initProjectors(){
 }
 function drawProjectors(t){
   for (const p of PROJECTORS){
-    if (Math.abs(p.x - cam.x) > 3600) continue;
+    // a kiosk PC should not decode a reel nobody is looking at
+    const near = Math.abs(p.x - cam.x) < 3600;
+    if (p.v){
+      if (near && p.v.paused) p.v.play().catch(()=>{});
+      else if (!near && !p.v.paused) p.v.pause();
+    }
+    if (!near) continue;
     const seg = segAt(p.x);
     const wz = (seg.z0 || 550) - 6;
     const kk = k(wz);
