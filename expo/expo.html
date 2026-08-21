@@ -305,6 +305,114 @@ function mixN(a,b,t){ return a+(b-a)*t; }
 function wallZAt(x){
   return segAt(x).z0;
 }
+/* THE RIVET LAW. Every OBJECT hung on the wall MOVES with the wall:
+   photos, plasmas, banners take their horizontal screen anchor from
+   wallSX and nowhere else — projected through the wall's own depth, so
+   no exhibit can crawl along the masonry, columns or panels while the
+   camera travels. Size and height keep the era's text plane (equal
+   framing across eras) — only motion is riveted. Bare typography (years,
+   captions, theses) stays on the era text plane: type over a plain wall
+   shows no crawl, and its spacing is composed there. auditRivets()
+   (?audit in the URL) verifies the law against the real rendered frame. */
+function wallSX(wx, dxWorld, kSpread){
+  const kw = k(wallZAt(wx) - 8);
+  return px(wx, kw) + (dxWorld || 0) * (kSpread || kw) * SS;
+}
+/* Rivet audit: while RIVET_PROBE is set, draw passes register their real
+   rendered anchors here; auditRivets() renders the hall twice per beat with
+   the camera shifted and asserts each anchor moved at its wall's parallax
+   rate. Run with ?audit in the URL. Any future code that draws a wall thing
+   off its plane fails this at boot — loudly. */
+let RIVET_PROBE = null;
+function rivet(key, sx, kExp){ if (RIVET_PROBE) RIVET_PROBE.set(key, {sx, kExp}); }
+function auditRivets(){
+  if (!W || !H){ resize(); }
+  if (!W || !H){ console.warn('rivet audit skipped: zero viewport'); return; }
+  const saved = {x: cam.x, z: cam.z, zT: cam.zTarget, vel: cam.vel, mode: state.mode};
+  cam.z = 0; cam.zTarget = 0; cam.vel = 0; state.mode = 'live';
+  const bad = [];
+  for (const b of BEATS){
+    const probe = [];
+    for (const dx of [0, 120]){
+      cam.x = b.x - 420 + dx;
+      RIVET_PROBE = new Map();
+      frame();
+      probe.push(RIVET_PROBE);
+      RIVET_PROBE = null;
+    }
+    for (const [key, p1] of probe[0]){
+      const p2 = probe[1].get(key);
+      if (!p2) continue;
+      const slope = (p2.sx - p1.sx) / 120;
+      if (Math.abs(slope + p1.kExp * SS) > 0.06 * SS)
+        bad.push(`${key}: moves at k=${(-slope/SS).toFixed(3)}, its wall is k=${p1.kExp.toFixed(3)}`);
+    }
+  }
+  cam.x = saved.x; cam.z = saved.z; cam.zTarget = saved.zT; cam.vel = saved.vel; state.mode = saved.mode;
+  if (bad.length) console.error('RIVET AUDIT — objects sliding on the wall:\n' + [...new Set(bad)].join('\n'));
+  else console.log('rivet audit clean: every wall anchor moves with its wall');
+}
+/* Captions ride the wall parallax now, so two neighbours can meet where
+   the text plane once spread them apart. The law says text never overlaps:
+   the later caption steps down one lane (staggered museum labels) and its
+   thesis follows. The year numerals never move. Runs at boot, data-driven —
+   new beats are covered automatically. */
+function initCapLanes(){
+  const mc = document.createElement('canvas').getContext('2d');
+  const items = [];
+  for (const b of BEATS){
+    if (b.under || b.plaque || !b.t) continue;
+    const seg = segAt(b.x);
+    const sc = (b.minor ? 0.6 : 1) * (seg.tScale || 1);
+    mc.font = eraFont(46 * sc, '', seg.font);
+    const wpx = mc.measureText(b.t).width + Math.max(0, b.t.length - 1) * 9 * sc;
+    const kT = k((seg.tz || wallZAt(b.x)) - 8);
+    items.push({b, half: wpx * kT / 2});
+    b._capDrop = 0;
+  }
+  items.sort((a, c) => a.b.x - c.b.x);
+  for (let i = 1; i < items.length; i++){
+    const A = items[i-1], B = items[i];
+    if (A.b._capDrop) continue;   // compare against the standing lane only
+    const kT = Math.min(k((segAt(A.b.x).tz || wallZAt(A.b.x)) - 8), k((segAt(B.b.x).tz || wallZAt(B.b.x)) - 8));
+    const dist = (B.b.x - A.b.x) * kT;
+    if (dist < A.half + B.half + 14) B.b._capDrop = 44;
+  }
+}
+
+/* Static placement audit — runs at every boot (cheap, data-level):
+   gravity for table things, and no un-pinned wall photo inside a
+   recreation span (the panel there stands proud of the era wall —
+   such a photo MUST carry pz or it will crawl across the panel). */
+function auditStatics(){
+  const bad = [];
+  for (const b of BEATS){
+    for (const it of (b.table || [])){
+      const x = b.x + (it.dx || 0), half = (it.w || 120) * 0.5;
+      if (!TABLES.some(tb => x - half >= tb.x0 && x + half <= tb.x1))
+        bad.push(`table item off any table: ${b.y} ${it.img || ''} @${x|0}`);
+    }
+    for (const it of (b.st || [])){
+      const x = b.x + (it.dx || 0), half = (it.w || 120) * 0.28;
+      if (!TABLES.some(tb => x - half >= tb.x0 && x + half <= tb.x1))
+        bad.push(`standing print off any table: ${b.y} ${it.img || ''} @${x|0}`);
+    }
+    for (const it of (b.wall || [])){
+      if (it.pz != null) continue;
+      const x = b.x + it.dx;
+      const inRec = (x > REC_L && x < REC_R) || (x > REC3_L && x < REC3_R) ||
+                    (x > REC2_L && x < REC2_R) || (x > REC4_L && x < REC4_R);
+      if (inRec) bad.push(`wall photo inside a recreation without pz: ${b.y} ${it.img} @${x|0} — pin it to the panel`);
+    }
+  }
+  for (const p of PROPS){
+    if (p.mid) continue;
+    const half = (p.w || 120) * 0.5;
+    if (!TABLES.some(tb => p.x - half >= tb.x0 - 20 && p.x + half <= tb.x1 + 20))
+      bad.push(`prop off any table: ${p.kind} @${p.x|0}`);
+  }
+  if (bad.length) console.error('PLACEMENT AUDIT:\n' + bad.join('\n'));
+}
 /* ambient color/grain, blended across seam zones */
 function ambient(x){
   const i = segIdx(x), s = SEGMENTS[i];
@@ -950,9 +1058,9 @@ function drawBench(){
   }
 }
 
-function drawSprite(sp, x, yCenter, z, wWorld, rotDeg, alpha, hit){
+function drawSprite(sp, x, yCenter, z, wWorld, rotDeg, alpha, hit, sxRivet){
   const kk = k(z);
-  const sx = px(x, kk), sy = py(yCenter, kk);
+  const sx = sxRivet != null ? sxRivet : px(x, kk), sy = py(yCenter, kk);
   if (sx < -600 || sx > W + 600) return;
   const scale = (wWorld / sp.inner.w) * kk * SS;
   if (hit) pushHit(sx - sp.w*scale/2, sy - sp.h*scale/2, sp.w*scale, sp.h*scale, hit);
@@ -1057,15 +1165,16 @@ function drawBeatText(b, focusAmt){
       ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
       ctx.fillText(b.y, cx, mixN(py(140, kk), H*0.16, focusAmt));
       pushHit(cx - 340*kk*SS, py(20, kk), 680*kk*SS, py(330, kk) - py(20, kk), {type:'study', beat: BEATS.indexOf(b)});
+      const cd = b._capDrop || 0;
       ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
-      ctx.fillText(b.t, cx, mixN(py(tY, kk), H*0.16 + 62*SS, focusAmt));
+      ctx.fillText(b.t, cx, mixN(py(tY + cd, kk), H*0.16 + 62*SS, focusAmt));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th && fFade > 0.05){
         ctx.font = eraFont(30 * (seg.tScale || 1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${((near-0.25)/0.75 * 0.72 * fFade).toFixed(3)})`;
-        drawLines(b._th, cx, py(tY + 54, kk), 38 * kk * SS);
+        drawLines(b._th, cx, py(tY + 54 + cd, kk), 38 * kk * SS);
       }
       ctx.restore();
     }
@@ -1094,15 +1203,16 @@ function drawBeatText(b, focusAmt){
         ctx.fillText(b.y, cx, mixN(py(140, kk), H*0.16, focusAmt));
       }
       pushHit(cx - 320*kk*SS, py(20, kk), 640*kk*SS, py(330, kk) - py(20, kk), {type:'study', beat: BEATS.indexOf(b)});
+      const cd = b._capDrop || 0;
       ctx.font = eraFont(46 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*sc*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
-      ctx.fillText(b.t, cx, mixN(py(b.minor ? tY + 4 : tY, kk), H*0.16 + 62*SS, focusAmt));
+      ctx.fillText(b.t, cx, mixN(py((b.minor ? tY + 4 : tY) + cd, kk), H*0.16 + 62*SS, focusAmt));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th){
         ctx.font = eraFont(30 * (b.minor?0.8:1) * (seg.tScale||1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
-        if (fFade > 0.05) drawLines(b._th, cx, py(b.minor ? tY + 46 : tY + 54, kk), 38 * (b.minor?0.8:1) * kk * SS);
+        if (fFade > 0.05) drawLines(b._th, cx, py((b.minor ? tY + 46 : tY + 54) + cd, kk), 38 * (b.minor?0.8:1) * kk * SS);
       }
       ctx.restore();
       ctx.globalAlpha = 1;
@@ -2505,7 +2615,7 @@ function auditPlacements(){
     .map(g => ({x: g.pedX, z: g.pedZ, c: g.c, r: g.r}));
   for (const b of BEATS)
     for (const it of b.wall)
-      crossTargets.push({x: b.x + it.dx, z: it.pz != null ? it.pz : (segAt(b.x).tz || wallZAt(b.x)) - 12, c: b.x, r: 520});
+      crossTargets.push({x: b.x + it.dx, z: it.pz != null ? it.pz : wallZAt(b.x) - 8, c: b.x, r: 520});
   for (const f of FIGURES){
     for (const g of crossTargets){
       const kP = kOf(g.z), kF = kOf(f.z);
@@ -2946,7 +3056,8 @@ function drawPedestal(b, t, hero){
 function drawPlasmaPanel(b, t){
   const p = b.plasma;
   const kk = k((segAt(b.x).tz || wallZAt(b.x)) - 14);
-  const sx = px(b.x + p.dx, kk), sy = py(p.cy, kk);
+  const sx = wallSX(b.x, p.dx, kk), sy = py(p.cy, kk);
+  rivet('plasma:' + b.x, sx, k(wallZAt(b.x) - 8));
   const w = p.w * kk * SS, h = w * 0.58;
   if (sx < -w || sx > W + w) return;
   pushHit(sx - w/2, sy - h/2, w, h, {type:'focus', beat: BEATS.indexOf(b), anchor: b.x + p.dx});
@@ -3246,7 +3357,8 @@ function drawBanners(t){
     if (Math.abs(bn.x - cam.x) > 3400) continue;
     const zB = (segAt(bn.x).tz || wallZAt(bn.x)) - 25;
     const kk = k(zB);
-    const sx = px(bn.x, kk);
+    const sx = wallSX(bn.x);
+    rivet('banner:' + bn.x, sx, k(wallZAt(bn.x) - 8));
     if (sx < -700 || sx > W + 700) continue;
     const h = bn.w * bn.sp.h / bn.sp.w;
     const cy = (bn.cy || 560) + 6*Math.sin(t*0.5 + bn.x);   // a breath of suspension
@@ -4178,11 +4290,14 @@ function frame(){
     if (Math.abs(b.x - cam.x) > 3400) continue;
     for (const it of b.wall){
       const sp = SPRITES[it.img]; if (!sp) continue;
-      // exhibits ride the era's exhibition plane — the same plane as the
-      // years — so nothing ever drifts away from its own beat
+      // sized on the era's text plane (equal framing everywhere), but
+      // riveted to the wall for motion — the rivet law
       const wz = it.pz != null ? it.pz : (segAt(b.x).tz || wallZAt(b.x)) - 12;
+      const ax = it.pz != null ? px(b.x + it.dx, k(it.pz))
+                               : wallSX(b.x, it.dx, k(wz));
+      rivet('wall:' + (it.img || '') + ':' + b.x, ax, k(it.pz != null ? it.pz : wallZAt(b.x) - 8));
       drawSprite(sp, b.x + it.dx, it.cy, wz, it.w, it.rot || 0, null,
-                 {type:'photo', sp, wx: b.x + it.dx, cy: it.cy, z: wz, w: it.w, cap: it.cap, link: it.link, beat: i});
+                 {type:'photo', sp, wx: b.x + it.dx, cy: it.cy, z: wz, w: it.w, cap: it.cap, link: it.link, beat: i}, ax);
       if (it.cap){
         const kk = k(wz);
         const seg = segAt(b.x);
@@ -4191,7 +4306,7 @@ function frame(){
         ctx.font = eraFont(19 * kk * SS, '', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},0.55)`;
         const hW = it.w * (sp.inner.h / sp.inner.w);
-        ctx.fillText(it.cap, px(b.x + it.dx, kk), py(it.cy + hW/2 + 44, kk));
+        ctx.fillText(it.cap, ax, py(it.cy + hW/2 + 44, kk));
         ctx.restore();
       }
     }
@@ -4339,6 +4454,8 @@ function loop(ts){
     if (fps < 36 && RQ > 0.55){ RQ = Math.max(0.55, RQ - 0.15); resize(); qCool = 900; }
     else if (fps > 59 && RQ < 1){ RQ = Math.min(1, RQ + 0.15); resize(); qCool = 900; }
   }
+  // a tab that boots hidden measures 0x0 — never draw a zero frame
+  if (!W || !H){ resize(); if (!W || !H){ requestAnimationFrame(loop); return; } }
   update(dt);
   frame();
   requestAnimationFrame(loop);
@@ -4441,6 +4558,7 @@ async function boot(){
       if (rest > 0) a.it.dx -= Math.min(rest, Math.max(0, (a.b.x + a.it.dx - a.half) - a.wallL));
     }
   }
+  initCapLanes();
   initBanners();
   initTables();
   initLights();
@@ -4448,6 +4566,8 @@ async function boot(){
   initDust();
   initDecor();
   attachMouseDriver(document.body);
+  auditStatics();
+  if (/[?&]audit/.test(location.search)) setTimeout(auditRivets, 400);
   requestAnimationFrame(loop);
 }
 window.addEventListener('load', boot);   // assets block sits below — wait for it
