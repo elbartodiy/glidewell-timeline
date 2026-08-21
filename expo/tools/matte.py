@@ -44,8 +44,11 @@ def detect_background(rgb):
     # saturated key colour: one or two channels far above the rest
     mx, mn = med.max(), med.min()
     if mx - mn > 90 and mx > 140:
-        if g < r - 80 and g < b - 80:  return ('chroma', np.array([255, 0, 255], float), 1)   # magenta, key = G
-        if r < g - 80 and b < g - 80:  return ('chroma', np.array([0, 255, 0], float), 0)     # green,   key = R/B
+        # the MEASURED key, never the ideal one: a generated magenta is nearer
+        # (247, 3, 238), and keying against pure #FF00FF leaves the difference
+        # behind as a faint veil over the whole background
+        if g < r - 80 and g < b - 80:  return ('chroma', med.astype(float), 1)   # magenta, green suppressed
+        if r < g - 80 and b < g - 80:  return ('chroma', med.astype(float), 0)   # green key
     # checkerboard: two light tones in a regular grid -> high local variance
     if spread > 6 and med.min() > 170:
         return ('checker', None, None)
@@ -154,6 +157,53 @@ def matte(img, maxw=1200):
     # pale smear on the dark bench. A shadow is neutral and merely a darkened
     # version of the background — never a colour the object owns.
     shadowish = shadow_mask(rgb, B)
+
+    # A chroma key needs no connectivity test: the key colour is unambiguous, so
+    # background enclosed by the object — the gap inside a lamp arm, the space
+    # between a frame and its rail — is background too. White and checkerboard
+    # backgrounds DO need it, because pale paper and plaster look like them.
+    if kind == 'chroma':
+        # Coverage from a DIFFERENCE key, not from distance to the key colour.
+        # Distance lies about dark objects: a black edge half-covered by magenta
+        # reads as (128,0,128), far from pure magenta, and would be called solid.
+        # The difference key asks how much the key's own channels dominate the
+        # suppressed one, which falls to zero on any real material.
+        R, G, Bc = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+        if keych == 1:                       # magenta: red and blue carry it
+            bgness = np.minimum(R, Bc) - G
+            span = min(B[0, 0, 0], B[0, 0, 2]) - B[0, 0, 1]
+        else:                                # green key
+            bgness = G - np.maximum(R, Bc)
+            span = B[0, 0, 1] - max(B[0, 0, 0], B[0, 0, 2])
+        a = np.clip(1.0 - bgness / max(span, 1.0), 0.0, 1.0)
+        a[bgness > span * 0.92] = 0.0
+        aa = np.clip(a, 1e-3, 1.0)[..., None]
+        F = np.clip((rgb - (1.0 - aa) * B) / aa, 0, 255)
+        # spill is a lighting effect; a generator paints a flat rectangle and the
+        # object never reflects it, so only partly-covered edge pixels can carry
+        # the key colour — the interior must be left exactly as drawn
+        # A contaminated pixel is recognisable without guessing: magenta pushes
+        # GREEN below both red and blue at once. Warm wood and beige marble keep
+        # red > green > blue, so they never match and are never touched.
+        if keych == 1:
+            lo = np.minimum(F[..., 0], F[..., 2])
+            excess = np.maximum(0.0, lo - F[..., 1] - 10.0)
+            F[..., 0] -= excess * 0.95
+            F[..., 2] -= excess * 0.95
+        else:
+            hi = np.maximum(F[..., 0], F[..., 2])
+            excess = np.maximum(0.0, F[..., 1] - hi - 10.0)
+            F[..., 1] -= excess * 0.95
+        out = np.dstack([np.clip(F, 0, 255), a * 255.0]).astype(np.uint8)
+        im = Image.fromarray(out)
+        alpha = np.asarray(im)[..., 3]
+        ys, xs = np.where(alpha > 8)
+        if len(ys):
+            im = im.crop((max(0, xs.min() - 2), max(0, ys.min() - 2),
+                          min(w, xs.max() + 3), min(h, ys.max() + 3)))
+        if im.width > maxw:
+            im = im.resize((maxw, round(im.height * maxw / im.width)), Image.LANCZOS)
+        return im, kind
 
     # connectivity: only background reachable from the border is really outside,
     # so light areas inside the object (labels, plaster, glass) stay opaque
