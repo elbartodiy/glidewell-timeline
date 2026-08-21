@@ -2290,7 +2290,7 @@ function initDecor(){
   for (let i = 0; i < 3; i++)
     FIGURES.push({x: 25480 + i*115, z: 740 + i*30, h: 650, sprite: makeFigure(80 + i)});
   // the symposium audience at the finale — spaced so the stage stays visible
-  const AUD = [[28960, 380, 640], [29060, 620, 580], [29140, 340, 650], [29220, 460, 615], [29060, 300, 660]];
+  const AUD = [[28790, 380, 640], [28890, 620, 580], [28970, 340, 650], [29050, 460, 615], [28890, 300, 660]];
   AUD.forEach(([ax, az, ah], i) => FIGURES.push({x: ax, z: az, h: ah, sprite: makeFigure(60 + i)}));
 
   // ambient props obey gravity too: full footprint on a real table span,
@@ -3349,6 +3349,28 @@ const PEOPLE = {
 const BEAT_PEOPLE = {2450:['jim'], 14260:['ditolla'], 15700:['rella'], 18700:['jim','ditolla'], 21080:['gordon','rella'],
                      25490:['ellen','nadia','bianca'], 26340:['jim'], 28180:['jim']};
 let PERSON_SPRITES = {};
+/* speaker clips inside the study pages: tap a preview, a third-layer video
+   window opens — pieces of the interviews we are filming */
+const STUDY_MEDIA = {
+  18700: [{name:'Dr. Paresh Patel', img:'patel', src:'media/2007_patel.mp4', label:'on the digital revolution'}],
+  22550: [{name:'Dr. Paresh Patel', img:'patel', src:'media/2010s_patel.mp4', label:'on scanners in every office'}],
+};
+const VIDEO_EL = {};
+function openClip(m){
+  let v = VIDEO_EL[m.src];
+  if (!v){
+    v = document.createElement('video');
+    v.src = m.src; v.preload = 'auto'; v.playsInline = true;
+    VIDEO_EL[m.src] = v;
+  }
+  try { v.currentTime = 0; v.play(); } catch(e){}
+  state.clip = {v, name: m.name, label: m.label, amt: 0};
+}
+function closeClip(){
+  const C = state.clip;
+  if (C && C.v){ try { C.v.pause(); } catch(e){} }
+  state.clip = null;
+}
 function openStudy(i){
   const b = BEATS[i];
   const imgs = [];   // reserved: the speaker-video carousel will live here
@@ -3465,6 +3487,58 @@ function drawStudy(){
     }
     y += 10 * SS;
   }
+  const media = STUDY_MEDIA[b.x];
+  if (media && media.length){
+    ctx.fillStyle = K.rule;
+    ctx.fillRect(left, y, colW, 1.5*SS); y += 38 * SS;
+    ctx.font = K.font(19);
+    ctx.fillStyle = `rgba(${K.dim},0.9)`;
+    ctx.fillText('WATCH \u00b7 VOICES OF THIS MOMENT', left, y); y += 34 * SS;
+    let mx = left;
+    for (let mi = 0; mi < media.length; mi++){
+      const m = media[mi];
+      const tw = 300*SS, th = 170*SS;
+      if (mx + tw > left + colW){ mx = left; y += th + 60*SS; }
+      const ty = y;
+      if (ty + th > topClip && ty < botClip){
+        ctx.save();
+        ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 10*SS); ctx.clip();
+        ctx.fillStyle = '#14181d';
+        ctx.fillRect(mx, ty, tw, th);
+        const im = IMGS[m.img];
+        if (im){
+          const s = Math.max(tw/im.w, th/im.h);
+          ctx.globalAlpha = 0.9;
+          ctx.drawImage(im.el, mx + tw/2 - im.w*s/2, ty + th/2 - im.h*s/2, im.w*s, im.h*s);
+          ctx.globalAlpha = 1;
+        }
+        const pg = ctx.createLinearGradient(0, ty + th*0.5, 0, ty + th);
+        pg.addColorStop(0, 'rgba(8,10,14,0)'); pg.addColorStop(1, 'rgba(8,10,14,0.85)');
+        ctx.fillStyle = pg; ctx.fillRect(mx, ty, tw, th);
+        // play badge
+        ctx.fillStyle = 'rgba(250,252,255,0.92)';
+        ctx.beginPath(); ctx.arc(mx + tw/2, ty + th/2 - 8*SS, 25*SS, 0, 7); ctx.fill();
+        ctx.fillStyle = '#1a2027';
+        ctx.beginPath();
+        ctx.moveTo(mx + tw/2 - 7*SS, ty + th/2 - 21*SS);
+        ctx.lineTo(mx + tw/2 + 13*SS, ty + th/2 - 8*SS);
+        ctx.lineTo(mx + tw/2 - 7*SS, ty + th/2 + 5*SS);
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = 'rgba(240,244,248,0.95)';
+        ctx.font = K.font(18);
+        ctx.fillText(m.name, mx + 14*SS, ty + th - 34*SS);
+        ctx.font = K.font(15, 'italic');
+        ctx.fillStyle = 'rgba(200,206,214,0.85)';
+        ctx.fillText(m.label, mx + 14*SS, ty + th - 12*SS);
+        ctx.restore();
+        ctx.strokeStyle = K.edge; ctx.lineWidth = 1.2*SS;
+        ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 10*SS); ctx.stroke();
+        pushHit(mx, ty, tw, th, {type:'clip', media: m});
+      }
+      mx += tw + 24*SS;
+    }
+    y += 170*SS + 46*SS;
+  }
   const ppl = BEAT_PEOPLE[b.x];
   if (ppl && ppl.length){
     ctx.fillStyle = K.rule;
@@ -3498,6 +3572,63 @@ function drawStudy(){
   S.maxScroll = Math.max(1, (y + 170*SS + S.scroll * SS - (wy0 + wh)) / SS);
 }
 
+function drawClip(){
+  const C = state.clip; if (!C) return;
+  C.amt += ((C.closing ? 0 : 1) - C.amt) * Math.min(1, (state.dt || 0.016) * 6);
+  if (C.closing && C.amt < 0.03){ closeClip(); return; }
+  const e = C.amt*C.amt*(3-2*C.amt);
+  ctx.fillStyle = `rgba(3,4,6,${(0.6*e).toFixed(3)})`;
+  ctx.fillRect(0, 0, W, H);
+  if (e < 0.2) return;
+  const a = (e - 0.2) / 0.8;
+  const vw = Math.min(W * 0.62, 1240 * SS);
+  const vh = vw * 9/16;
+  const x0 = W/2 - vw/2, y0 = H/2 - vh/2 - 30*SS + (1 - a) * 30 * SS;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.7)'; ctx.shadowBlur = 50*SS; ctx.shadowOffsetY = 18*SS;
+  ctx.fillStyle = '#0c0e12';
+  ctx.beginPath(); ctx.roundRect(x0 - 10*SS, y0 - 10*SS, vw + 20*SS, vh + 20*SS, 14*SS); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(x0, y0, vw, vh, 8*SS); ctx.clip();
+  const v = C.v;
+  if (v && v.videoWidth){
+    const s = Math.max(vw / v.videoWidth, vh / v.videoHeight);
+    ctx.drawImage(v, x0 + vw/2 - v.videoWidth*s/2, y0 + vh/2 - v.videoHeight*s/2,
+                  v.videoWidth*s, v.videoHeight*s);
+  } else {
+    ctx.fillStyle = '#14181d'; ctx.fillRect(x0, y0, vw, vh);
+    ctx.fillStyle = 'rgba(200,208,216,0.7)';
+    ctx.font = eraFont(24*SS, '', SEGMENTS[3].font);
+    ctx.textAlign = 'center';
+    ctx.fillText('\u2026', x0 + vw/2, y0 + vh/2);
+  }
+  // progress hairline
+  if (v && v.duration){
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.fillRect(x0, y0 + vh - 4*SS, vw, 4*SS);
+    ctx.fillStyle = 'rgba(140,205,250,0.9)';
+    ctx.fillRect(x0, y0 + vh - 4*SS, vw * (v.currentTime / v.duration), 4*SS);
+  }
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(255,255,255,0.28)'; ctx.lineWidth = 1.4*SS;
+  ctx.beginPath(); ctx.roundRect(x0, y0, vw, vh, 8*SS); ctx.stroke();
+  ctx.textAlign = 'left';
+  ctx.font = eraFont(28*SS, '', SEGMENTS[3].font);
+  ctx.fillStyle = 'rgba(240,244,248,0.95)';
+  ctx.fillText(C.name, x0, y0 + vh + 52*SS);
+  ctx.font = eraFont(21*SS, 'italic', SEGMENTS[3].font);
+  ctx.fillStyle = 'rgba(190,198,206,0.85)';
+  ctx.fillText(C.label, x0, y0 + vh + 86*SS);
+  ctx.textAlign = 'center';
+  ctx.font = eraFont(18*SS, '', SEGMENTS[3].font);
+  ctx.fillStyle = 'rgba(170,178,186,0.6)';
+  ctx.fillText('\u00b7 tap to return \u00b7', W/2, y0 + vh + 86*SS + 40*SS);
+  ctx.restore();
+}
+
 function drawAttractHint(t){
   if (state.mode !== 'attract') return;
   const a = 0.35 + 0.2*Math.sin(t*1.8);
@@ -3528,6 +3659,7 @@ function update(dt){
     if (state.mode === 'live' && state.idle > CFG.idleToAttract){
       state.mode = 'attract';
       state.study = null;
+      closeClip();
       state.attract.phase = 'cruise';
       state.focusBeat = -1; cam.zTarget = 0;
     }
@@ -3538,13 +3670,19 @@ function update(dt){
       // a photo is up close: any strong scroll or click puts it back
       if (inp.action || Math.abs(inp.impulse) > 260) state.inspect.closing = true;
       cam.vel = 0;
+    } else if (state.clip){
+      // the speaker window: any click or a strong scroll puts it back
+      if (inp.action || Math.abs(inp.impulse) > 260) state.clip.closing = true;
+      cam.vel = 0;
     } else if (state.study){
       // the reading page: the wheel scrolls, names open their people, a click closes
       const S = state.study;
       S.scroll += inp.impulse * 0.55 * dt * 60 / 60;
       if (inp.action && typeof inp.action === 'object'){
         const aimed = hitAt(inp.action.x, inp.action.y);
-        if (aimed && aimed.type === 'person' && PERSON_SPRITES[aimed.id]){
+        if (aimed && aimed.type === 'clip'){
+          openClip(aimed.media);
+        } else if (aimed && aimed.type === 'person' && PERSON_SPRITES[aimed.id]){
           const P = PEOPLE[aimed.id], sp = PERSON_SPRITES[aimed.id];
           state.inspect = {sp, wx: cam.x, cy: 400, z: 200, w: 300,
                            cap: P.name + ' \u00b7 ' + P.role, beat: S.beat, table: false, amt: 0};
@@ -3695,6 +3833,15 @@ function update(dt){
   }
   state.introFade += ((state.introHold ? 1 : 0) - state.introFade) * Math.min(1, dt*2.2);
 
+  // the finale packshot: coming to rest on the product still life pulls the
+  // camera in, cinema-tight; leaving lets the hall back in
+  if (!state.study && !state.inspect && state.focusBeat < 0 && !state.introHold){
+    const dF = Math.abs(cam.x - FIN_X);
+    if (!state.finHold && dF < 160 && Math.abs(cam.vel) < 50){ state.finHold = true; cam.zTarget = 430; }
+    else if (state.finHold && (dF > 380 || Math.abs(cam.vel) > 120)){ state.finHold = false; cam.zTarget = 0; }
+  } else if (state.finHold && state.focusBeat >= 0){ state.finHold = false; }
+  state.finFade = (state.finFade || 0) + ((state.finHold ? 1 : 0) - (state.finFade || 0)) * Math.min(1, dt*2.2);
+
   // dolly
   cam.z += (cam.zTarget - cam.z) * Math.min(1, dt*3);
 }
@@ -3825,9 +3972,9 @@ function frame(){
 
   drawForeground();
   drawDoorway();
-  if (state.introFade > 0.01){
-    // the welcome screen: darkness curtains both sides of the title
-    const IF = state.introFade;
+  if (Math.max(state.introFade, state.finFade || 0) > 0.01){
+    // packshot curtains: the welcome and the finale both close their frame
+    const IF = Math.max(state.introFade, state.finFade || 0);
     const edge = 300*SS, soft = 640*SS;
     for (const s of [-1, 1]){
       const x0 = W/2 + s*edge, x1 = W/2 + s*(edge + soft);
@@ -3844,6 +3991,7 @@ function frame(){
   drawSeamVideo();
   drawGrade(t);
   drawStudy();
+  drawClip();      // the speaker's voice — a video window above the page
   drawInspect();   // a person card opens above the reading page
   drawAttractHint(t);
   // pointer affordance
@@ -4025,6 +4173,7 @@ lab5move:"data:image/jpeg;base64,",
 logo1970:"data:image/jpeg;base64,",
 logo2026:"data:image/jpeg;base64,",
 nadia:"data:image/jpeg;base64,",
+patel:"data:image/jpeg;base64,",
 porc:"data:image/jpeg;base64,",
 qr:"data:image/png;base64,",
 rella:"data:image/jpeg;base64,",
