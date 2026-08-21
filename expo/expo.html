@@ -735,10 +735,30 @@ function drawWall(){
     ctx.beginPath(); ctx.rect(sx0, 0, sx1 - sx0, yBase); ctx.clip();
     const worldLeft = cam.x - (W/2) / (k(seg.z0) * SS);
     let wx = wx0 + Math.max(0, Math.floor((worldLeft - wx0) / tileW)) * tileW;
+    const PURE_X = 26100;   // from 2020 on: clean futurist white, no panels
     for (; px(wx, k(wallZAt(wx))) < sx1 + 2; wx += tileW){
       const kk = k(wallZAt(wx + tileW/2));   // per-tile depth: smooth recession
       const yBot = seg.floor ? Math.min(yBase, py(1080, kk)) : yBase;
-      ctx.drawImage(tex, px(wx, kk), 0, tileW * kk * SS * 1.03, yBot);
+      if (seg.floor && wx + tileW > PURE_X){
+        const xA = px(Math.max(wx, PURE_X), kk);
+        ctx.fillStyle = '#e6e7e9';
+        ctx.fillRect(xA, 0, px(wx + tileW, kk) - xA + 1, yBot);
+        if (wx < PURE_X) ctx.drawImage(tex, px(wx, kk), 0, (PURE_X - wx) * kk * SS * 1.03, yBot);
+      } else {
+        ctx.drawImage(tex, px(wx, kk), 0, tileW * kk * SS * 1.03, yBot);
+      }
+    }
+    if (seg.floor){
+      // the blue diode line along the white wall's base
+      const kl = k(seg.z0 - 6);
+      const lx0 = Math.max(sx0, px(PURE_X, kl));
+      const ly = py(1076, kl);
+      if (lx0 < sx1){
+        const pulse = 0.55 + 0.2*Math.sin(state.time*1.8);
+        ctx.fillStyle = `rgba(120,205,255,${pulse.toFixed(3)})`;
+        ctx.fillRect(lx0, ly, sx1 - lx0, 2.2*SS);
+        drawGlow('120,205,255', (lx0+sx1)/2, ly, (sx1-lx0)*0.7, 0.08*pulse);
+      }
     }
     // the far wall stands on a visible floor — the room reads huge
     if (seg.floor){
@@ -2716,11 +2736,31 @@ function drawPedestal(b, t, hero){
   }
   ctx.fillStyle = cg;
   ctx.fillRect(sx - colW/2, yTop, colW, H - yTop);
-  // top plate
-  ctx.fillStyle = era === 0 ? '#5b3a17' : (era === 3 ? '#f4f6f8' : '#c9ced2');
-  ctx.beginPath();
-  ctx.ellipse(sx, yTop, colW*0.62, 10*kk*SS, 0, 0, 7);
-  ctx.fill();
+  // the cap is a real cylinder slice: rim wall, top face, edge light
+  {
+    const rx = colW*0.62, ry = 11*kk*SS, capH = 9*kk*SS;
+    const rim = ctx.createLinearGradient(sx - rx, 0, sx + rx, 0);
+    if (era === 0){ rim.addColorStop(0,'#2a1809'); rim.addColorStop(.45,'#4e3012'); rim.addColorStop(1,'#1c0f06'); }
+    else if (era === 3){ rim.addColorStop(0,'#b6bbc0'); rim.addColorStop(.45,'#e2e6e9'); rim.addColorStop(1,'#9aa0a5'); }
+    else { rim.addColorStop(0,'#54585c'); rim.addColorStop(.45,'#8f9599'); rim.addColorStop(1,'#43474b'); }
+    ctx.fillStyle = rim;
+    ctx.beginPath();
+    ctx.ellipse(sx, yTop + capH, rx, ry, 0, 0, Math.PI);
+    ctx.lineTo(sx - rx, yTop);
+    ctx.ellipse(sx, yTop, rx, ry, 0, Math.PI, 0, true);
+    ctx.closePath(); ctx.fill();
+    const topg = ctx.createLinearGradient(sx - rx, yTop - ry, sx + rx, yTop + ry);
+    if (era === 0){ topg.addColorStop(0,'#6b4a20'); topg.addColorStop(1,'#4a2d10'); }
+    else if (era === 3){ topg.addColorStop(0,'#ffffff'); topg.addColorStop(1,'#dfe3e6'); }
+    else { topg.addColorStop(0,'#d7dcdf'); topg.addColorStop(1,'#b4b9bd'); }
+    ctx.fillStyle = topg;
+    ctx.beginPath(); ctx.ellipse(sx, yTop, rx, ry, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1.2*SS;
+    ctx.beginPath(); ctx.ellipse(sx, yTop, rx - 0.6*SS, ry - 0.6*SS, 0, Math.PI*1.05, Math.PI*1.95); ctx.stroke();
+    // contact shade where the column meets the cap
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.beginPath(); ctx.ellipse(sx, yTop + capH + 2*SS, colW*0.52, ry*0.7, 0, 0, Math.PI); ctx.fill();
+  }
   // the object
   const obj = PED_SPRITES[ped.obj];
   const ow = 120 * big * kk * SS, oh = ow * obj.h / obj.w;
@@ -2759,21 +2799,28 @@ function drawPlasmaPanel(b, t){
   ctx.save();
   ctx.beginPath(); ctx.rect(sx - w/2 + 4*SS, sy - h/2 + 4*SS, w - 8*SS, h - 8*SS); ctx.clip();
   if (p.mode === 'wave'){
+    // the chart owns the upper band; the caption strip below is never crossed
+    const chartBot = sy + h/2 - h*0.24;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(sx - w/2 + 4*SS, sy - h/2 + 4*SS, w - 8*SS, chartBot - (sy - h/2 + 4*SS)); ctx.clip();
     ctx.strokeStyle = 'rgba(90,210,255,0.22)'; ctx.lineWidth = 1;
-    for (let i = 1; i < 5; i++){
-      ctx.beginPath(); ctx.moveTo(sx - w/2, sy - h/2 + h*i/5); ctx.lineTo(sx + w/2, sy - h/2 + h*i/5); ctx.stroke();
+    for (let i = 1; i < 4; i++){
+      ctx.beginPath(); ctx.moveTo(sx - w/2, sy - h/2 + (chartBot - sy + h/2)*i/4); ctx.lineTo(sx + w/2, sy - h/2 + (chartBot - sy + h/2)*i/4); ctx.stroke();
     }
     ctx.strokeStyle = 'rgba(110,225,255,0.9)'; ctx.lineWidth = Math.max(1.2, h*0.012);
     ctx.beginPath();
     for (let i = 0; i <= 60; i++){
       const xx = sx - w/2 + w*i/60;
       const ph = t*2.2 + i*0.35;
-      const yy = sy + h*0.10 + Math.sin(ph)*h*0.16 + Math.sin(ph*0.37 + 1)*h*0.10;
+      const yy = sy - h*0.06 + Math.sin(ph)*h*0.12 + Math.sin(ph*0.37 + 1)*h*0.07;
       i ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy);
     }
     ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(90,200,250,0.3)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(sx - w/2 + 4*SS, chartBot); ctx.lineTo(sx + w/2 - 4*SS, chartBot); ctx.stroke();
     ctx.fillStyle = 'rgba(140,225,255,0.8)';
-    ctx.font = `${Math.max(9, h*0.09)}px "Helvetica Neue", Arial, sans-serif`;
+    ctx.font = `${(h*0.075).toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;
     ctx.textAlign = 'left';
     ctx.fillText('BRUXZIR FACTORY · ROBOTIC LINE · LIVE', sx - w/2 + w*0.05, sy + h/2 - h*0.09);
   } else {
@@ -3356,6 +3403,23 @@ const STUDY_MEDIA = {
   22550: [{name:'Dr. Paresh Patel', img:'patel', src:'media/2010s_patel.mp4', label:'on scanners in every office'}],
 };
 const VIDEO_EL = {};
+// preview thumbs are real frames from the clips, grabbed at runtime
+const THUMBS = {};
+function thumbFor(m){
+  if (THUMBS[m.src]) return THUMBS[m.src];
+  if (THUMBS[m.src] === null) return null;
+  THUMBS[m.src] = null;
+  const v = document.createElement('video');
+  v.src = m.src; v.preload = 'auto'; v.muted = true; v.playsInline = true;
+  v.addEventListener('loadeddata', () => { try { v.currentTime = Math.min(6, (v.duration || 8) * 0.25); } catch(e){} });
+  v.addEventListener('seeked', () => {
+    const c = document.createElement('canvas');
+    c.width = 480; c.height = Math.max(2, Math.round(480 * v.videoHeight / Math.max(1, v.videoWidth)));
+    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+    THUMBS[m.src] = {el: c, w: c.width, h: c.height};
+  }, {once: true});
+  return null;
+}
 function openClip(m){
   let v = VIDEO_EL[m.src];
   if (!v){
@@ -3391,7 +3455,7 @@ function drawStudy(){
      font:(s,st)=>`${st||''} ${Math.round(s*0.94)}px "American Typewriter","Courier New",monospace`.trim()},
     {bg:'rgba(238,238,230,0.97)', edge:'rgba(96,102,96,0.5)', r:3,
      ink:'46,52,50', dim:'96,104,100', accent:'160,52,40', rule:'rgba(96,102,96,0.35)',
-     font:(s,st)=>`${st||''} ${Math.round(s*0.94)}px "American Typewriter","Courier New",monospace`.trim()},
+     font:(s,st)=>`${st||''} ${Math.round(s)}px "Helvetica Neue", Helvetica, Arial, sans-serif`.trim()},
     {bg:'rgba(214,217,221,0.96)', edge:'rgba(58,64,72,0.6)', r:5,
      ink:'32,36,42', dim:'92,100,110', accent:'26,96,160', rule:'rgba(58,64,72,0.3)',
      font:(s,st)=>`${st||''} ${Math.round(s)}px Verdana, Tahoma, sans-serif`.trim()},
@@ -3419,7 +3483,20 @@ function drawStudy(){
   ctx.beginPath(); ctx.roundRect(wx0, wy0, ww, wh, K.r*SS); ctx.fill();
   ctx.restore();
   if (K.glass){
-    // frosted: a second veil and a hairline highlight along the top
+    // frosted for real: the hall behind is blurred inside the panel,
+    // then veiled and dusted with grain — matte, not see-through
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect(wx0, wy0, ww, wh, K.r*SS); ctx.clip();
+    try { ctx.filter = `blur(${16*SS}px)`; ctx.drawImage(cv, 0, 0); } catch(err){}
+    ctx.filter = 'none';
+    ctx.fillStyle = 'rgba(238,244,250,0.18)';
+    ctx.fillRect(wx0, wy0, ww, wh);
+    const gn = grains[(state.time*10|0) % grains.length];
+    ctx.globalAlpha = 0.05;
+    ctx.fillStyle = gn.pat || (gn.pat = ctx.createPattern(gn.c, 'repeat'));
+    ctx.fillRect(wx0, wy0, ww, wh);
+    ctx.globalAlpha = a;
+    ctx.restore();
     ctx.fillStyle = 'rgba(230,238,246,0.10)';
     ctx.beginPath(); ctx.roundRect(wx0, wy0, ww, wh, K.r*SS); ctx.fill();
     const gg = ctx.createLinearGradient(0, wy0, 0, wy0 + 120*SS);
@@ -3505,7 +3582,7 @@ function drawStudy(){
         ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 10*SS); ctx.clip();
         ctx.fillStyle = '#14181d';
         ctx.fillRect(mx, ty, tw, th);
-        const im = IMGS[m.img];
+        const im = thumbFor(m) || IMGS[m.img];   // a real interview frame, portrait until it loads
         if (im){
           const s = Math.max(tw/im.w, th/im.h);
           ctx.globalAlpha = 0.9;
@@ -3836,9 +3913,13 @@ function update(dt){
   // the finale packshot: coming to rest on the product still life pulls the
   // camera in, cinema-tight; leaving lets the hall back in
   if (!state.study && !state.inspect && state.focusBeat < 0 && !state.introHold){
-    const dF = Math.abs(cam.x - FIN_X);
-    if (!state.finHold && dF < 160 && Math.abs(cam.vel) < 50){ state.finHold = true; cam.zTarget = 430; }
-    else if (state.finHold && (dF > 380 || Math.abs(cam.vel) > 120)){ state.finHold = false; cam.zTarget = 0; }
+    if (!state.finHold && cam.x > FIN_X - 170){ state.finHold = true; cam.zTarget = 430; }
+    else if (state.finHold && cam.x < FIN_X - 320 && cam.vel < 0){ state.finHold = false; cam.zTarget = 0; }
+    if (state.finHold){
+      // one ending only: the camera glues itself onto the packshot
+      cam.x += (FIN_X - cam.x) * Math.min(1, dt*2.5);
+      cam.vel *= Math.pow(0.005, dt);
+    }
   } else if (state.finHold && state.focusBeat >= 0){ state.finHold = false; }
   state.finFade = (state.finFade || 0) + ((state.finHold ? 1 : 0) - (state.finFade || 0)) * Math.min(1, dt*2.2);
 
