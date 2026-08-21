@@ -910,16 +910,18 @@ function drawWall(){
     const worldLeft = cam.x - (W/2) / (k(seg.z0) * SS);
     let wx = wx0 + Math.max(0, Math.floor((worldLeft - wx0) / tileW)) * tileW;
     const PURE_X = REC4_R;   // beyond the 2022 recreation: clean futurist white, no panels
+    const swx = (PHOTO_SKIN && seg === SEGMENTS[0] && TEX.wall1_dark) ? wallSwitchX() : -1e9;
     for (; px(wx, k(wallZAt(wx))) < sx1 + 2; wx += tileW){
       const kk = k(wallZAt(wx + tileW/2));   // per-tile depth: smooth recession
+      const texT = (wx + tileW/2 < swx) ? TEX.wall1_dark : tex;
       const yBot = seg.floor ? Math.min(yBase, py(1080, kk)) : yBase;
       if (seg.floor && wx + tileW > PURE_X){
         const xA = px(Math.max(wx, PURE_X), kk);
         ctx.fillStyle = '#e6e7e9';
         ctx.fillRect(xA, 0, px(wx + tileW, kk) - xA + 1, yBot);
-        if (wx < PURE_X) ctx.drawImage(tex, px(wx, kk), 0, (PURE_X - wx) * kk * SS * 1.03, yBot);
+        if (wx < PURE_X) ctx.drawImage(texT, px(wx, kk), 0, (PURE_X - wx) * kk * SS * 1.03, yBot);
       } else {
-        ctx.drawImage(tex, px(wx, kk), 0, tileW * kk * SS * 1.03, yBot);
+        ctx.drawImage(texT, px(wx, kk), 0, tileW * kk * SS * 1.03, yBot);
       }
     }
     if (seg.floor){
@@ -2901,7 +2903,7 @@ const PLATES = GAP.on ? [{
   // tools/make_wall.py and tiled seamlessly along the era — stands behind.
   // The plate contributes only the counter and what stands on it, riveted to
   // the hall's bench at z = 0, so it travels with the counter run it extends.
-  x: GAP.at + GAP.w / 2, sw: 2320, benchFrac: 0.635,
+  x: GAP.at + GAP.w / 2, sw: 2320, benchFrac: 0.706,
   layers: [{img: 'plate_bay_front.png', z: 0}],
 }] : [];
 async function loadPlates(){
@@ -2986,7 +2988,15 @@ function drawPlates(t){
 const PHOTO_TEX = {};
 /* the procedural era walls (tools/make_wall.py) stand in for the drawn ones —
    same slot, same tiling, so drawWall never learns the difference */
+/* the wall changes material inside era 1: dark boards for the analog century,
+   the 1970 lab's sprayed plaster from the bench onward */
+function wallSwitchX(){
+  if (!PLATES.length) return SHIFT(3950);
+  const p = PLATES[0];
+  return p.x - (p.sw || 1390) / 2;
+}
 function applyPhotoTextures(){
+  TEX.wall1_dark = TEX.wall1;          // kept for the years before the 1970 bench
   for (const [slot, key] of [['wall1','wall_e1'], ['wall2','wall_e2'], ['wall3','wall_e3'], ['wall4','wall_e4'],
                              ['bench1','bench_top_e1'], ['front1','bench_face_e1']])
     if (PHOTO_TEX[key]) TEX[slot] = PHOTO_TEX[key];
