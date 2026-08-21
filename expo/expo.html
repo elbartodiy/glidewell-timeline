@@ -234,13 +234,37 @@ const BEATS = [
    wall:[], table:[],
    ped:{obj:'crown2', dx:0, big:true}},
 ];
+/* THE CUT — the timeline is sliced at GAP.at and everything downstream slides
+   right by GAP.w, opening an empty bay for a generated scene plate. Every world
+   anchor below is filtered through SHIFT, and the boot pass moves the beats and
+   re-keys their study texts, so tables, lights, attract stops and audits are all
+   built from already-shifted data. With the flag off SHIFT is the identity and
+   the hall is bit-for-bit what it was. */
+const GAP = {at: 3950, w: 2320, on: /[?&]plate/.test(location.search)};
+function SHIFT(x){ return (GAP.on && x >= GAP.at) ? x + GAP.w : x; }
+function applyCut(){
+  if (!GAP.on || GAP.done) return;
+  GAP.done = true;
+  // only raw literals move here: SEGMENTS and the world anchors were already
+  // filtered through SHIFT when the script was parsed
+  for (const b of BEATS) b.x = SHIFT(b.x);
+  const rekey = obj => {
+    const moved = {};
+    for (const k0 in obj) moved[String(SHIFT(+k0))] = obj[k0];
+    for (const k0 in obj) delete obj[k0];
+    Object.assign(obj, moved);
+  };
+  if (typeof STUDY_MORE === 'object') rekey(STUDY_MORE);
+  if (typeof STUDY_MEDIA === 'object') rekey(STUDY_MEDIA);
+  for (const it of FG_ITEMS) it.x = SHIFT(it.x);
+}
 const INTRO_X = -650;
-const WORLD_END = 29680;
-const SEAM_3 = 19980;
+const WORLD_END = SHIFT(29680);
+const SEAM_3 = SHIFT(19980);
 const REC2_L = SEAM_3 - 540, REC2_R = SEAM_3 + 540;   // the Digital Revolution recreation
-const REC_L = 6350, REC_R = 7450;   // era 1 ends; the 1979 recreation; era 2 begins
-const REC3_L = 10600, REC3_R = 11700;   // the 1989 National Leader recreation
-const REC4_L = 25940, REC4_R = 26740;   // the 2022 fastscan recreation — the wall turns pure white beyond it
+const REC_L = SHIFT(6350), REC_R = SHIFT(7450);   // era 1 ends; the 1979 recreation; era 2 begins
+const REC3_L = SHIFT(10600), REC3_R = SHIFT(11700);   // the 1989 National Leader recreation
+const REC4_L = SHIFT(25940), REC4_R = SHIFT(26740);   // the 2022 fastscan recreation — the wall turns pure white beyond it
 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
@@ -292,6 +316,7 @@ function initAttractStops(){
   s.add((REC_L + REC_R) / 2);       // 1979 · the map wall
   s.add((REC3_L + REC3_R) / 2);     // 1989 · national leader
   s.add((REC2_L + REC2_R) / 2);     // the digital revolution
+  for (const p of PLATES) s.add(p.x);   // the generated bay is a composition: stop dead centre
   s.add(FACT_X);                    // the robotic line
   s.add(STAGE_X);                   // Jim on stage
   s.add(FIN_X);                     // the product still life closes the tour
@@ -1378,7 +1403,7 @@ function drawIntro(){
   ctx.restore();
 }
 
-const FIN_X = 29750;
+const FIN_X = SHIFT(29750);
 function drawOutro(){
   // the finale is the mirror of the welcome: the mark under the ceiling,
   // the closing line, and a lit still life of today's products below
@@ -2521,6 +2546,63 @@ const PROPS = [], SHEETS = [], FIGURES = [];
    assets/photo/ (see SKIN_SPEC.md); each is a neutral-lit cutout that the
    engine lights and shades itself. Same slots, same physics, same audits. */
 const PHOTO_SKIN = /[?&]skin=photo/.test(location.search);
+
+/* SCENE PLATES — a fully generated frame of the hall dropped between beats.
+   A plate is a matte painting: flat, one depth, so everything inside it moves
+   at a single parallax rate. Hung on the open wall it would shear against the
+   procedural room; set BACK at the wall's own depth it reads as a recessed
+   alcove — the reveal at its edges explains the step in the counter line, and
+   the hall's bench passes in front of it the way a real counter passes a niche.
+   Data-driven: drop a file in assets/photo/ and add one row. */
+const PLATES = GAP.on ? [
+  // centred in the bay; world height is the hall's full 1080, so the width
+  // follows the image aspect and the plate's floor lands on the hall's floor
+  {x: GAP.at + GAP.w / 2, w: 2239, img: 'plate_bench_1970.jpg', z: null, benchFrac: 0.666},
+] : [];
+async function loadPlates(){
+  await Promise.all(PLATES.map(p => new Promise(res => {
+    const im = new Image();
+    im.onload = () => { p.sp = im; res(); };
+    im.onerror = () => { p.sp = null; res(); };   // no file yet — the hall just stays as it was
+    im.src = 'assets/photo/' + p.img;
+  })));
+}
+/* drawn straight after the bench, so the plate's own counter and cabinets
+   stand in for the procedural ones inside the niche */
+function drawPlates(t){
+  for (const p of PLATES){
+    if (!p.sp) continue;
+    const seg = segAt(p.x);
+    const z = p.z != null ? p.z : (seg.z0 || 550);
+    const kk = k(z);
+    const sx = px(p.x, kk);
+    const w = p.w * kk * SS;
+    if (sx < -w || sx > W + w) continue;
+    const h = w * p.sp.naturalHeight / p.sp.naturalWidth;
+    // the plate's counter line lands exactly on the hall's bench line at this depth
+    const y = py(CFG.benchY, kk) - h * (p.benchFrac || 0.65);
+    ctx.save();
+    // the reveal: a soft dark edge on both sides, so no surface has to line up
+    // across the seam and the niche reads as set into the masonry
+    const g = ctx.createLinearGradient(sx - w/2, 0, sx + w/2, 0);
+    g.addColorStop(0, 'rgba(0,0,0,1)');
+    g.addColorStop(0.07, 'rgba(0,0,0,0)');
+    g.addColorStop(0.93, 'rgba(0,0,0,0)');
+    g.addColorStop(1, 'rgba(0,0,0,1)');
+    ctx.beginPath(); ctx.rect(sx - w/2, y, w, h); ctx.clip();
+    ctx.drawImage(p.sp, sx - w/2, y, w, h);
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = g; ctx.fillRect(sx - w/2, y, w, h);
+    ctx.restore();
+    // the niche is deeper than the room: a shadow gutter down each jamb
+    const jamb = ctx.createLinearGradient(sx - w/2, 0, sx - w/2 + 26*kk*SS, 0);
+    jamb.addColorStop(0, 'rgba(0,0,0,0.55)'); jamb.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = jamb; ctx.fillRect(sx - w/2, y, 26*kk*SS, h);
+    const jamb2 = ctx.createLinearGradient(sx + w/2, 0, sx + w/2 - 26*kk*SS, 0);
+    jamb2.addColorStop(0, 'rgba(0,0,0,0.55)'); jamb2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = jamb2; ctx.fillRect(sx + w/2 - 26*kk*SS, y, 26*kk*SS, h);
+  }
+}
 async function loadPhotoSkin(){
   const want = {
     ph_furnace: 'furnace_0.png',
@@ -2564,10 +2646,10 @@ function initDecor(){
     }
   }
   // mid-ground people & machines (the wall is far enough now)
-  FIGURES.push({x: 16460, z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
+  FIGURES.push({x: SHIFT(16460), z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
   // mills receding behind the factory line
   // the graduates' mortarboard behind the alumnae portraits
-  PROPS.push({x: 25640, z: 245, kind: 'gradcap', w: 165});
+  PROPS.push({x: SHIFT(25640), z: 245, kind: 'gradcap', w: 165});
 
   // the welcome still life — placeholder heirlooms of the craft century
   // a tight triangle: the cast jaw is the hero dead under the title,
@@ -2585,7 +2667,7 @@ function initDecor(){
   PROPS.push({x: FACT_X - 120, z: 620, kind: 'mill', w: 470, mid: true});
   PROPS.push({x: FACT_X + 330, z: 700, kind: 'mill', w: 440, mid: true});
   // the symposium audience at the finale — spaced so the stage stays visible
-  const AUD = [[28960, 390, 640], [29060, 470, 615], [29120, 300, 660]];
+  const AUD = [[SHIFT(28960), 390, 640], [SHIFT(29060), 470, 615], [SHIFT(29120), 300, 660]];
   AUD.forEach(([ax, az, ah], i) => FIGURES.push({x: ax, z: az, h: ah, sprite: makeFigure(60 + i)}));
 
   // ambient props obey gravity too: full footprint on a real table span,
@@ -3372,10 +3454,10 @@ function makeBannerVert(title, sub, cta, imgName){
 }
 function initBanners(){
   BANNERS = [
-    {x: 21505, w: 550, sp: makeBanner('BRUXZIR®', 'The best dentistry — made affordable', 'THE #1 CROWN')},
-    {x: 22860, w: 550, sp: makeBanner('GLIDEWELL HT™', 'Premium implant, a fraction of the price', 'PREMIUM · AFFORDABLE')},
-    {x: 23595, w: 240, cy: 590, sp: makeBannerVert('GLIDEWELL.IO', 'The lab moves\ninto your office', 'SINGLE-VISIT', 'fastmill')},
-    {x: 27700, w: 480, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
+    {x: SHIFT(21505), w: 550, sp: makeBanner('BRUXZIR®', 'The best dentistry — made affordable', 'THE #1 CROWN')},
+    {x: SHIFT(22860), w: 550, sp: makeBanner('GLIDEWELL HT™', 'Premium implant, a fraction of the price', 'PREMIUM · AFFORDABLE')},
+    {x: SHIFT(23595), w: 240, cy: 590, sp: makeBannerVert('GLIDEWELL.IO', 'The lab moves\ninto your office', 'SINGLE-VISIT', 'fastmill')},
+    {x: SHIFT(27700), w: 480, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
   ];
 }
 function drawBanners(t){
@@ -3404,7 +3486,7 @@ function drawBanners(t){
 }
 
 /* BruxZir Factory: collaborative arms pick shade blocks and feed the mills */
-const FACT_X = 24870;
+const FACT_X = SHIFT(24870);
 function drawRobotArm(bx, bz, t, phase){
   const kk = k(bz);
   const X = wx => px(wx, kk), Y = wy => py(wy, kk);
@@ -3485,7 +3567,7 @@ function drawFactory(t){
   pushHit(px(FACT_X - 480, kk), py(560, kk), (960)*kk*SS, py(1080,kk)-py(560,kk),
           {type:'focus', beat: BEATS.indexOf(b), anchor: FACT_X});
 }
-const STAGE_X = 28830;
+const STAGE_X = SHIFT(28830);
 let JIM_FIG = null;
 function drawStage(t){
   if (Math.abs(cam.x - STAGE_X) > 2700) return;
@@ -4348,6 +4430,7 @@ function frame(){
   drawProps(true);
 
   drawBench();
+  drawPlates(t);
 
   // table items
   drawFactory(t);
@@ -4376,6 +4459,8 @@ function frame(){
   // lamps + dust + foreground — evenly spaced fixtures per era
   for (let i = 0; i < LIGHT_GRID.length; i++){
     const L = LIGHT_GRID[i];
+    // a plate brings its own lamp; the hall's fixture would hang in front of it
+    if (PLATES.some(p => p.sp && Math.abs(L.x - p.x) < p.w * 0.5)) continue;
     if (L.seg.lamp === 'tube') drawTube(L.x, t, i+1);
     else drawLamp(L.x, t, i+1);
   }
@@ -4492,8 +4577,10 @@ function loop(ts){
 /* ---------------- BOOT ---------------- */
 async function boot(){
   resize();
+  applyCut();          // before anything reads a beat position
   await loadAssets();
   if (PHOTO_SKIN) await loadPhotoSkin();
+  await loadPlates();
   TEX.wall1 = woodTexture({plank:'v', plankSize:150, base:'#20150b', light:'#372712', w:1400, h:900});
   TEX.bench1 = woodTexture({plank:'h', plankSize:110, base:'#3a2812', light:'#5a4020', w:1200, h:512});
   TEX.front1 = woodTexture({plank:'v', plankSize:190, base:'#170f07', light:'#2a1c0c', w:1200, h:600});
@@ -4587,8 +4674,8 @@ async function boot(){
       if (rest > 0) a.it.dx -= Math.min(rest, Math.max(0, (a.b.x + a.it.dx - a.half) - a.wallL));
     }
   }
-  initCapLanes();
   initBanners();
+  initCapLanes();
   initTables();
   initLights();
   initAttractStops();
