@@ -2554,10 +2554,23 @@ const PHOTO_SKIN = /[?&]skin=photo/.test(location.search);
    alcove — the reveal at its edges explains the step in the counter line, and
    the hall's bench passes in front of it the way a real counter passes a niche.
    Data-driven: drop a file in assets/photo/ and add one row. */
+/* A plate may be cut into depth layers. The trick is that layers share a
+   SCREEN width, not a world width: a band at depth z is given world width
+   sw/k(z), so it projects back to exactly sw and the bands stay glued when the
+   camera is centred — but each then travels at its own parallax rate, the wall
+   with the masonry and the counter with the bench.
+
+   The catch, and it decides how the plate must be generated: anything BAKED on
+   the counter travels with whichever band it was cut into. Objects sitting on
+   the counter belong to neither band, so with a baked still life they slide
+   along the counter as you scroll — the exact artefact the rivet law exists to
+   prevent. So: a layered plate must be generated EMPTY (wall, counter and
+   cabinets only) and carry its objects as sprites in `props`, which stand at
+   their own depth and can be lit and clicked like everything else in the hall.
+   A plate WITH objects baked in must stay single-layer (`layers` omitted):
+   flat, at wall depth, where nothing inside it can slide against anything. */
 const PLATES = GAP.on ? [
-  // centred in the bay; world height is the hall's full 1080, so the width
-  // follows the image aspect and the plate's floor lands on the hall's floor
-  {x: GAP.at + GAP.w / 2, w: 2239, img: 'plate_bench_1970.jpg', z: null, benchFrac: 0.666},
+  {x: GAP.at + GAP.w / 2, img: 'plate_bench_1970.jpg', sw: 1390, benchFrac: 0.666},
 ] : [];
 async function loadPlates(){
   await Promise.all(PLATES.map(p => new Promise(res => {
@@ -2573,34 +2586,54 @@ function drawPlates(t){
   for (const p of PLATES){
     if (!p.sp) continue;
     const seg = segAt(p.x);
-    const z = p.z != null ? p.z : (seg.z0 || 550);
-    const kk = k(z);
-    const sx = px(p.x, kk);
-    const w = p.w * kk * SS;
-    if (sx < -w || sx > W + w) continue;
-    const h = w * p.sp.naturalHeight / p.sp.naturalWidth;
-    // the plate's counter line lands exactly on the hall's bench line at this depth
-    const y = py(CFG.benchY, kk) - h * (p.benchFrac || 0.65);
-    ctx.save();
-    // the reveal: a soft dark edge on both sides, so no surface has to line up
-    // across the seam and the niche reads as set into the masonry
-    const g = ctx.createLinearGradient(sx - w/2, 0, sx + w/2, 0);
-    g.addColorStop(0, 'rgba(0,0,0,1)');
-    g.addColorStop(0.07, 'rgba(0,0,0,0)');
-    g.addColorStop(0.93, 'rgba(0,0,0,0)');
-    g.addColorStop(1, 'rgba(0,0,0,1)');
-    ctx.beginPath(); ctx.rect(sx - w/2, y, w, h); ctx.clip();
-    ctx.drawImage(p.sp, sx - w/2, y, w, h);
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.fillStyle = g; ctx.fillRect(sx - w/2, y, w, h);
-    ctx.restore();
-    // the niche is deeper than the room: a shadow gutter down each jamb
-    const jamb = ctx.createLinearGradient(sx - w/2, 0, sx - w/2 + 26*kk*SS, 0);
-    jamb.addColorStop(0, 'rgba(0,0,0,0.55)'); jamb.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = jamb; ctx.fillRect(sx - w/2, y, 26*kk*SS, h);
-    const jamb2 = ctx.createLinearGradient(sx + w/2, 0, sx + w/2 - 26*kk*SS, 0);
-    jamb2.addColorStop(0, 'rgba(0,0,0,0.55)'); jamb2.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = jamb2; ctx.fillRect(sx + w/2 - 26*kk*SS, y, 26*kk*SS, h);
+    const wallZ = p.z != null ? p.z : (seg.z0 || 550);
+    const sw = (p.sw || 1390) * SS;                       // screen width, shared by every layer
+    const sh = sw * p.sp.naturalHeight / p.sp.naturalWidth;
+    const bf = p.benchFrac || 0.666;
+    // the counter line lands on the hall's own bench line, so the plate's
+    // counter continues the hall's counter instead of stepping away from it
+    const anchorZ = p.layers ? p.layers[p.layers.length - 1].z : wallZ;
+    const y0 = py(CFG.benchY, k(anchorZ)) - sh * bf;
+    const layers = p.layers || [{z: wallZ, from: 0, to: 1}];
+    const fade = 0.06;
+    for (const L of layers){
+      const kk = k(L.z);
+      const sx = px(p.x, kk);
+      if (sx < -sw || sx > W + sw) continue;
+      const sy = y0 + sh * L.from, hh = sh * (L.to - L.from);
+      const sxImg = 0, syImg = p.sp.naturalHeight * L.from;
+      const hImg = p.sp.naturalHeight * (L.to - L.from);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(sx - sw/2, sy, sw, hh); ctx.clip();
+      ctx.drawImage(p.sp, sxImg, syImg, p.sp.naturalWidth, hImg, sx - sw/2, sy, sw, hh);
+      // the reveal: a soft dark edge, so no surface has to line up at the seam
+      const g = ctx.createLinearGradient(sx - sw/2, 0, sx + sw/2, 0);
+      g.addColorStop(0, 'rgba(0,0,0,1)');
+      g.addColorStop(fade, 'rgba(0,0,0,0)');
+      g.addColorStop(1 - fade, 'rgba(0,0,0,0)');
+      g.addColorStop(1, 'rgba(0,0,0,1)');
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillStyle = g; ctx.fillRect(sx - sw/2, sy, sw, hh);
+      ctx.restore();
+      // the niche stands deeper than the room: a shadow gutter down each jamb
+      for (const s of [-1, 1]){
+        const gx = sx + s * sw/2;
+        const jg = ctx.createLinearGradient(gx, 0, gx - s * 26*kk*SS, 0);
+        jg.addColorStop(0, 'rgba(0,0,0,0.55)'); jg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = jg;
+        ctx.fillRect(Math.min(gx, gx - s*26*kk*SS), sy, 26*kk*SS, hh);
+      }
+    }
+    // sprites standing on the plate's counter — they live at their own depth,
+    // so they never slide against the surface they stand on
+    for (const it of (p.props || [])){
+      const sp = PROP_SPRITES[it.kind]; if (!sp) continue;
+      const kk = k(it.z);
+      const sx = px(p.x + it.dx, kk);
+      const scale = (it.w / sp.w) * kk * SS;
+      ctx.drawImage(sp.c, sx - sp.w*scale/2, py(CFG.benchY - 2, kk) - sp.h*scale,
+                    sp.w*scale, sp.h*scale);
+    }
   }
 }
 async function loadPhotoSkin(){
