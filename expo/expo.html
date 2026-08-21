@@ -203,7 +203,7 @@ const BEATS = [
    th:'The analog→digital climax: robots make crowns.',
    d:'Automated, AI-designed, robotic monolithic production.',
    wall:[], table:[],
-   plasma:{dx:330, cy:492, w:430, mode:'wave'}},
+   plasma:{dx:330, cy:566, w:430, mode:'wave'}},
 
   {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870,
    th:'Reinvesting in the profession — and our channel for finding hero dentists.',
@@ -226,7 +226,7 @@ const BEATS = [
    d:'CrownAI / MarginAI; ~500K units a month, 5,000+ staff — the largest dental lab in the world.',
    wall:[],
    table:[],
-   plasma:{dx:-120, cy:505, w:420, mode:'count'}},
+   plasma:{dx:25, cy:505, w:420, mode:'count'}},
 
   {x:28180, y:'2026', t:'TODAY', tier:1, fly:true,
    th:'An arc the length of one life: craft → digital → automation.',
@@ -1123,24 +1123,63 @@ function drawBenchDescs(){
     if (dAmt < 0.02) continue;
     const seg = segAt(b.x);
     if (b.descWall){
-      // machinery owns this floor: the reading line hangs on the wall instead
-      const kw = k((seg.tz || 680) - 8);
+      // machinery owns floor, wall and air here: the line reads as a plaque
+      // at the foot of the frame, light ink over the vignette
       ctx.save();
       ctx.textAlign = 'center';
-      ctx.font = eraFont(24 * SS, '', seg.font);
-      ctx.fillStyle = `rgba(${seg.ink},${(dAmt * 0.9).toFixed(3)})`;
-      drawLines(b._d, px(b.x, kw), py(556, kw), 33 * SS);
+      ctx.font = eraFont(23 * SS, '', seg.font);
+      ctx.fillStyle = `rgba(226,229,233,${(dAmt * 0.92).toFixed(3)})`;
+      ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 2*SS;
+      drawLines(b._d, W * 0.5, H * 0.925, 32 * SS);
       ctx.restore();
       continue;
     }
     let cw = px(b.x, kf);
-    const onTable = TABLES.find(t => b.x >= t.x0 && b.x <= t.x1);
+    let onTable = TABLES.find(t => b.x >= t.x0 && b.x <= t.x1);
+    // a pedestal break may leave the beat without a table right under it —
+    // the label then steps onto the nearest counter, unless a recreation
+    // slab owns this ground
+    const inRec = (b.x > REC_L && b.x < REC_R) || (b.x > REC3_L && b.x < REC3_R) ||
+                  (b.x > REC2_L && b.x < REC2_R) || (b.x > REC4_L && b.x < REC4_R);
+    if (!onTable && !inRec){
+      // prefer the counter to the right: the tour reads left to right,
+      // the label leads the eye onward past the pedestal
+      let best = null, bd = 1e9;
+      for (const tt of TABLES){
+        let d = b.x < tt.x0 ? tt.x0 - b.x : (b.x > tt.x1 ? b.x - tt.x1 : 0);
+        if (tt.x1 < b.x) d += 500;
+        if (d < bd){ bd = d; best = tt; }
+      }
+      if (bd < 1400) onTable = best;
+    }
     let ink = '218,222,227', shadow = true, slabDrop = 0;   // light ink on the dark bench face
+    // the white era needs dark ink on its pale face — unless the hero dim
+    // has already sunk the scene, where light ink glows over the dark
+    if (segIdx(b.x) === 3 && (state.hero || 0) < 0.25){ ink = '55,61,69'; shadow = false; }
     if (onTable){
       // pinned to the beat's own table span — the line never crosses a gap
       const half = 350*SS;
       const lo = px(onTable.x0, kf) + half, hi = px(onTable.x1, kf) - half;
       if (lo < hi) cw = Math.max(lo, Math.min(hi, cw));
+      // a light pedestal column would swallow light ink — the label steps
+      // aside like a museum plate beside its sculpture
+      if (b.ped){
+        const kp = k(-90);
+        const pedSx = px(b.x + (b.ped.dx ?? -430), kp);
+        const pedHalf = 165 * (b.ped.big ? 1.35 : 1) * kp * SS * 0.62;
+        const need = pedHalf + half + 18*SS;
+        if (Math.abs(cw - pedSx) < need){
+          const right = pedSx + need, left = pedSx - need;
+          if (lo < hi){
+            // to the right by preference — the tour reads left to right,
+            // the label leads the eye onward; and never off the screen
+            if (right <= hi && right + 350*SS < W - 30*SS) cw = right;
+            else if (left >= lo && left - 350*SS > 30*SS) cw = left;
+          }
+        }
+      }
+      // whatever the counters allow, the line must live on the screen
+      cw = Math.max(385*SS, Math.min(W - 385*SS, cw));
     } else {
       // a recreation beat: the line reads off the light floor slab in dark ink
       ink = '52,58,66'; shadow = false; slabDrop = 130*SS;
@@ -2391,10 +2430,6 @@ function initDecor(){
     }
   }
   // mid-ground people & machines (the wall is far enough now)
-  for (let r = 0; r < 2; r++)                                              // 1998 · a small classroom
-    for (let i = 0; i < 4; i++)
-      FIGURES.push({x: 13940 + i*100 + r*40, z: 700 + r*85, h: 330,
-                    sprite: makeFigure(40 + r*10 + i, true), seated: true});
   FIGURES.push({x: 16460, z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
   // mills receding behind the factory line
   // the graduates' mortarboard behind the alumnae portraits
@@ -2409,7 +2444,7 @@ function initDecor(){
   PROPS.push({x: FACT_X - 120, z: 620, kind: 'mill', w: 470, mid: true});
   PROPS.push({x: FACT_X + 330, z: 700, kind: 'mill', w: 440, mid: true});
   // the symposium audience at the finale — spaced so the stage stays visible
-  const AUD = [[29060, 380, 640], [29160, 620, 580], [29240, 340, 650], [29320, 460, 615], [29160, 300, 660]];
+  const AUD = [[28960, 390, 640], [29060, 470, 615], [29120, 300, 660]];
   AUD.forEach(([ax, az, ah], i) => FIGURES.push({x: ax, z: az, h: ah, sprite: makeFigure(60 + i)}));
 
   // ambient props obey gravity too: full footprint on a real table span,
@@ -3198,7 +3233,7 @@ function initBanners(){
     {x: 21505, w: 550, sp: makeBanner('BRUXZIR®', 'The best dentistry — made affordable', 'THE #1 CROWN')},
     {x: 22860, w: 550, sp: makeBanner('GLIDEWELL HT™', 'Premium implant, a fraction of the price', 'PREMIUM · AFFORDABLE')},
     {x: 23595, w: 240, cy: 590, sp: makeBannerVert('GLIDEWELL.IO', 'The lab moves\ninto your office', 'SINGLE-VISIT', 'fastmill')},
-    {x: 27560, w: 480, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
+    {x: 27700, w: 480, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
   ];
 }
 function drawBanners(t){
