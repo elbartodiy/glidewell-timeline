@@ -210,16 +210,16 @@ const BEATS = [
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
    wall:[],
    table:[],
-   st:[{img:'ellen', w:150, dx:-420, lz:120, cap:'Dr. Ellen Paulisick · GL alum'},
-       {img:'nadia', w:150, dx:-180, lz:150, cap:'Dr. Nadia Rodriguez · GL alum'},
-       {img:'bianca', w:150, dx:60, lz:70, cap:'Dr. Bianca Clark · GL alum'}]},
+   st:[{img:'ellen', w:120, dx:55, lz:130, cap:'Dr. Ellen Paulisick · GL alum'},
+       {img:'nadia', w:120, dx:206, lz:180, cap:'Dr. Nadia Rodriguez · GL alum'},
+       {img:'bianca', w:120, dx:357, lz:60, cap:'Dr. Bianca Clark · GL alum'}]},
 
   {x:26340, y:'2022', t:'FASTSCAN.IO',
    th:'The front door to the all-digital workflow.',
    d:'fastscan.io, built with Medit, folds an intraoral scanner into the ecosystem — no impressions, no remakes, data straight into design and mill.',
-   wall:[{img:'jimnow', w:260, dx:-260, cy:360, rot:0.5, cap:'Jim Glidewell', style:'white'}],
+   wall:[{img:'jimnow', w:250, dx:-170, cy:360, rot:0.5, cap:'Jim Glidewell', style:'white', pz:995}],
    table:[], pyr:{dx:520, w:460},
-   ped:{obj:'scanner', dx:0}},
+   ped:{obj:'scanner', dx:0, gapHalf:400}},
 
   {x:27190, y:'2020s', t:'AI · SCALE', tier:1,
    th:'The flywheel: cheaper to make → wider access → reinvest.',
@@ -240,7 +240,7 @@ const SEAM_3 = 19980;
 const REC2_L = SEAM_3 - 540, REC2_R = SEAM_3 + 540;   // the Digital Revolution recreation
 const REC_L = 6350, REC_R = 7450;   // era 1 ends; the 1979 recreation; era 2 begins
 const REC3_L = 10600, REC3_R = 11700;   // the 1989 National Leader recreation
-const REC4_L = 25800, REC4_R = 26880;   // the 2022 fastscan recreation — the wall turns pure white beyond it
+const REC4_L = 25940, REC4_R = 26740;   // the 2022 fastscan recreation — the wall turns pure white beyond it
 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
@@ -607,8 +607,7 @@ function initLights(){
 function initTables(){
   // every pedestal claims a wide gap of its own, centered on it
   for (const b of BEATS)
-    if (b.ped) BENCH_BREAKS.push({x: b.x + (b.ped.dx ?? -430), half: 330});
-  BENCH_BREAKS.push({x: (REC4_L + REC4_R) / 2, half: (REC4_R - REC4_L) / 2});
+    if (b.ped) BENCH_BREAKS.push({x: b.x + (b.ped.dx ?? -430), half: b.ped.gapHalf || 330});
   // small breaks inside a pedestal zone would skew its centering — drop them
   const wide = BENCH_BREAKS.filter(v => v.half > 200);
   for (let i = BENCH_BREAKS.length - 1; i >= 0; i--){
@@ -622,7 +621,7 @@ function initTables(){
     const items = [...(b.st||[]), ...(b.table||[]), ...(b.props||[]),
                    ...(b.album?[b.album]:[]), ...(b.pyr?[b.pyr]:[])];
     const dodge = it => {
-      const half = (it.w || 300) * 0.9 + 40;
+      const half = (it.w || 300) * 0.55 + 30;
       for (const br of BENCH_BREAKS){
         const x = b.x + it.dx;
         if (Math.abs(x - br.x) < br.half + half){
@@ -634,7 +633,7 @@ function initTables(){
     items.forEach(dodge);
     items.sort((p, q) => p.dx - q.dx);
     for (let n = 1; n < items.length; n++){
-      const need = ((items[n-1].w||300) + (items[n].w||300)) * 0.5 + 60;
+      const need = ((items[n-1].w||300) + (items[n].w||300)) * 0.5 + 24;
       if (items[n].dx - items[n-1].dx < need){
         items[n].dx = items[n-1].dx + need;
         dodge(items[n]);
@@ -677,6 +676,7 @@ function initTables(){
 
 /* ---------------- RENDER SETUP ---------------- */
 const cv = document.getElementById('view');
+cv.style.transform = 'translateZ(0)';   // pin the canvas to its own compositor layer (anti-ghosting)
 const ctx = cv.getContext('2d', {alpha:false});
 let W = 0, H = 0, SS = 1;  // canvas px, and scale ref->canvas
 let RQ = 1;   // adaptive render quality (drops on weak hardware)
@@ -2398,7 +2398,7 @@ function initDecor(){
   FIGURES.push({x: 16460, z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
   // mills receding behind the factory line
   // the graduates' mortarboard behind the alumnae portraits
-  PROPS.push({x: 25200, z: 235, kind: 'gradcap', w: 205});
+  PROPS.push({x: 25640, z: 245, kind: 'gradcap', w: 165});
 
   // the welcome still life — placeholder heirlooms of the craft century
   // a tight triangle: the cast jaw is the hero dead under the title,
@@ -2409,7 +2409,7 @@ function initDecor(){
   PROPS.push({x: FACT_X - 120, z: 620, kind: 'mill', w: 470, mid: true});
   PROPS.push({x: FACT_X + 330, z: 700, kind: 'mill', w: 440, mid: true});
   // the symposium audience at the finale — spaced so the stage stays visible
-  const AUD = [[28790, 380, 640], [28890, 620, 580], [28970, 340, 650], [29050, 460, 615], [28890, 300, 660]];
+  const AUD = [[29060, 380, 640], [29160, 620, 580], [29240, 340, 650], [29320, 460, 615], [29160, 300, 660]];
   AUD.forEach(([ax, az, ah], i) => FIGURES.push({x: ax, z: az, h: ah, sprite: makeFigure(60 + i)}));
 
   // ambient props obey gravity too: full footprint on a real table span,
@@ -2467,7 +2467,7 @@ function auditPlacements(){
     .map(g => ({x: g.pedX, z: g.pedZ, c: g.c, r: g.r}));
   for (const b of BEATS)
     for (const it of b.wall)
-      crossTargets.push({x: b.x + it.dx, z: wallZAt(b.x) - 12, c: b.x, r: 520});
+      crossTargets.push({x: b.x + it.dx, z: it.pz != null ? it.pz : (segAt(b.x).tz || wallZAt(b.x)) - 12, c: b.x, r: 520});
   for (const f of FIGURES){
     for (const g of crossTargets){
       const kP = kOf(g.z), kF = kOf(f.z);
@@ -2907,7 +2907,7 @@ function drawPedestal(b, t, hero){
 /* ---------------- PLASMAS · living wall screens of the white room ---------------- */
 function drawPlasmaPanel(b, t){
   const p = b.plasma;
-  const kk = k(wallZAt(b.x) - 14);
+  const kk = k((segAt(b.x).tz || wallZAt(b.x)) - 14);
   const sx = px(b.x + p.dx, kk), sy = py(p.cy, kk);
   const w = p.w * kk * SS, h = w * 0.58;
   if (sx < -w || sx > W + w) return;
@@ -3206,7 +3206,7 @@ function drawBanners(t){
   // they share the wall's depth, never cross the floating text, never blink
   for (const bn of BANNERS){
     if (Math.abs(bn.x - cam.x) > 3400) continue;
-    const zB = wallZAt(bn.x) - 25;
+    const zB = (segAt(bn.x).tz || wallZAt(bn.x)) - 25;
     const kk = k(zB);
     const sx = px(bn.x, kk);
     if (sx < -700 || sx > W + 700) continue;
@@ -4140,7 +4140,9 @@ function frame(){
     if (Math.abs(b.x - cam.x) > 3400) continue;
     for (const it of b.wall){
       const sp = SPRITES[it.img]; if (!sp) continue;
-      const wz = wallZAt(b.x) - 12;
+      // exhibits ride the era's exhibition plane — the same plane as the
+      // years — so nothing ever drifts away from its own beat
+      const wz = it.pz != null ? it.pz : (segAt(b.x).tz || wallZAt(b.x)) - 12;
       drawSprite(sp, b.x + it.dx, it.cy, wz, it.w, it.rot || 0, null,
                  {type:'photo', sp, wx: b.x + it.dx, cy: it.cy, z: wz, w: it.w, cap: it.cap, link: it.link, beat: i});
       if (it.cap){
