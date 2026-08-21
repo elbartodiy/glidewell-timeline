@@ -46,10 +46,10 @@ const BEATS = [
    d:'Taggart brings lost-wax casting into dentistry — the analog century begins.',
    wall:[{img:'cast', w:360, dx:-430, cy:380, rot:-0.8},
          {img:'furnace', w:360, dx:430, cy:380, rot:1.2},
-         {img:'old1', w:280, dx:-3840, cy:360, rot:0.4, cap:'The tooth-drawer \u00b7 18th century'},
-         {img:'old2', w:290, dx:-3450, cy:360, rot:-0.4, cap:'Dentistry before the laboratory'},
-         {img:'old3', w:290, dx:-3060, cy:360, rot:0.3, cap:'The barber-surgeon\u2019s chair'},
-         {img:'old4', w:290, dx:-2680, cy:360, rot:-0.3, cap:'The old fear of the dentist'}],
+         {img:'old1', w:280, dx:-4490, cy:360, rot:0.4, cap:'The tooth-drawer \u00b7 18th century'},
+         {img:'old2', w:290, dx:-4100, cy:360, rot:-0.4, cap:'Dentistry before the laboratory'},
+         {img:'old3', w:290, dx:-3710, cy:360, rot:0.3, cap:'The barber-surgeon\u2019s chair'},
+         {img:'old4', w:290, dx:-3330, cy:360, rot:-0.3, cap:'The old fear of the dentist'}],
    table:[], st:[{img:'invest', w:280, dx:-320, lz:80}]},
 
   {x:2450, y:'1970', t:'FOUNDED', tier:1, fly:true,
@@ -245,7 +245,7 @@ const REC4_L = 25800, REC4_R = 26880;   // the 2022 fastscan recreation — the 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
 const SEGMENTS = [
-  {x0:-2600, x1:REC_L, z0:550, z1:550, tz:550, wall:'wall1', bench:'bench1', front:'front1',
+  {x0:-3450, x1:REC_L, z0:550, z1:550, tz:550, wall:'wall1', bench:'bench1', front:'front1',
    font:'Georgia, "Iowan Old Style", "Palatino Linotype", serif',
    ink:'232,205,160', lamp:'bulb', dust:true,
    rail:'rgba(190,150,80,0.55)', railInk:'rgba(230,195,130,0.7)',
@@ -3959,9 +3959,9 @@ function update(dt){
       } else if (aimed && aimed.type === 'study'){
         openStudy(aimed.beat);
       } else {
-        const nb = nearestBeat(cam.x);
+        // empty space is empty: a click there only releases a focus,
+        // it never opens anything the visitor didn't aim at
         if (state.focusBeat >= 0){ state.focusBeat = -1; state.focusAnchor = null; cam.zTarget = 0; }
-        else if (nb.d < 500) openStudy(nb.i);
       }
     }
     if (state.focusBeat >= 0){
@@ -4055,7 +4055,7 @@ function update(dt){
   if (state.splice && inp.action) state.splice.skip = true;
 
   // soft bounds
-  if (cam.x < INTRO_X - 400){ cam.x = INTRO_X - 400; cam.vel = Math.max(0, cam.vel); }
+  if (cam.x < INTRO_X - 1000){ cam.x = INTRO_X - 1000; cam.vel = Math.max(0, cam.vel); }
   if (cam.x > WORLD_END + 300){ cam.x = WORLD_END + 300; cam.vel = Math.min(0, cam.vel); }
 
   // beat magnetism when slow (live mode, not focused)
