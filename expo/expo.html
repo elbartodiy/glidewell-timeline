@@ -2516,6 +2516,27 @@ function makeFigure(seed, seated){
 }
 
 const PROPS = [], SHEETS = [], FIGURES = [];
+/* PHOTO SKIN (pilot) — real photographed artifacts replace the drawn
+   placeholders when the page runs with ?skin=photo. Assets live in
+   assets/photo/ (see SKIN_SPEC.md); each is a neutral-lit cutout that the
+   engine lights and shades itself. Same slots, same physics, same audits. */
+const PHOTO_SKIN = /[?&]skin=photo/.test(location.search);
+async function loadPhotoSkin(){
+  const want = {
+    ph_furnace: 'furnace_0.png',
+    ph_articulator: 'articulator_0.png',
+    ph_jars: 'jars_0.png',
+    ph_polisher: 'polisher_0.png',
+    ph_tray34: 'tray_2.png',
+    ph_crate: 'crate_0.png',
+  };
+  await Promise.all(Object.entries(want).map(([key, file]) => new Promise(res => {
+    const im = new Image();
+    im.onload = () => { PROP_SPRITES[key] = {c: im, w: im.naturalWidth, h: im.naturalHeight}; res(); };
+    im.onerror = () => { console.error('photo skin: missing asset', file); res(); };
+    im.src = 'assets/photo/' + file;
+  })));
+}
 function initDecor(){
   for (const kind of ['jar','plaster','toolbox','mailtray','box','papers','crtOff','mill','palmNear','jaw1','jaw2','gradcap'])
     PROP_SPRITES[kind] = makeProp(kind);
@@ -2551,9 +2572,16 @@ function initDecor(){
   // the welcome still life — placeholder heirlooms of the craft century
   // a tight triangle: the cast jaw is the hero dead under the title,
   // the toolbox and the plaster molds are its shoulders
-  PROPS.push({x: INTRO_X - 155, z: 105, kind: 'toolbox', w: 165});
-  PROPS.push({x: INTRO_X - 5,   z: 45,  kind: 'jaw1', w: 135});
-  PROPS.push({x: INTRO_X + 150, z: 80, kind: 'plaster', w: 160, flip: true});
+  if (PHOTO_SKIN && PROP_SPRITES.ph_articulator){
+    // the real heirlooms: kiln — articulator with the cast jaws — powder jars
+    PROPS.push({x: INTRO_X - 170, z: 110, kind: 'ph_furnace', w: 112});
+    PROPS.push({x: INTRO_X - 5,   z: 45,  kind: 'ph_articulator', w: 118});
+    PROPS.push({x: INTRO_X + 160, z: 85,  kind: 'ph_jars', w: 150});
+  } else {
+    PROPS.push({x: INTRO_X - 155, z: 105, kind: 'toolbox', w: 165});
+    PROPS.push({x: INTRO_X - 5,   z: 45,  kind: 'jaw1', w: 135});
+    PROPS.push({x: INTRO_X + 150, z: 80, kind: 'plaster', w: 160, flip: true});
+  }
   PROPS.push({x: FACT_X - 120, z: 620, kind: 'mill', w: 470, mid: true});
   PROPS.push({x: FACT_X + 330, z: 700, kind: 'mill', w: 440, mid: true});
   // the symposium audience at the finale — spaced so the stage stays visible
@@ -4465,6 +4493,7 @@ function loop(ts){
 async function boot(){
   resize();
   await loadAssets();
+  if (PHOTO_SKIN) await loadPhotoSkin();
   TEX.wall1 = woodTexture({plank:'v', plankSize:150, base:'#20150b', light:'#372712', w:1400, h:900});
   TEX.bench1 = woodTexture({plank:'h', plankSize:110, base:'#3a2812', light:'#5a4020', w:1200, h:512});
   TEX.front1 = woodTexture({plank:'v', plankSize:190, base:'#170f07', light:'#2a1c0c', w:1200, h:600});
@@ -4567,6 +4596,7 @@ async function boot(){
   initDecor();
   attachMouseDriver(document.body);
   auditStatics();
+  window.__photoSkinReady = true;
   if (/[?&]audit/.test(location.search)) setTimeout(auditRivets, 400);
   requestAnimationFrame(loop);
 }
