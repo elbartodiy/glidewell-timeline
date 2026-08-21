@@ -2569,43 +2569,54 @@ const PHOTO_SKIN = /[?&]skin=photo/.test(location.search);
    their own depth and can be lit and clicked like everything else in the hall.
    A plate WITH objects baked in must stay single-layer (`layers` omitted):
    flat, at wall depth, where nothing inside it can slide against anything. */
-const PLATES = GAP.on ? [
-  {x: GAP.at + GAP.w / 2, img: 'plate_bench_1970.jpg', sw: 1390, benchFrac: 0.666},
-] : [];
+const PLATES = GAP.on ? [{
+  x: GAP.at + GAP.w / 2, sw: 1390, benchFrac: 0.666,
+  layers: [
+    // the generated background is attached to the hall's WALL...
+    {img: 'plate_bay_wall.jpg',  z: null},
+    // ...and the counter with everything standing on it to the hall's BENCH,
+    // so each travels with the surface it belongs to
+    {img: 'plate_bay_front.png', z: 0},
+  ],
+}] : [];
 async function loadPlates(){
-  await Promise.all(PLATES.map(p => new Promise(res => {
-    const im = new Image();
-    im.onload = () => { p.sp = im; res(); };
-    im.onerror = () => { p.sp = null; res(); };   // no file yet — the hall just stays as it was
-    im.src = 'assets/photo/' + p.img;
-  })));
+  const jobs = [];
+  for (const p of PLATES)
+    for (const L of (p.layers || [{img: p.img, z: p.z}]))
+      jobs.push(new Promise(res => {
+        const im = new Image();
+        im.onload = () => { L.sp = im; res(); };
+        im.onerror = () => { L.sp = null; res(); };   // no file yet — the hall stays as it was
+        im.src = 'assets/photo/' + L.img;
+      }));
+  await Promise.all(jobs);
+  for (const p of PLATES) p.layers = (p.layers || []).filter(L => L.sp);
 }
 /* drawn straight after the bench, so the plate's own counter and cabinets
    stand in for the procedural ones inside the niche */
 function drawPlates(t){
   for (const p of PLATES){
-    if (!p.sp) continue;
+    const layers = p.layers || [];
+    if (!layers.length) continue;
     const seg = segAt(p.x);
-    const wallZ = p.z != null ? p.z : (seg.z0 || 550);
-    const sw = (p.sw || 1390) * SS;                       // screen width, shared by every layer
-    const sh = sw * p.sp.naturalHeight / p.sp.naturalWidth;
+    const wallZ = seg.z0 || 550;
+    const sw = (p.sw || 1390) * SS;              // screen width — shared by every layer,
+    const ref = layers[0].sp;                    // which is what keeps them glued when centred
+    const sh = sw * ref.naturalHeight / ref.naturalWidth;
     const bf = p.benchFrac || 0.666;
     // the counter line lands on the hall's own bench line, so the plate's
     // counter continues the hall's counter instead of stepping away from it
-    const anchorZ = p.layers ? p.layers[p.layers.length - 1].z : wallZ;
-    const y0 = py(CFG.benchY, k(anchorZ)) - sh * bf;
-    const layers = p.layers || [{z: wallZ, from: 0, to: 1}];
+    const frontZ = layers[layers.length - 1].z ?? wallZ;
+    const y0 = py(CFG.benchY, k(frontZ)) - sh * bf;
     const fade = 0.06;
     for (const L of layers){
-      const kk = k(L.z);
+      const z = L.z != null ? L.z : wallZ;
+      const kk = k(z);
       const sx = px(p.x, kk);
       if (sx < -sw || sx > W + sw) continue;
-      const sy = y0 + sh * L.from, hh = sh * (L.to - L.from);
-      const sxImg = 0, syImg = p.sp.naturalHeight * L.from;
-      const hImg = p.sp.naturalHeight * (L.to - L.from);
       ctx.save();
-      ctx.beginPath(); ctx.rect(sx - sw/2, sy, sw, hh); ctx.clip();
-      ctx.drawImage(p.sp, sxImg, syImg, p.sp.naturalWidth, hImg, sx - sw/2, sy, sw, hh);
+      ctx.beginPath(); ctx.rect(sx - sw/2, y0, sw, sh); ctx.clip();
+      ctx.drawImage(L.sp, sx - sw/2, y0, sw, sh);
       // the reveal: a soft dark edge, so no surface has to line up at the seam
       const g = ctx.createLinearGradient(sx - sw/2, 0, sx + sw/2, 0);
       g.addColorStop(0, 'rgba(0,0,0,1)');
@@ -2613,15 +2624,15 @@ function drawPlates(t){
       g.addColorStop(1 - fade, 'rgba(0,0,0,0)');
       g.addColorStop(1, 'rgba(0,0,0,1)');
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.fillStyle = g; ctx.fillRect(sx - sw/2, sy, sw, hh);
+      ctx.fillStyle = g; ctx.fillRect(sx - sw/2, y0, sw, sh);
       ctx.restore();
-      // the niche stands deeper than the room: a shadow gutter down each jamb
-      for (const s of [-1, 1]){
+      // only the background layer sits in a reveal; the counter runs through
+      if (L === layers[0]) for (const s of [-1, 1]){
         const gx = sx + s * sw/2;
         const jg = ctx.createLinearGradient(gx, 0, gx - s * 26*kk*SS, 0);
         jg.addColorStop(0, 'rgba(0,0,0,0.55)'); jg.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = jg;
-        ctx.fillRect(Math.min(gx, gx - s*26*kk*SS), sy, 26*kk*SS, hh);
+        ctx.fillRect(Math.min(gx, gx - s*26*kk*SS), y0, 26*kk*SS, sh);
       }
     }
     // sprites standing on the plate's counter — they live at their own depth,
@@ -2636,8 +2647,16 @@ function drawPlates(t){
     }
   }
 }
+const PHOTO_TEX = {};
+/* the procedural era walls (tools/make_wall.py) stand in for the drawn ones —
+   same slot, same tiling, so drawWall never learns the difference */
+function applyPhotoTextures(){
+  for (const [slot, key] of [['wall1','wall_e1'], ['wall2','wall_e2'], ['wall3','wall_e3'], ['wall4','wall_e4']])
+    if (PHOTO_TEX[key]) TEX[slot] = PHOTO_TEX[key];
+}
 async function loadPhotoSkin(){
   const want = {
+    wall_e1: 'wall_e1.jpg', wall_e2: 'wall_e2.jpg', wall_e3: 'wall_e3.jpg', wall_e4: 'wall_e4.jpg',
     ph_furnace: 'furnace_0.png',
     ph_articulator: 'articulator_0.png',
     ph_jars: 'jars_0.png',
@@ -2647,7 +2666,11 @@ async function loadPhotoSkin(){
   };
   await Promise.all(Object.entries(want).map(([key, file]) => new Promise(res => {
     const im = new Image();
-    im.onload = () => { PROP_SPRITES[key] = {c: im, w: im.naturalWidth, h: im.naturalHeight}; res(); };
+    im.onload = () => {
+      PHOTO_TEX[key] = im;
+      PROP_SPRITES[key] = {c: im, w: im.naturalWidth, h: im.naturalHeight};
+      res();
+    };
     im.onerror = () => { console.error('photo skin: missing asset', file); res(); };
     im.src = 'assets/photo/' + file;
   })));
@@ -4626,6 +4649,7 @@ async function boot(){
   TEX.wall4 = panelTexture({w:1400, h:900, base:'#e0e3e6', groove:600});
   TEX.bench4 = formicaTexture({w:1200, h:512, base:'#eef0f2'});
   TEX.front4 = panelTexture({w:1200, h:600, base:'#c8ccd0', groove:420});
+  if (PHOTO_SKIN) applyPhotoTextures();
   cacheWrap();
   TEX.outside = makeOutside();
   SECTIONS.old = makeSection('old');
