@@ -2942,26 +2942,28 @@ function drawPlates(t){
       const kk = k(z);
       const sx = px(p.x, kk);
       if (sx < -sw || sx > W + sw) continue;
-      ctx.save();
-      ctx.beginPath(); ctx.rect(sx - sw/2, y0, sw, sh); ctx.clip();
-      ctx.drawImage(L.sp, sx - sw/2, y0, sw, sh);
-      // the reveal: a soft dark edge, so no surface has to line up at the seam
-      const g = ctx.createLinearGradient(sx - sw/2, 0, sx + sw/2, 0);
-      g.addColorStop(0, 'rgba(0,0,0,1)');
-      g.addColorStop(fade, 'rgba(0,0,0,0)');
-      g.addColorStop(1 - fade, 'rgba(0,0,0,0)');
-      g.addColorStop(1, 'rgba(0,0,0,1)');
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.fillStyle = g; ctx.fillRect(sx - sw/2, y0, sw, sh);
-      ctx.restore();
-      // a reveal belongs to a recessed background; a counter simply runs on
-      if (L.reveal) for (const s of [-1, 1]){
-        const gx = sx + s * sw/2;
-        const jg = ctx.createLinearGradient(gx, 0, gx - s * 26*kk*SS, 0);
-        jg.addColorStop(0, 'rgba(0,0,0,0.55)'); jg.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = jg;
-        ctx.fillRect(Math.min(gx, gx - s*26*kk*SS), y0, 26*kk*SS, sh);
+      const ow = Math.max(8, Math.round(sw)), oh = Math.max(8, Math.round(sh));
+      if (!L.sheet || L.sheet.width !== ow || L.sheet.height !== oh){
+        L.sheet = document.createElement('canvas');
+        L.sheet.width = ow; L.sheet.height = oh;
+        const g2 = L.sheet.getContext('2d');
+        g2.drawImage(L.sp, 0, 0, ow, oh);
+        // the join is a butt joint: both sides are the same material now, so
+        // only a hair of blend is needed to kill the aliasing on the cut
+        const F = Math.max(1, Math.round(fade * ow));
+        g2.save();
+        g2.globalCompositeOperation = 'destination-out';
+        for (const [ex, near] of [[0, 1], [ow - F, 0]]){
+          const g = g2.createLinearGradient(ex, 0, ex + F, 0);
+          g.addColorStop(0, `rgba(0,0,0,${near})`);
+          g.addColorStop(1, `rgba(0,0,0,${1 - near})`);
+          g2.fillStyle = g; g2.fillRect(ex, 0, F, oh);
+        }
+        g2.restore();
       }
+      ctx.drawImage(L.sheet, sx - sw/2, y0);
+      // no reveal, no jamb shadow: a niche needs them, a counter that simply
+      // continues the hall's own counter must not announce itself at all
     }
     // sprites standing on the plate's counter — they live at their own depth,
     // so they never slide against the surface they stand on
@@ -4859,8 +4861,10 @@ function frame(){
     const L = LIGHT_GRID[i];
     // a plate brings its own lamp; the hall's fixture would hang in front of it
     if (PLATES.some(p => p.sp && Math.abs(L.x - p.x) < p.w * 0.5)) continue;
-    if (L.seg.lamp === 'tube') drawTube(L.x, t, i+1);
-    else drawLamp(L.x, t, i+1);
+    // the cool eras keep their light but lose the fixture: a black slab hung
+    // over the numerals was reading as a bar across the composition
+    if (L.seg.lamp === 'tube') continue;
+    drawLamp(L.x, t, i+1);
   }
   drawDust(t);
 
