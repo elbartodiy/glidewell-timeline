@@ -767,6 +767,14 @@ function initTables(){
   // every pedestal claims a wide gap of its own, centered on it
   for (const b of BEATS)
     if (b.ped) BENCH_BREAKS.push({x: b.x + (b.ped.dx ?? -430), half: b.ped.gapHalf || 330});
+  // a plate brings its own counter: the hall's must END where the plate starts,
+  // or the plate lands mid-run and cuts a continuous worktop in half. A narrow
+  // break at each end turns the seam into a real edge — nothing to feather.
+  for (const p of PLATES){
+    const half = (p.sw || 1390) / 2;
+    BENCH_BREAKS.push({x: p.x - half - 26, half: 26});
+    BENCH_BREAKS.push({x: p.x + half + 26, half: 26});
+  }
   // small breaks inside a pedestal zone would skew its centering — drop them
   const wide = BENCH_BREAKS.filter(v => v.half > 200);
   for (let i = BENCH_BREAKS.length - 1; i >= 0; i--){
@@ -2955,16 +2963,9 @@ function drawPlates(t){
         g2.drawImage(L.sp, 0, 0, ow, oh);
         // the join is a butt joint: both sides are the same material now, so
         // only a hair of blend is needed to kill the aliasing on the cut
-        const F = Math.max(1, Math.round(fade * ow));
-        g2.save();
-        g2.globalCompositeOperation = 'destination-out';
-        for (const [ex, near] of [[0, 1], [ow - F, 0]]){
-          const g = g2.createLinearGradient(ex, 0, ex + F, 0);
-          g.addColorStop(0, `rgba(0,0,0,${near})`);
-          g.addColorStop(1, `rgba(0,0,0,${1 - near})`);
-          g2.fillStyle = g; g2.fillRect(ex, 0, F, oh);
-        }
-        g2.restore();
+        // no feather: the counter ends in a real edge on both sides, and a
+        // blurred cut across a worktop is exactly what reads as a pasted seam
+        void fade;
       }
       ctx.drawImage(L.sheet, sx - sw/2, y0);
       // no reveal, no jamb shadow: a niche needs them, a counter that simply
