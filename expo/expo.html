@@ -1680,7 +1680,7 @@ let SEAM_VIDEO = null;
    lamp breathes, the gate weaves a hair, and the throw is keystoned because
    the machine sits below the centre of its own picture. */
 const PROJECTORS = [
-  {x: 12590, wallDX: 240, w: 1560, cy: 470, src: 'media/timeline5.mp4', throwZ: 210},
+  {x: SHIFT(12590), wallDX: 240, w: 1560, cy: 470, src: 'media/timeline5.mp4', throwZ: 210},
 ];
 function initProjectors(){
   for (const p of PROJECTORS){
@@ -1722,7 +1722,13 @@ function drawProjectors(t, phase){
     const wz = (seg.z0 || 550) - 6;
     const kk = k(wz);
     const sx = wallSX(p.x, p.wallDX, kk);
-    const vw = p.w * kk * SS, vh = vw * 9 / 16;
+    // the gate is sized to the reel AFTER its black ears are cut: a 4:3 film
+    // gets a 4:3 rectangle, fitted inside the same box, never stretched
+    const c0 = p.crop || {x0: 0, x1: 1};
+    const asp = ((p.v && p.v.videoWidth) ? p.v.videoWidth * (c0.x1 - c0.x0) / p.v.videoHeight : 16/9);
+    const boxW = p.w * kk * SS, boxH = boxW * 9 / 16;
+    const vw = asp >= 16/9 ? boxW : boxH * asp;
+    const vh = asp >= 16/9 ? boxW / asp : boxH;
     if (sx < -vw || sx > W + vw) continue;
     const sy = py(p.cy, kk);
     const live = p.ready && p.v.readyState >= 2;
@@ -1777,10 +1783,9 @@ function drawProjectors(t, phase){
     g2.fillStyle = `rgba(52,47,38,${(0.60 * lamp).toFixed(3)})`;
     g2.fillRect(0, 0, ow, oh);
     if (live){
-      const c = p.crop || {x0: 0, x1: 1};
       const sw0 = p.v.videoWidth || 1280, sh0 = p.v.videoHeight || 720;
       g2.globalAlpha = 0.95 * lamp;
-      g2.drawImage(p.v, sw0 * c.x0, 0, sw0 * (c.x1 - c.x0), sh0, 0, 0, ow, oh);
+      g2.drawImage(p.v, sw0 * c0.x0, 0, sw0 * (c0.x1 - c0.x0), sh0, 0, 0, ow, oh);
       g2.globalAlpha = 1;
     }
     // hot centre, falling away the way a lens actually throws
