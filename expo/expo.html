@@ -1671,6 +1671,146 @@ function makeSection(side){
 /* a full-screen video insert can live on the seam: drop a clip in and it
    fades in as you cross (slot — no clip embedded yet) */
 let SEAM_VIDEO = null;
+/* ---------------- THE PROJECTOR ----------------
+   A real machine standing in the hall, not a rectangle pasted on the wall.
+   What sells a projection is never the picture: it is that the picture is
+   MADE OF LIGHT. So the frame is drawn additively over the masonry — the
+   wall's own texture reads straight through the highlights, exactly as it
+   does in a room — the beam hangs in the air with dust turning in it, the
+   lamp breathes, the gate weaves a hair, and the throw is keystoned because
+   the machine sits below the centre of its own picture. */
+const PROJECTORS = [
+  {x: 3700, wallDX: 0, w: 1180, cy: 470, src: 'media/timeline5.mp4', throwZ: 210},
+];
+function initProjectors(){
+  for (const p of PROJECTORS){
+    const v = document.createElement('video');
+    v.src = p.src; v.muted = true; v.loop = true; v.playsInline = true;
+    v.preload = 'auto';
+    v.addEventListener('loadeddata', () => { p.ready = true; });
+    v.play().catch(() => {                      // a browser that wants a gesture first
+      const go = () => { v.play().catch(()=>{}); window.removeEventListener('pointerdown', go); };
+      window.addEventListener('pointerdown', go);
+    });
+    p.v = v;
+  }
+}
+function drawProjectors(t){
+  for (const p of PROJECTORS){
+    if (Math.abs(p.x - cam.x) > 3600) continue;
+    const seg = segAt(p.x);
+    const wz = (seg.z0 || 550) - 6;
+    const kk = k(wz);
+    const sx = wallSX(p.x, p.wallDX, kk);
+    const vw = p.w * kk * SS, vh = vw * 9 / 16;
+    if (sx < -vw || sx > W + vw) continue;
+    const sy = py(p.cy, kk);
+    const live = p.ready && p.v.readyState >= 2;
+
+    // the lamp: a slow breath with an occasional stumble in the gate
+    const lamp = 0.90 + 0.07 * Math.sin(t * 7.3) + 0.04 * Math.sin(t * 2.1)
+                 + (Math.sin(t * 31.7) > 0.985 ? -0.16 : 0);
+    // gate weave — a projected frame never sits perfectly still
+    const wx2 = Math.sin(t * 4.7) * 0.9 * kk * SS + Math.sin(t * 11.3) * 0.35 * kk * SS;
+    const wy2 = Math.cos(t * 3.9) * 0.7 * kk * SS;
+
+    // the machine, standing on the bench below the picture
+    const kp = k(p.throwZ);
+    const mxp = px(p.x + p.wallDX, kp), myp = py(CFG.benchY - 2, kp);
+    const bw = 150 * kp * SS, bh = 74 * kp * SS;
+
+    ctx.save();
+    // 1 — the beam: apex at the lens, spreading to the frame on the wall
+    const beam = ctx.createLinearGradient(0, myp - bh * 0.45, 0, sy);
+    beam.addColorStop(0, `rgba(255,246,222,${(0.20 * lamp).toFixed(3)})`);
+    beam.addColorStop(1, 'rgba(255,246,222,0.015)');
+    ctx.fillStyle = beam;
+    ctx.beginPath();
+    ctx.moveTo(mxp - 5 * kp * SS, myp - bh * 0.45);
+    ctx.lineTo(mxp + 5 * kp * SS, myp - bh * 0.45);
+    ctx.lineTo(sx + vw / 2, sy + vh / 2);
+    ctx.lineTo(sx - vw / 2, sy + vh / 2);
+    ctx.closePath(); ctx.fill();
+    // motes turning in the beam
+    for (let i = 0; i < 14; i++){
+      const u = ((i * 0.137 + t * 0.05) % 1);
+      const bx = mxp + (sx - mxp) * u + Math.sin(t * 0.7 + i) * 12 * SS * u;
+      const by = (myp - bh * 0.45) + (sy - (myp - bh * 0.45)) * u + Math.cos(t * 0.5 + i * 2) * 9 * SS * u;
+      ctx.fillStyle = `rgba(255,248,228,${(0.06 + 0.05 * Math.sin(t * 2 + i)).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(bx, by, (0.9 + 0.8 * u) * SS, 0, 7); ctx.fill();
+    }
+
+    // 2 — the picture, painted as LIGHT: 'lighter' lets the wall through
+    const gx0 = sx - vw / 2 + wx2, gy0 = sy - vh / 2 + wy2;
+    // keystone: the machine sits below its picture, so the top edge is wider
+    const key = 0.018 * vw;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(gx0 - key, gy0); ctx.lineTo(gx0 + vw + key, gy0);
+    ctx.lineTo(gx0 + vw, gy0 + vh); ctx.lineTo(gx0, gy0 + vh);
+    ctx.closePath(); ctx.clip();
+    // the wall first takes a wash of lamp light — a lit rectangle even in black frames
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = `rgba(46,42,34,${(0.55 * lamp).toFixed(3)})`;
+    ctx.fillRect(gx0 - key, gy0, vw + key * 2, vh);
+    if (live){
+      ctx.globalAlpha = 0.92 * lamp;
+      ctx.drawImage(p.v, gx0 - key, gy0, vw + key * 2, vh);
+      ctx.globalAlpha = 1;
+    }
+    // hot centre, falling away to the corners, the way a lens actually throws
+    const hot = ctx.createRadialGradient(gx0 + vw / 2, gy0 + vh * 0.44, vh * 0.12,
+                                         gx0 + vw / 2, gy0 + vh * 0.5, vw * 0.72);
+    hot.addColorStop(0, `rgba(255,250,235,${(0.10 * lamp).toFixed(3)})`);
+    hot.addColorStop(1, 'rgba(255,250,235,0)');
+    ctx.fillStyle = hot; ctx.fillRect(gx0 - key, gy0, vw + key * 2, vh);
+    ctx.restore();
+
+    // 3 — the edges: light has no border, it just runs out
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    const F = 12 * kk * SS;
+    for (const [gx, gy, gw, gh, dir] of [
+      [gx0 - key, gy0, vw + key * 2, F, 'v0'], [gx0 - key, gy0 + vh - F, vw + key * 2, F, 'v1'],
+      [gx0 - key, gy0, F, vh, 'h0'], [gx0 + vw + key - F, gy0, F, vh, 'h1']]){
+      const g = dir[0] === 'v'
+        ? ctx.createLinearGradient(0, gy, 0, gy + gh)
+        : ctx.createLinearGradient(gx, 0, gx + gw, 0);
+      const a0 = (dir === 'v0' || dir === 'h0') ? 1 : 0;
+      g.addColorStop(0, `rgba(0,0,0,${a0})`); g.addColorStop(1, `rgba(0,0,0,${1 - a0})`);
+      ctx.fillStyle = g; ctx.fillRect(gx, gy, gw, gh);
+    }
+    ctx.restore();
+
+    // 4 — halation: the wall around the frame catches the spill
+    const spill = ctx.createRadialGradient(sx, sy, vh * 0.4, sx, sy, vw * 0.95);
+    spill.addColorStop(0, `rgba(255,244,214,${(0.055 * lamp).toFixed(3)})`);
+    spill.addColorStop(1, 'rgba(255,244,214,0)');
+    ctx.fillStyle = spill; ctx.fillRect(sx - vw, sy - vh, vw * 2, vh * 2);
+
+    // 5 — the machine itself
+    ctx.fillStyle = '#2b2723';
+    ctx.beginPath(); ctx.roundRect(mxp - bw / 2, myp - bh, bw, bh, 5 * kp * SS); ctx.fill();
+    ctx.fillStyle = '#43403a';
+    ctx.fillRect(mxp - bw * 0.42, myp - bh * 0.92, bw * 0.84, bh * 0.16);
+    // the two reels
+    for (const s of [-1, 1]){
+      ctx.strokeStyle = 'rgba(190,186,176,0.75)'; ctx.lineWidth = 2 * kp * SS;
+      ctx.beginPath(); ctx.arc(mxp + s * bw * 0.26, myp - bh * 1.30, bw * 0.20, 0, 7); ctx.stroke();
+      ctx.fillStyle = 'rgba(30,28,25,0.9)';
+      ctx.beginPath(); ctx.arc(mxp + s * bw * 0.26, myp - bh * 1.30, bw * 0.055, 0, 7); ctx.fill();
+    }
+    // the lens, glowing with the lamp behind it
+    drawGlow('255,240,200', mxp, myp - bh * 0.45, 34 * kp * SS, 0.5 * lamp);
+    ctx.fillStyle = `rgba(255,246,224,${(0.85 * lamp).toFixed(2)})`;
+    ctx.beginPath(); ctx.arc(mxp, myp - bh * 0.45, 5 * kp * SS, 0, 7); ctx.fill();
+    ctx.restore();
+
+    pushHit(sx - vw / 2, sy - vh / 2, vw, vh,
+            {type: 'focus', beat: nearestBeat(p.x).i, anchor: p.x});
+  }
+}
+
 function initSeamVideo(){
   if (!window.ASSETS || !ASSETS.flyover) return;
   const v = document.createElement('video');
@@ -4639,6 +4779,7 @@ function frame(){
   drawProps(true);
 
   drawBench();
+  drawProjectors(t);      // the machine stands on the bench, so it comes after it
   drawPlates(t);
 
   // table items
@@ -4810,6 +4951,7 @@ async function boot(){
   SECTIONS.old = makeSection('old');
   SECTIONS.neu = makeSection('neu');
   initSeamVideo();
+  initProjectors();
   MAP_SPRITE = makeMapSprite();
   USA_SPRITE = makeUsaSprite();
   MONS.crt = makeMonitor('crt');
