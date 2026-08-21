@@ -143,7 +143,7 @@ const BEATS = [
   {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true,
    th:'Own the science, so you can own the quality and the price.',
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir. Labs go digital: scanning, on-screen design, milling.',
-   wall:[{img:'rella', w:250, dx:290, cy:350, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
+   wall:[{img:'rella', w:250, dx:330, cy:470, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
    table:[],
    ped:{obj:'puck', dx:0},
    props:[{kind:'crt', dx:700, lz:75, w:320, label:'CAD REVOLUTION'}]},
@@ -199,7 +199,7 @@ const BEATS = [
    table:[],
    ped:{obj:'millSt', dx:0}},
 
-  {x:24870, y:'2019', t:'BRUXZIR FACTORY',
+  {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true,
    th:'The analog→digital climax: robots make crowns.',
    d:'Automated, AI-designed, robotic monolithic production.',
    wall:[], table:[],
@@ -210,9 +210,9 @@ const BEATS = [
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
    wall:[],
    table:[],
-   st:[{img:'ellen', w:150, dx:-270, lz:120, cap:'Dr. Ellen Paulisick · GL alum'},
-       {img:'nadia', w:150, dx:-10, lz:150, cap:'Dr. Nadia Rodriguez · GL alum'},
-       {img:'bianca', w:150, dx:240, lz:70, cap:'Dr. Bianca Clark · GL alum'}]},
+   st:[{img:'ellen', w:150, dx:-420, lz:120, cap:'Dr. Ellen Paulisick · GL alum'},
+       {img:'nadia', w:150, dx:-180, lz:150, cap:'Dr. Nadia Rodriguez · GL alum'},
+       {img:'bianca', w:150, dx:60, lz:70, cap:'Dr. Bianca Clark · GL alum'}]},
 
   {x:26340, y:'2022', t:'FASTSCAN.IO',
    th:'The front door to the all-digital workflow.',
@@ -1036,8 +1036,8 @@ function drawBeatText(b, focusAmt){
   const tY = segIdx(b.x) === 0 ? 232 : 208;   // the serif era breathes wider under its numerals
   // during a pedestal dolly the headline recomposes: it steps down into the
   // zoomed frame and yields size, so the exhibit stays the hero
-  const fShift = 195 * focusAmt;
-  const fScale = 1 - 0.34 * focusAmt;
+  const fScale = 1 - 0.30 * focusAmt;
+  const fFade = 1 - focusAmt;   // the thesis bows out while the exhibit is the hero
   // flagged landmark beats fly: at distance they rest on the wall in the
   // standard typography, grow to full size at screen center, then settle back
   if (b.fly){
@@ -1055,17 +1055,17 @@ function drawBeatText(b, focusAmt){
       ctx.font = eraFont(170 * ts * fScale * kk * SS, '', seg.font);
       ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
       ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
-      ctx.fillText(b.y, cx, py(140 + fShift, kk));
-      pushHit(cx - 340*kk*SS, py(20 + fShift, kk), 680*kk*SS, py(330, kk) - py(20, kk), {type:'study', beat: BEATS.indexOf(b)});
+      ctx.fillText(b.y, cx, mixN(py(140, kk), H*0.16, focusAmt));
+      pushHit(cx - 340*kk*SS, py(20, kk), 680*kk*SS, py(330, kk) - py(20, kk), {type:'study', beat: BEATS.indexOf(b)});
       ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
-      ctx.fillText(b.t, cx, py(tY + fShift*0.9, kk));
+      ctx.fillText(b.t, cx, mixN(py(tY, kk), H*0.16 + 62*SS, focusAmt));
       try { ctx.letterSpacing = '0px'; } catch(e){}
-      if (near > 0.25 && b.th){
+      if (near > 0.25 && b.th && fFade > 0.05){
         ctx.font = eraFont(30 * (seg.tScale || 1) * kk * SS, 'italic', seg.font);
-        ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
-        drawLines(b._th, cx, py(tY + 54 + fShift*0.85, kk), 38 * kk * SS);
+        ctx.fillStyle = `rgba(${seg.ink},${((near-0.25)/0.75 * 0.72 * fFade).toFixed(3)})`;
+        drawLines(b._th, cx, py(tY + 54, kk), 38 * kk * SS);
       }
       ctx.restore();
     }
@@ -1091,18 +1091,18 @@ function drawBeatText(b, focusAmt){
         ctx.font = eraFont(170 * (seg.tScale||1) * (b._ys||1) * fScale * kk * SS, '', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${0.5 + 0.45*near})`;
         ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 3*SS;
-        ctx.fillText(b.y, cx, py(140 + fShift, kk));
+        ctx.fillText(b.y, cx, mixN(py(140, kk), H*0.16, focusAmt));
       }
       pushHit(cx - 320*kk*SS, py(20, kk), 640*kk*SS, py(330, kk) - py(20, kk), {type:'study', beat: BEATS.indexOf(b)});
       ctx.font = eraFont(46 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*sc*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
-      ctx.fillText(b.t, cx, py((b.minor ? tY + 4 : tY) + fShift*0.9, kk));
+      ctx.fillText(b.t, cx, mixN(py(b.minor ? tY + 4 : tY, kk), H*0.16 + 62*SS, focusAmt));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th){
         ctx.font = eraFont(30 * (b.minor?0.8:1) * (seg.tScale||1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
-        drawLines(b._th, cx, py((b.minor ? tY + 46 : tY + 54) + fShift*0.85, kk), 38 * (b.minor?0.8:1) * kk * SS);
+        if (fFade > 0.05) drawLines(b._th, cx, py(b.minor ? tY + 46 : tY + 54, kk), 38 * (b.minor?0.8:1) * kk * SS);
       }
       ctx.restore();
       ctx.globalAlpha = 1;
@@ -1122,9 +1122,20 @@ function drawBenchDescs(){
     if (b.album) dAmt *= 1 - (albumAnim[i] || 0);
     if (dAmt < 0.02) continue;
     const seg = segAt(b.x);
+    if (b.descWall){
+      // machinery owns this floor: the reading line hangs on the wall instead
+      const kw = k((seg.tz || 680) - 8);
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.font = eraFont(24 * SS, '', seg.font);
+      ctx.fillStyle = `rgba(${seg.ink},${(dAmt * 0.9).toFixed(3)})`;
+      drawLines(b._d, px(b.x, kw), py(556, kw), 33 * SS);
+      ctx.restore();
+      continue;
+    }
     let cw = px(b.x, kf);
     const onTable = TABLES.find(t => b.x >= t.x0 && b.x <= t.x1);
-    let ink = seg.ink, shadow = true, slabDrop = 0;
+    let ink = '218,222,227', shadow = true, slabDrop = 0;   // light ink on the dark bench face
     if (onTable){
       // pinned to the beat's own table span — the line never crosses a gap
       const half = 350*SS;
@@ -1789,8 +1800,8 @@ function drawRec3(t){
   ctx.fillRect(x0, 0, x1 - x0, yBase);
   const sp = USA_SPRITE;
   const w = 470 * kk * SS, h = w * sp.h / sp.w;
-  const cx = px(mid, kk), cyS = py(465, kk);
-  pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp, wx: mid, cy: 465, z: 726, w: 470,
+  const cx = px(mid, kk), cyS = py(505, kk);
+  pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp, wx: mid, cy: 505, z: 726, w: 470,
           cap: '1989 · 95% of cases arrive by mail', beat: BEATS.findIndex(b => b.y === '1989')});
   ctx.drawImage(sp.c, cx - w/2, cyS - h/2, w, h);
   for (const wxc of [REC3_L, REC3_R]){
@@ -2387,7 +2398,7 @@ function initDecor(){
   FIGURES.push({x: 16460, z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
   // mills receding behind the factory line
   // the graduates' mortarboard behind the alumnae portraits
-  PROPS.push({x: 25360, z: 235, kind: 'gradcap', w: 205});
+  PROPS.push({x: 25200, z: 235, kind: 'gradcap', w: 205});
 
   // the welcome still life — placeholder heirlooms of the craft century
   // a tight triangle: the cast jaw is the hero dead under the title,
@@ -4186,6 +4197,14 @@ function frame(){
     else drawLamp(L.x, t, i+1);
   }
   drawDust(t);
+
+  // a focus dolly turns the hall down: everything painted so far recedes,
+  // the headline and the pedestal (drawn after) carry the frame alone
+  const focusA = state.focusBeat >= 0 ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
+  if (focusA > 0.01){
+    ctx.fillStyle = `rgba(3,4,6,${(0.45*focusA).toFixed(3)})`;
+    ctx.fillRect(0, 0, W, H);
+  }
 
   // the floating text reads above everything — walls, tables, even the lamps
   for (let i = 0; i < BEATS.length; i++){
