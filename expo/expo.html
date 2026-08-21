@@ -662,16 +662,41 @@ function attachMouseDriver(el){
     Input.push(d * CFG.wheelGain);
   }, {passive:false});
   let lastX = 0, moved = 0, down = false;
-  el.addEventListener('pointerdown', e => { down = true; moved = 0; lastX = e.clientX; Input.setDragging(true); el.setPointerCapture(e.pointerId); });
+  el.addEventListener('pointerdown', e => {
+    down = true; moved = 0; lastX = e.clientX;
+    const pt = toBuf(e);
+    // the rule takes the pointer before the hall does: dragging its thumb
+    // scrubs the century instead of shoving the bench
+    // arm the scrub, but do not move yet: a press is not a jump. Grabbing the
+    // thumb anywhere on its body keeps that grip point, so it never snaps its
+    // centre under the cursor.
+    if (ruleHit(pt)){
+      const g = ruleGeom();
+      const grabbed = Math.abs(g.at(cam.x) - pt.x) < Math.max(18 * SS, (g.at(cam.x + g.half) - g.at(cam.x - g.half)) / 2);
+      state.ruleDrag = {off: grabbed ? cam.x - g.toWorld(pt.x) : 0};
+    }
+    Input.setDragging(true); el.setPointerCapture(e.pointerId);
+  });
   el.addEventListener('pointermove', e => {
     Input.hover = toBuf(e);
     if (!down) return;
     const dx = e.clientX - lastX; lastX = e.clientX; moved += Math.abs(dx);
+    if (state.ruleDrag){
+      if (moved > 3) ruleSeek(toBuf(e), true, state.ruleDrag.off);
+      Input.push(0);
+      return;
+    }
     // convert screen drag to world velocity kick (grab the bench, z=0)
     Input.push(-dx * 30);
   });
   el.addEventListener('pointerup', e => {
     down = false; Input.setDragging(false);
+    if (state.ruleDrag){
+      const dragged = moved >= 6;
+      state.ruleDrag = null;
+      if (!dragged) ruleSeek(toBuf(e), false);   // a tap glides there instead
+      return;                                    // the rule never opens a year
+    }
     if (moved < 6) Input.act(toBuf(e));  // a click = the button, aimed at a point
   });
   window.addEventListener('keydown', e => {
@@ -1660,6 +1685,36 @@ function initSeamVideo(){
    leaves a tick, and a lit marker rides the rule with the year beside it. It
    bows out whenever the hall has something better to say: the welcome, an open
    reading page, a playing clip, the closing packshot. */
+function ruleGeom(){
+  const x0 = W * 0.13, x1 = W * 0.87;
+  const W0 = INTRO_X, W1 = FIN_X;
+  const seg = segAt(cam.x);
+  // the thumb is as wide as the screen actually shows: the world span visible
+  // at the plane the years live on. That is the honest answer to "what part of
+  // the line am I looking at" — a point could never say it.
+  const half = (W / 2) / (k(seg.tz || seg.z0 || 550) * SS);
+  return {
+    x0, x1, y: H - 40 * SS, W0, W1, half,
+    at:  wx => x0 + (x1 - x0) * Math.max(0, Math.min(1, (wx - W0) / (W1 - W0))),
+    toWorld: sx => W0 + (W1 - W0) * Math.max(0, Math.min(1, (sx - x0) / (x1 - x0))),
+  };
+}
+function ruleHit(pt){
+  if (!pt || state.ruleA < 0.45) return false;
+  const g = ruleGeom();
+  return pt.y > g.y - 26 * SS && pt.y < g.y + 26 * SS &&
+         pt.x > g.x0 - 40 * SS && pt.x < g.x1 + 40 * SS;
+}
+function ruleSeek(pt, instant, grabOff){
+  const g = ruleGeom();
+  const to = g.toWorld(pt.x) + (grabOff || 0);
+  state.introHold = false;
+  if (instant){ cam.x = to; cam.vel = 0; state.glide = null; }
+  else state.glide = to;               // a click glides; the hall never teleports
+  state.focusBeat = -1; cam.zTarget = 0;
+  state.mode = 'live'; state.idle = 0;
+}
+
 function drawProgress(t){
   const busy = state.study || state.inspect || state.clip || state.introHold;
   const hidden = Math.max(state.introFade || 0, state.finFade || 0, state.attract.fade || 0);
@@ -1711,12 +1766,25 @@ function drawProgress(t){
     ctx.lineWidth = 1.4 * SS;
     ctx.beginPath(); ctx.moveTo(bx, y - tall * SS); ctx.lineTo(bx, y + tall * SS); ctx.stroke();
   }
-  // the marker, and the year it is standing in
+  // the thumb: not a point but the stretch of line the screen is showing
   const segNow = segAt(cam.x);
-  const mx = at(cam.x);
-  drawGlow(segNow.light ? segNow.light.pool : '255,220,170', mx, y, 92 * SS, 0.30 * A);
+  const g = ruleGeom();
+  const tx0 = g.at(cam.x - g.half), tx1 = g.at(cam.x + g.half);
+  const mx = (tx0 + tx1) / 2, tw = Math.max(14 * SS, tx1 - tx0);
+  const warm = ruleHit(Input.hover) || state.ruleDrag ? 1 : 0;
+  drawGlow(segNow.light ? segNow.light.pool : '255,220,170', mx, y, tw + 90 * SS, (0.20 + 0.14 * warm) * A);
+  ctx.fillStyle = `rgba(250,244,232,${((0.13 + 0.10 * warm) * A).toFixed(3)})`;
+  ctx.beginPath(); ctx.roundRect(mx - tw/2, y - 9 * SS, tw, 18 * SS, 9 * SS); ctx.fill();
+  ctx.strokeStyle = `rgba(250,244,232,${((0.55 + 0.35 * warm) * A).toFixed(3)})`;
+  ctx.lineWidth = 1.6 * SS;
+  ctx.beginPath(); ctx.roundRect(mx - tw/2, y - 9 * SS, tw, 18 * SS, 9 * SS); ctx.stroke();
+  // the two jaws read as the edges of the frame you are looking through
   ctx.fillStyle = `rgba(250,244,232,${(0.92 * A).toFixed(3)})`;
-  ctx.beginPath(); ctx.roundRect(mx - 1.6 * SS, y - 8 * SS, 3.2 * SS, 16 * SS, 1.6 * SS); ctx.fill();
+  for (const s of [-1, 1]){
+    ctx.beginPath();
+    ctx.roundRect(mx + s * (tw/2) - 1.5 * SS, y - 9 * SS, 3 * SS, 18 * SS, 1.5 * SS);
+    ctx.fill();
+  }
   const nb = nearestBeat(cam.x);
   if (nb.i >= 0 && BEATS[nb.i].y){
     ctx.font = eraFont(17 * SS, '', segNow.font);
@@ -4458,6 +4526,15 @@ function update(dt){
   if (state.splice && inp.action) state.splice.skip = true;
 
   // soft bounds
+  // a click on the rule glides there; any real input cancels the trip
+  if (state.glide != null){
+    if (Math.abs(inp.impulse) > 40) state.glide = null;
+    else {
+      cam.x += (state.glide - cam.x) * Math.min(1, dt * 4.5);
+      cam.vel = 0;
+      if (Math.abs(state.glide - cam.x) < 8){ cam.x = state.glide; state.glide = null; }
+    }
+  }
   if (cam.x < INTRO_X - 1000){ cam.x = INTRO_X - 1000; cam.vel = Math.max(0, cam.vel); }
   if (cam.x > WORLD_END + 300){ cam.x = WORLD_END + 300; cam.vel = Math.min(0, cam.vel); }
 
@@ -4669,7 +4746,8 @@ function frame(){
   drawAttractHint(t);
   // pointer affordance
   if (Input.hover && state.mode === 'live'){
-    document.body.style.cursor = (!state.inspect && hitAt(Input.hover.x, Input.hover.y)) ? 'pointer' : '';
+    document.body.style.cursor = ruleHit(Input.hover) ? 'ew-resize'
+      : ((!state.inspect && hitAt(Input.hover.x, Input.hover.y)) ? 'pointer' : '');
   }
 
   // attract fade
