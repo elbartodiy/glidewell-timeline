@@ -739,7 +739,7 @@ function nearestBeat(x){
 /* the long bench is really a row of separate tables */
 const BENCH_BREAKS = [1980, 3830, 7350, 9250, 13100, 17900, 22280]
   .map(x => ({x, half: 65}));
-BENCH_BREAKS.push({x: 24870, half: 560});   // the BruxZir Factory line replaces the table
+BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
 let TABLES = [];
 let LIGHT_GRID = [];
 function initLights(){
