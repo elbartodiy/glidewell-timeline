@@ -1025,8 +1025,13 @@ const FLOOR_TONES = {
    light slab running column to column — the carpet lies on that slab, the
    era seams land visibly at the slab's edges */
 function drawFloor(){
+  // The floor must begin where the WALL ends, not at some depth behind the
+  // bench: the strip between those two lines is normally hidden by the counter,
+  // but wherever the counter breaks it was left unpainted and the room's dark
+  // background showed through as a black slot — and since the wall's foot and
+  // the counter's edge sit at different depths, that slot opened and closed as
+  // the camera travelled.
   const kSeam = k(CFG.benchDepth);
-  const yTop = py(CFG.benchY + 240, kSeam);
   const kNear = k(-40);
   const T = FLOOR_TONES;
   const spans = [
@@ -1041,6 +1046,9 @@ function drawFloor(){
     [REC4_R, SEGMENTS[3].x1 + 900, T.era[3]],
   ];
   for (const [a, b, tone] of spans){
+    const segF = segAt((a + b) / 2);
+    const yTop = Math.min(py(CFG.benchY + 240, kSeam),
+                          py(1080, k((segF.z0 || 550) - 8)));
     const xTL = px(a, kSeam), xTR = px(b, kSeam);
     const xBL = px(a, kNear), xBR = px(b, kNear);
     if (Math.max(xTR, xBR) < 0 || Math.min(xTL, xBL) > W) continue;
