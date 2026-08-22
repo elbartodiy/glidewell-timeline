@@ -767,14 +767,10 @@ function initTables(){
   // every pedestal claims a wide gap of its own, centered on it
   for (const b of BEATS)
     if (b.ped) BENCH_BREAKS.push({x: b.x + (b.ped.dx ?? -430), half: b.ped.gapHalf || 330});
-  // a plate brings its own counter: the hall's must END where the plate starts,
-  // or the plate lands mid-run and cuts a continuous worktop in half. A narrow
-  // break at each end turns the seam into a real edge — nothing to feather.
-  for (const p of PLATES){
-    const half = (p.sw || 1390) / 2;
-    BENCH_BREAKS.push({x: p.x - half - 26, half: 26});
-    BENCH_BREAKS.push({x: p.x + half + 26, half: 26});
-  }
+  // A plate needs NO break of its own: it is painted after the bench and simply
+  // covers it, and beyond its edges the hall's counter continues on exactly the
+  // same line in exactly the same material. Breaks here only opened holes just
+  // outside the picture, which read as the counter behind it jutting out.
   // small breaks inside a pedestal zone would skew its centering — drop them
   const wide = BENCH_BREAKS.filter(v => v.half > 200);
   for (let i = BENCH_BREAKS.length - 1; i >= 0; i--){
