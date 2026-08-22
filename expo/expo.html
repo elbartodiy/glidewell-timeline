@@ -330,18 +330,23 @@ function mixN(a,b,t){ return a+(b-a)*t; }
 function wallZAt(x){
   return segAt(x).z0;
 }
-/* THE RIVET LAW. Every OBJECT hung on the wall MOVES with the wall:
-   photos, plasmas, banners take their horizontal screen anchor from
-   wallSX and nowhere else — projected through the wall's own depth, so
-   no exhibit can crawl along the masonry, columns or panels while the
-   camera travels. Size and height keep the era's text plane (equal
-   framing across eras) — only motion is riveted. Bare typography (years,
-   captions, theses) stays on the era text plane: type over a plain wall
-   shows no crawl, and its spacing is composed there. auditRivets()
-   (?audit in the URL) verifies the law against the real rendered frame. */
+/* THE RIVET LAW — one plane, not two.
+   Everything hung on the wall (years, captions, photos, plasmas, banners)
+   takes its horizontal anchor from the era's EXHIBITION PLANE, the same
+   plane the composition is designed on. Two planes always drift apart: the
+   wall in era 4 stands at z=1400 while the type sits at 680, so a screen
+   anchored to the masonry and a year anchored to the type separate by 180 px
+   for every 1000 units the camera travels — the year stays put and its own
+   plasma slides across the neighbouring exhibit. Chosen deliberately: drift
+   against the physical wall is invisible where that wall is featureless
+   (era 4 is flat white), while drift between a year and its exhibit destroys
+   the composition. Anything mounted ON a recreation panel carries `pz` and is
+   pinned to that panel instead. auditRivets() (?audit) checks the law against
+   the real rendered frame. */
+function exhibitZ(wx){ const s = segAt(wx); return (s.tz || s.z0 || 550) - 8; }
 function wallSX(wx, dxWorld, kSpread){
-  const kw = k(wallZAt(wx) - 8);
-  return px(wx, kw) + (dxWorld || 0) * (kSpread || kw) * SS;
+  const ke = k(exhibitZ(wx));
+  return px(wx, ke) + (dxWorld || 0) * (kSpread || ke) * SS;
 }
 /* Rivet audit: while RIVET_PROBE is set, draw passes register their real
    rendered anchors here; auditRivets() renders the hall twice per beat with
@@ -1727,7 +1732,7 @@ function drawProjectors(t, phase){
     const seg = segAt(p.x);
     const wz = (seg.z0 || 550) - 6;
     const kk = k(wz);
-    const sx = wallSX(p.x, p.wallDX, kk);
+    const sx = wallSX(p.x, p.wallDX, kk);   // exhibition plane, like every wall thing
     // the gate is sized to the reel AFTER its black ears are cut: a 4:3 film
     // gets a 4:3 rectangle, fitted inside the same box, never stretched
     const c0 = p.crop || {x0: 0, x1: 1};
@@ -1848,6 +1853,40 @@ function projMachine(p, t, lamp, mxp, myp, bw, bh, kp){
   ctx.fillStyle = `rgba(255,246,224,${(0.85 * lamp).toFixed(2)})`;
   ctx.beginPath(); ctx.arc(mxp, myp - bh * 0.45, 5 * kp * SS, 0, 7); ctx.fill();
   ctx.restore();
+}
+
+/* ---------------- MUSIC ----------------
+   One track for the whole hall to begin with. Kept deliberately quiet: this is
+   room tone, not a soundtrack, and it must never fight a speaking voice — so it
+   ducks hard whenever a clip is playing and idles when nobody is watching.
+   Browsers refuse sound before a gesture, so it waits for the first touch. */
+const MUSIC = {src: 'audio/mus_era1.m4a', vol: 0.34, duck: 0.18, cur: 0, el: null};
+function initMusic(){
+  const a = new Audio(MUSIC.src);
+  a.loop = true; a.preload = 'auto'; a.volume = 0;
+  MUSIC.el = a;
+  const start = () => {
+    a.play().catch(() => {});
+    window.removeEventListener('pointerdown', start);
+    window.removeEventListener('keydown', start);
+    window.removeEventListener('wheel', start);
+  };
+  window.addEventListener('pointerdown', start);
+  window.addEventListener('keydown', start);
+  window.addEventListener('wheel', start, {passive: true});
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) a.pause(); else a.play().catch(() => {});
+  });
+}
+function updateMusic(dt){
+  const a = MUSIC.el; if (!a) return;
+  // a speaking voice always wins; the attract loop plays a little lower still
+  let want = MUSIC.vol;
+  if (state.clip) want *= MUSIC.duck;
+  if (state.mode === 'attract') want *= 0.75;
+  want *= 1 - (state.attract.fade || 0);
+  MUSIC.cur += (want - MUSIC.cur) * Math.min(1, dt * 2.2);
+  a.volume = Math.max(0, Math.min(1, MUSIC.cur));
 }
 
 function initSeamVideo(){
@@ -3567,7 +3606,7 @@ function drawPlasmaPanel(b, t){
   const p = b.plasma;
   const kk = k((segAt(b.x).tz || wallZAt(b.x)) - 14);
   const sx = wallSX(b.x, p.dx, kk), sy = py(p.cy, kk);
-  rivet('plasma:' + b.x, sx, k(wallZAt(b.x) - 8));
+  rivet('plasma:' + b.x, sx, k(exhibitZ(b.x)));
   const w = p.w * kk * SS, h = w * 0.58;
   if (sx < -w || sx > W + w) return;
   pushHit(sx - w/2, sy - h/2, w, h, {type:'focus', beat: BEATS.indexOf(b), anchor: b.x + p.dx});
@@ -3868,7 +3907,7 @@ function drawBanners(t){
     const zB = (segAt(bn.x).tz || wallZAt(bn.x)) - 25;
     const kk = k(zB);
     const sx = wallSX(bn.x);
-    rivet('banner:' + bn.x, sx, k(wallZAt(bn.x) - 8));
+    rivet('banner:' + bn.x, sx, k(exhibitZ(bn.x)));
     if (sx < -700 || sx > W + 700) continue;
     const h = bn.w * bn.sp.h / bn.sp.w;
     const cy = (bn.cy || 560) + 6*Math.sin(t*0.5 + bn.x);   // a breath of suspension
@@ -4560,6 +4599,7 @@ function update(dt){
   const inp = Input.consume();
   state.time += dt;
   state.dt = dt;
+  updateMusic(dt);
 
   if (inp.anyInput){
     state.idle = 0;
@@ -4815,7 +4855,7 @@ function frame(){
       const wz = it.pz != null ? it.pz : (segAt(b.x).tz || wallZAt(b.x)) - 12;
       const ax = it.pz != null ? px(b.x + it.dx, k(it.pz))
                                : wallSX(b.x, it.dx, k(wz));
-      rivet('wall:' + (it.img || '') + ':' + b.x, ax, k(it.pz != null ? it.pz : wallZAt(b.x) - 8));
+      rivet('wall:' + (it.img || '') + ':' + b.x, ax, k(it.pz != null ? it.pz : exhibitZ(b.x)));
       drawSprite(sp, b.x + it.dx, it.cy, wz, it.w, it.rot || 0, null,
                  {type:'photo', sp, wx: b.x + it.dx, cy: it.cy, z: wz, w: it.w, cap: it.cap, link: it.link, beat: i}, ax);
       if (it.cap){
@@ -5016,6 +5056,7 @@ async function boot(){
   SECTIONS.neu = makeSection('neu');
   initSeamVideo();
   initProjectors();
+  initMusic();
   MAP_SPRITE = makeMapSprite();
   USA_SPRITE = makeUsaSprite();
   MONS.crt = makeMonitor('crt');
