@@ -810,8 +810,8 @@ function initTables(){
   }
   TABLES = [];
   for (const seg of SEGMENTS){
-    const bx0 = (seg.x0 <= -2500 && !seg.bInsetL) ? seg.x0 : seg.x0 + (seg.bInsetL || 140);
-    const bx1 = (seg.x1 >= WORLD_END + 800 && !seg.bInsetR) ? seg.x1 : seg.x1 - (seg.bInsetR || 140);
+    const bx0 = (seg.x0 <= -2500 && !seg.bInsetL) ? seg.x0 : seg.x0 + (seg.bInsetL != null ? seg.bInsetL : -110);
+    const bx1 = (seg.x1 >= WORLD_END + 800 && !seg.bInsetR) ? seg.x1 : seg.x1 - (seg.bInsetR != null ? seg.bInsetR : -110);
     let start = bx0;
     for (const br of BENCH_BREAKS.filter(v => v.x + v.half > bx0 && v.x - v.half < bx1).sort((a,b)=>a.x-b.x)){
       const L = br.x - br.half, R = br.x + br.half;
@@ -1860,7 +1860,7 @@ function projMachine(p, t, lamp, mxp, myp, bw, bh, kp){
    room tone, not a soundtrack, and it must never fight a speaking voice — so it
    ducks hard whenever a clip is playing and idles when nobody is watching.
    Browsers refuse sound before a gesture, so it waits for the first touch. */
-const MUSIC = {src: 'audio/mus_era1.m4a', vol: 0.34, duck: 0.18, cur: 0, el: null};
+const MUSIC = {src: 'audio/mus_hall.m4a', vol: 0.30, duck: 0.18, cur: 0, el: null};
 function initMusic(){
   const a = new Audio(MUSIC.src);
   a.loop = true; a.preload = 'auto'; a.volume = 0;
@@ -3103,8 +3103,10 @@ function initDecor(){
     PROPS.push({x: INTRO_X - 5,   z: 45,  kind: 'jaw1', w: 135});
     PROPS.push({x: INTRO_X + 150, z: 80, kind: 'plaster', w: 160, flip: true});
   }
-  PROPS.push({x: FACT_X - 120, z: 620, kind: 'mill', w: 470, mid: true});
-  PROPS.push({x: FACT_X + 330, z: 700, kind: 'mill', w: 440, mid: true});
+  // one line, one depth: two mills standing at different z drifted against each
+  // other and against the arms, and the whole bank stopped reading as one machine
+  PROPS.push({x: FACT_X - 120, z: 340, kind: 'mill', w: 470, mid: true});
+  PROPS.push({x: FACT_X + 330, z: 340, kind: 'mill', w: 440, mid: true});
   // the symposium audience at the finale — spaced so the stage stays visible
   const AUD = [[SHIFT(28960), 390, 640], [SHIFT(29060), 470, 615], [SHIFT(29120), 300, 660]];
   AUD.forEach(([ax, az, ah], i) => FIGURES.push({x: ax, z: az, h: ah, sprite: makeFigure(60 + i)}));
