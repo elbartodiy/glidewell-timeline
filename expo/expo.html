@@ -1697,7 +1697,8 @@ let SEAM_VIDEO = null;
    lamp breathes, the gate weaves a hair, and the throw is keystoned because
    the machine sits below the centre of its own picture. */
 const PROJECTORS = [
-  {x: SHIFT(12590), wallDX: 240, w: 1560, cy: 470, src: 'media/timeline5.mp4', throwZ: 210},
+  {x: SHIFT(12590), wallDX: 240, w: 1560, cy: 470, src: 'media/jim_glass.mp4', throwZ: 210,
+   clip: {name: 'Jim Glidewell', label: 'on the bench that started it', src: 'media/jim_glass.mp4'}},
 ];
 function initProjectors(){
   for (const p of PROJECTORS){
@@ -1731,8 +1732,9 @@ function drawProjectors(t, phase){
     // a kiosk PC should not decode a reel nobody is looking at
     const near = Math.abs(p.x - cam.x) < 3600;
     if (p.v){
-      if (near && p.v.paused) p.v.play().catch(()=>{});
-      else if (!near && !p.v.paused) p.v.pause();
+      const wanted = near && !state.clip;   // the spoken cut takes over from the loop
+      if (wanted && p.v.paused) p.v.play().catch(()=>{});
+      else if (!wanted && !p.v.paused) p.v.pause();
     }
     if (!near) continue;
     const seg = segAt(p.x);
@@ -1837,7 +1839,8 @@ function drawProjectors(t, phase){
     ctx.restore();
 
     pushHit(sx - vw / 2, sy - vh / 2, vw, vh,
-            {type: 'focus', beat: nearestBeat(p.x).i, anchor: p.x});
+            p.clip ? {type: 'clip', media: p.clip, wx: p.x}
+                   : {type: 'focus', beat: nearestBeat(p.x).i, anchor: p.x});
   }
 }
 /* the machine stands ON the bench, so it is painted after it — while the
