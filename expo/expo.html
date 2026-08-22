@@ -933,6 +933,7 @@ function drawWall(){
     const swx = (PHOTO_SKIN && seg === SEGMENTS[0] && TEX.wall1_dark) ? wallSwitchX() : -1e9;
     for (; px(wx, k(wallZAt(wx))) < sx1 + 2; wx += tileW){
       const kk = k(wallZAt(wx + tileW/2));   // per-tile depth: smooth recession
+      const straddles = swx > wx && swx < wx + tileW;
       const texT = (wx + tileW/2 < swx) ? TEX.wall1_dark : tex;
       const yBot = seg.floor ? Math.min(yBase, py(1080, kk)) : yBase;
       if (seg.floor && wx + tileW > PURE_X){
@@ -940,6 +941,18 @@ function drawWall(){
         ctx.fillStyle = '#e6e7e9';
         ctx.fillRect(xA, 0, px(wx + tileW, kk) - xA + 1, yBot);
         if (wx < PURE_X) ctx.drawImage(texT, px(wx, kk), 0, (PURE_X - wx) * kk * SS * 1.03, yBot);
+      } else if (straddles){
+        // the material changes mid-tile: draw the tile twice, each half clipped
+        // to its own side of the line, so the joint is a butt joint
+        const xs = px(swx, kk), tw = tileW * kk * SS * 1.03, tx = px(wx, kk);
+        ctx.save();
+        ctx.beginPath(); ctx.rect(tx - 2, 0, Math.max(0, xs - tx) + 2, yBot); ctx.clip();
+        ctx.drawImage(TEX.wall1_dark, tx, 0, tw, yBot);
+        ctx.restore();
+        ctx.save();
+        ctx.beginPath(); ctx.rect(xs, 0, Math.max(0, tx + tw - xs) + 2, yBot); ctx.clip();
+        ctx.drawImage(tex, tx, 0, tw, yBot);
+        ctx.restore();
       } else {
         ctx.drawImage(texT, px(wx, kk), 0, tileW * kk * SS * 1.03, yBot);
       }
@@ -3101,10 +3114,14 @@ function snapPlatesToTables(){
   }
 }
 function clearPlateBays(){
+  // a plate owns its bay, and so does a piece of furniture: nothing of the
+  // hall's own scatter may stand inside either, or a pinned sheet ends up
+  // glued to the face of a cabinet
   const bays = PLATES.map(p => {
     const half = (p.sw || 1390) / 2 + 40;      // world units at the bench plane
     return [p.x - half, p.x + half];
   });
+  for (const u of TALL_UNITS) bays.push([u.x - u.w / 2 - 30, u.x + u.w / 2 + 30]);
   if (!bays.length) return;
   const inBay = x => bays.some(([a, b]) => x > a && x < b);
   for (let i = PROPS.length - 1; i >= 0; i--) if (inBay(PROPS[i].x)) PROPS.splice(i, 1);
@@ -3178,7 +3195,8 @@ function wallSwitchX(){
   // the analog century keeps the dark boards; the 1970 lab's plaster starts
   // ahead of the founding pedestal, so that pedestal stands against the new
   // wall rather than on the threshold of it
-  return bayStart(0) + CUTS[0].w / 2;   // behind the drawer bank, where no one sees it
+  const u = TALL_UNITS[0];
+  return u ? u.x - u.w / 2 : bayStart(0);   // flush with the drawer bank's edge
 }
 function applyPhotoTextures(){
   TEX.wall1_dark = TEX.wall1;          // kept for the years before the 1970 bench
