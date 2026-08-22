@@ -2008,7 +2008,7 @@ function drawDebug(){
    stands exactly where the wall changes material, so the change happens behind
    furniture instead of down an open joint. */
 const TALL_UNITS = [
-  {x: SHIFT(1650), w: 560, cols: 2, rows: 5, top: 150},
+  {x: bayStart(0) + CUTS[0].w / 2, w: 560, cols: 2, rows: 5, top: 150},
 ];
 function drawTallUnits(){
   for (const u of TALL_UNITS){
@@ -3178,7 +3178,7 @@ function wallSwitchX(){
   // the analog century keeps the dark boards; the 1970 lab's plaster starts
   // ahead of the founding pedestal, so that pedestal stands against the new
   // wall rather than on the threshold of it
-  return SHIFT(1650);
+  return bayStart(0) + CUTS[0].w / 2;   // behind the drawer bank, where no one sees it
 }
 function applyPhotoTextures(){
   TEX.wall1_dark = TEX.wall1;          // kept for the years before the 1970 bench
