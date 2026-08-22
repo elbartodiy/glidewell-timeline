@@ -41,10 +41,10 @@ PRESETS = {
                       grain=0.012, joint_every=300, joint_dark=0.20, joint_soft=2),
     # 1990s–2000s: matte office board
     'board90':   dict(base=(168, 171, 166), mottle=0.030, speck=0.028, speck_thr=1.40,
-                      grain=0.010, joint_every=470, joint_dark=0.18, joint_soft=2),
+                      grain=0.010, joint_every=0, joint_dark=0.18, joint_soft=2),
     # the white era
     'white20':   dict(base=(226, 229, 232), mottle=0.018, speck=0.014, speck_thr=1.70,
-                      grain=0.007, joint_every=600, joint_dark=0.10, joint_soft=2),
+                      grain=0.007, joint_every=0, joint_dark=0.10, joint_soft=2),
 }
 
 
