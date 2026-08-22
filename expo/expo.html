@@ -55,11 +55,10 @@ const BEATS = [
   {x:2450, y:'1970', t:'FOUNDED', tier:1, fly:true,
    th:'One man, one bench — betting that affordable was a business model.',
    d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
-   wall:[{img:'jim1970', w:420, dx:440, cy:400, hero:true}],
+   wall:[{img:'jim1970', w:420, dx:1080, cy:400, hero:true}],
    table:[],
-   album:{dx:-650, lz:85, w:300, title:'THE FAMILY ALBUM',
-          photos:[['father42','jim15'],['jim18','jim1970']]},
-   ped:{obj:'logo1970', dx:0}},
+   album:{dx:-980, lz:85, w:300, title:'THE FAMILY ALBUM',
+          photos:[['father42','jim15'],['jim18','jim1970']]}},
 
   {x:3450, y:'1970s', t:'PFM ERA', plaque:true,
    th:'The craft baseline every later machine is measured against.',
@@ -245,8 +244,8 @@ const CUTS = [
   // the threshold: the drawer bank and the change of wall need a bay of their
   // own, or they lean into the era that follows
   {at: 1900, w: 700, on: true},
-  // the generated 1970 bench — part of the room now; ?noplate closes the bay
-  {at: 3950, w: 2320, on: !/[?&]noplate/.test(location.search)},
+  // the founding: Jim's own bench, standing where the year stands
+  {at: 2450, w: 2320, on: !/[?&]noplate/.test(location.search)},
 ];
 function SHIFT(x){
   let s = 0;
@@ -267,6 +266,11 @@ function applyCut(){
   // only raw literals move here: SEGMENTS and the world anchors were already
   // filtered through SHIFT when the script was parsed
   for (const b of BEATS) b.x = SHIFT(b.x);
+  // the founding beat owns the bay its bench stands in: it sits at its centre
+  if (CUTS[1].on){
+    const f = BEATS.find(b => b.y === '1970');
+    if (f) f.x = bayStart(1) + CUTS[1].w / 2;
+  }
   const rekey = obj => {
     const moved = {};
     for (const k0 in obj) moved[String(SHIFT(+k0))] = obj[k0];
