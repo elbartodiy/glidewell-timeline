@@ -784,6 +784,16 @@ function initLights(){
       LIGHT_GRID.push({x: lx, seg});
     }
   }
+  // a year is an exhibit: its lamp hangs over it, not beside it
+  for (const b of BEATS){
+    if (b.minor || b.under || b.plaque || b.ped) continue;
+    let best = -1, bd = 1e9;
+    for (let i = 0; i < LIGHT_GRID.length; i++){
+      const d = Math.abs(LIGHT_GRID[i].x - b.x);
+      if (d < bd){ bd = d; best = i; }
+    }
+    if (best >= 0 && bd < 620) LIGHT_GRID[best].x = b.x;
+  }
   LIGHT_GRID.push({x: INTRO_X, seg: SEGMENTS[0]});   // the welcome lamp, dead over the inscription
   LIGHT_GRID.push({x: FIN_X, seg: SEGMENTS[3]});     // and its mirror over the finale
 }
@@ -2021,7 +2031,7 @@ function drawDebug(){
    stands exactly where the wall changes material, so the change happens behind
    furniture instead of down an open joint. */
 const TALL_UNITS = [
-  {x: bayStart(0) + CUTS[0].w / 2, w: 560, cols: 2, rows: 5, top: 150},
+  {x: bayStart(0) + CUTS[0].w / 2, w: 440, cols: 2, rows: 5, top: 150},
 ];
 function drawTallUnits(){
   for (const u of TALL_UNITS){
@@ -3121,11 +3131,15 @@ function clearPlateBays(){
     const half = (p.sw || 1390) / 2 + 40;      // world units at the bench plane
     return [p.x - half, p.x + half];
   });
-  for (const u of TALL_UNITS) bays.push([u.x - u.w / 2 - 30, u.x + u.w / 2 + 30]);
+  for (const u of TALL_UNITS) bays.push([u.x - u.w / 2 - 150, u.x + u.w / 2 + 150]);
   if (!bays.length) return;
   const inBay = x => bays.some(([a, b]) => x > a && x < b);
   for (let i = PROPS.length - 1; i >= 0; i--) if (inBay(PROPS[i].x)) PROPS.splice(i, 1);
-  for (let i = SHEETS.length - 1; i >= 0; i--) if (inBay(SHEETS[i].x)) SHEETS.splice(i, 1);
+  // a sheet is cleared if any part of it reaches into the bay, not merely its pin
+  for (let i = SHEETS.length - 1; i >= 0; i--){
+    const s = SHEETS[i], hw = (s.w || 160) * 0.6;
+    if (inBay(s.x) || inBay(s.x - hw) || inBay(s.x + hw)) SHEETS.splice(i, 1);
+  }
   for (let i = FIGURES.length - 1; i >= 0; i--) if (inBay(FIGURES[i].x)) FIGURES.splice(i, 1);
   for (let i = FG_ITEMS.length - 1; i >= 0; i--) if (inBay(FG_ITEMS[i].x)) FG_ITEMS.splice(i, 1);
 }
@@ -3196,7 +3210,9 @@ function wallSwitchX(){
   // ahead of the founding pedestal, so that pedestal stands against the new
   // wall rather than on the threshold of it
   const u = TALL_UNITS[0];
-  return u ? u.x - u.w / 2 : bayStart(0);   // flush with the drawer bank's edge
+  // the bank is made of the craft era's own wood, so it stands ON the dark
+  // wall and the plaster begins at its far edge
+  return u ? u.x + u.w / 2 : bayStart(0);
 }
 function applyPhotoTextures(){
   TEX.wall1_dark = TEX.wall1;          // kept for the years before the 1970 bench
