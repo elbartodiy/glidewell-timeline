@@ -1,140 +1,80 @@
 # МУЗЫКА ЗАЛА — промпты для Suno
 
-## Сквозные правила (почему они важны)
+Шесть промптов, **каждый самодостаточен и уложен в лимит 500 знаков** — копируй
+целиком, ничего добавлять не надо. Все в одной тональности (A minor) и темпе
+(68 BPM): зал непрерывный, эпохи сменяются на ходу камеры, движок сводит их
+кроссфейдом — при разных тональностях стык фальшивит, при разных темпах
+спотыкается. Один ключ и один пульс = любые два трека накладываются в любой
+момент и звучат как одна композиция, сменившая инструмент.
 
-Все шесть треков живут в **одной тональности (A minor) и в одном темпе (68 BPM)**.
-Это не педантизм: зал — непрерывное пространство, эпохи переходят одна в другую
-на ходу камеры, и движок будет делать кроссфейд. Разные тональности на стыке
-дадут фальшь, разные темпы — спотыкание. Один ключ и один пульс означают, что
-любые два трека можно наложить в любой момент, и это будет звучать как одна
-композиция, меняющая инструмент.
-
-**Технический блок — добавлять в КАЖДЫЙ промпт (Style / Prompt):**
-
-```
-Instrumental only, no vocals, no lyrics, no choir. 68 BPM, key A minor.
-Extremely sparse and quiet — background music for a museum room that must never
-compete with a speaking voice. No builds, no drops, no crescendos, no drum
-fills, no cinematic hits: steady dynamics from the first bar to the last.
-Loopable — start and end on the same sustained chord, no fade in, no fade out,
-no silence at either end. Warm, wide, patient.
-```
-
-**Exclude styles (если Suno спросит):**
-`vocals, singing, choir, EDM, dubstep, trap, big orchestral swells, trailer
-percussion, hip-hop drums, aggressive bass`
-
-Длительность: 2–3 минуты хватит, движок зациклит.
+Длительность 2–3 минуты, движок зациклит. Файлы кидай в `expo/audio/`.
 
 ---
 
-## 1. WELCOME / ATTRACT — «до начала времени»
-Стартовый кадр: логотип под потолком, натюрморт под лампой, зал ждёт.
-Музыки почти нет — только воздух комнаты и одно дыхание аккорда.
+## 1 · WELCOME / ATTRACT → `mus_welcome.mp3`
+
+<sub>401/500 знаков</sub>
 
 ```
-A single sustained minor chord on a felt-muted upright piano, so quiet it is
-almost the room itself. Underneath: the low hum of an old tungsten lamp and
-faint air. One cello note enters every eight bars and decays. Nothing else —
-no melody yet, no rhythm at all. The sound of a workshop before anyone arrives.
-Analog tape warmth, gentle vinyl noise floor.
+Instrumental, no vocals. 68 BPM, A minor. Sparse, quiet museum background: steady dynamics, no builds or drops, loopable, no fade in or out. One sustained minor chord on a felt-muted upright piano, almost the room itself; a low tungsten hum and faint air beneath; one cello note every eight bars, decaying. No melody, no rhythm. A workshop before anyone arrives. Analog tape warmth, vinyl noise floor.
 ```
 
 ---
 
-## 2. ЭПОХА 1 · 1907–1979 — РЕМЕСЛО
-Дерево, вольфрам, руки. Пульс здесь — не барабан, а сама работа.
+## 2 · 1907–1979 · РЕМЕСЛО → `mus_era1.mp3`
+
+<sub>416/500 знаков</sub>
 
 ```
-Slow chamber miniature for felt upright piano and one solo cello, recorded in a
-small wooden room. The pulse is not a drum kit but the work itself: a soft
-metronome tick and the occasional faint tap of a hand tool on a bench, low in
-the mix, like a clock in another room. Warm tungsten-lit melancholy, patient and
-unhurried, the dignity of a craft done by hand. 1950s tape recording, wow and
-flutter, brushed felt hammers, no reverb tail longer than the room.
+Instrumental, no vocals. 68 BPM, A minor. Sparse, quiet museum background: steady dynamics, no builds or drops, loopable, no fade in or out. Slow chamber miniature: felt upright piano and one cello in a small wooden room. The pulse is the work itself — a soft metronome tick and a faint hand-tool tap on a bench, low in the mix. Warm tungsten melancholy, patient, hand-made. 1950s tape, wow and flutter. No drum kit.
 ```
 
 ---
 
-## 3. ЭПОХА 2 · 1979–1989 — МАСШТАБ ПО ПОЧТЕ
-Девять лабораторий сходятся в одну, кейсы едут по стране. Тепло, но уже машина.
+## 3 · 1979–1989 · МАСШТАБ ПО ПОЧТЕ → `mus_era2.mp3`
+
+<sub>414/500 знаков</sub>
 
 ```
-Warm analog optimism at walking pace: a Juno-style polysynth pad, a soft Rhodes
-electric piano playing two alternating chords, a quiet shaker keeping time.
-Hopeful but restrained — the sound of a small operation discovering it can reach
-the whole country by post. Slight tape wobble, cassette hiss, gentle chorus on
-the Rhodes. No lead melody, no snare, nothing bright or brassy.
+Instrumental, no vocals. 68 BPM, A minor. Sparse, quiet museum background: steady dynamics, no builds or drops, loopable, no fade in or out. Warm analog optimism at walking pace: Juno-style polysynth pad, soft Rhodes turning between two chords, a quiet shaker. Hopeful but restrained — a small lab finding it can reach the whole country by post. Tape wobble, cassette hiss, gentle chorus. No lead melody, no snare.
 ```
 
 ---
 
-## 4. ЭПОХА 3 · 1989–2009 — ЦИФРА ПРИХОДИТ НА ВЕРСТАК
-Зелёные CRT, серые панели, первые сканы. Прохладнее, любопытнее.
+## 4 · 1989–2009 · ЦИФРА НА ВЕРСТАКЕ → `mus_era3.mp3`
+
+<sub>415/500 знаков</sub>
 
 ```
-Early-digital ambience, cool and curious: FM bell tones in the style of a DX7,
-a slow four-note arpeggio on a soft digital pad, and a very low, very dry drum
-machine pulse — barely audible, more felt than heard. The feeling of a green CRT
-glowing in a dim laboratory at night; wonder without excitement. Dusty, slightly
-detuned, faint bit-crush on the bells. No bass drops, no acid lines, no vocals.
+Instrumental, no vocals. 68 BPM, A minor. Sparse, quiet museum background: steady dynamics, no builds or drops, loopable, no fade in or out. Early-digital ambience, cool and curious: DX7-style FM bells, a slow four-note arpeggio on a soft digital pad, a very low dry drum-machine pulse, more felt than heard. A green CRT glowing in a dim night laboratory; wonder without excitement. Dusty, detuned, faint bit-crush.
 ```
 
 ---
 
-## 5. ЭПОХА 4 · 2010–2026 — БЕЛЫЙ СВЕТ, МАШИНЫ, ТОЧНОСТЬ
-Белый камень, роботы, ИИ. Чисто и тепло одновременно — иначе выйдет холодная реклама.
+## 5 · 2010–2026 · БЕЛЫЙ СВЕТ → `mus_era4.mp3`
+
+<sub>409/500 знаков</sub>
 
 ```
-Clean minimal ambient: glassy celeste and marimba figures repeating in gentle
-interlocking patterns, over a wide granular pad that breathes very slowly. Warm
-despite the precision — the room is white and bright, but the music must stay
-human. Occasional single piano note, far away, with long decay. Nothing
-percussive, nothing clinical, no synth arpeggios racing, no risers.
+Instrumental, no vocals. 68 BPM, A minor. Sparse, quiet museum background: steady dynamics, no builds or drops, loopable, no fade in or out. Clean minimal ambient: glassy celeste and marimba interlocking gently over a wide granular pad that breathes slowly. Warm despite the precision — white and bright, but human, never clinical. A distant piano note now and then, long decay. Nothing percussive, no risers.
 ```
 
 ---
 
-## 6. ФИНАЛ · 2026 — ЗАМЫКАНИЕ ДУГИ
-Композиционная идея: **та же мелодия, что во welcome, но сыгранная палитрой
-последней эпохи.** Век прошёл — тема осталась, сменился инструмент. Это самый
-дешёвый и самый сильный способ дать зрителю почувствовать замкнувшийся круг.
+## 6 · ФИНАЛ 2026 → `mus_finale.mp3`
+
+<sub>420/500 знаков</sub>
 
 ```
-The same simple minor motif as the opening piece, but now played on celeste and
-soft glass-like synth over a wide warm pad, with the cello returning underneath
-in its lowest register. Resolved and quiet, not triumphant — an arc closing, not
-a fanfare. Long decay, generous space, the last chord held and unresolved enough
-to begin again.
+Instrumental, no vocals. 68 BPM, A minor. Sparse, quiet museum background: steady dynamics, no builds or drops, loopable, no fade in or out. The opening motif returns, now on celeste and soft glass synth over a wide warm pad, cello underneath in its lowest register. Resolved and quiet, not triumphant — an arc closing, not a fanfare. Long decay, generous space, a final chord held just unresolved enough to begin again.
 ```
-
-**Как получить именно ту же мелодию:** сгенери сначала welcome (п.1), затем в
-Suno сделай на него **Cover** с промптом финала — тема сохранится, палитра
-сменится. Если Cover даст не то, просто пришли welcome-трек: движок может сам
-использовать его в финале с другим микшированием.
 
 ---
 
-## Что мне нужно от тебя
+## Что сделаю я, когда файлы появятся
 
-Готовые файлы в `expo/audio/` с такими именами (mp3, 128–192 kbps достаточно):
-
-| Файл | Где играет |
-|---|---|
-| `mus_welcome.mp3` | стартовый кадр и attract-режим |
-| `mus_era1.mp3` | 1907–1979 |
-| `mus_era2.mp3` | 1979–1989 |
-| `mus_era3.mp3` | 1989–2009 |
-| `mus_era4.mp3` | 2010–2026 |
-| `mus_finale.mp3` | финальный натюрморт |
-
-## Что сделаю я
-
-- Кроссфейд между эпохами по положению камеры, а не по щелчку: трек эпохи
-  подмешивается по мере входа в неё, длина перехода — примерно ширина порога
-  рекреации, так что смена материала зала и смена звука совпадут.
-- **Дакинг:** когда играет речь спикера или плёнка проектора, музыка уходит
-  вниз на 12–14 dB и возвращается после. Иначе музыка съест голос.
-- Общая громкость тихая по умолчанию, с одной точкой настройки.
-- Автозапуск по первому касанию (браузеры не дают звук до жеста) и пауза, когда
-  киоск уходит в простой без зрителя.
+- Кроссфейд между эпохами по положению камеры, длиной примерно в порог рекреации —
+  смена материала зала и смена звука совпадут.
+- **Дакинг:** речь спикера или плёнка проектора опускают музыку на 12–14 dB.
+- Тихо по умолчанию, одна точка настройки громкости.
+- Автозапуск по первому касанию (браузеры не дают звук раньше) и пауза на простое.
