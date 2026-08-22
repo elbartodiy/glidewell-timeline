@@ -245,8 +245,8 @@ const CUTS = [
   // the threshold: the drawer bank and the change of wall need a bay of their
   // own, or they lean into the era that follows
   {at: 1900, w: 700, on: true},
-  // the generated 1970 bench
-  {at: 3950, w: 2320, on: /[?&]plate/.test(location.search)},
+  // the generated 1970 bench — part of the room now; ?noplate closes the bay
+  {at: 3950, w: 2320, on: !/[?&]noplate/.test(location.search)},
 ];
 function SHIFT(x){
   let s = 0;
@@ -3066,7 +3066,8 @@ const PROPS = [], SHEETS = [], FIGURES = [];
    placeholders when the page runs with ?skin=photo. Assets live in
    assets/photo/ (see SKIN_SPEC.md); each is a neutral-lit cutout that the
    engine lights and shades itself. Same slots, same physics, same audits. */
-const PHOTO_SKIN = /[?&]skin=photo/.test(location.search);
+// the photographed hall IS the hall now; ?skin=flat brings back the drawn one
+const PHOTO_SKIN = !/[?&]skin=flat/.test(location.search);
 
 /* SCENE PLATES — a fully generated frame of the hall dropped between beats.
    A plate is a matte painting: flat, one depth, so everything inside it moves
