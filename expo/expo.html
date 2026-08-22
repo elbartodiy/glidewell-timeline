@@ -743,7 +743,7 @@ function nearestBeat(x){
 
 /* the long bench is really a row of separate tables */
 const BENCH_BREAKS = [1980, 3830, 7350, 9250, 13100, 17900, 22280]
-  .map(x => ({x, half: 65}));
+  .map(x => ({x: SHIFT(x), half: 65}));
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
 let TABLES = [];
 let LIGHT_GRID = [];
@@ -1974,7 +1974,7 @@ function drawDebug(){
       ctx.fillStyle = 'rgba(120,180,255,0.95)'; ctx.fillText(`${lbl} ${wx|0}`, sx + 5*SS, 60*SS);
     }
   }
-  const wsx = px(wallSwitchX(), k(exhibitZ(cam.x)));
+  const wsx = px(wallSwitchX(), k(wallZAt(cam.x) - 8));
   ctx.strokeStyle = 'rgba(255,220,90,0.9)'; ctx.lineWidth = 2*SS;
   ctx.beginPath(); ctx.moveTo(wsx, 0); ctx.lineTo(wsx, H); ctx.stroke();
   ctx.fillStyle = 'rgba(255,220,90,0.95)';
@@ -3010,6 +3010,21 @@ async function loadPlates(){
 /* A plate owns its bay: the hall's ambient furniture — bench props, pinned
    sheets, passers-by — must not stand inside the picture it brings, or they
    read as junk floating over someone's workbench. Culled at boot, by data. */
+function snapPlatesToTables(){
+  for (const p of PLATES){
+    const half = (p.sw || 1390) / 2;
+    const left = p.x - half;
+    let best = null, bd = 1e9;
+    for (const tb of TABLES) for (const e of [tb.x0, tb.x1]){
+      const d = Math.abs(e - left);
+      if (d < bd){ bd = d; best = e; }
+    }
+    if (best != null && bd < 260){
+      p.x += best - left;                       // butt the picture onto that edge
+      if (DBG) console.log(`plate snapped ${bd.toFixed(0)} units to the table edge at ${best}`);
+    }
+  }
+}
 function clearPlateBays(){
   const bays = PLATES.map(p => {
     const half = (p.sw || 1390) / 2 + 40;      // world units at the bench plane
@@ -3037,7 +3052,7 @@ function drawPlates(t){
     // counter continues the hall's counter instead of stepping away from it
     const frontZ = layers[layers.length - 1].z ?? wallZ;
     const y0 = py(CFG.benchY, k(frontZ)) - sh * bf;
-    const fade = 0.012;
+    const fade = 0.05;
     for (const L of layers){
       const z = L.z != null ? L.z : wallZ;
       const kk = k(z);
@@ -3051,9 +3066,17 @@ function drawPlates(t){
         g2.drawImage(L.sp, 0, 0, ow, oh);
         // the join is a butt joint: both sides are the same material now, so
         // only a hair of blend is needed to kill the aliasing on the cut
-        // no feather: the counter ends in a real edge on both sides, and a
-        // blurred cut across a worktop is exactly what reads as a pasted seam
-        void fade;
+        // the near edge butts onto a real table edge; the far one lands
+        // mid-counter, so it dissolves into the identical material beneath.
+        // Feathering the SHEET is free — it is alpha, not an erasure of the room.
+        const F = Math.max(2, Math.round(fade * ow));
+        g2.save();
+        g2.globalCompositeOperation = 'destination-out';
+        const grad = g2.createLinearGradient(ow - F, 0, ow, 0);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, 'rgba(0,0,0,1)');
+        g2.fillStyle = grad; g2.fillRect(ow - F, 0, F, oh);
+        g2.restore();
       }
       ctx.drawImage(L.sheet, sx - sw/2, y0);
       // no reveal, no jamb shadow: a niche needs them, a counter that simply
@@ -5195,6 +5218,7 @@ async function boot(){
   initAttractStops();
   initDust();
   initDecor();
+  snapPlatesToTables();
   clearPlateBays();
   attachMouseDriver(document.body);
   auditStatics();
