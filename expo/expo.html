@@ -3110,10 +3110,17 @@ async function loadPlates(){
   for (const p of PLATES)
     for (const L of (p.layers || [{img: p.img, z: p.z}]))
       jobs.push(new Promise(res => {
-        const im = new Image();
-        im.onload = () => { L.sp = im; res(); };
-        im.onerror = () => { L.sp = null; res(); };   // no file yet — the hall stays as it was
-        im.src = 'assets/photo/' + L.img;
+        const tryLoad = (bust) => {
+          const im = new Image();
+          im.onload = () => { L.sp = im; res(); };
+          im.onerror = () => {
+            if (!bust) return tryLoad(true);          // a cached miss deserves one retry
+            console.error('plate layer missing:', L.img, '— the bench will not appear');
+            L.sp = null; res();
+          };
+          im.src = 'assets/photo/' + L.img + (bust ? '?r=' + Date.now() : '');
+        };
+        tryLoad(false);
       }));
   await Promise.all(jobs);
   for (const p of PLATES) p.layers = (p.layers || []).filter(L => L.sp);
@@ -3147,6 +3154,9 @@ function clearPlateBays(){
     return [p.x - half, p.x + half];
   });
   for (const u of TALL_UNITS) bays.push([u.x - u.w / 2 - 150, u.x + u.w / 2 + 150]);
+  // and the bays the cuts opened, whole: they exist for one composition each
+  for (let i = 0; i < CUTS.length; i++)
+    if (CUTS[i].on) bays.push([bayStart(i), bayStart(i) + CUTS[i].w]);
   if (!bays.length) return;
   const inBay = x => bays.some(([a, b]) => x > a && x < b);
   for (let i = PROPS.length - 1; i >= 0; i--) if (inBay(PROPS[i].x)) PROPS.splice(i, 1);
