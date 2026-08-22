@@ -41,7 +41,7 @@ const CFG = {
 /* x — position on the rail (world units, 1 unit = 1 ref px at z=0) */
 const BEATS = [
   /* ---- ERA 1 · the craft, 1907–1976 ---- */
-  {x:1400, y:'1907', t:'LOST-WAX CASTING',
+  {x:1050, y:'1907', t:'LOST-WAX CASTING',
    th:'The analog century: one restoration, many hands, weeks.',
    d:'Taggart brings lost-wax casting into dentistry — the analog century begins.',
    wall:[{img:'cast', w:360, dx:-430, cy:380, rot:-0.8},
@@ -234,16 +234,35 @@ const BEATS = [
    wall:[], table:[],
    ped:{obj:'crown2', dx:0, big:true}},
 ];
-/* THE CUT — the timeline is sliced at GAP.at and everything downstream slides
-   right by GAP.w, opening an empty bay for a generated scene plate. Every world
-   anchor below is filtered through SHIFT, and the boot pass moves the beats and
-   re-keys their study texts, so tables, lights, attract stops and audits are all
-   built from already-shifted data. With the flag off SHIFT is the identity and
-   the hall is bit-for-bit what it was. */
-const GAP = {at: 3950, w: 2320, on: /[?&]plate/.test(location.search)};
-function SHIFT(x){ return (GAP.on && x >= GAP.at) ? x + GAP.w : x; }
+/* THE CUTS — the timeline can be sliced in several places; everything
+   downstream of each cut slides right by its width, opening an empty bay.
+   Written in ORIGINAL coordinates and applied in order, so adding a cut never
+   requires renumbering the ones after it. Every world anchor below is filtered
+   through SHIFT, and the boot pass moves the beats and re-keys their study
+   texts, so tables, lights, attract stops and audits are all built from
+   already-shifted data. With every cut off, SHIFT is the identity. */
+const CUTS = [
+  // the threshold: the drawer bank and the change of wall need a bay of their
+  // own, or they lean into the era that follows
+  {at: 1900, w: 700, on: true},
+  // the generated 1970 bench
+  {at: 3950, w: 2320, on: /[?&]plate/.test(location.search)},
+];
+function SHIFT(x){
+  let s = 0;
+  for (const c of CUTS) if (c.on && x >= c.at) s += c.w;
+  return x + s;
+}
+/* where a cut's own bay begins on the final line: its position carries the
+   cuts BEFORE it, but not its own */
+function bayStart(i){
+  let s = 0;
+  for (let j = 0; j < i; j++) if (CUTS[j].on) s += CUTS[j].w;
+  return CUTS[i].at + s;
+}
+const GAP = CUTS[1];
 function applyCut(){
-  if (!GAP.on || GAP.done) return;
+  if (!CUTS.some(c => c.on) || GAP.done) return;
   GAP.done = true;
   // only raw literals move here: SEGMENTS and the world anchors were already
   // filtered through SHIFT when the script was parsed
@@ -1984,6 +2003,62 @@ function drawDebug(){
   ctx.restore();
 }
 
+/* TALL UNITS — a drawer bank standing against the wall, full height. It earns
+   its place twice: it gives the craft era the storage a real lab had, and it
+   stands exactly where the wall changes material, so the change happens behind
+   furniture instead of down an open joint. */
+const TALL_UNITS = [
+  {x: SHIFT(1650), w: 560, cols: 2, rows: 5, top: 150},
+];
+function drawTallUnits(){
+  for (const u of TALL_UNITS){
+    const seg = segAt(u.x);
+    const kk = k((seg.z0 || 550) - 40);         // furniture stands just off the wall
+    const sx = px(u.x, kk), w = u.w * kk * SS;
+    if (sx < -w || sx > W + w) continue;
+    const yTop = py(u.top, kk), yBot = py(CFG.benchY + 90, kk);
+    const h = yBot - yTop;
+    const x0 = sx - w / 2;
+    ctx.save();
+    // the carcass, in the era's own cabinet wood
+    const tex = TEX[seg.front];
+    ctx.beginPath(); ctx.rect(x0, yTop, w, h); ctx.clip();
+    if (tex) for (let yy = yTop; yy < yBot; yy += w * 0.62)
+      ctx.drawImage(tex, x0, yy, w, w * 0.62 + 1);
+    else { ctx.fillStyle = '#2a1c10'; ctx.fillRect(x0, yTop, w, h); }
+    // drawers: a grid of shallow fronts, each with a shadow under its lip
+    const cw = w / u.cols, ch = h / u.rows;
+    for (let r = 0; r < u.rows; r++)
+      for (let c = 0; c < u.cols; c++){
+        const dx0 = x0 + c * cw + 3 * kk * SS, dy0 = yTop + r * ch + 3 * kk * SS;
+        const dw = cw - 6 * kk * SS, dh = ch - 6 * kk * SS;
+        const g = ctx.createLinearGradient(0, dy0, 0, dy0 + dh);
+        g.addColorStop(0, 'rgba(255,238,205,0.06)');
+        g.addColorStop(0.10, 'rgba(0,0,0,0)');
+        g.addColorStop(1, 'rgba(0,0,0,0.30)');
+        ctx.fillStyle = g; ctx.fillRect(dx0, dy0, dw, dh);
+        ctx.strokeStyle = 'rgba(0,0,0,0.34)'; ctx.lineWidth = Math.max(1, 1.4 * kk * SS);
+        ctx.strokeRect(dx0, dy0, dw, dh);
+        // the pull
+        ctx.fillStyle = 'rgba(24,18,12,0.85)';
+        ctx.fillRect(dx0 + dw * 0.32, dy0 + dh * 0.52, dw * 0.36, Math.max(1.5, 3.4 * kk * SS));
+        ctx.fillStyle = 'rgba(255,236,200,0.16)';
+        ctx.fillRect(dx0 + dw * 0.32, dy0 + dh * 0.52, dw * 0.36, Math.max(1, 1.2 * kk * SS));
+      }
+    ctx.restore();
+    // cornice, and the shadow the unit throws onto the wall beside it
+    ctx.fillStyle = 'rgba(38,26,16,0.95)';
+    ctx.fillRect(x0 - 5 * kk * SS, yTop - 9 * kk * SS, w + 10 * kk * SS, 9 * kk * SS);
+    for (const s of [-1, 1]){
+      const gx = sx + s * (w / 2);
+      const sh = ctx.createLinearGradient(gx, 0, gx + s * 46 * kk * SS, 0);
+      sh.addColorStop(0, 'rgba(0,0,0,0.40)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sh;
+      ctx.fillRect(Math.min(gx, gx + s * 46 * kk * SS), yTop, 46 * kk * SS, h);
+    }
+  }
+}
+
 function drawProgress(t){
   const busy = state.study || state.inspect || state.clip || state.introHold;
   const hidden = Math.max(state.introFade || 0, state.finFade || 0, state.attract.fade || 0);
@@ -2989,7 +3064,7 @@ const PLATES = GAP.on ? [{
   // tools/make_wall.py and tiled seamlessly along the era — stands behind.
   // The plate contributes only the counter and what stands on it, riveted to
   // the hall's bench at z = 0, so it travels with the counter run it extends.
-  x: GAP.at + GAP.w / 2, sw: 2320, benchFrac: 0.706,
+  x: bayStart(1) + CUTS[1].w / 2, sw: 2320, benchFrac: 0.706,
   layers: [{img: 'plate_bay_front.png', z: 0}],
 }] : [];
 async function loadPlates(){
@@ -3103,7 +3178,7 @@ function wallSwitchX(){
   // the analog century keeps the dark boards; the 1970 lab's plaster starts
   // ahead of the founding pedestal, so that pedestal stands against the new
   // wall rather than on the threshold of it
-  return SHIFT(1850);
+  return SHIFT(1650);
 }
 function applyPhotoTextures(){
   TEX.wall1_dark = TEX.wall1;          // kept for the years before the 1970 bench
@@ -4917,6 +4992,7 @@ function frame(){
   // lamp pools on wall (behind photos) — one per ceiling fixture
   for (let i = 0; i < LIGHT_GRID.length; i++) drawLampPool(LIGHT_GRID[i].x, lampFlicker(t, i+1));
 
+  drawTallUnits();      // furniture against the wall, before anything hung on it
   drawIntro();
   drawOutro();
   drawSheets();
