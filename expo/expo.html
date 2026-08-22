@@ -1751,7 +1751,7 @@ let SEAM_VIDEO = null;
    lamp breathes, the gate weaves a hair, and the throw is keystoned because
    the machine sits below the centre of its own picture. */
 const PROJECTORS = [
-  {x: SHIFT(12590), wallDX: 240, w: 1560, cy: 470, src: 'media/jim_glass.mp4', throwZ: 210,
+  {x: SHIFT(12590), wallDX: 240, w: 1560, cy: 470, src: 'media/jim_glass.mp4', throwZ: 30,
    clip: {name: 'Jim Glidewell', label: 'on the bench that started it', src: 'media/jim_glass.mp4'}},
 ];
 function initProjectors(){
@@ -1794,7 +1794,9 @@ function drawProjectors(t, phase){
     const seg = segAt(p.x);
     const wz = (seg.z0 || 550) - 6;
     const kk = k(wz);
-    const sx = wallSX(p.x, p.wallDX, kk);   // exhibition plane, like every wall thing
+    // the frame takes its offset in WORLD units, the same units the machine
+    // below uses, so the two never drift apart and the beam stays true
+    const sx = px(p.x + p.wallDX, k(exhibitZ(p.x)));
     // the gate is sized to the reel AFTER its black ears are cut: a 4:3 film
     // gets a 4:3 rectangle, fitted inside the same box, never stretched
     const c0 = p.crop || {x0: 0, x1: 1};
@@ -1815,7 +1817,7 @@ function drawProjectors(t, phase){
 
     // the machine, standing on the bench below the picture
     const kp = k(p.throwZ);
-    const mxp = px(p.x + p.wallDX, kp), myp = py(CFG.benchY - 2, kp);
+    const mxp = px(p.x + p.wallDX, kp), myp = py(CFG.benchY - 2, kp);   // same world x as the frame
     const bw = 150 * kp * SS, bh = 74 * kp * SS;
 
     if (phase === 'machine'){ projMachine(p, t, lamp, mxp, myp, bw, bh, kp); continue; }
@@ -3095,15 +3097,14 @@ const PHOTO_SKIN = !/[?&]skin=flat/.test(location.search);
    their own depth and can be lit and clicked like everything else in the hall.
    A plate WITH objects baked in must stay single-layer (`layers` omitted):
    flat, at wall depth, where nothing inside it can slide against anything. */
-/* The founding bench: only what STANDS on it. The counter and the cabinets
-   came out of this same photograph and are already the hall's own material, so
-   carrying a second counter on top of the first bought nothing and cost a
-   visible joint — and matching the plate's cabinets to the room's forced its
-   objects to a size that ran into the year above them. Cropped to the still
-   life alone, it simply stands on the counter and can be scaled freely. */
+/* The founding bench, whole. Its scale is not chosen by eye: the counter's own
+   top surface — from where the wall meets it to its front edge — is made to
+   match the hall's, 71 px of photograph onto 74 px of room. Front edge to front
+   edge, back edge to the wall; everything else then follows, and the picture
+   comes out a fifth smaller than it was. */
 const PLATES = GAP.on ? [{
-  x: bayStart(1) + CUTS[1].w / 2, sw: 547, benchFrac: 1.0,
-  layers: [{img: 'bench_objects.png', z: 0}],
+  x: bayStart(1) + CUTS[1].w / 2, sw: 1874, benchFrac: 0.611,
+  layers: [{img: 'plate_bay_front.png', z: 0}],
 }] : [];
 async function loadPlates(){
   const jobs = [];
