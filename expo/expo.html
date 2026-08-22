@@ -5092,7 +5092,6 @@ function frame(){
 
   drawBench();
   drawProjectors(t, 'machine');   // it stands on the bench, so it comes after it
-  drawPlates(t);
 
   // table items
   drawFactory(t);
@@ -5172,6 +5171,10 @@ function frame(){
   }
   for (const b of BEATS) if (b.ped && Math.abs(b.x - cam.x) < 2000) drawPedestal(b, t, hero);
   drawMapHero(t, hMap);
+  // the founding bench stands IN FRONT of its own year: the numerals are
+  // painted on the wall behind it, so the still life passes over them the way
+  // any object in the room passes over what is written on the plaster
+  drawPlates(t);
   drawBenchDescs();
 
   drawForeground();
