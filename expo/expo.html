@@ -3119,7 +3119,7 @@ async function loadPlates(){
             console.error('plate layer missing:', L.img, '— the bench will not appear');
             L.sp = null; res();
           };
-          im.src = 'assets/photo/' + L.img + (bust ? '?r=' + Date.now() : '');
+          im.src = vurl('assets/photo/' + L.img) + (bust ? '&r=' + Date.now() : '');
         };
         tryLoad(false);
       }));
@@ -3219,6 +3219,11 @@ function drawPlates(t){
   }
 }
 const PHOTO_TEX = {};
+/* the skin's files are re-cut under the same names as the room is tuned, so a
+   browser that has already seen one keeps serving it back; every photo asset
+   carries the build stamp and a new cut is fetched the moment it exists */
+const ASSET_V = '20260821-1930';
+const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* the procedural era walls (tools/make_wall.py) stand in for the drawn ones —
    same slot, same tiling, so drawWall never learns the difference */
 /* the wall changes material inside era 1: dark boards for the analog century,
@@ -3257,7 +3262,7 @@ async function loadPhotoSkin(){
       res();
     };
     im.onerror = () => { console.error('photo skin: missing asset', file); res(); };
-    im.src = 'assets/photo/' + file;
+    im.src = vurl('assets/photo/' + file);
   })));
 }
 function initDecor(){
