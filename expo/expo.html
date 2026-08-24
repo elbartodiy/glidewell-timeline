@@ -207,7 +207,8 @@ const BEATS = [
    pinZ:1000,
    th:'',
    d:'A machine-learning team since 2015; the work done with UC Berkeley, alongside the people who wrote pix2pix itself. It learned from 1,500 pairs of scans — and from the natural profile between opposing teeth, the thing technicians find hardest. Glidewell milled the first crown designed entirely by it in 2017; the paper that followed in March 2018 is called Learning Beyond Human Expertise. The archive of scans that began in 2007 is what taught it.',
-   wall:[], table:[]},
+   wall:[], table:[],
+   rig:{kind:'design', dx:0, lz:120, w:540}},
   {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true,
    th:'The analog→digital climax: robots make crowns.',
    d:'Automated, AI-designed, robotic monolithic production.',
@@ -2823,41 +2824,6 @@ function drawRec18(t){
   ctx.fillText('no hand drew it \u00b7 no tool cut it \u00b7 it was proposed', cx, py(112, kk));
   ctx.restore();
 
-  const ph = latchedPhase(mid, 450);
-  const spC = PED_SPRITES.crown2;
-  const w = 430 * kk * SS, h = w * spC.h / spC.w;
-  const cyC = py(420, kk);
-  // the prepared tooth underneath: the one thing that was there before
-  const dieY = cyC + h * 0.62, dw = w * 0.62;
-  ctx.fillStyle = 'rgba(96,110,126,0.55)';
-  ctx.beginPath();
-  ctx.moveTo(cx - dw * 0.5, dieY + h * 0.16);
-  ctx.lineTo(cx - dw * 0.40, dieY - h * 0.10);
-  ctx.quadraticCurveTo(cx, dieY - h * 0.20, cx + dw * 0.40, dieY - h * 0.10);
-  ctx.lineTo(cx + dw * 0.5, dieY + h * 0.16);
-  ctx.closePath(); ctx.fill();
-
-  // three proposals, arguing. Which one leads is a function of the phase, not
-  // of the clock: stand still and the argument stands still with you.
-  const fade = Math.max(0, 1 - Math.max(0, ph - 0.42) / 0.30);
-  if (fade > 0.01){
-    const lead = Math.floor(ph * 16) % 3;
-    for (let c = 0; c < 3; c++){
-      const a = fade * (c === lead ? 0.75 : 0.22);
-      ctx.strokeStyle = `rgba(70,150,215,${a.toFixed(3)})`;
-      ctx.lineWidth = (c === lead ? 1.9 : 1.1) * SS;
-      crownSilhouette(cx, cyC, w, h, AI_WARP(c + 1));
-      ctx.stroke();
-    }
-  }
-  // and the one that won, drawing itself closed
-  if (ph > 0.30){
-    const g2 = Math.max(0, Math.min(1, (ph - 0.30) / 0.45));
-    ctx.strokeStyle = `rgba(36,58,80,${(0.35 + 0.6 * g2).toFixed(3)})`;
-    ctx.lineWidth = (1.2 + 1.6 * g2) * SS;
-    crownSilhouette(cx, cyC, w, h, null);
-    ctx.stroke();
-  }
   for (const wxc of [REC18_L, REC18_R]){
     const kc = k(994), sxc = px(wxc, kc), cw = 116 * kc * SS;
     if (sxc < -cw || sxc > W + cw) continue;
@@ -2866,6 +2832,107 @@ function drawRec18(t){
     ctx.fillStyle = cg;
     ctx.fillRect(sxc - cw/2, 0, cw, yBase);
   }
+}
+
+/* THE DESIGN STATION. The first AI crown existed as a file before it existed
+   as anything else, so this is where the year actually happens: fastdesign.io
+   on a monitor, and the crown being proposed inside its viewport. Three
+   candidates argue, one wins and fills — and only then does it leave the
+   screen. The interface is drawn from the product: the wordmark and its tabs,
+   the tool rails down both sides, the tooth strips top and bottom, and the
+   milling preview waiting at the bottom right. It carries NO product name:
+   that was christened later, and in 2018 this was simply the software the lab
+   designed in. What is drawn here is the layout, not the branding. */
+function drawDesignStation(b, t){
+  const g = b.rig, kk = k(g.lz ?? 120);
+  const sx = px(b.x + (g.dx || 0), kk);
+  const W2 = (g.w || 540) * kk * SS, H2 = W2 * 0.58;
+  const foot = py(CFG.benchY - 2, kk);
+  if (sx < -W2 || sx > W + W2) return;
+  const x0 = sx - W2/2, y0 = foot - 26 * kk * SS - H2;
+  // stand and foot
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  ctx.beginPath(); ctx.ellipse(sx, foot, W2 * 0.20, 6 * kk * SS, 0, 0, 7); ctx.fill();
+  const stG = ctx.createLinearGradient(sx - 12 * kk * SS, 0, sx + 12 * kk * SS, 0);
+  stG.addColorStop(0, '#8b9298'); stG.addColorStop(0.4, '#d5dade'); stG.addColorStop(1, '#7d848a');
+  ctx.fillStyle = stG;
+  ctx.fillRect(sx - 11 * kk * SS, y0 + H2, 22 * kk * SS, 26 * kk * SS);
+  ctx.fillStyle = '#aeb5bb';
+  ctx.beginPath(); ctx.ellipse(sx, foot, W2 * 0.17, 5 * kk * SS, 0, 0, 7); ctx.fill();
+  // bezel
+  ctx.fillStyle = '#e9ecef';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x0 - 4 * kk * SS, y0 - 4 * kk * SS, W2 + 8 * kk * SS, H2 + 8 * kk * SS, 4 * kk * SS);
+  else ctx.rect(x0 - 4 * kk * SS, y0 - 4 * kk * SS, W2 + 8 * kk * SS, H2 + 8 * kk * SS);
+  ctx.fill();
+
+  const ph = latchedPhase(b.x, 450);
+  const F = SEGMENTS[3].font, U = W2;               // one unit = the screen's width
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, y0, W2, H2); ctx.clip();
+  ctx.fillStyle = '#eef1f4'; ctx.fillRect(x0, y0, W2, H2);
+  const vp = {x: x0 + U*0.062, y: y0 + H2*0.155, w: W2 - U*0.112, h: H2*0.70};
+  ctx.fillStyle = '#c2d1dc'; ctx.fillRect(vp.x, vp.y, vp.w, vp.h);
+  // the crown, argued out inside the viewport
+  const cw2 = vp.h * 0.52, ch2 = cw2 * PED_SPRITES.crown2.h / PED_SPRITES.crown2.w;
+  const ccx = vp.x + vp.w/2, ccy = vp.y + vp.h*0.52;
+  const fade = Math.max(0, 1 - Math.max(0, ph - 0.42) / 0.30);
+  if (fade > 0.01){
+    const lead = Math.floor(ph * 16) % 3;
+    for (let c2 = 0; c2 < 3; c2++){
+      ctx.strokeStyle = `rgba(28,110,180,${(fade * (c2 === lead ? 0.8 : 0.24)).toFixed(3)})`;
+      ctx.lineWidth = (c2 === lead ? 1.8 : 1.1) * SS;
+      crownSilhouette(ccx, ccy, cw2, ch2, AI_WARP(c2 + 1));
+      ctx.stroke();
+    }
+  }
+  if (ph > 0.30){
+    const g2 = Math.max(0, Math.min(1, (ph - 0.30) / 0.45));
+    ctx.fillStyle = `rgba(244,240,232,${(0.92 * Math.max(0, (ph - 0.62) / 0.38)).toFixed(3)})`;
+    crownSilhouette(ccx, ccy, cw2, ch2, null); ctx.fill();
+    ctx.strokeStyle = `rgba(24,60,92,${(0.35 + 0.55 * g2).toFixed(3)})`;
+    ctx.lineWidth = (1.2 + 1.4 * g2) * SS;
+    crownSilhouette(ccx, ccy, cw2, ch2, null); ctx.stroke();
+  }
+  // the tooth strips, red at the ends and white through the middle
+  for (const ty of [vp.y - H2*0.052, vp.y + vp.h + H2*0.008]){
+    for (let i = 0; i < 16; i++){
+      const tw = vp.w * 0.026, gx2 = vp.x + vp.w*0.22 + i * tw * 1.18;
+      ctx.fillStyle = (i < 3 || i > 12) ? '#d0575c' : '#ffffff';
+      ctx.fillRect(gx2, ty, tw, H2*0.044);
+    }
+  }
+  // the rails
+  for (const [rx, cnt] of [[x0 + U*0.012, 10], [x0 + W2 - U*0.050, 5]]){
+    for (let i = 0; i < cnt; i++){
+      ctx.fillStyle = '#1f7fd0';
+      ctx.fillRect(rx, vp.y + i * H2*0.068, U*0.038, H2*0.052);
+    }
+  }
+  // chrome: the wordmark, its tabs, the search field
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(x0, y0, W2, H2*0.115);
+  ctx.fillStyle = '#2b3844';
+  ctx.fillRect(x0 + U*0.018, y0 + H2*0.042, U*0.078, H2*0.034);    // a mark, unnamed
+  ctx.fillStyle = '#aeb8c1';
+  ctx.fillRect(x0 + U*0.20, y0 + H2*0.050, U*0.040, H2*0.018);
+  ctx.fillRect(x0 + U*0.26, y0 + H2*0.050, U*0.040, H2*0.018);
+  ctx.fillStyle = '#1f7fd0';
+  ctx.fillRect(x0 + U*0.32, y0 + H2*0.050, U*0.044, H2*0.018);
+  ctx.fillStyle = '#f0f3f6'; ctx.fillRect(x0 + U*0.40, y0 + H2*0.030, U*0.18, H2*0.058);
+  ctx.fillStyle = '#b9c2ca';
+  ctx.beginPath(); ctx.arc(x0 + W2 - U*0.085, y0 + H2*0.058, H2*0.030, 0, 7); ctx.fill();
+  // and the bottom bar, with the milling preview waiting at the end of it
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(x0, y0 + H2*0.905, W2, H2*0.095);
+  ctx.fillStyle = '#1f7fd0';
+  ctx.fillRect(x0 + U*0.010, y0 + H2*0.915, U*0.045, H2*0.075);
+  ctx.fillRect(x0 + W2 - U*0.055, y0 + H2*0.915, U*0.045, H2*0.075);
+  ctx.fillStyle = '#b3bcc4';
+  ctx.fillRect(x0 + U*0.070, y0 + H2*0.940, U*0.11, H2*0.020);
+  ctx.fillRect(x0 + W2 - U*0.180, y0 + H2*0.940, U*0.11, H2*0.020);
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(120,130,140,0.55)'; ctx.lineWidth = 1.2 * SS;
+  ctx.strokeRect(x0 - 4 * kk * SS, y0 - 4 * kk * SS, W2 + 8 * kk * SS, H2 + 8 * kk * SS);
+  pushHit(x0, y0, W2, H2, {type: 'focus', beat: nearestBeat(b.x).i, anchor: b.x});
 }
 
 function ik2(sx, sy, tx, ty, l1, l2){
@@ -2897,11 +2964,11 @@ function drawAIRelay(t){
   if (build <= 0.28) return;
 
   const wx = mid + (endX - mid) * p;
-  const lz = 1000 + (430 - 1000) * p;           // forward, but not into your lap
-  const wy = 420 + (150 * p);
+  const lz = 120 + (40 - 120) * p;              // it lifts off the screen it was designed on
+  const wy = 566 - 70 * p;
   const kkc = k(lz), sxc = px(wx, kkc), syc = py(wy, kkc);
   const spC = PED_SPRITES.crown2;
-  const wC = 300 * kkc * SS, hC = wC * spC.h / spC.w;
+  const wC = 190 * kkc * SS, hC = wC * spC.h / spC.w;
   const sol = Math.max(0, Math.min(1, (p - 0.45) / 0.25));
   const gone = Math.max(0, Math.min(1, (p - 0.72) / 0.28));   // taken up by the line
   const a = (1 - gone) * Math.min(1, build * 1.6);
@@ -2979,7 +3046,7 @@ function box93(p, x0, x1, y0, y1, z0, z1, bands){
   // three ribbon windows, recessed between the spandrels
   const h = (y1 - y0) / 3;
   for (let i = 0; i < 3; i++){
-    const a = y0 + i * h + h * 0.20, b2 = y0 + i * h + h * 0.84;
+    const a = y0 + i * h + h * 0.30, b2 = y0 + i * h + h * 0.78;
     quad93(p, [[x0+3,b2,z1],[x1-3,b2,z1],[x1-3,a,z1],[x0+3,a,z1]], T93[3]);
     quad93(p, [[x1,b2,z0+3],[x1,b2,z1-3],[x1,a,z1-3],[x1,a,z0+3]], '#6f6c66');
   }
@@ -3006,7 +3073,7 @@ function drawModel93(wx, lz, wWorld, topWorldY){
   const kk = k(lz);
   const sx = px(wx, kk);
   const foot = py(topWorldY, kk);
-  const XM = 132, ZM = 84;
+  const XM = 132, ZM = 76;
   const s = wWorld * kk * SS / (XM + ZM * 0.50);
   if (sx < -500 || sx > W + 500) return;
   const p = {s, ox: sx - (XM - ZM * 0.50) * s / 2, oy: foot - ZM * 0.34 * s};
@@ -3045,34 +3112,26 @@ function drawModel93(wx, lz, wWorld, topWorldY){
      flat on the ground plane in the same oblique, so it lies down properly. */
   const flat = (x0, x1, z0, z1, tone) => quad93(p, [[x0,0.4,z0],[x1,0.4,z0],[x1,0.4,z1],[x0,0.4,z1]], tone);
   flat(4, XM-4, 4, ZM-4, '#dfe0dc');                    // the lawn it all sits on
-  flat(78, XM-6, 58, 78, '#a8adb2');                    // the lot, out in front on the right
-  flat(6, XM-6, 78, ZM-2, '#b3b8bd');                   // the drive across the front
-  flat(38, 68, 62, 78, '#c6cac8');                      // the plaza and the walk to the door
+  flat(86, XM-6, 8, ZM-16, '#a8adb2');                  // the lot
+  flat(6, XM-6, ZM-16, ZM-6, '#b3b8bd');                // the drive along the front
   ctx.lineWidth = Math.max(0.6, 0.7 * s);
   ctx.strokeStyle = 'rgba(250,250,248,0.75)';
-  for (let i = 0; i < 8; i++){
-    const xx = 82 + i * 5.6;
-    const a = m93(p, xx, 0.6, 60), b2 = m93(p, xx, 0.6, 76);
+  for (let i = 0; i < 7; i++){                          // stalls, painted
+    const zz = 12 + i * 6.4;
+    const a = m93(p, 88, 0.6, zz), b2 = m93(p, XM-8, 0.6, zz);
     ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b2[0], b2[1]); ctx.stroke();
   }
-  for (let i = 0; i < 5; i++)
-    box93(p, 84 + i * 8.4, 90 + i * 8.4, 0.4, 4.6, 62 + (i % 2) * 8, 72 + (i % 2) * 8, false);
+  for (let i = 0; i < 5; i++)                           // and cars in some of them
+    box93(p, 90 + (i % 2) * 15, 102 + (i % 2) * 15, 0.4, 4.6, 14 + i * 9.5, 22 + i * 9.5, false);
+  flat(30, 46, ZM-16, 58, '#c6cac8');                   // the walk up to the door
 
-  /* THE BUILDING. What the film shows is long and low — three continuous
-     ribbons of glass running its whole length — and what makes it itself is the
-     pale entrance bay: it projects forward of the facade and rises past the
-     roofline, with a tall slot cut into its face. Without that it is any office
-     block anywhere; with it, it is 4141 MacArthur. */
-  box93(p, 8, 118, 0, 27, 14, 46, true);                // the long slab
-  box93(p, 76, 118, 0, 27, 46, 58, true);               // the right half steps forward
-  box93(p, 86, 104, 27, 32, 20, 34, false);             // the plant on the roof
-  box93(p, 42, 60, 0, 41, 46, 62, false);               // THE ENTRANCE, taller than the roof
-  quad93(p, [[45,37,62],[57,37,62],[57,5,62],[45,5,62]], '#96a09c');   // the slot in its face
-  quad93(p, [[46,36,62],[56,36,62],[56,6,62],[46,6,62]], '#79837f');
+  box93(p, 8, 78, 0, 34, 12, 40, true);                 // the long block
+  box93(p, 20, 54, 0, 34, 40, 58, true);                // the wing that steps forward
+  box93(p, 30, 52, 34, 40, 18, 30, false);              // the plant on the roof
   // young trees — the film was shot the year they were planted
-  for (const [tx2, tz2, r2] of [[14, 62, 4.4], [26, 70, 3.8], [72, 78, 4.2], [34, 78, 3.6],
-                                [124, 54, 4.0], [76, 52, 3.4], [6, 24, 4.2], [6, 46, 3.8],
-                                [126, 20, 4.0], [104, 80, 3.6]]){
+  for (const [tx2, tz2, r2] of [[10, 66, 4.4], [26, 68, 3.8], [50, 68, 4.6], [66, 66, 3.6],
+                                [84, 30, 4.0], [84, 52, 3.6], [122, 12, 4.2], [122, 60, 3.8],
+                                [4, 20, 4.0], [4, 44, 3.6]]){
     const [ux, uy] = m93(p, tx2, 0.4, tz2);
     const [, cy2] = m93(p, tx2, r2 * 2.1, tz2);
     ctx.strokeStyle = '#8e8c84'; ctx.lineWidth = Math.max(0.8, 1.1 * s);
@@ -3083,7 +3142,7 @@ function drawModel93(wx, lz, wWorld, topWorldY){
     ctx.beginPath(); ctx.ellipse(ux - r2 * 0.3 * s, cy2 - r2 * 0.3 * s, r2 * 0.45 * s, r2 * 0.38 * s, 0, 0, 7); ctx.fill();
   }
   // the round stair tower on the far corner
-  const [tx, ty] = m93(p, 68, 25, 68), [, by] = m93(p, 68, 0, 68);
+  const [tx, ty] = m93(p, 72, 37, 48), [, by] = m93(p, 72, 0, 48);
   const rx = 7.5 * s, ry = rx * 0.34;
   const tg = ctx.createLinearGradient(tx - rx, 0, tx + rx, 0);
   tg.addColorStop(0, T93[1]); tg.addColorStop(0.38, T93[0]); tg.addColorStop(1, T93[2]);
@@ -3093,15 +3152,15 @@ function drawModel93(wx, lz, wWorld, topWorldY){
   ctx.beginPath(); ctx.ellipse(tx, ty, rx, ry, 0, 0, 7); ctx.fill();
   // the bollards along the walk up to the door — they are in the film too
   for (let i = 0; i < 6; i++){
-    const bx2 = 40 + i * 5.2;
-    const [ux, uy] = m93(p, bx2, 3.4, 76), [, ly] = m93(p, bx2, 0, 76);
+    const bx2 = 31 + i * 2.9;
+    const [ux, uy] = m93(p, bx2, 3.4, 60), [, ly] = m93(p, bx2, 0, 60);
     ctx.fillStyle = T93[1];
     ctx.fillRect(ux - 1.1 * s, uy, 2.2 * s, ly - uy);
     ctx.fillStyle = T93[0];
     ctx.beginPath(); ctx.ellipse(ux, uy, 1.1 * s, 0.4 * s, 0, 0, 7); ctx.fill();
   }
   // the number, where it is on the building
-  const [nx2, ny2] = m93(p, 86, 19, 46);
+  const [nx2, ny2] = m93(p, 32, 24, 40);
   ctx.fillStyle = 'rgba(70,68,64,0.85)';
   ctx.font = eraFont(Math.max(5, 4.6 * s), '700', SEGMENTS[2].font);
   ctx.textAlign = 'left';
@@ -6676,6 +6735,7 @@ function frame(){
     }
     if (b.rig && b.rig.kind === 'disc') drawDiscMill(b, t);
     if (b.rig && b.rig.kind === 'scale') drawScale(b, t);
+    if (b.rig && b.rig.kind === 'design') drawDesignStation(b, t);
     for (const p of (b.props || [])) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
     if (b.pyr) drawBookPyramid(b, t);
