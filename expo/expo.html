@@ -353,6 +353,23 @@ function mixN(a,b,t){ return a+(b-a)*t; }
 function wallZAt(x){
   return segAt(x).z0;
 }
+/* The average colour of a wall texture, measured once by letting the browser
+   downscale it to a single pixel. */
+const WALL_TONE = new Map();
+function wallTone(tex){
+  let c = WALL_TONE.get(tex);
+  if (c) return c;
+  try {
+    const s1 = document.createElement('canvas');
+    s1.width = s1.height = 1;
+    const g1 = s1.getContext('2d', {willReadFrequently: true});
+    g1.drawImage(tex, 0, 0, 1, 1);
+    const d = g1.getImageData(0, 0, 1, 1).data;
+    c = `rgb(${d[0]},${d[1]},${d[2]})`;
+  } catch (e){ c = '#9aa0a4'; }
+  WALL_TONE.set(tex, c);
+  return c;
+}
 /* THE RIVET LAW — one plane, not two.
    Everything hung on the wall (years, captions, photos, plasmas, banners)
    takes its horizontal anchor from the era's EXHIBITION PLANE, the same
@@ -988,12 +1005,18 @@ function drawWall(){
     const tileW = tex.width * 0.9;   // world units per tile
     ctx.save();
     ctx.beginPath(); ctx.rect(sx0, 0, sx1 - sx0, yBase); ctx.clip();
+    // Belt and braces: paint the era's own average tone across the whole span
+    // first. Tiling can miss by a pixel at a seam for a dozen reasons; when it
+    // does you should see wall, not the room's black background.
+    ctx.fillStyle = wallTone(tex);
+    ctx.fillRect(sx0, 0, sx1 - sx0, yBase);
     const worldLeft = cam.x - (W/2) / (k(seg.z0) * SS);
     let wx = wx0 + Math.floor((Math.min(worldLeft, ex0) - wx0) / tileW) * tileW;
     const PURE_X = REC4_R;   // beyond the 2022 recreation: clean futurist white, no panels
     const swx = (PHOTO_SKIN && seg === SEGMENTS[0] && TEX.wall1_dark) ? wallSwitchX() : -1e9;
-    for (; px(wx, k(wallZAt(wx))) < sx1 + 2; wx += tileW){
-      const kk = k(wallZAt(wx + tileW/2));   // per-tile depth: smooth recession
+    for (; px(wx, kw) < sx1 + 2; wx += tileW){
+      const kk = kw;   // the SEGMENT's depth — never wallZAt(), which reads the
+                       // world position and in the extension returns the era next door
       const straddles = swx > wx && swx < wx + tileW;
       const texT = (wx + tileW/2 < swx) ? TEX.wall1_dark : tex;
       const yBot = seg.floor ? Math.min(yBase, py(1080, kk)) : yBase;
