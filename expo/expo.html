@@ -2639,14 +2639,17 @@ function drawCrownFile(cx, cy, w, a, ph){
    a stroked line — a narrow aperture opening into a wide footprint, striated by
    a fixed comb of blades the way any beam looks crossing air that has dust in
    it, so nothing here crawls of its own accord. */
-function drawScanBeam(cx, cy, w, h, kn, ph, a){
+function drawScanBeam(cx, cy, w, h, ph, a){
   const mid = (REC2_L + REC2_R) / 2;
-  const ex = px(mid - 300, kn), ey = py(58, kn);
+  // the head hangs far back in the bay — it works the crown from across the
+  // room, so the throw is long and the fixture reads small
+  const kE = k(760);
+  const ex = px(mid - 520, kE), ey = py(-300, kE);
   const aimX = cx + w * (0.52 - 1.02 * ph);
   const aimY = cy + h * (-0.55 + 1.15 * ph);
   ctx.save();
   // the head on the ceiling
-  const hw2 = 15 * kn * SS, hh2 = 9 * kn * SS;
+  const hw2 = 15 * kE * SS, hh2 = 9 * kE * SS;
   ctx.fillStyle = 'rgba(24,32,40,0.92)';
   ctx.fillRect(ex - hw2, ey - hh2 * 2.4, hw2 * 2, hh2 * 2.4);
   ctx.fillStyle = `rgba(150,220,255,${(0.85 * a).toFixed(3)})`;
@@ -2701,6 +2704,12 @@ function drawRec2Front(t){
   const nx = px(mid, kn), ny = py(417, kn);
   const spm = PED_SPRITES.crown2, chh = cw * spm.h / spm.w;
   const plY = ny + chh * 0.5, pw = 150 * kn * SS;
+  // the scanner works the crown from across the room, so its light is thrown
+  // before the column and the crown are painted: they stand in it and stop it
+  const bLive = Math.max(0, 1 - Math.max(0, cam.x - mid) / 240);
+  if (bLive > 0.01 && ease > 0.02)
+    drawScanBeam(nx, ny, cw, chh, scanPhase(mid), bLive * (0.3 + 0.7 * ease));
+
   /* The plinth is a cylinder of frosted glass. It cannot be truly transparent:
      the sentence painted on the panel behind would read straight through it and
      the window set into its face would stop meaning anything. So it is glass
@@ -2819,10 +2828,6 @@ function drawRec2Front(t){
   }
   drawGlow('225,245,255', nx, ny, cw * 1.5, 0.12 + 0.13 * ease);
   ctx.drawImage(spm.c, nx - cw/2, ny - chh/2, cw, chh);
-  // the scanner crosses in FRONT of that crown, and goes out once you pass it
-  const bLive = Math.max(0, 1 - Math.max(0, cam.x - mid) / 240);
-  if (bLive > 0.01 && ease > 0.02)
-    drawScanBeam(nx, ny, cw, chh, kn, scanPhase(mid), bLive * (0.3 + 0.7 * ease));
   pushHit(nx - cw/2, ny - chh/2, cw, chh,
           {type: 'focus', beat: nearestBeat(mid).i, anchor: mid});
 }
