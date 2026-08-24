@@ -1968,6 +1968,18 @@ function initSeamVideo(){
    leaves a tick, and a lit marker rides the rule with the year beside it. It
    bows out whenever the hall has something better to say: the welcome, an open
    reading page, a playing clip, the closing packshot. */
+/* the rule wears the era it is standing in: brass under tungsten, pale steel
+   through the mail-order years, grey machine-work as the lab goes digital, and
+   ice with a lit edge in the white era. Materials, not decoration — the same
+   progression the room itself makes. */
+const RULE_STYLE = [
+  {thumb: '236,212,168', edge: '255,232,190', glow: '255,186,96',  round: 9,   led: 0,    tick: 'line'},
+  {thumb: '222,220,206', edge: '244,242,232', glow: '255,214,150', round: 7,   led: 0,    tick: 'line'},
+  {thumb: '226,229,228', edge: '246,249,248', glow: '200,228,246', round: 3,   led: 0.35, tick: 'line'},
+  {thumb: '242,248,252', edge: '255,255,255', glow: '150,215,255', round: 1.5, led: 1,    tick: 'dot'},
+];
+function ruleStyle(){ return RULE_STYLE[Math.max(0, Math.min(3, segIdx(cam.x)))]; }
+
 function ruleGeom(){
   const x0 = W * 0.13, x1 = W * 0.87;
   const W0 = INTRO_X, W1 = FIN_X;
@@ -2139,13 +2151,21 @@ function drawProgress(t){
     ctx.beginPath(); ctx.moveTo(cx, y - 5 * SS); ctx.lineTo(cx + 3.4 * SS, y);
     ctx.lineTo(cx, y + 5 * SS); ctx.lineTo(cx - 3.4 * SS, y); ctx.closePath(); ctx.fill();
   }
-  // a tick per beat; the landmark years stand a little taller
+  // a tick per beat; the landmark years stand a little taller, and the white
+  // era marks its years with points rather than strokes
   for (const b of BEATS){
     if (b.under) continue;
     const bx = at(b.x), tall = (b.tier === 1 || b.fly) ? 5 : 3;
-    ctx.strokeStyle = `rgba(${segAt(b.x).ink},${((b.minor ? 0.22 : 0.40) * A).toFixed(3)})`;
-    ctx.lineWidth = 1.4 * SS;
-    ctx.beginPath(); ctx.moveTo(bx, y - tall * SS); ctx.lineTo(bx, y + tall * SS); ctx.stroke();
+    const st = RULE_STYLE[Math.max(0, Math.min(3, segIdx(b.x)))];
+    const al = (b.minor ? 0.22 : 0.40) * A;
+    if (st.tick === 'dot'){
+      ctx.fillStyle = `rgba(${segAt(b.x).ink},${al.toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(bx, y, (b.minor ? 1.3 : 1.9) * SS, 0, 7); ctx.fill();
+    } else {
+      ctx.strokeStyle = `rgba(${segAt(b.x).ink},${al.toFixed(3)})`;
+      ctx.lineWidth = 1.4 * SS;
+      ctx.beginPath(); ctx.moveTo(bx, y - tall * SS); ctx.lineTo(bx, y + tall * SS); ctx.stroke();
+    }
   }
   // the thumb: not a point but the stretch of line the screen is showing
   const segNow = segAt(cam.x);
@@ -2153,17 +2173,27 @@ function drawProgress(t){
   const tx0 = g.at(cam.x - g.half), tx1 = g.at(cam.x + g.half);
   const mx = (tx0 + tx1) / 2, tw = Math.max(14 * SS, tx1 - tx0);
   const warm = ruleHit(Input.hover) || state.ruleDrag ? 1 : 0;
-  drawGlow(segNow.light ? segNow.light.pool : '255,220,170', mx, y, tw + 90 * SS, (0.20 + 0.14 * warm) * A);
-  ctx.fillStyle = `rgba(250,244,232,${((0.13 + 0.10 * warm) * A).toFixed(3)})`;
-  ctx.beginPath(); ctx.roundRect(mx - tw/2, y - 9 * SS, tw, 18 * SS, 9 * SS); ctx.fill();
-  ctx.strokeStyle = `rgba(250,244,232,${((0.55 + 0.35 * warm) * A).toFixed(3)})`;
+  const S = ruleStyle();
+  const R = S.round * SS;
+  drawGlow(S.glow, mx, y, tw + 90 * SS, (0.20 + 0.14 * warm) * A);
+  ctx.fillStyle = `rgba(${S.thumb},${((0.13 + 0.10 * warm) * A).toFixed(3)})`;
+  ctx.beginPath(); ctx.roundRect(mx - tw/2, y - 9 * SS, tw, 18 * SS, R); ctx.fill();
+  ctx.strokeStyle = `rgba(${S.edge},${((0.55 + 0.35 * warm) * A).toFixed(3)})`;
   ctx.lineWidth = 1.6 * SS;
-  ctx.beginPath(); ctx.roundRect(mx - tw/2, y - 9 * SS, tw, 18 * SS, 9 * SS); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(mx - tw/2, y - 9 * SS, tw, 18 * SS, R); ctx.stroke();
+  // in the white era the thumb carries a lit edge, the way the room does
+  if (S.led > 0){
+    ctx.strokeStyle = `rgba(${S.glow},${(0.55 * S.led * A).toFixed(3)})`;
+    ctx.lineWidth = 2.2 * SS;
+    ctx.beginPath();
+    ctx.moveTo(mx - tw/2 + R, y + 9 * SS); ctx.lineTo(mx + tw/2 - R, y + 9 * SS);
+    ctx.stroke();
+  }
   // the two jaws read as the edges of the frame you are looking through
-  ctx.fillStyle = `rgba(250,244,232,${(0.92 * A).toFixed(3)})`;
+  ctx.fillStyle = `rgba(${S.edge},${(0.92 * A).toFixed(3)})`;
   for (const s of [-1, 1]){
     ctx.beginPath();
-    ctx.roundRect(mx + s * (tw/2) - 1.5 * SS, y - 9 * SS, 3 * SS, 18 * SS, 1.5 * SS);
+    ctx.roundRect(mx + s * (tw/2) - 1.5 * SS, y - 9 * SS, 3 * SS, 18 * SS, Math.min(1.5 * SS, R));
     ctx.fill();
   }
   const nb = nearestBeat(cam.x);
@@ -2172,7 +2202,7 @@ function drawProgress(t){
     ctx.textAlign = 'center';
     try { ctx.letterSpacing = `${3 * SS}px`; } catch(e){}
     ctx.fillStyle = `rgba(${segNow.ink},${(0.62 * A).toFixed(3)})`;
-    ctx.fillText(BEATS[nb.i].y, mx, y - 17 * SS);
+    ctx.fillText(BEATS[nb.i].y, mx, y - 17 * SS);   // in the era's own face
     try { ctx.letterSpacing = '0px'; } catch(e){}
   }
   ctx.restore();
