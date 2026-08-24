@@ -2581,6 +2581,30 @@ function drawRec2Front(t){
   ctx.fillStyle = pg; ctx.fillRect(nx - pw/2, plY, pw, H - plY);
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
   ctx.beginPath(); ctx.ellipse(nx, plY, pw*0.62, 11*kn*SS, 0, 0, 7); ctx.fill();
+  // A display set into the pedestal, dead on the line the caption runs along.
+  // The words are painted on the panel behind; where this column crosses them
+  // they stop being paint and run as light across it, then continue as paint.
+  {
+    const stripY = py(596, kk), sh2 = 17 * kn * SS, iw = pw - 6 * SS;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(nx - iw/2, stripY - sh2/2, iw, sh2); ctx.clip();
+    ctx.fillStyle = '#0b1216';
+    ctx.fillRect(nx - iw/2, stripY - sh2/2, iw, sh2);
+    ctx.font = eraFont(12 * kn * SS, '700', SEGMENTS[3].font);
+    ctx.textAlign = 'left';
+    const phrase = 'SCANNED \u00b7 DESIGNED \u00b7 MILLED \u00b7 ';
+    const pwd = Math.max(20, ctx.measureText(phrase).width);
+    ctx.fillStyle = `rgba(150,228,255,${(0.45 + 0.45 * ease).toFixed(3)})`;
+    let ox = -((t * 42 * kn * SS) % pwd);
+    while (ox < iw){ ctx.fillText(phrase, nx - iw/2 + ox, stripY + 4.5 * kn * SS); ox += pwd; }
+    const sg2 = ctx.createLinearGradient(0, stripY - sh2/2, 0, stripY + sh2/2);
+    sg2.addColorStop(0, 'rgba(255,255,255,0.18)');
+    sg2.addColorStop(0.5, 'rgba(255,255,255,0.02)');
+    sg2.addColorStop(1, 'rgba(0,0,0,0.24)');
+    ctx.fillStyle = sg2; ctx.fillRect(nx - iw/2, stripY - sh2/2, iw, sh2);
+    ctx.restore();
+    drawGlow('120,215,255', nx, stripY, pw * 1.5, 0.10 + 0.18 * ease);
+  }
   drawGlow('225,245,255', nx, ny, cw * 1.5, 0.22 + 0.25 * ease);
   ctx.drawImage(spm.c, nx - cw/2, ny - chh/2, cw, chh);
   pushHit(nx - cw/2, ny - chh/2, cw, chh,
@@ -2704,30 +2728,6 @@ function drawRec2(t){
     ctx.fillStyle = 'rgba(170,225,255,0.55)';
     ctx.fillRect(sxc - cw/2 + 2*SS, 0, 2*SS, yBase);
     ctx.fillRect(sxc + cw/2 - 4*SS, 0, 2*SS, yBase);
-    // a thin display set into the pilaster, dead on the caption's line
-    {
-      const stripY = py(596, kk), sh2 = 16 * kc * SS;
-      const iw = cw - 8 * SS;
-      ctx.save();
-      ctx.beginPath(); ctx.rect(sxc - iw/2, stripY - sh2/2, iw, sh2); ctx.clip();
-      ctx.fillStyle = '#0b1216';
-      ctx.fillRect(sxc - iw/2, stripY - sh2/2, iw, sh2);
-      ctx.font = eraFont(11 * kc * SS, '700', SEGMENTS[3].font);
-      ctx.textAlign = 'left';
-      const phrase = 'SCANNED \u00b7 DESIGNED \u00b7 MILLED \u00b7 ';
-      const pwd = Math.max(20, ctx.measureText(phrase).width);
-      ctx.fillStyle = `rgba(150,228,255,${(0.45 + 0.45 * ease0).toFixed(3)})`;
-      let ox = -((t * 40 * kc * SS) % pwd);
-      while (ox < iw){ ctx.fillText(phrase, sxc - iw/2 + ox, stripY + 4 * kc * SS); ox += pwd; }
-      // the glass of the little screen
-      const sg2 = ctx.createLinearGradient(0, stripY - sh2/2, 0, stripY + sh2/2);
-      sg2.addColorStop(0, 'rgba(255,255,255,0.16)');
-      sg2.addColorStop(0.5, 'rgba(255,255,255,0.02)');
-      sg2.addColorStop(1, 'rgba(0,0,0,0.22)');
-      ctx.fillStyle = sg2; ctx.fillRect(sxc - iw/2, stripY - sh2/2, iw, sh2);
-      ctx.restore();
-      drawGlow('120,215,255', sxc, stripY, cw * 1.6, 0.10 + 0.16 * ease0);
-    }
     ctx.fillStyle = 'rgba(200,235,255,0.16)';
     ctx.fillRect(sxc - cw/2 + 6*SS, 0, 3*SS, yBase);
   }
