@@ -235,7 +235,7 @@ const BEATS = [
    th:'',
    d:'March 2023: for the first time, more digital impressions arrive at Glidewell in a month than physical ones. Nothing announces it — it is simply the month the two lines cross, sixteen years after the first digital case came in.',
    wall:[], table:[],
-   rig:{kind:'scale', dx:0, lz:150, w:300}},
+   rig:{kind:'boxes', dx:0, lz:150, w:300}},
   {x:27190, y:'2020s', t:'AI · SCALE', tier:1,
    th:'The flywheel: cheaper to make → wider access → reinvest.',
    d:'CrownAI / MarginAI; ~500K units a month, 5,000+ staff — the largest dental lab in the world.',
@@ -2705,72 +2705,83 @@ function drawRec23(t){
   }
 }
 
-/* The balance. Physical impressions on one pan, the data on the other, and the
-   beam level at the exact instant the lines cross. */
-function drawScale(b, t){
+/* THE PILE. Not a metaphor — the thing itself: the boxes the physical
+   impressions arrived in, stacked the way they stacked in a mailroom. They go
+   one at a time, from the top down, as you come through: half the pile by the
+   moment the two lines cross, and by the time you have walked on, a tenth of it
+   is left standing at the bottom. That is the whole of March 2023. */
+const BOX_ROWS = [7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1];   // 48, bottom row first
+let BOX_PILE = null;
+function boxPile(){
+  if (BOX_PILE) return BOX_PILE;
+  BOX_PILE = [];
+  BOX_ROWS.forEach((cnt, r) => {
+    for (let i = 0; i < cnt; i++){
+      const jitter = ((r * 7 + i * 13) % 9 - 4) / 40;    // stacked by hand, not by machine
+      BOX_PILE.push({r, u: (i - (cnt - 1) / 2) * 1.06 + jitter, lean: ((r * 5 + i * 11) % 7 - 3) * 0.006});
+    }
+  });
+  return BOX_PILE;
+}
+function drawBoxPile(b, t){
   const g = b.rig, kk = k(g.lz ?? 150);
   const sx = px(b.x + (g.dx || 0), kk);
   const S1 = (g.w || 300) * kk * SS / 240;
   const foot = py(CFG.benchY - 2, kk);
-  if (sx < -400 || sx > W + 400) return;
+  if (sx < -500 || sx > W + 500) return;
   const ph = crossPhase(b.x);
-  const ang = (0.5 - ph) * 0.42;
-  const postH = 150 * S1, pivY = foot - postH, armL = 92 * S1;
+  const P = boxPile(), N = P.length;
+  const live = Math.max(Math.round(N * 0.10), Math.ceil(N * (1 - 0.90 * ph)));
+  const bw = 26 * S1, bh = 15 * S1, dp = 9 * S1;        // one carton
+
   ctx.save();
   ctx.translate(sx, foot); ctx.scale(1, 0.20); ctx.translate(-sx, -foot);
-  const csh = ctx.createRadialGradient(sx, foot, 0, sx, foot, 90 * S1);
-  csh.addColorStop(0, 'rgba(0,0,0,0.40)'); csh.addColorStop(1, 'rgba(0,0,0,0)');
+  const csh = ctx.createRadialGradient(sx, foot, 0, sx, foot, bw * 4.4);
+  csh.addColorStop(0, `rgba(0,0,0,${(0.42 * (0.35 + 0.65 * live / N)).toFixed(3)})`);
+  csh.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = csh;
-  ctx.beginPath(); ctx.arc(sx, foot, 90 * S1, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(sx, foot, bw * 4.4, 0, 7); ctx.fill();
   ctx.restore();
-  ctx.save();                       // everything below sets stroke state
-  ctx.fillStyle = '#9099a1';
-  ctx.beginPath(); ctx.ellipse(sx, foot, 52 * S1, 11 * S1, 0, 0, 7); ctx.fill();
-  const pg2 = ctx.createLinearGradient(sx - 8 * S1, 0, sx + 8 * S1, 0);
-  pg2.addColorStop(0, '#7d858d'); pg2.addColorStop(0.4, '#ccd3d9'); pg2.addColorStop(1, '#6d757c');
-  ctx.fillStyle = pg2;
-  ctx.fillRect(sx - 8 * S1, pivY, 16 * S1, foot - pivY);
-  const cA = Math.cos(ang), sA = Math.sin(ang);
-  const Lx = sx - armL * cA, Ly = pivY + armL * sA;
-  const Rx = sx + armL * cA, Ry = pivY - armL * sA;
-  ctx.strokeStyle = '#b9c1c8'; ctx.lineWidth = 7 * S1; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(Lx, Ly); ctx.lineTo(Rx, Ry); ctx.stroke();
-  ctx.fillStyle = '#6d757c';
-  ctx.beginPath(); ctx.arc(sx, pivY, 10 * S1, 0, 7); ctx.fill();
-  const hang = 40 * S1;
-  for (const [ex, ey, kind] of [[Lx, Ly, 'p'], [Rx, Ry, 'd']]){
-    ctx.strokeStyle = 'rgba(150,158,166,0.9)'; ctx.lineWidth = 1.4 * S1;
-    ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex, ey + hang); ctx.stroke();
-    ctx.fillStyle = '#aeb6bd';
-    ctx.beginPath(); ctx.ellipse(ex, ey + hang, 30 * S1, 7 * S1, 0, 0, 7); ctx.fill();
-    if (kind === 'p'){
-      // impression trays, stacked and going nowhere
-      for (let i = 0; i < 3; i++){
-        const yy = ey + hang - 5 * S1 - i * 7 * S1;
-        ctx.strokeStyle = `rgba(126,116,102,${(0.9 - i * 0.12).toFixed(2)})`;
-        ctx.lineWidth = 4 * S1;
-        ctx.beginPath(); ctx.arc(ex, yy, 15 * S1, Math.PI * 0.12, Math.PI * 0.88); ctx.stroke();
-      }
-    } else {
-      // the data: a block of light with a grid in it
-      const bwd = 34 * S1, bht = 26 * S1, by2 = ey + hang - 5 * S1 - bht;
-      ctx.fillStyle = 'rgba(28,86,130,0.85)';
-      ctx.fillRect(ex - bwd/2, by2, bwd, bht);
-      ctx.strokeStyle = 'rgba(120,205,255,0.8)'; ctx.lineWidth = 1 * S1;
-      for (let i = 1; i < 4; i++){
-        ctx.beginPath();
-        ctx.moveTo(ex - bwd/2, by2 + bht * i / 4); ctx.lineTo(ex + bwd/2, by2 + bht * i / 4);
-        ctx.moveTo(ex - bwd/2 + bwd * i / 4, by2); ctx.lineTo(ex - bwd/2 + bwd * i / 4, by2 + bht);
-        ctx.stroke();
-      }
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      drawGlow('120,205,255', ex, by2 + bht/2, bwd * 1.8, 0.12 + 0.22 * ph);
-      ctx.restore();
-    }
+
+  for (let i = 0; i < live; i++){
+    const q = P[i];
+    const bx = sx + q.u * bw, by = foot - q.r * bh;
+    const goingA = Math.max(0, Math.min(1, (live - i) / 1.0));    // the top one is mid-flight
+    ctx.save();
+    ctx.globalAlpha = goingA;
+    ctx.translate(bx, by); ctx.rotate(q.lean); ctx.translate(-bx, -by);
+    // the face, the lid and the side it turns away
+    ctx.fillStyle = '#d5cbb8';
+    ctx.fillRect(bx - bw/2, by - bh, bw, bh);
+    ctx.fillStyle = '#e9e1d3';
+    ctx.beginPath();
+    ctx.moveTo(bx - bw/2, by - bh);
+    ctx.lineTo(bx - bw/2 + dp, by - bh - dp * 0.62);
+    ctx.lineTo(bx + bw/2 + dp, by - bh - dp * 0.62);
+    ctx.lineTo(bx + bw/2, by - bh);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#b3a892';
+    ctx.beginPath();
+    ctx.moveTo(bx + bw/2, by - bh);
+    ctx.lineTo(bx + bw/2 + dp, by - bh - dp * 0.62);
+    ctx.lineTo(bx + bw/2 + dp, by - dp * 0.62);
+    ctx.lineTo(bx + bw/2, by);
+    ctx.closePath(); ctx.fill();
+    // the tape down the middle, and the docket stuck on the front
+    ctx.fillStyle = 'rgba(160,150,132,0.55)';
+    ctx.fillRect(bx - 1.1 * S1, by - bh, 2.2 * S1, bh);
+    ctx.fillStyle = 'rgba(252,250,244,0.9)';
+    ctx.fillRect(bx - bw * 0.36, by - bh * 0.72, bw * 0.26, bh * 0.34);
+    ctx.strokeStyle = 'rgba(120,112,98,0.5)'; ctx.lineWidth = 0.9 * SS;
+    ctx.strokeRect(bx - bw/2, by - bh, bw, bh);
+    ctx.restore();
   }
-  ctx.restore();
-  pushHit(sx - 110 * S1, pivY - 30 * S1, 220 * S1, foot - pivY + 60 * S1,
+  ctx.fillStyle = 'rgba(70,80,92,0.55)';
+  ctx.font = eraFont(13 * S1, '700', SEGMENTS[3].font);
+  ctx.textAlign = 'center';
+  ctx.fillText(`${live} \u2190 ${N}`, sx, foot + 22 * S1);
+  ctx.textAlign = 'left';
+  pushHit(sx - bw * 4, foot - BOX_ROWS.length * bh - dp, bw * 8, BOX_ROWS.length * bh + dp * 2,
           {type: 'focus', beat: nearestBeat(b.x).i, anchor: b.x});
 }
 
@@ -6734,7 +6745,7 @@ function frame(){
         {type:'photo', sp, wx: b.x + it.dx, cy: CFG.benchY - hW/2, z: it.lz, w: it.w, cap: it.cap, beat: i});
     }
     if (b.rig && b.rig.kind === 'disc') drawDiscMill(b, t);
-    if (b.rig && b.rig.kind === 'scale') drawScale(b, t);
+    if (b.rig && b.rig.kind === 'boxes') drawBoxPile(b, t);
     if (b.rig && b.rig.kind === 'design') drawDesignStation(b, t);
     for (const p of (b.props || [])) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
