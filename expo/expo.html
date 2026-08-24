@@ -2920,10 +2920,15 @@ function drawRec2(t){
     const gw = nw * 0.90, gh = nh * 0.90;
     const spF = PED_SPRITES.crown2;
     const fw = Math.min(gw * 0.68, gh * 0.80 * spF.w / spF.h);
+    /* The pane comes down once. Having come down it hangs: it does not ride
+       back up when you walk on, it only travels with the room the way anything
+       fixed in the room travels. So its descent — and the mesh's presence on
+       it — is latched by the scan phase, not by how near you happen to be. */
+    const drop = scanPhase(mid);
     const rest = py(408, kf), from = rest - 260 * kf * SS;
-    const fy = rest + (from - rest) * (1 - ease);
+    const fy = rest + (from - rest) * (1 - drop);
     const gx = fx - gw / 2, gy = fy - gh / 2;
-    const ga = ease;
+    const ga = 0.14 + 0.86 * drop;
     ctx.strokeStyle = `rgba(150,210,235,${(0.28 * ga).toFixed(3)})`;
     ctx.lineWidth = 1 * SS;
     ctx.beginPath();
@@ -2954,7 +2959,7 @@ function drawRec2(t){
     // and now the mesh, on its face
     ctx.save();
     ctx.beginPath(); ctx.rect(gx, gy, gw, gh); ctx.clip();
-    drawCrownFile(fx, fy, fw, 0.25 + 0.75 * ease, scanPhase(mid));
+    drawCrownFile(fx, fy, fw, 0.25 + 0.75 * drop, drop);
     ctx.restore();
   }
 
