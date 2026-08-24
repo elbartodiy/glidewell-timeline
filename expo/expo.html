@@ -116,8 +116,8 @@ const BEATS = [
 
   /* ---- ERA 3 · the computer arrives, 1995–2007
           (1993 · Newport Beach happens inside the video splice) ---- */
-  {x:12150, y:'1993', t:'', tier:1, fly:true, ink:'56,58,64',
-   pinZ:728,   // the numeral belongs to the recreation panel, not the era wall
+  {x:12150, y:'1993', t:'', tier:1, ink:'56,58,64',
+   yLift:120,   // it sits above the screen instead of landing on it, and it does not grow
    th:'',
    d:'15 April 1993: 71,000 sq ft at 4141 MacArthur Blvd — nearly five times the floor the nine labs were consolidated into, and the address the company grew up in.',
    wall:[], table:[]},
@@ -839,7 +839,9 @@ function nearestBeat(x){
 const BENCH_BREAKS = [1980, 3830, 7350, 9250, 13100, 17900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
-BENCH_BREAKS.push({x: (REC93_L + REC93_R) / 2, half: 540});   // 1993 stands on its own plinth, not on the counter
+// the counter clears out from the 1989 portal all the way past the 1993 stand:
+// a model of a place should stand on the floor of a room, not on a worktop
+BENCH_BREAKS.push({x: (REC3_R + REC93_R + 65) / 2, half: (REC93_R + 65 - REC3_R) / 2});
 let TABLES = [];
 let LIGHT_GRID = [];
 function initLights(){
@@ -1391,7 +1393,7 @@ function drawBeatText(b, focusAmt){
       ctx.font = eraFont(170 * ts * fScale * kk * SS, '', seg.font);
       ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
       ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
-      ctx.fillText(b.y, cx, mixN(py(140, kk), H*0.16, focusAmt));
+      ctx.fillText(b.y, cx, mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt));
       pushHit(cx - 340*kk*SS, py(20, kk), 680*kk*SS, py(330, kk) - py(20, kk), {type:'study', beat: BEATS.indexOf(b)});
       const cd = b._capDrop || 0;
       ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
@@ -1428,7 +1430,8 @@ function drawBeatText(b, focusAmt){
         ctx.font = eraFont(170 * (seg.tScale||1) * (b._ys||1) * fScale * kk * SS, '', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${0.5 + 0.45*near})`;
         ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 3*SS;
-        ctx.fillText(b.y, cx, mixN(py(140, kk), H*0.16, focusAmt));
+        // a numeral can be lifted clear of whatever stands under it on the panel
+        ctx.fillText(b.y, cx, mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt));
       }
       pushHit(cx - 320*kk*SS, py(20, kk), 640*kk*SS, py(330, kk) - py(20, kk), {type:'study', beat: BEATS.indexOf(b)});
       const cd = b._capDrop || 0;
@@ -1878,7 +1881,7 @@ let SEAM_VIDEO = null;
    and we round it back. `pz` pins the picture to the recreation's own panel
    rather than to the era wall standing behind it. */
 const PROJECTORS = [
-  {x: (REC93_L + REC93_R) / 2, wallDX: 0, w: 1180, cy: 430, pz: 728,
+  {x: (REC93_L + REC93_R) / 2, wallDX: 0, w: 1020, cy: 385, pz: 728,
    src: 'media/timeline5.mp4', throwZ: 30, in: 12.6, out: 23.4,
    clip: {name: '4141 MacArthur Blvd', label: 'the building, before it was built',
           src: 'media/timeline5.mp4'}},
@@ -2746,7 +2749,7 @@ function drawRec93(t){
   ctx.fillRect(x0, 0, x1 - x0, yBase);
   // the reveal the picture lands in, so the film reads as hung and not floating
   const cx = px(mid, kk);
-  const sw = 830 * kk * SS, sh = sw * 3 / 4, sy = py(400, kk);
+  const sw = 830 * kk * SS, sh = sw * 3 / 4, sy = py(385, kk);
   ctx.fillStyle = 'rgba(22,27,32,0.92)';
   ctx.fillRect(cx - sw/2, sy - sh/2, sw, sh);
   const rg = ctx.createLinearGradient(0, sy - sh/2, 0, sy - sh/2 + 6 * kk * SS);
