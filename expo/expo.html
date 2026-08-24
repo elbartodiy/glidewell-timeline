@@ -439,6 +439,24 @@ function initCapLanes(){
    such a photo MUST carry pz or it will crawl across the panel). */
 function auditStatics(){
   const bad = [];
+  /* Every wall edge that meets something on another plane must be declared, or
+     a slot of naked background opens there and widens as you walk away. This is
+     the guard for that: it is not enough to have fixed the six seams once. */
+  for (const seg of SEGMENTS){
+    for (const [side, wx] of [['x0', seg.x0], ['x1', seg.x1]]){
+      const zp = abutPanelZ(wx);
+      if (zp != null){
+        if (Math.abs(zp - seg.z0) < 1) continue;      // same plane, nothing to bridge
+        continue;                                      // declared: drawWall bridges it
+      }
+      const nb = SEGMENTS.find(o => o !== seg &&
+        (Math.abs(o.x0 - wx) < 1 || Math.abs(o.x1 - wx) < 1));
+      if (nb && Math.abs(nb.z0 - seg.z0) > 1)
+        bad.push(`wall seam on two planes and nothing declared to bridge it: ` +
+                 `${side}=${wx|0}, z ${seg.z0} vs ${nb.z0} ` +
+                 `(${Math.abs(1000*(k(seg.z0)-k(nb.z0))).toFixed(0)} px of slot per 1000 units)`);
+    }
+  }
   for (const b of BEATS){
     for (const it of (b.table || [])){
       const x = b.x + (it.dx || 0), half = (it.w || 120) * 0.5;
@@ -933,18 +951,40 @@ function px(x, kk){ return W/2 + (x - cam.x - BR) * kk * SS; }
 function py(y, kk){ return (CFG.horizon + (y - CFG.horizon) * kk) * SS; }
 
 /* ---------------- SCENE DRAWING ---------------- */
+/* Where a wall meets a recreation, the two are on DIFFERENT PLANES: the era's
+   wall stands at its own depth (550 / 680 / 850 / 1400) and the recreation's
+   panel at its own (610 / 728 / 970 / 1000). They are told to meet at the same
+   world coordinate, but the same world coordinate does not land on the same
+   screen pixel at two depths — and the discrepancy is proportional to how far
+   you have travelled from it. Past the Digital Revolution that is 0.09 px of
+   naked background per unit of distance, which is the black slot that opens up
+   behind you and widens as you go. The cure is to let the wall run PAST its
+   nominal edge, as far as the neighbour's plane puts that edge on screen; the
+   recreations are painted after the walls, so the overlap is never seen. */
+const REC_PANELS = [[REC_L, REC_R, 610], [REC3_L, REC3_R, 728],
+                    [REC2_L, REC2_R, 970], [REC4_L, REC4_R, 1000]];
+function abutPanelZ(wx){
+  for (const [l, r, z] of REC_PANELS)
+    if (Math.abs(wx - l) < 1 || Math.abs(wx - r) < 1) return z;
+  return null;
+}
 function drawWall(){
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));  // hidden behind bench anyway
   for (const seg of SEGMENTS){
     const wx0 = seg.x0 + (seg.wInsetL || 0), wx1 = seg.x1 - (seg.wInsetR || 0);
-    const sx0 = Math.max(0, px(wx0, k(wallZAt(wx0)))), sx1 = Math.min(W, px(wx1, k(wallZAt(wx1))));
+    const kw = k(seg.z0);
+    let ex0 = wx0, ex1 = wx1;
+    const zL = abutPanelZ(seg.x0), zR = abutPanelZ(seg.x1);
+    if (zL != null) ex0 = Math.min(ex0, cam.x + (px(wx0, k(zL)) - W/2) / (kw * SS));
+    if (zR != null) ex1 = Math.max(ex1, cam.x + (px(wx1, k(zR)) - W/2) / (kw * SS));
+    const sx0 = Math.max(0, px(ex0, kw)), sx1 = Math.min(W, px(ex1, kw));
     if (sx1 <= 0 || sx0 >= W || sx1 <= sx0) continue;
     const tex = TEX[seg.wall];
     const tileW = tex.width * 0.9;   // world units per tile
     ctx.save();
     ctx.beginPath(); ctx.rect(sx0, 0, sx1 - sx0, yBase); ctx.clip();
     const worldLeft = cam.x - (W/2) / (k(seg.z0) * SS);
-    let wx = wx0 + Math.max(0, Math.floor((worldLeft - wx0) / tileW)) * tileW;
+    let wx = wx0 + Math.floor((Math.min(worldLeft, ex0) - wx0) / tileW) * tileW;
     const PURE_X = REC4_R;   // beyond the 2022 recreation: clean futurist white, no panels
     const swx = (PHOTO_SKIN && seg === SEGMENTS[0] && TEX.wall1_dark) ? wallSwitchX() : -1e9;
     for (; px(wx, k(wallZAt(wx))) < sx1 + 2; wx += tileW){
