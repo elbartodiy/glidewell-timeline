@@ -162,9 +162,9 @@ const BEATS = [
    d:'An in-house plastic-injection division starts making boxes, articulators and supplies — the vertical-integration playbook.',
    wall:[], table:[]},
 
-  {x:17700, y:'2005', t:'IPS e.max', minor:true,
-   th:'The esthetic foil to BruxZir — beauty up front, zirconia strength for the rest.',
-   d:'Ivoclar’s lithium disilicate becomes the go-to esthetic all-ceramic — pressable, millable, tooth-like. The metal-free front tooth finally has its material.',
+  {x:17700, y:'2005', t:'PRISMATIK', minor:true,
+   th:'The front tooth, made rather than bought.',
+   d:'January 2005: a full line of leucite-reinforced pressed ceramics under Glidewell’s own Prismatik brand — the esthetic front tooth made in-house rather than bought in. A year later Prismatik Dentalcraft becomes a manufacturing division of its own.',
    wall:[], table:[]},
 
   {x:18700, y:'2007', t:'FIRST DIGITAL CASE', fly:true,
@@ -188,17 +188,17 @@ const BEATS = [
 
   {x:22550, y:'2010s', t:'SCANNERS · SCALE',
    th:'Scale through vertical integration.',
-   d:'iTero and TRIOS take intraoral scanning mainstream — the goopy physical impression starts to die. Glidewell becomes the world’s largest lab.',
+   d:'August 2012: Glidewell buys IOS Technologies outright, and with it the FastScan intraoral scanner and the TS150 mill — rather than wait for someone else to build the scanner it depends on. The International Technology Center had opened the year before.',
    wall:[], table:[]},
 
-  {x:23170, y:'2015', t:'GLIDEWELL HT', minor:true,
+  {x:23170, y:'2015', t:'HAHN TAPERED IMPLANT', minor:true,
    th:'The BruxZir move, applied to the most expensive tooth — premium, made affordable.',
-   d:'Glidewell’s own implant, co-designed with Dr. Jack Hahn — premium quality at a fraction of the price.',
+   d:'June 2015: Glidewell’s own implant, designed with implant pioneer Dr. Jack Hahn — premium quality at a fraction of the price. It only takes the Glidewell HT name years later.',
    wall:[], table:[]},
 
-  {x:24020, y:'2017', t:'GLIDEWELL.IO',
+  {x:24020, y:'2018', t:'GLIDEWELL.IO',
    th:'Future: the lab moves into the chair.',
-   d:'In-office: fastdesign / fastmill / BruxZir NOW — single-visit crowns.',
+   d:'Announced November 2017, in the office from March 2018: the iTero Element scanner, the fastdesign.io design station, the fastmill.io mill — and BruxZir NOW, the only fully sintered chairside zirconia, so nothing needs firing after the cut. The lab’s own AI moves into the practice as CrownAI and MarginAI. The barrier was never the technique. It was the inconvenience.',
    wall:[],
    table:[],
    ped:{obj:'millSt', dx:0}},
@@ -3044,7 +3044,7 @@ function drawModel93(wx, lz, wWorld, topWorldY){
   const kk = k(lz);
   const sx = px(wx, kk);
   const foot = py(topWorldY, kk);
-  const XM = 104, ZM = 62;
+  const XM = 132, ZM = 76;
   const s = wWorld * kk * SS / (XM + ZM * 0.50);
   if (sx < -500 || sx > W + 500) return;
   const p = {s, ox: sx - (XM - ZM * 0.50) * s / 2, oy: foot - ZM * 0.34 * s};
@@ -3076,11 +3076,44 @@ function drawModel93(wx, lz, wWorld, topWorldY){
   ctx.fillStyle = topG; ctx.fill();
 
   box93(p, 0, XM, -4, 0, 0, ZM, false);                 // the site itself
-  box93(p, 6, 98, 0, 34, 6, 38, true);                  // the long block
-  box93(p, 18, 58, 0, 34, 38, 56, true);                // the wing that steps forward
-  box93(p, 30, 54, 34, 40, 12, 26, false);              // the plant on the roof
+
+  /* The grounds. A building alone on a plate is a massing study; what the film
+     shows is a place — asphalt, a lot with the stalls painted on it, young
+     trees that have not filled out yet, and the walk up to the door. Painted
+     flat on the ground plane in the same oblique, so it lies down properly. */
+  const flat = (x0, x1, z0, z1, tone) => quad93(p, [[x0,0.4,z0],[x1,0.4,z0],[x1,0.4,z1],[x0,0.4,z1]], tone);
+  flat(4, XM-4, 4, ZM-4, '#dfe0dc');                    // the lawn it all sits on
+  flat(86, XM-6, 8, ZM-16, '#a8adb2');                  // the lot
+  flat(6, XM-6, ZM-16, ZM-6, '#b3b8bd');                // the drive along the front
+  ctx.lineWidth = Math.max(0.6, 0.7 * s);
+  ctx.strokeStyle = 'rgba(250,250,248,0.75)';
+  for (let i = 0; i < 7; i++){                          // stalls, painted
+    const zz = 12 + i * 6.4;
+    const a = m93(p, 88, 0.6, zz), b2 = m93(p, XM-8, 0.6, zz);
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b2[0], b2[1]); ctx.stroke();
+  }
+  for (let i = 0; i < 5; i++)                           // and cars in some of them
+    box93(p, 90 + (i % 2) * 15, 102 + (i % 2) * 15, 0.4, 4.6, 14 + i * 9.5, 22 + i * 9.5, false);
+  flat(30, 46, ZM-16, 58, '#c6cac8');                   // the walk up to the door
+
+  box93(p, 8, 78, 0, 34, 12, 40, true);                 // the long block
+  box93(p, 20, 54, 0, 34, 40, 58, true);                // the wing that steps forward
+  box93(p, 30, 52, 34, 40, 18, 30, false);              // the plant on the roof
+  // young trees — the film was shot the year they were planted
+  for (const [tx2, tz2, r2] of [[10, 66, 4.4], [26, 68, 3.8], [50, 68, 4.6], [66, 66, 3.6],
+                                [84, 30, 4.0], [84, 52, 3.6], [122, 12, 4.2], [122, 60, 3.8],
+                                [4, 20, 4.0], [4, 44, 3.6]]){
+    const [ux, uy] = m93(p, tx2, 0.4, tz2);
+    const [, cy2] = m93(p, tx2, r2 * 2.1, tz2);
+    ctx.strokeStyle = '#8e8c84'; ctx.lineWidth = Math.max(0.8, 1.1 * s);
+    ctx.beginPath(); ctx.moveTo(ux, uy); ctx.lineTo(ux, cy2 + r2 * 0.5 * s); ctx.stroke();
+    ctx.fillStyle = '#9fb09a';
+    ctx.beginPath(); ctx.ellipse(ux, cy2, r2 * s, r2 * 0.86 * s, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(226,236,222,0.55)';
+    ctx.beginPath(); ctx.ellipse(ux - r2 * 0.3 * s, cy2 - r2 * 0.3 * s, r2 * 0.45 * s, r2 * 0.38 * s, 0, 0, 7); ctx.fill();
+  }
   // the round stair tower on the far corner
-  const [tx, ty] = m93(p, 88, 37, 46), [, by] = m93(p, 88, 0, 46);
+  const [tx, ty] = m93(p, 72, 37, 48), [, by] = m93(p, 72, 0, 48);
   const rx = 7.5 * s, ry = rx * 0.34;
   const tg = ctx.createLinearGradient(tx - rx, 0, tx + rx, 0);
   tg.addColorStop(0, T93[1]); tg.addColorStop(0.38, T93[0]); tg.addColorStop(1, T93[2]);
@@ -3090,15 +3123,15 @@ function drawModel93(wx, lz, wWorld, topWorldY){
   ctx.beginPath(); ctx.ellipse(tx, ty, rx, ry, 0, 0, 7); ctx.fill();
   // the bollards along the walk up to the door — they are in the film too
   for (let i = 0; i < 6; i++){
-    const bx2 = 22 + i * 6.4;
-    const [ux, uy] = m93(p, bx2, 3.4, 59), [, ly] = m93(p, bx2, 0, 59);
+    const bx2 = 31 + i * 2.9;
+    const [ux, uy] = m93(p, bx2, 3.4, 60), [, ly] = m93(p, bx2, 0, 60);
     ctx.fillStyle = T93[1];
     ctx.fillRect(ux - 1.1 * s, uy, 2.2 * s, ly - uy);
     ctx.fillStyle = T93[0];
     ctx.beginPath(); ctx.ellipse(ux, uy, 1.1 * s, 0.4 * s, 0, 0, 7); ctx.fill();
   }
   // the number, where it is on the building
-  const [nx2, ny2] = m93(p, 30, 24, 38);
+  const [nx2, ny2] = m93(p, 32, 24, 40);
   ctx.fillStyle = 'rgba(70,68,64,0.85)';
   ctx.font = eraFont(Math.max(5, 4.6 * s), '700', SEGMENTS[2].font);
   ctx.textAlign = 'left';
