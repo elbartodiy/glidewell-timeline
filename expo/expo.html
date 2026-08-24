@@ -2385,13 +2385,24 @@ function drawCrownFile(cx, cy, w, a, t){
   crownGeometry();
   const sp = PED_SPRITES.crown2, h = w * sp.h / sp.w;
   ctx.save();
-  ctx.strokeStyle = `rgba(170,235,255,${(a * 0.75).toFixed(3)})`;
-  ctx.lineWidth = Math.max(1, w * 0.007);
+  ctx.globalCompositeOperation = 'lighter';          // neon: light added, not painted
+  // the rings themselves are deep and saturated, the bloom around them cool
+  ctx.shadowColor = `rgba(40,150,255,${(a * 0.9).toFixed(3)})`;
+  ctx.shadowBlur = Math.max(3, w * 0.05);
+  ctx.strokeStyle = `rgba(50,150,215,${(a * 0.95).toFixed(3)})`;
+  ctx.lineWidth = Math.max(1, w * 0.009);
   for (const [ax, bx, uy] of CROWN_ROWS){
     const y = cy + uy * h, rx = (bx - ax) * w / 2, mx = cx + (ax + bx) * w / 2;
     ctx.beginPath(); ctx.ellipse(mx, y, rx, Math.max(1.5, h * 0.022), 0, 0, 7); ctx.stroke();
   }
-  ctx.strokeStyle = `rgba(210,245,255,${(a * 0.5).toFixed(3)})`;
+  // one white line down the axis — the tube inside the glow
+  ctx.shadowColor = `rgba(150,220,255,${(a * 0.9).toFixed(3)})`;
+  ctx.shadowBlur = Math.max(4, w * 0.07);
+  ctx.strokeStyle = `rgba(255,255,255,${(a * 0.95).toFixed(3)})`;
+  ctx.lineWidth = Math.max(1, w * 0.012);
+  ctx.beginPath(); ctx.moveTo(cx, cy - h * 0.52); ctx.lineTo(cx, cy + h * 0.52); ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = `rgba(120,200,240,${(a * 0.55).toFixed(3)})`;
   ctx.beginPath();
   for (let i = 0; i < CROWN_ROWS.length; i++){
     const [ax, , uy] = CROWN_ROWS[i];
@@ -2482,9 +2493,15 @@ function drawRec2(t){
   // THE MOMENT OF ALIGNMENT: when the three states lock, the form the points
   // have only been describing flares into being for an instant — the data
   // becomes the object, once, and then the room settles back
-  if (!state.rec2) state.rec2 = {fired: false, t0: -9};
-  if (ease0 > 0.90 && !state.rec2.fired){ state.rec2.fired = true; state.rec2.t0 = t; }
-  if (ease0 < 0.55) state.rec2.fired = false;
+  if (!state.rec2) state.rec2 = {fired: false, t0: -9, prev: null};
+  const dxm = cam.x - mid;
+  const crossed = state.rec2.prev != null && state.rec2.prev !== 0 &&
+                  Math.sign(state.rec2.prev) !== Math.sign(dxm);
+  if (!state.rec2.fired && (crossed || Math.abs(dxm) < 6)){
+    state.rec2.fired = true; state.rec2.t0 = t;
+  }
+  if (Math.abs(dxm) > 320) state.rec2.fired = false;   // re-armed once you leave
+  state.rec2.prev = dxm;
   const fl = Math.max(0, 1 - (t - state.rec2.t0) / 0.75);
   if (fl > 0.001){
     const f = fl * fl;
