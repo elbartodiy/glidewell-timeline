@@ -1346,6 +1346,20 @@ function drawBeatText(b, focusAmt){
 
 /* rest-descriptions live on the bench face, under the etched year line —
    drawn above everything, era ink, so no pedestal or prop ever hides them */
+/* A caption on a dark bench face has to be light — but light in the colour of
+   the era's own light. A cold grey under tungsten reads as a foreign object in
+   the room; the craft years want warm cream, the white era wants cool. Taken
+   from each era's ink, lifted where that ink is too dark to read on wood. */
+function descInk(seg){
+  const c = (seg.ink || '218,222,227').split(',').map(Number);
+  const mean = (c[0] + c[1] + c[2]) / 3;
+  if (mean >= 150) return seg.ink;                    // already a light era ink
+  // a dark era ink (the white era): keep its hue, raise it to read on a dark face
+  const mx = Math.max(1, Math.max(c[0], c[1], c[2]));
+  const g = 232 / mx;
+  return c.map(v => Math.round(Math.min(255, 40 + v * g))).join(',');
+}
+
 function drawBenchDescs(){
   const kf = k(0);
   for (let i = 0; i < BEATS.length; i++){
@@ -1362,7 +1376,7 @@ function drawBenchDescs(){
       ctx.save();
       ctx.textAlign = 'center';
       ctx.font = eraFont(23 * SS, '', seg.font);
-      ctx.fillStyle = `rgba(226,229,233,${(dAmt * 0.92).toFixed(3)})`;
+      ctx.fillStyle = `rgba(${descInk(seg)},${(dAmt * 0.92).toFixed(3)})`;
       ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 2*SS;
       drawLines(b._d, W * 0.5, H * 0.925, 32 * SS);
       ctx.restore();
@@ -1386,7 +1400,7 @@ function drawBenchDescs(){
       }
       if (bd < 1400) onTable = best;
     }
-    let ink = '218,222,227', shadow = true, slabDrop = 0;   // light ink on the dark bench face
+    let ink = descInk(seg), shadow = true, slabDrop = 0;   // light ink, in the era's own light
     // the white era needs dark ink on its pale face — unless the hero dim
     // has already sunk the scene, where light ink glows over the dark
     if (segIdx(b.x) === 3 && (state.hero || 0) < 0.25){ ink = '55,61,69'; shadow = false; }
