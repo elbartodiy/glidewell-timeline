@@ -698,6 +698,7 @@ function attachMouseDriver(el){
     // arm the scrub, but do not move yet: a press is not a jump. Grabbing the
     // thumb anywhere on its body keeps that grip point, so it never snaps its
     // centre under the cursor.
+    if (musicMarkHit(pt)){ toggleMusic(); down = false; return; }
     if (ruleHit(pt)){
       const g = ruleGeom();
       const grabbed = Math.abs(g.at(cam.x) - pt.x) < Math.max(18 * SS, (g.at(cam.x + g.half) - g.at(cam.x - g.half)) / 2);
@@ -732,6 +733,7 @@ function attachMouseDriver(el){
     else if (e.key === 'ArrowLeft') Input.push(-900);
     else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); Input.act(); }
     else if (e.key === 'f') document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    else if (e.key === 'm' || e.key === 'M' || e.key === '\u044c' || e.key === '\u042c') toggleMusic();
   });
 }
 
@@ -1925,7 +1927,62 @@ function projMachine(p, t, lamp, mxp, myp, bw, bh, kp){
    room tone, not a soundtrack, and it must never fight a speaking voice — so it
    ducks hard whenever a clip is playing and idles when nobody is watching.
    Browsers refuse sound before a gesture, so it waits for the first touch. */
-const MUSIC = {src: 'audio/mus_hall.m4a', vol: 0.30, duck: 0.18, cur: 0, el: null};
+const MUSIC = {src: 'audio/mus_hall.m4a', vol: 0.30, duck: 0.18, cur: 0, el: null,
+               off: localStorage.getItem('glidewell.music') === 'off'};
+function toggleMusic(){
+  MUSIC.off = !MUSIC.off;
+  try { localStorage.setItem('glidewell.music', MUSIC.off ? 'off' : 'on'); } catch(e){}
+  const a = MUSIC.el;
+  if (a && !MUSIC.off) a.play().catch(() => {});
+}
+/* a small mark in the corner, kept quiet: the room should not look like a
+   player. It brightens when the pointer is near it and says which state it is
+   in by the slash, not by a label. */
+function musicMarkBox(){ const s = 22 * SS; return {x: 26 * SS, y: 26 * SS, w: s, h: s}; }
+function musicMarkHit(pt){
+  if (!pt) return false;
+  const b = musicMarkBox(), pad = 12 * SS;
+  return pt.x > b.x - pad && pt.x < b.x + b.w + pad &&
+         pt.y > b.y - pad && pt.y < b.y + b.h + pad;
+}
+function drawMusicMark(){
+  const A = Math.max(0.25, state.ruleA);          // it lives with the rule
+  if (A < 0.03) return;
+  const b = musicMarkBox();
+  const hot = musicMarkHit(Input.hover) ? 1 : 0;
+  const seg = segAt(cam.x);
+  const a = (MUSIC.off ? 0.30 : 0.42) * A + 0.28 * hot;
+  ctx.save();
+  ctx.strokeStyle = `rgba(${seg.ink},${a.toFixed(3)})`;
+  ctx.fillStyle = `rgba(${seg.ink},${a.toFixed(3)})`;
+  ctx.lineWidth = 1.6 * SS;
+  ctx.lineJoin = 'round';
+  const cx = b.x + b.w * 0.34, cy = b.y + b.h * 0.5, s = b.h;
+  // the cone
+  ctx.beginPath();
+  ctx.moveTo(cx - s*0.26, cy - s*0.14);
+  ctx.lineTo(cx - s*0.08, cy - s*0.14);
+  ctx.lineTo(cx + s*0.16, cy - s*0.34);
+  ctx.lineTo(cx + s*0.16, cy + s*0.34);
+  ctx.lineTo(cx - s*0.08, cy + s*0.14);
+  ctx.lineTo(cx - s*0.26, cy + s*0.14);
+  ctx.closePath(); ctx.fill();
+  if (MUSIC.off){
+    ctx.beginPath();
+    ctx.moveTo(cx + s*0.34, cy - s*0.22); ctx.lineTo(cx + s*0.66, cy + s*0.22);
+    ctx.moveTo(cx + s*0.66, cy - s*0.22); ctx.lineTo(cx + s*0.34, cy + s*0.22);
+    ctx.stroke();
+  } else {
+    for (let i = 1; i <= 2; i++){
+      ctx.beginPath();
+      ctx.arc(cx + s*0.20, cy, s * (0.16 + 0.19 * i), -0.9, 0.9);
+      ctx.globalAlpha = 1 - i * 0.28;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
 function initMusic(){
   const a = new Audio(MUSIC.src);
   a.loop = true; a.preload = 'auto'; a.volume = 0;
@@ -1946,12 +2003,14 @@ function initMusic(){
 function updateMusic(dt){
   const a = MUSIC.el; if (!a) return;
   // a speaking voice always wins; the attract loop plays a little lower still
-  let want = MUSIC.vol;
+  let want = MUSIC.off ? 0 : MUSIC.vol;
   if (state.clip) want *= MUSIC.duck;
   if (state.mode === 'attract') want *= 0.75;
   want *= 1 - (state.attract.fade || 0);
   MUSIC.cur += (want - MUSIC.cur) * Math.min(1, dt * 2.2);
   a.volume = Math.max(0, Math.min(1, MUSIC.cur));
+  // silence costs nothing: a muted track stops decoding
+  if (MUSIC.off && MUSIC.cur < 0.01 && !a.paused) a.pause();
 }
 
 function initSeamVideo(){
@@ -5396,6 +5455,7 @@ function frame(){
   drawSeamVideo();
   drawGrade(t);
   drawProgress(t);
+  drawMusicMark();
   drawDebug();
   drawStudy();
   drawClip();      // the speaker's voice — a video window above the page
@@ -5403,7 +5463,8 @@ function frame(){
   drawAttractHint(t);
   // pointer affordance
   if (Input.hover && state.mode === 'live'){
-    document.body.style.cursor = ruleHit(Input.hover) ? 'ew-resize'
+    document.body.style.cursor = musicMarkHit(Input.hover) ? 'pointer'
+      : ruleHit(Input.hover) ? 'ew-resize'
       : ((!state.inspect && hitAt(Input.hover.x, Input.hover.y)) ? 'pointer' : '');
   }
 
