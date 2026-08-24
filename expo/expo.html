@@ -4816,13 +4816,17 @@ function drawDiscMill(b, t){
     ctx.globalCompositeOperation = 'lighter';
     drawGlow('255,238,190', cutting.x, cutting.y, R * 0.30, 0.5);
     ctx.restore();
-    ctx.fillStyle = 'rgba(150,158,166,0.95)';
+    // the spindle enters from the LEFT, on the horizontal, the way the machine
+    // is actually built — the blank faces you and the bur works across it
+    ctx.fillStyle = 'rgba(146,154,162,0.95)';
     ctx.beginPath();
-    ctx.moveTo(cutting.x - 3.2 * S1, wy);
-    ctx.lineTo(cutting.x + 3.2 * S1, wy);
-    ctx.lineTo(cutting.x + 1.5 * S1, cutting.y - rp * 0.5);
-    ctx.lineTo(cutting.x - 1.5 * S1, cutting.y - rp * 0.5);
+    ctx.moveTo(wx, cutting.y - 3.4 * S1);
+    ctx.lineTo(wx, cutting.y + 3.4 * S1);
+    ctx.lineTo(cutting.x - rp * 0.55, cutting.y + 1.5 * S1);
+    ctx.lineTo(cutting.x - rp * 0.55, cutting.y - 1.5 * S1);
     ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(196,202,208,0.95)';
+    ctx.fillRect(wx, cutting.y - 6 * S1, 11 * S1, 12 * S1);
   }
 
   const gg = ctx.createLinearGradient(wx, wy, wx + ww * 0.7, wy + wh);
@@ -5162,19 +5166,57 @@ function makePedObj(kind){
     g.beginPath(); g.ellipse(24, 20, 14, 22, 0.4, 0, 7); g.fill();
     g.restore();
   } else if (kind === 'millSt'){
-    c.width = 190; c.height = 160;
-    // fastmill.io — compact chairside mill
-    const bg = g.createLinearGradient(0, 10, 0, 150);
-    bg.addColorStop(0, '#f2f3f5'); bg.addColorStop(.7, '#d8dadd'); bg.addColorStop(1, '#b9bcc0');
+    /* fastmill.io, drawn from the machine rather than from imagination. It mills
+       on the HORIZONTAL: the blank is a small puck held frontally in a steel hub
+       on the right, and the bur comes in from the LEFT on a horizontal spindle
+       with its polished flange behind it. Nothing here descends from above. */
+    c.width = 210; c.height = 172;
+    const bg = g.createLinearGradient(0, 26, 0, 164);
+    bg.addColorStop(0, '#f4f5f7'); bg.addColorStop(.62, '#dcdee1'); bg.addColorStop(1, '#b6b9bd');
     g.fillStyle = bg;
-    g.beginPath(); g.roundRect(20, 12, 150, 136, 20); g.fill();
-    g.fillStyle = '#10161c';
-    g.beginPath(); g.roundRect(38, 40, 114, 78, 10); g.fill();   // window
-    g.fillStyle = 'rgba(120,220,255,0.5)';
-    g.fillRect(90, 52, 5, 44);                                    // spindle
-    g.fillStyle = 'rgba(200,240,255,0.85)'; g.fillRect(84, 92, 17, 5);
-    g.fillStyle = 'rgba(90,200,250,0.9)';
-    g.fillRect(38, 130, 40, 4);                                   // status LED
+    g.beginPath(); g.roundRect(10, 30, 190, 132, 16); g.fill();
+    // the hinged lid standing up over the chamber, with its own window
+    g.fillStyle = '#e6e8ea';
+    g.beginPath(); g.roundRect(126, 6, 56, 68, 14); g.fill();
+    g.fillStyle = '#20262c';
+    g.beginPath(); g.roundRect(139, 18, 30, 40, 6); g.fill();
+    // the chamber: a white cavity with concentric ridges turned into it
+    g.save();
+    g.beginPath(); g.roundRect(124, 62, 62, 66, 9); g.clip();
+    const ch = g.createLinearGradient(124, 62, 186, 128);
+    ch.addColorStop(0, '#fbfbfa'); ch.addColorStop(1, '#c9ccce');
+    g.fillStyle = ch; g.fillRect(124, 62, 62, 66);
+    g.strokeStyle = 'rgba(150,156,160,0.55)';
+    for (let i = 1; i <= 3; i++){
+      g.lineWidth = 1.6;
+      g.beginPath(); g.ellipse(163, 95, 8 + i * 7, 7 + i * 6.5, 0, 0, 7); g.stroke();
+    }
+    // spindle flange on the left, and the bur running right, on the level
+    const fl = g.createLinearGradient(126, 78, 144, 112);
+    fl.addColorStop(0, '#e8eaec'); fl.addColorStop(.5, '#9aa0a6'); fl.addColorStop(1, '#6f757b');
+    g.fillStyle = fl;
+    g.beginPath(); g.ellipse(133, 95, 9, 19, 0, 0, 7); g.fill();
+    g.fillStyle = '#7d838a'; g.fillRect(133, 92, 12, 6);
+    g.fillStyle = '#4d5257'; g.fillRect(145, 93.4, 5, 3.2);        // collet
+    g.fillStyle = '#b9bec3'; g.fillRect(150, 93.8, 14, 2.4);       // the diamond bur
+    // the blank, mounted frontally in its hub on the right
+    g.fillStyle = '#8d9298';
+    g.beginPath(); g.ellipse(176, 95, 7, 13, 0, 0, 7); g.fill();
+    const pk = g.createLinearGradient(163, 84, 175, 106);
+    pk.addColorStop(0, '#f0e7d2'); pk.addColorStop(1, '#cfc2a6');
+    g.fillStyle = pk;
+    g.beginPath(); g.roundRect(163, 84, 12, 22, 3); g.fill();
+    g.restore();
+    g.strokeStyle = 'rgba(90,96,102,0.55)'; g.lineWidth = 1.4;
+    g.beginPath(); g.roundRect(124, 62, 62, 66, 9); g.stroke();
+    // the hairline across the front, and the wordmarks
+    g.fillStyle = 'rgba(139,111,208,0.85)'; g.fillRect(20, 112, 100, 1.6);
+    g.fillStyle = 'rgba(70,76,82,0.9)';
+    g.font = '600 13px "Helvetica Neue", Arial, sans-serif';
+    g.fillText('fastmill.io', 22, 104);
+    g.fillStyle = 'rgba(120,126,132,0.8)';
+    g.font = '600 9px "Helvetica Neue", Arial, sans-serif';
+    g.fillText('glidewell.io', 128, 150);
   } else if (kind === 'scanner'){
     c.width = 150; c.height = 170;
     // intraoral scanner wand resting on its cradle
