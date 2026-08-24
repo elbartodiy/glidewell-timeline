@@ -2747,8 +2747,9 @@ function drawRec2Front(t){
   // the scanner works the crown from across the room, so its light is thrown
   // before the column and the crown are painted: they stand in it and stop it
   const bLive = Math.max(0, 1 - Math.max(0, cam.x - mid) / 240);
-  if (bLive > 0.01 && ease > 0.02)
-    drawScanBeam(nx, ny, cw, chh, scanPhase(mid), bLive * (0.3 + 0.7 * ease));
+  const bIn = Math.max(0, Math.min(1, (cam.x - mid + 560) / 140));
+  if (bLive * bIn > 0.01)
+    drawScanBeam(nx, ny, cw, chh, scanPhase(mid), bLive * bIn * (0.35 + 0.65 * ease));
 
   /* The plinth is a cylinder of frosted glass. It cannot be truly transparent:
      the sentence painted on the panel behind would read straight through it and
@@ -2872,15 +2873,20 @@ function drawRec2Front(t){
           {type: 'focus', beat: nearestBeat(mid).i, anchor: mid});
 }
 
-/* How far the scanner has got: it cuts as you come in and is finished exactly
-   at the alignment; once you are past, it stays finished rather than undoing
-   itself, because the file has been made and a made file does not unmake. */
-function scanPhase(mid){
+/* Anything that completes exactly at the alignment and then stays completed:
+   it runs as you come in and does not undo itself when you walk on, because a
+   file that has been made does not unmake. Two of these, on two spans — the
+   pane takes its time coming down, but the cut itself is a short, late event,
+   or the crown is already half a file while it is still off at the edge of the
+   bay and there is nothing left to watch happen. */
+function latchedPhase(mid, span){
   const d = cam.x - mid;
   if (d >= 0) return 1;
-  const u = Math.max(0, Math.min(1, 1 + d / 900));
+  const u = Math.max(0, Math.min(1, 1 + d / span));
   return u * u * (3 - 2 * u);
 }
+function scanPhase(mid){ return latchedPhase(mid, 450); }
+function paneDrop(mid){ return latchedPhase(mid, 900); }
 
 function drawRec2(t){
   const mid = (REC2_L + REC2_R) / 2;
@@ -2969,7 +2975,7 @@ function drawRec2(t){
        back up when you walk on, it only travels with the room the way anything
        fixed in the room travels. So its descent — and the mesh's presence on
        it — is latched by the scan phase, not by how near you happen to be. */
-    const drop = scanPhase(mid);
+    const drop = paneDrop(mid);
     const rest = py(408, kf), from = rest - 260 * kf * SS;
     const fy = rest + (from - rest) * (1 - drop);
     const gx = fx - gw / 2, gy = fy - gh / 2;
@@ -3004,7 +3010,7 @@ function drawRec2(t){
     // and now the mesh, on its face
     ctx.save();
     ctx.beginPath(); ctx.rect(gx, gy, gw, gh); ctx.clip();
-    drawCrownFile(fx, fy, fw, 0.25 + 0.75 * drop, drop);
+    drawCrownFile(fx, fy, fw, 0.25 + 0.75 * drop, scanPhase(mid));
     ctx.restore();
   }
 
