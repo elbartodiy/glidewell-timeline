@@ -2629,25 +2629,60 @@ function drawRec2Front(t){
      the wall and stays put, so the movement you see is the column sliding
      across a line that never moves. Paint, then light, then paint again. */
   if (ease > 0.15){
-    const stripY = py(596, kk), sh2 = 17 * kn * SS, iw = pw - 6 * SS;
+    const stripY = py(730, kk), sh2 = 19 * kn * SS;
+    const iw = pw - 34 * kn * SS;              // air at both sides: it is set INTO the column
+    const R = (iw / 2) * 1.18;                 // the cylinder it is wrapped around
+    // the line as it is written on the wall, rendered flat once
+    const ow2 = Math.ceil(W), oh2 = Math.ceil(sh2) + 2;
+    if (!state.rec2Strip || state.rec2Strip.width !== ow2 || state.rec2Strip.height !== oh2){
+      state.rec2Strip = document.createElement('canvas');
+      state.rec2Strip.width = ow2; state.rec2Strip.height = oh2;
+    }
+    const gs = state.rec2Strip.getContext('2d');
+    gs.clearRect(0, 0, ow2, oh2);
+    gs.textAlign = 'center';
+    gs.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
+    try { gs.letterSpacing = `${5*kk*SS}px`; } catch(e){}
+    gs.fillStyle = `rgba(150,228,255,${(0.60 + 0.4 * ease).toFixed(3)})`;
+    gs.fillText('SCANNED \u00b7 DESIGNED \u00b7 MILLED', cx, oh2 * 0.72);
     ctx.save();
-    ctx.beginPath(); ctx.rect(nx - iw/2, stripY - sh2/2, iw, sh2); ctx.clip();
+    // the recess, its edges curved by the barrel of the column
+    const yTopC = stripY - sh2/2, yBotC = stripY + sh2/2, bow = 3.2 * kn * SS;
+    ctx.beginPath();
+    ctx.moveTo(nx - iw/2, yTopC);
+    ctx.quadraticCurveTo(nx, yTopC + bow, nx + iw/2, yTopC);
+    ctx.lineTo(nx + iw/2, yBotC);
+    ctx.quadraticCurveTo(nx, yBotC + bow, nx - iw/2, yBotC);
+    ctx.closePath();
+    ctx.clip();
     ctx.fillStyle = '#0b1216';
-    ctx.fillRect(nx - iw/2, stripY - sh2/2, iw, sh2);
-    // the same words, at the panel's own position — the column merely reveals them
-    ctx.textAlign = 'center';
-    ctx.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
-    try { ctx.letterSpacing = `${5*kk*SS}px`; } catch(e){}
-    ctx.fillStyle = `rgba(150,228,255,${(0.55 + 0.4 * ease).toFixed(3)})`;
-    ctx.fillText('SCANNED \u00b7 DESIGNED \u00b7 MILLED', cx, stripY);
-    try { ctx.letterSpacing = '0px'; } catch(e){}
-    // the glass over it
-    const sg2 = ctx.createLinearGradient(0, stripY - sh2/2, 0, stripY + sh2/2);
-    sg2.addColorStop(0, 'rgba(255,255,255,0.18)');
-    sg2.addColorStop(0.5, 'rgba(255,255,255,0.02)');
-    sg2.addColorStop(1, 'rgba(0,0,0,0.24)');
-    ctx.fillStyle = sg2; ctx.fillRect(nx - iw/2, stripY - sh2/2, iw, sh2);
+    ctx.fillRect(nx - iw/2, yTopC - 2, iw, sh2 + 6);
+    // re-lay the flat line onto the barrel: a slice at screen x reads the line
+    // at the arc distance that lands there, so letters crowd toward the edges
+    const step = Math.max(1, Math.round(1.5 * SS));
+    for (let x = -iw/2; x < iw/2; x += step){
+      const u = Math.max(-0.999, Math.min(0.999, x / R));
+      const s = R * Math.asin(u);
+      const sag = bow * (1 - (x / (iw/2)) * (x / (iw/2)));
+      ctx.drawImage(state.rec2Strip,
+                    Math.round(nx + s), 0, step + 1, oh2,
+                    Math.round(nx + x), yTopC + sag - 1, step + 1, oh2);
+    }
+    // the glass, brighter along the crown of the barrel
+    const sg2 = ctx.createLinearGradient(nx - iw/2, 0, nx + iw/2, 0);
+    sg2.addColorStop(0, 'rgba(0,0,0,0.34)');
+    sg2.addColorStop(0.42, 'rgba(255,255,255,0.10)');
+    sg2.addColorStop(0.58, 'rgba(255,255,255,0.06)');
+    sg2.addColorStop(1, 'rgba(0,0,0,0.38)');
+    ctx.fillStyle = sg2; ctx.fillRect(nx - iw/2, yTopC - 2, iw, sh2 + 6);
     ctx.restore();
+    // the bezel, and the light it spills onto the column
+    ctx.strokeStyle = `rgba(210,240,255,${(0.22 + 0.18 * ease).toFixed(3)})`;
+    ctx.lineWidth = 1.2 * SS;
+    ctx.beginPath();
+    ctx.moveTo(nx - iw/2, yTopC); ctx.quadraticCurveTo(nx, yTopC + bow, nx + iw/2, yTopC);
+    ctx.moveTo(nx - iw/2, yBotC); ctx.quadraticCurveTo(nx, yBotC + bow, nx + iw/2, yBotC);
+    ctx.stroke();
     drawGlow('120,215,255', nx, stripY, pw * 1.5, 0.10 + 0.18 * ease);
   }
   drawGlow('225,245,255', nx, ny, cw * 1.5, 0.22 + 0.25 * ease);
@@ -2675,7 +2710,7 @@ function drawRec2(t){
   const sp = PED_SPRITES.crown2;
   const w = 360 * kk * SS, h = w * sp.h / sp.w;
   const cx = px(mid, kk), cyS = py(400, kk);
-  const nw = 520 * kk * SS, nh = 470 * kk * SS;
+  const nw = 600 * kk * SS, nh = 560 * kk * SS;
   const ng = ctx.createLinearGradient(0, cyS - nh/2, 0, cyS + nh/2);
   ng.addColorStop(0, '#1f242b'); ng.addColorStop(1, '#2c333c');
   ctx.fillStyle = ng;
@@ -2722,7 +2757,7 @@ function drawRec2(t){
     ctx.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
     try { ctx.letterSpacing = `${5*kk*SS}px`; } catch(e){}
     ctx.fillStyle = `rgba(70,110,135,${(0.75 * ease).toFixed(3)})`;
-    ctx.fillText('SCANNED \u00b7 DESIGNED \u00b7 MILLED', cx, py(596, kk));
+    ctx.fillText('SCANNED \u00b7 DESIGNED \u00b7 MILLED', cx, py(730, kk));
     try { ctx.letterSpacing = '0px'; } catch(e){}
     ctx.restore();
   }
@@ -2746,18 +2781,18 @@ function drawRec2(t){
   ctx.font = eraFont(34 * kk * SS, '', SEGMENTS[3].font);
   try { ctx.letterSpacing = `${8*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(58,68,80,0.85)';
-  ctx.fillText('THE DIGITAL REVOLUTION', cx, py(96, kk));
+  ctx.fillText('THE DIGITAL REVOLUTION', cx, py(60, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.font = eraFont(27 * kk * SS, '', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(66,76,88,0.95)';
-  ctx.fillText('the impression becomes a scan \u00b7 the crown becomes a file', cx, py(142, kk));
+  ctx.fillText('the impression becomes a scan \u00b7 the crown becomes a file', cx, py(100, kk));
   // era markers on the panel shoulders: inside the panel, clear of the columns
   ctx.font = eraFont(24 * kk * SS, '700', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(110,120,132,0.7)';
   ctx.textAlign = 'left';
-  ctx.fillText('\u2190 THE ANALOG CENTURY', x0 + 100*kk*SS, py(690, kk));
+  ctx.fillText('\u2190 THE ANALOG CENTURY', x0 + 100*kk*SS, py(800, kk));
   ctx.textAlign = 'right';
-  ctx.fillText('THE DIGITAL AGE \u2192', x1 - 100*kk*SS, py(690, kk));
+  ctx.fillText('THE DIGITAL AGE \u2192', x1 - 100*kk*SS, py(800, kk));
   ctx.restore();
   // pilaster columns, cool tone, same plane
   for (const wxc of [REC2_L, REC2_R]){
