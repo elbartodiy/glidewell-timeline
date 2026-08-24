@@ -174,7 +174,7 @@ const BEATS = [
    th:'Revolution: the best, made affordable — and the default.',
    d:'The monolithic solid-zirconia crown goes mainstream — the #1 brand; the biggest cost-and-speed inflection.',
    wall:[], table:[],
-   ped:{obj:'crown2', dx:0}},
+   rig:{kind:'disc', dx:-250, lz:150, w:240}},
 
   {x:21930, y:'2009–13', t:'SCREW-RETAINED', minor:true,
    th:'The barrier wasn’t the technique — it was the price of the parts.',
@@ -467,6 +467,11 @@ function auditStatics(){
       const x = b.x + (it.dx || 0), half = (it.w || 120) * 0.28;
       if (!TABLES.some(tb => x - half >= tb.x0 && x + half <= tb.x1))
         bad.push(`standing print off any table: ${b.y} ${it.img || ''} @${x|0}`);
+    }
+    if (b.rig){
+      const x = b.x + (b.rig.dx || 0), half = (b.rig.w || 240) * 0.5;
+      if (!TABLES.some(tb => x - half >= tb.x0 && x + half <= tb.x1))
+        bad.push(`machine off any table: ${b.y} ${b.rig.kind} @${x|0}`);
     }
     for (const it of (b.wall || [])){
       if (it.pz != null) continue;
@@ -3996,6 +4001,153 @@ function initDecor(){
   auditPlacements();
 }
 
+/* THE BLANK. BruxZir's real subject is not a crown, it is a disc: solid
+   zirconia goes into the mill whole and comes out with nineteen crowns cut out
+   of it, still held on their sprues. That is the argument of 2009 in one
+   object — the restoration has stopped being a thing a pair of hands builds up
+   and become a thing a machine takes away. So the plinth and its single crown
+   are gone, and a mill stands on the bench instead, cutting the blank as you
+   come: nineteen pockets in raster order, each one fast, the tool jumping
+   between them. Scroll drives it and it latches, because a disc that has been
+   cut does not fill back in. */
+let DISC_SLOTS = null;
+function discSlots(){
+  if (DISC_SLOTS) return DISC_SLOTS;
+  const pts = [{u: 0, v: 0}];
+  for (let i = 0; i < 6; i++){
+    const a = Math.PI * 2 * i / 6 - Math.PI / 2;
+    pts.push({u: Math.cos(a) * 0.37, v: Math.sin(a) * 0.37});
+  }
+  for (let i = 0; i < 12; i++){
+    const a = Math.PI * 2 * i / 12 - Math.PI / 2 + Math.PI / 12;
+    pts.push({u: Math.cos(a) * 0.70, v: Math.sin(a) * 0.70});
+  }
+  pts.sort((p, q) => (p.v - q.v) || (p.u - q.u));   // a mill works in rows
+  return (DISC_SLOTS = pts);
+}
+
+function drawCrownBlob(x, y, r, a){
+  ctx.fillStyle = `rgba(246,244,240,${a.toFixed(3)})`;
+  ctx.beginPath();
+  for (let i = 0; i <= 16; i++){
+    const th = Math.PI * 2 * i / 16;
+    const rr = r * (0.86 + 0.14 * Math.abs(Math.cos(th * 2)));
+    const bx2 = x + Math.cos(th) * rr, by2 = y + Math.sin(th) * rr * 0.92;
+    i ? ctx.lineTo(bx2, by2) : ctx.moveTo(bx2, by2);
+  }
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = `rgba(212,208,200,${(a * 0.75).toFixed(3)})`;
+  ctx.beginPath(); ctx.ellipse(x, y + r * 0.10, r * 0.52, r * 0.20, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = `rgba(255,255,255,${(a * 0.65).toFixed(3)})`;
+  ctx.beginPath(); ctx.ellipse(x - r * 0.30, y - r * 0.26, r * 0.24, r * 0.19, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x + r * 0.30, y - r * 0.24, r * 0.22, r * 0.18, 0, 0, 7); ctx.fill();
+}
+
+function drawDiscMill(b, t){
+  const g = b.rig, kk = k(g.lz ?? 150);
+  const sx = px(b.x + (g.dx || 0), kk);
+  const S1 = (g.w || 240) * kk * SS / 240;
+  const foot = py(CFG.benchY - 2, kk);
+  const bw = 240 * S1, bh = 196 * S1, x0 = sx - bw / 2, y0 = foot - bh;
+  if (x0 > W + 40 || x0 + bw < -40) return;
+  const ph = latchedPhase(b.x, 700);
+  const N = discSlots().length, slot = 1 / N;
+
+  ctx.save();
+  ctx.translate(sx, foot); ctx.scale(1, 0.20); ctx.translate(-sx, -foot);
+  const csh = ctx.createRadialGradient(sx, foot, 0, sx, foot, bw * 0.62);
+  csh.addColorStop(0, 'rgba(0,0,0,0.42)'); csh.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = csh;
+  ctx.beginPath(); ctx.arc(sx, foot, bw * 0.62, 0, 7); ctx.fill();
+  ctx.restore();
+
+  const bg = ctx.createLinearGradient(0, y0, 0, foot);
+  bg.addColorStop(0, '#eef1f3'); bg.addColorStop(0.55, '#ccd2d6'); bg.addColorStop(1, '#a4abb1');
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x0, y0, bw, bh, [10 * S1, 10 * S1, 3 * S1, 3 * S1]);
+  else ctx.rect(x0, y0, bw, bh);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.fillRect(x0 + 6 * S1, y0 + 3 * S1, bw - 12 * S1, 1.4 * S1);
+  ctx.fillStyle = 'rgba(40,48,56,0.55)';
+  ctx.fillRect(x0, foot - 9 * S1, bw, 9 * S1);
+
+  const wx = x0 + 20 * S1, wy = y0 + 20 * S1, ww = bw - 40 * S1, wh = bh - 54 * S1;
+  ctx.save();
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(wx, wy, ww, wh, 6 * S1); else ctx.rect(wx, wy, ww, wh);
+  ctx.clip();
+  const ig = ctx.createLinearGradient(0, wy, 0, wy + wh);
+  ig.addColorStop(0, '#16202a'); ig.addColorStop(1, '#0c1319');
+  ctx.fillStyle = ig; ctx.fillRect(wx, wy, ww, wh);
+
+  const cx2 = wx + ww / 2, cy2 = wy + wh * 0.48, R = Math.min(ww, wh) * 0.44;
+  const dg = ctx.createLinearGradient(cx2 - R, cy2 - R, cx2 + R, cy2 + R);
+  dg.addColorStop(0, '#faf8f4'); dg.addColorStop(0.55, '#e6e2da'); dg.addColorStop(1, '#c9c4ba');
+  ctx.fillStyle = dg;
+  ctx.beginPath(); ctx.arc(cx2, cy2, R, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1.1 * SS;
+  ctx.beginPath(); ctx.arc(cx2, cy2, R, 0, 7); ctx.stroke();
+
+  const rp = R * 0.215, rc = R * 0.148;
+  let cutting = null, done = 0;
+  discSlots().forEach((p, i) => {
+    const c = Math.max(0, Math.min(1, (ph - i * slot) / (0.55 * slot)));
+    if (c <= 0) return;
+    const gx2 = cx2 + p.u * R, gy2 = cy2 + p.v * R;
+    if (c >= 1) done++; else cutting = {x: gx2, y: gy2};
+    const pr = rp * (0.35 + 0.65 * c);
+    ctx.fillStyle = '#0e1720';
+    ctx.beginPath(); ctx.arc(gx2, gy2, pr, 0, 7); ctx.fill();
+    ctx.strokeStyle = `rgba(255,255,255,${(0.30 * c).toFixed(3)})`;
+    ctx.lineWidth = 1.2 * SS;
+    ctx.beginPath(); ctx.arc(gx2, gy2, pr, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke();
+    const ca = Math.max(0, Math.min(1, (c - 0.25) / 0.5));
+    if (ca > 0){
+      // still held on its sprues — nothing falls out of a blank
+      ctx.fillStyle = `rgba(230,226,218,${(0.9 * ca).toFixed(3)})`;
+      ctx.fillRect(gx2 - rp, gy2 - 1.1 * S1, rp * 2, 2.2 * S1);
+      drawCrownBlob(gx2, gy2, rc, ca);
+    }
+  });
+
+  if (cutting){
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    drawGlow('255,238,190', cutting.x, cutting.y, R * 0.30, 0.5);
+    ctx.restore();
+    ctx.fillStyle = 'rgba(150,158,166,0.95)';
+    ctx.beginPath();
+    ctx.moveTo(cutting.x - 3.2 * S1, wy);
+    ctx.lineTo(cutting.x + 3.2 * S1, wy);
+    ctx.lineTo(cutting.x + 1.5 * S1, cutting.y - rp * 0.5);
+    ctx.lineTo(cutting.x - 1.5 * S1, cutting.y - rp * 0.5);
+    ctx.closePath(); ctx.fill();
+  }
+
+  const gg = ctx.createLinearGradient(wx, wy, wx + ww * 0.7, wy + wh);
+  gg.addColorStop(0, 'rgba(255,255,255,0.16)');
+  gg.addColorStop(0.34, 'rgba(255,255,255,0.03)');
+  gg.addColorStop(1, 'rgba(255,255,255,0.07)');
+  ctx.fillStyle = gg; ctx.fillRect(wx, wy, ww, wh);
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(60,70,80,0.8)'; ctx.lineWidth = 1.3 * SS;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(wx, wy, ww, wh, 6 * S1); else ctx.rect(wx, wy, ww, wh);
+  ctx.stroke();
+
+  ctx.fillStyle = cutting ? 'rgba(120,220,150,0.9)' : 'rgba(150,170,185,0.75)';
+  ctx.beginPath(); ctx.arc(x0 + 15 * S1, foot - 22 * S1, 3 * S1, 0, 7); ctx.fill();
+  ctx.font = eraFont(12 * S1, '700', SEGMENTS[3].font);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(70,80,92,0.85)';
+  ctx.fillText(`${done} / ${N}`, x0 + bw - 14 * S1, foot - 18 * S1);
+  ctx.textAlign = 'left';
+
+  pushHit(x0, y0, bw, bh, {type: 'focus', beat: nearestBeat(b.x).i, anchor: b.x});
+}
+
 /* Every important camera moment is a guarded zone. Anything from the near or
    mid plane that would sit across it gets moved or removed — checked in code,
    not by eye, so new content can never reintroduce the collision. */
@@ -4006,6 +4158,7 @@ function auditPlacements(){
       const pedX = b.x + (b.ped.dx ?? -430);
       guards.push({c: pedX, r: 750, pedX, pedZ: -90});
     }
+    if (b.rig) guards.push({c: b.x + (b.rig.dx || 0), r: 560});
     if (!b.minor) guards.push({c: b.x, r: 420});
   }
   // near plane: a passer-by parks at screen center when cam ≈ its x
@@ -5760,6 +5913,7 @@ function frame(){
       drawStandingPrint(sp, b.x + it.dx, it.lz, it.w,
         {type:'photo', sp, wx: b.x + it.dx, cy: CFG.benchY - hW/2, z: it.lz, w: it.w, cap: it.cap, beat: i});
     }
+    if (b.rig && b.rig.kind === 'disc') drawDiscMill(b, t);
     for (const p of (b.props || [])) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
     if (b.pyr) drawBookPyramid(b, t);
