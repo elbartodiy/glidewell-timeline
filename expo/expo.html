@@ -178,13 +178,13 @@ const BEATS = [
   /* ---- ERA 4 · the white room, 2009–2026 ---- */
   {x:21080, y:'2009', t:'BRUXZIR', tier:1, fly:true,
    th:'Revolution: the best, made affordable — and the default.',
-   d:'The monolithic solid-zirconia crown goes mainstream — the #1 brand; the biggest cost-and-speed inflection.',
+   d:'June 2009: the monolithic solid-zirconia crown goes mainstream and becomes the #1 brand. In the same month Glidewell opens the Authorized BruxZir Lab program and lets rival laboratories mill it too — the surest way to make a thing ordinary is to stop owning it alone.',
    wall:[], table:[],
    rig:{kind:'disc', dx:-250, lz:150, w:240}},
 
   {x:21930, y:'2009–13', t:'SCREW-RETAINED', minor:true,
    th:'The barrier wasn’t the technique — it was the price of the parts.',
-   d:'Own-made Ti-bases, abutments and screws plus a flat lab fee — and BruxZir bonded to the Ti-base in the lab, so no cement goes in the patient’s mouth.',
+   d:'Own-made Ti-bases, abutments and screws plus a flat lab fee — and BruxZir bonded to the Ti-base in the lab, so no cement goes in the patient’s mouth. It arrives as the Inclusive Tooth Replacement System (2012), a patient-specific case in one box, and ends in the BruxZir Full-Arch Prosthesis (Nov 2013): a whole arch milled from one blank.',
    wall:[], table:[]},
 
   {x:22550, y:'2010s', t:'SCANNERS · SCALE',
@@ -204,7 +204,13 @@ const BEATS = [
    table:[],
    ped:{obj:'millSt', dx:0}},
 
+  {x:24450, y:'2018', t:'THE FIRST AI CROWN', tier:1, fly:true,
+   pinZ:1000,
+   th:'The first restoration no hand drew.',
+   d:'2017: Glidewell R&D and UC Berkeley write the first crown-design software that learns. 2018: it designs a crown outright \u2014 proposed, not drawn; chosen, not carved. The archive of scans that started in 2007 is what taught it.',
+   wall:[], table:[]},
   {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true,
+   rig:{kind:'robot', dx:0, lz:150, floor:true},
    th:'The analog→digital climax: robots make crowns.',
    d:'Automated, AI-designed, robotic monolithic production.',
    wall:[], table:[],
@@ -255,6 +261,8 @@ const CUTS = [
   // 1993: the move to Newport Beach — a model of the building, and the film the
   // company shot of it, cut inside era 2 where no two wall planes meet
   {at: 12150, w: 1500, on: true},
+  // 2018: the first crown designed entirely by AI, and the arm that takes it on
+  {at: 24450, w: 1500, on: true},
 ];
 function SHIFT(x){
   let s = 0;
@@ -283,6 +291,8 @@ function applyCut(){
   // 1993 owns the bay its model stands in: SHIFT would push it past its own cut
   const b93 = BEATS.find(b => b.y === '1993');
   if (b93) b93.x = (REC93_L + REC93_R) / 2;
+  const b18 = BEATS.find(b => b.y === '2018');
+  if (b18) b18.x = (REC18_L + REC18_R) / 2;
   const rekey = obj => {
     const moved = {};
     for (const k0 in obj) moved[String(SHIFT(+k0))] = obj[k0];
@@ -305,6 +315,8 @@ const REC4_L = SHIFT(25940), REC4_R = SHIFT(26740);   // the 2022 fastscan recre
    cut is 1500 wide and the panel takes the middle 950: that leaves 725 units of
    plain wall on each side, the breathing room the other recreations have. */
 const REC93_L = bayStart(2) + 275, REC93_R = bayStart(2) + 1225;
+/* The 2018 bay, cut inside era 4 for the same reason: no seam to bridge. */
+const REC18_L = bayStart(3) + 300, REC18_R = bayStart(3) + 1200;
 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
@@ -502,7 +514,7 @@ function auditStatics(){
       if (!TABLES.some(tb => x - half >= tb.x0 && x + half <= tb.x1))
         bad.push(`standing print off any table: ${b.y} ${it.img || ''} @${x|0}`);
     }
-    if (b.rig){
+    if (b.rig && !b.rig.floor){
       const x = b.x + (b.rig.dx || 0), half = (b.rig.w || 240) * 0.5;
       if (!TABLES.some(tb => x - half >= tb.x0 && x + half <= tb.x1))
         bad.push(`machine off any table: ${b.y} ${b.rig.kind} @${x|0}`);
@@ -511,7 +523,7 @@ function auditStatics(){
       if (it.pz != null) continue;
       const x = b.x + it.dx;
       const inRec = (x > REC_L && x < REC_R) || (x > REC3_L && x < REC3_R) ||
-                    (x > REC93_L && x < REC93_R) ||
+                    (x > REC93_L && x < REC93_R) || (x > REC18_L && x < REC18_R) ||
                     (x > REC2_L && x < REC2_R) || (x > REC4_L && x < REC4_R);
       if (inRec) bad.push(`wall photo inside a recreation without pz: ${b.y} ${it.img} @${x|0} — pin it to the panel`);
     }
@@ -1109,6 +1121,7 @@ const FLOOR_TONES = {
     ['#d6cfc0', '#8f8778'],   // 1979: pale stone, toned to the panel
     ['#d3d1c9', '#8b897f'],   // 1989: the national-leader threshold
     ['#c9ccd1', '#82868d'],   // 1993: the nineties office slab
+    ['#eceef0', '#a9aeb4'],   // 2018: the machine hall, lit like an operating room
     ['#dde1e6', '#989ea6'],   // digital revolution: cool light stone
     ['#e4e7ea', '#a3a9b0'],   // 2022 fastscan: the whitest slab of all
   ],
@@ -1136,7 +1149,9 @@ function drawFloor(){
     [REC93_L, REC93_R, T.rec[2]],
     [REC93_R, REC2_L, T.era[2]],
     [REC2_L, REC2_R, T.rec[2]],
-    [REC2_R, REC4_L, T.era[3]],
+    [REC2_R, REC18_L, T.era[3]],
+    [REC18_L, REC18_R, T.rec[3]],
+    [REC18_R, REC4_L, T.era[3]],
     [REC4_L, REC4_R, T.rec[3]],
     [REC4_R, SEGMENTS[3].x1 + 900, T.era[3]],
   ];
@@ -1477,7 +1492,7 @@ function drawBenchDescs(){
     // the label then steps onto the nearest counter, unless a recreation
     // slab owns this ground
     const inRec = (b.x > REC_L && b.x < REC_R) || (b.x > REC3_L && b.x < REC3_R) ||
-                  (b.x > REC93_L && b.x < REC93_R) ||
+                  (b.x > REC93_L && b.x < REC93_R) || (b.x > REC18_L && b.x < REC18_R) ||
                   (b.x > REC2_L && b.x < REC2_R) || (b.x > REC4_L && b.x < REC4_R);
     if (!onTable && !inRec){
       // prefer the counter to the right: the tour reads left to right,
@@ -2360,7 +2375,7 @@ function drawProgress(t){
   const W0 = INTRO_X, W1 = FIN_X;
   const at = wx => x0 + span * Math.max(0, Math.min(1, (wx - W0) / (W1 - W0)));
   const RECS = [[REC_L, REC_R], [REC3_L, REC3_R], [REC93_L, REC93_R],
-                [REC2_L, REC2_R], [REC4_L, REC4_R]];
+                [REC2_L, REC2_R], [REC18_L, REC18_R], [REC4_L, REC4_R]];
   // 1970 is a recreation too — the founding bench stands in its own cut bay, so
   // it earns the same pip as the other portals. The gap is taken at the width
   // the others use, not the bay's full 2320, so the rule keeps its rhythm.
@@ -2514,6 +2529,202 @@ function drawMapHero(t, h){
   }
   // the map itself rides above the dim and the light — crisp
   ctx.drawImage(sp.c, cx - w/2, cyS - hh/2, w, hh);
+}
+
+/* 2018 · THE FIRST AI CROWN — and the arm that takes it on.
+   Every other machine in this hall does something TO the crown: the scanner
+   measures it, the mill cuts it away, the laser reads it. Here nothing touches
+   it. Three candidate forms are proposed over the prepared tooth, they flicker
+   against each other, one wins and closes into a solid. No tool appears at any
+   point, because that is the entire fact of 2018. Then the crown leaves the
+   screen: it drifts forward out of the panel's plane into the room, growing as
+   it comes, and turns from a wireframe into an object exactly as the arm from
+   the year after closes on it and carries it into production. It is the only
+   thing in the hall that travels between two beats. */
+function crownSilhouette(cx, cy, w, h, warp){
+  crownGeometry();
+  const rows = CROWN_ROWS;
+  ctx.beginPath();
+  for (let i = 0; i < rows.length; i++){
+    const d = warp ? warp(i, -1) : 0;
+    const x = cx + (rows[i][0] + d) * w, y = cy + rows[i][2] * h;
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  for (let i = rows.length - 1; i >= 0; i--){
+    const d = warp ? warp(i, 1) : 0;
+    ctx.lineTo(cx + (rows[i][1] + d) * w, cy + rows[i][2] * h);
+  }
+  ctx.closePath();
+}
+const AI_WARP = c => (i, side) =>
+  side * (0.034 * Math.sin(i * 0.9 + c * 2.1) + 0.014 * Math.cos(i * 1.7 + c * 3.3));
+
+function drawRec18(t){
+  const mid = (REC18_L + REC18_R) / 2;
+  if (Math.abs(cam.x - mid) > 2800) return;
+  const kk = k(1000);
+  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const x0 = px(REC18_L, kk), x1 = px(REC18_R, kk);
+  const wg = ctx.createLinearGradient(0, 0, 0, yBase);
+  wg.addColorStop(0, '#e6eaee'); wg.addColorStop(0.45, '#f7fafc'); wg.addColorStop(1, '#cad0d6');
+  ctx.fillStyle = wg; ctx.fillRect(x0, 0, x1 - x0, yBase);
+  const cx = px(mid, kk);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = eraFont(58 * kk * SS, '700', SEGMENTS[3].font);
+  try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
+  ctx.fillStyle = 'rgba(32,42,54,0.96)';
+  ctx.fillText('THE FIRST AI CROWN', cx, py(46, kk));
+  try { ctx.letterSpacing = '0px'; } catch(e){}
+  ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
+  ctx.fillStyle = 'rgba(60,70,84,0.95)';
+  ctx.fillText('no hand drew it \u00b7 no tool cut it \u00b7 it was proposed', cx, py(112, kk));
+  ctx.restore();
+
+  const ph = latchedPhase(mid, 450);
+  const spC = PED_SPRITES.crown2;
+  const w = 430 * kk * SS, h = w * spC.h / spC.w;
+  const cyC = py(420, kk);
+  // the prepared tooth underneath: the one thing that was there before
+  const dieY = cyC + h * 0.62, dw = w * 0.62;
+  ctx.fillStyle = 'rgba(96,110,126,0.55)';
+  ctx.beginPath();
+  ctx.moveTo(cx - dw * 0.5, dieY + h * 0.16);
+  ctx.lineTo(cx - dw * 0.40, dieY - h * 0.10);
+  ctx.quadraticCurveTo(cx, dieY - h * 0.20, cx + dw * 0.40, dieY - h * 0.10);
+  ctx.lineTo(cx + dw * 0.5, dieY + h * 0.16);
+  ctx.closePath(); ctx.fill();
+
+  // three proposals, arguing. Which one leads is a function of the phase, not
+  // of the clock: stand still and the argument stands still with you.
+  const fade = Math.max(0, 1 - Math.max(0, ph - 0.42) / 0.30);
+  if (fade > 0.01){
+    const lead = Math.floor(ph * 16) % 3;
+    for (let c = 0; c < 3; c++){
+      const a = fade * (c === lead ? 0.75 : 0.22);
+      ctx.strokeStyle = `rgba(70,150,215,${a.toFixed(3)})`;
+      ctx.lineWidth = (c === lead ? 1.9 : 1.1) * SS;
+      crownSilhouette(cx, cyC, w, h, AI_WARP(c + 1));
+      ctx.stroke();
+    }
+  }
+  // and the one that won, drawing itself closed
+  if (ph > 0.30){
+    const g2 = Math.max(0, Math.min(1, (ph - 0.30) / 0.45));
+    ctx.strokeStyle = `rgba(36,58,80,${(0.35 + 0.6 * g2).toFixed(3)})`;
+    ctx.lineWidth = (1.2 + 1.6 * g2) * SS;
+    crownSilhouette(cx, cyC, w, h, null);
+    ctx.stroke();
+  }
+  for (const wxc of [REC18_L, REC18_R]){
+    const kc = k(994), sxc = px(wxc, kc), cw = 116 * kc * SS;
+    if (sxc < -cw || sxc > W + cw) continue;
+    const cg = ctx.createLinearGradient(sxc - cw/2, 0, sxc + cw/2, 0);
+    cg.addColorStop(0, '#8f979f'); cg.addColorStop(0.45, '#d8dee3'); cg.addColorStop(1, '#7d858c');
+    ctx.fillStyle = cg;
+    ctx.fillRect(sxc - cw/2, 0, cw, yBase);
+  }
+}
+
+function ik2(sx, sy, tx, ty, l1, l2){
+  const dx = tx - sx, dy = ty - sy;
+  const d = Math.min(Math.hypot(dx, dy), (l1 + l2) * 0.999) || 0.001;
+  const a = Math.atan2(dy, dx);
+  const c = Math.acos(Math.max(-1, Math.min(1, (d*d + l1*l1 - l2*l2) / (2 * d * l1))));
+  const th = a - c;                       // elbow up: a machine folds upward
+  return [sx + Math.cos(th) * l1, sy + Math.sin(th) * l1];
+}
+
+let AI_ROBOT_X = null;
+function drawAIRelay(t){
+  if (AI_ROBOT_X == null){
+    const b = BEATS.find(b2 => b2.rig && b2.rig.kind === 'robot');
+    AI_ROBOT_X = b ? b.x : REC18_R + 720;
+  }
+  const mid = (REC18_L + REC18_R) / 2, rob = AI_ROBOT_X;
+  if (cam.x < mid - 2400 || cam.x > rob + 2400) return;
+  const catchX = rob - 210;
+  const u = Math.max(0, Math.min(1, (cam.x - mid) / (catchX - mid)));
+  const p = u * u * (3 - 2 * u);
+  const q0 = Math.max(0, Math.min(1, (cam.x - catchX) / 300));
+  const q = q0 * q0 * (3 - 2 * q0);
+
+  // where the crown is: out of the panel, forward into the room, then carried
+  const wx = mid + (catchX - mid) * p + (rob + 150 - catchX) * q;
+  const lz = 1000 + (150 - 1000) * p;
+  const wy = 420 + (560 - 420) * p + 80 * q;
+  const kkc = k(lz), sxc = px(wx, kkc), syc = py(wy, kkc);
+  const spC = PED_SPRITES.crown2;
+  const wC = 430 * kkc * SS, hC = wC * spC.h / spC.w;
+  const sol = Math.max(0, Math.min(1, (p - 0.52) / 0.22));
+  const build = latchedPhase(mid, 450);
+
+  // the arm, standing on the floor where the counter is broken for it
+  const kr = k(150);
+  const shX = px(rob - 30, kr), shY = py(520, kr), baseY = py(1090, kr);
+  const L1 = 165 * kr * SS, L2 = 145 * kr * SS;
+  const restX = px(rob - 70, kr), restY = py(360, kr);
+  const grab = Math.max(0, Math.min(1, (p - 0.30) / 0.25));
+  const tx = restX + (sxc - restX) * grab, ty = restY + (syc - restY) * grab;
+  const [ex, ey] = ik2(shX, shY, tx, ty, L1, L2);
+  ctx.save();
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  // pedestal
+  const pgd = ctx.createLinearGradient(shX - 26 * kr * SS, 0, shX + 26 * kr * SS, 0);
+  pgd.addColorStop(0, '#4a5158'); pgd.addColorStop(0.4, '#8d959c'); pgd.addColorStop(1, '#3e444a');
+  ctx.fillStyle = pgd;
+  ctx.fillRect(shX - 26 * kr * SS, shY, 52 * kr * SS, baseY - shY);
+  ctx.strokeStyle = '#6f777e'; ctx.lineWidth = 26 * kr * SS;
+  ctx.beginPath(); ctx.moveTo(shX, shY); ctx.lineTo(ex, ey); ctx.stroke();
+  ctx.strokeStyle = '#878f96'; ctx.lineWidth = 20 * kr * SS;
+  ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(tx, ty); ctx.stroke();
+  ctx.strokeStyle = '#c2c9cf'; ctx.lineWidth = 5 * kr * SS;
+  ctx.beginPath(); ctx.moveTo(shX, shY); ctx.lineTo(ex, ey); ctx.moveTo(ex, ey); ctx.lineTo(tx, ty); ctx.stroke();
+  for (const s of [-1, 1]){
+    ctx.strokeStyle = '#aab2b9'; ctx.lineWidth = 5 * kr * SS;
+    const jaw = (1 - 0.55 * grab) * 13 * kr * SS;
+    ctx.beginPath();
+    ctx.moveTo(tx + s * jaw * 0.5, ty - 12 * kr * SS);
+    ctx.lineTo(tx + s * jaw, ty + 9 * kr * SS);
+    ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(70,80,90,0.9)';
+  ctx.beginPath(); ctx.arc(shX, shY, 15 * kr * SS, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(ex, ey, 11 * kr * SS, 0, 7); ctx.fill();
+  ctx.restore();
+
+  // the crown itself: a proposal while it flies, an object once it is held
+  if (build > 0.28){
+    if (sol < 1){
+      ctx.save();
+      ctx.strokeStyle = `rgba(60,140,205,${(0.85 * (1 - sol) * Math.min(1, build * 1.6)).toFixed(3)})`;
+      ctx.lineWidth = 1.6 * SS;
+      crownSilhouette(sxc, syc, wC, hC, null);
+      ctx.stroke();
+      crownGeometry();
+      ctx.strokeStyle = `rgba(60,140,205,${(0.34 * (1 - sol)).toFixed(3)})`;
+      ctx.lineWidth = 1 * SS;
+      for (const [a2, b2, uy] of CROWN_ROWS){     // the surface, still only a mesh
+        const y2 = syc + uy * hC;
+        ctx.beginPath();
+        ctx.moveTo(sxc + a2 * wC, y2); ctx.lineTo(sxc + b2 * wC, y2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    if (sol > 0){
+      ctx.save();
+      ctx.globalAlpha = sol;
+      ctx.drawImage(spC.c, sxc - wC/2, syc - hC/2, wC, hC);
+      ctx.restore();
+    }
+  }
+  // the conveyor it is set down on, and where it stays
+  const cvX = px(rob + 150, kr), cvY = py(660, kr);
+  ctx.fillStyle = 'rgba(120,130,140,0.85)';
+  ctx.fillRect(cvX - 90 * kr * SS, cvY, 180 * kr * SS, 14 * kr * SS);
+  ctx.fillStyle = 'rgba(60,68,76,0.7)';
+  ctx.fillRect(cvX - 90 * kr * SS, cvY + 14 * kr * SS, 180 * kr * SS, 4 * kr * SS);
 }
 
 /* 1993 · NEWPORT BEACH. The one bay in the hall whose film the company shot
@@ -6022,6 +6233,7 @@ function frame(){
   drawRec3(t);
   drawRec93(t);
   drawRec2(t);
+  drawRec18(t);
   drawRec4(t);
 
   // lamp pools on wall (behind photos) — one per ceiling fixture
@@ -6095,6 +6307,7 @@ function frame(){
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
     if (b.pyr) drawBookPyramid(b, t);
   }
+  drawAIRelay(t);   // the one object that belongs to two beats at once
 
 
   // lamps + dust + foreground — evenly spaced fixtures per era
