@@ -2653,20 +2653,30 @@ function drawScanBeam(cx, cy, w, h, kn, ph, a){
   ctx.fillRect(ex - hw2 * 0.55, ey - hh2 * 0.5, hw2 * 1.1, hh2 * 0.5);
   ctx.globalCompositeOperation = 'lighter';
   drawGlow('150,220,255', ex, ey, w * 0.30, a * 0.22);
+  /* A beam does not stop. It got its brightest at the crown and then simply
+     ended on a straight line drawn across it, which read as scissors — so the
+     geometry now runs well past the crown and the light dies inside it: the
+     quad reaches EXT times further than the aim and its alpha is already zero
+     there, which means the shape has no visible edge to cut anything on. */
   const bdx = aimX - ex, bdy = aimY - ey, bl = Math.hypot(bdx, bdy) || 1;
   const nxp = -bdy / bl, nyp = bdx / bl;
+  const EXT = 1.7, tAim = 1 / EXT;
+  const farX = ex + bdx * EXT, farY = ey + bdy * EXT;
   const ap = Math.max(1.1, w * 0.030), fp = w * 0.145;
+  const fpFar = ap + (fp - ap) * EXT;
   const shaft = (s0, s1, al) => {
     ctx.beginPath();
     ctx.moveTo(ex + nxp * ap * s0, ey + nyp * ap * s0);
     ctx.lineTo(ex + nxp * ap * s1, ey + nyp * ap * s1);
-    ctx.lineTo(aimX + nxp * fp * s1, aimY + nyp * fp * s1);
-    ctx.lineTo(aimX + nxp * fp * s0, aimY + nyp * fp * s0);
+    ctx.lineTo(farX + nxp * fpFar * s1, farY + nyp * fpFar * s1);
+    ctx.lineTo(farX + nxp * fpFar * s0, farY + nyp * fpFar * s0);
     ctx.closePath();
-    const g = ctx.createLinearGradient(ex, ey, aimX, aimY);
-    g.addColorStop(0,    `rgba(110,200,255,${(a * al * 0.30).toFixed(3)})`);
-    g.addColorStop(0.72, `rgba(150,215,248,${(a * al * 0.62).toFixed(3)})`);
-    g.addColorStop(1,    `rgba(186,226,246,${(a * al * 0.72).toFixed(3)})`);
+    const g = ctx.createLinearGradient(ex, ey, farX, farY);
+    g.addColorStop(0,            `rgba(110,200,255,${(a * al * 0.26).toFixed(3)})`);
+    g.addColorStop(tAim * 0.80,  `rgba(150,215,248,${(a * al * 0.58).toFixed(3)})`);
+    g.addColorStop(tAim,         `rgba(186,226,246,${(a * al * 0.70).toFixed(3)})`);
+    g.addColorStop(tAim + 0.16,  `rgba(150,205,235,${(a * al * 0.24).toFixed(3)})`);
+    g.addColorStop(1,            'rgba(120,180,215,0)');
     ctx.fillStyle = g; ctx.fill();
   };
   shaft(-1, 1, 0.10);
