@@ -2261,6 +2261,13 @@ function drawProgress(t){
   const W0 = INTRO_X, W1 = FIN_X;
   const at = wx => x0 + span * Math.max(0, Math.min(1, (wx - W0) / (W1 - W0)));
   const RECS = [[REC_L, REC_R], [REC3_L, REC3_R], [REC2_L, REC2_R], [REC4_L, REC4_R]];
+  // 1970 is a recreation too — the founding bench stands in its own cut bay, so
+  // it earns the same pip as the other portals. The gap is taken at the width
+  // the others use, not the bay's full 2320, so the rule keeps its rhythm.
+  if (CUTS[1].on){
+    const fc = bayStart(1) + CUTS[1].w / 2;
+    RECS.push([fc - 540, fc + 540]);
+  }
 
   ctx.save();
   ctx.lineCap = 'butt';
