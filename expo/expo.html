@@ -346,7 +346,7 @@ const SEGMENTS = [
    rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
    light:{pool:'225,240,255', poolR:1350, poolA:0.12},
    tube:{line:'246,251,255', glow:'226,239,252'},
-   bgc:[30,33,38], grain:0.012, bInsetR:4100, shade:0.30, floor:true},
+   bgc:[30,33,38], grain:0.012, bInsetR:4100, shade:0.46, floor:true},
 ];
 const SEAMS = [];   // era changes happen through the recreations now
 /* (dormant) the generated flyover clip can still play across the 1989
@@ -1882,7 +1882,8 @@ let SEAM_VIDEO = null;
    rather than to the era wall standing behind it. */
 const PROJECTORS = [
   {x: (REC93_L + REC93_R) / 2, wallDX: 0, w: 1020, cy: 385, pz: 728,
-   src: 'media/timeline5.mp4', throwZ: 30, in: 12.6, out: 23.4,
+   src: 'media/timeline5.mp4', throwZ: 240, mdx: -420, stand: true, ground: true,
+   in: 12.6, out: 23.4,
    clip: {name: '4141 MacArthur Blvd', label: 'the building, before it was built',
           src: 'media/timeline5.mp4'}},
 ];
@@ -1950,21 +1951,35 @@ function drawProjectors(t, phase){
 
     // the machine, standing on the bench below the picture
     const kp = k(p.throwZ);
-    const mxp = px(p.x + p.wallDX, kp), myp = py(CFG.benchY - 2, kp);   // same world x as the frame
+    const mxp = px(p.x + (p.mdx != null ? p.mdx : p.wallDX), kp);
+    const myp = py(CFG.benchY - 2, kp);
     const bw = 150 * kp * SS, bh = 74 * kp * SS;
 
     if (phase === 'machine'){ projMachine(p, t, lamp, mxp, myp, bw, bh, kp); continue; }
     ctx.save();
     // 1 — the beam: apex at the lens, spreading to the frame on the wall
-    const beam = ctx.createLinearGradient(0, myp - bh * 0.45, 0, sy);
+    // a beam from a lamp onto a rectangle is bounded by the two extreme corners
+    // as seen FROM the lamp — true whether it stands under the picture or beside it
+    const lx = mxp, ly = myp - bh * 0.45;
+    const corners = [[sx - vw/2, sy - vh/2], [sx + vw/2, sy - vh/2],
+                     [sx + vw/2, sy + vh/2], [sx - vw/2, sy + vh/2]];
+    const ang = corners.map(c => Math.atan2(c[1] - ly, c[0] - lx));
+    let iA = 0, iB = 0;
+    for (let i = 1; i < 4; i++){
+      if (ang[i] < ang[iA]) iA = i;
+      if (ang[i] > ang[iB]) iB = i;
+    }
+    const beam = ctx.createLinearGradient(lx, ly, sx, sy);
     beam.addColorStop(0, `rgba(255,246,222,${(0.20 * lamp).toFixed(3)})`);
     beam.addColorStop(1, 'rgba(255,246,222,0.015)');
     ctx.fillStyle = beam;
+    const nrm = Math.hypot(sx - lx, sy - ly) || 1;
+    const ox2 = -(sy - ly) / nrm * 5 * kp * SS, oy2 = (sx - lx) / nrm * 5 * kp * SS;
     ctx.beginPath();
-    ctx.moveTo(mxp - 5 * kp * SS, myp - bh * 0.45);
-    ctx.lineTo(mxp + 5 * kp * SS, myp - bh * 0.45);
-    ctx.lineTo(sx + vw / 2, sy + vh / 2);
-    ctx.lineTo(sx - vw / 2, sy + vh / 2);
+    ctx.moveTo(lx + ox2, ly + oy2);
+    ctx.lineTo(lx - ox2, ly - oy2);
+    ctx.lineTo(corners[iA][0], corners[iA][1]);
+    ctx.lineTo(corners[iB][0], corners[iB][1]);
     ctx.closePath(); ctx.fill();
     // motes turning in the beam
     for (let i = 0; i < 14; i++){
@@ -2014,6 +2029,30 @@ function drawProjectors(t, phase){
       g2.fillStyle = g; g2.fillRect(ex, ey, ew, eh);
     }
     g2.restore();
+    if (p.ground){
+      /* A projected picture on a LIGHT wall cannot be added and still be seen;
+         it needs something dark underneath. Anything drawn by hand around it
+         reads as a frame — which is what you were seeing. So the ground is the
+         picture's own silhouette: same canvas, same feather, no edge anywhere
+         for the eye to find. */
+      if (!p.gnd || p.gnd.width !== ow || p.gnd.height !== oh){
+        p.gnd = document.createElement('canvas');
+        p.gnd.width = ow; p.gnd.height = oh;
+        const g3 = p.gnd.getContext('2d');
+        g3.fillStyle = '#12171c'; g3.fillRect(0, 0, ow, oh);
+        g3.globalCompositeOperation = 'destination-out';
+        const F2 = Math.max(2, 11 * kk * SS);
+        for (const [ex, ey, ew, eh, vert, nr] of [
+          [0, 0, ow, F2, 1, 1], [0, oh - F2, ow, F2, 1, 0],
+          [0, 0, F2, oh, 0, 1], [ow - F2, 0, F2, oh, 0, 0]]){
+          const gg = vert ? g3.createLinearGradient(0, ey, 0, ey + eh)
+                          : g3.createLinearGradient(ex, 0, ex + ew, 0);
+          gg.addColorStop(0, `rgba(0,0,0,${nr})`); gg.addColorStop(1, `rgba(0,0,0,${1 - nr})`);
+          g3.fillStyle = gg; g3.fillRect(ex, ey, ew, eh);
+        }
+      }
+      ctx.drawImage(p.gnd, gx0 - key, gy0);
+    }
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     ctx.drawImage(p.off, gx0 - key, gy0);
@@ -2037,6 +2076,16 @@ function drawProjectors(t, phase){
    counter crops a projection that falls behind it */
 function projMachine(p, t, lamp, mxp, myp, bw, bh, kp){
   ctx.save();
+  if (p.stand){
+    // it stands on the floor beside the whole composition, not on a worktop
+    const fy = py(1080, kp);
+    const sg = ctx.createLinearGradient(mxp - 9 * kp * SS, 0, mxp + 9 * kp * SS, 0);
+    sg.addColorStop(0, '#23211e'); sg.addColorStop(0.4, '#585349'); sg.addColorStop(1, '#1c1a17');
+    ctx.fillStyle = sg;
+    ctx.fillRect(mxp - 9 * kp * SS, myp, 18 * kp * SS, fy - myp);
+    ctx.fillStyle = 'rgba(26,24,21,0.9)';
+    ctx.beginPath(); ctx.ellipse(mxp, fy, 46 * kp * SS, 12 * kp * SS, 0, 0, 7); ctx.fill();
+  }
   ctx.fillStyle = '#2b2723';
   ctx.beginPath(); ctx.roundRect(mxp - bw / 2, myp - bh, bw, bh, 5 * kp * SS); ctx.fill();
   ctx.fillStyle = '#43403a';
@@ -2749,15 +2798,8 @@ function drawRec93(t){
   ctx.fillRect(x0, 0, x1 - x0, yBase);
   // the reveal the picture lands in, so the film reads as hung and not floating
   const cx = px(mid, kk);
-  const sw = 830 * kk * SS, sh = sw * 3 / 4, sy = py(385, kk);
-  ctx.fillStyle = 'rgba(22,27,32,0.92)';
-  ctx.fillRect(cx - sw/2, sy - sh/2, sw, sh);
-  const rg = ctx.createLinearGradient(0, sy - sh/2, 0, sy - sh/2 + 6 * kk * SS);
-  rg.addColorStop(0, 'rgba(0,0,0,0.35)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = rg;
-  ctx.fillRect(cx - sw/2, sy - sh/2, sw, 6 * kk * SS);
-  ctx.strokeStyle = 'rgba(255,255,255,0.42)'; ctx.lineWidth = 1.3 * SS;
-  ctx.strokeRect(cx - sw/2, sy - sh/2, sw, sh);
+  // no reveal and no frame: the projector lays its own ground, in exactly the
+  // shape of the picture it is about to add
 }
 
 /* The massing model. Drawn in cabinet oblique — the projection an architect's
@@ -5584,9 +5626,18 @@ function drawGrade(t){
   if (!VIG) makeVignette();
   // the vignette never pops at the era seam: it holds through the BruxZir
   // hero and eases away only as you leave the crown behind
+  /* The white era carries less vignette than the analog century — that is the
+     point of it. But the ease into it was pinned to the raw world coordinate
+     21150, and every cut added to the timeline moved the portal right while
+     that number stayed put: it had fallen 4520 units behind, so what was meant
+     to be a 900-unit fade had become a step change of 45 per cent in the
+     darkness of the whole frame, landing on one world coordinate at the edge of
+     the recreation. That is the lightening you can see from across the room. It
+     is anchored to the portal itself now, and eased across 2280 units. */
   let sh = segAt(cam.x).shade != null ? segAt(cam.x).shade : 1;
-  if (cam.x > REC2_L && SEGMENTS[3].shade != null){
-    const tt = Math.max(0, Math.min(1, (cam.x - 21150) / 900));
+  if (SEGMENTS[3].shade != null){
+    const a0 = REC2_L - 300, a1 = REC2_R + 900;
+    const tt = Math.max(0, Math.min(1, (cam.x - a0) / (a1 - a0)));
     sh = 1 + (SEGMENTS[3].shade - 1) * (tt*tt*(3-2*tt));
   }
   ctx.globalAlpha = 0.35 + 0.65*sh;
