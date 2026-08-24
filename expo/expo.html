@@ -2581,22 +2581,26 @@ function drawRec2Front(t){
   ctx.fillStyle = pg; ctx.fillRect(nx - pw/2, plY, pw, H - plY);
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
   ctx.beginPath(); ctx.ellipse(nx, plY, pw*0.62, 11*kn*SS, 0, 0, 7); ctx.fill();
-  // A display set into the pedestal, dead on the line the caption runs along.
-  // The words are painted on the panel behind; where this column crosses them
-  // they stop being paint and run as light across it, then continue as paint.
-  {
+  /* A display set into the pedestal, dead on the line the caption runs along.
+     It is NOT a marquee: the words inside it stand exactly where the painted
+     words stand on the panel behind — same face, same size, same centre. The
+     window belongs to the column and travels with it, the sentence belongs to
+     the wall and stays put, so the movement you see is the column sliding
+     across a line that never moves. Paint, then light, then paint again. */
+  if (ease > 0.15){
     const stripY = py(596, kk), sh2 = 17 * kn * SS, iw = pw - 6 * SS;
     ctx.save();
     ctx.beginPath(); ctx.rect(nx - iw/2, stripY - sh2/2, iw, sh2); ctx.clip();
     ctx.fillStyle = '#0b1216';
     ctx.fillRect(nx - iw/2, stripY - sh2/2, iw, sh2);
-    ctx.font = eraFont(12 * kn * SS, '700', SEGMENTS[3].font);
-    ctx.textAlign = 'left';
-    const phrase = 'SCANNED \u00b7 DESIGNED \u00b7 MILLED \u00b7 ';
-    const pwd = Math.max(20, ctx.measureText(phrase).width);
-    ctx.fillStyle = `rgba(150,228,255,${(0.45 + 0.45 * ease).toFixed(3)})`;
-    let ox = -((t * 42 * kn * SS) % pwd);
-    while (ox < iw){ ctx.fillText(phrase, nx - iw/2 + ox, stripY + 4.5 * kn * SS); ox += pwd; }
+    // the same words, at the panel's own position — the column merely reveals them
+    ctx.textAlign = 'center';
+    ctx.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
+    try { ctx.letterSpacing = `${5*kk*SS}px`; } catch(e){}
+    ctx.fillStyle = `rgba(150,228,255,${(0.55 + 0.4 * ease).toFixed(3)})`;
+    ctx.fillText('SCANNED \u00b7 DESIGNED \u00b7 MILLED', cx, stripY);
+    try { ctx.letterSpacing = '0px'; } catch(e){}
+    // the glass over it
     const sg2 = ctx.createLinearGradient(0, stripY - sh2/2, 0, stripY + sh2/2);
     sg2.addColorStop(0, 'rgba(255,255,255,0.18)');
     sg2.addColorStop(0.5, 'rgba(255,255,255,0.02)');
