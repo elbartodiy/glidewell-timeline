@@ -116,6 +116,12 @@ const BEATS = [
 
   /* ---- ERA 3 · the computer arrives, 1995–2007
           (1993 · Newport Beach happens inside the video splice) ---- */
+  {x:12150, y:'1993', t:'NEWPORT BEACH', tier:1, fly:true, ink:'56,58,64',
+   pinZ:728,   // the numeral belongs to the recreation panel, not the era wall
+   th:'',
+   d:'15 April 1993: 71,000 sq ft at 4141 MacArthur Blvd — nearly five times the floor the nine labs were consolidated into, and the address the company grew up in.',
+   wall:[], table:[],
+   rig:{kind:'model93', dx:0, lz:150, w:300}},
   {x:12590, y:'1995', t:'OPERATORY · PLAYSAFE', minor:true,
    th:'Test where dentists work — and step beyond the crown.',
    d:'An in-house operatory opens to test materials on real patients; PlaySafe mouthguards launch.',
@@ -246,6 +252,9 @@ const CUTS = [
   {at: 1900, w: 700, on: true},
   // the founding: Jim's own bench, standing where the year stands
   {at: 2450, w: 2320, on: !/[?&]noplate/.test(location.search)},
+  // 1993: the move to Newport Beach — a model of the building, and the film the
+  // company shot of it, cut inside era 2 where no two wall planes meet
+  {at: 12150, w: 1500, on: true},
 ];
 function SHIFT(x){
   let s = 0;
@@ -271,6 +280,9 @@ function applyCut(){
     const f = BEATS.find(b => b.y === '1970');
     if (f) f.x = bayStart(1) + CUTS[1].w / 2;
   }
+  // 1993 owns the bay its model stands in: SHIFT would push it past its own cut
+  const b93 = BEATS.find(b => b.y === '1993');
+  if (b93) b93.x = (REC93_L + REC93_R) / 2;
   const rekey = obj => {
     const moved = {};
     for (const k0 in obj) moved[String(SHIFT(+k0))] = obj[k0];
@@ -288,6 +300,11 @@ const REC2_L = SEAM_3 - 540, REC2_R = SEAM_3 + 540;   // the Digital Revolution 
 const REC_L = SHIFT(6350), REC_R = SHIFT(7450);   // era 1 ends; the 1979 recreation; era 2 begins
 const REC3_L = SHIFT(10600), REC3_R = SHIFT(11700);   // the 1989 National Leader recreation
 const REC4_L = SHIFT(25940), REC4_R = SHIFT(26740);   // the 2022 fastscan recreation — the wall turns pure white beyond it
+/* The 1993 bay. Cut INSIDE era 2, not at a seam, so no two wall planes meet
+   here and the panel simply stands proud of a wall that runs on behind it. The
+   cut is 1500 wide and the panel takes the middle 950: that leaves 725 units of
+   plain wall on each side, the breathing room the other recreations have. */
+const REC93_L = bayStart(2) + 275, REC93_R = bayStart(2) + 1225;
 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
@@ -494,6 +511,7 @@ function auditStatics(){
       if (it.pz != null) continue;
       const x = b.x + it.dx;
       const inRec = (x > REC_L && x < REC_R) || (x > REC3_L && x < REC3_R) ||
+                    (x > REC93_L && x < REC93_R) ||
                     (x > REC2_L && x < REC2_R) || (x > REC4_L && x < REC4_R);
       if (inRec) bad.push(`wall photo inside a recreation without pz: ${b.y} ${it.img} @${x|0} — pin it to the panel`);
     }
@@ -1090,6 +1108,7 @@ const FLOOR_TONES = {
   rec: [
     ['#d6cfc0', '#8f8778'],   // 1979: pale stone, toned to the panel
     ['#d3d1c9', '#8b897f'],   // 1989: the national-leader threshold
+    ['#c9ccd1', '#82868d'],   // 1993: the nineties office slab
     ['#dde1e6', '#989ea6'],   // digital revolution: cool light stone
     ['#e4e7ea', '#a3a9b0'],   // 2022 fastscan: the whitest slab of all
   ],
@@ -1113,7 +1132,9 @@ function drawFloor(){
     [REC_L,  REC_R,  T.rec[0]],
     [REC_R,  REC3_L, T.era[1]],
     [REC3_L, REC3_R, T.rec[1]],
-    [REC3_R, REC2_L, T.era[2]],
+    [REC3_R, REC93_L, T.era[2]],
+    [REC93_L, REC93_R, T.rec[2]],
+    [REC93_R, REC2_L, T.era[2]],
     [REC2_L, REC2_R, T.rec[2]],
     [REC2_R, REC4_L, T.era[3]],
     [REC4_L, REC4_R, T.rec[3]],
@@ -1456,6 +1477,7 @@ function drawBenchDescs(){
     // the label then steps onto the nearest counter, unless a recreation
     // slab owns this ground
     const inRec = (b.x > REC_L && b.x < REC_R) || (b.x > REC3_L && b.x < REC3_R) ||
+                  (b.x > REC93_L && b.x < REC93_R) ||
                   (b.x > REC2_L && b.x < REC2_R) || (b.x > REC4_L && b.x < REC4_R);
     if (!onTable && !inRec){
       // prefer the counter to the right: the tour reads left to right,
@@ -1834,9 +1856,17 @@ let SEAM_VIDEO = null;
    does in a room — the beam hangs in the air with dust turning in it, the
    lamp breathes, the gate weaves a hair, and the throw is keystoned because
    the machine sits below the centre of its own picture. */
+/* The reel belongs to 1993, not 1995: the film IS about this building. It runs
+   a window out of the middle of the tape — 12.6s to 23.4s — which is the
+   architect's computer flythrough handing over, in a single cut and from the
+   same angle, to the finished building. After 23.4 the tape goes to the harbour
+   and we round it back. `pz` pins the picture to the recreation's own panel
+   rather than to the era wall standing behind it. */
 const PROJECTORS = [
-  {x: SHIFT(12590), wallDX: 240, w: 1560, cy: 470, src: 'media/jim_glass.mp4', throwZ: 30,
-   clip: {name: 'Jim Glidewell', label: 'on the bench that started it', src: 'media/jim_glass.mp4'}},
+  {x: (REC93_L + REC93_R) / 2, wallDX: 0, w: 1180, cy: 430, pz: 728,
+   src: 'media/timeline5.mp4', throwZ: 30, in: 12.6, out: 23.4,
+   clip: {name: '4141 MacArthur Blvd', label: 'the building, before it was built',
+          src: 'media/timeline5.mp4'}},
 ];
 function initProjectors(){
   for (const p of PROJECTORS){
@@ -1876,11 +1906,12 @@ function drawProjectors(t, phase){
     }
     if (!near) continue;
     const seg = segAt(p.x);
-    const wz = (seg.z0 || 550) - 6;
+    const wz = (p.pz != null ? p.pz : (seg.z0 || 550)) - 6;
     const kk = k(wz);
     // the frame takes its offset in WORLD units, the same units the machine
     // below uses, so the two never drift apart and the beam stays true
-    const sx = px(p.x + p.wallDX, k(exhibitZ(p.x)));
+    const sx = px(p.x + p.wallDX, k(p.pz != null ? p.pz - 8 : exhibitZ(p.x)));
+    if (p.out != null && p.v && p.v.currentTime > p.out) p.v.currentTime = p.in || 0;
     // the gate is sized to the reel AFTER its black ears are cut: a 4:3 film
     // gets a 4:3 rectangle, fitted inside the same box, never stretched
     const c0 = p.crop || {x0: 0, x1: 1};
@@ -2328,7 +2359,8 @@ function drawProgress(t){
   const y = H - 40 * SS;
   const W0 = INTRO_X, W1 = FIN_X;
   const at = wx => x0 + span * Math.max(0, Math.min(1, (wx - W0) / (W1 - W0)));
-  const RECS = [[REC_L, REC_R], [REC3_L, REC3_R], [REC2_L, REC2_R], [REC4_L, REC4_R]];
+  const RECS = [[REC_L, REC_R], [REC3_L, REC3_R], [REC93_L, REC93_R],
+                [REC2_L, REC2_R], [REC4_L, REC4_R]];
   // 1970 is a recreation too — the founding bench stands in its own cut bay, so
   // it earns the same pip as the other portals. The gap is taken at the width
   // the others use, not the bay's full 2320, so the rule keeps its rhythm.
@@ -2482,6 +2514,124 @@ function drawMapHero(t, h){
   }
   // the map itself rides above the dim and the light — crisp
   ctx.drawImage(sp.c, cx - w/2, cyS - hh/2, w, hh);
+}
+
+/* 1993 · NEWPORT BEACH. The one bay in the hall whose film the company shot
+   itself: an architect's computer flythrough of a building that did not exist
+   yet, cutting — same angle, single cut — to the same building finished. So the
+   panel is a screen, and what stands on the counter in front of it is the
+   massing model that flythrough was made from. */
+function drawRec93(t){
+  const mid = (REC93_L + REC93_R) / 2;
+  if (Math.abs(cam.x - mid) > 2800) return;
+  const kk = k(728);
+  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const x0 = px(REC93_L, kk), x1 = px(REC93_R, kk);
+  const wg = ctx.createLinearGradient(0, 0, 0, yBase);
+  wg.addColorStop(0, '#c3cad0');
+  wg.addColorStop(0.42, '#dee4e9');
+  wg.addColorStop(1, '#979ea5');
+  ctx.fillStyle = wg;
+  ctx.fillRect(x0, 0, x1 - x0, yBase);
+  // the reveal the picture lands in, so the film reads as hung and not floating
+  const cx = px(mid, kk);
+  const sw = 830 * kk * SS, sh = sw * 3 / 4, sy = py(400, kk);
+  ctx.fillStyle = 'rgba(22,27,32,0.92)';
+  ctx.fillRect(cx - sw/2, sy - sh/2, sw, sh);
+  const rg = ctx.createLinearGradient(0, sy - sh/2, 0, sy - sh/2 + 6 * kk * SS);
+  rg.addColorStop(0, 'rgba(0,0,0,0.35)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = rg;
+  ctx.fillRect(cx - sw/2, sy - sh/2, sw, 6 * kk * SS);
+  ctx.strokeStyle = 'rgba(255,255,255,0.42)'; ctx.lineWidth = 1.3 * SS;
+  ctx.strokeRect(cx - sw/2, sy - sh/2, sw, sh);
+  for (const wxc of [REC93_L, REC93_R]){
+    const kc = k(722), sxc = px(wxc, kc), cw = 116 * kc * SS;
+    if (sxc < -cw || sxc > W + cw) continue;
+    const cg = ctx.createLinearGradient(sxc - cw/2, 0, sxc + cw/2, 0);
+    cg.addColorStop(0, '#3a4046'); cg.addColorStop(0.45, '#818a92'); cg.addColorStop(1, '#2c3237');
+    ctx.fillStyle = cg;
+    ctx.fillRect(sxc - cw/2, 0, cw, yBase);
+  }
+}
+
+/* The massing model. Drawn in cabinet oblique — the projection an architect's
+   office actually used before it had a renderer — so it reads as a made object
+   on a table and not as a picture of one. One light, upper left: the roofs take
+   it full, the faces that turn away lose it in two steps. */
+function m93(p, mx, my, mz){
+  return [p.ox + (mx - mz * 0.50) * p.s, p.oy - (my - mz * 0.34) * p.s];
+}
+function quad93(p, pts, tone){
+  ctx.fillStyle = tone;
+  ctx.beginPath();
+  pts.forEach((v, i) => {
+    const q = m93(p, v[0], v[1], v[2]);
+    i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]);
+  });
+  ctx.closePath(); ctx.fill();
+}
+const T93 = ['#f6f4ef', '#dedad2', '#b3aea6', '#8e8a83'];   // roof, front, side, shade
+function box93(p, x0, x1, y0, y1, z0, z1, bands){
+  quad93(p, [[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]], T93[0]);   // roof
+  quad93(p, [[x1,y1,z0],[x1,y1,z1],[x1,y0,z1],[x1,y0,z0]], T93[2]);   // the side that turns away
+  quad93(p, [[x0,y1,z1],[x1,y1,z1],[x1,y0,z1],[x0,y0,z1]], T93[1]);   // the face
+  if (!bands) return;
+  // three ribbon windows, recessed between the spandrels
+  const h = (y1 - y0) / 3;
+  for (let i = 0; i < 3; i++){
+    const a = y0 + i * h + h * 0.30, b2 = y0 + i * h + h * 0.78;
+    quad93(p, [[x0+3,b2,z1],[x1-3,b2,z1],[x1-3,a,z1],[x0+3,a,z1]], T93[3]);
+    quad93(p, [[x1,b2,z0+3],[x1,b2,z1-3],[x1,a,z1-3],[x1,a,z0+3]], '#6f6c66');
+  }
+}
+function drawModel93(b, t){
+  const g = b.rig, kk = k(g.lz ?? 150);
+  const sx = px(b.x + (g.dx || 0), kk);
+  const foot = py(CFG.benchY - 2, kk);
+  const XM = 104, ZM = 62;
+  const s = (g.w || 300) * kk * SS / (XM + ZM * 0.50);
+  if (sx < -400 || sx > W + 400) return;
+  const p = {s, ox: sx - (XM - ZM * 0.50) * s / 2, oy: foot - ZM * 0.34 * s};
+
+  ctx.save();
+  ctx.translate(sx, foot); ctx.scale(1, 0.18); ctx.translate(-sx, -foot);
+  const csh = ctx.createRadialGradient(sx, foot, 0, sx, foot, XM * s * 0.62);
+  csh.addColorStop(0, 'rgba(0,0,0,0.40)'); csh.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = csh;
+  ctx.beginPath(); ctx.arc(sx, foot, XM * s * 0.62, 0, 7); ctx.fill();
+  ctx.restore();
+
+  box93(p, 0, XM, -4, 0, 0, ZM, false);                 // the base plate
+  box93(p, 6, 98, 0, 34, 6, 38, true);                  // the long block
+  box93(p, 18, 58, 0, 34, 38, 56, true);                // the wing that steps forward
+  box93(p, 30, 54, 34, 40, 12, 26, false);              // the plant on the roof
+  // the round stair tower on the far corner
+  const [tx, ty] = m93(p, 88, 37, 46), [, by] = m93(p, 88, 0, 46);
+  const rx = 7.5 * s, ry = rx * 0.34;
+  const tg = ctx.createLinearGradient(tx - rx, 0, tx + rx, 0);
+  tg.addColorStop(0, T93[1]); tg.addColorStop(0.38, T93[0]); tg.addColorStop(1, T93[2]);
+  ctx.fillStyle = tg; ctx.fillRect(tx - rx, ty, rx * 2, by - ty);
+  ctx.beginPath(); ctx.ellipse(tx, by, rx, ry, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = T93[0];
+  ctx.beginPath(); ctx.ellipse(tx, ty, rx, ry, 0, 0, 7); ctx.fill();
+  // the bollards along the walk up to the door — they are in the film too
+  for (let i = 0; i < 6; i++){
+    const bx2 = 22 + i * 6.4;
+    const [ux, uy] = m93(p, bx2, 3.4, 59), [, ly] = m93(p, bx2, 0, 59);
+    ctx.fillStyle = T93[1];
+    ctx.fillRect(ux - 1.1 * s, uy, 2.2 * s, ly - uy);
+    ctx.fillStyle = T93[0];
+    ctx.beginPath(); ctx.ellipse(ux, uy, 1.1 * s, 0.4 * s, 0, 0, 7); ctx.fill();
+  }
+  // the number, where it is on the building
+  const [nx2, ny2] = m93(p, 30, 24, 38);
+  ctx.fillStyle = 'rgba(70,68,64,0.85)';
+  ctx.font = eraFont(Math.max(5, 4.6 * s), '700', SEGMENTS[2].font);
+  ctx.textAlign = 'left';
+  ctx.fillText('4141', nx2, ny2);
+
+  pushHit(sx - XM * s * 0.5, foot - 46 * s, XM * s, 46 * s,
+          {type: 'focus', beat: nearestBeat(b.x).i, anchor: b.x});
 }
 
 /* the 1979 panel: a light wall between two columns, carrying the map of
@@ -2935,7 +3085,7 @@ function drawRec2(t){
   const sp = PED_SPRITES.crown2;
   const w = 360 * kk * SS, h = w * sp.h / sp.w;
   const cx = px(mid, kk), cyS = py(400, kk);
-  const nw = 600 * kk * SS, nh = 560 * kk * SS;
+  const nw = 600 * kk * SS, nh = 520 * kk * SS;
   const ng = ctx.createLinearGradient(0, cyS - nh/2, 0, cyS + nh/2);
   ng.addColorStop(0, '#1f242b'); ng.addColorStop(1, '#2c333c');
   ctx.fillStyle = ng;
@@ -3046,14 +3196,16 @@ function drawRec2(t){
   // lower centre, so the title cannot live down there
   ctx.save();
   ctx.textAlign = 'center';
-  ctx.font = eraFont(34 * kk * SS, '', SEGMENTS[3].font);
-  try { ctx.letterSpacing = `${8*kk*SS}px`; } catch(e){}
-  ctx.fillStyle = 'rgba(58,68,80,0.85)';
-  ctx.fillText('THE DIGITAL REVOLUTION', cx, py(60, kk));
+  // A revolution does not whisper. Seventy per cent bigger, bold, and dark
+  // enough to hold its own against a wall of year numerals.
+  ctx.font = eraFont(58 * kk * SS, '700', SEGMENTS[3].font);
+  try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
+  ctx.fillStyle = 'rgba(32,42,54,0.96)';
+  ctx.fillText('THE DIGITAL REVOLUTION', cx, py(46, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
-  ctx.font = eraFont(27 * kk * SS, '', SEGMENTS[3].font);
-  ctx.fillStyle = 'rgba(66,76,88,0.95)';
-  ctx.fillText('the impression becomes a scan \u00b7 the crown becomes a file', cx, py(100, kk));
+  ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
+  ctx.fillStyle = 'rgba(60,70,84,0.95)';
+  ctx.fillText('the impression becomes a scan \u00b7 the crown becomes a file', cx, py(112, kk));
   // era markers on the panel shoulders: inside the panel, clear of the columns
   ctx.font = eraFont(24 * kk * SS, '700', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(110,120,132,0.7)';
@@ -5868,6 +6020,7 @@ function frame(){
   // recreations stand proud of the deeper era walls — they paint on top
   drawMapWall(t);
   drawRec3(t);
+  drawRec93(t);
   drawRec2(t);
   drawRec4(t);
 
@@ -5937,6 +6090,7 @@ function frame(){
         {type:'photo', sp, wx: b.x + it.dx, cy: CFG.benchY - hW/2, z: it.lz, w: it.w, cap: it.cap, beat: i});
     }
     if (b.rig && b.rig.kind === 'disc') drawDiscMill(b, t);
+    if (b.rig && b.rig.kind === 'model93') drawModel93(b, t);
     for (const p of (b.props || [])) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
     if (b.pyr) drawBookPyramid(b, t);
