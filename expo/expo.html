@@ -2585,17 +2585,6 @@ function drawRec2Front(t){
   ctx.drawImage(spm.c, nx - cw/2, ny - chh/2, cw, chh);
   pushHit(nx - cw/2, ny - chh/2, cw, chh,
           {type: 'focus', beat: nearestBeat(mid).i, anchor: mid});
-  // the three states name themselves once they are locked
-  if (ease > 0.15){
-    ctx.save();
-    ctx.textAlign = 'center';
-    ctx.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
-    try { ctx.letterSpacing = `${5*kk*SS}px`; } catch(e){}
-    ctx.fillStyle = `rgba(70,110,135,${(0.75 * ease).toFixed(3)})`;
-    ctx.fillText('SCANNED \u00b7 DESIGNED \u00b7 MILLED', cx, py(596, kk));
-    try { ctx.letterSpacing = '0px'; } catch(e){}
-    ctx.restore();
-  }
 }
 
 function drawRec2(t){
@@ -2656,6 +2645,19 @@ function drawRec2(t){
           beat: BEATS.findIndex(b => b.t === 'BRUXZIR')});
   const ease = ease0;
 
+  // the three states name themselves on the panel itself, which means the
+  // pilasters stand in front of the words — see the strip on the column below
+  if (ease > 0.15){
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
+    try { ctx.letterSpacing = `${5*kk*SS}px`; } catch(e){}
+    ctx.fillStyle = `rgba(70,110,135,${(0.75 * ease).toFixed(3)})`;
+    ctx.fillText('SCANNED \u00b7 DESIGNED \u00b7 MILLED', cx, py(596, kk));
+    try { ctx.letterSpacing = '0px'; } catch(e){}
+    ctx.restore();
+  }
+
   // THE FILE — it descends from above as you arrive, on its own suspension
   {
     const kf = k(500), fw = 311 * kf * SS;
@@ -2702,6 +2704,30 @@ function drawRec2(t){
     ctx.fillStyle = 'rgba(170,225,255,0.55)';
     ctx.fillRect(sxc - cw/2 + 2*SS, 0, 2*SS, yBase);
     ctx.fillRect(sxc + cw/2 - 4*SS, 0, 2*SS, yBase);
+    // a thin display set into the pilaster, dead on the caption's line
+    {
+      const stripY = py(596, kk), sh2 = 16 * kc * SS;
+      const iw = cw - 8 * SS;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(sxc - iw/2, stripY - sh2/2, iw, sh2); ctx.clip();
+      ctx.fillStyle = '#0b1216';
+      ctx.fillRect(sxc - iw/2, stripY - sh2/2, iw, sh2);
+      ctx.font = eraFont(11 * kc * SS, '700', SEGMENTS[3].font);
+      ctx.textAlign = 'left';
+      const phrase = 'SCANNED \u00b7 DESIGNED \u00b7 MILLED \u00b7 ';
+      const pwd = Math.max(20, ctx.measureText(phrase).width);
+      ctx.fillStyle = `rgba(150,228,255,${(0.45 + 0.45 * ease0).toFixed(3)})`;
+      let ox = -((t * 40 * kc * SS) % pwd);
+      while (ox < iw){ ctx.fillText(phrase, sxc - iw/2 + ox, stripY + 4 * kc * SS); ox += pwd; }
+      // the glass of the little screen
+      const sg2 = ctx.createLinearGradient(0, stripY - sh2/2, 0, stripY + sh2/2);
+      sg2.addColorStop(0, 'rgba(255,255,255,0.16)');
+      sg2.addColorStop(0.5, 'rgba(255,255,255,0.02)');
+      sg2.addColorStop(1, 'rgba(0,0,0,0.22)');
+      ctx.fillStyle = sg2; ctx.fillRect(sxc - iw/2, stripY - sh2/2, iw, sh2);
+      ctx.restore();
+      drawGlow('120,215,255', sxc, stripY, cw * 1.6, 0.10 + 0.16 * ease0);
+    }
     ctx.fillStyle = 'rgba(200,235,255,0.16)';
     ctx.fillRect(sxc - cw/2 + 6*SS, 0, 3*SS, yBase);
   }
