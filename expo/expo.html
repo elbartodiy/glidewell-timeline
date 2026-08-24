@@ -2717,11 +2717,24 @@ function drawRec2Front(t){
   pgl.addColorStop(0, 'rgba(150,220,255,0.40)');
   pgl.addColorStop(1, 'rgba(150,220,255,0)');
   ctx.fillStyle = pgl; ctx.fillRect(nx - pw/2, plY, pw, (H - plY) * 0.6);
-  // the top face, and the lit rim of glass around it
-  ctx.fillStyle = 'rgba(238,249,255,0.94)';
-  ctx.beginPath(); ctx.ellipse(nx, plY, pw*0.5, 11*kn*SS, 0, 0, 7); ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1.3 * SS;
-  ctx.beginPath(); ctx.ellipse(nx, plY, pw*0.5, 11*kn*SS, 0, 0, 7); ctx.stroke();
+  // the top is a slab of glass with real thickness — underside, then the edge
+  // that runs round it and catches the light, then the face
+  const capRx = pw * 0.56, capRy = 13 * kn * SS, capT = 10 * kn * SS;
+  ctx.fillStyle = 'rgba(139,160,175,0.95)';
+  ctx.beginPath(); ctx.ellipse(nx, plY + capT, capRx, capRy, 0, 0, 7); ctx.fill();
+  const eg = ctx.createLinearGradient(nx - capRx, 0, nx + capRx, 0);
+  eg.addColorStop(0,    'rgba(28,42,55,0.60)');
+  eg.addColorStop(0.10, 'rgba(206,232,247,0.62)');
+  eg.addColorStop(0.36, 'rgba(255,255,255,0.60)');
+  eg.addColorStop(0.72, 'rgba(198,224,240,0.28)');
+  eg.addColorStop(0.94, 'rgba(206,232,247,0.55)');
+  eg.addColorStop(1,    'rgba(24,36,48,0.62)');
+  ctx.fillStyle = eg;
+  ctx.fillRect(nx - capRx, plY, capRx * 2, capT);
+  ctx.fillStyle = 'rgba(238,249,255,0.96)';
+  ctx.beginPath(); ctx.ellipse(nx, plY, capRx, capRy, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.92)'; ctx.lineWidth = 1.3 * SS;
+  ctx.beginPath(); ctx.ellipse(nx, plY, capRx, capRy, 0, 0, 7); ctx.stroke();
   /* A display set into the pedestal, dead on the line the caption runs along.
      It is NOT a marquee: the words inside it stand exactly where the painted
      words stand on the panel behind — same face, same size, same centre. The
@@ -2763,7 +2776,10 @@ function drawRec2Front(t){
     for (let x = -iw/2; x < iw/2; x += step){
       const u = Math.max(-0.999, Math.min(0.999, x / R));
       const s = R * Math.asin(u);
-      const sag = bow * (1 - (x / (iw/2)) * (x / (iw/2)));
+      // the frame's edge is a quadratic Bezier with its control point at `bow`,
+      // and such a curve only reaches HALF of it at the middle — the letters
+      // were sagging twice as far as the glass they sit behind
+      const sag = bow * 0.5 * (1 - (x / (iw/2)) * (x / (iw/2)));
       ctx.drawImage(state.rec2Strip,
                     Math.round(nx + s), 0, step + 1, oh2,
                     Math.round(nx + x), yTopC + sag - 1, step + 1, oh2);
