@@ -3470,7 +3470,7 @@ function drawRec2Front(t){
   ctx.fillStyle = pgl; ctx.fillRect(nx - pw/2, plY, pw, (H - plY) * 0.6);
   // the top is a slab of glass with real thickness — underside, then the edge
   // that runs round it and catches the light, then the face
-  const capRx = pw * 0.56, capRy = 13 * kn * SS, capT = 10 * kn * SS;
+  const capRx = pw * 0.56, capRy = 13 * kn * SS, capT = 17 * kn * SS;
   ctx.fillStyle = 'rgba(139,160,175,0.95)';
   ctx.beginPath(); ctx.ellipse(nx, plY + capT, capRx, capRy, 0, 0, 7); ctx.fill();
   const eg = ctx.createLinearGradient(nx - capRx, 0, nx + capRx, 0);
@@ -3689,14 +3689,39 @@ function drawRec2(t){
     gsh.addColorStop(0.58, `rgba(255,255,255,${(0.08 * ga).toFixed(3)})`);
     gsh.addColorStop(1,    'rgba(255,255,255,0)');
     ctx.fillStyle = gsh; ctx.fillRect(gx, gy, gw, gh);
-    // the ground edges — light collects in the thickness, most of it at the foot
-    ctx.strokeStyle = `rgba(214,238,254,${(0.42 * ga).toFixed(3)})`;
-    ctx.lineWidth = 1.3 * SS;
-    ctx.strokeRect(gx, gy, gw, gh);
-    const geg = ctx.createLinearGradient(0, gy + gh - 5 * SS, 0, gy + gh);
+    /* Thickness. A sheet of glass is read almost entirely from its edges: thin
+       glass has a hairline and looks cheap, thick glass has a bevel that takes
+       the light differently on every side and a ground foot where the light
+       that travelled through the pane finally gets out. */
+    const bv = 11 * kf * SS;
+    const quad = (a, b, c, d, al) => {
+      ctx.fillStyle = `rgba(226,244,255,${(al * ga).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+      ctx.lineTo(c[0], c[1]); ctx.lineTo(d[0], d[1]);
+      ctx.closePath(); ctx.fill();
+    };
+    const X0 = gx, X1 = gx + gw, Y0 = gy, Y1 = gy + gh;
+    quad([X0,Y0], [X1,Y0], [X1-bv,Y0+bv], [X0+bv,Y0+bv], 0.50);          // top facet
+    quad([X0,Y0], [X0+bv,Y0+bv], [X0+bv,Y1-bv], [X0,Y1], 0.34);          // left facet
+    quad([X1,Y0], [X1,Y1], [X1-bv,Y1-bv], [X1-bv,Y0+bv], 0.16);          // right, turned away
+    quad([X0,Y1], [X1,Y1], [X1-bv,Y1-bv], [X0+bv,Y1-bv], 0.62);          // the foot
+    // the line where the bevel meets the face, and the outer arris
+    ctx.strokeStyle = `rgba(240,252,255,${(0.34 * ga).toFixed(3)})`;
+    ctx.lineWidth = 1 * SS;
+    ctx.strokeRect(X0 + bv, Y0 + bv, gw - bv * 2, gh - bv * 2);
+    ctx.strokeStyle = `rgba(206,236,254,${(0.55 * ga).toFixed(3)})`;
+    ctx.lineWidth = 2.2 * SS;
+    ctx.strokeRect(X0, Y0, gw, gh);
+    // light that travelled the pane leaves at the ground foot
+    const geg = ctx.createLinearGradient(0, Y1 - bv * 1.6, 0, Y1);
     geg.addColorStop(0, 'rgba(190,232,255,0)');
-    geg.addColorStop(1, `rgba(215,244,255,${(0.55 * ga).toFixed(3)})`);
-    ctx.fillStyle = geg; ctx.fillRect(gx, gy + gh - 5 * SS, gw, 5 * SS);
+    geg.addColorStop(1, `rgba(228,248,255,${(0.75 * ga).toFixed(3)})`);
+    ctx.fillStyle = geg; ctx.fillRect(X0, Y1 - bv * 1.6, gw, bv * 1.6);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    drawGlow('150,220,255', (X0 + X1) / 2, Y1, gw * 0.9, 0.10 * ga);
+    ctx.restore();
     // and now the mesh, on its face
     ctx.save();
     ctx.beginPath(); ctx.rect(gx, gy, gw, gh); ctx.clip();
