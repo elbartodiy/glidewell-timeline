@@ -206,7 +206,7 @@ const BEATS = [
   {x:24450, y:'2018', t:'THE FIRST AI CROWN', tier:1, fly:true,
    pinZ:1000,
    th:'The first restoration no hand drew.',
-   d:'2017: Glidewell R&D and UC Berkeley write the first crown-design software that learns. 2018: it designs a crown outright \u2014 proposed, not drawn; chosen, not carved. The archive of scans that started in 2007 is what taught it.',
+   d:'A machine-learning team since 2015; the work done with UC Berkeley, alongside the people who wrote pix2pix itself. It learned from 1,500 pairs of scans — and from the natural profile between opposing teeth, the thing technicians find hardest. Glidewell milled the first crown designed entirely by it in 2017; the paper that followed in March 2018 is called Learning Beyond Human Expertise. The archive of scans that began in 2007 is what taught it.',
    wall:[], table:[]},
   {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true,
    rig:{kind:'robot', dx:0, lz:150, floor:true},
@@ -231,6 +231,11 @@ const BEATS = [
    table:[], pyr:{dx:520, w:460},
    ped:{obj:'scanner', dx:0, gapHalf:400}},
 
+  {x:26900, y:'2023', t:'THE CROSSOVER', tier:1, yLift:110,
+   th:'The analog century ends quietly, in a mailroom.',
+   d:'March 2023: for the first time, more digital impressions arrive at Glidewell in a month than physical ones. Nothing announces it — it is simply the month the two lines cross, sixteen years after the first digital case came in.',
+   wall:[], table:[],
+   rig:{kind:'scale', dx:0, lz:150, w:300}},
   {x:27190, y:'2020s', t:'AI · SCALE', tier:1,
    th:'The flywheel: cheaper to make → wider access → reinvest.',
    d:'CrownAI / MarginAI; ~500K units a month, 5,000+ staff — the largest dental lab in the world.',
@@ -262,6 +267,8 @@ const CUTS = [
   {at: 12150, w: 1500, on: true},
   // 2018: the first crown designed entirely by AI, and the arm that takes it on
   {at: 24450, w: 1500, on: true},
+  // 2023: the month the digital impressions outnumbered the physical ones
+  {at: 26900, w: 2000, on: true},
 ];
 function SHIFT(x){
   let s = 0;
@@ -292,6 +299,8 @@ function applyCut(){
   if (b93) b93.x = (REC93_L + REC93_R) / 2;
   const b18 = BEATS.find(b => b.y === '2018');
   if (b18) b18.x = (REC18_L + REC18_R) / 2;
+  const b23 = BEATS.find(b => b.y === '2023');
+  if (b23) b23.x = (REC23_L + REC23_R) / 2;
   const rekey = obj => {
     const moved = {};
     for (const k0 in obj) moved[String(SHIFT(+k0))] = obj[k0];
@@ -316,6 +325,9 @@ const REC4_L = SHIFT(25940), REC4_R = SHIFT(26740);   // the 2022 fastscan recre
 const REC93_L = bayStart(2) + 275, REC93_R = bayStart(2) + 1225;
 /* The 2018 bay, cut inside era 4 for the same reason: no seam to bridge. */
 const REC18_L = bayStart(3) + 300, REC18_R = bayStart(3) + 1200;
+/* The 2023 bay: the crossing. Cut inside era 4, 2000 wide, panel in the middle
+   900 — 710 units of clear wall after the 2022 portal, 840 before the next. */
+const REC23_L = bayStart(4) + 550, REC23_R = bayStart(4) + 1450;
 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
@@ -523,6 +535,7 @@ function auditStatics(){
       const x = b.x + it.dx;
       const inRec = (x > REC_L && x < REC_R) || (x > REC3_L && x < REC3_R) ||
                     (x > REC93_L && x < REC93_R) || (x > REC18_L && x < REC18_R) ||
+                    (x > REC23_L && x < REC23_R) ||
                     (x > REC2_L && x < REC2_R) || (x > REC4_L && x < REC4_R);
       if (inRec) bad.push(`wall photo inside a recreation without pz: ${b.y} ${it.img} @${x|0} — pin it to the panel`);
     }
@@ -1124,6 +1137,7 @@ const FLOOR_TONES = {
     ['#d3d1c9', '#8b897f'],   // 1989: the national-leader threshold
     ['#c9ccd1', '#82868d'],   // 1993: the nineties office slab
     ['#eceef0', '#a9aeb4'],   // 2018: the machine hall, lit like an operating room
+    ['#e8ebee', '#a4a9af'],   // 2023: the crossing
     ['#dde1e6', '#989ea6'],   // digital revolution: cool light stone
     ['#e4e7ea', '#a3a9b0'],   // 2022 fastscan: the whitest slab of all
   ],
@@ -1154,6 +1168,8 @@ function drawFloor(){
     [REC2_R, REC18_L, T.era[3]],
     [REC18_L, REC18_R, T.rec[3]],
     [REC18_R, REC4_L, T.era[3]],
+    [REC4_R, REC23_L, T.era[3]],
+    [REC23_L, REC23_R, T.rec[4]],
     [REC4_L, REC4_R, T.rec[3]],
     [REC4_R, SEGMENTS[3].x1 + 900, T.era[3]],
   ];
@@ -1496,6 +1512,7 @@ function drawBenchDescs(){
     // slab owns this ground
     const inRec = (b.x > REC_L && b.x < REC_R) || (b.x > REC3_L && b.x < REC3_R) ||
                   (b.x > REC93_L && b.x < REC93_R) || (b.x > REC18_L && b.x < REC18_R) ||
+                  (b.x > REC23_L && b.x < REC23_R) ||
                   (b.x > REC2_L && b.x < REC2_R) || (b.x > REC4_L && b.x < REC4_R);
     if (!onTable && !inRec){
       // prefer the counter to the right: the tour reads left to right,
@@ -2435,7 +2452,8 @@ function drawProgress(t){
   const W0 = INTRO_X, W1 = FIN_X;
   const at = wx => x0 + span * Math.max(0, Math.min(1, (wx - W0) / (W1 - W0)));
   const RECS = [[REC_L, REC_R], [REC3_L, REC3_R], [REC93_L, REC93_R],
-                [REC2_L, REC2_R], [REC18_L, REC18_R], [REC4_L, REC4_R]];
+                [REC2_L, REC2_R], [REC18_L, REC18_R], [REC4_L, REC4_R],
+                [REC23_L, REC23_R]];
   // 1970 is a recreation too — the founding bench stands in its own cut bay, so
   // it earns the same pip as the other portals. The gap is taken at the width
   // the others use, not the bay's full 2320, so the rule keeps its rhythm.
@@ -2589,6 +2607,170 @@ function drawMapHero(t, h){
   }
   // the map itself rides above the dim and the light — crisp
   ctx.drawImage(sp.c, cx - w/2, cyS - hh/2, w, hh);
+}
+
+/* 2023 · THE CROSSOVER. Every other apex in this hall is an invention. This
+   one is an arithmetic fact: in March 2023 more digital impressions arrived in
+   a month than physical ones, and nothing marked the day. So it is staged as
+   the only thing it honestly is — two lines crossing, and a balance going
+   level. Both reach dead centre at the same instant, and that instant is the
+   moment the recreation is centred on your screen. Past it the beam does not
+   swing back: a century does not end twice. */
+function crossPhase(mid){
+  const d = cam.x - mid;
+  if (d <= 0){
+    const u = Math.max(0, Math.min(1, 1 + d / 700));
+    return 0.5 * (u * u * (3 - 2 * u));
+  }
+  const u = Math.max(0, Math.min(1, d / 450));
+  return 0.5 + 0.5 * (u * u * (3 - 2 * u));
+}
+// a logistic through (0.5, 0.5): whatever the real curve was, it crossed in
+// the middle, and that is the only property this drawing may assert
+function digShare(u){
+  const a = 2.4, p1 = Math.pow(Math.max(1e-4, u), a), p2 = Math.pow(Math.max(1e-4, 1 - u), a);
+  return p1 / (p1 + p2);
+}
+function drawRec23(t){
+  const mid = (REC23_L + REC23_R) / 2;
+  if (Math.abs(cam.x - mid) > 2800) return;
+  const kk = k(1000);
+  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const x0 = px(REC23_L, kk), x1 = px(REC23_R, kk);
+  const wg = ctx.createLinearGradient(0, 0, 0, yBase);
+  wg.addColorStop(0, '#e4e9ed'); wg.addColorStop(0.45, '#f6f9fb'); wg.addColorStop(1, '#c8ced4');
+  ctx.fillStyle = wg; ctx.fillRect(x0, 0, x1 - x0, yBase);
+  const cx = px(mid, kk);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = eraFont(58 * kk * SS, '700', SEGMENTS[3].font);
+  try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
+  ctx.fillStyle = 'rgba(32,42,54,0.96)';
+  ctx.fillText('THE CROSSOVER', cx, py(46, kk));
+  try { ctx.letterSpacing = '0px'; } catch(e){}
+  ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
+  ctx.fillStyle = 'rgba(60,70,84,0.95)';
+  ctx.fillText('march 2023 \u00b7 the digital impressions outnumber the physical', cx, py(112, kk));
+  ctx.restore();
+
+  const ph = crossPhase(mid);
+  const pw2 = 700 * kk * SS, pl = cx - pw2 / 2;
+  const pTop = py(220, kk), pBot = py(560, kk), pH = pBot - pTop;
+  ctx.strokeStyle = 'rgba(90,102,116,0.30)'; ctx.lineWidth = 1 * SS;
+  ctx.beginPath(); ctx.moveTo(pl, pBot); ctx.lineTo(pl + pw2, pBot); ctx.stroke();
+  const N = 64, upto = Math.max(0.02, ph);
+  for (const [who, col, wid] of [['phys', '110,122,136', 2.4], ['dig', '40,140,210', 3.0]]){
+    ctx.strokeStyle = `rgba(${col},0.92)`;
+    ctx.lineWidth = wid * kk * SS;
+    ctx.beginPath();
+    for (let i = 0; i <= N; i++){
+      const u = (i / N) * upto;
+      const v = who === 'dig' ? digShare(u) : 1 - digShare(u);
+      const X = pl + pw2 * u, Y = pBot - pH * (0.12 + 0.76 * v);
+      i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
+    }
+    ctx.stroke();
+  }
+  ctx.font = eraFont(24 * kk * SS, '700', SEGMENTS[3].font);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(110,122,136,0.9)';
+  ctx.fillText('PHYSICAL', pl, pBot - pH * 0.94);
+  ctx.fillStyle = 'rgba(40,140,210,0.9)';
+  ctx.fillText('DIGITAL', pl, pBot - pH * 0.06);
+  ctx.textAlign = 'center';
+  if (ph >= 0.5){
+    const mx2 = pl + pw2 * 0.5, my2 = pBot - pH * 0.50;
+    const a2 = Math.min(1, (ph - 0.5) * 5);
+    ctx.strokeStyle = `rgba(30,40,52,${(0.5 * a2).toFixed(3)})`;
+    ctx.lineWidth = 1 * SS;
+    ctx.setLineDash([4 * SS, 4 * SS]);
+    ctx.beginPath(); ctx.moveTo(mx2, my2); ctx.lineTo(mx2, pBot); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = `rgba(30,40,52,${(0.9 * a2).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(mx2, my2, 4.5 * kk * SS, 0, 7); ctx.fill();
+    ctx.font = eraFont(22 * kk * SS, '700', SEGMENTS[3].font);
+    ctx.fillText('MARCH 2023', mx2, pBot + 26 * kk * SS);
+  }
+  // the instant itself, caught on the crossing of dead centre and not before
+  const dxm = cam.x - mid;
+  if (state._x23 != null && Math.sign(dxm) !== Math.sign(state._x23) && Math.abs(dxm) < 400)
+    state._x23flash = 1;
+  state._x23 = dxm;
+  if (state._x23flash > 0.01){
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    drawGlow('210,236,255', pl + pw2 * 0.5, pBot - pH * 0.5, pw2 * 0.8, 0.5 * state._x23flash);
+    ctx.restore();
+    state._x23flash *= 0.90;
+  }
+}
+
+/* The balance. Physical impressions on one pan, the data on the other, and the
+   beam level at the exact instant the lines cross. */
+function drawScale(b, t){
+  const g = b.rig, kk = k(g.lz ?? 150);
+  const sx = px(b.x + (g.dx || 0), kk);
+  const S1 = (g.w || 300) * kk * SS / 240;
+  const foot = py(CFG.benchY - 2, kk);
+  if (sx < -400 || sx > W + 400) return;
+  const ph = crossPhase(b.x);
+  const ang = (0.5 - ph) * 0.42;
+  const postH = 150 * S1, pivY = foot - postH, armL = 92 * S1;
+  ctx.save();
+  ctx.translate(sx, foot); ctx.scale(1, 0.20); ctx.translate(-sx, -foot);
+  const csh = ctx.createRadialGradient(sx, foot, 0, sx, foot, 90 * S1);
+  csh.addColorStop(0, 'rgba(0,0,0,0.40)'); csh.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = csh;
+  ctx.beginPath(); ctx.arc(sx, foot, 90 * S1, 0, 7); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = '#9099a1';
+  ctx.beginPath(); ctx.ellipse(sx, foot, 52 * S1, 11 * S1, 0, 0, 7); ctx.fill();
+  const pg2 = ctx.createLinearGradient(sx - 8 * S1, 0, sx + 8 * S1, 0);
+  pg2.addColorStop(0, '#7d858d'); pg2.addColorStop(0.4, '#ccd3d9'); pg2.addColorStop(1, '#6d757c');
+  ctx.fillStyle = pg2;
+  ctx.fillRect(sx - 8 * S1, pivY, 16 * S1, foot - pivY);
+  const cA = Math.cos(ang), sA = Math.sin(ang);
+  const Lx = sx - armL * cA, Ly = pivY + armL * sA;
+  const Rx = sx + armL * cA, Ry = pivY - armL * sA;
+  ctx.strokeStyle = '#b9c1c8'; ctx.lineWidth = 7 * S1; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(Lx, Ly); ctx.lineTo(Rx, Ry); ctx.stroke();
+  ctx.fillStyle = '#6d757c';
+  ctx.beginPath(); ctx.arc(sx, pivY, 10 * S1, 0, 7); ctx.fill();
+  const hang = 40 * S1;
+  for (const [ex, ey, kind] of [[Lx, Ly, 'p'], [Rx, Ry, 'd']]){
+    ctx.strokeStyle = 'rgba(150,158,166,0.9)'; ctx.lineWidth = 1.4 * S1;
+    ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex, ey + hang); ctx.stroke();
+    ctx.fillStyle = '#aeb6bd';
+    ctx.beginPath(); ctx.ellipse(ex, ey + hang, 30 * S1, 7 * S1, 0, 0, 7); ctx.fill();
+    if (kind === 'p'){
+      // impression trays, stacked and going nowhere
+      for (let i = 0; i < 3; i++){
+        const yy = ey + hang - 5 * S1 - i * 7 * S1;
+        ctx.strokeStyle = `rgba(126,116,102,${(0.9 - i * 0.12).toFixed(2)})`;
+        ctx.lineWidth = 4 * S1;
+        ctx.beginPath(); ctx.arc(ex, yy, 15 * S1, Math.PI * 0.12, Math.PI * 0.88); ctx.stroke();
+      }
+    } else {
+      // the data: a block of light with a grid in it
+      const bwd = 34 * S1, bht = 26 * S1, by2 = ey + hang - 5 * S1 - bht;
+      ctx.fillStyle = 'rgba(28,86,130,0.85)';
+      ctx.fillRect(ex - bwd/2, by2, bwd, bht);
+      ctx.strokeStyle = 'rgba(120,205,255,0.8)'; ctx.lineWidth = 1 * S1;
+      for (let i = 1; i < 4; i++){
+        ctx.beginPath();
+        ctx.moveTo(ex - bwd/2, by2 + bht * i / 4); ctx.lineTo(ex + bwd/2, by2 + bht * i / 4);
+        ctx.moveTo(ex - bwd/2 + bwd * i / 4, by2); ctx.lineTo(ex - bwd/2 + bwd * i / 4, by2 + bht);
+        ctx.stroke();
+      }
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      drawGlow('120,205,255', ex, by2 + bht/2, bwd * 1.8, 0.12 + 0.22 * ph);
+      ctx.restore();
+    }
+  }
+  ctx.restore && ctx.restore;
+  pushHit(sx - 110 * S1, pivY - 30 * S1, 220 * S1, foot - pivY + 60 * S1,
+          {type: 'focus', beat: nearestBeat(b.x).i, anchor: b.x});
 }
 
 /* 2018 · THE FIRST AI CROWN — and the arm that takes it on.
@@ -6329,6 +6511,7 @@ function frame(){
   drawRec93(t);
   drawRec2(t);
   drawRec18(t);
+  drawRec23(t);
   drawRec4(t);
 
   // lamp pools on wall (behind photos) — one per ceiling fixture
@@ -6397,6 +6580,7 @@ function frame(){
         {type:'photo', sp, wx: b.x + it.dx, cy: CFG.benchY - hW/2, z: it.lz, w: it.w, cap: it.cap, beat: i});
     }
     if (b.rig && b.rig.kind === 'disc') drawDiscMill(b, t);
+    if (b.rig && b.rig.kind === 'scale') drawScale(b, t);
     for (const p of (b.props || [])) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
     if (b.pyr) drawBookPyramid(b, t);
