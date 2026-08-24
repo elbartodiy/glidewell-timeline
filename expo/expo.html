@@ -2516,19 +2516,31 @@ function drawCrownScan(cx, cy, w, a){
   }
   ctx.restore();
 }
-/* the file: contour rings, the way a design is actually held in a machine */
+/* the file: contour rings, the way a design is actually held in a machine —
+   and they are not simply there. A laser comes in from above and to the left,
+   sweeps down through the crown's space, and each ring appears as the beam
+   reaches it, burns bright at the moment of the cut, then settles. The mesh is
+   the record of the pass, which is what a scan actually is. */
 function drawCrownFile(cx, cy, w, a, t){
   crownGeometry();
   const sp = PED_SPRITES.crown2, h = w * sp.h / sp.w;
+  const ph = (t * 0.17) % 1;                       // one slow pass, top to bottom
+  const beamY = cy - h * 0.58 + ph * h * 1.16;
+  const ox = cx - w * 2.1, oy = cy - h * 1.9;      // the emitter, up and to the left
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';          // neon: light added, not painted
   // the rings themselves are deep and saturated, the bloom around them cool
   ctx.shadowColor = `rgba(40,150,255,${(a * 0.9).toFixed(3)})`;
   ctx.shadowBlur = Math.max(3, w * 0.05);
-  ctx.strokeStyle = `rgba(50,150,215,${(a * 0.95).toFixed(3)})`;
   ctx.lineWidth = Math.max(1, w * 0.009);
   for (const [ax, bx, uy] of CROWN_ROWS){
     const y = cy + uy * h, rx = (bx - ax) * w / 2, mx = cx + (ax + bx) * w / 2;
+    // a ring exists once the beam has passed it; it flares at the cut itself
+    const d = (beamY - y) / h;
+    if (d < -0.03) continue;
+    const born = d < 0 ? 1 + d / 0.03 : 1;
+    const cut = Math.exp(-Math.abs(d) * 26);
+    ctx.strokeStyle = `rgba(${50 + 160*cut},${150 + 80*cut},${215 + 40*cut},${(a * (0.55 + 0.45*cut) * born).toFixed(3)})`;
     ctx.beginPath(); ctx.ellipse(mx, y, rx, Math.max(1.5, h * 0.022), 0, 0, 7); ctx.stroke();
   }
   // one white line down the axis — the tube inside the glow
@@ -2553,13 +2565,28 @@ function drawCrownFile(cx, cy, w, a, t){
     i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
   }
   ctx.stroke();
-  // the scan line that reads the model, crossing it slowly
-  const sy = cy - h/2 + ((t * 0.22) % 1) * h;
-  const sg = ctx.createLinearGradient(cx - w/2, sy - h*0.06, cx - w/2, sy + h*0.06);
-  sg.addColorStop(0, 'rgba(180,240,255,0)');
-  sg.addColorStop(0.5, `rgba(200,245,255,${(a*0.30).toFixed(3)})`);
-  sg.addColorStop(1, 'rgba(180,240,255,0)');
-  ctx.fillStyle = sg; ctx.fillRect(cx - w/2, sy - h*0.06, w, h*0.12);
+  // THE BEAM itself: one ray from the emitter to the plane it is cutting
+  ctx.globalCompositeOperation = 'lighter';
+  const hitX = cx + w * 0.62;
+  const bg = ctx.createLinearGradient(ox, oy, hitX, beamY);
+  bg.addColorStop(0, `rgba(120,200,255,${(a*0.05).toFixed(3)})`);
+  bg.addColorStop(0.75, `rgba(170,230,255,${(a*0.35).toFixed(3)})`);
+  bg.addColorStop(1, `rgba(230,250,255,${(a*0.85).toFixed(3)})`);
+  ctx.strokeStyle = bg;
+  ctx.lineWidth = Math.max(1, w * 0.012);
+  ctx.shadowColor = `rgba(150,220,255,${(a*0.8).toFixed(3)})`;
+  ctx.shadowBlur = Math.max(4, w * 0.09);
+  ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(hitX, beamY); ctx.stroke();
+  // the plane of light it lays across the crown's space
+  ctx.shadowBlur = 0;
+  const pg2 = ctx.createLinearGradient(cx - w/2, beamY - h*0.035, cx - w/2, beamY + h*0.035);
+  pg2.addColorStop(0, 'rgba(180,240,255,0)');
+  pg2.addColorStop(0.5, `rgba(215,248,255,${(a*0.34).toFixed(3)})`);
+  pg2.addColorStop(1, 'rgba(180,240,255,0)');
+  ctx.fillStyle = pg2;
+  ctx.fillRect(cx - w*0.62, beamY - h*0.035, w*1.24, h*0.07);
+  // and the point where it meets the surface
+  drawGlow('225,248,255', hitX, beamY, w * 0.30, a * 0.55);
   ctx.restore();
 }
 
