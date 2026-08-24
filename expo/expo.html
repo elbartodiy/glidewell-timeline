@@ -309,9 +309,9 @@ const SEGMENTS = [
    font:'Verdana, Tahoma, "DejaVu Sans", sans-serif',
    ink:'226,232,238', lamp:'tube', dust:false,
    rail:'rgba(185,196,202,0.5)', railInk:'rgba(212,222,228,0.75)',
-   light:{pool:'218,232,252', poolR:900, poolA:0.17},
+   light:{pool:'218,232,252', poolR:1250, poolA:0.13},
    tube:{line:'238,246,255', glow:'216,230,250'},
-   bgc:[11,12,14], grain:0.028},
+   bgc:[26,29,34], grain:0.016},
   {x0:REC2_R, x1:WORLD_END+2800, z0:1400, z1:1400, tz:680, wall:'wall4', bench:'bench4', front:'front4',
    font:'"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'55,64,76', lamp:'tube', dust:false,
@@ -1016,7 +1016,7 @@ const FLOOR_TONES = {
   era: [
     ['#4a2f17', '#1d1108'],   // craft: dark oiled wood
     ['#485042', '#1e2119'],   // workshop: worn linoleum
-    ['#3e434b', '#1b1d22'],   // office: carpet-tile grey
+    ['#5f656e', '#2c3037'],   // office: carpet-tile grey, lit like the room after it
     ['#686d75', '#31353b'],   // white room: polished light concrete
   ],
   rec: [
@@ -2752,7 +2752,12 @@ function drawRec2Front(t){
      window belongs to the column and travels with it, the sentence belongs to
      the wall and stays put, so the movement you see is the column sliding
      across a line that never moves. Paint, then light, then paint again. */
-  if (ease > 0.15){
+  {
+    /* The window is part of the column, not part of the arrival: the plinth is
+       drawn for 2800 units either side, so a display that faded out at 765 was
+       a screen switching itself off while you could still plainly see it. It
+       dims as you leave — it never goes dark. */
+    const lit = 0.34 + 0.66 * ease;
     const stripY = py(730, kk), sh2 = 19 * kn * SS;
     const iw = pw - 34 * kn * SS;              // air at both sides: it is set INTO the column
     const R = (iw / 2) * 1.18;                 // the cylinder it is wrapped around
@@ -2767,7 +2772,7 @@ function drawRec2Front(t){
     gs.textAlign = 'center';
     gs.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
     try { gs.letterSpacing = `${5*kk*SS}px`; } catch(e){}
-    gs.fillStyle = `rgba(150,228,255,${(0.60 + 0.4 * ease).toFixed(3)})`;
+    gs.fillStyle = `rgba(150,228,255,${(0.55 + 0.42 * lit).toFixed(3)})`;
     gs.fillText('SCANNED \u00b7 DESIGNED \u00b7 MILLED', cx, oh2 * 0.72);
     ctx.save();
     // the recess, its edges curved by the barrel of the column
@@ -2804,13 +2809,13 @@ function drawRec2Front(t){
     ctx.fillStyle = sg2; ctx.fillRect(nx - iw/2, yTopC - 2, iw, sh2 + 6);
     ctx.restore();
     // the bezel, and the light it spills onto the column
-    ctx.strokeStyle = `rgba(210,240,255,${(0.22 + 0.18 * ease).toFixed(3)})`;
+    ctx.strokeStyle = `rgba(210,240,255,${(0.20 + 0.20 * lit).toFixed(3)})`;
     ctx.lineWidth = 1.2 * SS;
     ctx.beginPath();
     ctx.moveTo(nx - iw/2, yTopC); ctx.quadraticCurveTo(nx, yTopC + bow, nx + iw/2, yTopC);
     ctx.moveTo(nx - iw/2, yBotC); ctx.quadraticCurveTo(nx, yBotC + bow, nx + iw/2, yBotC);
     ctx.stroke();
-    drawGlow('120,215,255', nx, stripY, pw * 1.5, 0.10 + 0.18 * ease);
+    drawGlow('120,215,255', nx, stripY, pw * 1.5, 0.08 + 0.18 * lit);
   }
   drawGlow('225,245,255', nx, ny, cw * 1.5, 0.12 + 0.13 * ease);
   ctx.drawImage(spm.c, nx - cw/2, ny - chh/2, cw, chh);
@@ -3810,7 +3815,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260821-1930';
+const ASSET_V = '20260824-e3lit';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* the procedural era walls (tools/make_wall.py) stand in for the drawn ones —
    same slot, same tiling, so drawWall never learns the difference */
@@ -5849,9 +5854,9 @@ async function boot(){
   TEX.wall2 = panelTexture({w:1400, h:900, base:'#5d5b47', groove:300});
   TEX.bench2 = formicaTexture({w:1200, h:512});
   TEX.front2 = panelTexture({w:1200, h:600, base:'#39392f', groove:220});
-  TEX.wall3 = panelTexture({w:1400, h:900, base:'#71746c', groove:470});
-  TEX.bench3 = formicaTexture({w:1200, h:512, base:'#a09a8e'});
-  TEX.front3 = panelTexture({w:1200, h:600, base:'#45463f', groove:240});
+  TEX.wall3 = panelTexture({w:1400, h:900, base:'#cfd2d3', groove:470});
+  TEX.bench3 = formicaTexture({w:1200, h:512, base:'#d8d5cd'});
+  TEX.front3 = panelTexture({w:1200, h:600, base:'#b0b4b0', groove:240});
   TEX.wall4 = panelTexture({w:1400, h:900, base:'#e0e3e6', groove:600});
   TEX.bench4 = formicaTexture({w:1200, h:512, base:'#eef0f2'});
   TEX.front4 = panelTexture({w:1200, h:600, base:'#c8ccd0', groove:420});
