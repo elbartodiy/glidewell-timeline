@@ -2335,6 +2335,36 @@ function drawProgress(t){
   ctx.restore();
 }
 
+/* Bloom. The single largest difference between a drawing and a photograph is
+   that in a photograph light spills: a lamp, a neon ring, a lit rim of glass
+   bleeds into what surrounds it, because the lens cannot keep it inside its
+   own edge. Everything above 0.85 is lifted off the finished frame at a
+   quarter resolution, blurred, and added back — cheap enough for the N100 at
+   480x270, and it is what makes the hall stop looking vector. `?nobloom` off. */
+const BLOOM_ON = !/[?&]nobloom/.test(location.search);
+let BLOOM = null;
+function drawBloom(){
+  if (!BLOOM_ON || !W || !H) return;
+  const bw = Math.max(2, W >> 2), bh = Math.max(2, H >> 2);
+  if (!BLOOM || BLOOM.width !== bw || BLOOM.height !== bh){
+    BLOOM = document.createElement('canvas');
+    BLOOM.width = bw; BLOOM.height = bh;
+  }
+  const g = BLOOM.getContext('2d');
+  g.clearRect(0, 0, bw, bh);
+  // brightness 0.515 + contrast 8 puts the knee at ~0.85 and blows what is
+  // over it to white; the blur then spreads only that
+  g.filter = `brightness(0.515) contrast(8) blur(${Math.max(2, bw*0.008).toFixed(1)}px)`;
+  g.drawImage(ctx.canvas, 0, 0, bw, bh);
+  g.filter = 'none';
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.20;
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(BLOOM, 0, 0, W, H);
+  ctx.restore();
+}
+
 function drawSeamVideo(){
   const S = state.splice;
   if (!S) return;
@@ -2644,11 +2674,38 @@ function drawRec2Front(t){
   const nx = px(mid, kn), ny = py(417, kn);
   const spm = PED_SPRITES.crown2, chh = cw * spm.h / spm.w;
   const plY = ny + chh * 0.5, pw = 150 * kn * SS;
-  const pg = ctx.createLinearGradient(nx - pw/2, 0, nx + pw/2, 0);
-  pg.addColorStop(0, '#c3c8cc'); pg.addColorStop(.45, '#eef1f3'); pg.addColorStop(1, '#a9aeb3');
-  ctx.fillStyle = pg; ctx.fillRect(nx - pw/2, plY, pw, H - plY);
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.beginPath(); ctx.ellipse(nx, plY, pw*0.62, 11*kn*SS, 0, 0, 7); ctx.fill();
+  /* The plinth is a cylinder of frosted glass. It cannot be truly transparent:
+     the sentence painted on the panel behind would read straight through it and
+     the window set into its face would stop meaning anything. So it is glass
+     the way frosted glass actually behaves — it carries light, not detail. */
+  const pgv = ctx.createLinearGradient(0, plY, 0, H);
+  pgv.addColorStop(0,    '#e8f2f8');       // bright where the crown stands on it
+  pgv.addColorStop(0.20, '#cfdde7');
+  pgv.addColorStop(0.72, '#9fb1bd');
+  pgv.addColorStop(1,    '#7c8d99');       // and heavier toward the floor
+  ctx.fillStyle = pgv; ctx.fillRect(nx - pw/2, plY, pw, H - plY);
+  // the barrel: dark at the shoulders, one specular band left of centre, and
+  // the two vertical seams where the light catches the thickness of the glass
+  const pgh = ctx.createLinearGradient(nx - pw/2, 0, nx + pw/2, 0);
+  pgh.addColorStop(0,     'rgba(26,40,52,0.58)');
+  pgh.addColorStop(0.055, 'rgba(216,238,250,0.55)');
+  pgh.addColorStop(0.17,  'rgba(26,40,52,0.15)');
+  pgh.addColorStop(0.40,  'rgba(255,255,255,0.44)');
+  pgh.addColorStop(0.60,  'rgba(255,255,255,0.05)');
+  pgh.addColorStop(0.89,  'rgba(26,40,52,0.26)');
+  pgh.addColorStop(0.955, 'rgba(198,228,246,0.50)');
+  pgh.addColorStop(1,     'rgba(18,30,40,0.62)');
+  ctx.fillStyle = pgh; ctx.fillRect(nx - pw/2, plY, pw, H - plY);
+  // the crown's own light pours down inside the column and fades out
+  const pgl = ctx.createLinearGradient(0, plY, 0, plY + (H - plY) * 0.6);
+  pgl.addColorStop(0, 'rgba(150,220,255,0.40)');
+  pgl.addColorStop(1, 'rgba(150,220,255,0)');
+  ctx.fillStyle = pgl; ctx.fillRect(nx - pw/2, plY, pw, (H - plY) * 0.6);
+  // the top face, and the lit rim of glass around it
+  ctx.fillStyle = 'rgba(238,249,255,0.94)';
+  ctx.beginPath(); ctx.ellipse(nx, plY, pw*0.5, 11*kn*SS, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1.3 * SS;
+  ctx.beginPath(); ctx.ellipse(nx, plY, pw*0.5, 11*kn*SS, 0, 0, 7); ctx.stroke();
   /* A display set into the pedestal, dead on the line the caption runs along.
      It is NOT a marquee: the words inside it stand exactly where the painted
      words stand on the panel behind — same face, same size, same centre. The
@@ -5633,6 +5690,7 @@ function frame(){
     }
   }
   drawSeamVideo();
+  drawBloom();
   drawGrade(t);
   drawProgress(t);
   drawMusicMark();
