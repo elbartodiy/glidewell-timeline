@@ -4113,7 +4113,20 @@ function projMesh(rot){
   }
   return out;
 }
-function drawScreenCAD(g, r, t, amber){
+/* How far the machine has got. Driven by the approach, not by a clock: the job
+   on the screen finishes exactly as you arrive at the exhibit, and if you stand
+   still it stands still with you. */
+function screenProgress(x){
+  const u = Math.max(0, Math.min(1, 1 - Math.abs(cam.x - x) / 1100));
+  return u * u * (3 - 2 * u);
+}
+function screenRead(g, r, s, tone, txt){
+  g.fillStyle = tone;
+  g.font = `${Math.max(8, 9 * s)}px monospace`;
+  g.textAlign = 'left';
+  g.fillText(txt, r.x + 8 * s, r.y + r.h - 8 * s);
+}
+function drawScreenCAD(g, r, t, amber, prog){
   // phosphor wireframe crown, slowly turning — green or amber
   const dim = amber ? 'rgba(160,120,40,0.25)' : 'rgba(70,160,110,0.25)';
   g.fillStyle = amber ? '#130d04' : '#06130a'; g.fillRect(r.x, r.y, r.w, r.h);
@@ -4138,6 +4151,11 @@ function drawScreenCAD(g, r, t, amber){
       g.lineTo(cx + b[p][0]*s, cy + b[p][1]*s); g.stroke();
     }
   }
+  // the machine says what it is doing, in the phosphor it has
+  const P = prog || 0;
+  screenRead(g, r, s, amber ? 'rgba(255,190,90,0.85)' : 'rgba(120,235,160,0.85)',
+             amber ? `case 04417 \u00b7 layer ${1 + Math.round(P * 8)} of 9`
+                   : `computing path \u2026 ${Math.round(P * 100)}%`);
   g.fillStyle = amber ? 'rgba(255,205,120,0.85)' : 'rgba(140,240,175,0.85)';
   g.font = `${Math.max(8, 9*s)}px monospace`;
   g.textAlign = 'left';
@@ -4146,12 +4164,12 @@ function drawScreenCAD(g, r, t, amber){
   g.fillStyle = 'rgba(0,0,0,0.16)';
   for (let y = r.y; y < r.y + r.h; y += 3) g.fillRect(r.x, y, r.w, 1);
 }
-function drawScreenScan(g, r, t){
+function drawScreenScan(g, r, t, prog){
   // blue point-cloud of an intraoral scan arriving
   g.fillStyle = '#060a12'; g.fillRect(r.x, r.y, r.w, r.h);
   const cx = r.x + r.w/2, cy = r.y + r.h/2 + r.h*0.04, s = r.h/170;
   const pts = projMesh(-t*0.35);
-  const reveal = (t*0.13) % 1.25;           // cloud keeps re-assembling
+  const reveal = prog || 0;                 // the cloud arrives as you do
   let n = 0, total = MESH.M * MESH.P;
   for (let m = 0; m < MESH.M; m++){
     for (let p = 0; p < MESH.P; p++){
@@ -4163,10 +4181,8 @@ function drawScreenScan(g, r, t){
       g.fillRect(cx + q[0]*s, cy + q[1]*s, Math.max(1, 1.6*s*(1-depth*0.5)), Math.max(1, 1.6*s*(1-depth*0.5)));
     }
   }
-  g.fillStyle = 'rgba(140,200,255,0.85)';
-  g.font = `${Math.max(8, 9*s)}px monospace`;
-  g.textAlign = 'left';
-  g.fillText(`receiving scan … ${Math.min(100, Math.round(reveal/1.0*100))}%`, r.x + 8*s, r.y + r.h - 8*s);
+  screenRead(g, r, s, 'rgba(140,200,255,0.85)',
+             `receiving scan \u2026 ${Math.min(100, Math.round(reveal * 100))}%`);
 }
 function drawMonitor(p, x, z, wWorld, t){
   const mon = MONS[p.kind]; if (!mon) return;
@@ -4194,7 +4210,9 @@ function drawMonitor(p, x, z, wWorld, t){
              w: mon.screen.w*scale, h: mon.screen.h*scale};
   ctx.save();
   ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.clip();
-  if (p.kind === 'crt') drawScreenCAD(ctx, r, t, p.col === 'amber'); else drawScreenScan(ctx, r, t);
+  const prog = screenProgress(x);
+  if (p.kind === 'crt') drawScreenCAD(ctx, r, t, p.col === 'amber', prog);
+  else drawScreenScan(ctx, r, t, prog);
   ctx.restore();
   // screen light spills into the room
   const glow = p.kind === 'crt' ? (p.col === 'amber' ? '235,170,80' : '110,220,150') : '110,180,255';
