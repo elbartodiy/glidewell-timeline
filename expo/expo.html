@@ -2894,14 +2894,52 @@ function drawRec2(t){
 
   // THE FILE — it descends from above as you arrive, on its own suspension
   {
-    const kf = k(500), fw = 311 * kf * SS;
+    /* The file is not a ghost hanging in the air. It is displayed ON something:
+       a pane of frosted glass suspended on two wires between the wall and the
+       crown, which descends as you arrive and carries the mesh on its face.
+       The pane is cut just inside the black screen behind it, so that screen
+       reads as the frame around the whole central composition. */
+    const kf = k(500);
     const fx = px(mid, kf);
-    const rest = py(408, kf), from = py(408, kf) - 260 * kf * SS;
+    const gw = nw * 0.90, gh = nh * 0.90;
+    const spF = PED_SPRITES.crown2;
+    const fw = Math.min(gw * 0.68, gh * 0.80 * spF.w / spF.h);
+    const rest = py(408, kf), from = rest - 260 * kf * SS;
     const fy = rest + (from - rest) * (1 - ease);
-    ctx.strokeStyle = `rgba(150,210,235,${(0.25 * ease).toFixed(3)})`;
+    const gx = fx - gw / 2, gy = fy - gh / 2;
+    const ga = ease;
+    ctx.strokeStyle = `rgba(150,210,235,${(0.28 * ga).toFixed(3)})`;
     ctx.lineWidth = 1 * SS;
-    ctx.beginPath(); ctx.moveTo(fx, 0); ctx.lineTo(fx, fy - fw * 0.5); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(gx + gw * 0.17, 0); ctx.lineTo(gx + gw * 0.17, gy);
+    ctx.moveTo(gx + gw * 0.83, 0); ctx.lineTo(gx + gw * 0.83, gy);
+    ctx.stroke();
+    // the sheet itself: it lightens what is behind it without showing it
+    const gg = ctx.createLinearGradient(0, gy, 0, gy + gh);
+    gg.addColorStop(0,   `rgba(228,242,252,${(0.22 * ga).toFixed(3)})`);
+    gg.addColorStop(0.5, `rgba(208,229,245,${(0.13 * ga).toFixed(3)})`);
+    gg.addColorStop(1,   `rgba(188,214,236,${(0.19 * ga).toFixed(3)})`);
+    ctx.fillStyle = gg; ctx.fillRect(gx, gy, gw, gh);
+    // one sheen running across it, the way a pane of glass takes the room
+    const gsh = ctx.createLinearGradient(gx, gy, gx + gw, gy + gh);
+    gsh.addColorStop(0,    `rgba(255,255,255,${(0.11 * ga).toFixed(3)})`);
+    gsh.addColorStop(0.34, `rgba(255,255,255,${(0.02 * ga).toFixed(3)})`);
+    gsh.addColorStop(0.58, `rgba(255,255,255,${(0.08 * ga).toFixed(3)})`);
+    gsh.addColorStop(1,    'rgba(255,255,255,0)');
+    ctx.fillStyle = gsh; ctx.fillRect(gx, gy, gw, gh);
+    // the ground edges — light collects in the thickness, most of it at the foot
+    ctx.strokeStyle = `rgba(214,238,254,${(0.42 * ga).toFixed(3)})`;
+    ctx.lineWidth = 1.3 * SS;
+    ctx.strokeRect(gx, gy, gw, gh);
+    const geg = ctx.createLinearGradient(0, gy + gh - 5 * SS, 0, gy + gh);
+    geg.addColorStop(0, 'rgba(190,232,255,0)');
+    geg.addColorStop(1, `rgba(215,244,255,${(0.55 * ga).toFixed(3)})`);
+    ctx.fillStyle = geg; ctx.fillRect(gx, gy + gh - 5 * SS, gw, 5 * SS);
+    // and now the mesh, on its face
+    ctx.save();
+    ctx.beginPath(); ctx.rect(gx, gy, gw, gh); ctx.clip();
     drawCrownFile(fx, fy, fw, 0.25 + 0.75 * ease, scanPhase(mid));
+    ctx.restore();
   }
 
   // the inscription crowns the panel: the plinth in front of it owns the
