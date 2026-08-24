@@ -2032,12 +2032,79 @@ function initSeamVideo(){
    ice with a lit edge in the white era. Materials, not decoration — the same
    progression the room itself makes. */
 const RULE_STYLE = [
-  {thumb: '236,212,168', edge: '255,232,190', glow: '255,186,96',  round: 9,   led: 0,    tick: 'line'},
-  {thumb: '222,220,206', edge: '244,242,232', glow: '255,214,150', round: 7,   led: 0,    tick: 'line'},
-  {thumb: '226,229,228', edge: '246,249,248', glow: '200,228,246', round: 3,   led: 0.35, tick: 'line'},
-  {thumb: '242,248,252', edge: '255,255,255', glow: '150,215,255', round: 1.5, led: 1,    tick: 'dot'},
+  {thumb: '236,212,168', edge: '255,232,190', glow: '255,186,96',  form: 'clamp', tick: 'line'},
+  {thumb: '222,220,206', edge: '244,242,232', glow: '255,214,150', form: 'plate', tick: 'line'},
+  {thumb: '226,229,228', edge: '246,249,248', glow: '200,228,246', form: 'frame', tick: 'line'},
+  {thumb: '242,248,252', edge: '255,255,255', glow: '150,215,255', form: 'glass', tick: 'dot'},
 ];
 function ruleStyle(){ return RULE_STYLE[Math.max(0, Math.min(3, segIdx(cam.x)))]; }
+
+/* Each era holds the line with its own hardware, not merely its own colour:
+   a brass clamp filed by hand, a stamped plate on rivets, a selection frame
+   borrowed from a screen, and finally a frameless slab of lit glass. */
+function drawRuleThumb(mx, y, tw, S, A, warm){
+  const h = 18 * SS, top = y - h/2, bot = y + h/2;
+  const body = `rgba(${S.thumb},${((0.13 + 0.10 * warm) * A).toFixed(3)})`;
+  const edge = `rgba(${S.edge},${((0.55 + 0.35 * warm) * A).toFixed(3)})`;
+  const bright = `rgba(${S.edge},${(0.92 * A).toFixed(3)})`;
+  ctx.save();
+  ctx.lineWidth = 1.6 * SS;
+  if (S.form === 'clamp'){
+    // filed by hand: a pill with a screw through each jaw
+    ctx.fillStyle = body; ctx.strokeStyle = edge;
+    ctx.beginPath(); ctx.roundRect(mx - tw/2, top, tw, h, h/2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = bright;
+    for (const s of [-1, 1]){
+      ctx.beginPath(); ctx.arc(mx + s * (tw/2 - h*0.42), y, 2.2 * SS, 0, 7); ctx.fill();
+    }
+    ctx.strokeStyle = `rgba(${S.edge},${(0.35 * A).toFixed(3)})`;
+    ctx.beginPath(); ctx.moveTo(mx - tw/2 + h*0.5, top + 3*SS); ctx.lineTo(mx + tw/2 - h*0.5, top + 3*SS); ctx.stroke();
+  } else if (S.form === 'plate'){
+    // stamped and riveted: chamfered corners, two square heads
+    const c = 5 * SS;
+    ctx.fillStyle = body; ctx.strokeStyle = edge;
+    ctx.beginPath();
+    ctx.moveTo(mx - tw/2 + c, top); ctx.lineTo(mx + tw/2 - c, top);
+    ctx.lineTo(mx + tw/2, top + c); ctx.lineTo(mx + tw/2, bot - c);
+    ctx.lineTo(mx + tw/2 - c, bot); ctx.lineTo(mx - tw/2 + c, bot);
+    ctx.lineTo(mx - tw/2, bot - c); ctx.lineTo(mx - tw/2, top + c);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = bright;
+    for (const s of [-1, 1]) ctx.fillRect(mx + s * (tw/2 - 11*SS) - 1.6*SS, y - 1.6*SS, 3.2*SS, 3.2*SS);
+  } else if (S.form === 'frame'){
+    // lifted off a screen: corner brackets and a centre notch, nothing else
+    ctx.fillStyle = `rgba(${S.thumb},${(0.07 * A).toFixed(3)})`;
+    ctx.fillRect(mx - tw/2, top, tw, h);
+    ctx.strokeStyle = edge;
+    const L = Math.min(12 * SS, tw * 0.28);
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]){
+      const cx0 = mx + sx * tw/2, cy0 = y + sy * h/2;
+      ctx.beginPath();
+      ctx.moveTo(cx0 - sx * L, cy0); ctx.lineTo(cx0, cy0); ctx.lineTo(cx0, cy0 - sy * (h*0.42));
+      ctx.stroke();
+    }
+    ctx.strokeStyle = `rgba(${S.edge},${(0.5 * A).toFixed(3)})`;
+    ctx.beginPath(); ctx.moveTo(mx, top + 2*SS); ctx.lineTo(mx, top + 6*SS); ctx.stroke();
+  } else {
+    // frameless: two thin jaws, a hairline between them, and a lit sill
+    ctx.fillStyle = `rgba(${S.thumb},${(0.06 * A).toFixed(3)})`;
+    ctx.fillRect(mx - tw/2, top, tw, h);
+    ctx.strokeStyle = `rgba(${S.edge},${(0.30 * A).toFixed(3)})`;
+    ctx.beginPath(); ctx.moveTo(mx - tw/2, y); ctx.lineTo(mx + tw/2, y); ctx.stroke();
+    ctx.strokeStyle = `rgba(${S.glow},${(0.60 * A).toFixed(3)})`;
+    ctx.lineWidth = 2.2 * SS;
+    ctx.beginPath(); ctx.moveTo(mx - tw/2 + 2*SS, bot); ctx.lineTo(mx + tw/2 - 2*SS, bot); ctx.stroke();
+  }
+  // the jaws: the edges of the frame you are looking through, in every era
+  ctx.fillStyle = bright;
+  for (const s of [-1, 1]){
+    const w2 = S.form === 'glass' ? 2.2 * SS : 3 * SS;
+    ctx.beginPath();
+    ctx.roundRect(mx + s * (tw/2) - w2/2, top, w2, h, S.form === 'clamp' ? w2/2 : 0.5 * SS);
+    ctx.fill();
+  }
+  ctx.restore();
+}
 
 function ruleGeom(){
   const x0 = W * 0.13, x1 = W * 0.87;
@@ -2233,28 +2300,8 @@ function drawProgress(t){
   const mx = (tx0 + tx1) / 2, tw = Math.max(14 * SS, tx1 - tx0);
   const warm = ruleHit(Input.hover) || state.ruleDrag ? 1 : 0;
   const S = ruleStyle();
-  const R = S.round * SS;
   drawGlow(S.glow, mx, y, tw + 90 * SS, (0.20 + 0.14 * warm) * A);
-  ctx.fillStyle = `rgba(${S.thumb},${((0.13 + 0.10 * warm) * A).toFixed(3)})`;
-  ctx.beginPath(); ctx.roundRect(mx - tw/2, y - 9 * SS, tw, 18 * SS, R); ctx.fill();
-  ctx.strokeStyle = `rgba(${S.edge},${((0.55 + 0.35 * warm) * A).toFixed(3)})`;
-  ctx.lineWidth = 1.6 * SS;
-  ctx.beginPath(); ctx.roundRect(mx - tw/2, y - 9 * SS, tw, 18 * SS, R); ctx.stroke();
-  // in the white era the thumb carries a lit edge, the way the room does
-  if (S.led > 0){
-    ctx.strokeStyle = `rgba(${S.glow},${(0.55 * S.led * A).toFixed(3)})`;
-    ctx.lineWidth = 2.2 * SS;
-    ctx.beginPath();
-    ctx.moveTo(mx - tw/2 + R, y + 9 * SS); ctx.lineTo(mx + tw/2 - R, y + 9 * SS);
-    ctx.stroke();
-  }
-  // the two jaws read as the edges of the frame you are looking through
-  ctx.fillStyle = `rgba(${S.edge},${(0.92 * A).toFixed(3)})`;
-  for (const s of [-1, 1]){
-    ctx.beginPath();
-    ctx.roundRect(mx + s * (tw/2) - 1.5 * SS, y - 9 * SS, 3 * SS, 18 * SS, Math.min(1.5 * SS, R));
-    ctx.fill();
-  }
+  drawRuleThumb(mx, y, tw, S, A, warm);
   const nb = nearestBeat(cam.x);
   if (nb.i >= 0 && BEATS[nb.i].y){
     ctx.font = eraFont(17 * SS, '', segNow.font);
