@@ -2542,10 +2542,13 @@ function drawCrownScan(cx, cy, w, a){
    sweeps down through the crown's space, and each ring appears as the beam
    reaches it, burns bright at the moment of the cut, then settles. The mesh is
    the record of the pass, which is what a scan actually is. */
-function drawCrownFile(cx, cy, w, a, t){
+/* `ph` is not time — it is how far the camera has come into the recreation, so
+   the scanner cuts the crown exactly as fast as the hand pushes forward and
+   finishes the file at the instant the three elements line up. Nothing here
+   moves on its own. */
+function drawCrownFile(cx, cy, w, a, ph){
   crownGeometry();
   const sp = PED_SPRITES.crown2, h = w * sp.h / sp.w;
-  const ph = (t * 0.17) % 1;                       // one slow pass, top to bottom
   const beamY = cy - h * 0.58 + ph * h * 1.16;
   const ox = cx - w * 2.1, oy = cy - h * 1.9;      // the emitter, up and to the left
   ctx.save();
@@ -2586,18 +2589,35 @@ function drawCrownFile(cx, cy, w, a, t){
     i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
   }
   ctx.stroke();
-  // THE BEAM itself: one ray from the emitter to the plane it is cutting
+  /* THE BEAM: a shaft of light, not a stroked line — a narrow aperture up and
+     to the left opening into a wide footprint where it meets the crown, the
+     body of it striated the way any real beam is when it crosses air that has
+     dust in it. The comb of striations is fixed, so the light never crawls of
+     its own accord; it travels only because the plane it cuts travels. */
   ctx.globalCompositeOperation = 'lighter';
+  ctx.shadowBlur = 0;
   const hitX = cx + w * 0.62;
-  const bg = ctx.createLinearGradient(ox, oy, hitX, beamY);
-  bg.addColorStop(0, `rgba(120,200,255,${(a*0.05).toFixed(3)})`);
-  bg.addColorStop(0.75, `rgba(170,230,255,${(a*0.35).toFixed(3)})`);
-  bg.addColorStop(1, `rgba(230,250,255,${(a*0.85).toFixed(3)})`);
-  ctx.strokeStyle = bg;
-  ctx.lineWidth = Math.max(1, w * 0.012);
-  ctx.shadowColor = `rgba(150,220,255,${(a*0.8).toFixed(3)})`;
-  ctx.shadowBlur = Math.max(4, w * 0.09);
-  ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(hitX, beamY); ctx.stroke();
+  const bdx = hitX - ox, bdy = beamY - oy, bl = Math.hypot(bdx, bdy) || 1;
+  const nxp = -bdy / bl, nyp = bdx / bl;             // across the beam
+  const ap = Math.max(1.1, w * 0.013), fp = w * 0.085;
+  const shaft = (s0, s1, al) => {
+    ctx.beginPath();
+    ctx.moveTo(ox + nxp * ap * s0, oy + nyp * ap * s0);
+    ctx.lineTo(ox + nxp * ap * s1, oy + nyp * ap * s1);
+    ctx.lineTo(hitX + nxp * fp * s1, beamY + nyp * fp * s1);
+    ctx.lineTo(hitX + nxp * fp * s0, beamY + nyp * fp * s0);
+    ctx.closePath();
+    const g = ctx.createLinearGradient(ox, oy, hitX, beamY);
+    g.addColorStop(0,    `rgba(110,200,255,${(a * al * 0.30).toFixed(3)})`);
+    g.addColorStop(0.72, `rgba(165,230,255,${(a * al * 0.80).toFixed(3)})`);
+    g.addColorStop(1,    `rgba(225,248,255,${(a * al).toFixed(3)})`);
+    ctx.fillStyle = g; ctx.fill();
+  };
+  shaft(-1, 1, 0.14);                                 // the body of the light
+  for (const s of [-0.80, -0.50, -0.22, 0.05, 0.31, 0.59, 0.85])
+    shaft(s - 0.065, s + 0.065, 0.10 + 0.05 * (1 - Math.abs(s)));
+  shaft(-0.11, 0.11, 0.46);                           // the bright core
+  drawGlow('150,220,255', ox, oy, w * 0.42, a * 0.30);
   // the plane of light it lays across the crown's space
   ctx.shadowBlur = 0;
   const pg2 = ctx.createLinearGradient(cx - w/2, beamY - h*0.035, cx - w/2, beamY + h*0.035);
@@ -2778,7 +2798,7 @@ function drawRec2(t){
     ctx.strokeStyle = `rgba(150,210,235,${(0.25 * ease).toFixed(3)})`;
     ctx.lineWidth = 1 * SS;
     ctx.beginPath(); ctx.moveTo(fx, 0); ctx.lineTo(fx, fy - fw * 0.5); ctx.stroke();
-    drawCrownFile(fx, fy, fw, 0.25 + 0.75 * ease, t);
+    drawCrownFile(fx, fy, fw, 0.25 + 0.75 * ease, ease);
   }
 
   // the inscription crowns the panel: the plinth in front of it owns the
