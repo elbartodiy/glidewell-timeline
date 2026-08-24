@@ -2339,6 +2339,83 @@ function drawMapWall(t){
 
 /* the Digital Revolution recreation: grey era | column | a backlit white
    panel carrying a giant glowing crown | column | the white era */
+/* THE DIGITAL REVOLUTION, as three states of one crown.
+   Scan, file, mill — the actual chain of those years, and the only honest triad
+   here: AI belongs to the 2020s, not to 2009. The three stand on the SAME world
+   x at three depths, so they are three separate objects everywhere in the hall
+   and lock into a single concentric silhouette at the one camera position the
+   composition is built for. The middle state descends as you arrive: the file
+   is what the room assembles in front of you. */
+let CROWN_PTS = null, CROWN_ROWS = null;
+function crownGeometry(){
+  if (CROWN_PTS) return;
+  const sp = PED_SPRITES.crown2;
+  const c = document.createElement('canvas'); c.width = sp.w; c.height = sp.h;
+  const g = c.getContext('2d', {willReadFrequently: true});
+  g.drawImage(sp.c, 0, 0);
+  const d = g.getImageData(0, 0, sp.w, sp.h).data;
+  const inside = (x, y) => d[((y|0) * sp.w + (x|0)) * 4 + 3] > 40;
+  const R = rng(90210);
+  CROWN_PTS = [];
+  for (let i = 0; i < 900 && CROWN_PTS.length < 260; i++){
+    const x = R() * sp.w, y = R() * sp.h;
+    if (inside(x, y)) CROWN_PTS.push([x / sp.w - 0.5, y / sp.h - 0.5]);
+  }
+  CROWN_ROWS = [];
+  for (let y = 2; y < sp.h - 2; y += Math.max(2, sp.h / 14)){
+    let a = -1, b = -1;
+    for (let x = 0; x < sp.w; x++){ if (inside(x, y)){ if (a < 0) a = x; b = x; } }
+    if (a >= 0 && b - a > 3) CROWN_ROWS.push([a / sp.w - 0.5, b / sp.w - 0.5, y / sp.h - 0.5]);
+  }
+}
+/* the scan: the surface as a cloud of measured points, nothing solid yet */
+function drawCrownScan(cx, cy, w, a){
+  crownGeometry();
+  const sp = PED_SPRITES.crown2, h = w * sp.h / sp.w;
+  ctx.save();
+  for (const [ux, uy] of CROWN_PTS){
+    const px_ = cx + ux * w, py_ = cy + uy * h;
+    ctx.fillStyle = `rgba(150,225,255,${(a * (0.35 + 0.5 * Math.abs(uy))).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(px_, py_, Math.max(0.7, w * 0.006), 0, 7); ctx.fill();
+  }
+  ctx.restore();
+}
+/* the file: contour rings, the way a design is actually held in a machine */
+function drawCrownFile(cx, cy, w, a, t){
+  crownGeometry();
+  const sp = PED_SPRITES.crown2, h = w * sp.h / sp.w;
+  ctx.save();
+  ctx.strokeStyle = `rgba(170,235,255,${(a * 0.75).toFixed(3)})`;
+  ctx.lineWidth = Math.max(1, w * 0.007);
+  for (const [ax, bx, uy] of CROWN_ROWS){
+    const y = cy + uy * h, rx = (bx - ax) * w / 2, mx = cx + (ax + bx) * w / 2;
+    ctx.beginPath(); ctx.ellipse(mx, y, rx, Math.max(1.5, h * 0.022), 0, 0, 7); ctx.stroke();
+  }
+  ctx.strokeStyle = `rgba(210,245,255,${(a * 0.5).toFixed(3)})`;
+  ctx.beginPath();
+  for (let i = 0; i < CROWN_ROWS.length; i++){
+    const [ax, , uy] = CROWN_ROWS[i];
+    const x = cx + ax * w, y = cy + uy * h;
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  ctx.stroke();
+  ctx.beginPath();
+  for (let i = 0; i < CROWN_ROWS.length; i++){
+    const [, bx, uy] = CROWN_ROWS[i];
+    const x = cx + bx * w, y = cy + uy * h;
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  ctx.stroke();
+  // the scan line that reads the model, crossing it slowly
+  const sy = cy - h/2 + ((t * 0.22) % 1) * h;
+  const sg = ctx.createLinearGradient(cx - w/2, sy - h*0.06, cx - w/2, sy + h*0.06);
+  sg.addColorStop(0, 'rgba(180,240,255,0)');
+  sg.addColorStop(0.5, `rgba(200,245,255,${(a*0.30).toFixed(3)})`);
+  sg.addColorStop(1, 'rgba(180,240,255,0)');
+  ctx.fillStyle = sg; ctx.fillRect(cx - w/2, sy - h*0.06, w, h*0.12);
+  ctx.restore();
+}
+
 function drawRec2(t){
   const mid = (REC2_L + REC2_R) / 2;
   if (Math.abs(cam.x - mid) > 2800) return;
@@ -2361,11 +2438,58 @@ function drawRec2(t){
   ng.addColorStop(0, '#1f242b'); ng.addColorStop(1, '#2c333c');
   ctx.fillStyle = ng;
   ctx.beginPath(); ctx.roundRect(cx - nw/2, cyS - nh/2, nw, nh, 10*SS); ctx.fill();
-  drawGlow('160,220,255', cx, cyS, w * 1.15, 0.6);
-  ctx.drawImage(sp.c, cx - w/2, cyS - h/2, w, h);
+  drawGlow('160,220,255', cx, cyS, w * 1.15, 0.45);
+  // the back plane holds the SCAN: measured points, not yet an object
+  drawCrownScan(cx, cyS, 499 * kk * SS, 1);
   pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp: Object.assign({inner:{w:sp.w,h:sp.h}}, sp),
           wx: mid, cy: 400, z: 968, w: 360, cap: '2009 · the digital revolution',
           beat: BEATS.findIndex(b => b.t === 'BRUXZIR')});
+  // how close the camera is to the one position this composition is built for
+  const lock = Math.max(0, 1 - Math.abs(cam.x - mid) / 900);
+  const ease = lock * lock * (3 - 2 * lock);
+
+  // THE FILE — it descends from above as you arrive, on its own suspension
+  {
+    const kf = k(500), fw = 311 * kf * SS;
+    const fx = px(mid, kf);
+    const rest = py(408, kf), from = py(408, kf) - 260 * kf * SS;
+    const fy = rest + (from - rest) * (1 - ease);
+    ctx.strokeStyle = `rgba(150,210,235,${(0.25 * ease).toFixed(3)})`;
+    ctx.lineWidth = 1 * SS;
+    ctx.beginPath(); ctx.moveTo(fx, 0); ctx.lineTo(fx, fy - fw * 0.5); ctx.stroke();
+    drawCrownFile(fx, fy, fw, 0.25 + 0.75 * ease, t);
+  }
+
+  // THE MILLED CROWN — the physical end of the chain, on its own plinth
+  {
+    const kn = k(-90), cw = 148 * kn * SS;
+    const nx = px(mid, kn), ny = py(417, kn);
+    const spm = PED_SPRITES.crown2, chh = cw * spm.h / spm.w;
+    const plY = ny + chh * 0.5;
+    const pw = 150 * kn * SS;
+    const pg = ctx.createLinearGradient(nx - pw/2, 0, nx + pw/2, 0);
+    pg.addColorStop(0, '#c3c8cc'); pg.addColorStop(.45, '#eef1f3'); pg.addColorStop(1, '#a9aeb3');
+    ctx.fillStyle = pg; ctx.fillRect(nx - pw/2, plY, pw, H - plY);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.ellipse(nx, plY, pw*0.62, 11*kn*SS, 0, 0, 7); ctx.fill();
+    drawGlow('225,245,255', nx, ny, cw * 1.5, 0.22 + 0.25 * ease);
+    ctx.drawImage(spm.c, nx - cw/2, ny - chh/2, cw, chh);
+    pushHit(nx - cw/2, ny - chh/2, cw, chh,
+            {type: 'focus', beat: nearestBeat(mid).i, anchor: mid});
+  }
+
+  // the three states name themselves once they are locked
+  if (ease > 0.15){
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
+    try { ctx.letterSpacing = `${5*kk*SS}px`; } catch(e){}
+    ctx.fillStyle = `rgba(70,110,135,${(0.75 * ease).toFixed(3)})`;
+    ctx.fillText('SCANNED \u00b7 DESIGNED \u00b7 MILLED', cx, py(628, kk));
+    try { ctx.letterSpacing = '0px'; } catch(e){}
+    ctx.restore();
+  }
+
   // the inscription
   ctx.save();
   ctx.textAlign = 'center';
