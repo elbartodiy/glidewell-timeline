@@ -7447,15 +7447,22 @@ function drawShowroomLight(t){
   ctx.fillStyle = wash; ctx.fillRect(x0, yBase, x1 - x0, yFloor + 90 * S - yBase);
   // the logo panels, edge-lit: the border burns, the face stays matte
   ctx.globalCompositeOperation = 'source-over';
-  /* Placed clear of the caption. The explanatory line is drawn centred on the
-     screen, so a panel that happens to land in that band would be read straight
-     through — skip it there and let a neighbour carry the mark rather than stack
-     two things in one place. */
-  for (const gx of [-1600, -520, 760, 1980]){
-    const lx = px((SHOW_L + SHOW_R) / 2 + gx, kf2);
+  /* THE MARK BELONGS TO A COUNTER, not to the air. It used to be placed at
+     fixed offsets from the middle of the stretch and hidden whenever it drifted
+     near the centre of the screen — so it winked out and reappeared as you
+     moved, and having no relation to any furniture it could end up behind a
+     plinth. It is fixed to a TABLE now: one plate per run of counter, at that
+     run's own centre, on the fascia's own plane. A plinth stands in a break
+     BETWEEN runs, so the mark can no longer be behind one, and because it is
+     tied to furniture it does not move at all. It sits off-centre within its
+     run so a screen-centred caption never lands on it. */
+  for (const tb of TABLES){
+    const mid2 = (tb.x0 + tb.x1) / 2;
+    if (tb.x1 - tb.x0 < 900) continue;
+    if (mid2 < SHOW_L || mid2 > SHOW_R) continue;
+    const lx = px(tb.x0 + (tb.x1 - tb.x0) * 0.30, kf2);
     const pw = 224 * S, ph = 76 * S, ly = py(CFG.benchY + 52, kf2);
     if (lx < -pw || lx > W + pw) continue;
-    if (Math.abs(lx - W / 2) < W * 0.30) continue;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     drawGlow('255,255,255', lx, ly + ph / 2, pw * 0.95, 0.16);
