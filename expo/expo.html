@@ -7992,6 +7992,73 @@ async function boot(){
   }
   if (/[?&]at=list/.test(location.search))
     console.log(BEATS.map(b => `${b.y}\t${b.x|0}\t${b.t || ''}`).join('\n'));
+  /* ?map=1 prints the counter as a string. Whether a counter exists at a given
+     coordinate is decided in four places — the era's own inset, the pedestal
+     gaps, the recreation spans and the factory line — so the only honest way to
+     read it is to ask the finished TABLES list. One row per era: a run of
+     counter is a 1, a break is a 0, and each cell carries the coordinates it
+     covers. Nothing about what stands ON the counter enters into it. */
+  if (/[?&]map=1/.test(location.search)){
+    const LET = ['A', 'B', 'C', 'D'];
+    const REC_SPANS = [['1979', REC_L, REC_R], ['1989', REC3_L, REC3_R], ['1993', REC93_L, REC93_R],
+                       ['DR', REC2_L, REC2_R], ['2018', REC18_L, REC18_R],
+                       ['2022', REC4_L, REC4_R], ['2023', REC23_L, REC23_R]];
+    const out = [];
+    let prev = null;
+    for (let i = 0; i < SEGMENTS.length; i++){
+      const seg = SEGMENTS[i];
+      const runs = TABLES.filter(t => t.seg === seg).sort((a, b) => a.x0 - b.x0);
+      const a = Math.max(-3450, seg.x0), b = Math.min(WORLD_END + 300, seg.x1);
+      const cells = [];
+      let x = a, n = 0;
+      for (const r of runs){
+        if (r.x0 > x + 1) cells.push(['0', x, Math.min(r.x0, b)]);
+        cells.push(['1', Math.max(r.x0, a), Math.min(r.x1, b)]);
+        x = Math.min(r.x1, b);
+      }
+      if (x < b - 1) cells.push(['0', x, b]);
+      // and every 0 says WHY it is a 0, because a recreation standing in for a
+      // counter and a plain hole in the furniture are not the same fault
+      const why = (c0, c1) => {
+        const mid = (c0 + c1) / 2;
+        for (const [nm, s0, s1] of REC_SPANS) if (mid > s0 - 40 && mid < s1 + 40) return 'recreation ' + nm;
+        if (c1 > WORLD_END - 200) return 'past the last counter (finale)';
+        const w = c1 - c0;
+        for (const bb of BEATS) if (bb.ped && Math.abs(bb.x + (bb.ped.dx ?? -430) - mid) < 80)
+          return 'pedestal ' + bb.y;
+        if (Math.abs(mid - SHIFT(24870)) < 620) return 'BruxZir factory line';
+        return w < 200 ? 'pedestal gap' : 'gap (' + (w|0) + ' wide, no owner)';
+      };
+      for (const c of cells) if (c[0] === '0') c[3] = why(c[1], c[2]);
+      // a recreation between two eras is its own sector, named
+      if (prev != null){
+        const rc = REC_SPANS.find(s => Math.abs(s[1] - prev) < 60);
+        if (rc) out.push(`  [${rc[0]}]  ${rc[1]|0} – ${rc[2]|0}   (${(rc[2]-rc[1])|0} wide)   recreation`);
+      }
+      out.push(`${LET[i]}  era ${i + 1}   ${a|0} – ${b|0}`);
+      for (const c of cells)
+        out.push(`  ${LET[i]}${n++} = ${c[0]}   ${c[1]|0} – ${c[2]|0}   (${(c[2]-c[1])|0})` +
+                 (c[3] ? '   ' + c[3] : ''));
+      out.push('  ' + LET[i] + ': ' + cells.map(c => c[0]).join(' '));
+      prev = b;
+    }
+    console.log('COUNTER MAP\n' + out.join('\n'));
+    /* And whether each recreation stands in a break or on a counter. A
+       recreation replaces the furniture, so it should land in a 0; one landing
+       on a 1 means a counter is running behind it, and one straddling the edge
+       means the break and the recreation were placed from different numbers. */
+    console.log('RECREATIONS vs COUNTER\n' + REC_SPANS.map(s => {
+      const on = TABLES.filter(t => t.x1 > s[1] + 20 && t.x0 < s[2] - 20);
+      const cov = on.reduce((a, t) => a + Math.min(t.x1, s[2]) - Math.max(t.x0, s[1]), 0);
+      const pc = Math.round(100 * cov / (s[2] - s[1]));
+      return `  ${s[0]}\t${s[1]|0} – ${s[2]|0}\t` +
+             (pc === 0 ? 'clear (stands in a 0)' :
+              pc > 90 ? 'ON A COUNTER — the run goes straight through it' :
+              `STRADDLES — ${pc}% of it has counter behind it`);
+    }).join('\n'));
+    console.log('ONE LINE  ' + SEGMENTS.map((seg, i) => LET[i] + ':' +
+      TABLES.filter(t => t.seg === seg).length).join('  runs   ') + '  runs');
+  }
   requestAnimationFrame(loop);
 }
 window.addEventListener('load', boot);   // assets block sits below — wait for it
