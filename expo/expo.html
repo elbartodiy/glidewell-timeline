@@ -7242,6 +7242,74 @@ function drawShowroom(t){
   ctx.restore();
 }
 
+/* CONCEALED LIGHT. The furniture in that room is lit from inside itself: a
+   recessed strip in the plinth washing the floor, a glow under the lip of the
+   worktop, and the logo panel edge-lit so its border burns white while its face
+   stays matte. There is not one visible fitting anywhere on it. This is painted
+   after the counter, because it is light coming OUT of the counter. */
+function drawShowroomLight(t){
+  if (cam.x < SHOW_L - 2400 || cam.x > SHOW_R + 2400) return;
+  const kf2 = k(2), S = kf2 * SS;
+  const x0 = Math.max(-40, px(SHOW_L, kf2)), x1 = Math.min(W + 40, px(SHOW_R, kf2));
+  if (x1 <= x0) return;
+  const yLip = py(CFG.benchY + 34, kf2);
+  const yBase = py(1032, kf2), yFloor = py(1080, kf2);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  // under the lip of the worktop
+  const lip = ctx.createLinearGradient(0, yLip, 0, yLip + 46 * S);
+  lip.addColorStop(0, 'rgba(255,250,238,0.30)');
+  lip.addColorStop(1, 'rgba(255,248,234,0)');
+  ctx.fillStyle = lip; ctx.fillRect(x0, yLip, x1 - x0, 46 * S);
+  // the strip recessed into the plinth, and the wash it throws on the floor
+  ctx.fillStyle = 'rgba(255,252,244,0.85)';
+  ctx.fillRect(x0, yBase, x1 - x0, Math.max(1, 3.4 * S));
+  const wash = ctx.createLinearGradient(0, yBase, 0, yFloor + 90 * S);
+  wash.addColorStop(0, 'rgba(255,248,232,0.42)');
+  wash.addColorStop(0.35, 'rgba(255,246,228,0.14)');
+  wash.addColorStop(1, 'rgba(255,244,224,0)');
+  ctx.fillStyle = wash; ctx.fillRect(x0, yBase, x1 - x0, yFloor + 90 * S - yBase);
+  // the logo panels, edge-lit: the border burns, the face stays matte
+  ctx.globalCompositeOperation = 'source-over';
+  for (const gx of [-1300, 700, 2000]){
+    const lx = px((SHOW_L + SHOW_R) / 2 + gx, kf2);
+    // sat at +96 and fell out of the bottom of the frame; the fascia's own band
+    const pw = 224 * S, ph = 76 * S, ly = py(CFG.benchY + 52, kf2);
+    if (lx < -pw || lx > W + pw) continue;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    drawGlow('255,255,255', lx, ly + ph / 2, pw * 0.95, 0.16);
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+    ctx.lineWidth = Math.max(1.6, 6 * S);
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(lx - pw/2, ly, pw, ph, 14 * S);
+    else ctx.rect(lx - pw/2, ly, pw, ph);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(250,250,251,0.96)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(lx - pw/2 + 5 * S, ly + 5 * S, pw - 10 * S, ph - 10 * S, 10 * S);
+    else ctx.rect(lx - pw/2 + 5 * S, ly + 5 * S, pw - 10 * S, ph - 10 * S);
+    ctx.fill();
+    // the mark, and the word beside it
+    const mw = ph * 0.52;
+    ctx.fillStyle = 'rgba(191,42,32,0.95)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(lx - pw * 0.40, ly + ph * 0.24, mw, mw, 3 * S);
+    else ctx.rect(lx - pw * 0.40, ly + ph * 0.24, mw, mw);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.font = eraFont(mw * 0.74, '700', SEGMENTS[3].font);
+    ctx.textAlign = 'center';
+    ctx.fillText('G', lx - pw * 0.40 + mw / 2, ly + ph * 0.24 + mw * 0.78);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(104,110,118,0.95)';
+    ctx.font = eraFont(ph * 0.40, '600', SEGMENTS[3].font);
+    ctx.fillText('Glidewell', lx - pw * 0.40 + mw * 1.30, ly + ph * 0.66);
+  }
+  ctx.restore();
+}
+
 /* The polish. A floor like that one is half of every photograph taken in the
    room, and ours was a flat gradient throwing that half away. The frame as
    painted so far is folded down across the floor line and faded out — so the
@@ -7407,6 +7475,7 @@ function frame(){
 
   drawFloorSheen();   // before the counter, so the counter covers it and the
   drawBench();        // reflection can never be laid over the furniture
+  drawShowroomLight(t);   // light coming OUT of the furniture, so after it
   drawProjectors(t, 'machine');   // it stands on the bench, so it comes after it
 
   // table items
