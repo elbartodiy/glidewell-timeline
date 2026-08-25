@@ -5902,17 +5902,23 @@ function drawArmInside(bx, bz, t, phase, gx0, gx1, yGl, yBase){
      opening — reach set to a little over half the door's height, which is the
      proportion a real cell is built to — and it is pivoted on the cabin's own
      floor, so it stands inside rather than on a plinth of its own. */
-  const ap = Math.min(gx1 - gx0, yBase - yGl);
-  const sc = Math.max(0.18, Math.min(0.86, ap * 0.86 / (550 * k(bz) * SS)));
-  const bxs = px(bx, k(bz)), bys = yBase - 14 * k(bz) * SS;
+  /* The fault was never the scale. The shoulder sat at world 1042 while the
+     glass stops at 872 — the arm was bolted 170 units BELOW the bottom of its
+     own window, so the clip threw away everything but the tip, which is why it
+     read as an insect in a big pane. It is mounted on the cabin floor now, just
+     inside the glass, and scaled so its whole reach fills the opening rather
+     than so its stump does. */
+  const kb = k(bz);
+  const sc = Math.max(0.24, Math.min(1.15, (yBase - yGl) * 0.94 / (550 * kb * SS)));
+  const bxs = px(bx, kb), bys = yBase - 10 * kb * SS;
   ctx.save();
   ctx.beginPath(); ctx.rect(gx0, yGl, gx1 - gx0, yBase - yGl); ctx.clip();
   ctx.translate(bxs, bys); ctx.scale(sc, sc); ctx.translate(-bxs, -bys);
   ctx.globalAlpha = 0.94;
-  drawRobotArm(bx, bz, t, phase, true, bys);
+  drawRobotArm(bx, bz, t, phase, true);
   ctx.restore();
 }
-function drawRobotArm(bx, bz, t, phase, inside, footY){
+function drawRobotArm(bx, bz, t, phase, inside){
   const kk = k(bz);
   const X = wx => px(wx, kk), Y = wy => py(wy, kk);
   const sx = X(bx);
@@ -5926,7 +5932,7 @@ function drawRobotArm(bx, bz, t, phase, inside, footY){
   const a2 = 0.95 + 0.55 * Math.sin(w + 1.1);
   const L1 = 300, L2 = 250;
   // inside a cabin the arm is bolted to the cabin floor, not to a plinth
-  const j0 = {x: bx, y: inside ? 1042 : 906};
+  const j0 = {x: bx, y: inside ? 862 : 906};   // inside: on the cabin floor
   const j1 = {x: j0.x + Math.sin(a1) * L1, y: j0.y - Math.cos(a1) * L1};
   const a12 = a1 + a2 - 1.3;
   const j2 = {x: j1.x + Math.sin(a12) * L2, y: j1.y - Math.cos(a12) * L2};
@@ -5957,7 +5963,7 @@ function drawRobotArm(bx, bz, t, phase, inside, footY){
   }
   if (inside){   // just the mounting boss it turns on
     ctx.fillStyle = 'rgba(70,58,20,0.9)';
-    ctx.beginPath(); ctx.ellipse(X(bx), Y(1052), 62 * S, 14 * S, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(X(bx), Y(876), 66 * S, 15 * S, 0, 0, 7); ctx.fill();
   }
 
   /* A link: a tapered casting from a to b, `wa` wide at its root and `wb` at
