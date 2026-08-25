@@ -7308,11 +7308,15 @@ function drawShowroomLight(t){
   ctx.fillStyle = wash; ctx.fillRect(x0, yBase, x1 - x0, yFloor + 90 * S - yBase);
   // the logo panels, edge-lit: the border burns, the face stays matte
   ctx.globalCompositeOperation = 'source-over';
-  for (const gx of [-1300, 700, 2000]){
+  /* Placed clear of the caption. The explanatory line is drawn centred on the
+     screen, so a panel that happens to land in that band would be read straight
+     through — skip it there and let a neighbour carry the mark rather than stack
+     two things in one place. */
+  for (const gx of [-1600, -520, 760, 1980]){
     const lx = px((SHOW_L + SHOW_R) / 2 + gx, kf2);
-    // sat at +96 and fell out of the bottom of the frame; the fascia's own band
     const pw = 224 * S, ph = 76 * S, ly = py(CFG.benchY + 52, kf2);
     if (lx < -pw || lx > W + pw) continue;
+    if (Math.abs(lx - W / 2) < W * 0.30) continue;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     drawGlow('255,255,255', lx, ly + ph / 2, pw * 0.95, 0.16);
@@ -7328,21 +7332,14 @@ function drawShowroomLight(t){
     if (ctx.roundRect) ctx.roundRect(lx - pw/2 + 5 * S, ly + 5 * S, pw - 10 * S, ph - 10 * S, 10 * S);
     else ctx.rect(lx - pw/2 + 5 * S, ly + 5 * S, pw - 10 * S, ph - 10 * S);
     ctx.fill();
-    // the mark, and the word beside it
     const mw = ph * 0.52;
-    ctx.fillStyle = 'rgba(191,42,32,0.95)';
-    ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(lx - pw * 0.40, ly + ph * 0.24, mw, mw, 3 * S);
-    else ctx.rect(lx - pw * 0.40, ly + ph * 0.24, mw, mw);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.95)';
-    ctx.font = eraFont(mw * 0.74, '700', SEGMENTS[3].font);
-    ctx.textAlign = 'center';
-    ctx.fillText('G', lx - pw * 0.40 + mw / 2, ly + ph * 0.24 + mw * 0.78);
-    ctx.textAlign = 'left';
-    ctx.fillStyle = 'rgba(104,110,118,0.95)';
-    ctx.font = eraFont(ph * 0.40, '600', SEGMENTS[3].font);
-    ctx.fillText('Glidewell', lx - pw * 0.40 + mw * 1.30, ly + ph * 0.66);
+    // the company's own mark, not a letter I drew: there is an asset for it
+    if (IMGS.logo2026){
+      const el = IMGS.logo2026.el;
+      const mh = ph * 0.58, mwd = mh * el.width / el.height;
+      ctx.drawImage(el, lx - mwd / 2, ly + (ph - mh) / 2, mwd, mh);
+    }
+    void mw;
   }
   ctx.restore();
 }
