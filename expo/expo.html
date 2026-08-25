@@ -334,6 +334,27 @@ function applyCut(){
       for (const s of BEATS) if (s.sub != null && Math.abs(s.sub - b.x) < 1){ s.x += d; s.sub = to; }
       b.x = to;
     });
+    /* Even intervals are not enough on their own: a bay-owned beat holds its
+       place, so an evenly-spaced neighbour can be pushed straight on top of it —
+       which is how THE FIRST AI CROWN ended up printed through GLIDEWELL.IO.
+       After spacing, walk the era and enforce a minimum gap, pushing away from
+       whichever of the pair is pinned. */
+    const MIN = 640;
+    mine.sort((p, q) => p.x - q.x);
+    for (let i = 1; i < mine.length; i++){
+      const L2 = mine[i - 1], R2 = mine[i];
+      const gap = R2.x - L2.x;
+      if (gap >= MIN) continue;
+      const need = MIN - gap;
+      const move = (b2, d2) => {
+        for (const s of BEATS) if (s.sub != null && Math.abs(s.sub - b2.x) < 1){ s.x += d2; s.sub = b2.x + d2; }
+        b2.x += d2;
+      };
+      if (owns.has(R2.y) && !owns.has(L2.y)) move(L2, -need);
+      else if (owns.has(L2.y) && !owns.has(R2.y)) move(R2, need);
+      else if (!owns.has(L2.y) && !owns.has(R2.y)){ move(L2, -need / 2); move(R2, need / 2); }
+      else console.warn(`rhythm: ${L2.y} and ${R2.y} are both pinned and ${gap | 0} apart`);
+    }
   }
   const rekey = obj => {
     const out = {};
@@ -4557,9 +4578,10 @@ const PHOTO_SKIN = !/[?&]skin=flat/.test(location.search);
    edge, back edge to the wall; everything else then follows, and the picture
    comes out a fifth smaller than it was. */
 const PLATES = GAP.on ? [{
-  // 396/617: the photograph's front edge. 0.611 was 377/617 — its BACK edge,
-  // so the plate was hung one worktop-width too low all along.
-  x: bayStart(1) + CUTS[1].w / 2, sw: 1874, benchFrac: 0.6418,
+  // 377/617 — the BACK edge of the worktop, which is where the plate now stops
+  // and where the hall's own counter begins. 0.611 was right all along; what was
+  // wrong was the line I was landing it on.
+  x: bayStart(1) + CUTS[1].w / 2, sw: 1874, benchFrac: 0.611,
   layers: [{img: 'plate_bay_front.png', z: 0}],
 }] : [];
 async function loadPlates(){
@@ -4635,23 +4657,31 @@ function drawPlates(t){
     const sw = (p.sw || 1390) * SS;              // screen width — shared by every layer,
     const ref = layers[0].sp;                    // which is what keeps them glued when centred
     const sh = sw * ref.naturalHeight / ref.naturalWidth;
+    /* THE PLATE STOPS AT THE COUNTER. It used to draw its own worktop, and that
+       worktop can never agree with the hall's: the photograph shows a band 19px
+       deep out of 617 while the hall's is 74, so hanging the plate by its front
+       edge started its surface 55px below the hall's and hanging it by its back
+       edge did the reverse. Both are the same mistake — two counters. So the
+       plate is cropped at the BACK edge of its worktop and contributes only the
+       wall and the objects standing against it; the whole surface, edge to edge
+       through the era, is the hall's counter, which is itself cut from this same
+       photograph. One counter, one level, one material. */
     const bf = p.benchFrac || 0.666;
-    // the counter line lands on the hall's own bench line, so the plate's
-    // counter continues the hall's counter instead of stepping away from it
-    const frontZ = layers[layers.length - 1].z ?? wallZ;
-    const y0 = py(CFG.benchY, k(frontZ)) - sh * bf;
+    const yBack = py(CFG.benchY, k(CFG.benchDepth));
+    const y0 = yBack - sh * bf;
     const fade = 0.05;
     for (const L of layers){
       const z = L.z != null ? L.z : wallZ;
       const kk = k(z);
       const sx = px(p.x, kk);
       if (sx < -sw || sx > W + sw) continue;
-      const ow = Math.max(8, Math.round(sw)), oh = Math.max(8, Math.round(sh));
+      const ow = Math.max(8, Math.round(sw)), oh = Math.max(8, Math.round(sh * bf));
       if (!L.sheet || L.sheet.width !== ow || L.sheet.height !== oh){
         L.sheet = document.createElement('canvas');
         L.sheet.width = ow; L.sheet.height = oh;
         const g2 = L.sheet.getContext('2d');
-        g2.drawImage(L.sp, 0, 0, ow, oh);
+        // only down to the worktop's back edge; below that the hall takes over
+        g2.drawImage(L.sp, 0, 0, L.sp.naturalWidth, L.sp.naturalHeight * bf, 0, 0, ow, oh);
         // the join is a butt joint: both sides are the same material now, so
         // only a hair of blend is needed to kill the aliasing on the cut
         // no feather: this is an object standing on a counter, not a second
@@ -6007,14 +6037,25 @@ function drawArmInside(bx, bz, t, phase, gx0, gx1, yGl, yBase){
   const kb = k(bz);
   const sc = Math.max(0.24, Math.min(1.15, (yBase - yGl) * 0.94 / (550 * kb * SS)));
   const bxs = px(bx, kb), bys = yBase - 10 * kb * SS;
+  /* THE ENVELOPE. Clipping to the glass was a lie: the arm leaned into the wall
+     and simply vanished at the pane's edge instead of hitting anything. A real
+     cell solves this the other way round — the arm's travel is limited so it
+     cannot reach its own enclosure. Its scaled reach here is about three times
+     the pane's half width, so the honest swing is small: work out the angle at
+     which the tip would touch the side wall and keep inside it. What you get is
+     the tight, deliberate motion of a machine in a box rather than something
+     swaying in a breeze. */
+  const reach = 550 * sc * kb * SS;
+  const room = (gx1 - gx0) * 0.5 - 16 * kb * SS;
+  const amp = Math.max(0.10, Math.min(0.55, Math.asin(Math.max(0.05, Math.min(1, room / Math.max(1, reach))))));
   ctx.save();
   ctx.beginPath(); ctx.rect(gx0, yGl, gx1 - gx0, yBase - yGl); ctx.clip();
   ctx.translate(bxs, bys); ctx.scale(sc, sc); ctx.translate(-bxs, -bys);
   ctx.globalAlpha = 0.94;
-  drawRobotArm(bx, bz, t, phase, true);
+  drawRobotArm(bx, bz, t, phase, true, amp);
   ctx.restore();
 }
-function drawRobotArm(bx, bz, t, phase, inside){
+function drawRobotArm(bx, bz, t, phase, inside, amp){
   const kk = k(bz);
   const X = wx => px(wx, kk), Y = wy => py(wy, kk);
   const sx = X(bx);
@@ -6024,8 +6065,10 @@ function drawRobotArm(bx, bz, t, phase, inside){
   ctx.lineJoin = 'round';
 
   const w = t * 0.9 + phase;
-  const a1 = -0.35 + 0.62 * Math.sin(w);
-  const a2 = 0.95 + 0.55 * Math.sin(w + 1.1);
+  // inside a cabin the swing is bounded by the cabin, not by the crop
+  const A1 = amp != null ? amp : 0.62, A2 = amp != null ? amp * 0.85 : 0.55;
+  const a1 = (amp != null ? -0.06 : -0.35) + A1 * Math.sin(w);
+  const a2 = (amp != null ? 0.62 : 0.95) + A2 * Math.sin(w + 1.1);
   const L1 = 300, L2 = 250;
   // inside a cabin the arm is bolted to the cabin floor, not to a plinth
   const j0 = {x: bx, y: inside ? 862 : 906};   // inside: on the cabin floor
