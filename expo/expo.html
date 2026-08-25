@@ -1018,9 +1018,13 @@ function glowSprite(col){
 function drawGlow(col, cx, cy, r, alpha, squashY){
   if (alpha <= 0.004 || r <= 0) return;
   const sy = squashY || 1;
+  /* Put back what the caller had, not the literal 1. drawClip fades itself in
+     by holding globalAlpha and calls this in the middle of doing so; resetting
+     to 1 meant the rest of that fade drew at full strength. */
+  const prev = ctx.globalAlpha;
   ctx.globalAlpha = Math.min(1, alpha);
   ctx.drawImage(glowSprite(col), cx - r, cy - r*sy, r*2, r*2*sy);
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha = prev;
 }
 let HITS = [];       // clickable screen rects, rebuilt every frame
 function pushHit(x, y, w, h, payload){
@@ -1238,6 +1242,7 @@ function benchTiles(tex, kk, srcY, srcH, dy, dh, wx0, wx1){
   }
 }
 function drawBench(){
+  ctx.save();
   const slices = 14;
   const kf = k(0);
   const yTopF = py(CFG.benchY, kf);
@@ -1327,6 +1332,7 @@ function drawBench(){
       }
     }
   }
+  ctx.restore();
 }
 
 function drawSprite(sp, x, yCenter, z, wWorld, rotDeg, alpha, hit, sxRivet){
@@ -2541,6 +2547,7 @@ function digShare(u){
 function drawRec23(t){
   const mid = (REC23_L + REC23_R) / 2;
   if (Math.abs(cam.x - mid) > 2800) return;
+  ctx.save();   // after the cull, for the same reason
   const kk = k(1000);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
   const x0 = px(REC23_L, kk), x1 = px(REC23_R, kk);
@@ -2610,6 +2617,7 @@ function drawRec23(t){
     ctx.restore();
     state._x23flash *= 0.90;
   }
+  ctx.restore();
 }
 
 /* THE PILE. Not a metaphor — the thing itself: the boxes the physical
@@ -5667,6 +5675,7 @@ function drawRobotArm(bx, bz, t, phase){
   const X = wx => px(wx, kk), Y = wy => py(wy, kk);
   const sx = X(bx);
   if (sx < -400 || sx > W + 400) return;
+  ctx.save();   // after the cull: a save the early exit could skip is a leak
   // plinth
   ctx.fillStyle = '#c9cdd1';
   ctx.fillRect(X(bx-70), Y(950), (140)*kk*SS, Y(1080)-Y(950));
@@ -5704,6 +5713,7 @@ function drawRobotArm(bx, bz, t, phase){
     ctx.fillRect(X(e2x) - 16*kk*SS, Y(e2y) + 10*kk*SS, 32*kk*SS, 24*kk*SS);
     ctx.globalAlpha = 1;
   }
+  ctx.restore();
 }
 function drawFactory(t){
   if (Math.abs(cam.x - FACT_X) > 2500) return;
@@ -6778,6 +6788,22 @@ function update(dt){
 function frame(){
   const t = state.time;
   HITS = [];
+  /* THE CLEAN SLATE. Canvas state survives from one frame to the next, so a
+     property set anywhere in seven thousand lines and not put back does not
+     corrupt one drawing — it corrupts every drawing made after it, for the rest
+     of the session, and the symptom shows up nowhere near the cause. A round
+     line cap set once in a robot arm gave the century rule round ends forever.
+     Resetting to a known state here makes that whole class of fault impossible
+     rather than merely absent, which is the only way it stays fixed. */
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.lineCap = 'butt'; ctx.lineJoin = 'miter'; ctx.lineWidth = 1;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.shadowColor = 'rgba(0,0,0,0)'; ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+  ctx.filter = 'none';
+  ctx.setLineDash([]);
+  try { ctx.letterSpacing = '0px'; } catch(e){}
   BR = (Math.sin(t*0.32)*6 + Math.sin(t*0.11)*3) * Math.min(1, Math.abs(cam.vel)/140);
   // base — ambient color drifts cooler era by era
   const amb = ambient(cam.x);
