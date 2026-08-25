@@ -319,21 +319,39 @@ function applyCut(){
      so moving the beat left the year and the machines in different places. A
      beat tied to a fixed scene cannot be re-spaced — the scene has to move with
      it, or it has to stay put. */
-  const owns = new Set(['1970', '1993', '2018', '2023', '2019']);
+  anchor('2022', (REC4_L + REC4_R) / 2);
+  const owns = new Set(['1970', '1993', '2018', '2022', '2023', '2019']);
   for (const seg of SEGMENTS){
     const mine = BEATS.filter(b => b.x > seg.x0 && b.x < seg.x1 && !b.sub && !b.under)
                       .sort((p, q) => p.x - q.x);
     if (mine.length < 4) continue;
-    const a0 = mine[0].x, z0 = mine[mine.length - 1].x;
-    const step = (z0 - a0) / (mine.length - 1);
-    mine.forEach((b, i) => {
-      if (owns.has(b.y)) return;
-      const to = a0 + step * i;
-      const d = to - b.x;
+    /* EVEN SPACING BETWEEN THE FIXED POINTS, not across the whole era. A pinned
+       beat holds its own coordinate, so slots measured from end to end can hand
+       a free beat a place to the RIGHT of the pinned beat that comes after it —
+       and order is chronology here. That is exactly what happened at 2018: the
+       crown is pinned to its recreation's centre and glidewell.io was handed a
+       slot past it, so the wall read 2018 then 2017. Spacing each run of free
+       beats between its two bounding fixed points cannot invert anything,
+       because every position it produces lies strictly inside its own interval. */
+    const fixed = [0];
+    for (let i = 1; i < mine.length - 1; i++) if (owns.has(mine[i].y)) fixed.push(i);
+    fixed.push(mine.length - 1);
+    const shove = (b, d) => {
       if (Math.abs(d) < 1) return;
-      for (const s of BEATS) if (s.sub != null && Math.abs(s.sub - b.x) < 1){ s.x += d; s.sub = to; }
-      b.x = to;
-    });
+      for (const s of BEATS) if (s.sub != null && Math.abs(s.sub - b.x) < 1){ s.x += d; s.sub = b.x + d; }
+      b.x += d;
+    };
+    for (let f = 0; f < fixed.length - 1; f++){
+      const p = fixed[f], q = fixed[f + 1];
+      if (q - p < 2) continue;                       // nothing free between them
+      const xp = mine[p].x, xq = mine[q].x;
+      if (xq <= xp){
+        console.warn(`rhythm: ${mine[p].y} at ${xp | 0} is not left of ${mine[q].y} at ${xq | 0}`);
+        continue;
+      }
+      for (let i = p + 1; i < q; i++)
+        shove(mine[i], xp + (xq - xp) * (i - p) / (q - p) - mine[i].x);
+    }
     /* Even intervals are not enough on their own: a bay-owned beat holds its
        place, so an evenly-spaced neighbour can be pushed straight on top of it —
        which is how THE FIRST AI CROWN ended up printed through GLIDEWELL.IO.
@@ -346,13 +364,9 @@ function applyCut(){
       const gap = R2.x - L2.x;
       if (gap >= MIN) continue;
       const need = MIN - gap;
-      const move = (b2, d2) => {
-        for (const s of BEATS) if (s.sub != null && Math.abs(s.sub - b2.x) < 1){ s.x += d2; s.sub = b2.x + d2; }
-        b2.x += d2;
-      };
-      if (owns.has(R2.y) && !owns.has(L2.y)) move(L2, -need);
-      else if (owns.has(L2.y) && !owns.has(R2.y)) move(R2, need);
-      else if (!owns.has(L2.y) && !owns.has(R2.y)){ move(L2, -need / 2); move(R2, need / 2); }
+      if (owns.has(R2.y) && !owns.has(L2.y)) shove(L2, -need);
+      else if (owns.has(L2.y) && !owns.has(R2.y)) shove(R2, need);
+      else if (!owns.has(L2.y) && !owns.has(R2.y)){ shove(L2, -need / 2); shove(R2, need / 2); }
       else console.warn(`rhythm: ${L2.y} and ${R2.y} are both pinned and ${gap | 0} apart`);
     }
   }
@@ -979,15 +993,15 @@ function initTables(){
      plate, with the end cap it already knows how to draw. A joint with an end
      reads as two things standing side by side; a joint without one reads as one
      surface that failed to meet itself. */
-  for (const P of PLATES){
-    const half = (P.sw || 1390) / 2;      // the plate's own world half-width at k(0)
-    for (const s of [-1, 1])
-      BENCH_BREAKS.push({x: P.x + s * half, half: 24});
-  }
-  // A plate needs NO break of its own: it is painted after the bench and simply
-  // covers it, and beyond its edges the hall's counter continues on exactly the
-  // same line in exactly the same material. Breaks here only opened holes just
-  // outside the picture, which read as the counter behind it jutting out.
+  /* A plate needs NO break of its own: it is painted after the bench and simply
+     covers it, and beyond its edges the hall's counter continues on exactly the
+     same line in exactly the same material. There WAS a loop here putting a
+     24-unit half-break at each plate edge, directly under this paragraph saying
+     it should not be there — I had reasoned my way to removing it and left the
+     code. It made two 48-unit gaps at x 3 349 and 5 223: narrower than the
+     worktop's own front lip is deep, half of each falling outside the picture,
+     so what you saw was a hairline of naked room beside the centrepiece. A gap
+     that small is not a pause in the furniture, it is a seam on it. */
   // small breaks inside a pedestal zone would skew its centering — drop them
   const wide = BENCH_BREAKS.filter(v => v.half > 200);
   for (let i = BENCH_BREAKS.length - 1; i >= 0; i--){
@@ -5456,7 +5470,13 @@ function drawPedestal(b, t, hero){
     const objSprite = PED_SPRITES[ped.obj];
     const objH = 120 * (ped.big ? 1.3 : 1) * kk * SS * objSprite.h / objSprite.w;
     const yObj = yTop - objH * 0.6;
-    const yEnd = yTop + (H - yTop) * 0.5;
+    /* A BEAM DIES ON WHAT IT LIGHTS. Two fixtures cross their beams on the
+       exhibit, which is right — but the beams ran on to halfway down the screen
+       past the crossing point, and past a crossing they diverge again. Two
+       beams became four shafts spreading across the whole room: a soft X over
+       the counter, the wall and the year. Ending them just below the plinth's
+       cap means they converge and stop, which is what a spotlight does. */
+    const yEnd = yTop + objH * 0.35;
     for (const s of [-1, 1]){
       const fx = sx + s * colW * 3.0;                    // the fixture, up top
       // beam direction: straight down -> through the exhibit, by lock
@@ -5471,8 +5491,10 @@ function drawPedestal(b, t, hero){
       ctx.beginPath();
       ctx.moveTo(fx - colW*0.22, 0);
       ctx.lineTo(fx + colW*0.22, 0);
-      ctx.lineTo(xEnd + colW*0.62, yEnd);
-      ctx.lineTo(xEnd - colW*0.62, yEnd);
+      // and it does not fan out on the way: a lens throws a cone that narrows
+      // onto its subject, not a wedge that widens away from it
+      ctx.lineTo(xEnd + colW*0.30, yEnd);
+      ctx.lineTo(xEnd - colW*0.30, yEnd);
       ctx.closePath(); ctx.fill();
       // the fixture itself
       ctx.fillStyle = 'rgba(20,20,22,0.9)';
@@ -7256,7 +7278,12 @@ function update(dt){
 /* ---------------- FRAME ---------------- */
 /* These three live at the top level because frame() calls two of them and a
    function declared inside boot() is invisible from outside it. */
-const SHOW_L = REC4_R + 60, SHOW_R = WORLD_END + 300;
+/* The showroom is the last stretch, and it starts AT the 2022 portal rather
+   than after it: SHOW_L was REC4_R + 60, which left the exhibit that opens the
+   stretch — the scanner on its plinth and the panel behind it — standing outside
+   the room it opens, and put the change of language at an arbitrary coordinate
+   860 units past the doorway instead of on it. */
+const SHOW_L = REC4_L, SHOW_R = WORLD_END + 300;
 function drawShowroom(t){
   if (cam.x < SHOW_L - 2600 || cam.x > SHOW_R + 2600) return;
   const seg = SEGMENTS[3], kk = k(seg.z0 - 6);
