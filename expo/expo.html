@@ -52,12 +52,15 @@ const BEATS = [
          {img:'old4', w:290, dx:-3330, cy:360, rot:-0.3, cap:'The old fear of the dentist'}],
    table:[], st:[{img:'invest', w:280, dx:-320, lz:80}]},
 
-  {x:2450, y:'1970', t:'FOUNDED', tier:1, fly:true,
+  {x:2450, y:'1970', t:'FOUNDED', tier:1, fly:true, yLift:96,   // clear of the bench lamp
    th:'One man, one bench — betting that affordable was a business model.',
    d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
    wall:[{img:'jim1970', w:420, dx:1080, cy:400, hero:true}],
    table:[],
-   album:{dx:-980, lz:85, w:300, title:'THE FAMILY ALBUM',
+   /* edgeOK: the founding bay is 2320 units wide and the frame shows about
+     1800, so anything standing at its edge cannot also be in shot at the apex.
+     The album belongs to the walk up to 1970, not to the moment of it. */
+  album:{dx:-980, lz:85, w:300, edgeOK:true, title:'THE FAMILY ALBUM',
           photos:[['father42','jim15'],['jim18','jim1970']]}},
 
   {x:3450, y:'1970s', t:'PFM ERA', plaque:true,
@@ -206,7 +209,7 @@ const BEATS = [
   {x:24450, y:'2018', t:'', tier:1, yLift:110,
    pinZ:1000,
    th:'',
-   d:'A machine-learning team since 2015; the work done with UC Berkeley, alongside the people who wrote pix2pix itself. It learned from 1,500 pairs of scans — and from the natural profile between opposing teeth, the thing technicians find hardest. Glidewell milled the first crown designed entirely by it in 2017; the paper that followed in March 2018 is called Learning Beyond Human Expertise. The archive of scans that began in 2007 is what taught it.',
+   d:'1,500 pairs of scans, and the profile between opposing teeth that technicians find hardest. The paper, written with UC Berkeley, is called Learning Beyond Human Expertise.',
    wall:[], table:[],
    rig:{kind:'design', dx:0, lz:120, w:540}},
   {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true,
@@ -227,7 +230,7 @@ const BEATS = [
   {x:26340, y:'2022', t:'FASTSCAN.IO',
    th:'The front door to the all-digital workflow.',
    d:'fastscan.io, built with Medit, folds an intraoral scanner into the ecosystem — no impressions, no remakes, data straight into design and mill.',
-   wall:[{img:'jimnow', w:250, dx:-170, cy:360, rot:0.5, cap:'Jim Glidewell', style:'white', pz:995}],
+   wall:[{img:'jimnow', w:250, dx:-520, cy:360, rot:0.5, cap:'Jim Glidewell', style:'white', pz:995}],
    table:[], pyr:{dx:520, w:460},
    ped:{obj:'scanner', dx:0, gapHalf:400}},
 
@@ -1218,6 +1221,14 @@ function drawFloor(){
     ctx.closePath();
     ctx.fillStyle = g;
     ctx.fill();
+    /* Where one floor meets another, lay a joint. Without it the two tones just
+       abut along a diagonal and the eye reads a rendering fault rather than a
+       change of material. */
+    ctx.strokeStyle = 'rgba(0,0,0,0.20)';
+    ctx.lineWidth = 1.4 * SS;
+    ctx.beginPath(); ctx.moveTo(xTR, yTop); ctx.lineTo(xBR, H); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+    ctx.beginPath(); ctx.moveTo(xTR + 1.4 * SS, yTop); ctx.lineTo(xBR + 1.4 * SS, H); ctx.stroke();
   }
 }
 
@@ -1441,17 +1452,18 @@ function drawBeatText(b, focusAmt){
       ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
       ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
       ctx.fillText(b.y, cx, mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt));
-      pushHit(cx - 340*kk*SS, py(20, kk), 680*kk*SS, py(330, kk) - py(20, kk), {type:'study', beat: BEATS.indexOf(b)});
+      pushHit(cx - 340*kk*SS, py(20 - (b.yLift || 0), kk), 680*kk*SS, py(330, kk) - py(20, kk),
+              {type:'study', beat: BEATS.indexOf(b)});
       const cd = b._capDrop || 0;
       ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
-      ctx.fillText(b.t, cx, mixN(py(tY + cd, kk), H*0.16 + 62*SS, focusAmt));
+      ctx.fillText(b.t, cx, mixN(py(tY + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th && fFade > 0.05){
         ctx.font = eraFont(30 * (seg.tScale || 1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${((near-0.25)/0.75 * 0.72 * fFade).toFixed(3)})`;
-        drawLines(b._th, cx, py(tY + 54 + cd, kk), 38 * kk * SS);
+        drawLines(b._th, cx, py(tY + 54 + cd - (b.yLift || 0), kk), 38 * kk * SS);
       }
       ctx.restore();
     }
@@ -1480,17 +1492,18 @@ function drawBeatText(b, focusAmt){
         // a numeral can be lifted clear of whatever stands under it on the panel
         ctx.fillText(b.y, cx, mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt));
       }
-      pushHit(cx - 320*kk*SS, py(20, kk), 640*kk*SS, py(330, kk) - py(20, kk), {type:'study', beat: BEATS.indexOf(b)});
+      pushHit(cx - 320*kk*SS, py(20 - (b.yLift || 0), kk), 640*kk*SS, py(330, kk) - py(20, kk),
+              {type:'study', beat: BEATS.indexOf(b)});
       const cd = b._capDrop || 0;
       ctx.font = eraFont(46 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*sc*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
-      ctx.fillText(b.t, cx, mixN(py((b.minor ? tY + 4 : tY) + cd, kk), H*0.16 + 62*SS, focusAmt));
+      ctx.fillText(b.t, cx, mixN(py((b.minor ? tY + 4 : tY) + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th){
         ctx.font = eraFont(30 * (b.minor?0.8:1) * (seg.tScale||1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
-        if (fFade > 0.05) drawLines(b._th, cx, py((b.minor ? tY + 46 : tY + 54) + cd, kk), 38 * (b.minor?0.8:1) * kk * SS);
+        if (fFade > 0.05) drawLines(b._th, cx, py((b.minor ? tY + 46 : tY + 54) + cd - (b.yLift || 0), kk), 38 * (b.minor?0.8:1) * kk * SS);
       }
       ctx.restore();
       ctx.globalAlpha = 1;
@@ -1989,7 +2002,9 @@ function drawProjectors(t, phase){
           g3.fillStyle = gg; g3.fillRect(ex, ey, ew, eh);
         }
       }
-      ctx.drawImage(p.gnd, gx0 - key, gy0);
+      // only when there is a picture to sit under. A lamp with no film in the
+      // gate throws a warm empty rectangle; it does not throw darkness.
+      if (live) ctx.drawImage(p.gnd, gx0 - key, gy0);
     }
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -3220,6 +3235,27 @@ function drawMapWall(t){
     ctx.moveTo(cxN - wN, yNear); ctx.lineTo(cxF - wF, yFar);
     ctx.lineTo(cxF + wF, yFar); ctx.lineTo(cxN + wN, yNear);
     ctx.closePath(); ctx.fill();
+    // the pile of it: bands running across the weave, closing up with distance
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cxN - wN, yNear); ctx.lineTo(cxF - wF, yFar);
+    ctx.lineTo(cxF + wF, yFar); ctx.lineTo(cxN + wN, yNear);
+    ctx.closePath(); ctx.clip();
+    for (let i = 0; i < 26; i++){
+      const u = i / 26, uu = u * u;                    // bunched toward the far end
+      const yy = yFar + (yNear - yFar) * uu;
+      const ww = wF + (wN - wF) * uu;
+      ctx.fillStyle = `rgba(255,235,215,${(0.030 * (1 - u * 0.5)).toFixed(3)})`;
+      ctx.fillRect(cxF + (cxN - cxF) * uu - ww, yy, ww * 2, Math.max(1, 2.2 * SS * (0.4 + uu)));
+    }
+    // and it is not flat: the light falls off toward both selvedges
+    const eg = ctx.createLinearGradient(cxN - wN, 0, cxN + wN, 0);
+    eg.addColorStop(0, 'rgba(20,4,8,0.42)');
+    eg.addColorStop(0.28, 'rgba(20,4,8,0)');
+    eg.addColorStop(0.72, 'rgba(20,4,8,0)');
+    eg.addColorStop(1, 'rgba(20,4,8,0.46)');
+    ctx.fillStyle = eg; ctx.fillRect(cxN - wN, yFar, wN * 2, yNear - yFar);
+    ctx.restore();
     ctx.strokeStyle = 'rgba(235,195,120,0.4)'; ctx.lineWidth = 2.5*SS;
     ctx.beginPath(); ctx.moveTo(cxN - wN + 10*SS, yNear); ctx.lineTo(cxF - wF + 5*SS, yFar); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cxN + wN - 10*SS, yNear); ctx.lineTo(cxF + wF - 5*SS, yFar); ctx.stroke();
@@ -4774,6 +4810,25 @@ function drawDiscMill(b, t){
   dg.addColorStop(0, '#faf8f4'); dg.addColorStop(0.55, '#e6e2da'); dg.addColorStop(1, '#c9c4ba');
   ctx.fillStyle = dg;
   ctx.beginPath(); ctx.arc(cx2, cy2, R, 0, 7); ctx.fill();
+  /* An uncut blank should still look like a thing: a zirconia disc has a
+     chamfer round its rim, a shrinkage ring stepped into the face, a hub where
+     the holder grips it and a lot number stamped on it. Without those it is a
+     white circle, which reads as something failing to load. */
+  ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 2.4 * SS;
+  ctx.beginPath(); ctx.arc(cx2, cy2, R * 0.965, 0, 7); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1.2 * SS;
+  ctx.beginPath(); ctx.arc(cx2, cy2, R * 0.90, 0, 7); ctx.stroke();
+  ctx.strokeStyle = 'rgba(150,142,128,0.22)'; ctx.lineWidth = 1 * SS;
+  ctx.beginPath(); ctx.arc(cx2, cy2, R * 0.84, 0, 7); ctx.stroke();
+  const hub = ctx.createRadialGradient(cx2 - R*0.05, cy2 - R*0.05, R*0.02, cx2, cy2, R*0.16);
+  hub.addColorStop(0, 'rgba(214,208,196,0.9)'); hub.addColorStop(1, 'rgba(168,160,146,0.7)');
+  ctx.fillStyle = hub;
+  ctx.beginPath(); ctx.arc(cx2, cy2, R * 0.15, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(120,112,100,0.55)';
+  ctx.font = eraFont(Math.max(5, R * 0.10), '600', SEGMENTS[3].font);
+  ctx.textAlign = 'center';
+  ctx.fillText('BZ-98', cx2, cy2 + R * 0.72);
+  ctx.textAlign = 'left';
   ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1.1 * SS;
   ctx.beginPath(); ctx.arc(cx2, cy2, R, 0, 7); ctx.stroke();
 
@@ -5027,7 +5082,7 @@ function drawAlbum(b, i, t, dt){
   const sy = py(CFG.benchY, kk);
   const ease = a*a*(3-2*a);
   const hw = b.album.w * (1 + 0.9*ease) * kk * SS;
-  pushHit(sx - hw/2, sy - hw*0.5, hw, hw*0.52, {type:'album', beat: i});
+  pushHit(sx - hw/2, sy - hw*0.5, hw, hw*0.52, {type:'album', beat: i, edgeOK: !!b.album.edgeOK});
   ctx.save();
   ctx.translate(sx, sy);
   ctx.rotate(-4 * Math.PI/180);
@@ -7145,7 +7200,59 @@ async function boot(){
   auditStatics();
   window.__photoSkinReady = true;
   if (/[?&]audit/.test(location.search)) setTimeout(auditRivets, 400);
-  /* ?at=<world x> stands the camera at a coordinate with the tour already
+  if (/[?&]audit/.test(location.search)) setTimeout(auditFrames, 900);
+  /* CONTAINMENT. Two rules the hall is meant to keep and which no amount of
+   looking will reliably catch: nothing may hang off the edge of the frame at
+   the moment it is the subject, and no two things may claim the same pixels to
+   be clicked on. Every interactive element already registers its screen
+   rectangle through pushHit, so both are measurable. This walks the camera to
+   each beat in turn, renders one frame, and reads the rectangles back. */
+function auditFrames(){
+  if (!W || !H){ console.warn('FRAME AUDIT: no viewport'); return; }
+  const keep = {x: cam.x, vel: cam.vel, z: cam.z, mode: state.mode};
+  const spill = [], clash = [];
+  const area = r => Math.max(0, r.w) * Math.max(0, r.h);
+  const bi = new Map(BEATS.map((b, i) => [b, i]));
+  for (const b of BEATS){
+    cam.x = b.x; cam.vel = 0;
+    frame();
+    /* Only the things that belong to THIS beat. Its neighbours are meant to run
+       off the sides — that is what a hall looks like — so judging them would
+       drown the real findings. */
+    const mine = h => {
+      const p = h.p || {};
+      if (p.beat != null) return p.beat === bi.get(b);
+      const wx = p.anchor != null ? p.anchor : p.wx;
+      return wx != null && Math.abs(wx - b.x) < 460;
+    };
+    const hs = HITS.filter(h => area(h) > 400 && mine(h) && !(h.p && h.p.edgeOK));
+    for (const h of hs){
+      const over = Math.max(-h.x, -h.y, (h.x + h.w) - W, (h.y + h.h) - H);
+      const frac = over / Math.max(1, Math.min(h.w, h.h));
+      if (over > 12 && frac > 0.28)
+        spill.push(`${b.y} \u00b7 ${(h.p && h.p.type) || '?'} \u2014 ${over | 0}px past the edge ` +
+                   `(${(frac * 100) | 0}% of it)`);
+    }
+    for (let i = 0; i < hs.length; i++)
+      for (let j = i + 1; j < hs.length; j++){
+        const a = hs[i], c = hs[j];
+        const ox = Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x);
+        const oy = Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y);
+        if (ox <= 0 || oy <= 0) continue;
+        const f = (ox * oy) / Math.min(area(a), area(c));
+        if (f > 0.45)
+          clash.push(`${b.y} \u00b7 ${(a.p && a.p.type) || '?'} and ${(c.p && c.p.type) || '?'} ` +
+                     `share ${(f * 100) | 0}% of the smaller target`);
+      }
+  }
+  cam.x = keep.x; cam.vel = keep.vel; cam.z = keep.z; state.mode = keep.mode;
+  const uniq = a => [...new Set(a)];
+  if (spill.length) console.error('FRAME AUDIT — off the edge:\n  ' + uniq(spill).join('\n  '));
+  if (clash.length) console.error('FRAME AUDIT — overlapping targets:\n  ' + uniq(clash).join('\n  '));
+  if (!spill.length && !clash.length) console.log('FRAME AUDIT: clean — nothing off the edge, no target claimed twice');
+}
+
+/* ?at=<world x> stands the camera at a coordinate with the tour already
      running. It exists so the hall can be walked and photographed from a script
      instead of by hand — every seam in it is a number, and a number can be
      checked. ?at=list prints the beats and their coordinates to the console. */
