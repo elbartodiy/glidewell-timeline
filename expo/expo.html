@@ -8106,6 +8106,22 @@ async function boot(){
     console.log('PEDESTALS at z=-90:\n' + BEATS.filter(b => b.ped)
       .map(b => '  ' + b.y + '   x ' + ((b.x + (b.ped.dx ?? -430))|0) +
                 '   gap half ' + (b.ped.gapHalf || 330)).join('\n'));
+    const items = [];
+    for (const b of BEATS)
+      for (const it of [...(b.st||[]), ...(b.table||[]), ...(b.props||[]),
+                        ...(b.album ? [b.album] : []), ...(b.rig ? [b.rig] : [])])
+        items.push([(b.x + (it.dx||0))|0, it.lz != null ? it.lz : 0, (it.w||300)|0,
+                    it.img || it.kind || it.title || 'rig']);
+    console.log('ON THE COUNTER (' + items.length + '):\n' +
+      items.sort((a,b) => a[0]-b[0]).map(i => '  x ' + i[0] + '  z ' + i[1] +
+        '  w ' + i[2] + '  ' + i[3]).join('\n'));
+    const pinned = [];
+    for (const b of BEATS)
+      for (const it of (b.wall || [])) if (it.pz != null)
+        pinned.push('  x ' + ((b.x + (it.dx||0))|0) + '  pz ' + it.pz + '  ' + (it.img||''));
+    console.log('PINNED TO A RECREATION PANEL (' + pinned.length + '):\n' + pinned.join('\n'));
+    console.log('PROJECTORS: ' + PROJECTORS.map(p =>
+      'x ' + ((p.x + (p.mdx||0))|0) + ' panel z ' + p.pz + ' throw z ' + p.throwZ).join(' · '));
     console.log('LAMPS at z=240: ' + LIGHT_GRID.map(l => l.x|0).sort((a,b)=>a-b).join(' '));
     console.log('BENCH_BREAKS: ' + BENCH_BREAKS.map(b => (b.x|0) + '±' + (b.half|0)).join('  '));
     console.log('FIGURES:\n' + FIGURES.map(f => '  x ' + (f.x|0) + '  z ' + f.z).join('\n'));
