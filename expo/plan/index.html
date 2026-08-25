@@ -1,63 +1,48 @@
 <title>The Hall in Plan</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
   /* A drawing of a dark hall is drawn on a dark sheet, so the lit things can be
      the light ones — the way they are in the room. This page commits to that one
-     world on purpose; every colour is painted from a token and the ground is
-     never left to the host. */
+     world on purpose; every colour comes from a token and the ground is never
+     left to the host to paint. */
   :root{
-    --ink:#0B0E12; --plate:#12171D; --plate-2:#0F1419; --rule:#212A33; --rule-2:#2C3742;
-    --bone:#E7E1D4; --fascia:#A39B88; --void:#18222A; --floor:#8892A0;
-    --brass:#C29A57; --rec:#69A0B6; --glow:#8FD3C7; --flag:#C42E22;
-    --dim:#707C89; --dim-2:#4A545F; --text:#CDD4DB;
+    --ink:#0B0E12; --plate:#12171D; --plate-2:#0F1419; --rule:#1F2831; --rule-2:#2B353F;
+    --bone:#E7E1D4;      /* every wall, one colour */
+    --brass:#C9A25C;     /* light */
+    --rec:#6FA6BD;       /* recreations */
+    --glow:#84CFC2;      /* glow, logos, reflection */
+    --floor:#8B95A3;     /* the ground */
+    --obj:#B4A98F;       /* things standing on things */
+    --flag:#D0483C;      /* a fault */
+    --dim:#77828F; --dim-2:#4C5661; --text:#CFD6DD;
   }
   *{box-sizing:border-box}
   body{margin:0; background:var(--ink); color:var(--text);
-    font:400 15px/1.55 "Archivo Narrow","Archivo","Helvetica Neue",Arial,sans-serif;
+    font:400 15px/1.55 "IBM Plex Sans Condensed","Helvetica Neue",Arial,sans-serif;
     -webkit-font-smoothing:antialiased}
-  .wrap{max-width:1240px; margin:0 auto; padding:34px 22px 100px; display:flex; flex-direction:column; gap:32px}
-  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+  .wrap{max-width:1600px; margin:0 auto; padding:32px 20px 90px;
+    display:flex; flex-direction:column; gap:30px}
 
   .titleblock{border:1px solid var(--rule); display:grid;
-    grid-template-columns:minmax(240px,1.7fr) repeat(4,minmax(78px,1fr))}
-  .titleblock>div{padding:13px 15px; border-left:1px solid var(--rule)}
+    grid-template-columns:minmax(230px,1.8fr) repeat(4,minmax(76px,1fr))}
+  .titleblock>div{padding:12px 15px; border-left:1px solid var(--rule)}
   .titleblock>div:first-child{border-left:0}
   .tb-k{font:600 10px/1 "IBM Plex Mono",monospace; letter-spacing:.15em;
     text-transform:uppercase; color:var(--dim-2); display:block; margin-bottom:7px}
   .tb-v{font:500 14px/1.2 "IBM Plex Mono",monospace; color:var(--text); font-variant-numeric:tabular-nums}
-  h1{font:700 26px/1.05 "Archivo Narrow",Arial,sans-serif; margin:0;
-    text-transform:uppercase; letter-spacing:.01em; color:var(--bone); text-wrap:balance}
-  h2{font:600 13px/1 "IBM Plex Mono",monospace; letter-spacing:.16em;
-    text-transform:uppercase; color:var(--brass); margin:0 0 4px}
-  .sub{color:var(--dim); font-size:14px; margin:0 0 16px; max-width:70ch}
-  .lede{max-width:66ch; color:var(--dim); font-size:15.5px; margin:0}
+  h1{font:600 26px/1.05 "IBM Plex Sans Condensed",Arial,sans-serif; margin:0;
+    text-transform:uppercase; letter-spacing:.02em; color:var(--bone); text-wrap:balance}
+  h2{font:600 12px/1 "IBM Plex Mono",monospace; letter-spacing:.17em;
+    text-transform:uppercase; color:var(--brass); margin:0 0 5px}
+  .sub{color:var(--dim); font-size:14px; margin:0 0 14px; max-width:78ch}
+  .lede{max-width:78ch; color:var(--dim); font-size:15.5px; margin:0}
   .lede b{color:var(--text); font-weight:600}
+  .lede code{font:500 14px "IBM Plex Mono",monospace; color:var(--brass)}
 
-  .plate{border:1px solid var(--rule); background:var(--plate)}
-  .phead{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; padding:12px 18px;
-    border-bottom:1px solid var(--rule); background:var(--plate-2)}
-  .pletter{font:700 20px/1 "IBM Plex Mono",monospace; color:var(--brass); flex:0 0 auto}
-  .pname{font:600 17px/1.1 "Archivo Narrow",Arial,sans-serif; letter-spacing:.05em;
-    text-transform:uppercase; color:var(--bone)}
-  .pnums{font:500 12px/1 "IBM Plex Mono",monospace; color:var(--dim);
-    font-variant-numeric:tabular-nums; margin-left:auto; white-space:nowrap}
-  svg{display:block; width:100%; height:auto}
-
-  .toolbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
-  .toolbar .lbl{font:600 10px/1 "IBM Plex Mono",monospace; letter-spacing:.15em;
-    text-transform:uppercase; color:var(--dim-2); margin-right:6px}
-  .chip{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--rule-2);
-    padding:6px 11px; cursor:pointer; user-select:none; background:var(--plate-2);
-    font:500 11.5px/1 "IBM Plex Mono",monospace; letter-spacing:.06em;
-    text-transform:uppercase; color:var(--dim)}
-  .chip input{position:absolute; opacity:0; width:1px; height:1px}
-  .chip .sw{width:11px; height:11px; border:1px solid currentColor; flex:0 0 auto}
-  .chip[data-on="1"]{color:var(--text); border-color:var(--dim-2)}
-  .chip[data-on="1"] .sw{background:currentColor}
-  .chip:has(input:focus-visible){outline:2px solid var(--brass); outline-offset:2px}
-
-  .two{display:grid; gap:24px; grid-template-columns:minmax(300px,1fr) minmax(300px,1.15fr)}
-  @media (max-width:820px){ .two{grid-template-columns:1fr} }
+  .sheet{border:1px solid var(--rule); background:var(--plate); overflow-x:auto}
+  .sheet svg{display:block}
+  #band svg{min-width:1560px; width:100%; height:auto}
+  #ladder svg{min-width:900px; width:100%; height:auto}
 
   table{width:100%; border-collapse:collapse; font-size:14px}
   .tscroll{overflow-x:auto; border:1px solid var(--rule)}
@@ -67,10 +52,12 @@
   td.n{font:500 13px/1 "IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; color:var(--dim)}
   tr:last-child td{border-bottom:0}
   .bad{color:var(--flag); font-weight:600} .ok{color:var(--rec)}
+  .two{display:grid; gap:22px; grid-template-columns:minmax(280px,1fr) minmax(300px,1.2fr)}
+  @media (max-width:860px){ .two{grid-template-columns:1fr} }
 
-  .notes{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .notes{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
   .note{border-left:2px solid var(--rule-2); padding:1px 0 1px 15px}
-  .note h3{font:600 12px/1.25 "IBM Plex Mono",monospace; letter-spacing:.08em;
+  .note h3{font:600 12px/1.3 "IBM Plex Mono",monospace; letter-spacing:.06em;
     text-transform:uppercase; margin:0 0 6px; color:var(--brass)}
   .note p{margin:0; color:var(--dim); font-size:14.5px}
   .note.flag{border-left-color:var(--flag)} .note.flag h3{color:var(--flag)}
@@ -80,90 +67,98 @@
 
   <header class="titleblock">
     <div><span class="tb-k">Glidewell History Tour · expo.html</span><h1>The Hall in Plan</h1></div>
-    <div><span class="tb-k">Sheets</span><span class="tb-v">P1 · S1</span></div>
-    <div><span class="tb-k">Read from</span><span class="tb-v">?plan=1</span></div>
-    <div><span class="tb-k">Layers</span><span class="tb-v">11</span></div>
-    <div><span class="tb-k">Depth range</span><span class="tb-v">−90 … 1400</span></div>
+    <div><span class="tb-k">Листы</span><span class="tb-v">P1 · S1</span></div>
+    <div><span class="tb-k">Источник</span><span class="tb-v">?plan=1</span></div>
+    <div><span class="tb-k">Слоёв</span><span class="tb-v">19</span></div>
+    <div><span class="tb-k">Глубина</span><span class="tb-v">−90 … 1400</span></div>
   </header>
 
-  <p class="lede">Looking down on the hall. <b>x</b> runs left to right along the rail the
-  camera travels; <b>z</b> runs up the sheet, away from you — the wall is at the top of each
-  plate and the pedestals are at the bottom, nearest the lens. Every layer is placed at the
-  depth the renderer actually gives it, because depth is the single number that decides
-  whether a thing sits behind the counter, on it, or in front of it. Nothing here is drawn
-  from memory: the numbers come out of the file itself.</p>
+  <p class="lede">Вид сверху на весь зал, одной лентой. По горизонтали — <b>x</b>, путь камеры
+  от начала до финала. Каждая дорожка — один слой: полоса там, где слой есть, пусто там, где
+  его нет. Пунктиры сверху донизу — границы секторов, по ним читается вертикальный срез:
+  что в этой точке зала присутствует, а что нет. У каждой полосы подписана её глубина
+  <b>z</b> — то самое число, которое решает, стоит вещь за столом, на столе или перед ним.
+  Ни одно число здесь не придумано: все взяты из <code>?plan=1</code> и сверены с кодом.</p>
 
   <section>
-    <h2>Sheet S1 · Section through any bay</h2>
-    <p class="sub">Every layer in the hall, listed by depth, nearest the camera at the
-    bottom. The ruler on the left holds the true spacing — twenty-six depths gather into
-    two knots, one at the counter and one at the wall, with four hundred units of empty
-    room between them. The rows are evenly spaced and joined to the ruler by leaders,
-    because at true height the labels print through each other.</p>
-    <div class="plate"><div id="ladder"></div></div>
+    <h2>Лист P1 · План, слоями</h2>
+    <p class="sub">Все стены — одним цветом. Дорожка «задний план» высокая: внутри неё
+    положение полосы по вертикали и есть глубина, поэтому видно, как стена отступает от
+    эпохи к эпохе, а панели рекреаций встают между ней и столом.</p>
+    <div class="sheet" id="band"></div>
+    <div class="tscroll" style="margin-top:14px"><table>
+      <thead><tr><th>Дорожка</th><th>Где это в коде</th><th>Глубина z</th><th>Протяжённость по x</th></tr></thead>
+      <tbody id="legend"></tbody></table></div>
   </section>
 
   <section>
-    <h2>Sheet P1 · Plan, four plates</h2>
-    <p class="sub">One plate per era, each at its own horizontal scale, depth at one scale
-    throughout so the plates can be compared. The exaggeration is printed on each.</p>
-    <div class="toolbar" id="toolbar"><span class="lbl">Layers</span></div>
-    <div id="plates" style="display:flex;flex-direction:column;gap:22px;margin-top:16px"></div>
+    <h2>Лист S1 · Разрез · все слои по глубине</h2>
+    <p class="sub">Тот же набор слоёв, но выстроенный по глубине, ближайшее к камере снизу.
+    Линейка слева держит настоящий масштаб: двадцать шесть глубин собираются в два узла —
+    один у стола, другой у стены, — и между ними четыреста единиц пустой комнаты.</p>
+    <div class="sheet" id="ladder"></div>
   </section>
 
   <div class="two">
     <section>
-      <h2>Where the counter is</h2>
-      <p class="sub">1 is furniture, 0 is a break, read off the finished run list.</p>
-      <div class="tscroll"><table><thead><tr><th>Era</th><th>Pattern</th><th>Runs</th></tr></thead>
+      <h2>Где стол есть, где нет</h2>
+      <p class="sub">1 — мебель, 0 — разрыв. Прочитано из готового списка прогонов.</p>
+      <div class="tscroll"><table><thead><tr><th>Эпоха</th><th>Схема</th><th>Прогонов</th></tr></thead>
       <tbody id="strings"></tbody></table></div>
     </section>
     <section>
-      <h2>Recreations against the counter</h2>
-      <p class="sub">A recreation replaces the furniture, so it should stand in a break.</p>
-      <div class="tscroll"><table><thead><tr><th>Recreation</th><th>Depth</th><th>Span</th><th>Counter behind</th></tr></thead>
+      <h2>Рекреации против стола</h2>
+      <p class="sub">Рекреация заменяет мебель — значит должна стоять в разрыве.</p>
+      <div class="tscroll"><table><thead><tr><th>Рекреация</th><th>z</th><th>Пролёт по x</th><th>Стол за ней</th></tr></thead>
       <tbody id="sched"></tbody></table></div>
     </section>
   </div>
 
   <section>
-    <h2>What the plan shows</h2>
-    <div class="notes" id="notes" style="margin-top:14px"></div>
+    <h2>Что показал план</h2>
+    <div class="notes" id="notes" style="margin-top:13px"></div>
   </section>
 </div>
 
 <script>
-/* ── everything below is the ?plan=1 dump, transcribed once ───────── */
+/* ── the ?plan=1 / ?map=1 / ?at=list dump, transcribed once ───────── */
 const D = {
   eras:[
-    {id:'A',n:1,x0:-3450,x1:9370,z0:550,tz:550,name:'The analog century',wall:'dark boards'},
-    {id:'B',n:2,x0:10470,x1:13620,z0:680,tz:680,name:'The PFM decade',wall:'formica'},
-    {id:'C',n:3,x0:14720,x1:23960,z0:850,tz:680,name:'Scale',wall:'pale panel'},
-    {id:'D',n:4,x0:25040,x1:38000,z0:1400,tz:680,name:'The showroom',wall:'white'}],
-  recs:[['1979',9370,10470,610,20],['1989',13620,14720,728,10],['1993',15445,16395,728,0],
-    ['Digital Rev.',23960,25040,970,20],['2018',29270,30170,1000,72],
-    ['2022',31960,32760,1000,83],['2023',33470,34370,1000,100]],
-  cells:[['A0',1,-3450,1635,null],['A1',0,1635,1765,'pedestal'],['A2',1,1765,3349,null],
-    ['A3',0,3349,3397,'pedestal'],['A4',1,3397,5223,null],['A5',0,5223,5271,'pedestal'],
-    ['A6',1,5271,6785,null],['A7',0,6785,6915,'pedestal'],['A8',1,6915,9370,null],
-    ['B0',1,10470,12205,null],['B1',0,12205,12335,'pedestal'],['B2',1,12335,13620,null],
-    ['C0',0,14720,16460,'the 1993 recreation'],['C1',1,16460,17555,null],
-    ['C2',0,17555,17685,'pedestal'],['C3',1,17685,20152,null],
-    ['C4',0,20152,20812,'pedestal · 2000'],['C5',1,20812,22355,null],
-    ['C6',0,22355,22485,'pedestal'],['C7',1,22485,22890,null],
-    ['C8',0,22890,23550,'pedestal · 2007'],['C9',1,23550,23960,null],
-    ['D0',1,25040,26735,null],['D1',0,26735,26865,'pedestal'],['D2',1,26865,29920,null],
-    ['D3',0,29920,31450,'BruxZir Factory line'],['D4',1,31450,32620,null],
-    ['D5',0,32620,33420,'pedestal · 2022'],['D6',1,33420,35870,null],
-    ['D7',0,35870,38000,'the finale — no counter']],
+    {id:'A',n:1,x0:-3450,x1:9370,z0:550,tz:550,name:'Аналоговый век',wall:'тёмные доски'},
+    {id:'B',n:2,x0:10470,x1:13620,z0:680,tz:680,name:'Эпоха PFM',wall:'формика'},
+    {id:'C',n:3,x0:14720,x1:23960,z0:850,tz:680,name:'Масштаб',wall:'светлая панель'},
+    {id:'D',n:4,x0:25040,x1:38000,z0:1400,tz:680,name:'Шоурум',wall:'белая',declared:40500}],
+  recs:[['1979',9370,10470,610,20,true],['1989',13620,14720,728,10,true],
+    ['1993',15445,16395,728,0,false],['Digital Revolution',23960,25040,970,20,true],
+    ['2018',29270,30170,1000,72,false],['2022',31960,32760,1000,83,false],
+    ['2023',33470,34370,1000,100,false]],
+  cells:[['A0',1,-3450,1635,null],['A1',0,1635,1765,'пьедестал'],['A2',1,1765,3349,null],
+    ['A3',0,3349,3397,'пьедестал'],['A4',1,3397,5223,null],['A5',0,5223,5271,'пьедестал'],
+    ['A6',1,5271,6785,null],['A7',0,6785,6915,'пьедестал'],['A8',1,6915,9370,null],
+    ['B0',1,10470,12205,null],['B1',0,12205,12335,'пьедестал'],['B2',1,12335,13620,null],
+    ['C0',0,14720,16460,'рекреация 1993'],['C1',1,16460,17555,null],
+    ['C2',0,17555,17685,'пьедестал'],['C3',1,17685,20152,null],
+    ['C4',0,20152,20812,'пьедестал 2000'],['C5',1,20812,22355,null],
+    ['C6',0,22355,22485,'пьедестал'],['C7',1,22485,22890,null],
+    ['C8',0,22890,23550,'пьедестал 2007'],['C9',1,23550,23960,null],
+    ['D0',1,25040,26735,null],['D1',0,26735,26865,'пьедестал'],['D2',1,26865,29920,null],
+    ['D3',0,29920,31450,'линия BruxZir Factory'],['D4',1,31450,32620,null],
+    ['D5',0,32620,33420,'пьедестал 2022'],['D6',1,33420,35870,null],
+    ['D7',0,35870,38000,'финал — стола нет']],
   lamps:[-650,1050,2333,3255,4310,5100,6022,6577,7866,8420,11010,11770,12870,15290,15920,
     17090,17990,18890,19790,20802,21590,22490,23540,25600,26535,27720,28370,29287,29720,
     30890,32038,32700,33920,35140,35707,36624,37541,37770],
   chand:[34230,35970,37550],
   peds:[['1989',14170],['2000',20482],['2007',23220],['2017',30250],['2022',33020],['2026',36200]],
   figs:[[21220,560],[37080,470],[36980,390],[37140,300]],
-  cells4:{},
-  machines:[['near',30590,190],['far',31140,232]],
+  machines:[['ближняя',30590,190],['дальняя',31140,232]],
+  proj:[[15500,728,240]],
+  pinned:[[32500,995,'jimnow · Jim Glidewell']],
+  items:[[730,80,280,'invest'],[3154,85,300,'family album'],[4790,85,310,'PFM craft'],
+    [5455,75,280,'wax'],[6577,80,250,'lab4ext'],[16672,75,290,'CRT'],[21182,75,320,'CRT'],
+    [23755,55,300,'LCD'],[25350,150,240,'disc mill'],[29720,120,540,'design station'],
+    [31565,165,120,'ellen'],[31716,165,120,'nadia'],[31867,165,120,'bianca'],
+    [33920,150,560,'box pile']],
   beats:[['1907',1050],['1970',4310],['1970s',4950],['1973',6577],['1976',8420],['1979',9920],
     ['1980',11010],['1984',11770],['1988',12870],['1989',14170],['1993',15920],['1995',16832],
     ['1996',17745],['1998',18657],['1999',19570],['2000',20482],['2001',21395],['2000',21680],
@@ -171,333 +166,418 @@ const D = {
     ['2018',29720],['2017',30250],['2019',30890],['2019',31510],['2022',33020],['2023',33920],
     ['2020s',35140],['2026',36200]],
   K:{benchDepth:340, floorFront:-40, plinth:-90, glow:2, lampZ:240, chandZ:520,
-     objNear:55, objFar:165, showL:32820, showR:38000, worldEnd:37700, horizon:430, F:900}
+     objNear:55, objFar:165, showL:32820, showR:38000, worldEnd:37700, W0:-3450, W1:38000}
 };
-const K = D.K;
-
+const K=D.K;
 const NS='http://www.w3.org/2000/svg';
 const el=(n,a={})=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
 const txt=(a,s)=>{const t=el('text',a);t.textContent=s;return t;};
 const fmt=n=>Math.round(n).toLocaleString('en-US').replace(/,/g,' ');
+const MONO=w=>'font:'+w+' "IBM Plex Mono",monospace';
+const SANS=w=>'font:'+w+' "IBM Plex Sans Condensed",Arial,sans-serif';
 
-/* Every layer group, with the depth it lives at and the colour it is drawn in.
-   The list is the legend, the toggle set and the section all at once — one
-   source, so the three can never disagree. */
-const LAYERS=[
-  {key:'plinth',  name:'Pedestals',            z:[-90],            col:'var(--brass)', note:'hero objects, nearest the lens'},
-  {key:'floor',   name:'Floor',                z:[-40,1392],       col:'var(--floor)',  note:'from the foot of the wall forward, under everything'},
-  {key:'bench',   name:'Counter',              z:[0,340],          col:'var(--bone)',  note:'front edge to back edge'},
-  {key:'glow',    name:'Counter glow + logos', z:[2],              col:'var(--glow)',  note:'concealed strip and the mark, era 4 only'},
-  {key:'objects', name:'Things on the counter',z:[55,165],         col:'var(--fascia)',note:'seven depths in use'},
-  {key:'machine', name:'Machining cells',      z:[190,232],        col:'var(--fascia)',note:'the BruxZir line'},
-  {key:'lamp',    name:'Lamps',                z:[240],            col:'var(--brass)', note:'38 of them, one per exhibit'},
-  {key:'chand',   name:'Chandeliers',          z:[520],            col:'var(--brass)', note:'three clusters, showroom only'},
-  {key:'rec',     name:'Recreation panels',    z:[610,1000],       col:'var(--rec)',   note:'610 · 728 · 970 · 1000'},
-  {key:'type',    name:'Year and title plane', z:[550,680],        col:'var(--dim)',   note:'550 in era 1, 680 in the rest'},
-  {key:'reflect', name:'Floor reflection',     z:[340,1392],       col:'var(--glow)',  note:'wall foot down to the counter, showroom only'},
-  {key:'wall',    name:'Wall + its photographs',z:[550,1400],      col:'var(--bone)',  note:'550 · 680 · 850 · 1400'},
-];
-const ON = Object.fromEntries(LAYERS.map(l=>[l.key,true]));
-
-function hatchDefs(){
-  const d=el('defs');
-  const mk=(id,stroke,w,rot)=>{const p=el('pattern',{id,width:6,height:6,
-    patternUnits:'userSpaceOnUse',patternTransform:'rotate('+rot+')'});
-    p.appendChild(el('line',{x1:0,y1:0,x2:0,y2:6,stroke,'stroke-width':w}));d.appendChild(p);};
-  mk('hWall','var(--dim-2)',1.6,45); mk('hRec','var(--rec)',1.1,45);
-  mk('hFlag','var(--flag)',1.5,45); mk('hRef','var(--glow)',.7,-45);
-  return d;
+/* THE SECTORS. An era, then a recreation, then an era — the divisions the tour
+   itself is built from. The two recreations that sit inside an era rather than
+   between two are marked on the header but do not divide it, because they do not
+   change the room they stand in. */
+const SECTORS=[];
+for(let i=0;i<D.eras.length;i++){
+  const e=D.eras[i];
+  SECTORS.push({kind:'era',x0:e.x0,x1:e.x1,name:'ЭПОХА '+e.n,sub:e.name,id:e.id});
+  const r=D.recs.find(r=>Math.abs(r[1]-e.x1)<40);
+  if(r) SECTORS.push({kind:'rec',x0:r[1],x1:r[2],name:'РЕКРЕАЦИЯ',sub:r[0]});
 }
 
-/* ── Sheet S1: the stack, as a schedule with leader lines ────────── */
+/* THE LANES, far to near. Each returns its own spans and points, so a lane is
+   the single place a layer's extent is stated — the drawing cannot disagree
+   with itself. `code` names where it lives in expo.html, which is the only
+   reason a drawing like this is worth keeping. */
+const era=id=>D.eras.find(e=>e.id===id);
+const LANES=[
+  {group:'ЗАДНИЙ ПЛАН',
+   key:'back', name:'Стена и панели рекреаций', code:'SEGMENTS.z0 · REC*_L/R',
+   tall:true, col:'var(--bone)',
+   bars:()=>[...D.eras.map(e=>({x0:e.x0,x1:e.x1,z:e.z0,label:'стена '+e.z0,
+             col:'var(--bone)',over:e.declared&&e.declared>e.x1?e.declared:0})),
+             ...D.recs.map(r=>({x0:r[1],x1:r[2],z:r[3],label:r[0],col:'var(--rec)'}))]},
+  {key:'photo', name:'Фото на стене', code:'STUDY · wallSX · it.pz', col:'var(--bone)',
+   bars:()=>D.eras.map(e=>({x0:e.x0,x1:e.x1,z:e.z0-6})),
+   /* one photograph is pinned to a recreation panel instead of to a wall — it
+      has to be, or it crawls across the panel as the camera moves */
+   pts:()=>D.pinned.map(([x,z,nm])=>({x,z,nm,pin:true}))},
+  {key:'type', name:'Плоскость года и заголовка', code:'SEGMENTS.tz', col:'var(--dim)',
+   bars:()=>D.eras.map(e=>({x0:e.x0,x1:e.x1,z:e.tz}))},
+  {key:'mono', name:'Монолиты годов', code:'drawShowroom', col:'var(--dim)',
+   bars:()=>[{x0:K.showL,x1:K.showR,z:1392}]},
+  {key:'soffit', name:'Софит потолка', code:'drawShowroom', col:'var(--obj)',
+   bars:()=>[{x0:K.showL,x1:K.showR,z:1394}]},
+
+  {group:'СВЕТ',
+   key:'chand', name:'Люстры', code:'drawShowroom', col:'var(--brass)',
+   pts:()=>D.chand.map(x=>({x,z:K.chandZ,ring:true}))},
+  {key:'lamp', name:'Светильники', code:'LIGHT_GRID · drawLamp', col:'var(--brass)',
+   pts:()=>D.lamps.map(x=>({x,z:K.lampZ}))},
+  {key:'pool', name:'Световое пятно на стене', code:'drawLampPool', col:'var(--brass)',
+   bars:()=>D.eras.map(e=>({x0:e.x0,x1:e.x1,z:e.z0-4}))},
+  {key:'glow', name:'Свечение стола и логотипы', code:'drawShowroomLight', col:'var(--glow)',
+   bars:()=>[{x0:K.showL,x1:K.showR,z:K.glow}]},
+
+  {group:'ПОЛ',
+   key:'floor', name:'Пол', code:'drawFloor', col:'var(--floor)',
+   bars:()=>D.eras.map(e=>({x0:e.x0,x1:e.x1,z:e.z0-8,label:'от подножия стены'}))},
+  {key:'reflect', name:'Отражение пола', code:'drawFloorSheen', col:'var(--glow)',
+   bars:()=>[{x0:K.showL,x1:K.showR,z:1392,label:'до z 340'}]},
+
+  {group:'СТОЛ',
+   key:'bench', name:'Стол', code:'TABLES · drawBench', col:'var(--bone)',
+   cells:true},
+  {key:'items', name:'Предметы на столе', code:'b.st · b.table · b.props', col:'var(--obj)',
+   pts:()=>D.items.map(([x,z,w,nm])=>({x,z,w,nm}))},
+
+  {group:'ОБЪЕКТЫ',
+   key:'machine', name:'Роботы · камеры фрезеровки', code:'drawCell · drawArmInside', col:'var(--obj)',
+   pts:()=>D.machines.map(([nm,x,z])=>({x,z,nm,box:true}))},
+  {key:'plinth', name:'Пьедесталы', code:'b.ped', col:'var(--brass)',
+   pts:()=>D.peds.map(([y,x])=>({x,z:K.plinth,nm:y,ring:true}))},
+  {key:'proj', name:'Проектор', code:'PROJECTORS', col:'var(--rec)',
+   pts:()=>D.proj.map(([x,pz,tz])=>({x,z:tz,nm:'на панель z '+pz,box:true}))},
+  {key:'figs', name:'Люди', code:'FIGURES', col:'var(--floor)',
+   pts:()=>D.figs.map(([x,z])=>({x,z,ring:true}))},
+
+  {group:'БЕЗ ГЛУБИНЫ · экранные слои',
+   key:'ui', name:'Линейка века, подсказка, подписи', code:'drawProgress · drawBenchDescs',
+   col:'var(--dim)', full:true},
+  {key:'grade', name:'Виньетка, засветка, зерно', code:'drawGrade · drawBloom',
+   col:'var(--dim-2)', full:true},
+];
+
+function band(){
+  const LW=234, PADR=72, VW=1560, IW=VW-LW-PADR;   // the last 72 px are the z column
+  const HDR=46, ROW=25, TALL=104, GAP=13, AXIS=56;   // the last 56 px carry the years and the scale
+  const sx=v=>LW+(v-K.W0)/(K.W1-K.W0)*IW;
+  let H=HDR+GAP;
+  const y0={};
+  for(const L of LANES){ if(L.group) H+=GAP; y0[L.key]=H; H+=L.tall?TALL:ROW; }
+  H+=GAP+AXIS;
+  const svg=el('svg',{viewBox:'0 0 '+VW+' '+H,role:'img',
+    'aria-label':'План зала: девятнадцать слоёв по всей длине'});
+  const defs=el('defs');
+  const mk=(id,stroke,w)=>{const p=el('pattern',{id,width:6,height:6,
+    patternUnits:'userSpaceOnUse',patternTransform:'rotate(45)'});
+    p.appendChild(el('line',{x1:0,y1:0,x2:0,y2:6,stroke,'stroke-width':w}));defs.appendChild(p);};
+  mk('hFlag','var(--flag)',1.4); mk('hRef','var(--glow)',.7);
+  svg.appendChild(defs);
+
+  // ── the sector header, and the dashed divisions that run the whole depth
+  for(const s of SECTORS){
+    const a=sx(s.x0),b=sx(s.x1);
+    svg.appendChild(el('rect',{x:a,y:8,width:b-a,height:HDR-16,
+      fill:s.kind==='rec'?'var(--plate-2)':'transparent',
+      stroke:s.kind==='rec'?'var(--rec)':'var(--rule-2)','stroke-width':1}));
+    const mid=(a+b)/2, room=b-a;
+    const TAG={'Digital Revolution':'DR'};
+    const tag=TAG[s.sub]||s.sub;
+    if(s.kind==='rec'){
+      svg.appendChild(txt({x:mid,y:HDR-24,'text-anchor':'middle',fill:'var(--rec)',
+        style:MONO('600 8.5px')+';letter-spacing:.02em'},tag));
+      svg.appendChild(txt({x:mid,y:HDR-13,'text-anchor':'middle',fill:'var(--rec)',
+        style:MONO('500 7.5px')+';letter-spacing:.06em'},'РЕКР.'));
+    } else {
+      svg.appendChild(txt({x:mid,y:room<150?HDR-22:HDR-24,'text-anchor':'middle',
+        fill:'var(--bone)',style:MONO('600 '+(room<150?9:10.5)+'px')+';letter-spacing:.1em'},s.name));
+      svg.appendChild(txt({x:mid,y:room<150?HDR-11:HDR-11,'text-anchor':'middle',
+        fill:'var(--dim)',style:SANS('400 '+(room<150?10:11.5)+'px')},s.sub));
+    }
+    svg.appendChild(el('line',{x1:a,y1:8,x2:a,y2:H-AXIS,stroke:'var(--rule-2)',
+      'stroke-width':1,'stroke-dasharray':'5 5'}));
+  }
+  svg.appendChild(el('line',{x1:sx(K.W1),y1:8,x2:sx(K.W1),y2:H-AXIS,
+    stroke:'var(--rule-2)','stroke-width':1,'stroke-dasharray':'5 5'}));
+  // the recreations that live INSIDE an era are marked, not used as divisions
+  for(const r of D.recs) if(!r[5]){
+    for(const x of [r[1],r[2]])
+      svg.appendChild(el('line',{x1:sx(x),y1:HDR-8,x2:sx(x),y2:H-AXIS,
+        stroke:'var(--rec)','stroke-width':.7,'stroke-dasharray':'2 6',opacity:.55}));
+  }
+
+  svg.appendChild(txt({x:VW-PADR+6,y:HDR-13,fill:'var(--dim-2)',
+    style:MONO('600 8.5px')+';letter-spacing:.14em'},'ГЛУБИНА z'));
+  svg.appendChild(el('line',{x1:VW-PADR+2,y1:8,x2:VW-PADR+2,y2:H-AXIS,
+    stroke:'var(--rule-2)','stroke-width':1}));
+  // ── the lanes
+  const zTop=1450, zBot=520;                      // the tall lane's own window
+  for(const L of LANES){
+    const top=y0[L.key], h=L.tall?TALL:ROW;
+    if(L.group){
+      svg.appendChild(txt({x:16,y:top-4,fill:'var(--brass)',
+        style:MONO('600 9.5px')+';letter-spacing:.16em'},L.group));
+      svg.appendChild(el('line',{x1:16,y1:top-16,x2:VW-PADR,y2:top-16,
+        stroke:'var(--rule-2)','stroke-width':1}));
+    }
+    svg.appendChild(el('rect',{x:LW,y:top,width:IW,height:h,fill:'var(--plate-2)',opacity:.55}));
+    svg.appendChild(txt({x:LW-12,y:top+(L.tall?16:h/2+4.5),'text-anchor':'end',
+      fill:'var(--text)',style:SANS('500 13px')},L.name));
+
+    const put=(x,y,w,hh,fill,op)=>svg.appendChild(el('rect',{x,y,width:Math.max(1,w),
+      height:hh,fill,opacity:op==null?1:op}));
+
+    if(L.tall){
+      // depth is the vertical position inside this lane: the wall steps back
+      const zy=z=>top+h-6-(z-zBot)/(zTop-zBot)*(h-16);
+      for(const z of [550,680,850,1000,1400])
+        svg.appendChild(el('line',{x1:LW,y1:zy(z),x2:VW-PADR,y2:zy(z),
+          stroke:'var(--rule)','stroke-width':.6,'stroke-dasharray':'1 7'}));
+      for(const z of [1400,550])
+        svg.appendChild(txt({x:VW-PADR+8,y:zy(z)+3,fill:'var(--dim-2)',
+          style:MONO('400 8.5px')},z));
+      for(const b of L.bars()){
+        const a=sx(b.x0),c=sx(b.x1),y=zy(b.z);
+        put(a,y-4,c-a,8,b.col,.92);
+        /* Declared past the end of the sheet. The marker turns inward: put
+           outside the bar it ran into the depth column and printed over it. */
+        if(b.over){
+          svg.appendChild(el('polygon',{points:[c-2,y-5,c+7,y,c-2,y+5].join(' '),
+            fill:'var(--flag)'}));
+          svg.appendChild(txt({x:c-8,y:y+3,'text-anchor':'end',fill:'var(--flag)',
+            style:MONO('600 8.5px')},'объявлена до '+fmt(b.over)));
+        }
+        svg.appendChild(el('line',{x1:a,y1:y-4,x2:c,y2:y-4,stroke:'#fff','stroke-width':.6,opacity:.35}));
+        if(c-a>62) svg.appendChild(txt({x:(a+c)/2,y:y-8,'text-anchor':'middle',fill:b.col,
+          style:MONO('600 9px')},'z '+b.z));
+      }
+      continue;
+    }
+    if(L.cells){
+      for(const [id,val,x0,x1,why] of D.cells){
+        const a=sx(x0),c=sx(x1);
+        if(val){ put(a,top+5,c-a,h-10,'var(--bone)',.88);
+          svg.appendChild(el('line',{x1:a,y1:top+5,x2:c,y2:top+5,stroke:'#fff','stroke-width':.6,opacity:.4})); }
+        else { put(a,top+5,Math.max(1,c-a),h-10,'var(--plate)',1);
+          for(const x of [a,c]) svg.appendChild(el('line',{x1:x,y1:top+4,x2:x,y2:top+h-4,
+            stroke:'var(--brass)','stroke-width':.8,opacity:.85}));
+          if(c-a>30) svg.appendChild(txt({x:(a+c)/2,y:top+h/2+3.5,'text-anchor':'middle',
+            fill:'var(--brass)',style:MONO('500 8.5px')},id)); }
+      }
+      svg.appendChild(txt({x:VW-PADR+8,y:top+h/2+3.5,fill:'var(--dim-2)',
+        style:MONO('400 8.5px')},'0…'+K.benchDepth));
+      continue;
+    }
+    if(L.full){
+      put(LW,top+7,IW,h-14,L.col,.20);
+      svg.appendChild(txt({x:LW+8,y:top+h/2+3.5,fill:'var(--dim)',
+        style:MONO('400 9.5px')+';letter-spacing:.08em'},'по всей длине · глубины нет'));
+      continue;
+    }
+    if(L.bars) for(const b of L.bars()){
+      const a=sx(b.x0),c=sx(b.x1);
+      const isRef=L.key==='reflect';
+      if(isRef) put(a,top+6,c-a,h-12,L.col,.16);
+      put(a,top+6,c-a,h-12,isRef?'url(#hRef)':L.col,isRef?.85:.7);
+      if(isRef){
+        for(const x of [a,c]) svg.appendChild(el('line',{x1:x,y1:top+6,x2:x,y2:top+h-6,
+          stroke:L.col,'stroke-width':1}));
+      }
+      if(!isRef) svg.appendChild(el('line',{x1:a,y1:top+6,x2:c,y2:top+6,
+        stroke:'#fff','stroke-width':.5,opacity:.3}));
+      const full='z '+b.z+(b.label?' · '+b.label:''), short='z '+b.z;
+      const fits=t=>t.length*5.4+10<=c-a;
+      const use=fits(full)?full:(fits(short)?short:(c-a>18?String(b.z):null));
+      if(use) svg.appendChild(txt({x:(a+c)/2,y:top+h/2+3.5,'text-anchor':'middle',
+        fill:isRef?L.col:'var(--ink)',
+        style:MONO('600 '+(use===full?9:8.5)+'px')},use));
+    }
+    if(L.pts) for(const p of L.pts()){
+      const x=sx(p.x), cy=top+h/2;
+      if(p.box){
+        const w=Math.max(9,(p.w||300)/(K.W1-K.W0)*IW);
+        put(x-w/2,top+6,w,h-12,L.col,.75);
+        if(p.nm&&w>34) svg.appendChild(txt({x,y:cy+3.5,'text-anchor':'middle',fill:'var(--ink)',
+          style:MONO('600 8px')},p.nm));
+      } else if(p.w!=null){
+        const w=Math.max(4,p.w/(K.W1-K.W0)*IW);
+        put(x-w/2,top+6,w,h-12,L.col,.8);
+      } else if(p.pin){
+        svg.appendChild(el('polygon',{points:[x,cy-6.5,x-4.5,cy+2,x+4.5,cy+2].join(' '),
+          fill:'var(--rec)',stroke:'var(--ink)','stroke-width':.6}));
+      } else if(p.ring){
+        svg.appendChild(el('circle',{cx:x,cy,r:4.6,fill:'var(--plate)',stroke:L.col,'stroke-width':1.3}));
+        svg.appendChild(el('circle',{cx:x,cy,r:1.4,fill:L.col}));
+      } else {
+        svg.appendChild(el('circle',{cx:x,cy,r:3,fill:'none',stroke:L.col,'stroke-width':1}));
+        svg.appendChild(el('circle',{cx:x,cy,r:.9,fill:L.col}));
+      }
+    }
+    if(L.pts){
+      const zs=[...new Set(L.pts().filter(p=>!p.pin).map(p=>p.z))].sort((a,b)=>a-b);
+      if(!zs.length) continue;
+      svg.appendChild(txt({x:VW-PADR+8,y:top+h/2+3.5,fill:'var(--dim-2)',
+        style:MONO('400 8.5px')},zs.length>2?zs[0]+'…'+zs[zs.length-1]:zs.join(' · ')));
+    }
+  }
+
+  // ── the years, on the bottom rule, staggered so they never touch
+  const axis=H-AXIS+8;
+  svg.appendChild(el('line',{x1:LW,y1:axis,x2:VW-PADR,y2:axis,stroke:'var(--rule-2)'}));
+  /* Two rows, each with its own occupancy. Alternating rows is not enough:
+     three years in a row put the first and third back on the same line, which
+     is how "2009" and "2010s" came to print through each other. A year that
+     fits on neither row keeps its tick and loses its label — better an unnamed
+     tick than two names on top of one another. */
+  const occupied=[-1e9,-1e9];
+  for(const [y,x] of D.beats){
+    const px2=sx(x), half=y.length*2.9+4;
+    svg.appendChild(el('line',{x1:px2,y1:axis,x2:px2,y2:axis+5,
+      stroke:'var(--dim-2)','stroke-width':.7}));
+    let row=-1;
+    for(let r=0;r<2;r++) if(px2-half>occupied[r]){ row=r; break; }
+    if(row<0) continue;
+    occupied[row]=px2+half;
+    const yy=axis+(row?26:13);
+    svg.appendChild(el('line',{x1:px2,y1:axis,x2:px2,y2:yy-8,
+      stroke:'var(--dim-2)','stroke-width':.7,opacity:.8}));
+    svg.appendChild(txt({x:px2,y:yy,'text-anchor':'middle',fill:'var(--dim)',
+      style:MONO('500 9.5px')},y));
+  }
+  svg.appendChild(txt({x:LW-12,y:axis+13,'text-anchor':'end',fill:'var(--dim-2)',
+    style:MONO('600 9px')+';letter-spacing:.14em'},'ГОДЫ'));
+  // and the scale
+  const unit=5000, bw=unit/(K.W1-K.W0)*IW;
+  svg.appendChild(el('line',{x1:LW,y1:H-6,x2:LW+bw,y2:H-6,stroke:'var(--dim-2)','stroke-width':1.2}));
+  for(const x of [LW,LW+bw]) svg.appendChild(el('line',{x1:x,y1:H-10,x2:x,y2:H-2,
+    stroke:'var(--dim-2)','stroke-width':1.2}));
+  svg.appendChild(txt({x:LW+bw+8,y:H-2.5,fill:'var(--dim-2)',
+    style:MONO('500 9.5px')+';letter-spacing:.1em'},fmt(unit)+' ЕДИНИЦ'));
+  return svg;
+}
+
+/* ── Sheet S1: every layer by depth, with leader lines ───────────── */
 const STACK=[
-  [-90,  'Pedestals',                'plinth', 'hero objects — nearest the lens'],
-  [-40,  'Floor · front edge',       'floor',  'and on past the lens'],
-  [0,    'Counter · front edge',     'bench',  'the bright line the eye reads as the counter'],
-  [2,    'Counter glow + logo plates','glow',  'era 4 only, from x 32 820'],
-  [55,   'Things on the counter · nearest','objects','of seven depths in use'],
-  [165,  'Things on the counter · farthest','objects','55 · 75 · 80 · 85 · 120 · 150 · 165'],
-  [190,  'Machining cell · near',    'machine','x 30 590'],
-  [232,  'Machining cell · far',     'machine','x 31 140'],
-  [240,  'Lamps',                    'lamp',   '38 of them — directly over the counter'],
-  [300,  'Figures · the finale',      'floor',  'three of the four people in the hall'],
-  [340,  'Counter · back edge',      'bench',  'where it meets the floor'],
-  [520,  'Chandelier hoops',         'chand',  'three clusters, showroom only'],
-  [542,  'Floor · back edge, era 1', 'floor',  'the foot of the wall'],
-  [544,  'Wall photographs, era 1',  'wall',   ''],
-  [550,  'WALL, era 1 — and its own type plane','wall','dark boards'],
-  [610,  'Recreation panel · 1979',  'rec',    'between era 1 and era 2'],
-  [674,  'Wall photographs, era 2',  'wall',   ''],
-  [680,  'WALL, era 2 — and the type plane for eras 2, 3, 4','wall','formica'],
-  [728,  'Recreation panels · 1989 and 1993','rec','one between eras, one inside era 3'],
-  [844,  'Wall photographs, era 3',  'wall',   ''],
-  [850,  'WALL, era 3',              'wall',   'pale panel'],
-  [970,  'Recreation panel · Digital Revolution','rec','between era 3 and era 4'],
-  [1000, 'Recreation panels · 2018, 2022, 2023','rec','all three inside era 4'],
-  [1392, 'Year monoliths · reflection fold · floor back edge','type','showroom'],
-  [1394, 'Wall photographs, era 4 · ceiling soffit','wall',''],
-  [1400, 'WALL, era 4',              'wall',   'white'],
+  [-90,'Пьедесталы','var(--brass)','ближе всего к камере'],
+  [-40,'Пол · передний край','var(--floor)','и дальше за камеру'],
+  [0,'Стол · передний край','var(--bone)','та светлая линия, которую глаз читает как стол'],
+  [2,'Свечение стола и логотипы','var(--glow)','только эпоха 4, от x 32 820'],
+  [55,'Предметы на столе · ближайшие','var(--obj)','из семи используемых глубин'],
+  [165,'Предметы на столе · дальние','var(--obj)','55 · 75 · 80 · 85 · 120 · 150 · 165'],
+  [190,'Камера фрезеровки · ближняя','var(--obj)','x 30 590'],
+  [232,'Камера фрезеровки · дальняя','var(--obj)','x 31 140'],
+  [240,'Светильники · и бросок проектора','var(--brass)','38 штук — прямо над столом'],
+  [300,'Люди · финал','var(--floor)','трое из четырёх во всём зале'],
+  [340,'Стол · задний край','var(--bone)','где он встречает пол'],
+  [520,'Люстры','var(--brass)','три группы, только шоурум'],
+  [542,'Пол · задний край, эпоха 1','var(--floor)','подножие стены'],
+  [544,'Фото на стене, эпоха 1','var(--bone)',''],
+  [550,'СТЕНА, эпоха 1 — и её плоскость текста','var(--bone)','тёмные доски'],
+  [610,'Панель рекреации · 1979','var(--rec)','между эпохой 1 и 2'],
+  [674,'Фото на стене, эпоха 2','var(--bone)',''],
+  [680,'СТЕНА, эпоха 2 — и плоскость текста эпох 2, 3, 4','var(--bone)','формика'],
+  [728,'Панели рекреаций · 1989 и 1993','var(--rec)','одна между эпохами, одна внутри эпохи 3'],
+  [844,'Фото на стене, эпоха 3','var(--bone)',''],
+  [850,'СТЕНА, эпоха 3','var(--bone)','светлая панель'],
+  [970,'Панель рекреации · Digital Revolution','var(--rec)','между эпохой 3 и 4'],
+  [995,'Фото, пришпиленное к панели 2022','var(--rec)','x 32 500 — единственное такое'],
+  [1000,'Панели рекреаций · 2018, 2022, 2023','var(--rec)','все три внутри эпохи 4'],
+  [1392,'Монолиты годов · сгиб отражения · задний край пола','var(--dim)','шоурум'],
+  [1394,'Фото на стене, эпоха 4 · софит потолка','var(--obj)',''],
+  [1400,'СТЕНА, эпоха 4','var(--bone)','белая'],
 ];
 function ladder(){
-  const ROW=25, TOPPAD=32, VW=1000;
-  const H=TOPPAD*2+STACK.length*ROW;
-  const RX0=64, RX1=112, LX=190;
-  const ZMAX=1450, ZMIN=-140;
+  const ROW=25,TOPPAD=30,VW=1000,H=TOPPAD*2+STACK.length*ROW;
+  const RX0=62,RX1=110,LX=186,ZMAX=1450,ZMIN=-140;
   const zy=z=>H-TOPPAD-(z-ZMIN)/(ZMAX-ZMIN)*(H-TOPPAD*2);
   const rowY=i=>TOPPAD+10+(STACK.length-1-i)*ROW;
   const svg=el('svg',{viewBox:'0 0 '+VW+' '+H,role:'img',
-    'aria-label':'Schedule of every layer in the hall, by depth'});
-  svg.appendChild(hatchDefs());
-  const colOf=k=>(LAYERS.find(l=>l.key===k)||{col:'var(--dim)'}).col;
-
-  /* The ruler keeps the true spacing — which is the point: twenty-six depths
-     in 1 590 units gather into two knots, one at the counter and one at the
-     wall, with four hundred units of nothing between them. The rows beside it
-     are evenly spaced and joined by leaders, because labels placed at their
-     true height print straight through each other. */
+    'aria-label':'Разрез: все слои зала по глубине'});
+  const defs=el('defs');
+  const p=el('pattern',{id:'hRef2',width:6,height:6,patternUnits:'userSpaceOnUse',
+    patternTransform:'rotate(-45)'});
+  p.appendChild(el('line',{x1:0,y1:0,x2:0,y2:6,stroke:'var(--glow)','stroke-width':.7}));
+  defs.appendChild(p); svg.appendChild(defs);
   svg.appendChild(el('rect',{x:RX0,y:zy(ZMAX),width:RX1-RX0,height:zy(ZMIN)-zy(ZMAX),
     fill:'var(--plate-2)',stroke:'var(--rule)'}));
   const seg=(z0,z1,fill,op)=>svg.appendChild(el('rect',{x:RX0+1,y:zy(z1),width:RX1-RX0-2,
     height:Math.max(1.5,zy(z0)-zy(z1)),fill,opacity:op}));
-  seg(K.floorFront,1392,'var(--rule-2)',.55);
-  seg(K.benchDepth,1392,'url(#hRef)',.4);
-  seg(0,K.benchDepth,'var(--bone)',.22);
-  seg(K.objNear,K.objFar,'var(--fascia)',.4);
+  seg(K.floorFront,1392,'var(--floor)',.30);
+  seg(K.benchDepth,1392,'url(#hRef2)',.45);
+  seg(0,K.benchDepth,'var(--bone)',.24);
+  seg(K.objNear,K.objFar,'var(--obj)',.40);
   for(let z=0;z<=1400;z+=200){
     svg.appendChild(el('line',{x1:RX0-5,y1:zy(z),x2:RX0,y2:zy(z),stroke:'var(--rule-2)'}));
     svg.appendChild(txt({x:RX0-9,y:zy(z)+3.5,'text-anchor':'end',fill:'var(--dim-2)',
-      style:'font:500 10px "IBM Plex Mono",monospace'},z));
+      style:MONO('400 10px')},z));
   }
   svg.appendChild(txt({x:RX0-9,y:zy(ZMIN)+16,'text-anchor':'end',fill:'var(--brass)',
-    style:'font:600 9.5px "IBM Plex Mono",monospace;letter-spacing:.12em'},'CAMERA'));
+    style:MONO('600 9.5px')+';letter-spacing:.12em'},'КАМЕРА'));
   svg.appendChild(txt({x:RX0-9,y:zy(ZMAX)-7,'text-anchor':'end',fill:'var(--dim-2)',
-    style:'font:600 9.5px "IBM Plex Mono",monospace;letter-spacing:.12em'},'z'));
-
+    style:MONO('600 9.5px')+';letter-spacing:.12em'},'z'));
   STACK.forEach((r,i)=>{
-    const [z,name,key,note]=r, col=colOf(key), y=rowY(i), ry=zy(z);
+    const [z,name,col,note]=r,y=rowY(i),ry=zy(z);
     svg.appendChild(el('polyline',{points:[RX1,ry,LX-52,ry,LX-34,y,LX-6,y].join(' '),
       fill:'none',stroke:col,'stroke-width':.8,opacity:.45}));
     svg.appendChild(el('circle',{cx:RX1,cy:ry,r:1.9,fill:col}));
-    svg.appendChild(txt({x:LX+40,y:y+4,'text-anchor':'end',fill:col,
-      style:'font:600 11.5px "IBM Plex Mono",monospace'},'z '+z));
-    svg.appendChild(el('rect',{x:LX+50,y:y-4.5,width:9,height:9,fill:col,opacity:.9}));
-    svg.appendChild(txt({x:LX+68,y:y+4,fill:'var(--text)',
-      style:'font:400 13.5px "Archivo Narrow",Arial,sans-serif'},name));
-    if(note) svg.appendChild(txt({x:VW-24,y:y+4,'text-anchor':'end',fill:'var(--dim-2)',
-      style:'font:400 12.5px "Archivo Narrow",Arial,sans-serif'},note));
+    svg.appendChild(txt({x:LX+38,y:y+4,'text-anchor':'end',fill:col,
+      style:MONO('600 11.5px')},'z '+z));
+    svg.appendChild(el('rect',{x:LX+48,y:y-4.5,width:9,height:9,fill:col,opacity:.9}));
+    svg.appendChild(txt({x:LX+66,y:y+4,fill:'var(--text)',style:SANS('400 13.5px')},name));
+    if(note) svg.appendChild(txt({x:VW-22,y:y+4,'text-anchor':'end',fill:'var(--dim-2)',
+      style:SANS('400 12.5px')},note));
   });
   return svg;
 }
 
-/* ── Sheet P1: the plan ─────────────────────────────────────────── */
-function plan(era){
-  const PADL=42,PADR=16,VW=1000,IW=VW-PADL-PADR,H=286,TOP=20,BOT=H-32;
-  const ZMAX=1450,ZMIN=-140;
-  const sx=v=>PADL+(v-era.x0)/(era.x1-era.x0)*IW;
-  const zy=z=>BOT-(z-ZMIN)/(ZMAX-ZMIN)*(BOT-TOP);
-  const xPerPx=(era.x1-era.x0)/IW, zPerPx=(ZMAX-ZMIN)/(BOT-TOP);
-  const runs=D.cells.filter(c=>c[0][0]===era.id&&c[1]===1);
+document.getElementById('band').appendChild(band());
 
-  const wrap=document.createElement('section');
-  wrap.className='plate';
-  wrap.innerHTML='<div class="phead"><span class="pletter">'+era.id+'</span>'+
-    '<span class="pname">'+era.name+'</span>'+
-    '<span class="pnums">x '+fmt(era.x0)+' → '+fmt(era.x1)+'  ·  wall z '+era.z0+
-    '  ·  '+runs.length+' runs  ·  depth × '+(xPerPx/zPerPx).toFixed(1)+'</span></div>'+
-    '<div class="pbody"></div>';
-
-  const svg=el('svg',{viewBox:'0 0 '+VW+' '+H,role:'img',
-    'aria-label':'Plan of era '+era.n});
-  svg.appendChild(hatchDefs());
-  const G={};
-  for(const L of LAYERS){ G[L.key]=el('g',{'data-layer':L.key}); }
-
-  // z ruler
-  for(const z of [0,340,680,1000,1400]){
-    svg.appendChild(el('line',{x1:PADL-5,y1:zy(z),x2:VW-PADR,y2:zy(z),
-      stroke:'var(--rule)','stroke-width':.6,'stroke-dasharray':'1 6'}));
-    svg.appendChild(txt({x:PADL-9,y:zy(z)+3.5,'text-anchor':'end',fill:'var(--dim-2)',
-      style:'font:500 9.5px "IBM Plex Mono",monospace'},z));
+/* The schedule of layers. One row per lane, with the place in expo.html it comes
+   from — which is the only reason a drawing like this is worth keeping past the
+   afternoon it was made. */
+document.getElementById('legend').innerHTML=LANES.map(L=>{
+  let zs=[], ext='';
+  if(L.tall){ zs=[...new Set(L.bars().map(b=>b.z))].sort((a,b)=>a-b);
+    ext='вся длина · стена и семь панелей'; }
+  else if(L.cells){ zs=[0,K.benchDepth];
+    ext=D.cells.filter(c=>c[1]).length+' прогонов, '+D.cells.filter(c=>!c[1]).length+' разрывов'; }
+  else if(L.full){ zs=null; ext='вся длина, экранный слой'; }
+  else {
+    const bs=L.bars?L.bars():[], ps=L.pts?L.pts():[];
+    zs=[...new Set([...bs.map(b=>b.z),...ps.map(p=>p.z)])].sort((a,b)=>a-b);
+    if(bs.length){
+      const total=bs.reduce((a,b)=>a+(b.x1-b.x0),0);
+      ext=bs.length+' '+(bs.length===1?'участок':'участка')+' · '+fmt(total)+' единиц';
+    } else ext=ps.length+' '+(ps.length===1?'штука':'шт.');
   }
-
-  /* FLOOR — it starts at the foot of the WALL and runs forward past the lens.
-     The counter stands on it, so in plan it is the ground everything else is
-     drawn over, and the only part of it you ever see is what the counter and
-     its breaks leave uncovered. */
-  G.floor.appendChild(el('rect',{x:PADL,y:zy(era.z0-8),width:IW,
-    height:zy(ZMIN)-zy(era.z0-8),fill:'var(--rule-2)',opacity:.30}));
-  G.floor.appendChild(el('line',{x1:PADL,y1:zy(era.z0-8),x2:VW-PADR,y2:zy(era.z0-8),
-    stroke:'var(--rule-2)','stroke-width':1}));
-
-  // REFLECT — showroom only, wall foot down to the back of the counter
-  if(era.id==='D'){
-    const a=Math.max(sx(K.showL),PADL),b=Math.min(sx(K.showR),VW-PADR);
-    if(b>a){G.reflect.appendChild(el('rect',{x:a,y:zy(1392),width:b-a,
-      height:zy(K.benchDepth)-zy(1392),fill:'url(#hRef)',opacity:.34}));
-      G.reflect.appendChild(txt({x:a+7,y:zy(1392)+13,fill:'var(--glow)',
-        style:'font:600 9.5px "IBM Plex Mono",monospace;letter-spacing:.1em'},'FLOOR REFLECTION'));}
-  }
-
-  // WALL — a wall in plan: two faces with hatch between, stepping era to era
-  const wt=26;
-  G.wall.appendChild(el('rect',{x:PADL,y:zy(era.z0+wt),width:IW,
-    height:zy(era.z0)-zy(era.z0+wt),fill:'url(#hWall)',opacity:.75}));
-  for(const z of [era.z0,era.z0+wt])
-    G.wall.appendChild(el('line',{x1:PADL,y1:zy(z),x2:VW-PADR,y2:zy(z),
-      stroke:'var(--bone)','stroke-width':1.1,opacity:.85}));
-  G.wall.appendChild(el('line',{x1:PADL,y1:zy(era.z0-6),x2:VW-PADR,y2:zy(era.z0-6),
-    stroke:'var(--bone)','stroke-width':.7,'stroke-dasharray':'8 5',opacity:.5}));
-  G.wall.appendChild(txt({x:VW-PADR-6,y:zy(era.z0+wt)-5,'text-anchor':'end',fill:'var(--bone)',
-    style:'font:600 10px "IBM Plex Mono",monospace;letter-spacing:.1em'},
-    'WALL z '+era.z0+' · '+era.wall));
-
-  // TYPE — the plane the years and titles are set on
-  G.type.appendChild(el('line',{x1:PADL,y1:zy(era.tz),x2:VW-PADR,y2:zy(era.tz),
-    stroke:'var(--dim)','stroke-width':1,'stroke-dasharray':'2 4'}));
-  G.type.appendChild(txt({x:PADL+6,y:zy(era.tz)+12,fill:'var(--dim)',
-    style:'font:600 9.5px "IBM Plex Mono",monospace;letter-spacing:.1em'},
-    'TYPE z '+era.tz+(era.tz===era.z0?' (on the wall)':' (forward of it)')));
-
-  // COUNTER — solid where there is a run, jambs where there is not
-  for(const c of D.cells){
-    if(c[0][0]!==era.id) continue;
-    const a=sx(c[2]),b=sx(c[3]);
-    if(c[1]){
-      G.bench.appendChild(el('rect',{x:a,y:zy(K.benchDepth),width:Math.max(.8,b-a),
-        height:zy(0)-zy(K.benchDepth),fill:'var(--bone)',opacity:.9}));
-      G.objects.appendChild(el('rect',{x:a+2,y:zy(K.objFar),width:Math.max(.8,b-a)-4,
-        height:zy(K.objNear)-zy(K.objFar),fill:'var(--fascia)',opacity:.5}));
-    } else {
-      for(const x of [a,b])
-        G.bench.appendChild(el('line',{x1:x,y1:zy(K.benchDepth),x2:x,y2:zy(0),
-          stroke:'var(--brass)','stroke-width':.9,opacity:.8}));
-      if(b-a>26) G.bench.appendChild(txt({x:(a+b)/2,y:zy(0)+11,'text-anchor':'middle',
-        fill:'var(--brass)',style:'font:500 9px "IBM Plex Mono",monospace'},c[0]));
-    }
-  }
-
-  // GLOW — the concealed strip and the logo plates
-  if(era.id==='D'){
-    const a=Math.max(sx(K.showL),PADL),b=Math.min(sx(K.showR),VW-PADR);
-    if(b>a) G.glow.appendChild(el('rect',{x:a,y:zy(K.glow)-1.6,width:b-a,height:3.2,
-      fill:'var(--glow)',opacity:.9}));
-  }
-
-  // RECREATION PANELS
-  for(const [nm,r0,r1,z,pc] of D.recs){
-    if(r1<era.x0-30||r0>era.x1+30) continue;
-    const a=Math.max(sx(r0),PADL),b=Math.min(sx(r1),VW-PADR);
-    if(b-a<1) continue;
-    const bad=pc>25;
-    G.rec.appendChild(el('rect',{x:a,y:zy(z+18),width:b-a,height:zy(z)-zy(z+18),
-      fill:'url(#'+(bad?'hFlag':'hRec')+')',opacity:.75}));
-    G.rec.appendChild(el('rect',{x:a,y:zy(z+18),width:b-a,height:zy(z)-zy(z+18),
-      fill:'none',stroke:bad?'var(--flag)':'var(--rec)','stroke-width':1.2}));
-    G.rec.appendChild(txt({x:(a+b)/2,y:zy(z+18)-5,'text-anchor':'middle',
-      fill:bad?'var(--flag)':'var(--rec)',
-      style:'font:600 10px "IBM Plex Mono",monospace;letter-spacing:.05em'},nm+' · z'+z));
-  }
-
-  // LAMPS, CHANDELIERS, PEDESTALS, CELLS, FIGURES — points in plan
-  for(const x of D.lamps){
-    if(x<era.x0||x>era.x1) continue;
-    G.lamp.appendChild(el('circle',{cx:sx(x),cy:zy(K.lampZ),r:3.4,
-      fill:'none',stroke:'var(--brass)','stroke-width':1.1}));
-    G.lamp.appendChild(el('circle',{cx:sx(x),cy:zy(K.lampZ),r:1.1,fill:'var(--brass)'}));
-  }
-  for(const x of D.chand){
-    if(x<era.x0||x>era.x1) continue;
-    for(const r of [7.5,4.6])
-      G.chand.appendChild(el('circle',{cx:sx(x),cy:zy(K.chandZ),r,
-        fill:'none',stroke:'var(--brass)','stroke-width':1}));
-  }
-  for(const [y,x] of D.peds){
-    if(x<era.x0||x>era.x1) continue;
-    G.plinth.appendChild(el('circle',{cx:sx(x),cy:zy(K.plinth),r:5.5,
-      fill:'var(--plate)',stroke:'var(--brass)','stroke-width':1.4}));
-    G.plinth.appendChild(el('line',{x1:sx(x),y1:zy(K.plinth)-5.5,x2:sx(x),y2:zy(0),
-      stroke:'var(--brass)','stroke-width':.6,'stroke-dasharray':'2 3',opacity:.55}));
-    void y;
-  }
-  for(const [nm,x,z] of D.machines){
-    if(x<era.x0||x>era.x1) continue;
-    G.machine.appendChild(el('rect',{x:sx(x)-9,y:zy(z)-6,width:18,height:12,
-      fill:'none',stroke:'var(--fascia)','stroke-width':1.2}));
-  }
-  for(const [x,z] of D.figs){
-    if(x<era.x0||x>era.x1) continue;
-    G.floor.appendChild(el('circle',{cx:sx(x),cy:zy(z),r:3.6,
-      fill:'var(--plate)',stroke:'var(--floor)','stroke-width':1.3}));
-    G.floor.appendChild(el('circle',{cx:sx(x),cy:zy(z),r:1.3,fill:'var(--floor)'}));
-  }
-
-  // the years, ticked along the bottom of the sheet
-  for(const [y,x] of D.beats){
-    if(x<era.x0||x>era.x1) continue;
-    svg.appendChild(el('line',{x1:sx(x),y1:BOT+4,x2:sx(x),y2:BOT+9,
-      stroke:'var(--dim-2)','stroke-width':.7}));
-    svg.appendChild(txt({x:sx(x),y:H-6,'text-anchor':'middle',fill:'var(--dim)',
-      style:'font:500 9.5px "IBM Plex Mono",monospace'},y));
-  }
-  svg.appendChild(el('line',{x1:PADL,y1:BOT+4,x2:VW-PADR,y2:BOT+4,stroke:'var(--rule)'}));
-
-  /* Paint order is ground upward, not far to near: floor, then the reflection
-     lying on it, then what stands on the floor, then what stands on the counter,
-     then what hangs above it all. Drawing the counter after the lamps buried
-     every lamp in the hall, because they hang at z 240 and the counter reaches
-     340 — they are over it, not behind it. */
-  for(const key of ['floor','reflect','wall','type','rec','bench','objects','machine',
-                    'glow','lamp','chand','plinth'])
-    if(G[key]) svg.appendChild(G[key]);
-
-  wrap.querySelector('.pbody').appendChild(svg);
-  return wrap;
-}
-
-/* ── build ──────────────────────────────────────────────────────── */
+  const zt=zs===null?'—':(zs.length>3?zs[0]+' … '+zs[zs.length-1]+' ('+zs.length+')':zs.join(' · '));
+  return '<tr><td>'+(L.group?'<span style="color:var(--brass)">'+L.group+' · </span>':'')+
+    L.name+'</td><td class="n">'+L.code+'</td><td class="n">'+zt+'</td><td class="n">'+ext+'</td></tr>';
+}).join('');
 document.getElementById('ladder').appendChild(ladder());
-const host=document.getElementById('plates');
-for(const e of D.eras) host.appendChild(plan(e));
-
-const bar=document.getElementById('toolbar');
-for(const L of LAYERS){
-  const c=document.createElement('label');
-  c.className='chip'; c.dataset.on='1';
-  c.style.color=L.col.startsWith('var')?L.col:L.col;
-  c.innerHTML='<input type="checkbox" checked><span class="sw"></span>'+L.name;
-  c.title=L.note+' · z '+L.z.join('–');
-  c.querySelector('input').addEventListener('change',ev=>{
-    ON[L.key]=ev.target.checked;
-    c.dataset.on=ev.target.checked?'1':'0';
-    for(const g of document.querySelectorAll('[data-layer="'+L.key+'"]'))
-      g.style.display=ev.target.checked?'':'none';
-  });
-  bar.appendChild(c);
-}
 
 document.getElementById('strings').innerHTML=D.eras.map(e=>{
   const cs=D.cells.filter(c=>c[0][0]===e.id);
-  return '<tr><td>'+e.id+' · '+e.name+'</td><td class="n" style="letter-spacing:.28em">'+
+  return '<tr><td>'+e.id+' · '+e.name+'</td><td class="n" style="letter-spacing:.3em">'+
     cs.map(c=>c[1]).join('')+'</td><td class="n">'+cs.filter(c=>c[1]).length+'</td></tr>';
 }).join('');
 
 document.getElementById('sched').innerHTML=D.recs.map(([nm,a,b,z,pc])=>
-  '<tr><td>'+nm+'</td><td class="n">z '+z+'</td><td class="n">'+fmt(a)+' … '+fmt(b)+'</td>'+
-  '<td class="'+(pc>25?'bad':'ok')+'">'+pc+'%'+(pc===0?' — clear':pc>=95?' — straight through':pc>25?' — straddles':'')+
+  '<tr><td>'+nm+'</td><td class="n">'+z+'</td><td class="n">'+fmt(a)+' … '+fmt(b)+'</td>'+
+  '<td class="'+(pc>25?'bad':'ok')+'">'+pc+'%'+
+  (pc===0?' — чисто':pc>=95?' — проходит насквозь':pc>25?' — на краю разрыва':'')+
   '</td></tr>').join('');
 
 document.getElementById('notes').innerHTML=[
-  ['flag','The showroom starts too late',
-   'Every showroom layer — the soffit, the chandeliers, the year monoliths, the concealed glow, the floor reflection — exists only from x 32 820, which is where the 2022 recreation ends. The era begins at 25 040, so 7 780 units of it, sixty per cent, has none of that language. That is why the stretch around the robots looks like a different room from the finale.'],
-  ['flag','Three recreation panels have counter behind them',
-   'All three of era 4 sit at z 1 000, in front of a wall at 1 400 and behind a counter that reaches 340 — so far so good. The fault is in x, not z: 2018 has counter behind 72 per cent of its width, 2022 behind 83, and at 2023 the run passes clean through. The break and the panel were set out from different numbers.'],
-  ['','Four gaps are narrower than the worktop is thick',
-   'A3 and A5 are 48 units; A1, A7, B1, C2, C6 and D1 are 130. The worktop is 340 deep and its front lip alone is 74. A 48-unit break is not a pause in the furniture, it is a seam in it.'],
-  ['','The hall holds four people',
-   'One figure at x 21 220, three more at the very end around 37 000. Between 25 000 and 37 000 — the whole modern half — there is nobody at all.'],
-  ['','The wall runs 2 800 past the end of the world',
-   'Era 4 is declared to 40 500 while the world ends at 37 700. Harmless, but it means the wall, its lamp pool and its photograph plane are all being computed for 2 800 units nobody can reach.'],
-  ['','Nothing lives between z 340 and z 520',
-   'The counter ends at 340 and the next thing back is the chandelier plane at 520 — and in the first three eras, nothing until the wall at 550, 680 or 850. That gap is the room’s depth, and it is empty: no mid-ground, which is why the halls read as a backdrop with a shelf in front of it.'],
+  ['flag','Шоурум начинается слишком поздно',
+   'Все слои шоурума — софит, люстры, монолиты годов, свечение мебели, отражение пола — существуют только от x 32 820, там где кончается рекреация 2022. Эпоха начинается на 25 040, значит 7 780 единиц, шестьдесят процентов эпохи, живут без этого языка. Поэтому отрезок вокруг роботов выглядит другой комнатой, чем финал.'],
+  ['flag','Под тремя панелями рекреаций идёт стол',
+   'Все три в эпохе 4 стоят на z 1000 — перед стеной на 1400 и за столом, который доходит до 340; по глубине всё верно. Ошибка в x: за 2018 стол идёт на 72 % её ширины, за 2022 — на 83 %, а под 2023 прогон проходит от края до края. Разрыв и панель расставлены из разных чисел.'],
+  ['','Четыре разрыва уже, чем толщина столешницы',
+   'A3 и A5 — по 48 единиц; A1, A7, B1, C2, C6 и D1 — по 130. Стол в глубину 340, один его передний свес — 74. Разрыв в 48 единиц это не пауза в мебели, это шов на ней.'],
+  ['','На сорока тысячах единиц стола стоит четырнадцать предметов',
+   'От инвестмента на 730 до горы коробок на 33 920. Между 6 577 и 16 672 — почти десять тысяч единиц, две эпохи и рекреация — на столе не стоит ничего.'],
+  ['','В зале четыре человека',
+   'Один на x 21 220, трое в самом конце около 37 000. Между 25 000 и 37 000, во всей современной половине, нет никого.'],
+  ['flag','Два года стоят не по порядку',
+   'glidewell.io (2017) стоит на x 30 250, то есть ПОСЛЕ первой коронки от ИИ (2018) на 29 720 — идущий слева направо читает «2018 · 2017». И 2000 встречается дважды: на 20 482 и на 21 680, между ними 2001. Это данные, а не отрисовка, и это видно на шкале годов внизу листа.'],
+  ['','Стена эпохи 4 объявлена на 2 800 единиц дальше конца мира',
+   'SEGMENTS[3].x1 = 40 500, а мир кончается на 37 700. Вреда нет, но стена, её световое пятно и плоскость фотографий считаются для 2 800 единиц, куда никто не дойдёт. На чертеже это красная стрелка на конце полосы стены.'],
+  ['','Между z 340 и z 520 не живёт ничего',
+   'Стол кончается на 340, следующее по глубине — плоскость люстр на 520, а в первых трёх эпохах вообще ничего до стены на 550, 680 или 850. Этот зазор и есть глубина комнаты, и он пуст: среднего плана нет, поэтому залы читаются как задник с полкой перед ним.'],
 ].map(([k,h,p])=>'<div class="note '+k+'"><h3>'+h+'</h3><p>'+p+'</p></div>').join('');
 </script>
