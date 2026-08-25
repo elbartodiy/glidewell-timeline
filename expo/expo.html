@@ -883,6 +883,7 @@ BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line r
 // the counter clears out from the 1989 portal all the way past the 1993 stand:
 // a model of a place should stand on the floor of a room, not on a worktop
 BENCH_BREAKS.push({x: (REC3_R + REC93_R + 65) / 2, half: (REC93_R + 65 - REC3_R) / 2});
+
 let TABLES = [];
 let LIGHT_GRID = [];
 function initLights(){
@@ -920,6 +921,19 @@ function initTables(){
   // every pedestal claims a wide gap of its own, centered on it
   for (const b of BEATS)
     if (b.ped) BENCH_BREAKS.push({x: b.x + (b.ped.dx ?? -430), half: b.ped.gapHalf || 330});
+  /* A photographic counter and a procedural one cannot be made into one surface
+     by tuning a constant: the photograph was taken with a different camera, so
+     its worktop is seen at a different angle and shows a different depth of its
+     own top. Every attempt to line them up is a fit for a single frame. They
+     are two pieces of furniture — so the hall's counter ENDS at each edge of a
+     plate, with the end cap it already knows how to draw. A joint with an end
+     reads as two things standing side by side; a joint without one reads as one
+     surface that failed to meet itself. */
+  for (const P of PLATES){
+    const half = (P.sw || 1390) / 2;      // the plate's own world half-width at k(0)
+    for (const s of [-1, 1])
+      BENCH_BREAKS.push({x: P.x + s * half, half: 24});
+  }
   // A plate needs NO break of its own: it is painted after the bench and simply
   // covers it, and beyond its edges the hall's counter continues on exactly the
   // same line in exactly the same material. Breaks here only opened holes just
@@ -1550,7 +1564,9 @@ function drawBenchDescs(){
       ctx.font = eraFont(23 * SS, '', seg.font);
       ctx.fillStyle = `rgba(${descInk(seg)},${(dAmt * 0.92).toFixed(3)})`;
       ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 2*SS;
-      drawLines(b._d, W * 0.5, H * 0.925, 32 * SS);
+      // 0.925 put this line straight through the century rule and the hint under
+  // it; the rule owns the bottom of the frame, so the caption stops above it
+  drawLines(b._d, W * 0.5, H * 0.858, 32 * SS);
       ctx.restore();
       continue;
     }
@@ -5732,47 +5748,283 @@ function drawBanners(t){
 
 /* BruxZir Factory: collaborative arms pick shade blocks and feed the mills */
 const FACT_X = SHIFT(24870);
-function drawRobotArm(bx, bz, t, phase){
+/* A MACHINING CELL. The arms in that plant do not stand in the open — they work
+   inside an enclosure, and what you actually see is the cabin: a cream body
+   with a swept roof cowl, a curved glass door with a steel handrail, a dark
+   plinth it sits on, an accent band carrying the model name, a signal tower on
+   a pole and a control pendant on a stalk beside it. The arm is a yellow shape
+   glimpsed through the glass. Drawing the arm bare was the whole reason it read
+   as a toy: no machine on a shop floor is bare. */
+function drawCell(cx, cz, t, phase){
+  const kk = k(cz), S = kk * SS;
+  const X = wx => px(wx, kk), Y = wy => py(wy, kk);
+  const sx = X(cx);
+  const HW = 250;
+  if (sx < -HW * 2 * S || sx > W + HW * 2 * S) return;
+  ctx.save();
+  ctx.lineJoin = 'round';
+  const yTop = Y(408), yGl = Y(474), yBase = Y(884), yFloor = Y(1080);
+
+  // the plinth
+  const pg = ctx.createLinearGradient(0, yBase, 0, yFloor);
+  pg.addColorStop(0, '#4c5259'); pg.addColorStop(0.5, '#3b4147'); pg.addColorStop(1, '#2b3036');
+  ctx.fillStyle = pg;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(X(cx - HW), yBase, HW * 2 * S, yFloor - yBase, [10 * S, 10 * S, 2 * S, 2 * S]);
+  else ctx.rect(X(cx - HW), yBase, HW * 2 * S, yFloor - yBase);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.10)';
+  ctx.fillRect(X(cx - HW), yBase, HW * 2 * S, 2 * S);
+
+  // the body, with the roof cowl swept back
+  const bg = ctx.createLinearGradient(X(cx - HW), 0, X(cx + HW), 0);
+  bg.addColorStop(0, '#c9c6bb'); bg.addColorStop(0.22, '#efece3');
+  bg.addColorStop(0.68, '#e2ded3'); bg.addColorStop(1, '#b3afa4');
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.moveTo(X(cx - HW), yBase);
+  ctx.lineTo(X(cx - HW), yGl);
+  ctx.quadraticCurveTo(X(cx - HW * 0.86), yTop, X(cx - HW * 0.34), yTop);
+  ctx.lineTo(X(cx + HW * 0.62), Y(382));
+  ctx.quadraticCurveTo(X(cx + HW), Y(400), X(cx + HW), yGl);
+  ctx.lineTo(X(cx + HW), yBase);
+  ctx.closePath(); ctx.fill();
+
+  // the glass door: the arm lives behind it
+  const gx0 = X(cx - HW * 0.70), gx1 = X(cx + HW * 0.46);
+  ctx.save();
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(gx0, yGl, gx1 - gx0, yBase - yGl - 16 * S, 16 * S);
+  else ctx.rect(gx0, yGl, gx1 - gx0, yBase - yGl - 16 * S);
+  ctx.clip();
+  const ig = ctx.createLinearGradient(0, yGl, 0, yBase);
+  ig.addColorStop(0, '#7f8a92'); ig.addColorStop(0.5, '#59636b'); ig.addColorStop(1, '#39424a');
+  ctx.fillStyle = ig; ctx.fillRect(gx0, yGl, gx1 - gx0, yBase - yGl);
+  drawArmInside(cx - HW * 0.12, cz, t, phase, kk);
+  // the glass itself: two sweeps of reflection and the grime at its foot
+  const rg2 = ctx.createLinearGradient(gx0, yGl, gx1, yBase);
+  rg2.addColorStop(0, 'rgba(240,246,250,0.30)');
+  rg2.addColorStop(0.30, 'rgba(240,246,250,0.05)');
+  rg2.addColorStop(0.55, 'rgba(240,246,250,0.20)');
+  rg2.addColorStop(1, 'rgba(240,246,250,0.02)');
+  ctx.fillStyle = rg2; ctx.fillRect(gx0, yGl, gx1 - gx0, yBase - yGl);
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(120,126,132,0.75)'; ctx.lineWidth = Math.max(1, 2.4 * S);
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(gx0, yGl, gx1 - gx0, yBase - yGl - 16 * S, 16 * S);
+  else ctx.rect(gx0, yGl, gx1 - gx0, yBase - yGl - 16 * S);
+  ctx.stroke();
+  // the handrail down the door
+  ctx.strokeStyle = 'rgba(206,212,218,0.95)'; ctx.lineWidth = Math.max(1.4, 5 * S);
+  ctx.beginPath();
+  ctx.moveTo(gx1 - 26 * S, yGl + 40 * S); ctx.lineTo(gx1 - 26 * S, yBase - 70 * S);
+  ctx.stroke();
+
+  // the accent band and the model name on it
+  ctx.fillStyle = 'rgba(28,44,96,0.92)';
+  ctx.fillRect(X(cx - HW * 0.66), Y(436), HW * 1.30 * S, 20 * S);
+  ctx.fillStyle = 'rgba(196,46,34,0.95)';
+  ctx.fillRect(X(cx - HW * 0.66), Y(436), 22 * S, 20 * S);
+  ctx.fillStyle = 'rgba(238,242,246,0.92)';
+  ctx.font = eraFont(13 * S, '700', SEGMENTS[3].font);
+  ctx.textAlign = 'left';
+  ctx.fillText('BRUXZIR CELL \u00b7 AUTOMATION', X(cx - HW * 0.52), Y(452));
+
+  // the signal tower, and the pendant on its stalk
+  const tx = X(cx + HW * 0.80);
+  ctx.strokeStyle = 'rgba(150,156,162,0.9)'; ctx.lineWidth = Math.max(1, 4 * S);
+  ctx.beginPath(); ctx.moveTo(tx, Y(408)); ctx.lineTo(tx, Y(292)); ctx.stroke();
+  const lit = Math.sin(t * 0.8 + phase) > -0.3;
+  for (const [i2, col] of [[0, lit ? '90,220,120' : '40,70,48'], [1, lit ? '60,40,32' : '224,72,48']]){
+    ctx.fillStyle = `rgba(${col},0.95)`;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(tx - 9 * S, Y(292 + i2 * 26), 18 * S, 22 * S, 4 * S);
+    else ctx.rect(tx - 9 * S, Y(292 + i2 * 26), 18 * S, 22 * S);
+    ctx.fill();
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    drawGlow(col, tx, Y(302 + i2 * 26), 30 * S, 0.22);
+    ctx.restore();
+  }
+  // the pendant
+  const px2 = X(cx + HW * 1.16);
+  ctx.strokeStyle = 'rgba(168,174,180,0.9)'; ctx.lineWidth = Math.max(1, 6 * S);
+  ctx.beginPath(); ctx.moveTo(px2, Y(1080)); ctx.lineTo(px2, Y(600)); ctx.stroke();
+  ctx.fillStyle = '#dcd8cf';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(px2 - 56 * S, Y(600), 112 * S, 130 * S, 6 * S);
+  else ctx.rect(px2 - 56 * S, Y(600), 112 * S, 130 * S);
+  ctx.fill();
+  ctx.fillStyle = '#1a2b34';
+  ctx.fillRect(px2 - 44 * S, Y(614), 88 * S, 62 * S);
+  ctx.fillStyle = 'rgba(120,215,255,0.55)';
+  for (let i2 = 0; i2 < 4; i2++) ctx.fillRect(px2 - 38 * S, Y(622 + i2 * 12), (54 - i2 * 9) * S, 3 * S);
+  ctx.fillStyle = 'rgba(196,46,34,0.95)';
+  ctx.beginPath(); ctx.arc(px2 - 34 * S, Y(700), 9 * S, 0, 7); ctx.fill();
+  for (let i2 = 0; i2 < 12; i2++){
+    ctx.fillStyle = 'rgba(150,156,162,0.7)';
+    ctx.fillRect(px2 - 14 * S + (i2 % 6) * 10 * S, Y(692 + Math.floor(i2 / 6) * 12), 7 * S, 7 * S);
+  }
+  // the coiled air hose, the one bright thing on any shop floor
+  ctx.strokeStyle = 'rgba(226,196,44,0.9)'; ctx.lineWidth = Math.max(1, 3.4 * S);
+  ctx.beginPath();
+  for (let i2 = 0; i2 <= 40; i2++){
+    const u = i2 / 40, yy = Y(880 + u * 190);
+    const xx = X(cx - HW * 1.02) + Math.sin(u * Math.PI * 7) * 15 * S;
+    i2 ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* A six-axis arm, not two sticks and three dots. What made the old one read as
+   a toy was that every part was the same width and every joint was a flat
+   circle: real links are CASTINGS — wide at the joint they carry, narrow at the
+   one they reach with, ribbed down the middle, with the cable conduit slung
+   outside the elbow in a loop that moves with the arm. The joints are housings
+   with a flange and a boss, seen as a cylinder end rather than a disc. One
+   light, from the left, so each link has a lit face and a shaded one. */
+function drawArmInside(bx, bz, t, phase, kOuter){
+  /* Inside a cabin the arm is a yellow silhouette with the light of the work
+     behind it, not a display piece. Same linkage, dimmer and warmer. */
+  ctx.save();
+  ctx.globalAlpha = 0.92;
+  drawRobotArm(bx, bz, t, phase, true);
+  ctx.restore();
+}
+function drawRobotArm(bx, bz, t, phase, inside){
   const kk = k(bz);
   const X = wx => px(wx, kk), Y = wy => py(wy, kk);
   const sx = X(bx);
   if (sx < -400 || sx > W + 400) return;
-  ctx.save();   // after the cull: a save the early exit could skip is a leak
-  // plinth
-  ctx.fillStyle = '#c9cdd1';
-  ctx.fillRect(X(bx-70), Y(950), (140)*kk*SS, Y(1080)-Y(950));
-  ctx.fillStyle = 'rgba(0,0,0,0.25)';
-  ctx.fillRect(X(bx-70), Y(1062), 140*kk*SS, Y(1080)-Y(1062));
-  // animated joints (a slow pick -> place cycle)
-  const w = t*0.9 + phase;
-  const a1 = -0.35 + 0.62*Math.sin(w);                 // shoulder, from vertical
-  const a2 = 0.95 + 0.55*Math.sin(w + 1.1);            // elbow, relative
+  const S = kk * SS;
+  ctx.save();
+  ctx.lineJoin = 'round';
+
+  const w = t * 0.9 + phase;
+  const a1 = -0.35 + 0.62 * Math.sin(w);
+  const a2 = 0.95 + 0.55 * Math.sin(w + 1.1);
   const L1 = 300, L2 = 250;
-  const sxw = bx, syw = 930;
-  const e1x = sxw + Math.sin(a1)*L1, e1y = syw - Math.cos(a1)*L1;
+  const j0 = {x: bx, y: 906};                                  // shoulder
+  const j1 = {x: j0.x + Math.sin(a1) * L1, y: j0.y - Math.cos(a1) * L1};
   const a12 = a1 + a2 - 1.3;
-  const e2x = e1x + Math.sin(a12)*L2, e2y = e1y - Math.cos(a12)*L2;
-  const seg = (x0,y0,x1,y1,wd,col) => {
-    ctx.strokeStyle = col; ctx.lineWidth = wd*kk*SS; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(X(x0), Y(y0)); ctx.lineTo(X(x1), Y(y1)); ctx.stroke();
-  };
-  seg(sxw, syw, e1x, e1y, 58, '#33373c');              // dark inner shadow pass
-  seg(sxw, syw, e1x, e1y, 46, '#e3e6e9');
-  seg(e1x, e1y, e2x, e2y, 48, '#33373c');
-  seg(e1x, e1y, e2x, e2y, 38, '#dfe2e5');
-  // joints with the collaborative-blue caps
-  for (const [jx, jy, r] of [[sxw, syw, 42], [e1x, e1y, 36], [e2x, e2y, 26]]){
-    ctx.fillStyle = '#2c3036';
-    ctx.beginPath(); ctx.arc(X(jx), Y(jy), r*kk*SS, 0, 7); ctx.fill();
-    ctx.fillStyle = '#4a90d9';
-    ctx.beginPath(); ctx.arc(X(jx), Y(jy), r*0.45*kk*SS, 0, 7); ctx.fill();
+  const j2 = {x: j1.x + Math.sin(a12) * L2, y: j1.y - Math.cos(a12) * L2};
+
+  // the pedestal: a heavy cast base, chamfered, bolted down
+  const bw = 96;
+  ctx.fillStyle = '#8f959b';
+  ctx.beginPath();
+  ctx.moveTo(X(bx - bw), Y(1080)); ctx.lineTo(X(bx - bw * 0.72), Y(986));
+  ctx.lineTo(X(bx + bw * 0.72), Y(986)); ctx.lineTo(X(bx + bw), Y(1080));
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.30)';
+  ctx.fillRect(X(bx - bw * 0.70), Y(986), bw * 1.4 * S, 3 * S);
+  ctx.fillStyle = 'rgba(20,24,28,0.35)';
+  ctx.fillRect(X(bx - bw), Y(1064), bw * 2 * S, Y(1080) - Y(1064));
+  for (const s of [-1, 1]){
+    ctx.fillStyle = 'rgba(46,52,58,0.75)';
+    ctx.beginPath(); ctx.arc(X(bx + s * bw * 0.52), Y(1020), 5 * S, 0, 7); ctx.fill();
   }
-  // the zirconia block in the gripper, when the arm is carrying
+  // the turret it slews on
+  const tg = ctx.createLinearGradient(X(bx - 56), 0, X(bx + 56), 0);
+  tg.addColorStop(0, '#7f858b'); tg.addColorStop(0.34, '#e6e9ec');
+  tg.addColorStop(0.68, '#b9bec3'); tg.addColorStop(1, '#6d737a');
+  ctx.fillStyle = tg;
+  ctx.fillRect(X(bx - 56), Y(986), 112 * S, Y(986) - Y(918));
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.beginPath(); ctx.ellipse(X(bx), Y(918), 56 * S, 12 * S, 0, 0, 7); ctx.fill();
+
+  /* A link: a tapered casting from a to b, `wa` wide at its root and `wb` at
+     its tip, with a rib down its spine. */
+  const link = (a, b, wa, wb, rib) => {
+    const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1;
+    const nx = -dy / L, ny = dx / L;
+    const P = (p, o, wd) => [X(p.x + nx * o * wd), Y(p.y + ny * o * wd)];
+    const q = [P(a, -0.5, wa), P(b, -0.5, wb), P(b, 0.5, wb), P(a, 0.5, wa)];
+    const g = ctx.createLinearGradient(q[0][0], q[0][1], q[3][0], q[3][1]);
+    if (inside){                      // a Fanuc in a cabin is yellow, and lit from behind
+      g.addColorStop(0, '#e8c64a'); g.addColorStop(0.42, '#c8a230');
+      g.addColorStop(0.76, '#8e7220'); g.addColorStop(1, '#5f4c16');
+    } else {
+      g.addColorStop(0, '#f2f4f6'); g.addColorStop(0.42, '#d8dce0');
+      g.addColorStop(0.76, '#a9aeb4'); g.addColorStop(1, '#7d838a');
+    }
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(q[0][0], q[0][1]);
+    for (let i = 1; i < 4; i++) ctx.lineTo(q[i][0], q[i][1]);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(60,66,72,0.45)'; ctx.lineWidth = Math.max(0.8, 1.2 * S);
+    ctx.stroke();
+    if (rib){                                   // the rib along its spine
+      const r0 = P(a, -0.13, wa), r1 = P(b, -0.13, wb);
+      const r2 = P(b, 0.13, wb), r3 = P(a, 0.13, wa);
+      ctx.fillStyle = 'rgba(255,255,255,0.34)';
+      ctx.beginPath();
+      ctx.moveTo(r0[0], r0[1]); ctx.lineTo(r1[0], r1[1]);
+      ctx.lineTo(r2[0], r2[1]); ctx.lineTo(r3[0], r3[1]);
+      ctx.closePath(); ctx.fill();
+    }
+  };
+  // a joint housing: a cylinder seen end-on, with its flange and boss
+  const joint = (p, r) => {
+    const jg = ctx.createLinearGradient(X(p.x - r), 0, X(p.x + r), 0);
+    jg.addColorStop(0, '#4d5359'); jg.addColorStop(0.36, '#9aa0a6');
+    jg.addColorStop(0.7, '#6c7278'); jg.addColorStop(1, '#3d4349');
+    ctx.fillStyle = jg;
+    ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), r * S, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(232,236,240,0.45)'; ctx.lineWidth = Math.max(0.8, 1.6 * S);
+    ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), r * 0.80 * S, 0, 7); ctx.stroke();
+    ctx.fillStyle = 'rgba(38,44,50,0.85)';
+    ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), r * 0.30 * S, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.beginPath(); ctx.arc(X(p.x) - r * 0.28 * S, Y(p.y) - r * 0.30 * S, r * 0.16 * S, 0, 7); ctx.fill();
+  };
+
+  link(j0, j1, 104, 66, true);        // an upper arm carries the whole reach
+  link(j1, j2, 74, 40, true);
+  // the maker's stripe at the root of each link — the one warm mark on a machine
+  const stripe = (a, b2, wd) => {
+    const dx = b2.x - a.x, dy = b2.y - a.y, L = Math.hypot(dx, dy) || 1;
+    const ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+    ctx.fillStyle = inside ? 'rgba(150,34,26,0.85)' : 'rgba(196,46,34,0.88)';
+    ctx.beginPath();
+    for (const [o, d2] of [[-0.5, 0.10], [0.5, 0.10], [0.5, 0.17], [-0.5, 0.17]])
+      ctx.lineTo(X(a.x + ux * L * d2 + nx * o * wd), Y(a.y + uy * L * d2 + ny * o * wd));
+    ctx.closePath(); ctx.fill();
+  };
+  stripe(j0, j1, 96); stripe(j1, j2, 68);
+  // the conduit, slung outside the elbow and carried along the forearm
+  ctx.strokeStyle = 'rgba(52,58,64,0.62)';
+  ctx.lineWidth = Math.max(1.2, 7 * S);
+  ctx.beginPath();
+  ctx.moveTo(X(j0.x + 40), Y(j0.y + 24));
+  ctx.quadraticCurveTo(X(j1.x + 76), Y(j1.y + 40), X(j1.x + 22), Y(j1.y - 6));
+  ctx.quadraticCurveTo(X((j1.x + j2.x) / 2 + 26), Y((j1.y + j2.y) / 2), X(j2.x + 12), Y(j2.y + 8));
+  ctx.stroke();
+  joint(j0, 46); joint(j1, 38);
+  // wrist, tool flange and jaws
+  const wa = Math.atan2(j2.y - j1.y, j2.x - j1.x);
+  joint(j2, 24);
+  ctx.save();
+  ctx.translate(X(j2.x), Y(j2.y)); ctx.rotate(wa);
+  ctx.fillStyle = '#8d939a';
+  ctx.fillRect(0, -14 * S, 26 * S, 28 * S);
+  ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(0, -14 * S, 26 * S, 3 * S);
+  const grip = 0.5 + 0.5 * Math.sin(w + 0.5);
+  ctx.fillStyle = '#5b6167';
+  for (const s of [-1, 1])
+    ctx.fillRect(26 * S, s * (5 + 7 * grip) * S - 4 * S, 20 * S, 8 * S);
+  ctx.restore();
+  // the blank it is carrying
   const carry = Math.max(0, Math.sin(w + 0.5));
   if (carry > 0.25){
-    ctx.globalAlpha = Math.min(1, (carry-0.25)*3);
-    ctx.fillStyle = '#f0f2ef';
-    ctx.fillRect(X(e2x) - 16*kk*SS, Y(e2y) + 10*kk*SS, 32*kk*SS, 24*kk*SS);
+    ctx.globalAlpha = Math.min(1, (carry - 0.25) * 3);
+    const bg2 = ctx.createLinearGradient(X(j2.x) - 18 * S, 0, X(j2.x) + 18 * S, 0);
+    bg2.addColorStop(0, '#fbfaf6'); bg2.addColorStop(0.6, '#e6e3da'); bg2.addColorStop(1, '#c6c2b6');
+    ctx.fillStyle = bg2;
+    ctx.fillRect(X(j2.x) - 17 * S, Y(j2.y) + 26 * S, 34 * S, 26 * S);
+    ctx.strokeStyle = 'rgba(90,86,78,0.4)'; ctx.lineWidth = Math.max(0.7, 1 * S);
+    ctx.strokeRect(X(j2.x) - 17 * S, Y(j2.y) + 26 * S, 34 * S, 26 * S);
     ctx.globalAlpha = 1;
   }
   ctx.restore();
@@ -5808,8 +6060,8 @@ function drawFactory(t){
     }
   }
   // two arms working out of phase
-  drawRobotArm(FACT_X - 140, 190, t, 0);
-  drawRobotArm(FACT_X + 250, 220, t, 2.4);
+  drawCell(FACT_X - 150, 190, t, 0);
+  drawCell(FACT_X + 260, 220, t, 2.4);
   const kk = k(190);
   pushHit(px(FACT_X - 480, kk), py(560, kk), (960)*kk*SS, py(1080,kk)-py(560,kk),
           {type:'focus', beat: BEATS.indexOf(b), anchor: FACT_X});
@@ -6857,7 +7109,11 @@ function drawShowroom(t){
   if (x1 < -200 || x0 > W + 200) return;
   ctx.save();
   // the ribbon: a soffit of walnut, turned down out of the ceiling
-  const yT = py(-40, kk), yB = py(104, kk), turn = 190 * kk * SS;
+  /* Up where a ceiling border belongs. It was sitting at exactly the height
+     the year numerals occupy, so the years were printed across a timber band —
+     which is not a thing anyone does, and read as a collision because it was
+     one. Nothing is set on the wood now. */
+  const yT = py(-330, kk), yB = py(-90, kk), turn = 190 * kk * SS;
   const wg = ctx.createLinearGradient(0, yT, 0, yB);
   wg.addColorStop(0, '#6e5942'); wg.addColorStop(0.34, '#93775a');
   wg.addColorStop(0.76, '#7b6247'); wg.addColorStop(1, '#63503b');
@@ -6877,6 +7133,11 @@ function drawShowroom(t){
     ctx.fillRect(x0, yy, x1 - x0, 1.6 * SS);
   }
   ctx.restore();
+  /* Red in small doses, because the mark is red: a hairline reveal under the
+     ribbon. Enough that the eye finds the accent without the room becoming
+     about it. */
+  ctx.fillStyle = 'rgba(196,46,34,0.5)';
+  ctx.fillRect(Math.max(0, x0), yB - 2.2 * kk * SS, x1 - Math.max(0, x0), 2.2 * kk * SS);
   const sh = ctx.createLinearGradient(0, yB, 0, yB + 70 * kk * SS);
   sh.addColorStop(0, 'rgba(30,22,14,0.22)'); sh.addColorStop(1, 'rgba(30,22,14,0)');
   ctx.fillStyle = sh;
@@ -6888,7 +7149,7 @@ function drawShowroom(t){
     if (lx < -260 || lx > W + 260) continue;
     ctx.fillStyle = 'rgba(255,236,196,0.85)';
     ctx.beginPath(); ctx.ellipse(lx, yB - 9 * kk * SS, 13 * kk * SS, 5 * kk * SS, 0, 0, 7); ctx.fill();
-    const yP = py(760, kk);
+    const yP = py(700, kk);
     const pool = ctx.createLinearGradient(0, yB, 0, yP);
     pool.addColorStop(0, 'rgba(255,228,180,0.20)');
     pool.addColorStop(0.5, 'rgba(255,224,172,0.055)');
@@ -6905,19 +7166,64 @@ function drawShowroom(t){
     drawGlow('255,232,190', lx, py(560, kk), 150 * kk * SS, 0.05);
   }
   // the ring, with the mark inside it — the one thing in the room that is lit
-  /* The ceiling: rings of light that interlock, in twos and threes, at
-     different sizes. One ring is a lamp; a cluster of them is that room. */
-  for (const [gx, cl] of [[-900, [[0,0,74],[62,16,52],[118,-8,38]]],
-                          [420,  [[0,0,58],[54,14,44]]],
-                          [1560, [[0,0,80],[70,-10,56],[128,14,40],[186,-6,30]]]]){
-    const cx0 = px((SHOW_L + SHOW_R) / 2 + gx, kk), cy0 = py(46, kk);
-    if (cx0 < -400 || cx0 > W + 400) continue;
+  /* The years belong to the architecture, not to the timber. That room puts
+     words on white monoliths standing a little proud of the wall — DIGITAL
+     DENTISTRY, IMPLANT & BIOLOGICS — lit from the same downlights and throwing
+     a soft edge shadow. So each year in this stretch gets one: a panel behind
+     it on its own plane, so the two can never drift apart. */
+  for (const b of BEATS){
+    if (b.x < SHOW_L - 200 || b.x > SHOW_R || b.minor || b.under) continue;
+    const kY = k(wallZAt(b.x) - 8);
+    const bx = px(b.x, kY);
+    const pw2 = 660 * kY * SS;
+    if (bx < -pw2 || bx > W + pw2) continue;
+    const pt = py(-46, kY), pb = py(430, kY);
+    ctx.fillStyle = 'rgba(20,26,34,0.10)';       // the shadow it stands off the wall on
+    ctx.fillRect(bx - pw2/2 + 7 * kY * SS, pt + 7 * kY * SS, pw2, pb - pt);
+    const pg3 = ctx.createLinearGradient(0, pt, 0, pb);
+    pg3.addColorStop(0, 'rgba(255,255,255,0.86)');
+    pg3.addColorStop(0.55, 'rgba(252,253,254,0.72)');
+    pg3.addColorStop(1, 'rgba(240,242,245,0.48)');
+    ctx.fillStyle = pg3;
+    ctx.fillRect(bx - pw2/2, pt, pw2, pb - pt);
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';    // the lit arris down its near edge
+    ctx.fillRect(bx - pw2/2, pt, 1.6 * SS, pb - pt);
+    ctx.fillRect(bx - pw2/2, pt, pw2, 1.6 * SS);
+  }
+
+  /* THE CEILING. These are chandeliers — big lit hoops hanging in a white
+     coffer overhead — and I had them as pinpricks sitting on the plank, which
+     is neither their size nor their place. They belong on a plane of their own,
+     nearer than the wall, in a recess that is lighter than the ceiling around
+     it, and they are metres across: two or three hoops per fitting, hung at
+     different drops so they interlock when you look up through them. */
+  const kC = k(520);
+  const cyR = py(-262, kC), recH = 250 * kC * SS;
+  const rg = ctx.createLinearGradient(0, cyR - recH * 0.7, 0, cyR + recH * 0.6);
+  rg.addColorStop(0, 'rgba(255,252,246,0.55)');
+  rg.addColorStop(0.55, 'rgba(250,247,241,0.30)');
+  rg.addColorStop(1, 'rgba(240,236,229,0)');
+  ctx.fillStyle = rg;
+  ctx.fillRect(Math.max(0, px(SHOW_L, kC)), cyR - recH * 0.7,
+               Math.min(W, px(SHOW_R, kC)) - Math.max(0, px(SHOW_L, kC)), recH * 1.3);
+  for (const [gx, cl] of [[-1180, [[0, 0, 250], [190, 62, 178]]],
+                          [560,   [[0, 0, 214], [162, -46, 150], [292, 40, 112]]],
+                          [2140,  [[0, 0, 268], [206, 54, 190]]]]){
+    const cx0 = px((SHOW_L + SHOW_R) / 2 + gx, kC);
+    if (cx0 < -900 || cx0 > W + 900) continue;
     for (const [ox, oy, r0] of cl){
-      const rr = r0 * kk * SS, rx = cx0 + ox * kk * SS, ry = cy0 + oy * kk * SS;
-      drawGlow('255,246,226', rx, ry, rr * 2.1, 0.10);
-      ctx.strokeStyle = 'rgba(255,249,236,0.90)';
-      ctx.lineWidth = Math.max(1.2, 4 * kk * SS);
-      ctx.beginPath(); ctx.ellipse(rx, ry, rr, rr * 0.32, 0, 0, 7); ctx.stroke();
+      const rr = r0 * kC * SS, rx = cx0 + ox * kC * SS, ry = cyR + oy * kC * SS;
+      // the drop it hangs on
+      ctx.strokeStyle = 'rgba(228,224,216,0.5)';
+      ctx.lineWidth = Math.max(1, 1.6 * kC * SS);
+      ctx.beginPath(); ctx.moveTo(rx, cyR - recH * 0.66); ctx.lineTo(rx, ry); ctx.stroke();
+      drawGlow('255,247,230', rx, ry, rr * 1.5, 0.13);
+      ctx.strokeStyle = 'rgba(255,251,242,0.95)';
+      ctx.lineWidth = Math.max(1.6, 9 * kC * SS);
+      ctx.beginPath(); ctx.ellipse(rx, ry, rr, rr * 0.235, 0, 0, 7); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,240,214,0.45)';
+      ctx.lineWidth = Math.max(1, 3 * kC * SS);
+      ctx.beginPath(); ctx.ellipse(rx, ry + 3.5 * kC * SS, rr, rr * 0.235, 0, 0, 7); ctx.stroke();
     }
   }
   // and the monogram, cut into the wood as a relief and lit from its edge
@@ -6943,8 +7249,12 @@ function drawShowroom(t){
    construction rather than by being drawn twice. */
 function drawFloorSheen(){
   if (cam.x < SHOW_L - 2400 || cam.x > SHOW_R + 2400) return;
+  /* The floor you can actually see in this hall is the strip between the foot
+     of the wall and the back of the counter, plus whatever shows through a gap
+     in it. So the fold happens at the wall's foot — not at some line inside the
+     counter, which is what put a milky wash over the furniture. */
   const kSeam = k(CFG.benchDepth);
-  const yF = py(CFG.benchY + 240, kSeam);
+  const yF = py(1080, k((SEGMENTS[3].z0 || 1400) - 8));
   const x0 = Math.max(0, px(SHOW_L, kSeam)), x1 = Math.min(W, px(SHOW_R, kSeam));
   if (x1 - x0 < 4 || yF >= H - 4 || yF <= 4) return;
   const hh = Math.min(yF, H - yF);
@@ -7095,7 +7405,8 @@ function frame(){
   drawFigures();
   drawProps(true);
 
-  drawBench();
+  drawFloorSheen();   // before the counter, so the counter covers it and the
+  drawBench();        // reflection can never be laid over the furniture
   drawProjectors(t, 'machine');   // it stands on the bench, so it comes after it
 
   // table items
@@ -7186,7 +7497,6 @@ function frame(){
   // any object in the room passes over what is written on the plaster
   drawPlates(t);
   drawBenchDescs();
-  drawFloorSheen();   // the polished floor gives the stretch its second half
 
   drawForeground();
   drawDoorway();
