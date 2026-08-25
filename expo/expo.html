@@ -4674,6 +4674,37 @@ function wallSwitchX(){
   // wall and the plaster begins at its far edge
   return u ? u.x + u.w / 2 : bayStart(0);
 }
+/* THE ERA'S COUNTER, CUT OUT OF THE CENTREPIECE. The founding bay is a
+   photograph and it cannot be re-shot, so the counter in it is fixed. Every
+   attempt to make a separately-photographed counter meet it was a fit for one
+   frame. The way out is the other direction: take the counter OUT of that
+   photograph and build the whole era's counter from it. Two strips do it — the
+   worktop band between its back and front edges (rows 377-396, measured off
+   the file) and the cabinet front below it (rows 400 to the bottom) — stretched
+   to the plate's own world width so a tile lands at the same scale it was shot
+   at. After this the hall's counter and the centrepiece's counter are the same
+   material by construction; there is nothing left to match by eye. */
+function benchFromPlate(){
+  const src = PLATES[0] && PLATES[0].layers[0] && PLATES[0].layers[0].sp;
+  if (!src || !src.naturalWidth) return false;
+  const iw = src.naturalWidth, ih = src.naturalHeight;
+  const TW = Math.round(PLATES[0].sw || 1874);      // one tile = the plate's world width
+  const band = (y0, y1, outH) => {
+    const c = document.createElement('canvas');
+    c.width = TW; c.height = outH;
+    const g = c.getContext('2d');
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(src, 0, y0 * ih, iw, (y1 - y0) * ih, 0, 0, TW, outH);
+    return c;
+  };
+  // the worktop: a narrow band stretched over the depth our counter actually
+  // has. The material is uniform along it, so stretching costs nothing and the
+  // tone still runs from its back edge to its front the way the photograph does.
+  TEX.bench1 = band(377 / 617, 396 / 617, 512);
+  // the cabinet front, at its own proportions
+  TEX.front1 = band(400 / 617, 1, Math.round(TW * (217 / 617) * (617 / iw) * ih / TW * 2));
+  return true;
+}
 function applyPhotoTextures(){
   TEX.wall1_dark = TEX.wall1;          // kept for the years before the 1970 bench
   for (const [slot, key] of [['wall1','wall_e1'], ['wall2','wall_e2'], ['wall3','wall_e3'], ['wall4','wall_e4'],
@@ -7738,6 +7769,10 @@ async function boot(){
   TEX.bench4 = formicaTexture({w:1200, h:512, base:'#eef0f2'});
   TEX.front4 = panelTexture({w:1200, h:600, base:'#c8ccd0', groove:420});
   if (PHOTO_SKIN) applyPhotoTextures();
+  // and then the founding era takes its counter out of its own centrepiece,
+  // overriding whatever the photo-skin pass just put there
+  if (PHOTO_SKIN && !benchFromPlate())
+    console.warn('bench: the plate image is not loaded, era 1 keeps the old counter');
   cacheWrap();
   SECTIONS.old = makeSection('old');
   SECTIONS.neu = makeSection('neu');
