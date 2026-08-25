@@ -1347,18 +1347,10 @@ function drawBench(){
     const sx0f = px(bx0, kf), sx1f = px(bx1, kf);
     if (sx1f <= 0 || sx0f >= W) continue;
     const tex = TEX[seg.bench];
-    /* The worktop's apparent depth can be overridden per era, but era 1 must NOT
-       use it. Objects stand on the counter at their own depth — 45 to 165 — so
-       a shallow counter ends behind them and they float off the back of it. I
-       set era 1 to 76 to match the photograph's band and made everything in the
-       founding bay levitate. The counter is 340 deep in this hall because things
-       stand on it; the photograph's band is narrow because it was shot almost
-       level with the top, and that is not reconcilable by any number here. */
-    const bd = seg.benchDepth != null ? seg.benchDepth : CFG.benchDepth;
-    // tabletop: horizontal slices from back (bd) to front (0)
+    // tabletop: horizontal slices from back (benchDepth) to front (0)
     for (let s = 0; s < slices; s++){
-      const z1 = bd * (1 - s/slices);
-      const z0 = bd * (1 - (s+1)/slices);
+      const z1 = CFG.benchDepth * (1 - s/slices);
+      const z0 = CFG.benchDepth * (1 - (s+1)/slices);
       const k1 = k(z1), k0 = k(z0);
       const y1 = py(CFG.benchY, k1), y0 = py(CFG.benchY, k0);
       const cx0 = Math.max(0, px(bx0, kf)), cx1 = Math.min(W, px(bx1, kf));
@@ -1366,7 +1358,7 @@ function drawBench(){
       ctx.save();
       ctx.beginPath(); ctx.rect(cx0, y1, cx1 - cx0, (y0 - y1) + 1); ctx.clip();
       benchTiles(tex, k0, (s/slices)*(tex.height-90), 90, y1, (y0-y1)+1, bx0, bx1);
-      ctx.fillStyle = `rgba(8,4,1,${(0.55 * (s? z1/bd : 0)).toFixed(3)})`;
+      ctx.fillStyle = `rgba(8,4,1,${(0.55 * (s? z1/CFG.benchDepth : 0)).toFixed(3)})`;
       ctx.fillRect(cx0, y1, cx1 - cx0, (y0 - y1) + 1);
       ctx.restore();
     }
@@ -1621,7 +1613,9 @@ function descInk(seg){
   return c.map(v => Math.round(Math.min(255, 40 + v * g))).join(',');
 }
 
+let CAP_RECT = null;                 // where the caption actually landed, last frame
 function drawBenchDescs(){
+  CAP_RECT = null;
   const kf = k(0);
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
@@ -1645,7 +1639,14 @@ function drawBenchDescs(){
      fixed height ran its last line off the bottom of the frame. Anchor the
      block by its foot instead: the last line always lands on the same rule, and
      longer captions grow upward. */
-  drawLines(b._d, W * 0.5, H * 0.905 - (b._d.length - 1) * 32 * SS, 32 * SS);
+  {
+        const top = H * 0.905 - (b._d.length - 1) * 32 * SS;
+        let wide = 0;
+        for (const ln of b._d) wide = Math.max(wide, ctx.measureText(ln).width);
+        drawLines(b._d, W * 0.5, top, 32 * SS);
+        CAP_RECT = {x0: W/2 - wide/2 - 14 * SS, x1: W/2 + wide/2 + 14 * SS,
+                    y0: top - 30 * SS, y1: H * 0.905 + 12 * SS};
+      }
       ctx.restore();
       continue;
     }
@@ -1709,7 +1710,12 @@ function drawBenchDescs(){
     ctx.font = eraFont(23 * SS, '', seg.font);
     ctx.fillStyle = `rgba(${ink},${(dAmt * 0.9).toFixed(3)})`;
     if (shadow){ ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 2*SS; }
-    drawLines(b._d, cw, py(CFG.benchY, kf) + 78*SS + slabDrop, 32 * SS);
+    const capTop = py(CFG.benchY, kf) + 78*SS + slabDrop;
+    let capW = 0;
+    for (const ln of b._d) capW = Math.max(capW, ctx.measureText(ln).width);
+    drawLines(b._d, cw, capTop, 32 * SS);
+    CAP_RECT = {x0: cw - capW/2 - 14 * SS, x1: cw + capW/2 + 14 * SS,
+                y0: capTop - 30 * SS, y1: capTop + b._d.length * 32 * SS};
     ctx.restore();
   }
 }
@@ -4597,9 +4603,6 @@ const PHOTO_SKIN = !/[?&]skin=flat/.test(location.search);
    edge, back edge to the wall; everything else then follows, and the picture
    comes out a fifth smaller than it was. */
 const PLATES = GAP.on ? [{
-  // 377/617 — the BACK edge of the worktop, which is where the plate now stops
-  // and where the hall's own counter begins. 0.611 was right all along; what was
-  // wrong was the line I was landing it on.
   x: bayStart(1) + CUTS[1].w / 2, sw: 1874, benchFrac: 0.611,
   layers: [{img: 'plate_bay_front.png', z: 0}],
 }] : [];
@@ -4676,31 +4679,23 @@ function drawPlates(t){
     const sw = (p.sw || 1390) * SS;              // screen width — shared by every layer,
     const ref = layers[0].sp;                    // which is what keeps them glued when centred
     const sh = sw * ref.naturalHeight / ref.naturalWidth;
-    /* THE PLATE STOPS AT THE COUNTER. It used to draw its own worktop, and that
-       worktop can never agree with the hall's: the photograph shows a band 19px
-       deep out of 617 while the hall's is 74, so hanging the plate by its front
-       edge started its surface 55px below the hall's and hanging it by its back
-       edge did the reverse. Both are the same mistake — two counters. So the
-       plate is cropped at the BACK edge of its worktop and contributes only the
-       wall and the objects standing against it; the whole surface, edge to edge
-       through the era, is the hall's counter, which is itself cut from this same
-       photograph. One counter, one level, one material. */
     const bf = p.benchFrac || 0.666;
-    const yBack = py(CFG.benchY, k(CFG.benchDepth));
-    const y0 = yBack - sh * bf;
+    // the counter line lands on the hall's own bench line, so the plate's
+    // counter continues the hall's counter instead of stepping away from it
+    const frontZ = layers[layers.length - 1].z ?? wallZ;
+    const y0 = py(CFG.benchY, k(frontZ)) - sh * bf;
     const fade = 0.05;
     for (const L of layers){
       const z = L.z != null ? L.z : wallZ;
       const kk = k(z);
       const sx = px(p.x, kk);
       if (sx < -sw || sx > W + sw) continue;
-      const ow = Math.max(8, Math.round(sw)), oh = Math.max(8, Math.round(sh * bf));
+      const ow = Math.max(8, Math.round(sw)), oh = Math.max(8, Math.round(sh));
       if (!L.sheet || L.sheet.width !== ow || L.sheet.height !== oh){
         L.sheet = document.createElement('canvas');
         L.sheet.width = ow; L.sheet.height = oh;
         const g2 = L.sheet.getContext('2d');
-        // only down to the worktop's back edge; below that the hall takes over
-        g2.drawImage(L.sp, 0, 0, L.sp.naturalWidth, L.sp.naturalHeight * bf, 0, 0, ow, oh);
+        g2.drawImage(L.sp, 0, 0, ow, oh);
         // the join is a butt joint: both sides are the same material now, so
         // only a hair of blend is needed to kill the aliasing on the cut
         // no feather: this is an object standing on a counter, not a second
@@ -4741,37 +4736,6 @@ function wallSwitchX(){
   // the bank is made of the craft era's own wood, so it stands ON the dark
   // wall and the plaster begins at its far edge
   return u ? u.x + u.w / 2 : bayStart(0);
-}
-/* THE ERA'S COUNTER, CUT OUT OF THE CENTREPIECE. The founding bay is a
-   photograph and it cannot be re-shot, so the counter in it is fixed. Every
-   attempt to make a separately-photographed counter meet it was a fit for one
-   frame. The way out is the other direction: take the counter OUT of that
-   photograph and build the whole era's counter from it. Two strips do it — the
-   worktop band between its back and front edges (rows 377-396, measured off
-   the file) and the cabinet front below it (rows 400 to the bottom) — stretched
-   to the plate's own world width so a tile lands at the same scale it was shot
-   at. After this the hall's counter and the centrepiece's counter are the same
-   material by construction; there is nothing left to match by eye. */
-function benchFromPlate(){
-  const src = PLATES[0] && PLATES[0].layers[0] && PLATES[0].layers[0].sp;
-  if (!src || !src.naturalWidth) return false;
-  const iw = src.naturalWidth, ih = src.naturalHeight;
-  const TW = Math.round(PLATES[0].sw || 1874);      // one tile = the plate's world width
-  const band = (y0, y1, outH) => {
-    const c = document.createElement('canvas');
-    c.width = TW; c.height = outH;
-    const g = c.getContext('2d');
-    g.imageSmoothingQuality = 'high';
-    g.drawImage(src, 0, y0 * ih, iw, (y1 - y0) * ih, 0, 0, TW, outH);
-    return c;
-  };
-  // the worktop: a narrow band stretched over the depth our counter actually
-  // has. The material is uniform along it, so stretching costs nothing and the
-  // tone still runs from its back edge to its front the way the photograph does.
-  TEX.bench1 = band(377 / 617, 396 / 617, 512);
-  // the cabinet front, at its own proportions
-  TEX.front1 = band(400 / 617, 1, Math.round(TW * (217 / 617) * (617 / iw) * ih / TW * 2));
-  return true;
 }
 function applyPhotoTextures(){
   TEX.wall1_dark = TEX.wall1;          // kept for the years before the 1970 bench
@@ -7340,21 +7304,21 @@ function drawShowroom(t){
     if (lx < -260 || lx > W + 260) continue;
     ctx.fillStyle = 'rgba(255,236,196,0.85)';
     ctx.beginPath(); ctx.ellipse(lx, yB - 9 * kk * SS, 13 * kk * SS, 5 * kk * SS, 0, 0, 7); ctx.fill();
-    const yP = py(700, kk);
+    const yP = py(210, kk);              // dies out high on the wall, not on the counter
     const pool = ctx.createLinearGradient(0, yB, 0, yP);
-    pool.addColorStop(0, 'rgba(255,228,180,0.20)');
-    pool.addColorStop(0.5, 'rgba(255,224,172,0.055)');
+    pool.addColorStop(0, 'rgba(255,228,180,0.13)');
+    pool.addColorStop(0.5, 'rgba(255,224,172,0.028)');
     pool.addColorStop(1, 'rgba(255,220,166,0)');
     ctx.fillStyle = pool;
     ctx.beginPath();                        // soft-shouldered, not a triangle
     ctx.moveTo(lx - 22 * kk * SS, yB);
     ctx.bezierCurveTo(lx - 40 * kk * SS, yB + (yP - yB) * 0.4,
-                      lx - 150 * kk * SS, yB + (yP - yB) * 0.7, lx - 176 * kk * SS, yP);
-    ctx.lineTo(lx + 176 * kk * SS, yP);
-    ctx.bezierCurveTo(lx + 150 * kk * SS, yB + (yP - yB) * 0.7,
+                      lx - 96 * kk * SS, yB + (yP - yB) * 0.7, lx - 118 * kk * SS, yP);
+    ctx.lineTo(lx + 118 * kk * SS, yP);
+    ctx.bezierCurveTo(lx + 96 * kk * SS, yB + (yP - yB) * 0.7,
                       lx + 40 * kk * SS, yB + (yP - yB) * 0.4, lx + 22 * kk * SS, yB);
     ctx.closePath(); ctx.fill();
-    drawGlow('255,232,190', lx, py(560, kk), 150 * kk * SS, 0.05);
+    drawGlow('255,232,190', lx, py(30, kk), 92 * kk * SS, 0.045);
   }
   // the ring, with the mark inside it — the one thing in the room that is lit
   /* The years belong to the architecture, not to the timber. That room puts
@@ -7366,7 +7330,13 @@ function drawShowroom(t){
     if (b.x < SHOW_L - 200 || b.x > SHOW_R || b.minor || b.under) continue;
     const kY = k(wallZAt(b.x) - 8);
     const bx = px(b.x, kY);
-    const pw2 = 660 * kY * SS;
+    /* A panel wider than the gap to its neighbour overlaps it, and two white
+       panels overlapping on a white wall is mush. Each is bounded by half the
+       distance to the nearer neighbour. */
+    let gap = 1e9;
+    for (const o of BEATS) if (o !== b && !o.minor && !o.under && o.x >= SHOW_L - 200 && o.x <= SHOW_R)
+      gap = Math.min(gap, Math.abs(o.x - b.x));
+    const pw2 = Math.min(660, Math.max(300, gap * 0.82)) * kY * SS;
     if (bx < -pw2 || bx > W + pw2) continue;
     const pt = py(-46, kY), pb = py(430, kY);
     ctx.fillStyle = 'rgba(20,26,34,0.10)';       // the shadow it stands off the wall on
@@ -7377,9 +7347,15 @@ function drawShowroom(t){
     pg3.addColorStop(1, 'rgba(240,242,245,0.48)');
     ctx.fillStyle = pg3;
     ctx.fillRect(bx - pw2/2, pt, pw2, pb - pt);
-    ctx.fillStyle = 'rgba(255,255,255,0.75)';    // the lit arris down its near edge
-    ctx.fillRect(bx - pw2/2, pt, 1.6 * SS, pb - pt);
-    ctx.fillRect(bx - pw2/2, pt, pw2, 1.6 * SS);
+    /* WHITE ON WHITE NEEDS AN EDGE. A panel standing proud of a white wall is
+       read entirely from its two lit edges and the shadow on its two dark ones;
+       without them it is a slightly paler smudge, which is what these were. */
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';    // the lit arris: top and near side
+    ctx.fillRect(bx - pw2/2, pt, 2.0 * SS, pb - pt);
+    ctx.fillRect(bx - pw2/2, pt, pw2, 2.0 * SS);
+    ctx.fillStyle = 'rgba(96,104,116,0.34)';     // and the turned-away pair
+    ctx.fillRect(bx + pw2/2 - 1.6 * SS, pt, 1.6 * SS, pb - pt);
+    ctx.fillRect(bx - pw2/2, pb - 1.6 * SS, pw2, 1.6 * SS);
   }
 
   /* THE CEILING. These are chandeliers — big lit hoops hanging in a white
@@ -7456,8 +7432,8 @@ function drawShowroomLight(t){
   ctx.fillStyle = 'rgba(255,252,244,0.85)';
   ctx.fillRect(x0, yBase, x1 - x0, Math.max(1, 3.4 * S));
   const wash = ctx.createLinearGradient(0, yBase, 0, yFloor + 90 * S);
-  wash.addColorStop(0, 'rgba(255,248,232,0.42)');
-  wash.addColorStop(0.35, 'rgba(255,246,228,0.14)');
+  wash.addColorStop(0, 'rgba(255,248,232,0.26)');
+  wash.addColorStop(0.35, 'rgba(255,246,228,0.075)');
   wash.addColorStop(1, 'rgba(255,244,224,0)');
   ctx.fillStyle = wash; ctx.fillRect(x0, yBase, x1 - x0, yFloor + 90 * S - yBase);
   // the logo panels, edge-lit: the border burns, the face stays matte
@@ -7469,14 +7445,27 @@ function drawShowroomLight(t){
      plinth. It is fixed to a TABLE now: one plate per run of counter, at that
      run's own centre, on the fascia's own plane. A plinth stands in a break
      BETWEEN runs, so the mark can no longer be behind one, and because it is
-     tied to furniture it does not move at all. It sits off-centre within its
-     run so a screen-centred caption never lands on it. */
+     tied to furniture it does not move at all.
+     And it keeps clear of the caption by MEASUREMENT, not by hope: I wrote
+     "it sits off-centre within its run so a screen-centred caption never lands
+     on it", which is not a guard — 30% along a long run can land anywhere on
+     screen, and it landed straight on the text. The caption is drawn centred on
+     the screen in a fixed band; any plate whose rectangle reaches into that
+     band is skipped, and the run's other end is tried instead. */
   for (const tb of TABLES){
     const mid2 = (tb.x0 + tb.x1) / 2;
     if (tb.x1 - tb.x0 < 900) continue;
     if (mid2 < SHOW_L || mid2 > SHOW_R) continue;
-    const lx = px(tb.x0 + (tb.x1 - tb.x0) * 0.30, kf2);
     const pw = 224 * S, ph = 76 * S, ly = py(CFG.benchY + 52, kf2);
+    const cr = CAP_RECT;
+    const clear = (cx3) => !cr || !(cx3 + pw/2 > cr.x0 - 10 * SS && cx3 - pw/2 < cr.x1 + 10 * SS
+                                    && ly + ph > cr.y0 && ly < cr.y1);
+    let lx = null;
+    for (const f of [0.30, 0.70, 0.14, 0.86]){
+      const c3 = px(tb.x0 + (tb.x1 - tb.x0) * f, kf2);
+      if (clear(c3)){ lx = c3; break; }
+    }
+    if (lx == null) continue;
     if (lx < -pw || lx > W + pw) continue;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -7510,62 +7499,58 @@ function drawShowroomLight(t){
    painted so far is folded down across the floor line and faded out — so the
    reflection is of whatever is actually standing there, and stays true by
    construction rather than by being drawn twice. */
-/* The runner. In the real room the display floor is laid with red carpet, and
-   ours is polished tile all the way. What you can actually see of the floor
-   here is the strip between the foot of the wall and the back of the counter,
-   plus whatever shows through a break in it — so that is where the carpet goes,
-   painted before the counter like the reflection is, and picked up by it. */
-function drawShowroomFloor(){
-  if (cam.x < SHOW_L - 2400 || cam.x > SHOW_R + 2400) return;
-  const kW = k((SEGMENTS[3].z0 || 1400) - 8), kS = k(CFG.benchDepth);
-  const yW = py(1080, kW), yB = py(1080, kS);
-  const x0 = px(SHOW_L, kW), x1 = px(SHOW_R, kW);
-  const b0 = px(SHOW_L, kS), b1 = px(SHOW_R, kS);
-  if (Math.max(x1, b1) < 0 || Math.min(x0, b0) > W) return;
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(x0, yW); ctx.lineTo(x1, yW); ctx.lineTo(b1, yB); ctx.lineTo(b0, yB);
-  ctx.closePath();
-  const cg = ctx.createLinearGradient(0, yW, 0, yB);
-  cg.addColorStop(0, '#7d2018');
-  cg.addColorStop(0.45, '#95271d');
-  cg.addColorStop(1, '#a52c21');
-  ctx.fillStyle = cg; ctx.fill();
-  // the pile, and the bound edge along the back
-  ctx.clip();
-  for (let i = 0; i < 22; i++){
-    const u = i / 22, uu = u * u;
-    const yy = yW + (yB - yW) * uu;
-    ctx.fillStyle = `rgba(255,214,196,${(0.022 * (1 - u * 0.4)).toFixed(3)})`;
-    ctx.fillRect(Math.min(x0, b0), yy, Math.max(x1, b1) - Math.min(x0, b0), Math.max(1, 2 * SS * (0.4 + uu)));
-  }
-  ctx.fillStyle = 'rgba(40,8,6,0.35)';
-  ctx.fillRect(Math.min(x0, b0), yW, Math.max(x1, b1) - Math.min(x0, b0), 3 * SS);
-  ctx.restore();
-}
 function drawFloorSheen(){
   if (cam.x < SHOW_L - 2400 || cam.x > SHOW_R + 2400) return;
-  /* The floor you can actually see in this hall is the strip between the foot
-     of the wall and the back of the counter, plus whatever shows through a gap
-     in it. So the fold happens at the wall's foot — not at some line inside the
-     counter, which is what put a milky wash over the furniture. */
-  const kSeam = k(CFG.benchDepth);
-  const yF = py(1080, k((SEGMENTS[3].z0 || 1400) - 8));
-  const x0 = Math.max(0, px(SHOW_L, kSeam)), x1 = Math.min(W, px(SHOW_R, kSeam));
-  if (x1 - x0 < 4 || yF >= H - 4 || yF <= 4) return;
-  const hh = Math.min(yF, H - yF);
+  /* A REFLECTION IS BOUNDED BY THE FLOOR IT LIES ON. This was clipped to
+     "everything below the wall's foot", which on screen means the counter as
+     well — so a whole upside-down portrait ended up on the front of a cabinet,
+     and the fade that softened it read as fog over the furniture. Mixed with a
+     red runner it became a smear, which is why the runner had to go.
+     What you can actually see of this floor is the strip between the foot of
+     the wall and the back of the counter: a few dozen pixels. The reflection is
+     that strip and no more — it takes only the band of wall directly above it,
+     the same depth it is itself, and it cannot reach the furniture because it
+     is not drawn where the furniture is. */
+  const yTop = py(1080, k((SEGMENTS[3].z0 || 1400) - 8));
+  const yBot = py(1080, k(CFG.benchDepth));
+  const band = yBot - yTop;
+  if (band < 3) return;
+  const kW = k((SEGMENTS[3].z0 || 1400) - 8), kS = k(CFG.benchDepth);
+  const a0 = px(SHOW_L, kW), a1 = px(SHOW_R, kW);
+  const b0 = px(SHOW_L, kS), b1 = px(SHOW_R, kS);
+  if (Math.max(a1, b1) < 0 || Math.min(a0, b0) > W) return;
   ctx.save();
-  ctx.beginPath(); ctx.rect(x0, yF, x1 - x0, H - yF); ctx.clip();
-  ctx.globalAlpha = 0.20;
-  ctx.scale(1, -1);
-  ctx.drawImage(ctx.canvas, x0, yF - hh, x1 - x0, hh, x0, -(yF + hh), x1 - x0, hh);
-  ctx.restore();
-  const fade = ctx.createLinearGradient(0, yF, 0, yF + hh * 0.85);
-  fade.addColorStop(0, 'rgba(232,234,237,0)');
-  fade.addColorStop(1, 'rgba(232,234,237,0.72)');
-  ctx.save();
-  ctx.beginPath(); ctx.rect(x0, yF, x1 - x0, H - yF); ctx.clip();
-  ctx.fillStyle = fade; ctx.fillRect(x0, yF, x1 - x0, hh);
+  ctx.beginPath();
+  ctx.moveTo(a0, yTop); ctx.lineTo(a1, yTop); ctx.lineTo(b1, yBot); ctx.lineTo(b0, yBot);
+  ctx.closePath(); ctx.clip();
+  const sx0 = Math.max(0, Math.min(a0, b0)), sx1 = Math.min(W, Math.max(a1, b1));
+  /* A REFLECTION DIES WITH DISTANCE FROM THE FOLD. Mirrored at one flat alpha
+     the whole band comes back — a whole upside-down portrait lying on the floor
+     like a dropped photograph, which is not what a floor does. Stone returns
+     the most light where the eye grazes it, at the fold, and almost none as the
+     angle opens toward you. So it is laid in slices, each taking its own share,
+     and it is gone within the near half of the band. */
+  if (sx1 - sx0 > 2 && yTop - band > 0){
+    const N = 14;
+    for (let s = 0; s < N; s++){
+      const u = s / N, a = 0.34 * (1 - u) * (1 - u);
+      if (a < 0.004) break;
+      const hh = band / N;
+      ctx.globalAlpha = a;
+      ctx.scale(1, -1);
+      ctx.drawImage(ctx.canvas, sx0, yTop - (s + 1) * hh, sx1 - sx0, hh,
+                                sx0, -(yTop + (s + 1) * hh), sx1 - sx0, hh);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+    ctx.globalAlpha = 1;
+  }
+  // the polish itself: a dark stone floor takes a sheen along the grazing angle
+  const gl = ctx.createLinearGradient(0, yTop, 0, yBot);
+  gl.addColorStop(0, 'rgba(226,229,233,0.34)');
+  gl.addColorStop(0.5, 'rgba(196,200,206,0.16)');
+  gl.addColorStop(1, 'rgba(150,155,163,0.30)');
+  ctx.fillStyle = gl;
+  ctx.fillRect(sx0, yTop, sx1 - sx0, band);
   ctx.restore();
 }
 
@@ -7701,7 +7686,6 @@ function frame(){
   drawFigures();
   drawProps(true);
 
-  drawShowroomFloor();   // the red runner the display floor is actually laid with
   drawFloorSheen();   // before the counter, so the counter covers it and the
   drawBench();        // reflection can never be laid over the furniture
   drawShowroomLight(t);   // light coming OUT of the furniture, so after it
@@ -7887,10 +7871,6 @@ async function boot(){
   TEX.bench4 = formicaTexture({w:1200, h:512, base:'#eef0f2'});
   TEX.front4 = panelTexture({w:1200, h:600, base:'#c8ccd0', groove:420});
   if (PHOTO_SKIN) applyPhotoTextures();
-  // and then the founding era takes its counter out of its own centrepiece,
-  // overriding whatever the photo-skin pass just put there
-  if (PHOTO_SKIN && !benchFromPlate())
-    console.warn('bench: the plate image is not loaded, era 1 keeps the old counter');
   cacheWrap();
   SECTIONS.old = makeSection('old');
   SECTIONS.neu = makeSection('neu');
