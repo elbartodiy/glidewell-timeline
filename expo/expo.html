@@ -2780,7 +2780,7 @@ function drawBoxPile(b, t){
     ctx.restore();
   }
   pushHit(sx - bw * 4, foot - BOX_ROWS.length * bh - dp, bw * 8, BOX_ROWS.length * bh + dp * 2,
-          {type: 'focus', beat: nearestBeat(b.x).i, anchor: b.x});
+          {type: 'openbox'});
 }
 
 /* 2018 · THE FIRST AI CROWN — and the arm that takes it on.
@@ -6005,6 +6005,110 @@ function drawGrade(t){
   ctx.globalAlpha = 1;
 }
 
+/* One case, taken off the pile and opened. What was inside every one of those
+   forty-eight boxes: an impression of both jaws in set VPS — the upper with its
+   palate, the lower open through the middle for the tongue — and the row of
+   tooth imprints pressed into each. No trays: what the lab pours is the
+   material, and the tray goes back. */
+function drawImpression(cx, cy, w, upper){
+  const h = w * 0.94;
+  const rx = w * 0.5, ry = h * 0.5, ix = w * 0.29, iy = h * 0.31;
+  const A0 = Math.PI * 0.13, A1 = Math.PI * 0.87;
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, ry, 0, A0, A1, true);
+  ctx.ellipse(cx, cy, ix, iy, 0, A1, A0, false);
+  ctx.closePath();
+  if (upper){                              // the palate fills the arch
+    ctx.moveTo(cx + ix, cy);
+    ctx.ellipse(cx, cy - h * 0.04, ix, iy * 0.98, 0, 0, 7);
+  }
+  const g = ctx.createLinearGradient(cx - rx, cy - ry, cx + rx * 0.6, cy + ry);
+  g.addColorStop(0, '#d768b4'); g.addColorStop(0.42, '#bb3f93'); g.addColorStop(1, '#8b2a6e');
+  ctx.fillStyle = g;
+  ctx.shadowColor = 'rgba(20,6,16,0.5)'; ctx.shadowBlur = 14 * SS; ctx.shadowOffsetY = 6 * SS;
+  ctx.fill();
+  ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  // the imprints: bigger at the back, small and close at the front
+  const mrx = (rx + ix) / 2, mry = (ry + iy) / 2;
+  for (let i = 0; i < 14; i++){
+    const t2 = (i + 0.5) / 14;
+    const th = Math.PI * 0.13 - t2 * Math.PI * 1.26;
+    const px2 = cx + Math.cos(th) * mrx, py2 = cy + Math.sin(th) * mry;
+    const sz = w * (0.038 + 0.030 * Math.abs(t2 - 0.5) * 2);
+    ctx.save();
+    ctx.translate(px2, py2); ctx.rotate(th + Math.PI / 2);
+    ctx.fillStyle = 'rgba(96,26,76,0.85)';
+    ctx.beginPath(); ctx.ellipse(0, 0, sz, sz * 0.78, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(226,150,200,0.45)';
+    ctx.beginPath(); ctx.ellipse(-sz * 0.18, -sz * 0.22, sz * 0.5, sz * 0.36, 0, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+  // the wet look the material never loses
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, ry, 0, A0, A1, true);
+  ctx.ellipse(cx, cy, ix, iy, 0, A1, A0, false);
+  ctx.closePath(); ctx.clip();
+  const sh = ctx.createLinearGradient(cx - rx, cy - ry, cx - rx * 0.1, cy + ry * 0.3);
+  sh.addColorStop(0, 'rgba(255,225,246,0.42)');
+  sh.addColorStop(0.5, 'rgba(255,225,246,0.06)');
+  sh.addColorStop(1, 'rgba(255,225,246,0)');
+  ctx.fillStyle = sh; ctx.fillRect(cx - rx, cy - ry, rx * 2, ry * 2);
+  ctx.restore();
+  ctx.restore();
+}
+function drawOpenBox(){
+  const O = state.openBox; if (!O) return;
+  O.amt += ((O.closing ? 0 : 1) - O.amt) * Math.min(1, (state.dt || 0.016) * 7);
+  if (O.closing && O.amt < 0.02){ state.openBox = null; return; }
+  const e = O.amt * O.amt * (3 - 2 * O.amt), a = e;
+  ctx.save();
+  ctx.fillStyle = `rgba(8,10,13,${(0.74 * a).toFixed(3)})`;
+  ctx.fillRect(0, 0, W, H);
+  const cx = W / 2, cy = H * 0.50, S2 = Math.min(W / 1120, H / 760) * (0.86 + 0.14 * e);
+  const bw2 = 640 * S2, bh2 = 380 * S2, fl = 132 * S2;
+  ctx.globalAlpha = a;
+  // the flaps, folded back
+  ctx.fillStyle = '#c8bda6';
+  for (const [x0, y0, x1, y1, x2, y2, x3, y3] of [
+    [cx - bw2/2, cy - bh2/2, cx + bw2/2, cy - bh2/2, cx + bw2/2 - fl*0.5, cy - bh2/2 - fl, cx - bw2/2 + fl*0.5, cy - bh2/2 - fl],
+    [cx - bw2/2, cy + bh2/2, cx + bw2/2, cy + bh2/2, cx + bw2/2 - fl*0.5, cy + bh2/2 + fl, cx - bw2/2 + fl*0.5, cy + bh2/2 + fl],
+    [cx - bw2/2, cy - bh2/2, cx - bw2/2, cy + bh2/2, cx - bw2/2 - fl*0.8, cy + bh2/2 - fl*0.4, cx - bw2/2 - fl*0.8, cy - bh2/2 + fl*0.4],
+    [cx + bw2/2, cy - bh2/2, cx + bw2/2, cy + bh2/2, cx + bw2/2 + fl*0.8, cy + bh2/2 - fl*0.4, cx + bw2/2 + fl*0.8, cy - bh2/2 + fl*0.4]]){
+    ctx.beginPath();
+    ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(140,128,108,0.6)'; ctx.lineWidth = 1.2 * SS; ctx.stroke();
+  }
+  // the inside of the carton, and the paper it is packed with
+  const ig = ctx.createLinearGradient(0, cy - bh2/2, 0, cy + bh2/2);
+  ig.addColorStop(0, '#9c9078'); ig.addColorStop(0.30, '#cfc5ad'); ig.addColorStop(1, '#b8ad94');
+  ctx.fillStyle = ig;
+  ctx.fillRect(cx - bw2/2, cy - bh2/2, bw2, bh2);
+  ctx.fillStyle = 'rgba(246,243,235,0.55)';
+  ctx.beginPath();
+  ctx.moveTo(cx - bw2*0.46, cy + bh2*0.40); ctx.lineTo(cx - bw2*0.30, cy - bh2*0.36);
+  ctx.lineTo(cx + bw2*0.44, cy - bh2*0.30); ctx.lineTo(cx + bw2*0.34, cy + bh2*0.42);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(90,80,64,0.55)'; ctx.lineWidth = 2 * SS;
+  ctx.strokeRect(cx - bw2/2, cy - bh2/2, bw2, bh2);
+  // both halves of the case
+  drawImpression(cx - bw2 * 0.23, cy - bh2 * 0.02, bw2 * 0.40, true);
+  drawImpression(cx + bw2 * 0.24, cy + bh2 * 0.03, bw2 * 0.36, false);
+  ctx.textAlign = 'center';
+  ctx.font = eraFont(26 * S2, '700', SEGMENTS[3].font);
+  ctx.fillStyle = 'rgba(232,238,244,0.92)';
+  ctx.fillText('ONE CASE, AS IT ARRIVED', cx, cy - bh2/2 - fl - 34 * S2);
+  ctx.font = eraFont(20 * S2, '', SEGMENTS[3].font);
+  ctx.fillStyle = 'rgba(190,200,212,0.8)';
+  ctx.fillText('an impression of both jaws \u00b7 upper and lower', cx, cy - bh2/2 - fl - 6 * S2);
+  ctx.font = eraFont(17 * S2, '', SEGMENTS[3].font);
+  ctx.fillStyle = 'rgba(150,162,175,0.7)';
+  ctx.fillText('click anywhere to close', cx, cy + bh2/2 + fl + 34 * S2);
+  ctx.restore();
+}
+
 function drawInspect(){
   const I = state.inspect; if (!I) return;
   I.amt += ((I.closing ? 0 : 1) - I.amt) * Math.min(1, (state.dt || 0.016) * 5);
@@ -6489,7 +6593,9 @@ function update(dt){
     } else {
       cam.vel += inp.impulse;
     }
-    if (inp.action && !state.inspect && !state.study){
+    if (inp.action && state.openBox && !state.openBox.closing){
+      state.openBox.closing = true;
+    } else if (inp.action && !state.inspect && !state.study && !state.openBox){
       const aimed = (typeof inp.action === 'object') ? hitAt(inp.action.x, inp.action.y) : null;
       if (aimed && aimed.type === 'photo'){
         state.inspect = {sp: aimed.sp, wx: aimed.wx, cy: aimed.cy, z: aimed.z, w: aimed.w,
@@ -6506,6 +6612,9 @@ function update(dt){
         if (state.focusBeat === aimed.beat){ state.focusBeat = -1; state.focusAnchor = null; cam.zTarget = 0; }
         else { state.focusBeat = aimed.beat; state.focusAnchor = aimed.anchor != null ? aimed.anchor : null;
                cam.zTarget = CFG.focusCamZ; cam.vel = 0; }
+      } else if (aimed && aimed.type === 'openbox'){
+        state.openBox = {amt: 0, closing: false};
+        cam.vel = 0;
       } else if (aimed && aimed.type === 'study'){
         openStudy(aimed.beat);
       } else {
@@ -6843,6 +6952,7 @@ function frame(){
   drawStudy();
   drawClip();      // the speaker's voice — a video window above the page
   drawInspect();   // a person card opens above the reading page
+  drawOpenBox();   // one carton off the pile, opened
   drawAttractHint(t);
   // pointer affordance
   if (Input.hover && state.mode === 'live'){
