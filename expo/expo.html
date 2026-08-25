@@ -306,6 +306,35 @@ function applyCut(){
   anchor('1993', (REC93_L + REC93_R) / 2);
   anchor('2018', (REC18_L + REC18_R) / 2);
   anchor('2023', (REC23_L + REC23_R) / 2);
+  /* RHYTHM. Inside one era the years should stand at equal intervals: a
+     corridor reads by its beat, and ours had a gap of 600 next to a gap of 1600
+     for no reason but the order they happened to be written in. The era keeps
+     its own extent — its first and last year do not move — and everything
+     between them is redistributed evenly. A beat that owns a bay cut for it
+     keeps its centre, and a satellite keeps its offset from the beat it belongs
+     to. Props, photos and captions are all positioned by `dx` from their beat,
+     so they travel with it and nothing has to be replaced by hand. */
+  /* These four own a bay cut for them. 2019 is different and had to be added
+     after the audit caught it: the factory is drawn at its own constant FACT_X,
+     so moving the beat left the year and the machines in different places. A
+     beat tied to a fixed scene cannot be re-spaced — the scene has to move with
+     it, or it has to stay put. */
+  const owns = new Set(['1970', '1993', '2018', '2023', '2019']);
+  for (const seg of SEGMENTS){
+    const mine = BEATS.filter(b => b.x > seg.x0 && b.x < seg.x1 && !b.sub && !b.under)
+                      .sort((p, q) => p.x - q.x);
+    if (mine.length < 4) continue;
+    const a0 = mine[0].x, z0 = mine[mine.length - 1].x;
+    const step = (z0 - a0) / (mine.length - 1);
+    mine.forEach((b, i) => {
+      if (owns.has(b.y)) return;
+      const to = a0 + step * i;
+      const d = to - b.x;
+      if (Math.abs(d) < 1) return;
+      for (const s of BEATS) if (s.sub != null && Math.abs(s.sub - b.x) < 1){ s.x += d; s.sub = to; }
+      b.x = to;
+    });
+  }
   const rekey = obj => {
     const out = {};
     for (const k0 in obj){
@@ -360,7 +389,6 @@ const REC23_L = bayStart(4) + 550, REC23_R = bayStart(4) + 1450;
    light and typography change; each seam is crossed through a doorway. */
 const SEGMENTS = [
   {x0:-3450, x1:REC_L, z0:550, z1:550, tz:550, wall:'wall1', bench:'bench1', front:'front1',
-   benchDepth:76,          // measured off the plate photograph, not guessed
    font:'Georgia, "Iowan Old Style", "Palatino Linotype", serif',
    ink:'232,205,160', lamp:'bulb', dust:true,
    rail:'rgba(190,150,80,0.55)', railInk:'rgba(230,195,130,0.7)',
@@ -1282,13 +1310,13 @@ function drawBench(){
     const sx0f = px(bx0, kf), sx1f = px(bx1, kf);
     if (sx1f <= 0 || sx0f >= W) continue;
     const tex = TEX[seg.bench];
-    /* The apparent depth of the worktop belongs to the ERA, not to the whole
-       hall. Era 1's counter is a photograph, and in that photograph the top
-       shows a band 20 px deep out of 617 — which works out at a depth of 76,
-       not the 340 the rest of the hall uses. Drawing it at 340 made the hall's
-       worktop three and a half times deeper than the plate's, and that is the
-       step you could see: I had been tuning where the two lines met while the
-       two BANDS were different widths, which no constant can reconcile. */
+    /* The worktop's apparent depth can be overridden per era, but era 1 must NOT
+       use it. Objects stand on the counter at their own depth — 45 to 165 — so
+       a shallow counter ends behind them and they float off the back of it. I
+       set era 1 to 76 to match the photograph's band and made everything in the
+       founding bay levitate. The counter is 340 deep in this hall because things
+       stand on it; the photograph's band is narrow because it was shot almost
+       level with the top, and that is not reconcilable by any number here. */
     const bd = seg.benchDepth != null ? seg.benchDepth : CFG.benchDepth;
     // tabletop: horizontal slices from back (bd) to front (0)
     for (let s = 0; s < slices; s++){
@@ -5020,10 +5048,28 @@ function drawProps(midPass){
     if (sx < -260 || sx > W + 260) continue;
     const scale = (p.w / sp.w) * kk * SS;
     const syFoot = (p.mid && midPass !== 'late') ? py(1080, kk) : py(CFG.benchY - 2, kk);
+    /* The join. Every one of these was a single drawImage with nothing under
+       it, so fifty objects hovered a hair above the counter in every frame —
+       while a mere pinned photograph got a proper contact shadow. An object
+       without a shadow is not on a surface, it is in front of one, and no
+       amount of detail in the sprite itself will fix that. */
+    const pw2 = sp.w * scale, ph2 = sp.h * scale;
+    ctx.save();
+    ctx.translate(sx, syFoot); ctx.scale(1, 0.20); ctx.translate(-sx, -syFoot);
+    const csh2 = ctx.createRadialGradient(sx, syFoot, 0, sx, syFoot, pw2 * 0.60);
+    csh2.addColorStop(0, 'rgba(0,0,0,0.42)');
+    csh2.addColorStop(0.55, 'rgba(0,0,0,0.16)');
+    csh2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = csh2;
+    ctx.beginPath(); ctx.arc(sx, syFoot, pw2 * 0.60, 0, 7); ctx.fill();
+    ctx.restore();
+    // and the dark line where it actually meets the surface
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.fillRect(sx - pw2 * 0.30, syFoot - 1.4 * SS, pw2 * 0.60, 2.4 * SS);
     ctx.save();
     if (p.flip){ ctx.translate(sx, 0); ctx.scale(-1, 1); ctx.translate(-sx, 0); }
     ctx.globalAlpha = 0.95;
-    ctx.drawImage(sp.c, sx - sp.w*scale/2, syFoot - sp.h*scale, sp.w*scale, sp.h*scale);
+    ctx.drawImage(sp.c, sx - pw2/2, syFoot - ph2, pw2, ph2);
     ctx.restore();
   }
 }
