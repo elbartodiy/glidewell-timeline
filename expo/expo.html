@@ -290,25 +290,49 @@ function applyCut(){
   // filtered through SHIFT when the script was parsed
   for (const b of BEATS) b.x = SHIFT(b.x);
   // the founding beat owns the bay its bench stands in: it sits at its centre
-  if (CUTS[1].on){
-    const f = BEATS.find(b => b.y === '1970');
-    if (f) f.x = bayStart(1) + CUTS[1].w / 2;
-  }
-  // 1993 owns the bay its model stands in: SHIFT would push it past its own cut
-  const b93 = BEATS.find(b => b.y === '1993');
-  if (b93) b93.x = (REC93_L + REC93_R) / 2;
-  const b18 = BEATS.find(b => b.y === '2018');
-  if (b18) b18.x = (REC18_L + REC18_R) / 2;
-  const b23 = BEATS.find(b => b.y === '2023');
-  if (b23) b23.x = (REC23_L + REC23_R) / 2;
+  /* Four beats do not go where SHIFT would put them: each owns a bay that was
+     cut for it and belongs at its centre. Their articles have to travel with
+     them — the founding's did not, and its key landed 1160 units from the beat,
+     which is how the most important page in the hall became unopenable. */
+  const moved = [];
+  const anchor = (year, to) => {
+    const b = BEATS.find(x => x.y === year);
+    if (b && to != null && Math.abs(b.x - to) > 1){ moved.push([b.x, to]); b.x = to; }
+  };
+  if (CUTS[1].on) anchor('1970', bayStart(1) + CUTS[1].w / 2);
+  anchor('1993', (REC93_L + REC93_R) / 2);
+  anchor('2018', (REC18_L + REC18_R) / 2);
+  anchor('2023', (REC23_L + REC23_R) / 2);
   const rekey = obj => {
-    const moved = {};
-    for (const k0 in obj) moved[String(SHIFT(+k0))] = obj[k0];
+    const out = {};
+    for (const k0 in obj){
+      let kx = SHIFT(+k0);
+      for (const [from, to] of moved) if (Math.abs(kx - from) < 1) kx = to;
+      out[String(kx)] = obj[k0];
+    }
     for (const k0 in obj) delete obj[k0];
-    Object.assign(obj, moved);
+    Object.assign(obj, out);
   };
   if (typeof STUDY_MORE === 'object') rekey(STUDY_MORE);
   if (typeof STUDY_MEDIA === 'object') rekey(STUDY_MEDIA);
+  /* An article is keyed by a beat's coordinate, so a key that matches no beat
+     is an article nobody can ever open. Five of them had come loose. Snap any
+     stray to the beat it plainly belongs to and say so, rather than letting the
+     page quietly go missing. */
+  const snap = (obj, nm) => {
+    for (const k0 of Object.keys(obj)){
+      const kx = +k0;
+      if (BEATS.some(b => b.x === kx)) continue;
+      let best = null, bd = 1e9;
+      for (const b of BEATS){ const d = Math.abs(b.x - kx); if (d < bd){ bd = d; best = b; } }
+      if (best && bd <= 400){
+        console.warn(`${nm}: key ${kx} matches no beat — snapped to ${best.y} at ${best.x|0} (${bd|0} away)`);
+        obj[best.x] = obj[k0]; delete obj[k0];
+      } else console.error(`${nm}: key ${kx} matches no beat and nothing is near it`);
+    }
+  };
+  if (typeof STUDY_MORE === 'object') snap(STUDY_MORE, 'STUDY_MORE');
+  if (typeof STUDY_MEDIA === 'object') snap(STUDY_MEDIA, 'STUDY_MEDIA');
   for (const it of FG_ITEMS) it.x = SHIFT(it.x);
 }
 const INTRO_X = -650;
@@ -343,21 +367,18 @@ const SEGMENTS = [
    ink:'223,226,214', lamp:'tube', dust:false,
    rail:'rgba(165,175,172,0.5)', railInk:'rgba(198,208,202,0.7)',
    light:{pool:'214,240,224', poolR:820, poolA:0.20},
-   tube:{line:'228,255,238', glow:'212,245,228'},
    bgc:[10,12,11], grain:0.038},
   {x0:REC3_R, x1:REC2_L, z0:850, z1:850, tz:680, wall:'wall3', bench:'bench3', front:'front3',
    font:'Verdana, Tahoma, "DejaVu Sans", sans-serif',
    ink:'226,232,238', lamp:'tube', dust:false,
    rail:'rgba(185,196,202,0.5)', railInk:'rgba(212,222,228,0.75)',
    light:{pool:'218,232,252', poolR:1250, poolA:0.13},
-   tube:{line:'238,246,255', glow:'216,230,250'},
    bgc:[26,29,34], grain:0.016},
   {x0:REC2_R, x1:WORLD_END+2800, z0:1400, z1:1400, tz:680, wall:'wall4', bench:'bench4', front:'front4',
    font:'"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'55,64,76', lamp:'tube', dust:false,
    rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
    light:{pool:'225,240,255', poolR:1350, poolA:0.12},
-   tube:{line:'246,251,255', glow:'226,239,252'},
    bgc:[30,33,38], grain:0.012, bInsetR:4100, shade:0.46, floor:true},
 ];
 const SEAMS = [];   // era changes happen through the recreations now
@@ -849,7 +870,11 @@ function nearestBeat(x){
 }
 
 /* the long bench is really a row of separate tables */
-const BENCH_BREAKS = [1980, 3830, 7350, 9250, 13100, 17900, 22280]
+/* Table joints. 1980 used to sit well before the threshold; once the threshold
+   bay was cut it landed at 2680 — a hand's width past the change of wall — and
+   punched a bright slot straight through the dark counter. Moved back to where
+   it was in the room rather than where it was in the array. */
+const BENCH_BREAKS = [1700, 3830, 7350, 9250, 13100, 17900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
 // the counter clears out from the 1989 portal all the way past the 1993 stand:
@@ -1705,124 +1730,6 @@ function drawFinaleTable(t){
   }
 }
 
-/* the outside between two buildings — seen through the window seam */
-function makeOutside(){
-  const c = document.createElement('canvas'); c.width = 1400; c.height = 900;
-  const g = c.getContext('2d');
-  const VX = 700, VY = 470;                     // vanishing point of the street
-  // sky
-  const sky = g.createLinearGradient(0, 0, 0, VY);
-  sky.addColorStop(0, '#8fc0ec'); sky.addColorStop(.75, '#c4dced'); sky.addColorStop(1, '#e2ecf0');
-  g.fillStyle = sky; g.fillRect(0, 0, 1400, VY + 2);
-  let sg = g.createRadialGradient(560, 150, 10, 560, 150, 220);
-  sg.addColorStop(0, 'rgba(255,252,238,0.9)'); sg.addColorStop(1, 'rgba(255,250,225,0)');
-  g.fillStyle = sg; g.fillRect(340, -70, 440, 440);
-  // hills with haze
-  g.fillStyle = '#b7c3ab';
-  g.beginPath(); g.moveTo(0, VY);
-  for (let x = 0; x <= 1400; x += 70) g.lineTo(x, VY - 26 - 30*Math.sin(x*0.006) - 14*Math.sin(x*0.017+2));
-  g.lineTo(1400, VY); g.closePath(); g.fill();
-  g.fillStyle = 'rgba(150,164,135,0.85)';
-  g.beginPath(); g.moveTo(0, VY);
-  for (let x = 0; x <= 1400; x += 60) g.lineTo(x, VY - 10 - 16*Math.sin(x*0.01+1) - 8*Math.sin(x*0.03));
-  g.lineTo(1400, VY); g.closePath(); g.fill();
-  // distant campus buildings flanking the street
-  const R = rng(1212);
-  const bldg = (x0, w, h, tone) => {
-    g.fillStyle = tone; g.fillRect(x0, VY - h, w, h);
-    g.fillStyle = 'rgba(80,110,140,0.5)';
-    for (let r = 0; r < Math.floor(h/22); r++)
-      g.fillRect(x0 + 5, VY - h + 7 + r*22, w - 10, 9);
-  };
-  bldg(300, 190, 88, '#e9eae4'); bldg(120, 150, 60, '#dfe1da'); bldg(510, 110, 52, '#e8eae3');
-  bldg(910, 200, 92, '#eceee8'); bldg(1130, 150, 64, '#e0e2db'); bldg(820, 80, 46, '#e6e8e1');
-  // ground
-  const gr = g.createLinearGradient(0, VY, 0, 900);
-  gr.addColorStop(0, '#aab389'); gr.addColorStop(.4, '#8ea06b'); gr.addColorStop(1, '#5f7a4a');
-  g.fillStyle = gr; g.fillRect(0, VY, 1400, 430);
-  // the road
-  const roadHalf = t => 26 + 306 * t;
-  const roadY = t => VY + 430 * Math.pow(t, 1.35);
-  const rd = g.createLinearGradient(0, VY, 0, 900);
-  rd.addColorStop(0, '#8a9096'); rd.addColorStop(.5, '#5c6167'); rd.addColorStop(1, '#3c4045');
-  g.fillStyle = rd;
-  g.beginPath();
-  g.moveTo(VX - roadHalf(0), roadY(0)); g.lineTo(VX + roadHalf(0), roadY(0));
-  g.lineTo(VX + roadHalf(1), 900); g.lineTo(VX - roadHalf(1), 900);
-  g.closePath(); g.fill();
-  // curbs and side lines
-  for (const s of [-1, 1]){
-    g.strokeStyle = 'rgba(240,242,238,0.85)'; g.lineWidth = 3;
-    g.beginPath(); g.moveTo(VX + s*(roadHalf(0.04)+2), roadY(0.04));
-    g.lineTo(VX + s*(roadHalf(1)+6), 900); g.stroke();
-    g.strokeStyle = 'rgba(200,205,196,0.7)'; g.lineWidth = 6;
-    g.beginPath(); g.moveTo(VX + s*(roadHalf(0.05)+9), roadY(0.05));
-    g.lineTo(VX + s*(roadHalf(1)+30), 900); g.stroke();
-  }
-  // dashed center line
-  g.fillStyle = 'rgba(245,246,240,0.9)';
-  for (let i = 0; i < 9; i++){
-    const t0 = 0.055 + i*0.105, t1 = t0 + 0.045;
-    if (t1 > 1) break;
-    const w0 = 1.5 + 8*t0, w1 = 1.5 + 8*t1;
-    g.beginPath();
-    g.moveTo(VX - w0, roadY(t0)); g.lineTo(VX + w0, roadY(t0));
-    g.lineTo(VX + w1, roadY(t1)); g.lineTo(VX - w1, roadY(t1));
-    g.closePath(); g.fill();
-  }
-  // low agaves near the road
-  const agave = (x, y, s, tone) => {
-    g.strokeStyle = tone; g.lineWidth = 3.5*s; g.lineCap = 'round';
-    for (let i = 0; i < 7; i++){
-      const a = -Math.PI/2 + (i-3)*0.38;
-      g.beginPath(); g.moveTo(x, y);
-      g.quadraticCurveTo(x + Math.cos(a)*16*s, y + Math.sin(a)*22*s, x + Math.cos(a)*30*s, y + Math.sin(a)*34*s);
-      g.stroke();
-    }
-  };
-  // palm alley along both sides
-  function palm(x, y, s, lean){
-    g.strokeStyle = '#57452c'; g.lineWidth = 6.5*s; g.lineCap = 'round';
-    g.beginPath(); g.moveTo(x, y);
-    g.quadraticCurveTo(x + 24*lean*s, y - 80*s, x + 46*lean*s, y - 138*s);
-    g.stroke();
-    const tx = x + 46*lean*s, ty = y - 138*s;
-    g.strokeStyle = '#33613a'; g.lineWidth = 4*s;
-    for (let i = 0; i < 7; i++){
-      const a = -Math.PI*0.95 + i*(Math.PI*0.9/6);
-      g.beginPath(); g.moveTo(tx, ty);
-      g.quadraticCurveTo(tx + Math.cos(a)*42*s, ty + Math.sin(a)*27*s - 15*s,
-                         tx + Math.cos(a)*80*s, ty + Math.sin(a)*48*s + 13*s);
-      g.stroke();
-    }
-  }
-  for (const t of [0.14, 0.3, 0.52, 0.8]){
-    const s = 0.35 + t*1.15;
-    palm(VX - roadHalf(t) - 46 - 60*t, roadY(t) + 6, s, 1);
-    palm(VX + roadHalf(t) + 46 + 60*t, roadY(t) + 6, s, -1);
-    agave(VX - roadHalf(t) - 110*t - 20, roadY(t) + 16*t, 0.5 + t, '#3f5f3c');
-    agave(VX + roadHalf(t) + 110*t + 20, roadY(t) + 16*t, 0.5 + t, '#46683f');
-  }
-  // ambient shadow at the very bottom, where the rooms' floor meets the yard
-  const hz = g.createLinearGradient(0, 760, 0, 900);
-  hz.addColorStop(0, 'rgba(14,14,12,0)'); hz.addColorStop(1, 'rgba(10,10,9,0.5)');
-  g.fillStyle = hz; g.fillRect(0, 760, 1400, 140);
-  return c;
-}
-function drawOutside(){
-  return;   // dormant with the parked video splice
-  if (Math.abs(cam.x - (REC3_L+550)) > 3000) return;
-  // hard-clipped to the slot between the two buildings — the street can
-  // never bleed into the rooms, whatever the camera does
-  const kwL = k(wallZAt(REC3_L)), kwR = k(wallZAt(REC3_R));
-  const x0 = px(REC3_L, kwL), x1 = px(REC3_R, kwR);
-  if (x1 <= 0 || x0 >= W) return;
-  ctx.save();
-  ctx.beginPath(); ctx.rect(x0, 0, x1 - x0, H); ctx.clip();
-  const kk = k(1300);
-  ctx.drawImage(TEX.outside, px(REC3_L, kk), 0, 2600 * kk * SS, H);
-  ctx.restore();
-}
 
 /* building sections: at each wall end the house is cut open — floors,
    ceiling lights, a hint of furniture (per the reference render) */
@@ -2944,14 +2851,6 @@ function drawDesignStation(b, t){
   pushHit(x0, y0, W2, H2, {type: 'focus', beat: nearestBeat(b.x).i, anchor: b.x});
 }
 
-function ik2(sx, sy, tx, ty, l1, l2){
-  const dx = tx - sx, dy = ty - sy;
-  const d = Math.min(Math.hypot(dx, dy), (l1 + l2) * 0.999) || 0.001;
-  const a = Math.atan2(dy, dx);
-  const c = Math.acos(Math.max(-1, Math.min(1, (d*d + l1*l1 - l2*l2) / (2 * d * l1))));
-  const th = a - c;                       // elbow up: a machine folds upward
-  return [sx + Math.cos(th) * l1, sy + Math.sin(th) * l1];
-}
 
 let AI_ROBOT_X = null;
 /* The crown's journey. It leaves the panel's plane and comes forward into the
@@ -4100,45 +3999,6 @@ function drawLamp(x, t, seed){
   return inten;
 }
 
-/* fluorescent tube fixture — era 2/3 light, colored by segment */
-function drawTube(x, t, seed){
-  const kk = k(240);
-  const sx = px(x, kk);
-  if (sx < -600 || sx > W + 600) return;
-  const tc = segAt(x).tube;
-  let inten = 0.93 + 0.05 * Math.sin(t*40 + seed*9) * Math.sin(t*7.3 + seed);
-  if (Math.sin(t*0.9 + seed*17) > 0.997) inten *= 0.5;   // rare fluorescent dip
-  const yF = py(30, kk);
-  const halfW = 270 * kk * SS;
-  // housing
-  ctx.fillStyle = '#20241f';
-  ctx.fillRect(sx - halfW - 10*SS, yF - 12*kk*SS, halfW*2 + 20*SS, 14*kk*SS);
-  // tube line
-  const tg = ctx.createLinearGradient(sx - halfW, 0, sx + halfW, 0);
-  tg.addColorStop(0, `rgba(${tc.glow},0)`);
-  tg.addColorStop(0.1, `rgba(${tc.line},${0.9*inten})`);
-  tg.addColorStop(0.9, `rgba(${tc.line},${0.9*inten})`);
-  tg.addColorStop(1, `rgba(${tc.glow},0)`);
-  ctx.fillStyle = tg;
-  ctx.fillRect(sx - halfW, yF, halfW*2, 6*kk*SS);
-  // halo
-  drawGlow(tc.glow, sx, yF, halfW * 1.35, 0.28*inten, 0.45);
-  // broad cone
-  const yTable = py(CFG.benchY, k(120));
-  const cg = ctx.createLinearGradient(0, yF, 0, yTable);
-  cg.addColorStop(0, `rgba(${tc.glow},${0.10*inten})`);
-  cg.addColorStop(1, `rgba(${tc.glow},0)`);
-  ctx.fillStyle = cg;
-  ctx.beginPath();
-  ctx.moveTo(sx - halfW, yF);
-  ctx.lineTo(sx + halfW, yF);
-  ctx.lineTo(sx + 430*kk*SS, yTable);
-  ctx.lineTo(sx - 430*kk*SS, yTable);
-  ctx.closePath(); ctx.fill();
-  // pool on the table
-  const kf = k(160);
-  drawGlow(tc.glow, px(x,kf), py(CFG.benchY - 4, kf), 380*kf*SS, 0.13*inten, 0.26);
-}
 
 /* ---------------- MONITORS · era 3 living screens ---------------- */
 const MONS = {};    // kind -> {c, w, h, screen:{x,y,w,h}}
@@ -5043,7 +4903,10 @@ function drawFigures(){
     if (sx < -260 || sx > W + 260) continue;
     const scale = (f.h / f.sprite.h) * kk * SS;
     const syFoot = py(f.seated ? 900 : 1080, kk);
-    ctx.globalAlpha = 0.92;
+    // the sprites are near-black. Against the wood and plaster of the analog
+    // century that reads as a person standing in shadow; against the white
+    // rooms it read as a hole cut in the wall, so it thins out with the era.
+    ctx.globalAlpha = segIdx(f.x) <= 1 ? 0.92 : 0.32;
     ctx.drawImage(f.sprite.c, sx - f.sprite.w*scale/2, syFoot - f.sprite.h*scale,
                   f.sprite.w*scale, f.sprite.h*scale);
     ctx.globalAlpha = 1;
@@ -5898,17 +5761,17 @@ function drawStage(t){
   ctx.fillStyle = fg;
   ctx.fillRect(xF0, yF, xF1 - xF0, yB - yF);
   // the angled side table in the recreation zone (per the green-board sketch)
-  const T = drawYawedTable(27690, 300, 34, 620, 260, 820, 260,
+  const T = drawYawedTable(SHIFT(27690), 300, 34, 620, 260, 820, 260,
     {top:'#dfe2e5', side0:'#b7bbbf', side1:'#82878c', edge:'rgba(255,255,255,0.5)'});
   // a round stand on it
   const kS = k(280);
-  const sxS = px(27620, kS);
+  const sxS = px(SHIFT(27620), kS);
   const yS = py(820, kS);
   ctx.fillStyle = '#c7cbd0';
   ctx.fillRect(sxS - 26*kS*SS, yS - 60*kS*SS, 52*kS*SS, 60*kS*SS);
   ctx.beginPath(); ctx.ellipse(sxS, yS - 60*kS*SS, 34*kS*SS, 9*kS*SS, 0, 0, 7);
   ctx.fillStyle = '#eceff2'; ctx.fill();
-  pushHit(sxS - 40*kS*SS, yS - 120*kS*SS, 80*kS*SS, 120*kS*SS, {type:'focus', beat: BEATS.length - 1, anchor: 27620});
+  pushHit(sxS - 40*kS*SS, yS - 120*kS*SS, 80*kS*SS, 120*kS*SS, {type:'focus', beat: BEATS.length - 1, anchor: SHIFT(27620)});
 
   // Jim on stage — a presence, later a generated-video moment
   const kJ = k(480);
@@ -6306,8 +6169,20 @@ const PEOPLE = {
   nadia:  {name:'Nadia Rodriguez', role:'Guiding Leaders alumna', img:'nadia'},
   bianca: {name:'Bianca Clark', role:'Guiding Leaders alumna', img:'bianca'},
 };
-const BEAT_PEOPLE = {2450:['jim'], 14260:['ditolla'], 15700:['rella'], 18700:['jim','ditolla'], 21080:['gordon','rella'],
-                     25490:['ellen','nadia','bianca'], 28180:['jim']};
+/* Keyed by the beat itself, not by where it happens to stand. These were raw
+   world coordinates, and every cut added to the timeline moved the beats out
+   from under them, so the block never rendered on any page at all; one key
+   (14260) had not matched a beat even before the cuts. A year and a title
+   cannot drift. */
+const BEAT_PEOPLE = {
+  '1970|FOUNDED': ['jim'],
+  '2000|R&D IS BORN': ['rella'],
+  '2001|WEB \u00b7 CLINICAL VOICE': ['ditolla'],
+  '2007|FIRST DIGITAL CASE': ['jim', 'ditolla'],
+  '2009|BRUXZIR': ['gordon', 'rella'],
+  '2019|GUIDING LEADERS': ['ellen', 'nadia', 'bianca'],
+  '2026|TODAY': ['jim'],
+};
 let PERSON_SPRITES = {};
 /* speaker clips inside the study pages: tap a preview, a third-layer video
    window opens — pieces of the interviews we are filming */
@@ -6537,7 +6412,7 @@ function drawStudy(){
       my += th + 46*SS;
     }
   }
-  const ppl = BEAT_PEOPLE[b.x];
+  const ppl = BEAT_PEOPLE[b.y + '|' + (b.t || '')];
   if (ppl && ppl.length){
     ctx.fillStyle = K.rule;
     ctx.fillRect(left, y, colW, 1.5*SS); y += 38 * SS;
@@ -7150,7 +7025,6 @@ async function boot(){
   TEX.front4 = panelTexture({w:1200, h:600, base:'#c8ccd0', groove:420});
   if (PHOTO_SKIN) applyPhotoTextures();
   cacheWrap();
-  TEX.outside = makeOutside();
   SECTIONS.old = makeSection('old');
   SECTIONS.neu = makeSection('neu');
   initSeamVideo();
@@ -7245,6 +7119,18 @@ async function boot(){
   auditStatics();
   window.__photoSkinReady = true;
   if (/[?&]audit/.test(location.search)) setTimeout(auditRivets, 400);
+  /* ?at=<world x> stands the camera at a coordinate with the tour already
+     running. It exists so the hall can be walked and photographed from a script
+     instead of by hand — every seam in it is a number, and a number can be
+     checked. ?at=list prints the beats and their coordinates to the console. */
+  const at = /[?&]at=([-\d.]+)/.exec(location.search);
+  if (at){
+    cam.x = parseFloat(at[1]); cam.vel = 0; cam.z = 0; cam.zTarget = 0;
+    state.mode = 'live'; state.introHold = false; state.introFade = 0;
+    state.ruleA = 1; state.idle = 0;
+  }
+  if (/[?&]at=list/.test(location.search))
+    console.log(BEATS.map(b => `${b.y}\t${b.x|0}\t${b.t || ''}`).join('\n'));
   requestAnimationFrame(loop);
 }
 window.addEventListener('load', boot);   // assets block sits below — wait for it
