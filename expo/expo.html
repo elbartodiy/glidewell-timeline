@@ -2710,10 +2710,10 @@ function drawRec23(t){
    one at a time, from the top down, as you come through: half the pile by the
    moment the two lines cross, and by the time you have walked on, a tenth of it
    is left standing at the bottom. That is the whole of March 2023. */
-/* Still forty-eight boxes, but at twice the size they have to stack broader or
-   the pile buries the very crossing it is there to prove. Seven rows, not
-   twelve: a mailroom heap is wide before it is tall anyway. */
-const BOX_ROWS = [9, 8, 8, 7, 6, 5, 5];   // 48, bottom row first
+/* Forty-eight boxes at twice the size. The pile stands tall enough to cross
+   the lines behind it, and that is fine: by the time it is in front of them
+   most of it has already gone, and what is left is below the crossing. */
+const BOX_ROWS = [7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1];   // 48, bottom row first
 let BOX_PILE = null;
 function boxPile(){
   if (BOX_PILE) return BOX_PILE;
@@ -2779,11 +2779,6 @@ function drawBoxPile(b, t){
     ctx.strokeRect(bx - bw/2, by - bh, bw, bh);
     ctx.restore();
   }
-  ctx.fillStyle = 'rgba(70,80,92,0.55)';
-  ctx.font = eraFont(13 * S1, '700', SEGMENTS[3].font);
-  ctx.textAlign = 'center';
-  ctx.fillText(`${live} \u2190 ${N}`, sx, foot + 22 * S1);
-  ctx.textAlign = 'left';
   pushHit(sx - bw * 4, foot - BOX_ROWS.length * bh - dp, bw * 8, BOX_ROWS.length * bh + dp * 2,
           {type: 'focus', beat: nearestBeat(b.x).i, anchor: b.x});
 }
