@@ -1603,7 +1603,11 @@ function drawBenchDescs(){
       ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 2*SS;
       // 0.925 put this line straight through the century rule and the hint under
   // it; the rule owns the bottom of the frame, so the caption stops above it
-  drawLines(b._d, W * 0.5, H * 0.858, 32 * SS);
+  /* drawLines takes the FIRST baseline, so a four-line caption starting at a
+     fixed height ran its last line off the bottom of the frame. Anchor the
+     block by its foot instead: the last line always lands on the same rule, and
+     longer captions grow upward. */
+  drawLines(b._d, W * 0.5, H * 0.905 - (b._d.length - 1) * 32 * SS, 32 * SS);
       ctx.restore();
       continue;
     }
@@ -3068,10 +3072,15 @@ function drawModel93(wx, lz, wWorld, topWorldY){
   const p = {s, ox: sx - (XM - ZM * 0.50) * s / 2, oy: foot - ZM * 0.34 * s};
 
   // the plinth: the ground plane of the model, oversailed and extruded down
-  const OV = 13, H = py(1080, kk) - foot;
-  const A = m93(p, -OV, -4, -OV), B = m93(p, XM+OV, -4, -OV);
-  const C = m93(p, XM+OV, -4, ZM+OV), D = m93(p, -OV, -4, ZM+OV);
-  const rr = 26 * s * 0.6;
+  /* One surface. The site used to be a separate slab laid on top of a separate
+     box, and the two never looked like one thing — the card overhung the stand
+     on one side and left it bare on the other, which is exactly the cut-and-
+     paste look. The stand's top face IS the ground the site is laid out on now,
+     so there is no seam between them to misalign. */
+  const OV = 0, H = py(1080, kk) - foot;
+  const A = m93(p, -2, 0, -2), B = m93(p, XM+2, 0, -2);
+  const C = m93(p, XM+2, 0, ZM+2), D = m93(p, -2, 0, ZM+2);
+  const rr = 14 * s;
   ctx.save();
   ctx.translate(sx, py(1080, kk)); ctx.scale(1, 0.16); ctx.translate(-sx, -py(1080, kk));
   const gsh = ctx.createRadialGradient(sx, py(1080, kk), 0, sx, py(1080, kk), (XM+2*OV) * s * 0.7);
@@ -3093,7 +3102,6 @@ function drawModel93(wx, lz, wWorld, topWorldY){
   topG.addColorStop(0, '#ffffff'); topG.addColorStop(1, '#e4e8ec');
   ctx.fillStyle = topG; ctx.fill();
 
-  box93(p, 0, XM, -4, 0, 0, ZM, false);                 // the site itself
 
   /* The grounds. A building alone on a plate is a massing study; what the film
      shows is a place — asphalt, a lot with the stalls painted on it, young
@@ -3666,7 +3674,18 @@ function latchedPhase(mid, span){
   return u * u * (3 - 2 * u);
 }
 function scanPhase(mid){ return latchedPhase(mid, 450); }
-function paneDrop(mid){ return latchedPhase(mid, 900); }
+function paneDrop(mid){
+  /* The pane is on screen from 2800 units out, and its descent was computed
+     over the last 900 — so for the first nineteen hundred it hung at the
+     ceiling doing nothing, waiting for you to get close, which reads as a thing
+     that is broken rather than a thing that is arriving. It now travels the
+     whole distance it is visible for, on an ease-in: barely moving while it is
+     far off, gathering speed as it comes, and landing exactly at the centre. */
+  const d = cam.x - mid;
+  if (d >= 0) return 1;
+  const u = Math.max(0, Math.min(1, 1 + d / 2800));
+  return u * u;
+}
 
 function drawRec2(t){
   const mid = (REC2_L + REC2_R) / 2;
