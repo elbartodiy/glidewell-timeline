@@ -6055,84 +6055,103 @@ function drawGrade(t){
    tray and impression travel to the lab together; the lab pours the model out
    of it. An impression without a tray would never have been in the post. */
 function drawImpression(cx, cy, w, upper){
+  /* Drawn from the photograph. Three materials, and they matter: the tray is a
+     pale cream, the impression is a vivid orchid, and the handle is stamped
+     metal with a hole through it. The teeth are the point — fourteen distinct
+     forms pressed into the material, each one a hollow with a lit rim, wide at
+     the back and narrow at the front, not a row of dots. */
   const h = w * 0.94;
-  const rx = w * 0.5, ry = h * 0.5, ix = w * 0.29, iy = h * 0.31;
-  const A0 = Math.PI * 0.13, A1 = Math.PI * 0.87;
+  const A0 = Math.PI * 0.08, A1 = Math.PI * 0.92;
+  const orx = w * 0.50, ory = h * 0.50;      // the tray
+  const prx = w * 0.425, pry = h * 0.435;    // the material, outer
+  const irx = w * 0.235, iry = h * 0.255;    // the material, inner
+  const arch = (rx, ry, a0, a1) => ctx.ellipse(cx, cy, rx, ry, 0, a0, a1, true);
   ctx.save();
-  // THE TRAY: a horseshoe of steel a little larger than the impression, with
-  // its handle out at the front where the dentist held it
-  const trx = rx * 1.15, tryy = ry * 1.15, tix = ix * 0.84, tiy = iy * 0.84;
+
+  // the handle, out at the front, behind everything else
+  const hw = w * 0.125, hh = w * 0.34, hy = cy - ory * 0.94;
+  const hg = ctx.createLinearGradient(cx - hw/2, 0, cx + hw/2, 0);
+  hg.addColorStop(0, '#8f959b'); hg.addColorStop(0.34, '#e2e6e9');
+  hg.addColorStop(0.62, '#aab1b7'); hg.addColorStop(1, '#767c82');
+  ctx.fillStyle = hg;
   ctx.beginPath();
-  ctx.ellipse(cx, cy, trx, tryy, 0, A0, A1, true);
-  ctx.ellipse(cx, cy, tix, tiy, 0, A1, A0, false);
-  ctx.closePath();
-  const tg = ctx.createLinearGradient(cx - trx, cy - tryy, cx + trx, cy + tryy);
-  tg.addColorStop(0, '#e7eaec'); tg.addColorStop(0.34, '#a7aeb4');
-  tg.addColorStop(0.62, '#dde1e4'); tg.addColorStop(1, '#7e858b');
-  ctx.fillStyle = tg;
-  ctx.shadowColor = 'rgba(20,14,18,0.45)'; ctx.shadowBlur = 16 * SS; ctx.shadowOffsetY = 7 * SS;
-  ctx.fill();
-  ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-  ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1.4 * SS;
-  ctx.beginPath(); ctx.ellipse(cx, cy, trx, tryy, 0, A0, A1, true); ctx.stroke();
-  // the handle, with the hole in it
-  const hw = w * 0.115, hh = w * 0.30, hy = cy - tryy;
-  ctx.fillStyle = tg;
-  ctx.beginPath();
-  if (ctx.roundRect) ctx.roundRect(cx - hw/2, hy - hh, hw, hh + hh * 0.22, hw * 0.30);
+  if (ctx.roundRect) ctx.roundRect(cx - hw/2, hy - hh, hw, hh + hh * 0.30, hw * 0.34);
   else ctx.rect(cx - hw/2, hy - hh, hw, hh);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(120,128,136,0.7)'; ctx.lineWidth = 1.2 * SS; ctx.stroke();
-  ctx.fillStyle = 'rgba(52,58,64,0.85)';
-  ctx.beginPath(); ctx.arc(cx, hy - hh * 0.66, hw * 0.22, 0, 7); ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(cx, cy, rx, ry, 0, A0, A1, true);
-  ctx.ellipse(cx, cy, ix, iy, 0, A1, A0, false);
-  ctx.closePath();
-  if (upper){                              // the palate fills the arch
-    ctx.moveTo(cx + ix, cy);
-    ctx.ellipse(cx, cy - h * 0.04, ix, iy * 0.98, 0, 0, 7);
-  }
-  const g = ctx.createLinearGradient(cx - rx, cy - ry, cx + rx * 0.6, cy + ry);
-  g.addColorStop(0, '#d768b4'); g.addColorStop(0.42, '#bb3f93'); g.addColorStop(1, '#8b2a6e');
-  ctx.fillStyle = g;
-  ctx.shadowColor = 'rgba(20,6,16,0.5)'; ctx.shadowBlur = 14 * SS; ctx.shadowOffsetY = 6 * SS;
+  ctx.strokeStyle = 'rgba(110,118,126,0.7)'; ctx.lineWidth = 1.1 * SS; ctx.stroke();
+  ctx.fillStyle = 'rgba(58,64,70,0.9)';
+  ctx.beginPath(); ctx.arc(cx, hy - hh * 0.62, hw * 0.20, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(120,128,136,0.55)';
+  ctx.fillRect(cx - hw * 0.26, hy - hh * 0.30, hw * 0.52, hh * 0.045);
+
+  // the tray: a pale block, flat across the open end
+  ctx.beginPath(); arch(orx, ory, A0, A1); ctx.closePath();
+  const tg = ctx.createLinearGradient(cx - orx, cy - ory, cx + orx * 0.4, cy + ory);
+  tg.addColorStop(0, '#f6f2ea'); tg.addColorStop(0.55, '#e4ddd0'); tg.addColorStop(1, '#c3bbab');
+  ctx.fillStyle = tg;
+  ctx.shadowColor = 'rgba(24,14,20,0.45)'; ctx.shadowBlur = 15 * SS; ctx.shadowOffsetY = 7 * SS;
   ctx.fill();
   ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-  // the imprints: bigger at the back, small and close at the front
-  const mrx = (rx + ix) / 2, mry = (ry + iy) / 2;
+
+  // the material
+  ctx.beginPath();
+  arch(prx, pry, A0 + 0.05, A1 - 0.05);
+  if (upper){ ctx.closePath(); }
+  else { ctx.ellipse(cx, cy, irx, iry, 0, A1 - 0.05, A0 + 0.05, false); ctx.closePath(); }
+  const pg = ctx.createLinearGradient(cx - prx, cy - pry, cx + prx * 0.5, cy + pry);
+  pg.addColorStop(0, '#e07ac2'); pg.addColorStop(0.30, '#c74aa2');
+  pg.addColorStop(0.68, '#ad2f8b'); pg.addColorStop(1, '#7f1f66');
+  ctx.fillStyle = pg; ctx.fill();
+  if (upper){
+    // the palate, a smooth dome inside the arch
+    ctx.beginPath(); ctx.ellipse(cx, cy - h * 0.02, irx * 1.02, iry * 1.02, 0, 0, 7);
+    const dg = ctx.createRadialGradient(cx - irx * 0.3, cy - iry * 0.5, irx * 0.1,
+                                        cx, cy - h * 0.02, irx * 1.1);
+    dg.addColorStop(0, '#d264b2'); dg.addColorStop(1, '#94266f');
+    ctx.fillStyle = dg; ctx.fill();
+  }
+
+  // fourteen teeth, wide at the back and close at the front
+  const mrx = (prx + irx) / 2, mry = (pry + iry) / 2, band = (prx - irx);
   for (let i = 0; i < 14; i++){
     const t2 = (i + 0.5) / 14;
-    const th = Math.PI * 0.13 - t2 * Math.PI * 1.26;
+    const th = Math.PI * 0.12 - t2 * Math.PI * 1.24;
     const px2 = cx + Math.cos(th) * mrx, py2 = cy + Math.sin(th) * mry;
-    const sz = w * (0.038 + 0.030 * Math.abs(t2 - 0.5) * 2);
+    const back = Math.abs(t2 - 0.5) * 2;                  // 0 at the front, 1 at the back
+    const tw = band * (0.30 + 0.30 * back), tl = band * (0.40 + 0.12 * back);
     ctx.save();
     ctx.translate(px2, py2); ctx.rotate(th + Math.PI / 2);
-    ctx.fillStyle = 'rgba(96,26,76,0.85)';
-    ctx.beginPath(); ctx.ellipse(0, 0, sz, sz * 0.78, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = 'rgba(226,150,200,0.45)';
-    ctx.beginPath(); ctx.ellipse(-sz * 0.18, -sz * 0.22, sz * 0.5, sz * 0.36, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(96,22,74,0.92)';                // the hollow
+    ctx.beginPath(); ctx.ellipse(0, 0, tw, tl, 0, 0, 7); ctx.fill();
+    if (back > 0.45){                                     // molars keep their cusps
+      ctx.fillStyle = 'rgba(140,44,110,0.8)';
+      for (const [ox2, oy2] of [[-tw*0.38, -tl*0.34], [tw*0.38, -tl*0.34],
+                                [-tw*0.38, tl*0.34], [tw*0.38, tl*0.34]]){
+        ctx.beginPath(); ctx.ellipse(ox2, oy2, tw * 0.34, tl * 0.30, 0, 0, 7); ctx.fill();
+      }
+    }
+    ctx.strokeStyle = 'rgba(244,178,222,0.55)';           // the lit rim of the hollow
+    ctx.lineWidth = Math.max(0.8, tw * 0.16);
+    ctx.beginPath(); ctx.ellipse(0, -tl * 0.06, tw * 0.96, tl * 0.94, 0, Math.PI * 1.05, Math.PI * 1.95);
+    ctx.stroke();
     ctx.restore();
   }
-  // the wet look the material never loses
+
+  // the wet look, only on the material
   ctx.save();
   ctx.beginPath();
-  ctx.ellipse(cx, cy, rx, ry, 0, A0, A1, true);
-  ctx.ellipse(cx, cy, ix, iy, 0, A1, A0, false);
-  ctx.closePath(); ctx.clip();
-  const sh = ctx.createLinearGradient(cx - rx, cy - ry, cx - rx * 0.1, cy + ry * 0.3);
-  sh.addColorStop(0, 'rgba(255,225,246,0.42)');
-  sh.addColorStop(0.5, 'rgba(255,225,246,0.06)');
-  sh.addColorStop(1, 'rgba(255,225,246,0)');
-  ctx.fillStyle = sh; ctx.fillRect(cx - rx, cy - ry, rx * 2, ry * 2);
+  arch(prx, pry, A0 + 0.05, A1 - 0.05);
+  if (upper) ctx.closePath();
+  else { ctx.ellipse(cx, cy, irx, iry, 0, A1 - 0.05, A0 + 0.05, false); ctx.closePath(); }
+  ctx.clip();
+  const sg = ctx.createLinearGradient(cx - prx, cy - pry, cx - prx * 0.1, cy + pry * 0.4);
+  sg.addColorStop(0, 'rgba(255,228,248,0.50)');
+  sg.addColorStop(0.45, 'rgba(255,228,248,0.07)');
+  sg.addColorStop(1, 'rgba(255,228,248,0)');
+  ctx.fillStyle = sg; ctx.fillRect(cx - prx, cy - pry, prx * 2, pry * 2);
   ctx.restore();
   ctx.restore();
 }
-/* Closing it does not put it away: the impression goes the way it actually
-   went. Two hundred and twenty points over each arch turn into a nought or a
-   one, lift off the material and fade — the physical thing leaving as data,
-   which is the whole of what happened in March 2023. Only when the last bit has
-   gone does the carton itself fade. */
 function drawBits(cx, cy, w, dz, seed){
   const h = w * 0.94, rx = w * 0.5, ry = h * 0.5, ix = w * 0.29, iy = h * 0.31;
   const R = rng(seed);
