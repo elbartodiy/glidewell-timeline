@@ -220,9 +220,9 @@ const BEATS = [
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
    wall:[],
    table:[],
-   st:[{img:'ellen', w:120, dx:55, lz:130, cap:'Dr. Ellen Paulisick · GL alum'},
-       {img:'nadia', w:120, dx:206, lz:180, cap:'Dr. Nadia Rodriguez · GL alum'},
-       {img:'bianca', w:120, dx:357, lz:60, cap:'Dr. Bianca Clark · GL alum'}]},
+   st:[{img:'ellen', w:120, dx:55, lz:165, cap:'Dr. Ellen Paulisick · GL alum'},
+       {img:'nadia', w:120, dx:206, lz:165, cap:'Dr. Nadia Rodriguez · GL alum'},
+       {img:'bianca', w:120, dx:357, lz:165, cap:'Dr. Bianca Clark · GL alum'}]},
 
   {x:26340, y:'2022', t:'FASTSCAN.IO',
    th:'The front door to the all-digital workflow.',
@@ -235,7 +235,7 @@ const BEATS = [
    th:'',
    d:'March 2023: for the first time, more digital impressions arrive at Glidewell in a month than physical ones. Nothing announces it — it is simply the month the two lines cross, sixteen years after the first digital case came in.',
    wall:[], table:[],
-   rig:{kind:'boxes', dx:0, lz:150, w:300}},
+   rig:{kind:'boxes', dx:0, lz:150, w:560}},
   {x:27190, y:'2020s', t:'AI · SCALE', tier:1,
    th:'The flywheel: cheaper to make → wider access → reinvest.',
    d:'CrownAI / MarginAI; ~500K units a month, 5,000+ staff — the largest dental lab in the world.',
@@ -2710,7 +2710,10 @@ function drawRec23(t){
    one at a time, from the top down, as you come through: half the pile by the
    moment the two lines cross, and by the time you have walked on, a tenth of it
    is left standing at the bottom. That is the whole of March 2023. */
-const BOX_ROWS = [7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1];   // 48, bottom row first
+/* Still forty-eight boxes, but at twice the size they have to stack broader or
+   the pile buries the very crossing it is there to prove. Seven rows, not
+   twelve: a mailroom heap is wide before it is tall anyway. */
+const BOX_ROWS = [9, 8, 8, 7, 6, 5, 5];   // 48, bottom row first
 let BOX_PILE = null;
 function boxPile(){
   if (BOX_PILE) return BOX_PILE;
@@ -4726,7 +4729,7 @@ function initDecor(){
   FIGURES.push({x: SHIFT(16460), z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
   // mills receding behind the factory line
   // the graduates' mortarboard behind the alumnae portraits
-  PROPS.push({x: SHIFT(25640), z: 245, kind: 'gradcap', w: 165});
+  PROPS.push({x: SHIFT(25700), z: 85, kind: 'gradcap', w: 175, late: true});
 
   // the welcome still life — placeholder heirlooms of the craft century
   // a tight triangle: the cast jaw is the hero dead under the title,
@@ -5009,14 +5012,15 @@ function drawFigures(){
 }
 function drawProps(midPass){
   for (const p of PROPS){
-    if ((!!p.mid) !== !!midPass) continue;
+    if (midPass === 'late'){ if (!p.late) continue; }
+    else if ((!!p.mid) !== !!midPass || p.late) continue;
     if (Math.abs(p.x - cam.x) > 2200) continue;
     const sp = PROP_SPRITES[p.kind];
     const kk = k(p.z);
     const sx = px(p.x, kk);
     if (sx < -260 || sx > W + 260) continue;
     const scale = (p.w / sp.w) * kk * SS;
-    const syFoot = p.mid ? py(1080, kk) : py(CFG.benchY - 2, kk);
+    const syFoot = (p.mid && midPass !== 'late') ? py(1080, kk) : py(CFG.benchY - 2, kk);
     ctx.save();
     if (p.flip){ ctx.translate(sx, 0); ctx.scale(-1, 1); ctx.translate(-sx, 0); }
     ctx.globalAlpha = 0.95;
@@ -6751,6 +6755,7 @@ function frame(){
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
     if (b.pyr) drawBookPyramid(b, t);
   }
+  drawProps('late');   // things meant to lie in front of a beat's own objects
   drawRec93Front(t);   // the model stands on its own plinth, on the floor
   drawAIRelay(t);      // the one object that belongs to two beats at once
 
