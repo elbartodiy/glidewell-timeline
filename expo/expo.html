@@ -1164,15 +1164,20 @@ const FLOOR_TONES = {
     ['#5f656e', '#2c3037'],   // office: carpet-tile grey, lit like the room after it
     ['#686d75', '#31353b'],   // white room: polished light concrete
   ],
-  rec: [
-    ['#d6cfc0', '#8f8778'],   // 1979: pale stone, toned to the panel
-    ['#d3d1c9', '#8b897f'],   // 1989: the national-leader threshold
-    ['#c9ccd1', '#82868d'],   // 1993: the nineties office slab
-    ['#eceef0', '#a9aeb4'],   // 2018: the machine hall, lit like an operating room
-    ['#e8ebee', '#a4a9af'],   // 2023: the crossing
-    ['#dde1e6', '#989ea6'],   // digital revolution: cool light stone
-    ['#e4e7ea', '#a3a9b0'],   // 2022 fastscan: the whitest slab of all
-  ],
+  /* Keyed by the bay, not by its position in this list. They were positional,
+     and inserting three rows in the middle silently moved two portals onto
+     slabs meant for other years — the Digital Revolution ended up on the 1993
+     office floor and 2022 on the 2018 machine-hall floor, while the two slabs
+     written for them went unused. A name cannot slide. */
+  rec: {
+    r1979: ['#d6cfc0', '#8f8778'],   // pale stone, toned to the panel
+    r1989: ['#d3d1c9', '#8b897f'],   // the national-leader threshold
+    r1993: ['#c9ccd1', '#82868d'],   // the nineties office slab
+    r2018: ['#eceef0', '#a9aeb4'],   // the machine hall, lit like an operating room
+    r2023: ['#e8ebee', '#a4a9af'],   // the crossing
+    rDR:   ['#dde1e6', '#989ea6'],   // digital revolution: cool light stone
+    r2022: ['#e4e7ea', '#a3a9b0'],   // fastscan: the whitest slab of all
+  },
   plaza: ['#9aa27f', '#5c6650'],  // outside: sunlit ground
 };
 /* the floor: every era owns its tone, and each recreation stands on its own
@@ -1190,19 +1195,19 @@ function drawFloor(){
   const T = FLOOR_TONES;
   const spans = [
     [SEGMENTS[0].x0 - 900, REC_L,  T.era[0]],
-    [REC_L,  REC_R,  T.rec[0]],
+    [REC_L,  REC_R,  T.rec.r1979],
     [REC_R,  REC3_L, T.era[1]],
-    [REC3_L, REC3_R, T.rec[1]],
+    [REC3_L, REC3_R, T.rec.r1989],
     [REC3_R, REC93_L, T.era[2]],
-    [REC93_L, REC93_R, T.rec[2]],
+    [REC93_L, REC93_R, T.rec.r1993],
     [REC93_R, REC2_L, T.era[2]],
-    [REC2_L, REC2_R, T.rec[2]],
+    [REC2_L, REC2_R, T.rec.rDR],
     [REC2_R, REC18_L, T.era[3]],
-    [REC18_L, REC18_R, T.rec[3]],
+    [REC18_L, REC18_R, T.rec.r2018],
     [REC18_R, REC4_L, T.era[3]],
     [REC4_R, REC23_L, T.era[3]],
-    [REC23_L, REC23_R, T.rec[4]],
-    [REC4_L, REC4_R, T.rec[3]],
+    [REC23_L, REC23_R, T.rec.r2023],
+    [REC4_L, REC4_R, T.rec.r2022],
     [REC23_R, SEGMENTS[3].x1 + 900, T.era[3]],
   ];
   for (const [a, b, tone] of spans){
@@ -4766,6 +4771,8 @@ function drawCrownBlob(x, y, r, a){
   ctx.beginPath(); ctx.ellipse(x + r * 0.30, y - r * 0.24, r * 0.22, r * 0.18, 0, 0, 7); ctx.fill();
 }
 
+/* A counter machine is a data row, not an edit inside the frame loop. */
+const RIGS = {};
 function drawDiscMill(b, t){
   const g = b.rig, kk = k(g.lz ?? 150);
   const sx = px(b.x + (g.dx || 0), kk);
@@ -6840,6 +6847,173 @@ function update(dt){
 }
 
 /* ---------------- FRAME ---------------- */
+/* These three live at the top level because frame() calls two of them and a
+   function declared inside boot() is invisible from outside it. */
+const SHOW_L = REC4_R + 60, SHOW_R = WORLD_END + 300;
+function drawShowroom(t){
+  if (cam.x < SHOW_L - 2600 || cam.x > SHOW_R + 2600) return;
+  const seg = SEGMENTS[3], kk = k(seg.z0 - 6);
+  const x0 = px(SHOW_L, kk), x1 = px(SHOW_R, kk);
+  if (x1 < -200 || x0 > W + 200) return;
+  ctx.save();
+  // the ribbon: a soffit of walnut, turned down out of the ceiling
+  const yT = py(-40, kk), yB = py(104, kk), turn = 190 * kk * SS;
+  const wg = ctx.createLinearGradient(0, yT, 0, yB);
+  wg.addColorStop(0, '#6e5942'); wg.addColorStop(0.34, '#93775a');
+  wg.addColorStop(0.76, '#7b6247'); wg.addColorStop(1, '#63503b');
+  ctx.fillStyle = wg;
+  ctx.beginPath();
+  ctx.moveTo(Math.max(-40, x0), yT);
+  ctx.lineTo(x1, yT); ctx.lineTo(x1, yB);
+  ctx.lineTo(Math.max(-40, x0) + turn, yB);
+  ctx.quadraticCurveTo(Math.max(-40, x0), yB, Math.max(-40, x0), yB - turn * 0.55);
+  ctx.closePath(); ctx.fill();
+  // the grain, and the shadow it drops on the wall below
+  ctx.save();
+  ctx.beginPath(); ctx.rect(Math.max(-40, x0), yT, x1 - Math.max(-40, x0), yB - yT); ctx.clip();
+  for (let i = 0; i < 26; i++){
+    const yy = yT + (yB - yT) * (i / 26);
+    ctx.fillStyle = `rgba(${i % 3 ? 62 : 206},${i % 3 ? 48 : 182},${i % 3 ? 34 : 148},0.035)`;
+    ctx.fillRect(x0, yy, x1 - x0, 1.6 * SS);
+  }
+  ctx.restore();
+  const sh = ctx.createLinearGradient(0, yB, 0, yB + 70 * kk * SS);
+  sh.addColorStop(0, 'rgba(30,22,14,0.22)'); sh.addColorStop(1, 'rgba(30,22,14,0)');
+  ctx.fillStyle = sh;
+  ctx.fillRect(Math.max(0, x0), yB, x1 - Math.max(0, x0), 70 * kk * SS);
+  // downlights set into it, and the pools they throw
+  ctx.globalCompositeOperation = 'lighter';
+  for (let wx = SHOW_L + 330; wx < SHOW_R; wx += 660){
+    const lx = px(wx, kk);
+    if (lx < -260 || lx > W + 260) continue;
+    ctx.fillStyle = 'rgba(255,236,196,0.85)';
+    ctx.beginPath(); ctx.ellipse(lx, yB - 9 * kk * SS, 13 * kk * SS, 5 * kk * SS, 0, 0, 7); ctx.fill();
+    const yP = py(760, kk);
+    const pool = ctx.createLinearGradient(0, yB, 0, yP);
+    pool.addColorStop(0, 'rgba(255,228,180,0.20)');
+    pool.addColorStop(0.5, 'rgba(255,224,172,0.055)');
+    pool.addColorStop(1, 'rgba(255,220,166,0)');
+    ctx.fillStyle = pool;
+    ctx.beginPath();                        // soft-shouldered, not a triangle
+    ctx.moveTo(lx - 22 * kk * SS, yB);
+    ctx.bezierCurveTo(lx - 40 * kk * SS, yB + (yP - yB) * 0.4,
+                      lx - 150 * kk * SS, yB + (yP - yB) * 0.7, lx - 176 * kk * SS, yP);
+    ctx.lineTo(lx + 176 * kk * SS, yP);
+    ctx.bezierCurveTo(lx + 150 * kk * SS, yB + (yP - yB) * 0.7,
+                      lx + 40 * kk * SS, yB + (yP - yB) * 0.4, lx + 22 * kk * SS, yB);
+    ctx.closePath(); ctx.fill();
+    drawGlow('255,232,190', lx, py(560, kk), 150 * kk * SS, 0.05);
+  }
+  // the ring, with the mark inside it — the one thing in the room that is lit
+  /* The ceiling: rings of light that interlock, in twos and threes, at
+     different sizes. One ring is a lamp; a cluster of them is that room. */
+  for (const [gx, cl] of [[-900, [[0,0,74],[62,16,52],[118,-8,38]]],
+                          [420,  [[0,0,58],[54,14,44]]],
+                          [1560, [[0,0,80],[70,-10,56],[128,14,40],[186,-6,30]]]]){
+    const cx0 = px((SHOW_L + SHOW_R) / 2 + gx, kk), cy0 = py(46, kk);
+    if (cx0 < -400 || cx0 > W + 400) continue;
+    for (const [ox, oy, r0] of cl){
+      const rr = r0 * kk * SS, rx = cx0 + ox * kk * SS, ry = cy0 + oy * kk * SS;
+      drawGlow('255,246,226', rx, ry, rr * 2.1, 0.10);
+      ctx.strokeStyle = 'rgba(255,249,236,0.90)';
+      ctx.lineWidth = Math.max(1.2, 4 * kk * SS);
+      ctx.beginPath(); ctx.ellipse(rx, ry, rr, rr * 0.32, 0, 0, 7); ctx.stroke();
+    }
+  }
+  // and the monogram, cut into the wood as a relief and lit from its edge
+  const mx = px(SHOW_L + 1780, kk), my = py(52, kk), mr = 44 * kk * SS;
+  if (mx > -mr * 4 && mx < W + mr * 4){
+    ctx.strokeStyle = 'rgba(238,226,208,0.30)';
+    ctx.lineWidth = Math.max(2, 9 * kk * SS);
+    ctx.beginPath(); ctx.arc(mx, my, mr, Math.PI * 0.18, Math.PI * 1.72); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(mx + mr * 0.95, my); ctx.lineTo(mx + mr * 0.18, my);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,246,228,0.55)';
+    ctx.lineWidth = Math.max(1, 2.4 * kk * SS);
+    ctx.beginPath(); ctx.arc(mx, my - 1.6 * kk * SS, mr, Math.PI * 0.18, Math.PI * 1.72); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* The polish. A floor like that one is half of every photograph taken in the
+   room, and ours was a flat gradient throwing that half away. The frame as
+   painted so far is folded down across the floor line and faded out — so the
+   reflection is of whatever is actually standing there, and stays true by
+   construction rather than by being drawn twice. */
+function drawFloorSheen(){
+  if (cam.x < SHOW_L - 2400 || cam.x > SHOW_R + 2400) return;
+  const kSeam = k(CFG.benchDepth);
+  const yF = py(CFG.benchY + 240, kSeam);
+  const x0 = Math.max(0, px(SHOW_L, kSeam)), x1 = Math.min(W, px(SHOW_R, kSeam));
+  if (x1 - x0 < 4 || yF >= H - 4 || yF <= 4) return;
+  const hh = Math.min(yF, H - yF);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, yF, x1 - x0, H - yF); ctx.clip();
+  ctx.globalAlpha = 0.20;
+  ctx.scale(1, -1);
+  ctx.drawImage(ctx.canvas, x0, yF - hh, x1 - x0, hh, x0, -(yF + hh), x1 - x0, hh);
+  ctx.restore();
+  const fade = ctx.createLinearGradient(0, yF, 0, yF + hh * 0.85);
+  fade.addColorStop(0, 'rgba(232,234,237,0)');
+  fade.addColorStop(1, 'rgba(232,234,237,0.72)');
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, yF, x1 - x0, H - yF); ctx.clip();
+  ctx.fillStyle = fade; ctx.fillRect(x0, yF, x1 - x0, hh);
+  ctx.restore();
+}
+
+/* CONTAINMENT. Two rules the hall is meant to keep and which no amount of
+   looking will reliably catch: nothing may hang off the edge of the frame at
+   the moment it is the subject, and no two things may claim the same pixels to
+   be clicked on. Every interactive element already registers its screen
+   rectangle through pushHit, so both are measurable. This walks the camera to
+   each beat in turn, renders one frame, and reads the rectangles back. */
+function auditFrames(){
+  if (!W || !H){ console.warn('FRAME AUDIT: no viewport'); return; }
+  const keep = {x: cam.x, vel: cam.vel, z: cam.z, mode: state.mode};
+  const spill = [], clash = [];
+  const area = r => Math.max(0, r.w) * Math.max(0, r.h);
+  const bi = new Map(BEATS.map((b, i) => [b, i]));
+  for (const b of BEATS){
+    cam.x = b.x; cam.vel = 0;
+    frame();
+    /* Only the things that belong to THIS beat. Its neighbours are meant to run
+       off the sides — that is what a hall looks like — so judging them would
+       drown the real findings. */
+    const mine = h => {
+      const p = h.p || {};
+      if (p.beat != null) return p.beat === bi.get(b);
+      const wx = p.anchor != null ? p.anchor : p.wx;
+      return wx != null && Math.abs(wx - b.x) < 460;
+    };
+    const hs = HITS.filter(h => area(h) > 400 && mine(h) && !(h.p && h.p.edgeOK));
+    for (const h of hs){
+      const over = Math.max(-h.x, -h.y, (h.x + h.w) - W, (h.y + h.h) - H);
+      const frac = over / Math.max(1, Math.min(h.w, h.h));
+      if (over > 12 && frac > 0.28)
+        spill.push(`${b.y} \u00b7 ${(h.p && h.p.type) || '?'} \u2014 ${over | 0}px past the edge ` +
+                   `(${(frac * 100) | 0}% of it)`);
+    }
+    for (let i = 0; i < hs.length; i++)
+      for (let j = i + 1; j < hs.length; j++){
+        const a = hs[i], c = hs[j];
+        const ox = Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x);
+        const oy = Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y);
+        if (ox <= 0 || oy <= 0) continue;
+        const f = (ox * oy) / Math.min(area(a), area(c));
+        if (f > 0.45)
+          clash.push(`${b.y} \u00b7 ${(a.p && a.p.type) || '?'} and ${(c.p && c.p.type) || '?'} ` +
+                     `share ${(f * 100) | 0}% of the smaller target`);
+      }
+  }
+  cam.x = keep.x; cam.vel = keep.vel; cam.z = keep.z; state.mode = keep.mode;
+  const uniq = a => [...new Set(a)];
+  if (spill.length) console.error('FRAME AUDIT — off the edge:\n  ' + uniq(spill).join('\n  '));
+  if (clash.length) console.error('FRAME AUDIT — overlapping targets:\n  ' + uniq(clash).join('\n  '));
+  if (!spill.length && !clash.length) console.log('FRAME AUDIT: clean — nothing off the edge, no target claimed twice');
+}
+
 function frame(){
   const t = state.time;
   HITS = [];
@@ -6867,6 +7041,7 @@ function frame(){
 
   drawFloor();
   drawWall();
+  drawShowroom(t);   // the room the last stretch is actually set in
   // recreations stand proud of the deeper era walls — they paint on top
   drawMapWall(t);
   drawRec3(t);
@@ -6941,9 +7116,7 @@ function frame(){
       drawStandingPrint(sp, b.x + it.dx, it.lz, it.w,
         {type:'photo', sp, wx: b.x + it.dx, cy: CFG.benchY - hW/2, z: it.lz, w: it.w, cap: it.cap, beat: i});
     }
-    if (b.rig && b.rig.kind === 'disc') drawDiscMill(b, t);
-    if (b.rig && b.rig.kind === 'boxes') drawBoxPile(b, t);
-    if (b.rig && b.rig.kind === 'design') drawDesignStation(b, t);
+    if (b.rig && RIGS[b.rig.kind]) RIGS[b.rig.kind](b, t);
     for (const p of (b.props || [])) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
     if (b.pyr) drawBookPyramid(b, t);
@@ -7013,6 +7186,7 @@ function frame(){
   // any object in the room passes over what is written on the plaster
   drawPlates(t);
   drawBenchDescs();
+  drawFloorSheen();   // the polished floor gives the stretch its second half
 
   drawForeground();
   drawDoorway();
@@ -7190,6 +7364,7 @@ async function boot(){
   initBanners();
   initCapLanes();
   initTables();
+  Object.assign(RIGS, {disc: drawDiscMill, boxes: drawBoxPile, design: drawDesignStation});
   initLights();
   initAttractStops();
   initDust();
@@ -7201,56 +7376,17 @@ async function boot(){
   window.__photoSkinReady = true;
   if (/[?&]audit/.test(location.search)) setTimeout(auditRivets, 400);
   if (/[?&]audit/.test(location.search)) setTimeout(auditFrames, 900);
-  /* CONTAINMENT. Two rules the hall is meant to keep and which no amount of
-   looking will reliably catch: nothing may hang off the edge of the frame at
-   the moment it is the subject, and no two things may claim the same pixels to
-   be clicked on. Every interactive element already registers its screen
-   rectangle through pushHit, so both are measurable. This walks the camera to
-   each beat in turn, renders one frame, and reads the rectangles back. */
-function auditFrames(){
-  if (!W || !H){ console.warn('FRAME AUDIT: no viewport'); return; }
-  const keep = {x: cam.x, vel: cam.vel, z: cam.z, mode: state.mode};
-  const spill = [], clash = [];
-  const area = r => Math.max(0, r.w) * Math.max(0, r.h);
-  const bi = new Map(BEATS.map((b, i) => [b, i]));
-  for (const b of BEATS){
-    cam.x = b.x; cam.vel = 0;
-    frame();
-    /* Only the things that belong to THIS beat. Its neighbours are meant to run
-       off the sides — that is what a hall looks like — so judging them would
-       drown the real findings. */
-    const mine = h => {
-      const p = h.p || {};
-      if (p.beat != null) return p.beat === bi.get(b);
-      const wx = p.anchor != null ? p.anchor : p.wx;
-      return wx != null && Math.abs(wx - b.x) < 460;
-    };
-    const hs = HITS.filter(h => area(h) > 400 && mine(h) && !(h.p && h.p.edgeOK));
-    for (const h of hs){
-      const over = Math.max(-h.x, -h.y, (h.x + h.w) - W, (h.y + h.h) - H);
-      const frac = over / Math.max(1, Math.min(h.w, h.h));
-      if (over > 12 && frac > 0.28)
-        spill.push(`${b.y} \u00b7 ${(h.p && h.p.type) || '?'} \u2014 ${over | 0}px past the edge ` +
-                   `(${(frac * 100) | 0}% of it)`);
-    }
-    for (let i = 0; i < hs.length; i++)
-      for (let j = i + 1; j < hs.length; j++){
-        const a = hs[i], c = hs[j];
-        const ox = Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x);
-        const oy = Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y);
-        if (ox <= 0 || oy <= 0) continue;
-        const f = (ox * oy) / Math.min(area(a), area(c));
-        if (f > 0.45)
-          clash.push(`${b.y} \u00b7 ${(a.p && a.p.type) || '?'} and ${(c.p && c.p.type) || '?'} ` +
-                     `share ${(f * 100) | 0}% of the smaller target`);
-      }
-  }
-  cam.x = keep.x; cam.vel = keep.vel; cam.z = keep.z; state.mode = keep.mode;
-  const uniq = a => [...new Set(a)];
-  if (spill.length) console.error('FRAME AUDIT — off the edge:\n  ' + uniq(spill).join('\n  '));
-  if (clash.length) console.error('FRAME AUDIT — overlapping targets:\n  ' + uniq(clash).join('\n  '));
-  if (!spill.length && !clash.length) console.log('FRAME AUDIT: clean — nothing off the edge, no target claimed twice');
-}
+  /* THE SHOWROOM. The last stretch before the finale is the one room in this
+   hall that still exists, and a photograph of it exists too. Four things carry
+   that interior and three of them are light: a walnut ribbon that comes off the
+   ceiling on a soft curve and runs the wall, so the white reads as far and the
+   wood as near; warm downlights set into it at a rhythm, which give the
+   corridor its length — an even wash gives none; one luminous ring on the
+   ceiling with the mark inside it, the only self-lit object in the room; and a
+   polished floor, which is the half of every photograph of that place that our
+   flat gradient was throwing away. */
+
+
 
 /* ?at=<world x> stands the camera at a coordinate with the tour already
      running. It exists so the hall can be walked and photographed from a script
