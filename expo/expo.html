@@ -8059,6 +8059,65 @@ async function boot(){
     console.log('ONE LINE  ' + SEGMENTS.map((seg, i) => LET[i] + ':' +
       TABLES.filter(t => t.seg === seg).length).join('  runs   ') + '  runs');
   }
+  /* ?plan=1 prints the hall as a plan: every layer with the depth it lives at.
+     x is where you are along the rail, z is how far back from the camera — and
+     because every draw call goes through k(z), a layer's depth is the single
+     number that decides whether it sits behind the counter, on it, or in front
+     of it. Reading those numbers off seven thousand lines by hand is how things
+     end up on the wrong plane, so the file is asked instead. */
+  if (/[?&]plan=1/.test(location.search)){
+    const L = [];
+    const add = (z, layer, name, x0, x1) => L.push({z, layer, name, x0: x0|0, x1: x1|0});
+    for (let i = 0; i < SEGMENTS.length; i++){
+      const s = SEGMENTS[i];
+      add(s.z0, 'WALL', 'era ' + (i+1) + ' wall (' + s.wall + ')', s.x0, s.x1);
+      add(s.z0 - 4, 'LIGHT', 'era ' + (i+1) + ' lamp pool on the wall', s.x0, s.x1);
+      add(s.z0 - 6, 'WALL', 'era ' + (i+1) + ' wall photographs', s.x0, s.x1);
+      add(s.tz, 'TYPE', 'era ' + (i+1) + ' year + title' +
+          (s.tz === s.z0 ? ' (on the wall)' : ' (forward of the wall)'), s.x0, s.x1);
+    }
+    for (const [nm, a, b, z] of [['1979', REC_L, REC_R, 610], ['1989', REC3_L, REC3_R, 728],
+        ['1993', REC93_L, REC93_R, 728], ['Digital Revolution', REC2_L, REC2_R, 970],
+        ['2018', REC18_L, REC18_R, 1000], ['2022', REC4_L, REC4_R, 1000],
+        ['2023', REC23_L, REC23_R, 1000]])
+      add(z, 'REC', nm + ' panel', a, b);
+    add(520, 'LIGHT', 'showroom chandelier hoops', SHOW_L, SHOW_R);
+    add((SEGMENTS[3].z0 || 1400) - 6, 'REC', 'showroom ceiling soffit', SHOW_L, SHOW_R);
+    add((SEGMENTS[3].z0 || 1400) - 8, 'TYPE', 'showroom year monoliths', SHOW_L, SHOW_R);
+    add((SEGMENTS[3].z0 || 1400) - 8, 'REFLECT', 'floor sheen — fold at the wall foot', SHOW_L, SHOW_R);
+    add(CFG.benchDepth, 'REFLECT', 'floor sheen — near edge (back of the counter)', SHOW_L, SHOW_R);
+    for (let i = 0; i < SEGMENTS.length; i++)
+      add((SEGMENTS[i].z0 || 550) - 8, 'FLOOR', 'floor — back edge, at the foot of era ' +
+          (i+1) + "'s wall", SEGMENTS[i].x0, SEGMENTS[i].x1);
+    add(-40, 'FLOOR', 'floor — front edge', -4350, WORLD_END + 300);
+    add(CFG.benchDepth, 'BENCH', 'counter — back edge', -3450, WORLD_END + 300);
+    add(0, 'BENCH', 'counter — front edge', -3450, WORLD_END + 300);
+    add(2, 'GLOW', 'concealed strip + logo plates (era 4)', SHOW_L, SHOW_R);
+    add(240, 'LIGHT', 'pendant lamps and bulbs', -3450, WORLD_END + 300);
+    add(232, 'MACHINE', 'machining cell — the far one', FACT_X + 250, FACT_X + 250);
+    add(190, 'MACHINE', 'machining cell — the near one', FACT_X - 300, FACT_X - 300);
+    add(-90, 'PLINTH', 'pedestals (hero objects)', -3450, WORLD_END + 300);
+    const pz = new Set(), fz = new Set();
+    for (const b of BEATS)
+      for (const it of [...(b.st||[]), ...(b.table||[]), ...(b.props||[]),
+                        ...(b.album ? [b.album] : []), ...(b.rig ? [b.rig] : [])])
+        if (it.lz != null) pz.add(it.lz);
+    for (const f of FIGURES) fz.add(f.z);
+    console.log('PEDESTALS at z=-90:\n' + BEATS.filter(b => b.ped)
+      .map(b => '  ' + b.y + '   x ' + ((b.x + (b.ped.dx ?? -430))|0) +
+                '   gap half ' + (b.ped.gapHalf || 330)).join('\n'));
+    console.log('LAMPS at z=240: ' + LIGHT_GRID.map(l => l.x|0).sort((a,b)=>a-b).join(' '));
+    console.log('BENCH_BREAKS: ' + BENCH_BREAKS.map(b => (b.x|0) + '±' + (b.half|0)).join('  '));
+    console.log('FIGURES:\n' + FIGURES.map(f => '  x ' + (f.x|0) + '  z ' + f.z).join('\n'));
+    console.log('PLAN — LAYERS BY DEPTH\n' + L.sort((a, b) => b.z - a.z).map(r =>
+      '  z=' + String(r.z).padStart(5) + '  ' + r.layer.padEnd(8) + ' ' + r.name +
+      (r.x1 > r.x0 ? '   x ' + r.x0 + ' … ' + r.x1 : '')).join('\n'));
+    console.log('counter objects at z = ' + [...pz].sort((a, b) => b - a).join(', '));
+    console.log('figures at z = ' + [...fz].sort((a, b) => b - a).join(', '));
+    console.log('FACT_X ' + (FACT_X|0) + ' · SHOW_L ' + (SHOW_L|0) + ' · SHOW_R ' + (SHOW_R|0) +
+                ' · WORLD_END ' + (WORLD_END|0) + ' · horizon ' + CFG.horizon + ' · F ' + CFG.F +
+                ' · benchY ' + CFG.benchY);
+  }
   requestAnimationFrame(loop);
 }
 window.addEventListener('load', boot);   // assets block sits below — wait for it
