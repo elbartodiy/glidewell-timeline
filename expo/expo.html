@@ -1709,20 +1709,30 @@ function drawHungYear(b, seg, cx, band, fScale, focusAmt, near){
     ctx.lineTo(cx + wid * s, yBase - cap);
     ctx.stroke();
   }
-  // the light behind, laid first: the face is drawn over its own glow, so the
-  // body of each pass is covered and only the spill survives
-  ctx.globalCompositeOperation = 'lighter';
-  ctx.fillStyle = `rgba(255,255,255,${(0.92 * Math.max(0, Math.min(1, near)) ** 1.6).toFixed(3)})`;
-  ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
-  const lit = Math.max(0, Math.min(1, near)) ** 1.6;   // dark at the edges, lit at the middle
-  if (lit > 0.01) for (const [bl, a] of [[46, 0.28], [23, 0.23], [10, 0.17]]){
-    ctx.shadowColor = `rgba(255,255,255,${(a * lit).toFixed(3)})`;
-    ctx.shadowBlur = bl * SS;
-    ctx.fillText(label, cx, yBase);
+  /* THE HALO IS CAST, NOT PAINTED. Laying the glow by filling the glyph in white
+     and covering it with the dark face leaves a bright hairline all round it:
+     the white body and the dark face are anti-aliased separately, so along every
+     edge the white is a shade more covered than the dark that is meant to hide
+     it, and what survives is a one-pixel outline. It showed on the unlit years
+     too, because even a very faint white body has an edge.
+     So the glyph that makes the shadow is drawn far off the canvas and only its
+     shadow is thrown back into place. There is no body to leak. */
+  const lit = Math.max(0, Math.min(1, near)) ** 1.6;
+  if (lit > 0.01){
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = '#fff';
+    const OFF = W + 4000;
+    ctx.shadowOffsetX = OFF; ctx.shadowOffsetY = 0;
+    for (const [bl, a] of [[54, 0.40], [27, 0.34], [12, 0.26]]){
+      ctx.shadowColor = `rgba(255,255,255,${(a * lit).toFixed(3)})`;
+      ctx.shadowBlur = bl * SS;
+      ctx.fillText(label, cx - OFF, yBase);
+    }
+    ctx.globalCompositeOperation = 'source-over';
   }
-  ctx.globalCompositeOperation = 'source-over';
   ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
-  ctx.fillStyle = `rgba(${seg.ink},0.92)`;
+  ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+  ctx.fillStyle = `rgba(${seg.ink},0.94)`;
   ctx.fillText(label, cx, yBase);
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.restore();
@@ -4924,6 +4934,28 @@ function drawPlateBench(t){
        there is no edge to find — the pitch shortens by the overlap, which on
        plain cabinet wood is invisible. */
     const FTH = 64;                                        // overlap, in world units
+    /* THE SKIRT IS MIRRORED, NOT STRETCHED. The photograph's cabinet stops short
+       of the floor and I filled the rest by stretching its lowest rows — seven
+       plate-widths across and four times down, which is why the bottom of the
+       counter read as a blown-up smear that did not line up with the wood above
+       it. A band of the same wood, flipped, continues its own grain exactly at
+       the joint; flipped again it continues that, and so on to the floor. Every
+       band is at its natural scale in both directions. */
+    const BAND = PL_ROW.bot - PL_ROW.skirt, bandH = sh * BAND / IH;
+    const skirtUnder = (c0, c1, sa, sWid, flip) => {
+      let y = yBot, m = true;
+      while (y < yFloor - 0.5 && bandH > 1){
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(sa, y, sWid + 1, Math.min(bandH, yFloor - y) + 0.5);
+        ctx.clip();
+        if (flip){ ctx.translate(sa + sWid, 0); ctx.scale(-1, 1); ctx.translate(-sa, 0); }
+        if (m){ ctx.translate(0, 2 * y + bandH); ctx.scale(1, -1); }
+        ctx.drawImage(im, c0, PL_ROW.skirt, c1 - c0, BAND, sa, y, sWid + 1, bandH);
+        ctx.restore();
+        y += bandH; m = !m;
+      }
+    };
     const tile = (c0, c1, a, wWorld, flip, lead) => {
       const sa = px(a, kf), sWid = wWorld * SS, f = Math.min(FTH, wWorld * 0.4) * SS;
       if (sa > W || sa + sWid < 0) return;
@@ -4946,10 +4978,17 @@ function drawPlateBench(t){
         for (let j = 0; j < N; j++)
           put(sa + sWid - f * (j + 1) / N, f / N + 0.7, (j + 0.5) / N);
       } else put(sa, sWid + 1, 1);
+      skirtUnder(c0, c1, sa, sWid, flip);
     };
     let i = 0;
     for (const dir of [-1, 1]){
-      let edge = dir < 0 ? pL : pR;
+      /* Start overlapped. A tile fades out along the edge that meets its
+         neighbour, and the first one's neighbour is the plate — laid at its own
+         width and not a millimetre wider. Butting the tile against it left the
+         fade with nothing underneath, so the wall showed through in a band the
+         width of the feather. It runs INTO the plate now, over the same clean
+         counter the strip was cut from. */
+      let edge = dir < 0 ? pL + FTH : pR - FTH;
       while (dir < 0 ? edge > tb.x0 : edge < tb.x1){
         const [c0, c1] = STRIPS[i % 2], flip = (i >> 1) % 2 === 1;
         const wWorld = (c1 - c0) * uPer;
@@ -4960,12 +4999,7 @@ function drawPlateBench(t){
         if (i > 120) break;                                // a run is never this long
       }
     }
-    /* And down to the floor. The photograph's cabinet stops 130 px short of it,
-       which is the other half of what read as a patch: a counter floating with
-       the old one showing underneath. Its lowest clean band is carried down. */
-    if (yFloor > yBot)
-      ctx.drawImage(im, 0, PL_ROW.skirt, IW, PL_ROW.bot - PL_ROW.skirt,
-                    px(pL, kf) - sw * 3, yBot, sw * 7, yFloor - yBot);
+    if (pR > tb.x0 && pL < tb.x1) skirtUnder(0, IW, px(pL, kf), sw, false);
     // the era's own light over the whole face, and the year rail on its edge
     const seg = tb.seg, shF = seg.shade != null ? seg.shade : 1;
     const gr = ctx.createLinearGradient(0, rowY(PL_ROW.front), 0, yFloor);
