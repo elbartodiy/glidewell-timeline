@@ -7351,11 +7351,23 @@ function drawShowroom(t){
   /* The years belong to the architecture, not to the timber. That room puts
      words on white monoliths standing a little proud of the wall — DIGITAL
      DENTISTRY, IMPLANT & BIOLOGICS — lit from the same downlights and throwing
-     a soft edge shadow. So each year in this stretch gets one: a panel behind
-     it on its own plane, so the two can never drift apart. */
+     a soft edge shadow. So each year in this stretch gets one.
+
+     ON THE TYPE'S OWN PLANE, not on its own. I wrote "a panel behind it on its
+     own plane, so the two can never drift apart" — which is the opposite of
+     true, and it is the same mistake as the logo keeping clear of the caption
+     by comment. The panel sat at the wall's depth, 1392, and the year is set on
+     the shared type plane at 680; two depths move across the screen at
+     different rates, so the panel slid out from under its own year as you
+     walked — sometimes a hundred pixels to the left of it. And because the
+     panel's top was computed at the far depth it started BELOW the numerals, so
+     what was left was a pale rectangle standing next to a year rather than
+     behind it. It is now drawn at the type's own depth and sized from the type's
+     own coordinates: the same k, the same x, so nothing can drift. */
   for (const b of BEATS){
     if (b.x < SHOW_L - 200 || b.x > SHOW_R || b.minor || b.under) continue;
-    const kY = k(wallZAt(b.x) - 8);
+    const segY = segAt(b.x);
+    const kY = k(segY.tz || wallZAt(b.x));
     const bx = px(b.x, kY);
     /* A panel wider than the gap to its neighbour overlaps it, and two white
        panels overlapping on a white wall is mush. Each is bounded by half the
@@ -7363,9 +7375,14 @@ function drawShowroom(t){
     let gap = 1e9;
     for (const o of BEATS) if (o !== b && !o.minor && !o.under && o.x >= SHOW_L - 200 && o.x <= SHOW_R)
       gap = Math.min(gap, Math.abs(o.x - b.x));
-    const pw2 = Math.min(660, Math.max(300, gap * 0.82)) * kY * SS;
+    const pw2 = Math.min(780, Math.max(340, gap * 0.86)) * kY * SS;
     if (bx < -pw2 || bx > W + pw2) continue;
-    const pt = py(-46, kY), pb = py(430, kY);
+    /* The type block runs from the top of the numerals down past the thesis —
+       the same span the beat registers for clicking, which is world y 20 to 330
+       at this plane, lifted with the year. The panel takes that block and a
+       margin, so a year is always ON its monolith and never beside it. */
+    const lift = b.yLift || 0;
+    const pt = py(-58 - lift, kY), pb = py(392, kY);
     ctx.fillStyle = 'rgba(20,26,34,0.10)';       // the shadow it stands off the wall on
     ctx.fillRect(bx - pw2/2 + 7 * kY * SS, pt + 7 * kY * SS, pw2, pb - pt);
     const pg3 = ctx.createLinearGradient(0, pt, 0, pb);
