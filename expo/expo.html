@@ -239,14 +239,14 @@ const BEATS = [
    d:'March 2023: for the first time, more digital impressions arrive at Glidewell in a month than physical ones. Nothing announces it — it is simply the month the two lines cross, sixteen years after the first digital case came in.',
    wall:[], table:[],
    rig:{kind:'boxes', dx:0, lz:150, w:560}},
-  {x:27190, y:'2020s', t:'AI · SCALE', tier:1,
+  {x:27190, y:'2020', t:'AI · SCALE', tier:1,
    th:'The flywheel: cheaper to make → wider access → reinvest.',
    d:'CrownAI / MarginAI; ~500K units a month, 5,000+ staff — the largest dental lab in the world.',
    wall:[],
    table:[],
    plasma:{dx:25, cy:505, w:420, mode:'count'}},
 
-  {x:28180, y:'2026', t:'TODAY', tier:1, fly:true,
+  {x:28180, y:'2026', sign:'TODAY', t:'', tier:1, fly:true,
    th:'An arc the length of one life: craft → digital → automation.',
    d:'Automated monolithic milling is the norm; AI + robotics + single-visit define the frontier. The story keeps compounding.',
    wall:[], table:[],
@@ -1112,6 +1112,27 @@ function contactShadow(sx, syFoot, wide, strength){
   ctx.beginPath(); ctx.arc(sx, syFoot, r, 0, 7); ctx.fill();
   ctx.restore();
 }
+/* A SHAFT OF LIGHT WITH SOFT SHOULDERS. A single quad gives a hard edge down
+   both sides, which is what made these read as cut paper. Real light has no
+   edge: it is brightest along its axis and dies outward, and it dies faster the
+   further it has travelled. So the shaft is laid in nested passes — the widest
+   faintest, the narrowest brightest — and each pass spreads more at the foot
+   than at the head, which is the feather from top to bottom. */
+function softBeam(xa, xb, yA, yB, halfA, halfB, rgb, peak, stops){
+  const PASSES = [[1.55, 0.16], [1.22, 0.26], [0.92, 0.40], [0.62, 0.62], [0.34, 0.92]];
+  for (const [w, a] of PASSES){
+    const g = ctx.createLinearGradient(0, yA, 0, yB);
+    for (const [t, m] of stops) g.addColorStop(t, `rgba(${rgb},${(peak * a * m).toFixed(4)})`);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    // the head keeps its width; the foot is where the spread happens
+    const hA = halfA * (1 + (w - 1) * 0.45), hB = halfB * w;
+    ctx.moveTo(xa - hA, yA); ctx.lineTo(xa + hA, yA);
+    ctx.lineTo(xb + hB, yB); ctx.lineTo(xb - hB, yB);
+    ctx.closePath(); ctx.fill();
+  }
+}
+
 function drawGlow(col, cx, cy, r, alpha, squashY){
   if (alpha <= 0.004 || r <= 0) return;
   const sy = squashY || 1;
@@ -1548,11 +1569,19 @@ function drawBeatText(b, focusAmt){
     if (cx > -1200 && cx < W + 1200){
       ctx.save();
       ctx.textAlign = 'center';
-      ctx.font = eraFont(170 * ts * fScale * kk * SS, '', seg.font);
-      ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
-      ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
-      ctx.fillText(b.y, cx, mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt));
-      pushHit(cx - 340*kk*SS, py(20 - (b.yLift || 0), kk), 680*kk*SS, py(330, kk) - py(20, kk),
+      let hitTopF = py(20 - (b.yLift || 0), kk);
+      const bandF = hungBand(b.x);
+      if (bandF){
+        const r = drawHungYear(b, seg, cx, bandF, fScale, focusAmt, near);
+        hitTopF = r.yBase - r.cap - 18 * SS;
+      } else {
+        ctx.font = eraFont(170 * ts * fScale * kk * SS, '', seg.font);
+        ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
+        ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
+        ctx.fillText(b.y, cx, mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt));
+        ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      }
+      pushHit(cx - 340*kk*SS, hitTopF, 680*kk*SS, py(330, kk) - hitTopF,
               {type:'study', beat: BEATS.indexOf(b)});
       const cd = b._capDrop || 0;
       ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
@@ -1585,14 +1614,30 @@ function drawBeatText(b, focusAmt){
       ctx.textAlign = 'center';
       if (b.sub){
         // a satellite of its year-stand: no numeral of its own — the title carries it
-      } else {
-        ctx.font = eraFont(170 * (seg.tScale||1) * (b._ys||1) * fScale * kk * SS, '', seg.font);
-        ctx.fillStyle = `rgba(${seg.ink},${0.5 + 0.45*near})`;
-        ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 3*SS;
-        // a numeral can be lifted clear of whatever stands under it on the panel
-        ctx.fillText(b.y, cx, mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt));
       }
-      pushHit(cx - 320*kk*SS, py(20 - (b.yLift || 0), kk), 640*kk*SS, py(330, kk) - py(20, kk),
+      let hitTop = py(20 - (b.yLift || 0), kk);
+      if (!b.sub){
+        /* IN THE SHOWROOM THE YEAR HANGS. It is a set of cut letters on two
+           wires, sitting on the timber soffit — so it is sized and placed from
+           the soffit's own band rather than from a world coordinate, and it is
+           backlit: the face stays a dark silhouette and the light spills round
+           the perimeter, which is the same trick the furniture's concealed
+           strip plays. That is also what fixes it reading dark — a backlit sign
+           is legible because of the halo, not because the letter is pale. */
+        const band = hungBand(b.x);
+        if (band){
+          const r = drawHungYear(b, seg, cx, band, fScale, focusAmt, near);
+          hitTop = r.yBase - r.cap - 18 * SS;
+        } else {
+          ctx.font = eraFont(170 * (seg.tScale||1) * (b._ys||1) * fScale * kk * SS, '', seg.font);
+          ctx.fillStyle = `rgba(${seg.ink},${0.5 + 0.45*near})`;
+          ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 3*SS;
+          // a numeral can be lifted clear of whatever stands under it on the panel
+          ctx.fillText(b.y, cx, mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt));
+          ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+        }
+      }
+      pushHit(cx - 320*kk*SS, hitTop, 640*kk*SS, py(330, kk) - hitTop,
               {type:'study', beat: BEATS.indexOf(b)});
       const cd = b._capDrop || 0;
       ctx.font = eraFont(46 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
@@ -1617,6 +1662,59 @@ function drawBeatText(b, focusAmt){
    the era's own light. A cold grey under tungsten reads as a foreign object in
    the room; the craft years want warm cream, the white era wants cool. Taken
    from each era's ink, lifted where that ink is too dark to read on wood. */
+/* THE HUNG YEAR. In the showroom a year is a set of cut letters on two wires,
+   sitting on the horizontal walnut strip: sized and placed from the strip's own
+   screen band rather than from a world coordinate, set wide the way cut letters
+   are, and backlit. The face stays a dark silhouette and white light spills
+   round the perimeter — the same trick the concealed strip in the furniture
+   plays, and the reason a dark numeral reads at all against a white wall.
+   Both the flying beats and the static ones come through here: I wrote it into
+   one branch first and the finale, which flies, was left behind. */
+function drawHungYear(b, seg, cx, band, fScale, focusAmt, near){
+  const label = b.sign || b.y;      // the finale is hung as a word, not a number
+  ctx.save();
+  ctx.textAlign = 'center';
+  const track = 13;                         // cut letters are set apart
+  ctx.font = eraFont(100, '', seg.font);
+  try { ctx.letterSpacing = `${track}px`; } catch(e){}
+  const c0 = ctx.measureText(label).actualBoundingBoxAscent || 72;
+  const fpx = 100 * ((band.yB - band.yT) * 0.74) / c0 * fScale;   // shy of the strip
+  ctx.font = eraFont(fpx, '', seg.font);
+  try { ctx.letterSpacing = `${(track * fpx / 100).toFixed(2)}px`; } catch(e){}
+  const m = ctx.measureText(label);
+  const cap = m.actualBoundingBoxAscent || fpx * 0.72;
+  const wid = m.width;
+  const yBase = mixN((band.yT + band.yB) / 2 + cap / 2, H * 0.16, focusAmt);
+  // the two wires, the gauge and colour the banners hang on
+  ctx.strokeStyle = 'rgba(120,128,136,0.5)';
+  ctx.lineWidth = Math.max(1, 1.4 * SS);
+  for (const s of [-0.34, 0.34]){
+    ctx.beginPath();
+    ctx.moveTo(cx + wid * s, 0);
+    ctx.lineTo(cx + wid * s, yBase - cap);
+    ctx.stroke();
+  }
+  // the light behind, laid first: the face is drawn over its own glow, so the
+  // body of each pass is covered and only the spill survives
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = `rgba(255,255,255,${(0.92 * Math.max(0, Math.min(1, near)) ** 1.6).toFixed(3)})`;
+  ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+  const lit = Math.max(0, Math.min(1, near)) ** 1.6;   // dark at the edges, lit at the middle
+  if (lit > 0.01) for (const [bl, a] of [[46, 0.28], [23, 0.23], [10, 0.17]]){
+    ctx.shadowColor = `rgba(255,255,255,${(a * lit).toFixed(3)})`;
+    ctx.shadowBlur = bl * SS;
+    ctx.fillText(label, cx, yBase);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+  ctx.fillStyle = `rgba(${seg.ink},0.92)`;
+  ctx.fillText(label, cx, yBase);
+  try { ctx.letterSpacing = '0px'; } catch(e){}
+  ctx.restore();
+  return {yBase, cap};
+}
+const hungBand = x => (x >= SHOW_L - 200 && x <= SHOW_R) ? timberBand() : null;
+
 function descInk(seg){
   const c = (seg.ink || '218,222,227').split(',').map(Number);
   const mean = (c[0] + c[1] + c[2]) / 3;
@@ -5482,20 +5580,8 @@ function drawPedestal(b, t, hero){
       // beam direction: straight down -> through the exhibit, by lock
       const xEnd = fx + ((sx - fx) * (yEnd / Math.max(1, yObj))) * lock;
       const tObj = Math.max(0.05, Math.min(0.92, yObj / yEnd));
-      const beam = ctx.createLinearGradient(0, 0, 0, yEnd);
-      beam.addColorStop(0, `rgba(${warmC},${(0.03*hero).toFixed(3)})`);
-      beam.addColorStop(tObj, `rgba(${warmC},${(0.22*hero*lock).toFixed(3)})`);
-      beam.addColorStop(Math.min(1, tObj + 0.25), `rgba(${warmC},${(0.07*hero).toFixed(3)})`);
-      beam.addColorStop(1, `rgba(${warmC},0)`);
-      ctx.fillStyle = beam;
-      ctx.beginPath();
-      ctx.moveTo(fx - colW*0.22, 0);
-      ctx.lineTo(fx + colW*0.22, 0);
-      // and it does not fan out on the way: a lens throws a cone that narrows
-      // onto its subject, not a wedge that widens away from it
-      ctx.lineTo(xEnd + colW*0.30, yEnd);
-      ctx.lineTo(xEnd - colW*0.30, yEnd);
-      ctx.closePath(); ctx.fill();
+      softBeam(fx, xEnd, 0, yEnd, colW * 0.22, colW * 0.30, warmC, hero,
+               [[0, 0.14], [tObj, 1], [Math.min(1, tObj + 0.25), 0.32], [1, 0]]);
       // the fixture itself
       ctx.fillStyle = 'rgba(20,20,22,0.9)';
       ctx.fillRect(fx - 9*SS, 0, 18*SS, 12*SS);
@@ -6237,6 +6323,22 @@ function drawFactory(t){
      them that a shop floor has. Butted together they read as one wide box with
      two windows — which is what they looked like. Only the nearer cell carries
      the control pendant; one aisle does not have two of them. */
+  /* LIGHT ON THE CELLS. They were standing in the era's flat ambient with
+     nothing thrown at them, so arriving at 2019 felt like walking into a
+     shadow. Each cabin now gets a shaft from the ceiling landing on its roof —
+     the same soft-shouldered shaft the plinths use, in the room's own cool
+     white rather than the plinths' warm. */
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const [cx2, cz2] of [[FACT_X - 300, 190], [FACT_X + 250, 232]]){
+    const kc = k(cz2), sxc = px(cx2, kc), roof = py(408, kc);
+    if (sxc < -400 || sxc > W + 400) continue;
+    const halfC = 150 * kc * SS;
+    softBeam(sxc, sxc, 0, roof, halfC * 0.42, halfC, '226,240,255', 0.30,
+             [[0, 0.10], [0.55, 0.55], [1, 1]]);
+    drawGlow('226,240,255', sxc, roof, halfC * 1.5, 0.16);
+  }
+  ctx.restore();
   drawCell(FACT_X - 300, 190, t, 0, true);
   drawCell(FACT_X + 250, 232, t, 2.4, false);
   const kk = k(190);
@@ -6682,7 +6784,7 @@ const BEAT_PEOPLE = {
   '2007|FIRST DIGITAL CASE': ['jim', 'ditolla'],
   '2009|BRUXZIR': ['gordon', 'rella'],
   '2019|GUIDING LEADERS': ['ellen', 'nadia', 'bianca'],
-  '2026|TODAY': ['jim'],
+  '2026|': ['jim'],
 };
 let PERSON_SPRITES = {};
 /* speaker clips inside the study pages: tap a preview, a third-layer video
@@ -7284,10 +7386,26 @@ function update(dt){
    the room it opens, and put the change of language at an arbitrary coordinate
    860 units past the doorway instead of on it. */
 const SHOW_L = REC4_L, SHOW_R = WORLD_END + 300;
+/* THE TIMBER BAND'S SCREEN EXTENT. The horizontal walnut strip that runs the
+   length of the showroom — the years in this stretch are hung on it rather than
+   merely set in front of it, so they need its actual screen coordinates. One
+   formula, living beside the thing it measures, so the two cannot drift apart
+   the way the year and its plate did. */
+function timberBand(){
+  if (cam.x < SHOW_L - 2600 || cam.x > SHOW_R + 2600) return null;
+  const kk = k((SEGMENTS[3].z0 || 1400) - 6);
+  return {yT: py(-330, kk), yB: py(-90, kk)};
+}
 function drawShowroom(t){
   if (cam.x < SHOW_L - 2600 || cam.x > SHOW_R + 2600) return;
   const seg = SEGMENTS[3], kk = k(seg.z0 - 6);
-  const x0 = px(SHOW_L, kk), x1 = px(SHOW_R, kk);
+  /* THE RUN IS CUT AT ITS FIRST DOWNLIGHT. Left to start at SHOW_L it showed up
+     two bays early as a brown block hanging in the air with nothing holding it.
+     The first light recessed into it is the landmark: the timber may reach that
+     fitting and no further. Both are at the beam's own depth, so the cut cannot
+     drift away from the lamp it is measured against. */
+  const x0 = px(SHOW_L + 330, kk) - 12 * SS;
+  const x1 = px(SHOW_R, kk);
   if (x1 < -200 || x0 > W + 200) return;
   ctx.save();
   // the ribbon: a soffit of walnut, turned down out of the ceiling
@@ -7300,15 +7418,25 @@ function drawShowroom(t){
   wg.addColorStop(0, '#6e5942'); wg.addColorStop(0.34, '#93775a');
   wg.addColorStop(0.76, '#7b6247'); wg.addColorStop(1, '#63503b');
   ctx.fillStyle = wg;
-  ctx.beginPath();
-  ctx.moveTo(Math.max(-40, x0), yT);
-  ctx.lineTo(x1, yT); ctx.lineTo(x1, yB);
-  ctx.lineTo(Math.max(-40, x0) + turn, yB);
-  ctx.quadraticCurveTo(Math.max(-40, x0), yB, Math.max(-40, x0), yB - turn * 0.55);
-  ctx.closePath(); ctx.fill();
+  /* THE ROUND GOES ON THE FAR END, NOT THE NEAR ONE. A quarter-round where the
+     run BEGINS reads, from the bay before it, as a brown lozenge floating with
+     nothing holding it — and it cannot be tucked behind the 2022 panel, because
+     the panel is at z 1000 and the beam at 1394, so the two slide apart and the
+     end pokes out to the left of it. So the near end is a return — a clean cut
+     with darker end grain — and the round belongs at the far end, where the run
+     actually finishes and there is nothing beyond it to explain. */
+  const xL = Math.max(-40, x0);
+  const beam = new Path2D();
+  beam.moveTo(xL, yT);
+  beam.lineTo(x1, yT);
+  beam.lineTo(x1, yB - turn * 0.55);
+  beam.quadraticCurveTo(x1, yB, x1 - turn, yB);
+  beam.lineTo(xL, yB);
+  beam.closePath();
+  ctx.fill(beam);
   // the grain, and the shadow it drops on the wall below
   ctx.save();
-  ctx.beginPath(); ctx.rect(Math.max(-40, x0), yT, x1 - Math.max(-40, x0), yB - yT); ctx.clip();
+  ctx.clip(beam);
   for (let i = 0; i < 26; i++){
     const yy = yT + (yB - yT) * (i / 26);
     ctx.fillStyle = `rgba(${i % 3 ? 62 : 206},${i % 3 ? 48 : 182},${i % 3 ? 34 : 148},0.035)`;
@@ -7320,6 +7448,18 @@ function drawShowroom(t){
      about it. */
   ctx.fillStyle = 'rgba(196,46,34,0.5)';
   ctx.fillRect(Math.max(0, x0), yB - 2.2 * kk * SS, x1 - Math.max(0, x0), 2.2 * kk * SS);
+  /* the return at the near end: end grain, then the shadow it throws on the wall
+     beside it, so the run begins somewhere instead of simply appearing */
+  if (x0 > -40){
+    const eg = ctx.createLinearGradient(x0, 0, x0 + 9 * kk * SS, 0);
+    eg.addColorStop(0, '#4a3b2a'); eg.addColorStop(1, '#6d5940');
+    ctx.fillStyle = eg;
+    ctx.fillRect(x0, yT, 9 * kk * SS, yB - yT);
+    const sg = ctx.createLinearGradient(x0 - 26 * kk * SS, 0, x0, 0);
+    sg.addColorStop(0, 'rgba(30,22,14,0)'); sg.addColorStop(1, 'rgba(30,22,14,0.20)');
+    ctx.fillStyle = sg;
+    ctx.fillRect(x0 - 26 * kk * SS, yT, 26 * kk * SS, yB - yT);
+  }
   const sh = ctx.createLinearGradient(0, yB, 0, yB + 70 * kk * SS);
   sh.addColorStop(0, 'rgba(30,22,14,0.22)'); sh.addColorStop(1, 'rgba(30,22,14,0)');
   ctx.fillStyle = sh;
