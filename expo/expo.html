@@ -7348,59 +7348,18 @@ function drawShowroom(t){
     drawGlow('255,232,190', lx, py(30, kk), 92 * kk * SS, 0.045);
   }
   // the ring, with the mark inside it — the one thing in the room that is lit
-  /* The years belong to the architecture, not to the timber. That room puts
-     words on white monoliths standing a little proud of the wall — DIGITAL
-     DENTISTRY, IMPLANT & BIOLOGICS — lit from the same downlights and throwing
-     a soft edge shadow. So each year in this stretch gets one.
-
-     ON THE TYPE'S OWN PLANE, not on its own. I wrote "a panel behind it on its
-     own plane, so the two can never drift apart" — which is the opposite of
-     true, and it is the same mistake as the logo keeping clear of the caption
-     by comment. The panel sat at the wall's depth, 1392, and the year is set on
-     the shared type plane at 680; two depths move across the screen at
-     different rates, so the panel slid out from under its own year as you
-     walked — sometimes a hundred pixels to the left of it. And because the
-     panel's top was computed at the far depth it started BELOW the numerals, so
-     what was left was a pale rectangle standing next to a year rather than
-     behind it. It is now drawn at the type's own depth and sized from the type's
-     own coordinates: the same k, the same x, so nothing can drift. */
-  for (const b of BEATS){
-    if (b.x < SHOW_L - 200 || b.x > SHOW_R || b.minor || b.under) continue;
-    const segY = segAt(b.x);
-    const kY = k(segY.tz || wallZAt(b.x));
-    const bx = px(b.x, kY);
-    /* A panel wider than the gap to its neighbour overlaps it, and two white
-       panels overlapping on a white wall is mush. Each is bounded by half the
-       distance to the nearer neighbour. */
-    let gap = 1e9;
-    for (const o of BEATS) if (o !== b && !o.minor && !o.under && o.x >= SHOW_L - 200 && o.x <= SHOW_R)
-      gap = Math.min(gap, Math.abs(o.x - b.x));
-    const pw2 = Math.min(780, Math.max(340, gap * 0.86)) * kY * SS;
-    if (bx < -pw2 || bx > W + pw2) continue;
-    /* The type block runs from the top of the numerals down past the thesis —
-       the same span the beat registers for clicking, which is world y 20 to 330
-       at this plane, lifted with the year. The panel takes that block and a
-       margin, so a year is always ON its monolith and never beside it. */
-    const lift = b.yLift || 0;
-    const pt = py(-58 - lift, kY), pb = py(392, kY);
-    ctx.fillStyle = 'rgba(20,26,34,0.10)';       // the shadow it stands off the wall on
-    ctx.fillRect(bx - pw2/2 + 7 * kY * SS, pt + 7 * kY * SS, pw2, pb - pt);
-    const pg3 = ctx.createLinearGradient(0, pt, 0, pb);
-    pg3.addColorStop(0, 'rgba(255,255,255,0.86)');
-    pg3.addColorStop(0.55, 'rgba(252,253,254,0.72)');
-    pg3.addColorStop(1, 'rgba(240,242,245,0.48)');
-    ctx.fillStyle = pg3;
-    ctx.fillRect(bx - pw2/2, pt, pw2, pb - pt);
-    /* WHITE ON WHITE NEEDS AN EDGE. A panel standing proud of a white wall is
-       read entirely from its two lit edges and the shadow on its two dark ones;
-       without them it is a slightly paler smudge, which is what these were. */
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';    // the lit arris: top and near side
-    ctx.fillRect(bx - pw2/2, pt, 2.0 * SS, pb - pt);
-    ctx.fillRect(bx - pw2/2, pt, pw2, 2.0 * SS);
-    ctx.fillStyle = 'rgba(96,104,116,0.34)';     // and the turned-away pair
-    ctx.fillRect(bx + pw2/2 - 1.6 * SS, pt, 1.6 * SS, pb - pt);
-    ctx.fillRect(bx - pw2/2, pb - 1.6 * SS, pw2, 1.6 * SS);
-  }
+  /* NO PLATE BEHIND THE YEAR. The room this is drawn from puts its words on
+     white plates standing a little proud of the wall, and I built that twice.
+     Both times it read as an appliqué, and the reason is structural rather than
+     cosmetic: the year is set on the shared type plane at 680 so that type is
+     the same size in every era, while a plate standing on this wall belongs at
+     1400. Those two depths separate by as much as 220 px across the span a beat
+     is on screen, and no plate is that wide — so the first version slid out from
+     under its own year, and the second, pinned to the type to stop the sliding,
+     ended up 720 units clear of the wall: a sheet of paper hanging in the room,
+     which is a shape with no explanation. Type at a fixed apparent size and
+     architecture at the wall cannot be married. The year sits on the wall, the
+     way it does in every other era. */
 
   /* THE CEILING. These are chandeliers — big lit hoops hanging in a white
      coffer overhead — and I had them as pinpricks sitting on the plank, which
@@ -8127,7 +8086,6 @@ async function boot(){
       add(z, 'REC', nm + ' panel', a, b);
     add(520, 'LIGHT', 'showroom chandelier hoops', SHOW_L, SHOW_R);
     add((SEGMENTS[3].z0 || 1400) - 6, 'REC', 'showroom ceiling soffit', SHOW_L, SHOW_R);
-    add((SEGMENTS[3].z0 || 1400) - 8, 'TYPE', 'showroom year monoliths', SHOW_L, SHOW_R);
     add((SEGMENTS[3].z0 || 1400) - 8, 'REFLECT', 'floor sheen — fold at the wall foot', SHOW_L, SHOW_R);
     add(CFG.benchDepth, 'REFLECT', 'floor sheen — near edge (back of the counter)', SHOW_L, SHOW_R);
     for (let i = 0; i < SEGMENTS.length; i++)
