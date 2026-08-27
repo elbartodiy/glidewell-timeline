@@ -992,8 +992,12 @@ function initTables(){
      cabinet is on the floor with its own legs showing. A break rather than a
      start: making the era's counter BEGIN here would empty the opening scene
      and the 1907 bay of every surface and everything standing on one. */
-  for (const u of TALL_UNITS)
-    BENCH_BREAKS.push({x: (u.x - 300 + 2705) / 2, half: (2705 - (u.x - 300)) / 2});
+  for (const u of TALL_UNITS){
+    const im = PHOTO_TEX.ph_cabinet;
+    const half = (im ? (u.hw || 640) * im.width / im.height : u.w) / 2 + 110;
+    BENCH_BREAKS.push({x: u.x, half});
+    PLATE_FROM = u.x + half;      // the photographed counter starts past the cabinet
+  }
   /* A photographic counter and a procedural one cannot be made into one surface
      by tuning a constant: the photograph was taken with a different camera, so
      its worktop is seen at a different angle and shows a different depth of its
@@ -1389,7 +1393,7 @@ function drawBench(){
   const yTopF = py(CFG.benchY, kf);
   for (const tb of TABLES){
     const seg = tb.seg, bx0 = tb.x0, bx1 = tb.x1;
-    if (seg.plateBench) continue;      // this era's counter IS the photograph
+    if (onPlate(tb)) continue;         // past the cabinet the counter IS the photograph
     const sx0f = px(bx0, kf), sx1f = px(bx1, kf);
     if (sx1f <= 0 || sx0f >= W) continue;
     const tex = TEX[seg.bench];
@@ -2546,7 +2550,13 @@ function drawDebug(){
    stands exactly where the wall changes material, so the change happens behind
    furniture instead of down an open joint. */
 const TALL_UNITS = [
-  {x: bayStart(0) + CUTS[0].w / 2, w: 440, hw: 640, cols: 2, rows: 5, top: 150},
+  /* `wallAt` is where the dark boards give way to the plaster. It used to be
+     derived from this unit's own edge, which meant the seam followed the
+     cabinet everywhere it went; it is stated here so the cabinet can be placed
+     against it instead of dragging it along. The cabinet sits a little past the
+     seam, so rather more than half of it stands in the light era. */
+  {x: bayStart(0) + CUTS[0].w / 2 + 295, w: 440, hw: 960, wallAt: bayStart(0) + CUTS[0].w / 2 + 220,
+   cols: 2, rows: 5, top: 150},
 ];
 function drawTallUnits(){
   for (const u of TALL_UNITS){
@@ -4871,6 +4881,12 @@ function drawPlates(t){
    (The number I had before — a 19px band — was the bullnose. That single
    mis-reading is what made me tell you this could not be done.) */
 const PL_ROW = {top: 303, front: 377, bot: 617, skirt: 588};
+/* Left of the cabinet is the century BEFORE the company — 1907, lost-wax, the
+   dark boards — and it keeps the counter it always had. The photographed bench
+   is the founding lab's, and it begins where that room begins: past the
+   cabinet, which is the door between the two. */
+let PLATE_FROM = 1e9;
+const onPlate = tb => !!tb.seg.plateBench && tb.x0 >= PLATE_FROM - 40;
 function drawPlateBench(t){
   const P = PLATES[0]; if (!P) return;
   const L = (P.layers || [])[0]; if (!L || !L.sp) return;
@@ -4886,7 +4902,7 @@ function drawPlateBench(t){
   const STRIPS = [[20, 540], [1420, 1780]];
   ctx.save();
   for (const tb of TABLES){
-    if (!tb.seg.plateBench) continue;
+    if (!onPlate(tb)) continue;
     const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
     if (cx1 - cx0 < 1) continue;
     ctx.save();
@@ -4901,6 +4917,36 @@ function drawPlateBench(t){
        stretches and mirroring every other one. A single strip repeated at a
        fixed pitch reads as wallpaper; two strips and a flip put the joints and
        the door rhythm out of step with each other. */
+    /* THE JOINTS OVERLAP AND FADE. Butted edge to edge, every join between two
+       tiles is a hard vertical line, and a line every few hundred units reads as
+       a seam even when the wood on both sides matches. Each tile now runs a
+       little way into the one already laid and comes up through it in steps, so
+       there is no edge to find — the pitch shortens by the overlap, which on
+       plain cabinet wood is invisible. */
+    const FTH = 64;                                        // overlap, in world units
+    const tile = (c0, c1, a, wWorld, flip, lead) => {
+      const sa = px(a, kf), sWid = wWorld * SS, f = Math.min(FTH, wWorld * 0.4) * SS;
+      if (sa > W || sa + sWid < 0) return;
+      const put = (cx, cw, al) => {
+        if (cw <= 0) return;
+        ctx.save();
+        ctx.globalAlpha = al;
+        ctx.beginPath(); ctx.rect(cx, yTop, cw, yBot - yTop); ctx.clip();
+        if (flip){ ctx.translate(sa + sWid, 0); ctx.scale(-1, 1); ctx.translate(-sa, 0); }
+        ctx.drawImage(im, c0, PL_ROW.top, c1 - c0, IH - PL_ROW.top,
+                      sa, yTop, sWid + 0.6, yBot - yTop);
+        ctx.restore();
+      };
+      const N = 7;
+      if (lead > 0){                       // fades in on its left edge
+        put(sa + f, sWid - f + 1, 1);
+        for (let j = 0; j < N; j++) put(sa + f * j / N, f / N + 0.7, (j + 0.5) / N);
+      } else if (lead < 0){                // fades in on its right edge
+        put(sa, sWid - f + 1, 1);
+        for (let j = 0; j < N; j++)
+          put(sa + sWid - f * (j + 1) / N, f / N + 0.7, (j + 0.5) / N);
+      } else put(sa, sWid + 1, 1);
+    };
     let i = 0;
     for (const dir of [-1, 1]){
       let edge = dir < 0 ? pL : pR;
@@ -4908,16 +4954,10 @@ function drawPlateBench(t){
         const [c0, c1] = STRIPS[i % 2], flip = (i >> 1) % 2 === 1;
         const wWorld = (c1 - c0) * uPer;
         const a = dir < 0 ? edge - wWorld : edge;
-        const sa = px(a, kf), sWid = wWorld * SS;
-        if ((dir < 0 ? a + wWorld > tb.x0 - wWorld : a < tb.x1) && sa < W && sa + sWid > 0){
-          ctx.save();
-          if (flip){ ctx.translate(sa + sWid, 0); ctx.scale(-1, 1); ctx.translate(-sa, 0); }
-          ctx.drawImage(im, c0, PL_ROW.top, c1 - c0, IH - PL_ROW.top,
-                        sa, yTop, sWid + 0.6, yBot - yTop);
-          ctx.restore();
-        }
-        edge += dir * wWorld; i++;
-        if (i > 90) break;                                // a run is never this long
+        if (dir < 0 ? a + wWorld > tb.x0 - wWorld : a < tb.x1)
+          tile(c0, c1, a, wWorld, flip, dir < 0 ? -1 : 1);
+        edge += dir * (wWorld - FTH); i++;                 // the overlap shortens the pitch
+        if (i > 120) break;                                // a run is never this long
       }
     }
     /* And down to the floor. The photograph's cabinet stops 130 px short of it,
@@ -4965,9 +5005,7 @@ function wallSwitchX(){
   // ahead of the founding pedestal, so that pedestal stands against the new
   // wall rather than on the threshold of it
   const u = TALL_UNITS[0];
-  // the bank is made of the craft era's own wood, so it stands ON the dark
-  // wall and the plaster begins at its far edge
-  return u ? u.x + u.w / 2 : bayStart(0);
+  return u ? (u.wallAt != null ? u.wallAt : u.x + u.w / 2) : bayStart(0);
 }
 function applyPhotoTextures(){
   TEX.wall1_dark = TEX.wall1;          // kept for the years before the 1970 bench
