@@ -1197,7 +1197,6 @@ function abutPanelZ(wx){
   return null;
 }
 function drawWall(){
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));  // hidden behind bench anyway
   for (const seg of SEGMENTS){
     const wx0 = seg.x0 + (seg.wInsetL || 0), wx1 = seg.x1 - (seg.wInsetR || 0);
     const kw = k(seg.z0);
@@ -1209,42 +1208,56 @@ function drawWall(){
     if (sx1 <= 0 || sx0 >= W || sx1 <= sx0) continue;
     const tex = TEX[seg.wall];
     const tileW = tex.width * 0.9;   // world units per tile
+    /* THE WALL'S FOOT, at the wall's own depth. Everything below — the clip, the
+       backstop tone, the shading — used to be measured to a line taken at the
+       COUNTER's depth, so they all stopped short of where the wall actually
+       meets the floor and a strip of naked room opened between the two. */
+    const yFoot = py(1080, kw);
     ctx.save();
-    ctx.beginPath(); ctx.rect(sx0, 0, sx1 - sx0, yBase); ctx.clip();
+    ctx.beginPath(); ctx.rect(sx0, 0, sx1 - sx0, yFoot); ctx.clip();
     // Belt and braces: paint the era's own average tone across the whole span
     // first. Tiling can miss by a pixel at a seam for a dozen reasons; when it
     // does you should see wall, not the room's black background.
     ctx.fillStyle = wallTone(tex);
-    ctx.fillRect(sx0, 0, sx1 - sx0, yBase);
+    ctx.fillRect(sx0, 0, sx1 - sx0, yFoot);
     const worldLeft = cam.x - (W/2) / (k(seg.z0) * SS);
     let wx = wx0 + Math.floor((Math.min(worldLeft, ex0) - wx0) / tileW) * tileW;
     const PURE_X = REC4_R;   // beyond the 2022 recreation: clean futurist white, no panels
     const swx = (PHOTO_SKIN && seg === SEGMENTS[0] && TEX.wall1_dark) ? wallSwitchX() : -1e9;
+    /* A WALL IS A PLANE, NOT A CURTAIN. It used to be drawn from the top of the
+       frame down to a line computed at the COUNTER's depth — so its foot
+       travelled at the counter's rate rather than its own, and because the top
+       was pinned to the edge of the screen the whole image stretched and
+       squashed between the two as the camera dollied. Pull back and the wall
+       visibly climbed. It now hangs between two world lines at its own depth:
+       well above the frame at the top, the floor at the bottom. It moves the way
+       the room it belongs to moves, and its texture no longer breathes. */
+    const yTopW = py(-520, kw), hW = yFoot - yTopW;
     for (; px(wx, kw) < sx1 + 2; wx += tileW){
       const kk = kw;   // the SEGMENT's depth — never wallZAt(), which reads the
                        // world position and in the extension returns the era next door
       const straddles = swx > wx && swx < wx + tileW;
       const texT = (wx + tileW/2 < swx) ? TEX.wall1_dark : tex;
-      const yBot = seg.floor ? Math.min(yBase, py(1080, kk)) : yBase;
       if (seg.floor && wx + tileW > PURE_X){
         const xA = px(Math.max(wx, PURE_X), kk);
         ctx.fillStyle = '#e6e7e9';
-        ctx.fillRect(xA, 0, px(wx + tileW, kk) - xA + 1, yBot);
-        if (wx < PURE_X) ctx.drawImage(texT, px(wx, kk), 0, (PURE_X - wx) * kk * SS * 1.03, yBot);
+        ctx.fillRect(xA, yTopW, px(wx + tileW, kk) - xA + 1, hW);
+        if (wx < PURE_X)
+          ctx.drawImage(texT, px(wx, kk), yTopW, (PURE_X - wx) * kk * SS * 1.03, hW);
       } else if (straddles){
         // the material changes mid-tile: draw the tile twice, each half clipped
         // to its own side of the line, so the joint is a butt joint
         const xs = px(swx, kk), tw = tileW * kk * SS * 1.03, tx = px(wx, kk);
         ctx.save();
-        ctx.beginPath(); ctx.rect(tx - 2, 0, Math.max(0, xs - tx) + 2, yBot); ctx.clip();
-        ctx.drawImage(TEX.wall1_dark, tx, 0, tw, yBot);
+        ctx.beginPath(); ctx.rect(tx - 2, yTopW, Math.max(0, xs - tx) + 2, hW); ctx.clip();
+        ctx.drawImage(TEX.wall1_dark, tx, yTopW, tw, hW);
         ctx.restore();
         ctx.save();
-        ctx.beginPath(); ctx.rect(xs, 0, Math.max(0, tx + tw - xs) + 2, yBot); ctx.clip();
-        ctx.drawImage(tex, tx, 0, tw, yBot);
+        ctx.beginPath(); ctx.rect(xs, yTopW, Math.max(0, tx + tw - xs) + 2, hW); ctx.clip();
+        ctx.drawImage(tex, tx, yTopW, tw, hW);
         ctx.restore();
       } else {
-        ctx.drawImage(texT, px(wx, kk), 0, tileW * kk * SS * 1.03, yBot);
+        ctx.drawImage(texT, px(wx, kk), yTopW, tileW * kk * SS * 1.03, hW);
       }
     }
     if (seg.floor){
@@ -1263,23 +1276,23 @@ function drawWall(){
     if (seg.floor){
       const kk2 = k(wallZAt((wx0 + wx1) / 2));
       const yWallBase = py(1080, kk2);
-      if (yWallBase < yBase){
-        const fg = ctx.createLinearGradient(0, yWallBase, 0, yBase);
+      if (yWallBase < yFoot){
+        const fg = ctx.createLinearGradient(0, yWallBase, 0, yFoot);
         fg.addColorStop(0, '#a9aeb3');
         fg.addColorStop(0.12, '#8f959a');
         fg.addColorStop(1, '#54585d');
         ctx.fillStyle = fg;
-        ctx.fillRect(sx0, yWallBase, sx1 - sx0, yBase - yWallBase);
+        ctx.fillRect(sx0, yWallBase, sx1 - sx0, yFoot - yWallBase);
       }
     }
     // ambient darkening top and bottom of wall — each era keeps its own gloom
     const sh = seg.shade != null ? seg.shade : 1;
-    const gr = ctx.createLinearGradient(0, 0, 0, yBase);
+    const gr = ctx.createLinearGradient(0, 0, 0, yFoot);
     gr.addColorStop(0, `rgba(5,2,0,${0.85*sh})`);
     gr.addColorStop(0.3, `rgba(5,2,0,${0.25*sh})`);
     gr.addColorStop(0.75, `rgba(5,2,0,${0.18*sh})`);
     gr.addColorStop(1, `rgba(5,2,0,${0.6*sh})`);
-    ctx.fillStyle = gr; ctx.fillRect(sx0, 0, sx1 - sx0, yBase);
+    ctx.fillStyle = gr; ctx.fillRect(sx0, 0, sx1 - sx0, yFoot);
     ctx.restore();
   }
 }
@@ -1341,8 +1354,10 @@ function drawFloor(){
   ];
   for (const [a, b, tone] of spans){
     const segF = segAt((a + b) / 2);
-    const yTop = Math.min(py(CFG.benchY + 240, kSeam),
-                          py(1080, k((segF.z0 || 550) - 8)));
+    /* The same line the wall's foot is drawn to, computed the same way. Taking
+       one from the counter's depth and the other from the wall's is how a strip
+       of naked background opens between them. */
+    const yTop = py(1080, k(segF.z0 || 550));
     const xTL = px(a, kSeam), xTR = px(b, kSeam);
     const xBL = px(a, kNear), xBR = px(b, kNear);
     if (Math.max(xTR, xBR) < 0 || Math.min(xTL, xBL) > W) continue;
@@ -2583,7 +2598,7 @@ function drawTallUnits(){
       const hW = u.hw || 640;                    // its height in world units
       const wW = hW * im.width / im.height;
       const sw2 = wW * kk * SS, sh2 = hW * kk * SS;
-      const foot = py(1080, kk);
+      const foot = py(1080, kk) + 15 * SS;
       /* THE SHADOW IS AS WIDE AS THE CABINET. contactShadow throws a round pool
          at 60 per cent of the width it is given, so at half the cabinet's width
          it reached about two thirds of the way out and stopped well short of the
