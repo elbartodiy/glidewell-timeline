@@ -1197,7 +1197,7 @@ function abutPanelZ(wx){
   return null;
 }
 function drawWall(){
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));  // hidden behind bench anyway
+  const yBase = py(1080, k(CFG.benchDepth));   // to the floor: a break leaves nothing to hide it  // hidden behind bench anyway
   for (const seg of SEGMENTS){
     const wx0 = seg.x0 + (seg.wInsetL || 0), wx1 = seg.x1 - (seg.wInsetR || 0);
     const kw = k(seg.z0);
@@ -2828,7 +2828,7 @@ function drawRec23(t){
   if (Math.abs(cam.x - mid) > 2800) return;
   ctx.save();   // after the cull, for the same reason
   const kk = k(1000);
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const yBase = py(1080, k(CFG.benchDepth));   // to the floor: a break leaves nothing to hide it
   const x0 = px(REC23_L, kk), x1 = px(REC23_R, kk);
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#e4e9ed'); wg.addColorStop(0.45, '#f6f9fb'); wg.addColorStop(1, '#c8ced4');
@@ -3009,7 +3009,7 @@ function drawRec18(t){
   const mid = (REC18_L + REC18_R) / 2;
   if (Math.abs(cam.x - mid) > 2800) return;
   const kk = k(1000);
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const yBase = py(1080, k(CFG.benchDepth));   // to the floor: a break leaves nothing to hide it
   const x0 = px(REC18_L, kk), x1 = px(REC18_R, kk);
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#e6eaee'); wg.addColorStop(0.45, '#f7fafc'); wg.addColorStop(1, '#cad0d6');
@@ -3202,7 +3202,7 @@ function drawRec93(t){
   const mid = (REC93_L + REC93_R) / 2;
   if (Math.abs(cam.x - mid) > 2800) return;
   const kk = k(728);
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const yBase = py(1080, k(CFG.benchDepth));   // to the floor: a break leaves nothing to hide it
   const x0 = px(REC93_L, kk), x1 = px(REC93_R, kk);
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#c3cad0');
@@ -3472,7 +3472,7 @@ function drawMapWall(t){
   const mid = (REC_L + REC_R) / 2;
   if (Math.abs(cam.x - mid) > 2800) return;
   const kk = k(610);
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const yBase = py(1080, k(CFG.benchDepth));   // to the floor: a break leaves nothing to hide it
   const x0 = px(REC_L, kk), x1 = px(REC_R, kk);
   // the light wall panel
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
@@ -3895,7 +3895,7 @@ function drawRec2(t){
   const lock0 = Math.max(0, 1 - Math.abs(cam.x - mid) / 900);
   const ease0 = lock0 * lock0 * (3 - 2 * lock0);
   const kk = k(970);
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const yBase = py(1080, k(CFG.benchDepth));   // to the floor: a break leaves nothing to hide it
   const x0 = px(REC2_L, kk), x1 = px(REC2_R, kk);
   // the luminous panel
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
@@ -4087,7 +4087,7 @@ function drawRec4(t){
   const mid = (REC4_L + REC4_R) / 2;
   if (Math.abs(cam.x - mid) > 2800) return;
   const kk = k(1000);   // the portal stands proud of the deep white wall
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const yBase = py(1080, k(CFG.benchDepth));   // to the floor: a break leaves nothing to hide it
   const x0 = px(REC4_L, kk), x1 = px(REC4_R, kk);
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#f2f4f6');
@@ -4171,7 +4171,7 @@ function drawRec3(t){
   const mid = (REC3_L + REC3_R) / 2;
   if (Math.abs(cam.x - mid) > 2800) return;
   const kk = k(728);
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const yBase = py(1080, k(CFG.benchDepth));   // to the floor: a break leaves nothing to hide it
   const x0 = px(REC3_L, kk), x1 = px(REC3_R, kk);
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#7d8894');
@@ -7850,65 +7850,6 @@ function drawShowroomLight(t){
   ctx.restore();
 }
 
-/* The polish. A floor like that one is half of every photograph taken in the
-   room, and ours was a flat gradient throwing that half away. The frame as
-   painted so far is folded down across the floor line and faded out — so the
-   reflection is of whatever is actually standing there, and stays true by
-   construction rather than by being drawn twice. */
-function drawFloorSheen(){
-  if (cam.x < SHOW_L - 2400 || cam.x > SHOW_R + 2400) return;
-  /* A REFLECTION IS BOUNDED BY THE FLOOR IT LIES ON. This was clipped to
-     "everything below the wall's foot", which on screen means the counter as
-     well — so a whole upside-down portrait ended up on the front of a cabinet,
-     and the fade that softened it read as fog over the furniture. Mixed with a
-     red runner it became a smear, which is why the runner had to go.
-     What you can actually see of this floor is the strip between the foot of
-     the wall and the back of the counter: a few dozen pixels. The reflection is
-     that strip and no more — it takes only the band of wall directly above it,
-     the same depth it is itself, and it cannot reach the furniture because it
-     is not drawn where the furniture is. */
-  const yTop = py(1080, k((SEGMENTS[3].z0 || 1400) - 8));
-  const yBot = py(1080, k(CFG.benchDepth));
-  const band = yBot - yTop;
-  if (band < 3) return;
-  const kW = k((SEGMENTS[3].z0 || 1400) - 8), kS = k(CFG.benchDepth);
-  const a0 = px(SHOW_L, kW), a1 = px(SHOW_R, kW);
-  const b0 = px(SHOW_L, kS), b1 = px(SHOW_R, kS);
-  if (Math.max(a1, b1) < 0 || Math.min(a0, b0) > W) return;
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(a0, yTop); ctx.lineTo(a1, yTop); ctx.lineTo(b1, yBot); ctx.lineTo(b0, yBot);
-  ctx.closePath(); ctx.clip();
-  const sx0 = Math.max(0, Math.min(a0, b0)), sx1 = Math.min(W, Math.max(a1, b1));
-  /* A REFLECTION DIES WITH DISTANCE FROM THE FOLD. Mirrored at one flat alpha
-     the whole band comes back — a whole upside-down portrait lying on the floor
-     like a dropped photograph, which is not what a floor does. Stone returns
-     the most light where the eye grazes it, at the fold, and almost none as the
-     angle opens toward you. So it is laid in slices, each taking its own share,
-     and it is gone within the near half of the band. */
-  if (sx1 - sx0 > 2 && yTop - band > 0){
-    const N = 14;
-    for (let s = 0; s < N; s++){
-      const u = s / N, a = 0.34 * (1 - u) * (1 - u);
-      if (a < 0.004) break;
-      const hh = band / N;
-      ctx.globalAlpha = a;
-      ctx.scale(1, -1);
-      ctx.drawImage(ctx.canvas, sx0, yTop - (s + 1) * hh, sx1 - sx0, hh,
-                                sx0, -(yTop + (s + 1) * hh), sx1 - sx0, hh);
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-    }
-    ctx.globalAlpha = 1;
-  }
-  // the polish itself: a dark stone floor takes a sheen along the grazing angle
-  const gl = ctx.createLinearGradient(0, yTop, 0, yBot);
-  gl.addColorStop(0, 'rgba(226,229,233,0.34)');
-  gl.addColorStop(0.5, 'rgba(196,200,206,0.16)');
-  gl.addColorStop(1, 'rgba(150,155,163,0.30)');
-  ctx.fillStyle = gl;
-  ctx.fillRect(sx0, yTop, sx1 - sx0, band);
-  ctx.restore();
-}
 
 /* CONTAINMENT. Two rules the hall is meant to keep and which no amount of
    looking will reliably catch: nothing may hang off the edge of the frame at
@@ -8043,8 +7984,14 @@ function frame(){
   drawProps(true);
 
   drawPhotoBench(t);  // every counter that is a photograph rather than a texture
-  drawFloorSheen();   // before the counter, so the counter covers it and the
-  drawBench();        // reflection can never be laid over the furniture
+  /* THE FLOOR REFLECTION IS GONE. A polished floor was part of the showroom's
+     language, but in this projection the only floor you ever see is the strip
+     between the wall's foot and the back of the counter — and wherever the
+     counter breaks, that strip opens into a wide field. Filled with a mirror
+     and a sheen it stopped reading as a floor and started reading as a pane of
+     something laid over one, which is exactly what it looked like under the
+     2022 plinth. A plain floor is the honest version. */
+  drawBench();
   drawShowroomLight(t);   // light coming OUT of the furniture, so after it
   drawProjectors(t, 'machine');   // it stands on the bench, so it comes after it
 
