@@ -4916,8 +4916,8 @@ function artFor(tb){
   return null;
 }
 function drawPhotoBench(t){
-  const kf = k(0);
-  const deep = py(CFG.benchY, kf) - py(CFG.benchY, k(CFG.benchDepth));   // 74 ref px
+  const kf = k(0), wpp = kf * SS;                    // world -> screen
+  const deep = py(CFG.benchY, kf) - py(CFG.benchY, k(CFG.benchDepth));
   const yFloor = py(1080, kf);
   ctx.save();
   for (const tb of TABLES){
@@ -4925,57 +4925,70 @@ function drawPhotoBench(t){
     if (!art || !art.im) continue;
     const im = art.im, IW = im.naturalWidth || im.width, IH = im.naturalHeight || im.height;
     const R = art.rows;
-    const pxRow = deep / (R.front - R.back);        // the worktop sets the scale
+    const pxRow = deep / (R.front - R.back);          // the worktop sets the scale
     const sh = IH * pxRow, sw = IW * pxRow;
-    const wWorldFull = sw / SS;                      // one sheet, in world units
+    const wWorld = sw / wpp;                          // one sheet, in world units
     const y0 = py(CFG.benchY, kf) - R.front * pxRow;
     const yTop = y0 + R.back * pxRow, yBot = y0 + sh;
-    const anchor = art.at != null ? art.at : tb.x0 + wWorldFull / 2;   // where it is pinned
-    const pL = anchor - wWorldFull / 2, pR = anchor + wWorldFull / 2;
     const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
-    if (cx1 - cx0 < 1) continue;
+    if (cx1 - cx0 < 1 || wWorld < 1) continue;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(cx0, art.tall ? y0 : yTop, cx1 - cx0, yFloor - (art.tall ? y0 : yTop) + 4);
+    const clipTop = art.tall ? y0 : yTop;
+    ctx.rect(cx0, clipTop, cx1 - cx0, yFloor - clipTop + 4);
     ctx.clip();
-    // the sheet itself, where it falls inside this run
-    if (art.tall && pR > tb.x0 && pL < tb.x1)
-      ctx.drawImage(im, px(pL, kf), y0, sw, sh);
-    const FTH = 64;
-    const tile = (c0, c1, a, wWorld, flip, lead) => {
-      const sa = px(a, kf), sWid = wWorld * SS, f = Math.min(FTH, wWorld * 0.4) * SS;
+    /* MIRROR TILING. Every other sheet is flipped, so the column that ends one
+       tile is the same column that begins the next: the join is continuous by
+       construction and there is nothing to feather. The overlap-and-fade this
+       replaces drew each tile eight times behind a clip, which on a wide sheet
+       in the opening dolly cost enough frames that the adaptive quality dropped
+       the whole canvas to 55 per cent — that is why the type went soft. One
+       drawImage a tile now. */
+    const anchor = art.at != null ? art.at : tb.x0;
+    const put = (a, flip) => {
+      const sa = px(a, kf), sWid = wWorld * wpp;
       if (sa > W || sa + sWid < 0) return;
-      const put = (bx, bw, al) => {
-        if (bw <= 0) return;
-        ctx.save();
-        ctx.globalAlpha = al;
-        ctx.beginPath(); ctx.rect(bx, yTop, bw, yFloor - yTop + 2); ctx.clip();
-        if (flip){ ctx.translate(sa + sWid, 0); ctx.scale(-1, 1); ctx.translate(-sa, 0); }
-        ctx.drawImage(im, c0, R.back, c1 - c0, IH - R.back,
-                      sa, yTop, sWid + 0.6, yBot - yTop);
-        ctx.restore();
-      };
-      const N = 7;
-      if (lead > 0){ put(sa + f, sWid - f + 1, 1);
-        for (let j = 0; j < N; j++) put(sa + f * j / N, f / N + 0.7, (j + 0.5) / N); }
-      else if (lead < 0){ put(sa, sWid - f + 1, 1);
-        for (let j = 0; j < N; j++)
-          put(sa + sWid - f * (j + 1) / N, f / N + 0.7, (j + 0.5) / N); }
-      else put(sa, sWid + 1, 1);
+      ctx.save();
+      if (flip){ ctx.translate(sa + sWid, 0); ctx.scale(-1, 1); ctx.translate(-sa, 0); }
+      ctx.drawImage(im, 0, R.back, IW, IH - R.back, sa, yTop, sWid + 0.7, yBot - yTop);
+      // the plate stops short of the floor; its own foot, flipped, carries down
+      if (art.tall && yFloor > yBot){
+        const band = (R.bot - R.skirt) * pxRow;
+        let y = yBot, up = true;
+        while (y < yFloor && band > 1){
+          ctx.save();
+          ctx.beginPath(); ctx.rect(sa, y, sWid + 1, Math.min(band, yFloor - y) + 0.5); ctx.clip();
+          if (up){ ctx.translate(0, 2 * y + band); ctx.scale(1, -1); }
+          ctx.drawImage(im, 0, R.skirt, IW, R.bot - R.skirt, sa, y, sWid + 1, band);
+          ctx.restore();
+          y += band; up = !up;
+        }
+      }
+      ctx.restore();
     };
-    let i = 0;
-    for (const dir of [-1, 1]){
-      // start overlapped, so the first tile's fade has something under it
-      let edge = art.tall ? (dir < 0 ? pL + FTH : pR - FTH) : (dir < 0 ? pL : pR - wWorldFull);
-      if (!art.tall && dir < 0) { i++; continue; }   // one anchor, tiled rightward only
-      while (dir < 0 ? edge > tb.x0 : edge < tb.x1){
-        const [c0, c1] = art.strips[i % art.strips.length], flip = (i >> 1) % 2 === 1;
-        const wWorld = (c1 - c0) * (wWorldFull / IW);
-        const a = dir < 0 ? edge - wWorld : edge;
-        if (dir < 0 ? a + wWorld > tb.x0 - wWorld : a < tb.x1)
-          tile(c0, c1, a, wWorld, flip, dir < 0 ? -1 : 1);
-        edge += dir * (wWorld - FTH); i++;
-        if (i > 160) break;
+    // outward in both directions from the anchor, flipping alternately
+    let n = 0;
+    for (let a = anchor; a < tb.x1; a += wWorld) put(a, (n++) % 2 === 1);
+    n = 1;
+    for (let a = anchor - wWorld; a + wWorld > tb.x0; a -= wWorld) put(a, (n++) % 2 === 1);
+    /* And the plate whole, on top of its own tiles. It is cropped at the
+       worktop's back edge like every other tile, and everything the founding bay
+       is FOR — the furnace, the articulator, the lamp — stands above that line.
+       Cropping it there took the still-life away with it. */
+    if (art.tall){
+      const sa = px(anchor, kf);
+      ctx.drawImage(im, sa, y0, sw, sh);
+      if (yFloor > yBot){
+        const band = (R.bot - R.skirt) * pxRow;
+        let y = yBot, up = true;
+        while (y < yFloor && band > 1){
+          ctx.save();
+          ctx.beginPath(); ctx.rect(sa, y, sw + 1, Math.min(band, yFloor - y) + 0.5); ctx.clip();
+          if (up){ ctx.translate(0, 2 * y + band); ctx.scale(1, -1); }
+          ctx.drawImage(im, 0, R.skirt, IW, R.bot - R.skirt, sa, y, sw + 1, band);
+          ctx.restore();
+          y += band; up = !up;
+        }
       }
     }
     // the era's own light over the face, and the year rail on its edge
@@ -4990,7 +5003,6 @@ function drawPhotoBench(t){
     ctx.fillStyle = seg.rail;
     ctx.fillRect(cx0, yFront + 6 * SS, cx1 - cx0, 3 * SS);
     ctx.restore();
-    // the ends of the run, so it stops rather than simply ceasing
     for (const [ex, edge] of [[tb.x0, 1], [tb.x1, -1]]){
       const exs = px(ex, kf);
       if (exs < -40 || exs > W + 40) continue;
@@ -5007,7 +5019,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260828-interior';
+const ASSET_V = '20260828-interior3';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* the procedural era walls (tools/make_wall.py) stand in for the drawn ones —
    same slot, same tiling, so drawWall never learns the difference */
@@ -5024,19 +5036,18 @@ function applyPhotoTextures(){
   for (const [slot, key] of [['wall1','wall_e1'], ['wall2','wall_e2'], ['wall3','wall_e3'], ['wall4','wall_e4'],
                              ['bench1','bench_top_e1'], ['front1','bench_face_e1']])
     if (PHOTO_TEX[key]) TEX[slot] = PHOTO_TEX[key];
-  /* ONE WALL THROUGH ERA 1. The century before the company and the founding lab
-     used to be told apart by the wall changing from dark boards to plaster.
-     With the boards now a photograph of a real panelled wall, the era reads as
-     one room and the change of material has nothing left to say — the thing
-     that divides the two halves is the instrument cabinet standing between
-     them, which is a better door than a change of paint. Set both to the same
-     sheet rather than leaving a second, procedural wood beside a photographed
-     one; two different woods a metre apart is the fault this was meant to cure. */
-  TEX.wall1_dark = TEX.wall1;
+  /* THE WALL STILL CHANGES AT THE CABINET. I made both halves of era 1 one
+     sheet and called it a decision — but the cabinet's whole reason for being
+     there is to be the door between the century before the company and the
+     founding lab, and with the same wall on both sides it was a door between
+     two identical rooms. Two of the panelled sheets: the darker, flatter one
+     for 1907, the warmer one with the stronger grain for the lab that starts
+     after it. */
+  TEX.wall1_dark = PHOTO_TEX.wall_e1_dark || TEX.wall1;
 }
 async function loadPhotoSkin(){
   const want = {
-    wall_e1: 'wall_e1.jpg', wall_e2: 'wall_e2.jpg', wall_e3: 'wall_e3.jpg', wall_e4: 'wall_e4.jpg',
+    wall_e1: 'wall_e1.jpg', wall_e1_dark: 'wall_e1_dark.jpg', wall_e2: 'wall_e2.jpg', wall_e3: 'wall_e3.jpg', wall_e4: 'wall_e4.jpg',
     bench_top_e1: 'bench_top_e1.jpg', bench_face_e1: 'bench_face_e1.jpg',
     ph_furnace: 'furnace_0.png',
     ph_articulator: 'articulator_0.png',
@@ -8320,11 +8331,9 @@ async function boot(){
   {
     const P = PLATES[0], L = P && P.layers && P.layers[0];
     if (L && L.sp) BENCH_ART.plate = {im: L.sp, rows: {back: PL_ROW.top, front: PL_ROW.front,
-      bot: PL_ROW.bot}, strips: [[20, 540], [1420, 1780]], at: P.x, tall: true};
-    if (PHOTO_TEX.bench_pre) BENCH_ART.e1  = {im: PHOTO_TEX.bench_pre, rows: ART_ROWS,
-      strips: [[0, 836], [836, 1672]]};
-    if (PHOTO_TEX.bench_mid) BENCH_ART.mid = {im: PHOTO_TEX.bench_mid, rows: ART_ROWS,
-      strips: [[0, 836], [836, 1672]]};
+      bot: PL_ROW.bot, skirt: PL_ROW.skirt}, at: P.x - (P.sw || 1874) / 2, tall: true};
+    if (PHOTO_TEX.bench_pre) BENCH_ART.e1  = {im: PHOTO_TEX.bench_pre, rows: ART_ROWS};
+    if (PHOTO_TEX.bench_mid) BENCH_ART.mid = {im: PHOTO_TEX.bench_mid, rows: ART_ROWS};
     if (!BENCH_ART.e1 || !BENCH_ART.mid)
       console.warn('bench art missing — those eras fall back to the drawn counter');
   }
@@ -8503,6 +8512,8 @@ async function boot(){
                 ' · WORLD_END ' + (WORLD_END|0) + ' · horizon ' + CFG.horizon + ' · F ' + CFG.F +
                 ' · benchY ' + CFG.benchY);
   }
+  if (/[?&]rq=1/.test(location.search))
+    setTimeout(() => console.log('RQ=' + RQ.toFixed(2) + ' canvas ' + W + 'x' + H), 5000);
   requestAnimationFrame(loop);
 }
 window.addEventListener('load', boot);   // assets block sits below — wait for it
