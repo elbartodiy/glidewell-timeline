@@ -2584,7 +2584,36 @@ function drawTallUnits(){
       const wW = hW * im.width / im.height;
       const sw2 = wW * kk * SS, sh2 = hW * kk * SS;
       const foot = py(1080, kk);
-      contactShadow(sx, foot, sw2 * 0.52, 0.5);
+      /* THE SHADOW IS AS WIDE AS THE CABINET. contactShadow throws a round pool
+         at 60 per cent of the width it is given, so at half the cabinet's width
+         it reached about two thirds of the way out and stopped well short of the
+         feet — a cabinet apparently resting on air at both ends. This one is an
+         ellipse the full width of the piece, soft, still carrying weight where
+         the edges are; and the two feet, which are what actually touch the
+         floor, get a small dark pool of their own. Measured off the file: they
+         sit at 3 and 97 per cent of its width. */
+      ctx.save();
+      const half = sw2 * 0.54, rise = Math.max(2, sh2 * 0.052);
+      ctx.translate(sx, foot); ctx.scale(1, rise / half); ctx.translate(-sx, -foot);
+      const shg = ctx.createRadialGradient(sx, foot, 0, sx, foot, half);
+      shg.addColorStop(0, 'rgba(0,0,0,0.40)');
+      shg.addColorStop(0.55, 'rgba(0,0,0,0.26)');
+      shg.addColorStop(0.86, 'rgba(0,0,0,0.13)');
+      shg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = shg;
+      ctx.beginPath(); ctx.arc(sx, foot, half, 0, 7); ctx.fill();
+      ctx.restore();
+      for (const f of [-0.47, 0.47]){
+        const fx2 = sx + sw2 * f, fr = Math.max(2, sw2 * 0.085);
+        ctx.save();
+        ctx.translate(fx2, foot); ctx.scale(1, 0.34); ctx.translate(-fx2, -foot);
+        const fg = ctx.createRadialGradient(fx2, foot, 0, fx2, foot, fr);
+        fg.addColorStop(0, 'rgba(0,0,0,0.44)');
+        fg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = fg;
+        ctx.beginPath(); ctx.arc(fx2, foot, fr, 0, 7); ctx.fill();
+        ctx.restore();
+      }
       ctx.drawImage(im, sx - sw2 / 2, foot - sh2, sw2, sh2);
       continue;
     }
@@ -5028,7 +5057,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260826-cab';
+const ASSET_V = '20260828-e1wall';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* the procedural era walls (tools/make_wall.py) stand in for the drawn ones —
    same slot, same tiling, so drawWall never learns the difference */
@@ -5042,14 +5071,21 @@ function wallSwitchX(){
   return u ? (u.wallAt != null ? u.wallAt : u.x + u.w / 2) : bayStart(0);
 }
 function applyPhotoTextures(){
-  TEX.wall1_dark = TEX.wall1;          // kept for the years before the 1970 bench
+  /* ERA 1 — the stretch up to the cabinet, which is where that era ends. It is
+     one era with one wall, and this is it: panelled wood, photographed. It used
+     to fall back to the drawn wood, which was the last procedural wall left in
+     the hall. Cropped between two real plank joints a whole number of planks
+     apart, so a repeat lands joint on joint; nothing is blended at the edges,
+     because blending them is what put one joint on top of another. */
+  TEX.wall1_dark = PHOTO_TEX.wall_e1_1907 || TEX.wall1;
   for (const [slot, key] of [['wall1','wall_e1'], ['wall2','wall_e2'], ['wall3','wall_e3'], ['wall4','wall_e4'],
                              ['bench1','bench_top_e1'], ['front1','bench_face_e1']])
     if (PHOTO_TEX[key]) TEX[slot] = PHOTO_TEX[key];
 }
 async function loadPhotoSkin(){
   const want = {
-    wall_e1: 'wall_e1.jpg', wall_e2: 'wall_e2.jpg', wall_e3: 'wall_e3.jpg', wall_e4: 'wall_e4.jpg',
+    wall_e1: 'wall_e1.jpg', wall_e1_1907: 'wall_e1_1907.jpg',
+    wall_e2: 'wall_e2.jpg', wall_e3: 'wall_e3.jpg', wall_e4: 'wall_e4.jpg',
     bench_top_e1: 'bench_top_e1.jpg', bench_face_e1: 'bench_face_e1.jpg',
     ph_furnace: 'furnace_0.png',
     ph_articulator: 'articulator_0.png',
