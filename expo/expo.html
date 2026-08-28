@@ -1393,7 +1393,7 @@ function drawBench(){
   const yTopF = py(CFG.benchY, kf);
   for (const tb of TABLES){
     const seg = tb.seg, bx0 = tb.x0, bx1 = tb.x1;
-    if (onPlate(tb)) continue;         // past the cabinet the counter IS the photograph
+    if (artFor(tb)) continue;          // wherever a photograph is the counter
     const sx0f = px(bx0, kf), sx1f = px(bx1, kf);
     if (sx1f <= 0 || sx0f >= W) continue;
     const tex = TEX[seg.bench];
@@ -4897,119 +4897,98 @@ const PL_ROW = {top: 303, front: 377, bot: 617, skirt: 588};
    cabinet, which is the door between the two. */
 let PLATE_FROM = 1e9;
 const onPlate = tb => !!tb.seg.plateBench && tb.x0 >= PLATE_FROM - 40;
-function drawPlateBench(t){
-  const P = PLATES[0]; if (!P) return;
-  const L = (P.layers || [])[0]; if (!L || !L.sp) return;
-  const im = L.sp, IW = im.naturalWidth, IH = im.naturalHeight;
-  const kf = k(0), SW = (P.sw || 1874);
-  const sw = SW * SS, sh = sw * IH / IW;
-  const y0 = py(CFG.benchY, kf) - sh * PL_ROW.front / IH;
-  const rowY = r => y0 + sh * r / IH;
-  const uPer = SW / IW;                                   // world units per image column
-  const pL = P.x - SW / 2, pR = P.x + SW / 2;
-  const yTop = rowY(PL_ROW.top), yBot = rowY(PL_ROW.bot), yFloor = py(1080, kf);
-  // the two clean stretches, in image columns
-  const STRIPS = [[20, 540], [1420, 1780]];
+/* THE COUNTERS ARE PHOTOGRAPHS, LAID ALONG THE ERA.
+   One routine for all of them. An art gives the source sheet and three rows
+   measured off that sheet — where the worktop meets the wall, where its front
+   edge is, and where the sheet ends — and everything else follows: the scale is
+   whatever makes the worktop as deep on screen as this hall's worktop is, the
+   sheet hangs by its front edge on the hall's counter line, and the cabinet
+   front runs on down past the floor and is clipped there.
+   The sheet is repeated outward in both directions from its anchor, alternating
+   two halves and mirroring every other one, each running a little way into the
+   one already laid and coming up through it in steps so no join has an edge. */
+const ART_ROWS = {back: 1, front: 52, bot: 438};     // the cut sheets, measured
+const BENCH_ART = {};
+function artFor(tb){
+  if (tb.seg === SEGMENTS[0])
+    return tb.x0 >= PLATE_FROM - 40 ? BENCH_ART.plate : BENCH_ART.e1;
+  if (tb.seg === SEGMENTS[1] || tb.seg === SEGMENTS[2]) return BENCH_ART.mid;
+  return null;
+}
+function drawPhotoBench(t){
+  const kf = k(0);
+  const deep = py(CFG.benchY, kf) - py(CFG.benchY, k(CFG.benchDepth));   // 74 ref px
+  const yFloor = py(1080, kf);
   ctx.save();
   for (const tb of TABLES){
-    if (!onPlate(tb)) continue;
+    const art = artFor(tb);
+    if (!art || !art.im) continue;
+    const im = art.im, IW = im.naturalWidth || im.width, IH = im.naturalHeight || im.height;
+    const R = art.rows;
+    const pxRow = deep / (R.front - R.back);        // the worktop sets the scale
+    const sh = IH * pxRow, sw = IW * pxRow;
+    const wWorldFull = sw / SS;                      // one sheet, in world units
+    const y0 = py(CFG.benchY, kf) - R.front * pxRow;
+    const yTop = y0 + R.back * pxRow, yBot = y0 + sh;
+    const anchor = art.at != null ? art.at : tb.x0 + wWorldFull / 2;   // where it is pinned
+    const pL = anchor - wWorldFull / 2, pR = anchor + wWorldFull / 2;
     const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
     if (cx1 - cx0 < 1) continue;
     ctx.save();
-    /* The clip reaches above the counter, because the plate is not only a
-       counter: the still-life standing on it lives in the rows above 303, and
-       cutting the sheet at the worktop's back edge took every tall object in
-       the founding bay with it. The EXTENSION is cut there; the plate is not. */
-    ctx.beginPath(); ctx.rect(cx0, rowY(0), cx1 - cx0, yFloor - rowY(0) + 4); ctx.clip();
-    if (pR > tb.x0 && pL < tb.x1)
-      ctx.drawImage(im, px(pL, kf), rowY(0), sw, yBot - rowY(0));
-    /* Outward from the plate in both directions, alternating the two clean
-       stretches and mirroring every other one. A single strip repeated at a
-       fixed pitch reads as wallpaper; two strips and a flip put the joints and
-       the door rhythm out of step with each other. */
-    /* THE JOINTS OVERLAP AND FADE. Butted edge to edge, every join between two
-       tiles is a hard vertical line, and a line every few hundred units reads as
-       a seam even when the wood on both sides matches. Each tile now runs a
-       little way into the one already laid and comes up through it in steps, so
-       there is no edge to find — the pitch shortens by the overlap, which on
-       plain cabinet wood is invisible. */
-    const FTH = 64;                                        // overlap, in world units
-    /* THE SKIRT IS MIRRORED, NOT STRETCHED. The photograph's cabinet stops short
-       of the floor and I filled the rest by stretching its lowest rows — seven
-       plate-widths across and four times down, which is why the bottom of the
-       counter read as a blown-up smear that did not line up with the wood above
-       it. A band of the same wood, flipped, continues its own grain exactly at
-       the joint; flipped again it continues that, and so on to the floor. Every
-       band is at its natural scale in both directions. */
-    const BAND = PL_ROW.bot - PL_ROW.skirt, bandH = sh * BAND / IH;
-    const skirtUnder = (c0, c1, sa, sWid, flip) => {
-      let y = yBot, m = true;
-      while (y < yFloor - 0.5 && bandH > 1){
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(sa, y, sWid + 1, Math.min(bandH, yFloor - y) + 0.5);
-        ctx.clip();
-        if (flip){ ctx.translate(sa + sWid, 0); ctx.scale(-1, 1); ctx.translate(-sa, 0); }
-        if (m){ ctx.translate(0, 2 * y + bandH); ctx.scale(1, -1); }
-        ctx.drawImage(im, c0, PL_ROW.skirt, c1 - c0, BAND, sa, y, sWid + 1, bandH);
-        ctx.restore();
-        y += bandH; m = !m;
-      }
-    };
+    ctx.beginPath();
+    ctx.rect(cx0, art.tall ? y0 : yTop, cx1 - cx0, yFloor - (art.tall ? y0 : yTop) + 4);
+    ctx.clip();
+    // the sheet itself, where it falls inside this run
+    if (art.tall && pR > tb.x0 && pL < tb.x1)
+      ctx.drawImage(im, px(pL, kf), y0, sw, sh);
+    const FTH = 64;
     const tile = (c0, c1, a, wWorld, flip, lead) => {
       const sa = px(a, kf), sWid = wWorld * SS, f = Math.min(FTH, wWorld * 0.4) * SS;
       if (sa > W || sa + sWid < 0) return;
-      const put = (cx, cw, al) => {
-        if (cw <= 0) return;
+      const put = (bx, bw, al) => {
+        if (bw <= 0) return;
         ctx.save();
         ctx.globalAlpha = al;
-        ctx.beginPath(); ctx.rect(cx, yTop, cw, yBot - yTop); ctx.clip();
+        ctx.beginPath(); ctx.rect(bx, yTop, bw, yFloor - yTop + 2); ctx.clip();
         if (flip){ ctx.translate(sa + sWid, 0); ctx.scale(-1, 1); ctx.translate(-sa, 0); }
-        ctx.drawImage(im, c0, PL_ROW.top, c1 - c0, IH - PL_ROW.top,
+        ctx.drawImage(im, c0, R.back, c1 - c0, IH - R.back,
                       sa, yTop, sWid + 0.6, yBot - yTop);
         ctx.restore();
       };
       const N = 7;
-      if (lead > 0){                       // fades in on its left edge
-        put(sa + f, sWid - f + 1, 1);
-        for (let j = 0; j < N; j++) put(sa + f * j / N, f / N + 0.7, (j + 0.5) / N);
-      } else if (lead < 0){                // fades in on its right edge
-        put(sa, sWid - f + 1, 1);
+      if (lead > 0){ put(sa + f, sWid - f + 1, 1);
+        for (let j = 0; j < N; j++) put(sa + f * j / N, f / N + 0.7, (j + 0.5) / N); }
+      else if (lead < 0){ put(sa, sWid - f + 1, 1);
         for (let j = 0; j < N; j++)
-          put(sa + sWid - f * (j + 1) / N, f / N + 0.7, (j + 0.5) / N);
-      } else put(sa, sWid + 1, 1);
-      skirtUnder(c0, c1, sa, sWid, flip);
+          put(sa + sWid - f * (j + 1) / N, f / N + 0.7, (j + 0.5) / N); }
+      else put(sa, sWid + 1, 1);
     };
     let i = 0;
     for (const dir of [-1, 1]){
-      /* Start overlapped. A tile fades out along the edge that meets its
-         neighbour, and the first one's neighbour is the plate — laid at its own
-         width and not a millimetre wider. Butting the tile against it left the
-         fade with nothing underneath, so the wall showed through in a band the
-         width of the feather. It runs INTO the plate now, over the same clean
-         counter the strip was cut from. */
-      let edge = dir < 0 ? pL + FTH : pR - FTH;
+      // start overlapped, so the first tile's fade has something under it
+      let edge = art.tall ? (dir < 0 ? pL + FTH : pR - FTH) : (dir < 0 ? pL : pR - wWorldFull);
+      if (!art.tall && dir < 0) { i++; continue; }   // one anchor, tiled rightward only
       while (dir < 0 ? edge > tb.x0 : edge < tb.x1){
-        const [c0, c1] = STRIPS[i % 2], flip = (i >> 1) % 2 === 1;
-        const wWorld = (c1 - c0) * uPer;
+        const [c0, c1] = art.strips[i % art.strips.length], flip = (i >> 1) % 2 === 1;
+        const wWorld = (c1 - c0) * (wWorldFull / IW);
         const a = dir < 0 ? edge - wWorld : edge;
         if (dir < 0 ? a + wWorld > tb.x0 - wWorld : a < tb.x1)
           tile(c0, c1, a, wWorld, flip, dir < 0 ? -1 : 1);
-        edge += dir * (wWorld - FTH); i++;                 // the overlap shortens the pitch
-        if (i > 120) break;                                // a run is never this long
+        edge += dir * (wWorld - FTH); i++;
+        if (i > 160) break;
       }
     }
-    if (pR > tb.x0 && pL < tb.x1) skirtUnder(0, IW, px(pL, kf), sw, false);
-    // the era's own light over the whole face, and the year rail on its edge
+    // the era's own light over the face, and the year rail on its edge
     const seg = tb.seg, shF = seg.shade != null ? seg.shade : 1;
-    const gr = ctx.createLinearGradient(0, rowY(PL_ROW.front), 0, yFloor);
+    const yFront = py(CFG.benchY, kf);
+    const gr = ctx.createLinearGradient(0, yFront, 0, yFloor);
     gr.addColorStop(0, 'rgba(255,220,160,0.10)');
     gr.addColorStop(0.08, 'rgba(0,0,0,0)');
     gr.addColorStop(1, `rgba(0,0,0,${0.62 * shF})`);
     ctx.fillStyle = gr;
-    ctx.fillRect(cx0, rowY(PL_ROW.front), cx1 - cx0, yFloor - rowY(PL_ROW.front));
+    ctx.fillRect(cx0, yFront, cx1 - cx0, yFloor - yFront);
     ctx.fillStyle = seg.rail;
-    ctx.fillRect(cx0, rowY(PL_ROW.front) + 6 * SS, cx1 - cx0, 3 * SS);
+    ctx.fillRect(cx0, yFront + 6 * SS, cx1 - cx0, 3 * SS);
     ctx.restore();
     // the ends of the run, so it stops rather than simply ceasing
     for (const [ex, edge] of [[tb.x0, 1], [tb.x1, -1]]){
@@ -5028,7 +5007,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260826-cab';
+const ASSET_V = '20260828-interior';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* the procedural era walls (tools/make_wall.py) stand in for the drawn ones —
    same slot, same tiling, so drawWall never learns the difference */
@@ -5042,10 +5021,18 @@ function wallSwitchX(){
   return u ? (u.wallAt != null ? u.wallAt : u.x + u.w / 2) : bayStart(0);
 }
 function applyPhotoTextures(){
-  TEX.wall1_dark = TEX.wall1;          // kept for the years before the 1970 bench
   for (const [slot, key] of [['wall1','wall_e1'], ['wall2','wall_e2'], ['wall3','wall_e3'], ['wall4','wall_e4'],
                              ['bench1','bench_top_e1'], ['front1','bench_face_e1']])
     if (PHOTO_TEX[key]) TEX[slot] = PHOTO_TEX[key];
+  /* ONE WALL THROUGH ERA 1. The century before the company and the founding lab
+     used to be told apart by the wall changing from dark boards to plaster.
+     With the boards now a photograph of a real panelled wall, the era reads as
+     one room and the change of material has nothing left to say — the thing
+     that divides the two halves is the instrument cabinet standing between
+     them, which is a better door than a change of paint. Set both to the same
+     sheet rather than leaving a second, procedural wood beside a photographed
+     one; two different woods a metre apart is the fault this was meant to cure. */
+  TEX.wall1_dark = TEX.wall1;
 }
 async function loadPhotoSkin(){
   const want = {
@@ -5058,6 +5045,8 @@ async function loadPhotoSkin(){
     ph_tray34: 'tray_2.png',
     ph_crate: 'crate_0.png',
     ph_cabinet: 'cabinet_1907.png',
+    bench_pre: 'bench_e1.jpg',        // the counter in the dark-boards room
+    bench_mid: 'bench_mid.jpg',       // the master counter, eras 2 and 3
   };
   await Promise.all(Object.entries(want).map(([key, file]) => new Promise(res => {
     const im = new Image();
@@ -5773,7 +5762,12 @@ function drawPedestal(b, t, hero){
       // beam direction: straight down -> through the exhibit, by lock
       const xEnd = fx + ((sx - fx) * (yEnd / Math.max(1, yObj))) * lock;
       const tObj = Math.max(0.05, Math.min(0.92, yObj / yEnd));
-      softBeam(fx, xEnd, 0, yEnd, colW * 0.22, colW * 0.30, warmC, hero,
+      /* 0.10, not `hero`. The single quad this replaced peaked at 0.22 of the
+         hero level; five additive passes sum to about two and a third times one
+         pass, so handing the same number to softBeam made the shaft four times
+         as strong. Against era 3's pale wall it merely looked bright; on the
+         photographed walls it became a white X across the room. */
+      softBeam(fx, xEnd, 0, yEnd, colW * 0.22, colW * 0.30, warmC, 0.10 * hero * lock,
                [[0, 0.14], [tObj, 1], [Math.min(1, tObj + 0.25), 0.32], [1, 0]]);
       // the fixture itself
       ctx.fillStyle = 'rgba(20,20,22,0.9)';
@@ -8022,7 +8016,7 @@ function frame(){
   drawFigures();
   drawProps(true);
 
-  drawPlateBench(t);  // era 1's counter, cut from its own centrepiece
+  drawPhotoBench(t);  // every counter that is a photograph rather than a texture
   drawFloorSheen();   // before the counter, so the counter covers it and the
   drawBench();        // reflection can never be laid over the furniture
   drawShowroomLight(t);   // light coming OUT of the furniture, so after it
@@ -8318,6 +8312,21 @@ async function boot(){
       console.log('prop cleared from the approach: ' + p.kind + ' @' + (p.x | 0));
       PROPS.splice(i, 1);
     }
+  }
+  /* THE ARTS. Each is a sheet plus the three rows measured off it. The founding
+     plate is `tall` because it carries the still-life above its own counter and
+     must be drawn whole; the cut sheets start at the worktop's back edge and
+     have nothing above it, so they are laid from the run's own left end. */
+  {
+    const P = PLATES[0], L = P && P.layers && P.layers[0];
+    if (L && L.sp) BENCH_ART.plate = {im: L.sp, rows: {back: PL_ROW.top, front: PL_ROW.front,
+      bot: PL_ROW.bot}, strips: [[20, 540], [1420, 1780]], at: P.x, tall: true};
+    if (PHOTO_TEX.bench_pre) BENCH_ART.e1  = {im: PHOTO_TEX.bench_pre, rows: ART_ROWS,
+      strips: [[0, 836], [836, 1672]]};
+    if (PHOTO_TEX.bench_mid) BENCH_ART.mid = {im: PHOTO_TEX.bench_mid, rows: ART_ROWS,
+      strips: [[0, 836], [836, 1672]]};
+    if (!BENCH_ART.e1 || !BENCH_ART.mid)
+      console.warn('bench art missing — those eras fall back to the drawn counter');
   }
   snapPlatesToTables();
   clearPlateBays();
