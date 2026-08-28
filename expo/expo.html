@@ -2598,13 +2598,13 @@ function drawTallUnits(){
       const hW = u.hw || 640;                    // its height in world units
       const wW = hW * im.width / im.height;
       const sw2 = wW * kk * SS, sh2 = hW * kk * SS;
-      /* 50, not 15. The fifteen was applied in the same breath as the wall
+      /* 44. Fifty put it five too low; the fifteen was applied in the same breath as the wall
          becoming a plane, and that moved the wall's foot 28 px DOWN — so against
          the room the cabinet came out fifteen higher than it started, which is
          what you saw. Measured off the frames: it used to stand 37 px in front
          of the wall's base and now stands 22, so it needs 15 for the request and
          28 to undo what the floor did underneath it. */
-      const foot = py(1080, kk) + 50 * SS;
+      const foot = py(1080, kk) + 44 * SS;
       /* THE SHADOW IS AS WIDE AS THE CABINET. contactShadow throws a round pool
          at 60 per cent of the width it is given, so at half the cabinet's width
          it reached about two thirds of the way out and stopped well short of the
