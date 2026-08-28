@@ -4945,12 +4945,18 @@ function drawPhotoBench(t){
        the whole canvas to 55 per cent — that is why the type went soft. One
        drawImage a tile now. */
     const anchor = art.at != null ? art.at : tb.x0;
-    const put = (a, flip) => {
+    /* TILE FROM THE CLEAN ENDS, NOT THE WHOLE SHEET. The still-life does not
+       only stand above the worktop — the boxes, the files and the papers LIE on
+       it, in the very rows the tile is cut from. Mosaicking the entire plate
+       therefore carried that clutter along the era and printed it again at 1973
+       and 1976. The plate is tiled from the empty counter at its two ends; a
+       cut sheet has no still-life and is tiled whole. */
+    const put = (a, wWorld, c0, c1, flip) => {
       const sa = px(a, kf), sWid = wWorld * wpp;
       if (sa > W || sa + sWid < 0) return;
       ctx.save();
       if (flip){ ctx.translate(sa + sWid, 0); ctx.scale(-1, 1); ctx.translate(-sa, 0); }
-      ctx.drawImage(im, 0, R.back, IW, IH - R.back, sa, yTop, sWid + 0.7, yBot - yTop);
+      ctx.drawImage(im, c0, R.back, c1 - c0, IH - R.back, sa, yTop, sWid + 0.7, yBot - yTop);
       // the plate stops short of the floor; its own foot, flipped, carries down
       if (art.tall && yFloor > yBot){
         const band = (R.bot - R.skirt) * pxRow;
@@ -4959,24 +4965,33 @@ function drawPhotoBench(t){
           ctx.save();
           ctx.beginPath(); ctx.rect(sa, y, sWid + 1, Math.min(band, yFloor - y) + 0.5); ctx.clip();
           if (up){ ctx.translate(0, 2 * y + band); ctx.scale(1, -1); }
-          ctx.drawImage(im, 0, R.skirt, IW, R.bot - R.skirt, sa, y, sWid + 1, band);
+          ctx.drawImage(im, c0, R.skirt, c1 - c0, R.bot - R.skirt, sa, y, sWid + 1, band);
           ctx.restore();
           y += band; up = !up;
         }
       }
       ctx.restore();
     };
-    // outward in both directions from the anchor, flipping alternately
-    let n = 0;
-    for (let a = anchor; a < tb.x1; a += wWorld) put(a, (n++) % 2 === 1);
-    n = 1;
-    for (let a = anchor - wWorld; a + wWorld > tb.x0; a -= wWorld) put(a, (n++) % 2 === 1);
+    /* Outward in both directions, flipping alternately: the column that ends a
+       tile is the column that begins the next, so the join is continuous. The
+       first tile on each side is flipped so that the edge it presents to the
+       anchored sheet is that sheet's own edge column. */
+    const SL = art.stripL || [0, IW], SR = art.stripR || [0, IW];
+    const wOf = st => (st[1] - st[0]) * (wWorld / IW);
+    const right = art.tall ? anchor + wWorld : anchor;   // where the sheet ends
+    let n = 0, wR = wOf(SR);
+    for (let a = right; a < tb.x1; a += wR) put(a, wR, SR[0], SR[1], (n++) % 2 === 0);
+    n = 0;
+    const wL = wOf(SL);
+    for (let a = anchor - wL; a + wL > tb.x0; a -= wL)
+      put(a, wL, SL[0], SL[1], (n++) % 2 === 0);
     /* And the plate whole, on top of its own tiles. It is cropped at the
        worktop's back edge like every other tile, and everything the founding bay
        is FOR — the furnace, the articulator, the lamp — stands above that line.
        Cropping it there took the still-life away with it. */
     if (art.tall){
-      const sa = px(anchor, kf);
+      const sa = px(anchor, kf), c0 = 0, c1 = IW;
+      void c0; void c1;
       ctx.drawImage(im, sa, y0, sw, sh);
       if (yFloor > yBot){
         const band = (R.bot - R.skirt) * pxRow;
@@ -8331,7 +8346,8 @@ async function boot(){
   {
     const P = PLATES[0], L = P && P.layers && P.layers[0];
     if (L && L.sp) BENCH_ART.plate = {im: L.sp, rows: {back: PL_ROW.top, front: PL_ROW.front,
-      bot: PL_ROW.bot, skirt: PL_ROW.skirt}, at: P.x - (P.sw || 1874) / 2, tall: true};
+      bot: PL_ROW.bot, skirt: PL_ROW.skirt}, at: P.x - (P.sw || 1874) / 2, tall: true,
+      stripL: [0, 540], stripR: [1410, 1797]};   // the empty counter at each end
     if (PHOTO_TEX.bench_pre) BENCH_ART.e1  = {im: PHOTO_TEX.bench_pre, rows: ART_ROWS};
     if (PHOTO_TEX.bench_mid) BENCH_ART.mid = {im: PHOTO_TEX.bench_mid, rows: ART_ROWS};
     if (!BENCH_ART.e1 || !BENCH_ART.mid)
