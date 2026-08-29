@@ -1408,7 +1408,7 @@ function drawBench(){
   const yTopF = py(CFG.benchY, kf);
   for (const tb of TABLES){
     const seg = tb.seg, bx0 = tb.x0, bx1 = tb.x1;
-    if (onPlate(tb)) continue;         // past the cabinet the counter IS the photograph
+    if (onPlate(tb) || era1Photo(tb)) continue;   // a photograph takes this run over
     const sx0f = px(bx0, kf), sx1f = px(bx1, kf);
     if (sx1f <= 0 || sx0f >= W) continue;
     const tex = TEX[seg.bench];
@@ -4947,6 +4947,70 @@ const PL_ROW = {top: 303, front: 377, bot: 617, skirt: 588};
    cabinet, which is the door between the two. */
 let PLATE_FROM = 1e9;
 const onPlate = tb => !!tb.seg.plateBench && tb.x0 >= PLATE_FROM - 40;
+/* ERA 1'S COUNTER — the stretch up to the cabinet, which is where that era
+   ends. A photograph, laid along the run. Three rows measured off the sheet:
+   the worktop meets the wall on row 1, its front edge is row 53, and the cabinet
+   front runs to the bottom, so it reaches the floor on its own and needs nothing
+   carried down under it.
+   The scale is whatever makes the worktop as deep on screen as this hall's is;
+   the sheet hangs by its front edge on the counter line, and the front runs past
+   the floor and is clipped there. Tiles alternate flipped, so the column that
+   ends one is the column that begins the next and the join is continuous by
+   construction — one drawImage a tile, nothing feathered, nothing clipped. */
+const AGE01 = {back: 1, front: 53, bot: 438};
+const era1Photo = tb => tb.seg === SEGMENTS[0] && !onPlate(tb) && !!PHOTO_TEX.bench_age01;
+function drawEra1Bench(){
+  const im = PHOTO_TEX.bench_age01;
+  if (!im) return;
+  const IW = im.naturalWidth || im.width, IH = im.naturalHeight || im.height;
+  const kf = k(0), wpp = kf * SS;
+  const deep = py(CFG.benchY, kf) - py(CFG.benchY, k(CFG.benchDepth));
+  const pxRow = deep / (AGE01.front - AGE01.back);
+  const sh = IH * pxRow, sw = IW * pxRow, wWorld = sw / wpp;
+  const y0 = py(CFG.benchY, kf) - AGE01.front * pxRow;
+  const yTop = y0 + AGE01.back * pxRow, yBot = y0 + sh, yFloor = py(1080, kf);
+  if (wWorld < 1) return;
+  ctx.save();
+  for (const tb of TABLES){
+    if (!era1Photo(tb)) continue;
+    const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
+    if (cx1 - cx0 < 1) continue;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(cx0, yTop, cx1 - cx0, yFloor - yTop + 4); ctx.clip();
+    let i = 0;
+    for (let a = tb.x0; a < tb.x1 && i < 80; a += wWorld, i++){
+      const sa = px(a, kf), sWid = wWorld * wpp;
+      if (sa > W || sa + sWid < 0) continue;
+      ctx.save();
+      if (i % 2){ ctx.translate(sa + sWid, 0); ctx.scale(-1, 1); ctx.translate(-sa, 0); }
+      ctx.drawImage(im, 0, AGE01.back, IW, IH - AGE01.back,
+                    sa, yTop, sWid + 0.7, yBot - yTop);
+      ctx.restore();
+    }
+    // the era's own light over the face, and the year rail on its edge
+    const seg = tb.seg, shF = seg.shade != null ? seg.shade : 1;
+    const yFront = py(CFG.benchY, kf);
+    const gr = ctx.createLinearGradient(0, yFront, 0, yFloor);
+    gr.addColorStop(0, 'rgba(255,220,160,0.10)');
+    gr.addColorStop(0.08, 'rgba(0,0,0,0)');
+    gr.addColorStop(1, `rgba(0,0,0,${0.62 * shF})`);
+    ctx.fillStyle = gr;
+    ctx.fillRect(cx0, yFront, cx1 - cx0, yFloor - yFront);
+    ctx.fillStyle = seg.rail;
+    ctx.fillRect(cx0, yFront + 6 * SS, cx1 - cx0, 3 * SS);
+    ctx.restore();
+    for (const [ex, edge] of [[tb.x0, 1], [tb.x1, -1]]){
+      const exs = px(ex, kf);
+      if (exs < -40 || exs > W + 40) continue;
+      ctx.fillStyle = 'rgba(0,0,0,0.30)';
+      ctx.fillRect(edge > 0 ? exs : exs - 5 * SS, yTop, 5 * SS, yFloor - yTop);
+      ctx.fillStyle = 'rgba(255,240,210,0.10)';
+      ctx.fillRect(edge > 0 ? exs + 5 * SS : exs - 7 * SS, yTop, 2 * SS, yFloor - yTop);
+    }
+  }
+  ctx.restore();
+}
+
 function drawPlateBench(t){
   const P = PLATES[0]; if (!P) return;
   const L = (P.layers || [])[0]; if (!L || !L.sp) return;
@@ -5078,7 +5142,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260828-e1wall';
+const ASSET_V = '20260828-e1bench';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* the procedural era walls (tools/make_wall.py) stand in for the drawn ones —
    same slot, same tiling, so drawWall never learns the difference */
@@ -5115,6 +5179,7 @@ async function loadPhotoSkin(){
     ph_tray34: 'tray_2.png',
     ph_crate: 'crate_0.png',
     ph_cabinet: 'cabinet_1907.png',
+    bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
   };
   await Promise.all(Object.entries(want).map(([key, file]) => new Promise(res => {
     const im = new Image();
@@ -8079,7 +8144,8 @@ function frame(){
   drawFigures();
   drawProps(true);
 
-  drawPlateBench(t);  // era 1's counter, cut from its own centrepiece
+  drawEra1Bench();    // era 1, up to the cabinet: its own photographed counter
+  drawPlateBench(t);  // and the founding bay, cut from its centrepiece
   drawFloorSheen();   // before the counter, so the counter covers it and the
   drawBench();        // reflection can never be laid over the furniture
   drawShowroomLight(t);   // light coming OUT of the furniture, so after it
