@@ -1933,13 +1933,13 @@ function drawIntro(){
     ctx.restore();
   }
   ctx.font = eraFont(64 * kk * SS);
-  // two lines higher: the title's own leading is 78 world units, so 156
-  ctx.fillText('HOW GOOD DENTISTRY', cx, py(326, kk));
-  ctx.fillText('STOPPED BEING A LUXURY', cx, py(404, kk));
+  // one line above where it started: the title's own leading is 78 world units
+  ctx.fillText('HOW GOOD DENTISTRY', cx, py(404, kk));
+  ctx.fillText('STOPPED BEING A LUXURY', cx, py(482, kk));
   ctx.font = eraFont(24 * kk * SS);
   try { ctx.letterSpacing = `${5*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(200,172,132,0.6)';
-  ctx.fillText('GLIDEWELL HISTORY TOUR →', cx, py(474, kk));
+  ctx.fillText('GLIDEWELL HISTORY TOUR →', cx, py(552, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.restore();
 }
