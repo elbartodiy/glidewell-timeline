@@ -4959,17 +4959,26 @@ const onPlate = tb => !!tb.seg.plateBench && tb.x0 >= PLATE_FROM - 40;
    ends one is the column that begins the next and the join is continuous by
    construction — one drawImage a tile, nothing feathered, nothing clipped. */
 const AGE01 = {back: 1, front: 53, bot: 438};
+/* HOW BIG THE SHEET IS, IN THE WORLD — settled once, with the camera at rest,
+   and never again. I had been deriving it each frame from the counter's depth
+   ON SCREEN, and that is not proportional to k: at rest it is 74 px, in the
+   opening dolly 217. So the sheet's world width ran from 2124 units to 3252 as
+   the camera came in — the counter physically stretched, slid left, coarsened,
+   and the things standing on it, which do not move, ended up somewhere else
+   entirely. A counter is a counter whatever the lens is doing. */
+const AGE01_UROW = ((CFG.benchY - CFG.horizon) *
+  (1 - CFG.F / (CFG.F + CFG.benchDepth))) / (AGE01.front - AGE01.back);
 const era1Photo = tb => tb.seg === SEGMENTS[0] && !onPlate(tb) && !!PHOTO_TEX.bench_age01;
 function drawEra1Bench(){
   const im = PHOTO_TEX.bench_age01;
   if (!im) return;
   const IW = im.naturalWidth || im.width, IH = im.naturalHeight || im.height;
   const kf = k(0), wpp = kf * SS;
-  const deep = py(CFG.benchY, kf) - py(CFG.benchY, k(CFG.benchDepth));
-  const pxRow = deep / (AGE01.front - AGE01.back);
-  const sh = IH * pxRow, sw = IW * pxRow, wWorld = sw / wpp;
-  const y0 = py(CFG.benchY, kf) - AGE01.front * pxRow;
-  const yTop = y0 + AGE01.back * pxRow, yBot = y0 + sh, yFloor = py(1080, kf);
+  const wWorld = IW * AGE01_UROW;                    // fixed, in world units
+  const rowPx = AGE01_UROW * wpp;                    // one image row, on screen
+  const y0 = py(CFG.benchY, kf) - AGE01.front * rowPx;
+  const yTop = y0 + AGE01.back * rowPx, yBot = y0 + IH * rowPx;
+  const yFloor = py(1080, kf);
   if (wWorld < 1) return;
   ctx.save();
   for (const tb of TABLES){
@@ -4980,7 +4989,7 @@ function drawEra1Bench(){
     ctx.beginPath(); ctx.rect(cx0, yTop, cx1 - cx0, yFloor - yTop + 4); ctx.clip();
     let i = 0;
     for (let a = tb.x0; a < tb.x1 && i < 80; a += wWorld, i++){
-      const sa = px(a, kf), sWid = wWorld * wpp;
+      const sa = px(a, kf), sWid = wWorld * wpp;   // grows with the room, not with the lens
       if (sa > W || sa + sWid < 0) continue;
       ctx.save();
       if (i % 2){ ctx.translate(sa + sWid, 0); ctx.scale(-1, 1); ctx.translate(-sa, 0); }
