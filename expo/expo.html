@@ -1408,7 +1408,7 @@ function drawBench(){
   const yTopF = py(CFG.benchY, kf);
   for (const tb of TABLES){
     const seg = tb.seg, bx0 = tb.x0, bx1 = tb.x1;
-    if (onPlate(tb) || era1Photo(tb)) continue;   // a photograph takes this run over
+    if (onPlate(tb) || era1Photo(tb) || era2Photo(tb)) continue;   // a photograph takes this run over
     const sx0f = px(bx0, kf), sx1f = px(bx1, kf);
     if (sx1f <= 0 || sx0f >= W) continue;
     const tex = TEX[seg.bench];
@@ -5021,6 +5021,70 @@ function drawEra1Bench(){
   ctx.restore();
 }
 
+/* ERA 2'S COUNTER, 1980 TO THE 1989 RECREATION — cut from the office_1980
+   master-geometry render, between two real door joints so the mirror tiling
+   closes on itself.
+
+   The render's camera sits almost at worktop height: its top surface is a
+   28-row sliver where the hall's counter is 74 px deep. Fitting the whole sheet
+   by that sliver would have blown it up 2.6x and made the doors three times too
+   wide. So the two bands are fitted separately. The fronts — the part you
+   actually look at — keep the photograph's own aspect exactly, which is what
+   settles the sheet's width in the world; the worktop sliver is then stretched
+   on its own to the hall's real depth, and a stone slab takes a vertical
+   stretch without telling anyone. */
+const B80 = {front: 28, bot: 437};
+const B80_U = (1080 - CFG.benchY) / (B80.bot - B80.front);   // world units per image row
+const era2Photo = tb => tb.seg === SEGMENTS[1] && !!PHOTO_TEX.bench_1980;
+function drawEra2Bench(){
+  const im = PHOTO_TEX.bench_1980;
+  if (!im) return;
+  const IW = im.naturalWidth || im.width, IH = im.naturalHeight || im.height;
+  const kf = k(0), wpp = kf * SS;
+  const wWorld = IW * B80_U;                         // fixed, in world units
+  const yBack = py(CFG.benchY, k(CFG.benchDepth));   // where the hall's worktop starts
+  const yFront = py(CFG.benchY, kf), yFloor = py(1080, kf);
+  if (wWorld < 1 || yFloor - yBack < 2) return;
+  ctx.save();
+  for (const tb of TABLES){
+    if (!era2Photo(tb)) continue;
+    const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
+    if (cx1 - cx0 < 1) continue;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(cx0, yBack, cx1 - cx0, yFloor - yBack + 4); ctx.clip();
+    let i = 0;
+    for (let a = tb.x0; a < tb.x1 && i < 80; a += wWorld, i++){
+      const sa = px(a, kf), sWid = wWorld * wpp;
+      if (sa > W || sa + sWid < 0) continue;
+      ctx.save();
+      if (i % 2){ ctx.translate(sa + sWid, 0); ctx.scale(-1, 1); ctx.translate(-sa, 0); }
+      ctx.drawImage(im, 0, 0, IW, B80.front,
+                    sa, yBack, sWid + 0.7, yFront - yBack);
+      ctx.drawImage(im, 0, B80.front, IW, IH - B80.front,
+                    sa, yFront, sWid + 0.7, yFloor - yFront);
+      ctx.restore();
+    }
+    const shF = tb.seg.shade != null ? tb.seg.shade : 1;
+    const gr = ctx.createLinearGradient(0, yFront, 0, yFloor);
+    gr.addColorStop(0, 'rgba(255,220,160,0.10)');
+    gr.addColorStop(0.08, 'rgba(0,0,0,0)');
+    gr.addColorStop(1, `rgba(0,0,0,${0.62 * shF})`);
+    ctx.fillStyle = gr;
+    ctx.fillRect(cx0, yFront, cx1 - cx0, yFloor - yFront);
+    ctx.fillStyle = tb.seg.rail;
+    ctx.fillRect(cx0, yFront + 6 * SS, cx1 - cx0, 3 * SS);
+    ctx.restore();
+    for (const [ex, edge] of [[tb.x0, 1], [tb.x1, -1]]){
+      const exs = px(ex, kf);
+      if (exs < -40 || exs > W + 40) continue;
+      ctx.fillStyle = 'rgba(0,0,0,0.30)';
+      ctx.fillRect(edge > 0 ? exs : exs - 5 * SS, yBack, 5 * SS, yFloor - yBack);
+      ctx.fillStyle = 'rgba(255,240,210,0.10)';
+      ctx.fillRect(edge > 0 ? exs + 5 * SS : exs - 7 * SS, yBack, 2 * SS, yFloor - yBack);
+    }
+  }
+  ctx.restore();
+}
 function drawPlateBench(t){
   const P = PLATES[0]; if (!P) return;
   const L = (P.layers || [])[0]; if (!L || !L.sp) return;
@@ -5152,7 +5216,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260828-e1bench';
+const ASSET_V = '20260828-e2bench';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* the procedural era walls (tools/make_wall.py) stand in for the drawn ones —
    same slot, same tiling, so drawWall never learns the difference */
@@ -5190,6 +5254,7 @@ async function loadPhotoSkin(){
     ph_crate: 'crate_0.png',
     ph_cabinet: 'cabinet_1907.png',
     bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
+    bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
   };
   await Promise.all(Object.entries(want).map(([key, file]) => new Promise(res => {
     const im = new Image();
@@ -8155,6 +8220,7 @@ function frame(){
   drawProps(true);
 
   drawEra1Bench();    // era 1, up to the cabinet: its own photographed counter
+  drawEra2Bench();    // era 2, 1980 to the 1989 recreation
   drawPlateBench(t);  // and the founding bay, cut from its centrepiece
   drawFloorSheen();   // before the counter, so the counter covers it and the
   drawBench();        // reflection can never be laid over the furniture
