@@ -7289,12 +7289,11 @@ const BEAT_PEOPLE = {
 let PERSON_SPRITES = {};
 /* speaker clips inside the study pages: tap a preview, a third-layer video
    window opens — pieces of the interviews we are filming */
+/* A year carries only footage shot FOR that year. The `_01` interviews are a
+   person's own record — they live on the person's page and nowhere else. */
 const STUDY_MEDIA = {
-  14260: [{name:'Dr. Neil Park', pid:'park', src:'media/park_01.mp4', label:'on teaching as the product'}],
   18700: [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2007_patel.mp4', label:'on the digital revolution'}],
   22550: [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2010s_patel.mp4', label:'on scanners in every office'}],
-  23170: [{name:'Dr. Randolph Resnik', pid:'resnik', src:'media/resnik_01.mp4', label:'on implants leaving the specialty'}],
-  24020: [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/patel_01.mp4', label:'on the digital workflow'}],
 };
 const VIDEO_EL = {};
 // preview thumbs are real frames from the clips, grabbed at runtime
@@ -7323,9 +7322,6 @@ function openClip(m, wx){
   }
   try { v.currentTime = 0; v.play(); } catch(e){}
   state.clip = {v, name: m.name, label: m.label, wx: wx, amt: 0};
-  // the projection needs the bare wall — unless a person's page sent you here,
-  // in which case closing the clip should put you back on it
-  if (state.study && !state.person) state.study.closing = true;
 }
 function closeClip(){
   const C = state.clip;
@@ -7546,6 +7542,7 @@ function drawStudy(){
   ctx.fillStyle = `rgba(${K.dim},0.7)`;
   ctx.fillText('· scroll to explore · tap to return ·', W/2, y + 28*SS);
   ctx.restore();
+  state.cardRect = {x: wx0, y: wy0, w: ww, h: wh, r: K.r*SS};
   S.maxScroll = Math.max(1, (y + 170*SS + S.scroll * SS - (wy0 + wh)) / SS);
 }
 
@@ -7690,90 +7687,86 @@ function drawPerson(){
   ctx.fillStyle = `rgba(${K.dim},0.75)`;
   ctx.fillText('· scroll to read · tap to go back ·', W/2, y + 28*SS);
   ctx.restore();
+  state.cardRect = {x: wx0, y: wy0, w: ww, h: wh, r: K.r*SS};
   S.maxScroll = Math.max(1, (y + 170*SS + S.scroll * SS - (wy0 + wh)) / SS);
 }
 function drawClip(){
-  // the speaker is projected straight onto the wall: a cone of light from
-  // above, feathered edges, faint grain — no frame, no window, no buttons
+  /* THE PLAYER IS A LAYER INSIDE THE CARD. It used to throw the clip on the
+     hall wall — a beam, feathered edges, grain, a flicker on the picture. That
+     belongs to the projector in the room and to nothing else: a card is a page,
+     not a screening, and a page does not flicker. So the card stays exactly
+     where it is, dims a little, and the video plays in a panel set inside it. */
   const C = state.clip; if (!C) return;
   C.amt += ((C.closing ? 0 : 1) - C.amt) * Math.min(1, (state.dt || 0.016) * 5);
   if (C.closing && C.amt < 0.03){ closeClip(); return; }
   const e = C.amt*C.amt*(3-2*C.amt);
-  const seg = segAt(C.wx);
-  const kk = k((seg.tz || 680) - 6);
-  // the hall falls dark, the wall stays as the screen
-  ctx.fillStyle = `rgba(2,3,5,${(0.72*e).toFixed(3)})`;
-  ctx.fillRect(0, 0, W, H);
-  if (e < 0.15) return;
-  const a = (e - 0.15) / 0.85;
-  const vw = Math.min(1150 * kk * SS, W * 0.6);
-  const vh = vw * 9/16;
-  const cx = Math.max(vw/2 + 30*SS, Math.min(W - vw/2 - 30*SS, px(C.wx, kk)));
-  const x0 = cx - vw/2, y0 = py(150, kk);
+  const R = state.cardRect;
+  if (!R) return;                     // no host card, nothing to play inside
+  const a = e;
   ctx.save();
+  ctx.beginPath(); ctx.roundRect(R.x, R.y, R.w, R.h, R.r); ctx.clip();
+  /* the page does not sit half-visible behind the picture — a ghost of the
+     text under a video reads as a mistake, not as depth. The card's own frame
+     stays, and inside it turns into the dark plate the clip plays on; the fade
+     is what shows you it is the same card. */
+  ctx.fillStyle = `rgba(12,14,17,${a.toFixed(3)})`;
+  ctx.fillRect(R.x, R.y, R.w, R.h);
+  // the panel is fitted into the card with room left round it, so it reads as
+  // a layer standing on the page rather than as the page being replaced
+  const pad = R.w * 0.09;
+  const boxW = R.w - pad*2, boxH = R.h - 230*SS;
+  const vw = Math.min(boxW, boxH * 16/9), vh = vw * 9/16;
+  // the panel and its caption are centred as one block, and the caption keeps
+  // to the margins: the card's own centred footer is still faintly behind it
+  const capH = 104*SS;
+  const x0 = R.x + (R.w - vw)/2, y0 = R.y + (R.h - (vh + capH))/2;
   ctx.globalAlpha = a;
-  // the projector beam
-  const apexY = -30*SS;
-  const bg = ctx.createLinearGradient(0, apexY, 0, y0 + vh);
-  bg.addColorStop(0, 'rgba(235,240,250,0.16)');
-  bg.addColorStop(1, 'rgba(235,240,250,0.02)');
-  ctx.fillStyle = bg;
-  ctx.beginPath();
-  ctx.moveTo(cx - 16*SS, apexY);
-  ctx.lineTo(cx + 16*SS, apexY);
-  ctx.lineTo(x0 + vw, y0 + vh);
-  ctx.lineTo(x0, y0 + vh);
-  ctx.closePath(); ctx.fill();
-  drawGlow('235,240,250', cx, 4*SS, 90*SS, 0.4);
-  // the picture, cast on the wall
   const v = C.v;
-  const flick = 0.86 + 0.05*Math.sin(state.time*37) + 0.03*Math.sin(state.time*9.3);
   ctx.save();
-  ctx.beginPath(); ctx.rect(x0, y0, vw, vh); ctx.clip();
-  if (v && v.videoWidth){
-    ctx.globalAlpha = a * flick;
-    const s = Math.max(vw / v.videoWidth, vh / v.videoHeight);
-    ctx.drawImage(v, cx - v.videoWidth*s/2, y0 + vh/2 - v.videoHeight*s/2,
-                  v.videoWidth*s, v.videoHeight*s);
-    ctx.globalAlpha = a;
-  }
-  // feathered edges: the light melts into the dark wall
-  const F = 46*SS, DIM = 'rgba(2,3,5,';
-  for (const [gx0, gy0, gx1, gy1, rx, ry, rw, rh] of [
-    [x0, 0, x0 + F, 0, x0, y0, F, vh],
-    [x0 + vw, 0, x0 + vw - F, 0, x0 + vw - F, y0, F, vh],
-    [0, y0, 0, y0 + F, x0, y0, vw, F],
-    [0, y0 + vh, 0, y0 + vh - F, x0, y0 + vh - F, vw, F],
-  ]){
-    const g2 = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
-    g2.addColorStop(0, DIM + '0.9)'); g2.addColorStop(1, DIM + '0)');
-    ctx.fillStyle = g2;
-    ctx.fillRect(rx, ry, rw, rh);
-  }
-  // grain of the throw
-  const gn = grains[(state.time*10|0) % grains.length];
-  ctx.globalAlpha = a * 0.06;
-  ctx.fillStyle = gn.pat || (gn.pat = ctx.createPattern(gn.c, 'repeat'));
-  ctx.fillRect(x0, y0, vw, vh);
-  ctx.globalAlpha = a;
+  ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 34*SS; ctx.shadowOffsetY = 10*SS;
+  ctx.fillStyle = '#0b0d10';
+  ctx.beginPath(); ctx.roundRect(x0, y0, vw, vh, 6*SS); ctx.fill();
   ctx.restore();
-  // progress: a thin light line under the throw, part of the projection
-  if (v && v.duration){
-    ctx.fillStyle = 'rgba(200,225,245,0.25)';
-    ctx.fillRect(x0 + F, y0 + vh + 14*SS, vw - 2*F, 2*SS);
-    ctx.fillStyle = 'rgba(200,225,245,0.7)';
-    ctx.fillRect(x0 + F, y0 + vh + 14*SS, (vw - 2*F) * (v.currentTime / v.duration), 2*SS);
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(x0, y0, vw, vh, 6*SS); ctx.clip();
+  if (v && v.videoWidth && v.readyState >= 2){
+    // contained, not cropped: an interview is a framed shot, keep the frame
+    const s = Math.min(vw / v.videoWidth, vh / v.videoHeight);
+    ctx.drawImage(v, x0 + vw/2 - v.videoWidth*s/2, y0 + vh/2 - v.videoHeight*s/2,
+                  v.videoWidth*s, v.videoHeight*s);
+  } else {
+    // a still from the clip while the first frame is still being decoded —
+    // never a black hole in the middle of the page
+    const im = thumbFor(C);
+    if (im){
+      const s = Math.min(vw / im.w, vh / im.h);
+      ctx.globalAlpha = a * 0.65;
+      ctx.drawImage(im.el, x0 + vw/2 - im.w*s/2, y0 + vh/2 - im.h*s/2, im.w*s, im.h*s);
+      ctx.globalAlpha = a;
+    }
   }
-  // the caption, painted in light
-  ctx.textAlign = 'center';
-  ctx.font = eraFont(24*SS, '', seg.font);
-  ctx.fillStyle = 'rgba(225,238,248,0.75)';
-  try { ctx.letterSpacing = `${4*SS}px`; } catch(err){}
-  ctx.fillText(C.name.toUpperCase(), cx, y0 + vh + 56*SS);
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 1.2*SS;
+  ctx.beginPath(); ctx.roundRect(x0, y0, vw, vh, 6*SS); ctx.stroke();
+  if (v && v.duration){
+    ctx.fillStyle = 'rgba(236,240,245,0.20)';
+    ctx.fillRect(x0, y0 + vh + 16*SS, vw, 2.5*SS);
+    ctx.fillStyle = 'rgba(225,27,42,0.95)';
+    ctx.fillRect(x0, y0 + vh + 16*SS, vw * (v.currentTime / v.duration), 2.5*SS);
+  }
+  ctx.textAlign = 'left';
+  ctx.font = `${Math.round(21*SS)}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
+  ctx.fillStyle = 'rgba(238,242,246,0.95)';
+  try { ctx.letterSpacing = `${2*SS}px`; } catch(err){}
+  ctx.fillText(C.name, x0, y0 + vh + 54*SS);
   try { ctx.letterSpacing = '0px'; } catch(err){}
-  ctx.font = eraFont(19*SS, 'italic', seg.font);
-  ctx.fillStyle = 'rgba(190,205,218,0.55)';
-  ctx.fillText(C.label, cx, y0 + vh + 88*SS);
+  ctx.font = `italic ${Math.round(18*SS)}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
+  ctx.fillStyle = 'rgba(178,186,196,0.85)';
+  ctx.fillText(C.label, x0, y0 + vh + 82*SS);
+  ctx.textAlign = 'right';
+  ctx.font = `${Math.round(17*SS)}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
+  ctx.fillStyle = 'rgba(170,178,188,0.7)';
+  ctx.fillText('· tap to close ·', x0 + vw, y0 + vh + 54*SS);
   ctx.restore();
 }
 
