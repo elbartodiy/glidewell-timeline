@@ -2683,7 +2683,7 @@ function drawTallUnits(){
 }
 
 function drawProgress(t){
-  const busy = state.study || state.person || state.inspect || state.clip || state.introHold;
+  const busy = state.study || state.person || state.people || state.inspect || state.clip || state.introHold;
   const hidden = Math.max(state.introFade || 0, state.finFade || 0, state.attract.fade || 0);
   const want = busy ? 0 : (1 - hidden);
   state.ruleA += (want - state.ruleA) * Math.min(1, (state.dt || 0.016) * 6);
@@ -5216,7 +5216,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260828-e2bench';
+const ASSET_V = '20260901-voices';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* the procedural era walls (tools/make_wall.py) stand in for the drawn ones —
    same slot, same tiling, so drawWall never learns the difference */
@@ -7158,7 +7158,10 @@ const STUDY_MORE = {"2450": "In January 1970, Jim Glidewell opened a one-man den
    page says about them; `clips` is the rail of interview previews down its
    right side — the same clips that hang on the year cards by topic. */
 const PEOPLE = {
-  jim:    {name:'Jim Glidewell, CDT', role:'Founder · one bench in 1970', img:'jimnow'},
+  jim:    {name:'Jim Glidewell, CDT', role:'Founder and president · one bench in 1970', img:'jimnow',
+           bio:["A dental technician who started alone at a kitchen table in Orange County in January 1970 — founder and, for a while, the only employee. Before that: a Kentucky farm near the Cumberland River, a latchkey childhood, the Navy, and Orange Coast College.",
+                "The company he built is the argument this whole hall makes. He did not invent zirconia, or CAD/CAM, or the implant; he took each of them and drove the price down until an ordinary practice could say yes."],
+           clips:[{src:'media/jim_glass.mp4', label:'in his own workshop'}]},
   rella:  {name:'Dr. Rella Christensen', role:'TRAC Research · the idea of a crown for everyone', img:'rella'},
   ditolla:{name:'Dr. Michael DiTolla', role:'Chairside Magazine · the clinical voice', img:'ditolla'},
   gordon: {name:'Dr. Gordon Christensen', role:'Independent clinical researcher', img:'christensen'},
@@ -7184,6 +7187,65 @@ const PEOPLE = {
                   src:'Chairside Magazine, Vol. 16-2, 2021'},
            clips:[{src:'media/resnik_01.mp4', label:'on implants leaving the specialty'}]},
 };
+/* THE REST OF THE CAST — the same list the production works from
+   (data_speakers.js), imported so the wall of voices is not a different wall
+   from the one the film is cast against. The ten above have pages written by
+   hand; these carry their role and the opening of their brief until someone
+   writes them properly. */
+const PEOPLE_MORE = {
+  alas: {name:'Dr. Abdul Alas', role:'Practice owner, general dentist & implantologist; mentor to 12+ young dentists', bio:['Our guide through the texture of dentistry now. Born in Damascus, Syria; at 17 (1993) he chose dentistry over engineering, graduated dental school in 1998, moved to the US, passed the four equivalency exams, licensed in California in 2001.']},
+  marie: {name:'Marie Alejandrino-Buell, DMD', role:'Owner, Dental Designs (Oxnard, CA); 32 years in practice; Fastbraces Senior Master Provider; Guiding Leaders (Orange County group)', bio:['Dr. Marie E.C.S. Alejandrino-Buell — Dental Designs, Oxnard, California. Thirty-two years in practice.']},
+  june: {name:'Dr. June', role:'Practice owner (~2 years), ~5 years in dentistry; Guiding Leaders newcomer', bio:['Practices in La Verne, California. About five years in dentistry, roughly two of them running her own practice.']},
+  jimlam: {name:'Jim Lam, DDS', role:'Owner, Doniphan Family Dental (two practices, two fastmills); Guiding Leaders alum (2025)', bio:['Doniphan Family Dental, Canutillo, Texas (El Paso area). Guiding Leaders cohort 2025, recommended by Bobbie Norton and flagged in our own notes as the clearest fit for the film\'s access thesis.']},
+  julio: {name:'Julio Terra, DDS', role:'Guiding Leaders alum, previous cohort', bio:['Julio — a Guiding Leaders participant from last year\'s cohort (2025) who came back to the 17 July 2026 session just to say hello.']},
+  joan: {name:'Joan', role:'Long-tenured employee (~40 years), worked directly with Jim', bio:['An employee of nearly 40 years who worked directly with Jim. Surfaced in our June 2026 planning notes as a candidate for a proper, prepared interview (explicitly not a grab-on-the-run).']},
+  labar: {name:'Paula LaBar', role:'Kitchen staff; sister of Joan', bio:['Works in the company kitchen; sister of Joan, the ~40-year employee who worked with Jim.']},
+  sohn: {name:'Joon Woo Sohn, DMD', role:'Owner, JW Dentistry (La Mirada, CA); successor to Dr. Wayne Wong', bio:['JW Dentistry, La Mirada, California. Identified from a contact card shared after the Guiding Leaders day; treat the GL connection itself as unconfirmed until Bobbie or he confirms it.']},
+  wali: {name:'Teena Wali, DDS', role:'General dentist, La Habra, CA (per public directories)', bio:['A general dentist listed in La Habra, California (1281 E La Habra Blvd), with directory listings also showing Chino, CA.']},
+  venard: {name:'Phil Venard', role:'R&D engineer (retired)', bio:['Phil Venard is the roster’s institutional memory of the analog era — the R&D hand who lived the lab when crowns were wax, stone and molten metal.']},
+  ceranic: {name:'Dzevad Ceranic', role:'Vice-President of Lab Operations (joined 1999 as a night-shift dental technician)', bio:['Vice-President of Lab Operations. One of the strongest human stories in the whole company, and it is already on the record: he wrote his own profile in Jim\'s book Constant Change (2020), pp.']},
+  fejzagic: {name:'Leila Fejzagic', role:'Vice-President of Human Resources (joined November 1995 as a fulfilment clerk)', bio:['Vice-President of Human Resources. Her profile is in Jim\'s book Constant Change (2020), pp.']},
+  withrow: {name:'Darryl Withrow', role:'Vice-President of Operations (joined 1988 as a delivery driver, when the company had 65 employees)', bio:['Vice-President of Operations, and the company\'s memory of the small-lab era: he arrived in 1988, when Glidewell had 65 employees.']},
+  friebauer: {name:'Wolfgang Friebauer', role:'Director of R&D and Education', bio:['Wolfgang Friebauer is Glidewell’s Director of R&D and Education (title confirmed by his own LinkedIn) — the materials man: the territory of BruxZir zirconia and Obsidian lithium silicate, how powders become blocks and blocks become teeth.']},
+  kois: {name:'John Kois', role:'Director, the Kois Center; prosthodontist', bio:['Dr. John Kois runs the Kois Center in Seattle — the profession’s “unbiased referee”: an advanced CE program built on its own research and data, famously sponsor-free.'], quote:{q:'It is often our lack of clear, objective data that allows one dentist to determine treatment needs that another dentist would judge to be inappropriate.', src:'Inside Dentistry, Apr 2010'}},
+  spear: {name:'Frank Spear', role:'Founder, Spear Education', bio:['Dr. Frank Spear founded Spear Education (Scottsdale) — one of the two great independent CE houses (with Kois).']},
+  manalili: {name:'Taylor Manalili', role:'Director of Clinical Prosthodontics', bio:['Dr.'], quote:{q:'I think one of the most important jobs we have here as clinicians is trying to improve communication between the doctors and the lab technicians.', src:'Chairside Magazine, Vol. 14-3 (Glidewell), 2019'}},
+  kosinski: {name:'Tim Kosinski', role:'Implant dentist & educator', bio:['Dr. Timothy Kosinski (Bingham Farms, MI) is the workhorse-educator of implantology: 14,000+ implants placed, 200+ published articles, an adjunct professor’s temperament — and a regular teacher at Glidewell symposia, so the бренд knows him and he knows the audience.']},
+  chi: {name:'Justin Chi', role:'Director of Clinical Technologies (DDS, CDT)', bio:['Justin Chi is Glidewell’s Director of Clinical Technologies and the roster’s rare three-in-one: a hands trained in the old craft (B.S.'], quote:{q:'One of the greatest benefits of in-office CAD/CAM is the ability to try in and deliver restorations in the same appointment, which I believe is best for the patient\'s health.', src:'Chairside Magazine, Vol. 13-1 (Glidewell), 2018'}},
+  leeson: {name:'David Leeson', role:'EVP of Engineering, Manufacturing & R&D (factory architect)', bio:['David Leeson is Glidewell’s EVP of Engineering, Manufacturing and R&D — the architect of the BruxZir Factory and of what he calls “mass customization”: multiple automated lines coordinating thousands of restorations at once, every single one unique to its patient, each carrying its own tracking code (Chairside Vol.'], quote:{q:'Now we are creating heavily connected systems and leveraging data from the more than 10 million individual patient designs we store in the cloud.', src:'Glidewell / Machine Design, 2022'}},
+  azernikov: {name:'Sergei Azernikov, PhD', role:'VP of CAD/CAM Software (AI lead)', bio:['✓ Interview — what we already have (9 Jul): • AI pipeline (#5): &quot;A generative network now designs essentially all our crowns — in 2015–16 that was unheard of; the technician is the first human to see the case, just approving it.&quot; (align to our &gt;95% figure) • Scale (#5/#11): &quot;~50 → ~200 crowns a day; the designer&#39;s role shifted from designing to quality assurance.&quot; • The moat (#10): &quot;Like a self-driving car — millions of cases make it better; that&#39;s what no one can just replicate.&quot; • Transition (#13): &quot;The machine won&#39;t replace you — someone who knows how to use it will.&quot; (automation was planned around retraining/relocating people, no mass layoffs) • Handmade myth (#4): &quot;Nobody says &#39;a handmade car&#39; anymore — the machine is more accurate than the hand and the stone model.&quot; • Same-day (#3): &quot;Scan, design and place the crown in under two hours — one day instead of three visits.&quot; • Future (#12/#14): &quot;Connect the clinic&#39;s systems before you make them smarter.&quot; · &quot;Self-driving companies in 10–20 years.&quot; · &quot;People would ask for a faster horse — until someone brings the disruption.&quot; • Why he does it (#2): &quot;A crown made wrong hurts someone&#39;s quality of life — that&#39;s what drives me.&quot; Full transcript, chopped by theme (+ the Jim-film pile): Documents/07_09_Azernikov_Verbatim_by_Theme.md.'], quote:{q:'There\'s a lot of excitement around our work because, until now, real-world, tangible applications of GANs did not exist… To my knowledge, this is the first time anybody has generated a physical object with this technique.', src:'Chairside Magazine, Vol. 13-2 (Glidewell), 2018'}},
+  farran: {name:'Howard Farran', role:'Founder, Dentaltown; host, “Dentistry Uncensored”', bio:['Dr. Howard Farran, DDS, MBA, is dentistry’s megaphone: founder of Dentaltown (the profession’s town square — 200K+ dentists) and host of “Dentistry Uncensored”, which he has run to 1,700+ episodes and still publishes EVERY WEEKDAY (episodes #1706–1709 in June 2026 alone).']},
+  feuerstein: {name:'Paul Feuerstein, DMD', role:'GP (45+ yrs); Editor-in-Chief, Dentistry Today; dental-tech authority', bio:['Added 2026-07-24 (Eric\'s addition, from the planning meeting) — one of the two KOLs who, per Eric, are now free of a practice on the road and can travel to the Irvine campus for an interview — possibly alongside Jim (idea only — NOT yet agreed with Jim; don\'t promise it). Who he is.']},
+  brenneise: {name:'Rob Brenneise', role:'Chief Growth Officer, Glidewell — since Dec 2023 · ex-SVP Sales, Marketing & Education · ex-VP Sales, CAD/CAM & glidewell.io · ~30 yrs in dental sales before that: DenMat 1995-2012, Experience Dental Studio, Dental Lab Holdings, VIAX', bio:['Rob Brenneise is Glidewell\'s Chief Growth Officer, in that role since December 2023.']},
+  ameduri: {name:'Anna Ameduri', role:'VP Global Logistics, Glidewell', bio:['Anna Ameduri is Glidewell’s VP of Global Logistics — 25+ years at the company and, by our own account, its first female executive.']},
+  labao: {name:'Edsel Labao', role:'VP Information Technology, Glidewell', bio:['★ The real story (from the planning meeting, 2026-07-24 — confirm details with him). Edsel came from the Philippines ~30 years ago on a tourist visa.']},
+  dorfman: {name:'Bill Dorfman', role:'Celebrity cosmetic dentist', bio:['Dr. Bill Dorfman, “America’s Dentist”: 30+ years of cosmetic practice in Century City / Beverly Hills, the featured dentist of ABC’s Extreme Makeover and a recurring co-host on CBS’ The Doctors — the only mass-audience face in our cast.'], quote:{q:'In our society, confidence is currency. If you don\'t have confidence, a lot of times you just feel broken.', src:'SWAGGER Magazine, Aug 2025'}},
+  norton: {name:'Bobbie Norton', role:'Director of Strategic Partner Relations; Director of Guiding Leaders, Glidewell'},
+};
+for (const id in PEOPLE_MORE) if (!PEOPLE[id]) PEOPLE[id] = PEOPLE_MORE[id];
+/* the order the wall reads in — the production's own running order */
+const PEOPLE_ORDER = [
+  'jim', 'alas', 'marie', 'june', 'ellen', 'nadia', 'bianca', 'jimlam',
+  'julio', 'joan', 'labar', 'sohn', 'wali', 'venard', 'ditolla', 'ceranic',
+  'fejzagic', 'withrow', 'friebauer', 'gordon', 'rella', 'kois', 'spear', 'manalili',
+  'resnik', 'kosinski', 'chi', 'patel', 'leeson', 'azernikov', 'farran', 'feuerstein',
+  'brenneise', 'ameduri', 'labao', 'park', 'dorfman', 'norton'
+];
+/* who has a portrait in assets/people; the rest stand as their initials */
+const PORTRAIT_IDS = [
+  'jim', 'alas', 'ellen', 'nadia', 'bianca', 'jimlam', 'venard', 'ditolla',
+  'friebauer', 'gordon', 'rella', 'kois', 'spear', 'manalili', 'resnik', 'kosinski',
+  'chi', 'patel', 'leeson', 'azernikov', 'farran', 'ameduri', 'labao', 'park',
+  'dorfman', 'norton'
+];
+const PORTRAIT = {};
+function loadPortraits(){
+  for (const id of PORTRAIT_IDS){
+    const im = new Image();
+    im.onload = () => { PORTRAIT[id] = {el: im, w: im.naturalWidth, h: im.naturalHeight}; };
+    im.src = 'assets/people/' + id + '.jpg?v=' + ASSET_V;
+  }
+}
 /* The forms a person goes by in the prose. Longest first, so 'Dr. Neil Park'
    is matched before 'Neil Park'. Only the FIRST mention on a page becomes a
    link — past that it stops being navigation and turns into decoration. */
@@ -7198,6 +7260,35 @@ const NAME_FORMS = [
   ['park', ['Dr. Neil Park', 'Neil Park']],
   ['patel', ['Dr. Paresh Patel', 'Paresh Patel']],
   ['resnik', ['Dr. Randolph Resnik', 'Dr. Randy Resnik', 'Randolph Resnik', 'Randy Resnik', 'Resnik']],
+  /* the imported cast, by full name only — a bare surname is too cheap a match
+     when the list runs to thirty-eight people */
+  ['alas', ['Dr. Abdul Alas', 'Abdul Alas']],
+  ['marie', ['Marie Alejandrino-Buell, DMD', 'Marie Alejandrino-Buell']],
+  ['june', ['Dr. June']],
+  ['jimlam', ['Jim Lam, DDS', 'Jim Lam']],
+  ['julio', ['Julio Terra, DDS', 'Julio Terra']],
+  ['labar', ['Paula LaBar']],
+  ['sohn', ['Joon Woo Sohn, DMD', 'Joon Woo Sohn']],
+  ['wali', ['Teena Wali, DDS', 'Teena Wali']],
+  ['venard', ['Phil Venard']],
+  ['ceranic', ['Dzevad Ceranic']],
+  ['fejzagic', ['Leila Fejzagic']],
+  ['withrow', ['Darryl Withrow']],
+  ['friebauer', ['Wolfgang Friebauer']],
+  ['kois', ['John Kois']],
+  ['spear', ['Frank Spear']],
+  ['manalili', ['Taylor Manalili']],
+  ['kosinski', ['Tim Kosinski']],
+  ['chi', ['Justin Chi']],
+  ['leeson', ['David Leeson']],
+  ['azernikov', ['Sergei Azernikov, PhD', 'Sergei Azernikov']],
+  ['farran', ['Howard Farran']],
+  ['feuerstein', ['Paul Feuerstein, DMD', 'Paul Feuerstein']],
+  ['brenneise', ['Rob Brenneise']],
+  ['ameduri', ['Anna Ameduri']],
+  ['labao', ['Edsel Labao']],
+  ['dorfman', ['Bill Dorfman']],
+  ['norton', ['Bobbie Norton']],
 ];
 let NAME_RE_MAP = new Map();
 const NAME_RE = (() => {
@@ -7546,6 +7637,121 @@ function drawStudy(){
   S.maxScroll = Math.max(1, (y + 170*SS + S.scroll * SS - (wy0 + wh)) / SS);
 }
 
+/* THE WALL OF VOICES. One page holding everyone the film talks to: a face, a
+   name, and the line that says who they are — the same list the production
+   casts from. Tapping a face opens that person's own page over this one, so
+   going back lands you here rather than in the hall. */
+function openPeople(){ state.people = {scroll: 0, amt: 0, maxScroll: 1}; }
+function personInitials(nm){
+  return (nm || '').replace(/^(Dr\.|Mr\.|Ms\.|Mrs\.)\s+/, '')
+    .split(/\s+/).filter(w => /^[A-Za-z]/.test(w)).slice(0, 2)
+    .map(w => w[0].toUpperCase()).join('');
+}
+/* the role as a card can carry it: the first clause, and no more than fits */
+function roleShort(role){
+  let r = (role || '').split(/[;(]/)[0].trim().replace(/,$/, '');
+  return r || (role || '');
+}
+function drawPeople(){
+  const S = state.people; if (!S) return;
+  S.amt += ((S.closing ? 0 : 1) - S.amt) * Math.min(1, (state.dt || 0.016) * 5);
+  if (S.closing && S.amt < 0.03){ state.people = null; return; }
+  const e = S.amt*S.amt*(3-2*S.amt);
+  const K = PSKIN;
+  ctx.fillStyle = `rgba(4,5,7,${(0.62*e).toFixed(3)})`;
+  ctx.fillRect(0, 0, W, H);
+  if (e < 0.35) return;
+  const a = (e - 0.35) / 0.65;
+  const colW = Math.min(W * 0.80, 1520 * SS);
+  const left = W/2 - colW/2;
+  const padX = 58 * SS;
+  const wx0 = left - padX, ww = colW + padX*2;
+  const wy0 = H * 0.06 + (1 - a) * 36 * SS, wh = H * 0.88;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 42*SS; ctx.shadowOffsetY = 14*SS;
+  ctx.fillStyle = K.bg;
+  ctx.beginPath(); ctx.roundRect(wx0, wy0, ww, wh, K.r*SS); ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = K.edge; ctx.lineWidth = 1.4*SS;
+  ctx.beginPath(); ctx.roundRect(wx0 + SS, wy0 + SS, ww - 2*SS, wh - 2*SS, K.r*SS); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(wx0 + 2*SS, wy0 + 2*SS, ww - 4*SS, wh - 4*SS, K.r*SS); ctx.clip();
+  let y = wy0 + 104*SS - S.scroll * SS;
+  const topClip = wy0 - 120*SS, botClip = wy0 + wh + 120*SS;
+  ctx.textAlign = 'left';
+  ctx.font = K.font(60);
+  ctx.fillStyle = `rgba(${K.ink},0.98)`;
+  ctx.fillText('THE VOICES', left, y); y += 32 * SS;
+  ctx.font = K.font(19);
+  ctx.fillStyle = `rgba(${K.dim},0.95)`;
+  const roster = PEOPLE_ORDER.filter(id => PEOPLE[id]);
+  ctx.fillText(roster.length + ' PEOPLE ON CAMERA · TAP A FACE FOR THEIR PAGE', left, y);
+  y += 26 * SS;
+  ctx.fillStyle = `rgba(${K.red},1)`;
+  ctx.fillRect(left, y, 68*SS, 3*SS); y += 44 * SS;
+  const COLS = 5, gap = 22 * SS;
+  const cw = (colW - gap * (COLS - 1)) / COLS;
+  const ph = cw * 1.22;
+  const rowH = ph + 112 * SS;
+  for (let i = 0; i < roster.length; i++){
+    const id = roster[i], P = PEOPLE[id];
+    const cx = left + (i % COLS) * (cw + gap);
+    const cy = y + Math.floor(i / COLS) * rowH;
+    if (cy > botClip || cy + rowH < topClip) continue;
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect(cx, cy, cw, ph, 4*SS); ctx.clip();
+    const im = PORTRAIT[id] || (P.img && IMGS[P.img]);
+    if (im){
+      const s = Math.max(cw / im.w, ph / im.h);
+      ctx.drawImage(im.el, cx + cw/2 - im.w*s/2, cy + ph/2 - im.h*s/2, im.w*s, im.h*s);
+    } else {
+      // no portrait yet: the initials stand in, quietly
+      ctx.fillStyle = 'rgba(26,28,30,0.055)';
+      ctx.fillRect(cx, cy, cw, ph);
+      ctx.textAlign = 'center';
+      ctx.font = K.font(cw * 0.34);
+      ctx.fillStyle = `rgba(${K.dim},0.4)`;
+      ctx.fillText(personInitials(P.name), cx + cw/2, cy + ph/2 + cw*0.12);
+      ctx.textAlign = 'left';
+    }
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(26,28,30,0.14)'; ctx.lineWidth = 1*SS;
+    ctx.beginPath(); ctx.roundRect(cx, cy, cw, ph, 4*SS); ctx.stroke();
+    // a red hairline under the faces we can already play on camera
+    if (P.clips && P.clips.length){
+      ctx.fillStyle = `rgba(${K.red},1)`;
+      ctx.fillRect(cx, cy + ph - 3*SS, cw, 3*SS);
+    }
+    let ty = cy + ph + 26*SS;
+    ctx.font = K.font(18);
+    ctx.fillStyle = `rgba(${K.ink},0.95)`;
+    let nm = P.name;
+    while (ctx.measureText(nm).width > cw && nm.length > 6) nm = nm.slice(0, -1);
+    ctx.fillText(nm === P.name ? nm : nm.replace(/[ ,]+$/, '') + '…', cx, ty);
+    ty += 22 * SS;
+    ctx.font = K.font(14);
+    ctx.fillStyle = `rgba(${K.dim},0.95)`;
+    let words = roleShort(P.role).split(' '), ln = '', used = 0;
+    for (const w of words){
+      const t = ln ? ln + ' ' + w : w;
+      if (ctx.measureText(t).width > cw && ln){
+        if (used === 1){ ln += '…'; break; }
+        ctx.fillText(ln, cx, ty); ty += 18*SS; used++; ln = w;
+      } else ln = t;
+    }
+    if (ln) ctx.fillText(ln, cx, ty);
+    pushHit(cx, cy, cw, ph + 60*SS, {type:'person', id});
+  }
+  y += Math.ceil(roster.length / COLS) * rowH + 20 * SS;
+  ctx.textAlign = 'center';
+  ctx.font = K.font(18);
+  ctx.fillStyle = `rgba(${K.dim},0.75)`;
+  ctx.fillText('· scroll · tap a face · tap the margin to return ·', W/2, y);
+  ctx.restore();
+  state.cardRect = {x: wx0, y: wy0, w: ww, h: wh, r: K.r*SS};
+  S.maxScroll = Math.max(1, (y + 120*SS + S.scroll * SS - (wy0 + wh)) / SS);
+}
 /* THE PERSON'S PAGE. Same window and the same reading rhythm as a year card,
    but stripped to white: this page is about one voice, not one moment, so it
    drops the era's costume. One red element carries it — the rule under the
@@ -7571,9 +7777,10 @@ function drawPerson(){
   if (e < 0.35) return;
   const a = (e - 0.35) / 0.65;
   const clips = P.clips || [];
+  const face = PORTRAIT[S.id] || (P.img && IMGS[P.img]);
   const colW = Math.min(W * 0.62, 1100 * SS);
   const left = W/2 - colW/2;
-  const railW = clips.length ? 320*SS : 0;
+  const railW = (clips.length || face) ? 320*SS : 0;
   const textW = colW - (railW ? railW + 40*SS : 0);
   const padX = 76 * SS;
   const wx0 = left - padX, ww = colW + padX*2;
@@ -7588,9 +7795,19 @@ function drawPerson(){
   ctx.strokeStyle = K.edge; ctx.lineWidth = 1.4*SS;
   ctx.beginPath(); ctx.roundRect(wx0 + SS, wy0 + SS, ww - 2*SS, wh - 2*SS, K.r*SS); ctx.stroke();
   ctx.beginPath(); ctx.roundRect(wx0 + 2*SS, wy0 + 2*SS, ww - 4*SS, wh - 4*SS, K.r*SS); ctx.clip();
-  let y = wy0 + 130*SS - S.scroll * SS;
+  let y = wy0 + 158*SS - S.scroll * SS;
   const topClip = wy0 - 80*SS, botClip = wy0 + wh + 80*SS;
   ctx.textAlign = 'left';
+  // the way back to the wall, wherever you came in from
+  ctx.font = K.font(17);
+  try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
+  ctx.fillStyle = `rgba(${K.red},0.92)`;
+  const backTx = '\u2190 ALL VOICES';
+  if (y - 70*SS > topClip){
+    ctx.fillText(backTx, left, y - 70*SS);
+    pushHit(left - 8*SS, y - 94*SS, ctx.measureText(backTx).width + 18*SS, 34*SS, {type:'voices'});
+  }
+  try { ctx.letterSpacing = '0px'; } catch(err){}
   // the name, at the size a year gets — this page is about a person. It is set
   // to the text column, never into the rail: a long name gives up points, not
   // the margin.
@@ -7602,8 +7819,9 @@ function drawPerson(){
   ctx.font = K.font(21);
   try { ctx.letterSpacing = `${4*SS}px`; } catch(err){}
   ctx.fillStyle = `rgba(${K.dim},0.95)`;
-  let roleSz = 21, roleTx = (P.role || '').toUpperCase();
+  let roleSz = 21, roleTx = roleShort(P.role).toUpperCase();
   while (ctx.measureText(roleTx).width > textW && roleSz > 13){ roleSz -= 1; ctx.font = K.font(roleSz); }
+  while (ctx.measureText(roleTx).width > textW && roleTx.length > 8) roleTx = roleTx.slice(0, -1);
   ctx.fillText(roleTx, left, y);
   try { ctx.letterSpacing = '0px'; } catch(err){}
   y += 34 * SS;
@@ -7636,13 +7854,28 @@ function drawPerson(){
     if (y > topClip && y < botClip) ctx.fillText(P.quote.src, left + 26*SS, y + 6*SS);
     y += 52 * SS;
   }
-  if (clips.length){
+  if (clips.length || face){
     const mx = left + textW + 40*SS;
-    let my = wy0 + 130*SS - S.scroll * SS;
-    ctx.font = K.font(19);
-    ctx.fillStyle = `rgba(${K.dim},0.9)`;
-    if (my > topClip && my < botClip) ctx.fillText('WATCH', mx, my);
-    my += 26 * SS;
+    let my = wy0 + 158*SS - S.scroll * SS;
+    if (face){
+      const fw = 300*SS, fh = fw * 1.22;
+      if (my + fh > topClip && my < botClip){
+        ctx.save();
+        ctx.beginPath(); ctx.roundRect(mx, my, fw, fh, 4*SS); ctx.clip();
+        const s = Math.max(fw/face.w, fh/face.h);
+        ctx.drawImage(face.el, mx + fw/2 - face.w*s/2, my + fh/2 - face.h*s/2, face.w*s, face.h*s);
+        ctx.restore();
+        ctx.strokeStyle = 'rgba(26,28,30,0.14)'; ctx.lineWidth = 1*SS;
+        ctx.beginPath(); ctx.roundRect(mx, my, fw, fh, 4*SS); ctx.stroke();
+      }
+      my += fh + 38 * SS;
+    }
+    if (clips.length){
+      ctx.font = K.font(19);
+      ctx.fillStyle = `rgba(${K.dim},0.9)`;
+      if (my > topClip && my < botClip) ctx.fillText('WATCH', mx, my);
+      my += 26 * SS;
+    }
     for (const c of clips){
       const tw = 300*SS, th = 170*SS, ty = my;
       if (ty + th > topClip && ty < botClip){
@@ -7801,7 +8034,7 @@ function update(dt){
     state.idle += dt;
     if (state.mode === 'live' && state.idle > CFG.idleToAttract){
       state.mode = 'attract';
-      state.study = null; state.person = null;
+      state.study = null; state.person = null; state.people = null;
       closeClip();
       state.attract.phase = 'cruise';
       state.focusBeat = -1; cam.zTarget = 0;
@@ -7829,6 +8062,17 @@ function update(dt){
         const aimed = hitAt(inp.action.x, inp.action.y);
         if (aimed && aimed.type === 'clip') openClip(aimed.media, aimed.wx);
         else if (aimed && aimed.type === 'person' && aimed.id !== S.id) openPerson(aimed.id);
+        else if (aimed && aimed.type === 'voices'){ S.closing = true; if (!state.people) openPeople(); }
+        else S.closing = true;
+      } else if (S.scroll < -90 || inp.action === true) S.closing = true;
+      S.scroll = Math.max(-120, Math.min(S.maxScroll, S.scroll));
+      cam.vel = 0;
+    } else if (state.people){
+      const S = state.people;
+      S.scroll += inp.impulse * 0.55 * dt * 60 / 60;
+      if (inp.action && typeof inp.action === 'object'){
+        const aimed = hitAt(inp.action.x, inp.action.y);
+        if (aimed && aimed.type === 'person') openPerson(aimed.id);
         else S.closing = true;
       } else if (S.scroll < -90 || inp.action === true) S.closing = true;
       S.scroll = Math.max(-120, Math.min(S.maxScroll, S.scroll));
@@ -7852,7 +8096,7 @@ function update(dt){
     }
     if (inp.action && state.openBox && !state.openBox.closing){
       state.openBox.closing = true;
-    } else if (inp.action && !state.inspect && !state.study && !state.person && !state.openBox){
+    } else if (inp.action && !state.inspect && !state.study && !state.person && !state.people && !state.openBox){
       const aimed = (typeof inp.action === 'object') ? hitAt(inp.action.x, inp.action.y) : null;
       if (aimed && aimed.type === 'photo'){
         state.inspect = {sp: aimed.sp, wx: aimed.wx, cy: aimed.cy, z: aimed.z, w: aimed.w,
@@ -8597,7 +8841,8 @@ function frame(){
   drawMusicMark();
   drawDebug();
   drawStudy();
-  drawPerson();    // one voice's own page, over the year that sent you to it
+  drawPeople();    // the wall of voices
+  drawPerson();    // one voice's own page, over whatever sent you to it
   drawClip();      // the speaker's voice — a video window above the page
   drawInspect();   // a person card opens above the reading page
   drawOpenBox();   // one carton off the pile, opened
@@ -8650,6 +8895,7 @@ async function boot(){
   applyCut();          // before anything reads a beat position
   await loadAssets();
   if (PHOTO_SKIN) await loadPhotoSkin();
+  loadPortraits();     // the wall of voices — small, and never blocking the boot
   await loadPlates();
   TEX.wall1 = woodTexture({plank:'v', plankSize:150, base:'#20150b', light:'#372712', w:1400, h:900});
   TEX.bench1 = woodTexture({plank:'h', plankSize:110, base:'#3a2812', light:'#5a4020', w:1200, h:512});
@@ -8817,6 +9063,11 @@ async function boot(){
                  // a frame has to run before maxScroll is known, or the clamp eats it
                  if (sc) setTimeout(() => { if (state.study) state.study.scroll = parseFloat(sc[1]); }, 900); }
     else console.log('study: no beat with year ' + stu[1]);
+  }
+  if (/[?&]people=1/.test(location.search)){
+    state.mode = 'live'; state.introHold = false; state.introFade = 0;
+    state.ruleA = 1; state.idle = 0;
+    setTimeout(() => { openPeople(); if (state.people) state.people.amt = 1; }, 300);
   }
   const per = /[?&]person=(\w+)/.exec(location.search);
   if (per){
