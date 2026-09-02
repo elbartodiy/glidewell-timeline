@@ -7637,10 +7637,10 @@ function drawStudy(){
   S.maxScroll = Math.max(1, (y + 170*SS + S.scroll * SS - (wy0 + wh)) / SS);
 }
 
-/* THE WALL OF VOICES. One page holding everyone the film talks to: a face, a
-   name, and the line that says who they are — the same list the production
-   casts from. Tapping a face opens that person's own page over this one, so
-   going back lands you here rather than in the hall. */
+/* THE WALL OF VOICES. One page holding everyone the film talks to, shaped the
+   way the working timeline shapes them: a small square face, the name beside
+   it, and the line that says who they are — three to a row. Tapping a face
+   opens that person's page over the wall, so going back lands you here. */
 function openPeople(){ state.people = {scroll: 0, amt: 0, maxScroll: 1}; }
 function personInitials(nm){
   return (nm || '').replace(/^(Dr\.|Mr\.|Ms\.|Mrs\.)\s+/, '')
@@ -7651,6 +7651,16 @@ function personInitials(nm){
 function roleShort(role){
   let r = (role || '').split(/[;(]/)[0].trim().replace(/,$/, '');
   return r || (role || '');
+}
+/* THE WHEEL ON A READING PAGE. The impulse is a VELOCITY — it is what the hall
+   adds to cam.vel — and the pages were multiplying it by dt as though it were
+   one, so a notch moved a three-thousand-unit page by two and a half units:
+   a thousand turns to reach the bottom. A notch is a displacement, and now
+   moves about an eighth of the window. A drag keeps roughly the hand's own
+   distance instead of ten times it. */
+function pageScroll(S, inp, dt){
+  S.scroll += inp.impulse * (inp.dragging ? 0.055 : 0.43);
+  S.scroll = Math.max(-240, Math.min(S.maxScroll, S.scroll));
 }
 function drawPeople(){
   const S = state.people; if (!S) return;
@@ -7677,73 +7687,73 @@ function drawPeople(){
   ctx.strokeStyle = K.edge; ctx.lineWidth = 1.4*SS;
   ctx.beginPath(); ctx.roundRect(wx0 + SS, wy0 + SS, ww - 2*SS, wh - 2*SS, K.r*SS); ctx.stroke();
   ctx.beginPath(); ctx.roundRect(wx0 + 2*SS, wy0 + 2*SS, ww - 4*SS, wh - 4*SS, K.r*SS); ctx.clip();
-  let y = wy0 + 104*SS - S.scroll * SS;
+  let y = wy0 + 96*SS - S.scroll * SS;
   const topClip = wy0 - 120*SS, botClip = wy0 + wh + 120*SS;
   ctx.textAlign = 'left';
-  ctx.font = K.font(60);
+  ctx.font = K.font(52);
   ctx.fillStyle = `rgba(${K.ink},0.98)`;
-  ctx.fillText('THE VOICES', left, y); y += 32 * SS;
-  ctx.font = K.font(19);
+  ctx.fillText('THE VOICES', left, y); y += 30 * SS;
+  ctx.font = K.font(18);
   ctx.fillStyle = `rgba(${K.dim},0.95)`;
   const roster = PEOPLE_ORDER.filter(id => PEOPLE[id]);
   ctx.fillText(roster.length + ' PEOPLE ON CAMERA · TAP A FACE FOR THEIR PAGE', left, y);
-  y += 26 * SS;
+  y += 24 * SS;
   ctx.fillStyle = `rgba(${K.red},1)`;
-  ctx.fillRect(left, y, 68*SS, 3*SS); y += 44 * SS;
-  const COLS = 5, gap = 22 * SS;
+  ctx.fillRect(left, y, 68*SS, 3*SS); y += 40 * SS;
+  const COLS = 3, gap = 28 * SS;
   const cw = (colW - gap * (COLS - 1)) / COLS;
-  const ph = cw * 1.22;
-  const rowH = ph + 112 * SS;
+  const th = 104 * SS;                       // the face, square and small
+  const rowH = th + 30 * SS;
   for (let i = 0; i < roster.length; i++){
     const id = roster[i], P = PEOPLE[id];
     const cx = left + (i % COLS) * (cw + gap);
     const cy = y + Math.floor(i / COLS) * rowH;
     if (cy > botClip || cy + rowH < topClip) continue;
     ctx.save();
-    ctx.beginPath(); ctx.roundRect(cx, cy, cw, ph, 4*SS); ctx.clip();
+    ctx.beginPath(); ctx.roundRect(cx, cy, th, th, 5*SS); ctx.clip();
     const im = PORTRAIT[id] || (P.img && IMGS[P.img]);
     if (im){
-      const s = Math.max(cw / im.w, ph / im.h);
-      ctx.drawImage(im.el, cx + cw/2 - im.w*s/2, cy + ph/2 - im.h*s/2, im.w*s, im.h*s);
+      const s = Math.max(th / im.w, th / im.h);
+      ctx.drawImage(im.el, cx + th/2 - im.w*s/2, cy + th/2 - im.h*s/2, im.w*s, im.h*s);
     } else {
-      // no portrait yet: the initials stand in, quietly
-      ctx.fillStyle = 'rgba(26,28,30,0.055)';
-      ctx.fillRect(cx, cy, cw, ph);
+      ctx.fillStyle = 'rgba(26,28,30,0.06)';
+      ctx.fillRect(cx, cy, th, th);
       ctx.textAlign = 'center';
-      ctx.font = K.font(cw * 0.34);
-      ctx.fillStyle = `rgba(${K.dim},0.4)`;
-      ctx.fillText(personInitials(P.name), cx + cw/2, cy + ph/2 + cw*0.12);
+      ctx.font = K.font(th * 0.34);
+      ctx.fillStyle = `rgba(${K.dim},0.42)`;
+      ctx.fillText(personInitials(P.name), cx + th/2, cy + th/2 + th*0.12);
       ctx.textAlign = 'left';
     }
     ctx.restore();
     ctx.strokeStyle = 'rgba(26,28,30,0.14)'; ctx.lineWidth = 1*SS;
-    ctx.beginPath(); ctx.roundRect(cx, cy, cw, ph, 4*SS); ctx.stroke();
-    // a red hairline under the faces we can already play on camera
+    ctx.beginPath(); ctx.roundRect(cx, cy, th, th, 5*SS); ctx.stroke();
+    // a red edge down the faces we already have on camera
     if (P.clips && P.clips.length){
       ctx.fillStyle = `rgba(${K.red},1)`;
-      ctx.fillRect(cx, cy + ph - 3*SS, cw, 3*SS);
+      ctx.fillRect(cx, cy, 3.5*SS, th);
     }
-    let ty = cy + ph + 26*SS;
+    const tx = cx + th + 16*SS, tw = cw - th - 16*SS;
+    let ty = cy + 26*SS;
     ctx.font = K.font(18);
     ctx.fillStyle = `rgba(${K.ink},0.95)`;
     let nm = P.name;
-    while (ctx.measureText(nm).width > cw && nm.length > 6) nm = nm.slice(0, -1);
-    ctx.fillText(nm === P.name ? nm : nm.replace(/[ ,]+$/, '') + '…', cx, ty);
-    ty += 22 * SS;
+    while (ctx.measureText(nm).width > tw && nm.length > 6) nm = nm.slice(0, -1);
+    ctx.fillText(nm === P.name ? nm : nm.replace(/[ ,]+$/, '') + '…', tx, ty);
+    ty += 24 * SS;
     ctx.font = K.font(14);
     ctx.fillStyle = `rgba(${K.dim},0.95)`;
-    let words = roleShort(P.role).split(' '), ln = '', used = 0;
-    for (const w of words){
+    let ln = '', used = 0;
+    for (const w of roleShort(P.role).split(' ')){
       const t = ln ? ln + ' ' + w : w;
-      if (ctx.measureText(t).width > cw && ln){
-        if (used === 1){ ln += '…'; break; }
-        ctx.fillText(ln, cx, ty); ty += 18*SS; used++; ln = w;
+      if (ctx.measureText(t).width > tw && ln){
+        if (used === 2){ ln += '…'; break; }
+        ctx.fillText(ln, tx, ty); ty += 19*SS; used++; ln = w;
       } else ln = t;
     }
-    if (ln) ctx.fillText(ln, cx, ty);
-    pushHit(cx, cy, cw, ph + 60*SS, {type:'person', id});
+    if (ln) ctx.fillText(ln, tx, ty);
+    pushHit(cx, cy, cw, th, {type:'person', id});
   }
-  y += Math.ceil(roster.length / COLS) * rowH + 20 * SS;
+  y += Math.ceil(roster.length / COLS) * rowH + 24 * SS;
   ctx.textAlign = 'center';
   ctx.font = K.font(18);
   ctx.fillStyle = `rgba(${K.dim},0.75)`;
@@ -7755,22 +7765,45 @@ function drawPeople(){
 /* THE PERSON'S PAGE. Same window and the same reading rhythm as a year card,
    but stripped to white: this page is about one voice, not one moment, so it
    drops the era's costume. One red element carries it — the rule under the
-   name, and the play mark on every preview. The clips ride down the right,
-   exactly where the year cards keep theirs. */
+   name, and the play mark on every preview.
+
+   It has two modes. Reading: the life on the left, the face and the clips down
+   the right. Watching: the clip plays where the text was, held still, while the
+   rail beside it goes on scrolling — pick the next one without losing this one.
+   That is the shape people already know from a video site, and it is the one
+   thing a page of interviews should not have to teach. */
 const PSKIN = {bg:'rgba(252,252,251,0.985)', edge:'rgba(26,28,30,0.16)', r:6,
                ink:'24,26,28', dim:'118,124,130', red:'225,27,42',
                rule:'rgba(26,28,30,0.13)',
                font:(s,st)=>`${st||''} ${Math.round(s)}px "Helvetica Neue", Helvetica, Arial, sans-serif`.trim()};
 function openPerson(id){
   if (!PEOPLE[id]) return;
-  state.person = {id, scroll: 0, amt: 0, maxScroll: 1};
+  if (state.person) personStop(state.person);
+  state.person = {id, scroll: 0, amt: 0, maxScroll: 1, playing: null, v: null};
+}
+function personPlay(S, i){
+  const P = PEOPLE[S.id], c = P.clips && P.clips[i];
+  if (!c) return;
+  if (S.v){ try { S.v.pause(); } catch(e){} }
+  let v = VIDEO_EL[c.src];
+  if (!v){
+    v = document.createElement('video');
+    v.src = c.src; v.preload = 'auto'; v.playsInline = true;
+    VIDEO_EL[c.src] = v;
+  }
+  S.playing = i; S.v = v; S.scroll = 0;
+  try { v.currentTime = 0; v.play(); } catch(e){}
+}
+function personStop(S){
+  if (S && S.v){ try { S.v.pause(); } catch(e){} }
+  if (S){ S.playing = null; S.v = null; }
 }
 function drawPerson(){
   const S = state.person; if (!S) return;
   S.amt += ((S.closing ? 0 : 1) - S.amt) * Math.min(1, (state.dt || 0.016) * 5);
-  if (S.closing && S.amt < 0.03){ state.person = null; return; }
+  if (S.closing && S.amt < 0.03){ personStop(S); state.person = null; return; }
   const e = S.amt*S.amt*(3-2*S.amt);
-  const P = PEOPLE[S.id]; if (!P) { state.person = null; return; }
+  const P = PEOPLE[S.id]; if (!P){ state.person = null; return; }
   const K = PSKIN;
   ctx.fillStyle = `rgba(4,5,7,${(0.62*e).toFixed(3)})`;
   ctx.fillRect(0, 0, W, H);
@@ -7778,7 +7811,8 @@ function drawPerson(){
   const a = (e - 0.35) / 0.65;
   const clips = P.clips || [];
   const face = PORTRAIT[S.id] || (P.img && IMGS[P.img]);
-  const colW = Math.min(W * 0.62, 1100 * SS);
+  const watching = S.playing != null && clips[S.playing];
+  const colW = Math.min(W * (watching ? 0.72 : 0.62), (watching ? 1300 : 1100) * SS);
   const left = W/2 - colW/2;
   const railW = (clips.length || face) ? 320*SS : 0;
   const textW = colW - (railW ? railW + 40*SS : 0);
@@ -7795,69 +7829,123 @@ function drawPerson(){
   ctx.strokeStyle = K.edge; ctx.lineWidth = 1.4*SS;
   ctx.beginPath(); ctx.roundRect(wx0 + SS, wy0 + SS, ww - 2*SS, wh - 2*SS, K.r*SS); ctx.stroke();
   ctx.beginPath(); ctx.roundRect(wx0 + 2*SS, wy0 + 2*SS, ww - 4*SS, wh - 4*SS, K.r*SS); ctx.clip();
-  let y = wy0 + 158*SS - S.scroll * SS;
+  const top0 = wy0 + 158*SS;
   const topClip = wy0 - 80*SS, botClip = wy0 + wh + 80*SS;
   ctx.textAlign = 'left';
-  // the way back to the wall, wherever you came in from
+  let y = top0 - (watching ? 0 : S.scroll * SS);
+
+  // the way back — to the page when a clip is up, to the wall when it is not
   ctx.font = K.font(17);
   try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
   ctx.fillStyle = `rgba(${K.red},0.92)`;
-  const backTx = '\u2190 ALL VOICES';
+  const backTx = watching ? '← BACK TO THE PAGE' : '← ALL VOICES';
   if (y - 70*SS > topClip){
     ctx.fillText(backTx, left, y - 70*SS);
-    pushHit(left - 8*SS, y - 94*SS, ctx.measureText(backTx).width + 18*SS, 34*SS, {type:'voices'});
+    pushHit(left - 8*SS, y - 94*SS, ctx.measureText(backTx).width + 18*SS, 34*SS,
+            {type: watching ? 'stopclip' : 'voices'});
   }
   try { ctx.letterSpacing = '0px'; } catch(err){}
-  // the name, at the size a year gets — this page is about a person. It is set
-  // to the text column, never into the rail: a long name gives up points, not
-  // the margin.
-  let nameSz = 74;
-  ctx.font = K.font(nameSz);
-  while (ctx.measureText(P.name).width > textW && nameSz > 40){ nameSz -= 2; ctx.font = K.font(nameSz); }
-  ctx.fillStyle = `rgba(${K.ink},0.98)`;
-  ctx.fillText(P.name, left, y); y += 40 * SS;
-  ctx.font = K.font(21);
-  try { ctx.letterSpacing = `${4*SS}px`; } catch(err){}
-  ctx.fillStyle = `rgba(${K.dim},0.95)`;
-  let roleSz = 21, roleTx = roleShort(P.role).toUpperCase();
-  while (ctx.measureText(roleTx).width > textW && roleSz > 13){ roleSz -= 1; ctx.font = K.font(roleSz); }
-  while (ctx.measureText(roleTx).width > textW && roleTx.length > 8) roleTx = roleTx.slice(0, -1);
-  ctx.fillText(roleTx, left, y);
-  try { ctx.letterSpacing = '0px'; } catch(err){}
-  y += 34 * SS;
-  // the one red thing on the page
-  ctx.fillStyle = `rgba(${K.red},1)`;
-  ctx.fillRect(left, y, 68*SS, 3*SS); y += 46 * SS;
-  const seen = new Set([S.id]);   // his own name is not a link to himself
-  if (P.bio){
-    ctx.font = K.font(25);
-    ctx.fillStyle = `rgba(${K.ink},0.9)`;
-    for (const para of P.bio){
-      y = flowText(para, left, y, textW, 38*SS,
-        {seen, top: topClip, bot: botClip, accent: `rgba(${K.red},0.95)`, ink: `rgba(${K.ink},0.9)`});
-      y += 22 * SS;
+
+  if (watching){
+    /* WATCHING. The picture is held still where the reading was; nothing under
+       it moves, so the rail beside it is the only thing the wheel touches. */
+    const c = clips[S.playing], v = S.v;
+    const vw = textW, vh = vw * 9/16;
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect(left, y, vw, vh, 5*SS); ctx.clip();
+    ctx.fillStyle = '#0b0d10';
+    ctx.fillRect(left, y, vw, vh);
+    if (v && v.videoWidth && v.readyState >= 2){
+      const s = Math.min(vw / v.videoWidth, vh / v.videoHeight);
+      ctx.drawImage(v, left + vw/2 - v.videoWidth*s/2, y + vh/2 - v.videoHeight*s/2,
+                    v.videoWidth*s, v.videoHeight*s);
+    } else {
+      const im = thumbFor(c);
+      if (im){
+        const s = Math.min(vw / im.w, vh / im.h);
+        ctx.globalAlpha = a * 0.6;
+        ctx.drawImage(im.el, left + vw/2 - im.w*s/2, y + vh/2 - im.h*s/2, im.w*s, im.h*s);
+        ctx.globalAlpha = a;
+      }
     }
-    y += 8 * SS;
+    if (v && v.paused){
+      ctx.fillStyle = 'rgba(252,252,251,0.92)';
+      ctx.beginPath(); ctx.arc(left + vw/2, y + vh/2, 34*SS, 0, 7); ctx.fill();
+      ctx.fillStyle = `rgba(${K.red},1)`;
+      ctx.beginPath();
+      ctx.moveTo(left + vw/2 - 10*SS, y + vh/2 - 17*SS);
+      ctx.lineTo(left + vw/2 + 18*SS, y + vh/2);
+      ctx.lineTo(left + vw/2 - 10*SS, y + vh/2 + 17*SS);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(26,28,30,0.18)'; ctx.lineWidth = 1.2*SS;
+    ctx.beginPath(); ctx.roundRect(left, y, vw, vh, 5*SS); ctx.stroke();
+    pushHit(left, y, vw, vh, {type:'playpause'});
+    // the progress line, and the red is the only colour on the page
+    ctx.fillStyle = 'rgba(26,28,30,0.12)';
+    ctx.fillRect(left, y + vh + 12*SS, vw, 3*SS);
+    if (v && v.duration){
+      ctx.fillStyle = `rgba(${K.red},0.95)`;
+      ctx.fillRect(left, y + vh + 12*SS, vw * (v.currentTime / v.duration), 3*SS);
+    }
+    let ty = y + vh + 58*SS;
+    ctx.font = K.font(30);
+    ctx.fillStyle = `rgba(${K.ink},0.96)`;
+    ctx.fillText(P.name, left, ty); ty += 32*SS;
+    ctx.font = K.font(21, 'italic');
+    ctx.fillStyle = `rgba(${K.dim},0.95)`;
+    ctx.fillText(c.label, left, ty);
+  } else {
+    // the name, set to the text column: a long name gives up points, not margin
+    let nameSz = 74;
+    ctx.font = K.font(nameSz);
+    while (ctx.measureText(P.name).width > textW && nameSz > 40){ nameSz -= 2; ctx.font = K.font(nameSz); }
+    ctx.fillStyle = `rgba(${K.ink},0.98)`;
+    ctx.fillText(P.name, left, y); y += 40 * SS;
+    ctx.font = K.font(21);
+    try { ctx.letterSpacing = `${4*SS}px`; } catch(err){}
+    ctx.fillStyle = `rgba(${K.dim},0.95)`;
+    let roleSz = 21, roleTx = roleShort(P.role).toUpperCase();
+    while (ctx.measureText(roleTx).width > textW && roleSz > 13){ roleSz -= 1; ctx.font = K.font(roleSz); }
+    while (ctx.measureText(roleTx).width > textW && roleTx.length > 8) roleTx = roleTx.slice(0, -1);
+    ctx.fillText(roleTx, left, y);
+    try { ctx.letterSpacing = '0px'; } catch(err){}
+    y += 34 * SS;
+    ctx.fillStyle = `rgba(${K.red},1)`;
+    ctx.fillRect(left, y, 68*SS, 3*SS); y += 46 * SS;
+    const seen = new Set([S.id]);   // his own name is not a link to himself
+    if (P.bio){
+      ctx.font = K.font(25);
+      ctx.fillStyle = `rgba(${K.ink},0.9)`;
+      for (const para of P.bio){
+        y = flowText(para, left, y, textW, 38*SS,
+          {seen, top: topClip, bot: botClip, accent: `rgba(${K.red},0.95)`, ink: `rgba(${K.ink},0.9)`});
+        y += 22 * SS;
+      }
+      y += 8 * SS;
+    }
+    if (P.quote){
+      const qy0 = y;
+      ctx.font = K.font(28, 'italic');
+      ctx.fillStyle = `rgba(${K.ink},0.92)`;
+      y = flowText('“' + P.quote.q + '”', left + 26*SS, y, textW - 26*SS, 40*SS,
+        {seen, top: topClip, bot: botClip, accent: `rgba(${K.red},0.95)`, ink: `rgba(${K.ink},0.92)`});
+      ctx.fillStyle = K.rule;
+      ctx.fillRect(left, qy0 - 28*SS, 2*SS, (y - qy0) + 10*SS);
+      ctx.font = K.font(18);
+      ctx.fillStyle = `rgba(${K.dim},0.9)`;
+      if (y > topClip && y < botClip) ctx.fillText(P.quote.src, left + 26*SS, y + 6*SS);
+      y += 52 * SS;
+    }
   }
-  if (P.quote){
-    ctx.fillStyle = K.rule;
-    ctx.fillRect(left, y - 8*SS, 2*SS, 0);   // measured after the lines are laid
-    const qy0 = y;
-    ctx.font = K.font(28, 'italic');
-    ctx.fillStyle = `rgba(${K.ink},0.92)`;
-    y = flowText('“' + P.quote.q + '”', left + 26*SS, y, textW - 26*SS, 40*SS,
-      {seen, top: topClip, bot: botClip, accent: `rgba(${K.red},0.95)`, ink: `rgba(${K.ink},0.92)`});
-    ctx.fillStyle = K.rule;
-    ctx.fillRect(left, qy0 - 28*SS, 2*SS, (y - qy0) + 10*SS);
-    ctx.font = K.font(18);
-    ctx.fillStyle = `rgba(${K.dim},0.9)`;
-    if (y > topClip && y < botClip) ctx.fillText(P.quote.src, left + 26*SS, y + 6*SS);
-    y += 52 * SS;
-  }
+
+  // THE RAIL. It scrolls in both modes — in watching mode it is the only thing
+  // that does, which is what makes picking the next clip painless.
+  let my = top0 - S.scroll * SS;
   if (clips.length || face){
     const mx = left + textW + 40*SS;
-    let my = wy0 + 158*SS - S.scroll * SS;
-    if (face){
+    if (face && !watching){
       const fw = 300*SS, fh = fw * 1.22;
       if (my + fh > topClip && my < botClip){
         ctx.save();
@@ -7873,55 +7961,70 @@ function drawPerson(){
     if (clips.length){
       ctx.font = K.font(19);
       ctx.fillStyle = `rgba(${K.dim},0.9)`;
-      if (my > topClip && my < botClip) ctx.fillText('WATCH', mx, my);
+      if (my > topClip && my < botClip)
+        ctx.fillText(watching ? 'UP NEXT' : 'WATCH', mx, my);
       my += 26 * SS;
     }
-    for (const c of clips){
+    for (let ci = 0; ci < clips.length; ci++){
+      const c = clips[ci];
       const tw = 300*SS, th = 170*SS, ty = my;
+      const live = watching && ci === S.playing;
       if (ty + th > topClip && ty < botClip){
         ctx.save();
-        ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 8*SS); ctx.clip();
+        ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 6*SS); ctx.clip();
         ctx.fillStyle = '#14181d';
         ctx.fillRect(mx, ty, tw, th);
-        const im = thumbFor(c) || (P.img && IMGS[P.img]);
+        const im = thumbFor(c) || face;
         if (im){
           const s = Math.max(tw/im.w, th/im.h);
-          ctx.globalAlpha = 0.92;
+          ctx.globalAlpha = a * (live ? 0.55 : 0.92);
           ctx.drawImage(im.el, mx + tw/2 - im.w*s/2, ty + th/2 - im.h*s/2, im.w*s, im.h*s);
-          ctx.globalAlpha = 1;
+          ctx.globalAlpha = a;
         }
         const pg = ctx.createLinearGradient(0, ty + th*0.5, 0, ty + th);
         pg.addColorStop(0, 'rgba(8,10,14,0)'); pg.addColorStop(1, 'rgba(8,10,14,0.85)');
         ctx.fillStyle = pg; ctx.fillRect(mx, ty, tw, th);
-        ctx.fillStyle = 'rgba(252,252,251,0.94)';
-        ctx.beginPath(); ctx.arc(mx + tw/2, ty + th/2 - 8*SS, 25*SS, 0, 7); ctx.fill();
-        ctx.fillStyle = `rgba(${K.red},1)`;
-        ctx.beginPath();
-        ctx.moveTo(mx + tw/2 - 7*SS, ty + th/2 - 21*SS);
-        ctx.lineTo(mx + tw/2 + 13*SS, ty + th/2 - 8*SS);
-        ctx.lineTo(mx + tw/2 - 7*SS, ty + th/2 + 5*SS);
-        ctx.closePath(); ctx.fill();
+        if (!live){
+          ctx.fillStyle = 'rgba(252,252,251,0.94)';
+          ctx.beginPath(); ctx.arc(mx + tw/2, ty + th/2 - 8*SS, 25*SS, 0, 7); ctx.fill();
+          ctx.fillStyle = `rgba(${K.red},1)`;
+          ctx.beginPath();
+          ctx.moveTo(mx + tw/2 - 7*SS, ty + th/2 - 21*SS);
+          ctx.lineTo(mx + tw/2 + 13*SS, ty + th/2 - 8*SS);
+          ctx.lineTo(mx + tw/2 - 7*SS, ty + th/2 + 5*SS);
+          ctx.closePath(); ctx.fill();
+        } else {
+          ctx.font = K.font(15);
+          try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
+          ctx.fillStyle = `rgba(${K.red},1)`;
+          ctx.textAlign = 'center';
+          ctx.fillText('NOW PLAYING', mx + tw/2, ty + th/2 - 2*SS);
+          ctx.textAlign = 'left';
+          try { ctx.letterSpacing = '0px'; } catch(err){}
+        }
         ctx.fillStyle = 'rgba(244,246,248,0.96)';
         ctx.font = K.font(17, 'italic');
         let lab = c.label;
         while (ctx.measureText(lab + '…').width > tw - 28*SS && lab.length > 4) lab = lab.slice(0, -1);
         ctx.fillText(lab === c.label ? lab : lab.replace(/[ ,]+$/, '') + '…', mx + 14*SS, ty + th - 16*SS);
         ctx.restore();
-        ctx.strokeStyle = K.edge; ctx.lineWidth = 1.2*SS;
-        ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 8*SS); ctx.stroke();
-        pushHit(mx, ty, tw, th, {type:'clip', media: {src: c.src, label: c.label, name: P.name}, wx: cam.x});
+        ctx.strokeStyle = live ? `rgba(${K.red},0.9)` : K.edge;
+        ctx.lineWidth = (live ? 2.4 : 1.2)*SS;
+        ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 6*SS); ctx.stroke();
+        pushHit(mx, ty, tw, th, {type:'playclip', i: ci});
       }
       my += th + 30*SS;
     }
-    y = Math.max(y, my);
   }
   ctx.font = K.font(18);
   ctx.textAlign = 'center';
   ctx.fillStyle = `rgba(${K.dim},0.75)`;
-  ctx.fillText('· scroll to read · tap to go back ·', W/2, y + 28*SS);
+  const foot = watching ? '· scroll the rail · tap the picture to pause ·'
+                        : '· scroll to read · tap to go back ·';
+  ctx.fillText(foot, W/2, Math.max(y, my) + 28*SS);
   ctx.restore();
   state.cardRect = {x: wx0, y: wy0, w: ww, h: wh, r: K.r*SS};
-  S.maxScroll = Math.max(1, (y + 170*SS + S.scroll * SS - (wy0 + wh)) / SS);
+  S.maxScroll = Math.max(1, (Math.max(y, my) + 170*SS + S.scroll * SS - (wy0 + wh)) / SS);
 }
 function drawClip(){
   /* THE PLAYER IS A LAYER INSIDE THE CARD. It used to throw the clip on the
@@ -8057,30 +8160,33 @@ function update(dt){
       cam.vel = 0;
     } else if (state.person){
       const S = state.person;
-      S.scroll += inp.impulse * 0.55 * dt * 60 / 60;
+      pageScroll(S, inp, dt);
       if (inp.action && typeof inp.action === 'object'){
         const aimed = hitAt(inp.action.x, inp.action.y);
-        if (aimed && aimed.type === 'clip') openClip(aimed.media, aimed.wx);
+        if (aimed && aimed.type === 'playclip') personPlay(S, aimed.i);
+        else if (aimed && aimed.type === 'playpause'){
+          if (S.v){ try { S.v.paused ? S.v.play() : S.v.pause(); } catch(e){} }
+        }
+        else if (aimed && aimed.type === 'stopclip'){ personStop(S); S.scroll = 0; }
         else if (aimed && aimed.type === 'person' && aimed.id !== S.id) openPerson(aimed.id);
         else if (aimed && aimed.type === 'voices'){ S.closing = true; if (!state.people) openPeople(); }
+        else if (S.playing != null){ personStop(S); S.scroll = 0; }   // out of the clip, not out of the page
         else S.closing = true;
-      } else if (S.scroll < -90 || inp.action === true) S.closing = true;
-      S.scroll = Math.max(-120, Math.min(S.maxScroll, S.scroll));
+      } else if (S.scroll < -200 || inp.action === true) S.closing = true;
       cam.vel = 0;
     } else if (state.people){
       const S = state.people;
-      S.scroll += inp.impulse * 0.55 * dt * 60 / 60;
+      pageScroll(S, inp, dt);
       if (inp.action && typeof inp.action === 'object'){
         const aimed = hitAt(inp.action.x, inp.action.y);
         if (aimed && aimed.type === 'person') openPerson(aimed.id);
         else S.closing = true;
-      } else if (S.scroll < -90 || inp.action === true) S.closing = true;
-      S.scroll = Math.max(-120, Math.min(S.maxScroll, S.scroll));
+      } else if (S.scroll < -200 || inp.action === true) S.closing = true;
       cam.vel = 0;
     } else if (state.study){
       // the reading page: the wheel scrolls, names open their people, a click closes
       const S = state.study;
-      S.scroll += inp.impulse * 0.55 * dt * 60 / 60;
+      pageScroll(S, inp, dt);
       if (inp.action && typeof inp.action === 'object'){
         const aimed = hitAt(inp.action.x, inp.action.y);
         if (aimed && aimed.type === 'clip'){
@@ -8088,8 +8194,7 @@ function update(dt){
         } else if (aimed && aimed.type === 'person' && PEOPLE[aimed.id]){
           openPerson(aimed.id);     // the name in the text goes to the person, not to a portrait
         } else S.closing = true;
-      } else if (S.scroll < -90 || inp.action === true) S.closing = true;
-      S.scroll = Math.max(-120, Math.min(S.maxScroll, S.scroll));
+      } else if (S.scroll < -200 || inp.action === true) S.closing = true;
       cam.vel = 0;
     } else {
       cam.vel += inp.impulse;
