@@ -1933,15 +1933,103 @@ function drawIntro(){
     ctx.restore();
   }
   ctx.font = eraFont(64 * kk * SS);
-  // one line above where it started: the title's own leading is 78 world units
-  ctx.fillText('HOW GOOD DENTISTRY', cx, py(404, kk));
-  ctx.fillText('STOPPED BEING A LUXURY', cx, py(482, kk));
-  ctx.font = eraFont(24 * kk * SS);
-  try { ctx.letterSpacing = `${5*kk*SS}px`; } catch(e){}
-  ctx.fillStyle = 'rgba(200,172,132,0.6)';
-  ctx.fillText('GLIDEWELL HISTORY TOUR →', cx, py(552, kk));
-  try { ctx.letterSpacing = '0px'; } catch(e){}
+  // the whole text block lives high on the wall now: the film below owns
+  // the space the still life used to hold, so the title clears its panel
+  ctx.fillText('HOW GOOD DENTISTRY', cx, py(180, kk));
+  ctx.fillText('STOPPED BEING A LUXURY', cx, py(252, kk));
+  // the tour line moved down with the film: drawWelcomeTV sets it under the panel
   ctx.restore();
+}
+
+/* ---------------- WELCOME FILM · a flat panel on the bench ----------------
+   The preview movie plays where the still life used to stand: a plain plasma
+   panel with a thin border on a low foot — no chrome, no cyan, the era-1 lamp
+   is the only theatre it gets. Autoplay is muted (the browser demands it);
+   the first tap turns the sound on, the next taps pause and resume. */
+const WELCOME_TV = {x: INTRO_X, lz: 70, w: 520, src: 'media/movie_pre.mp4'};
+function initWelcomeTV(){
+  const v = document.createElement('video');
+  v.src = WELCOME_TV.src; v.muted = true; v.loop = true; v.playsInline = true;
+  v.preload = 'auto';
+  v.play().catch(() => {                      // a browser that wants a gesture first
+    const go = () => { v.play().catch(()=>{}); window.removeEventListener('pointerdown', go); };
+    window.addEventListener('pointerdown', go);
+  });
+  WELCOME_TV.v = v;
+}
+function drawWelcomeTV(){
+  const T = WELCOME_TV, v = T.v;
+  // a kiosk PC should not decode a film nobody is looking at
+  if (Math.abs(T.x - cam.x) > 3600){ if (v && !v.paused) v.pause(); return; }
+  if (v){
+    const wanted = !state.clip && !state.study && !state.person && !state.people && !T.userPaused;
+    if (wanted && v.paused) v.play().catch(()=>{});
+    else if ((state.clip || T.userPaused) && !v.paused) v.pause();
+  }
+  const kk = k(T.lz), sx = px(T.x, kk);
+  const sw = T.w * kk * SS, sh = sw * 9/16;
+  if (sx < -sw || sx > W + sw) return;
+  const bez = 8 * kk * SS, neck = 14 * kk * SS, footH = 8 * kk * SS;
+  const footY = py(CFG.benchY - 2, kk);
+  const top = footY - footH - neck - sh - bez*2;
+  // contact shadow — the same recipe the standing prints use
+  ctx.save();
+  ctx.translate(sx, footY); ctx.scale(1, 0.20); ctx.translate(-sx, -footY);
+  const sg = ctx.createRadialGradient(sx, footY, 2, sx, footY, sw*0.6);
+  sg.addColorStop(0, 'rgba(0,0,0,0.42)'); sg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sg; ctx.fillRect(sx - sw*0.6, footY - sw*0.6, sw*1.2, sw*1.2);
+  ctx.restore();
+  // the low foot and its neck
+  ctx.fillStyle = '#161310';
+  ctx.fillRect(sx - 5*kk*SS, footY - footH - neck, 10*kk*SS, neck + 2*SS);
+  ctx.beginPath(); ctx.roundRect(sx - 85*kk*SS, footY - footH, 170*kk*SS, footH, 3*SS); ctx.fill();
+  // the panel: a near-black slab with a thin border catching the lamp
+  ctx.fillStyle = '#0b0a09';
+  ctx.beginPath(); ctx.roundRect(sx - sw/2 - bez, top, sw + bez*2, sh + bez*2, 4*SS); ctx.fill();
+  ctx.strokeStyle = 'rgba(214,188,150,0.22)'; ctx.lineWidth = 1*SS;
+  ctx.strokeRect(sx - sw/2 - bez + 0.5*SS, top + 0.5*SS, sw + bez*2 - SS, sh + bez*2 - SS);
+  const vx = sx - sw/2, vy = top + bez;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(vx, vy, sw, sh); ctx.clip();
+  ctx.fillStyle = '#000';
+  ctx.fillRect(vx, vy, sw, sh);
+  if (v && v.videoWidth && v.readyState >= 2){
+    const s = Math.max(sw / v.videoWidth, sh / v.videoHeight);
+    ctx.drawImage(v, sx - v.videoWidth*s/2, vy + sh/2 - v.videoHeight*s/2,
+                  v.videoWidth*s, v.videoHeight*s);
+  } else {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(236,210,165,0.35)';
+    ctx.font = eraFont(15 * kk * SS);
+    ctx.fillText('THE FILM', sx, vy + sh/2 + 5*kk*SS);
+  }
+  if (v && v.readyState >= 2){
+    ctx.textAlign = 'center';
+    if (T.userPaused){
+      // a thin outlined play mark, not a badge
+      ctx.strokeStyle = 'rgba(252,250,244,0.9)'; ctx.lineWidth = 2*SS;
+      ctx.beginPath();
+      ctx.moveTo(sx - 9*kk*SS, vy + sh/2 - 15*kk*SS);
+      ctx.lineTo(sx + 15*kk*SS, vy + sh/2);
+      ctx.lineTo(sx - 9*kk*SS, vy + sh/2 + 15*kk*SS);
+      ctx.closePath(); ctx.stroke();
+    } else if (v.muted){
+      ctx.fillStyle = 'rgba(236,210,165,0.75)';
+      ctx.font = eraFont(13 * kk * SS);
+      try { ctx.letterSpacing = `${2*kk*SS}px`; } catch(e){}
+      ctx.fillText('TAP FOR SOUND', sx, vy + sh - 12*kk*SS);
+      try { ctx.letterSpacing = '0px'; } catch(e){}
+    }
+  }
+  ctx.restore();
+  // the tour line sits under the panel now, on the counter's front edge
+  ctx.textAlign = 'center';
+  ctx.font = eraFont(16 * kk * SS);
+  try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
+  ctx.fillStyle = 'rgba(200,172,132,0.65)';
+  ctx.fillText('GLIDEWELL HISTORY TOUR →', sx, footY + 34*kk*SS);
+  try { ctx.letterSpacing = '0px'; } catch(e){}
+  pushHit(vx, vy, sw, sh, {type: 'welcomevid'});
 }
 
 const FIN_X = SHIFT(29750);
@@ -5299,19 +5387,9 @@ function initDecor(){
   // the graduates' mortarboard behind the alumnae portraits
   PROPS.push({x: SHIFT(25700), z: 85, kind: 'gradcap', w: 175, late: true});
 
-  // the welcome still life — placeholder heirlooms of the craft century
-  // a tight triangle: the cast jaw is the hero dead under the title,
-  // the toolbox and the plaster molds are its shoulders
-  if (PHOTO_SKIN && PROP_SPRITES.ph_articulator){
-    // the real heirlooms: kiln — articulator with the cast jaws — powder jars
-    PROPS.push({x: INTRO_X - 170, z: 110, kind: 'ph_furnace', w: 112});
-    PROPS.push({x: INTRO_X - 5,   z: 45,  kind: 'ph_articulator', w: 118});
-    PROPS.push({x: INTRO_X + 160, z: 85,  kind: 'ph_jars', w: 150});
-  } else {
-    PROPS.push({x: INTRO_X - 155, z: 105, kind: 'toolbox', w: 165});
-    PROPS.push({x: INTRO_X - 5,   z: 45,  kind: 'jaw1', w: 135});
-    PROPS.push({x: INTRO_X + 150, z: 80, kind: 'plaster', w: 160, flip: true});
-  }
+  /* The welcome still life is gone: the film plays where the heirlooms stood.
+     A flat panel on the bench (drawWelcomeTV) carries the preview movie, and
+     the title block moved up the wall to clear it. */
   // one line, one depth: two mills standing at different z drifted against each
   // other and against the arms, and the whole bank stopped reading as one machine
   /* The two flat mill sprites used to stand here, 150 units from the enclosed
@@ -8223,6 +8301,13 @@ function update(dt){
         cam.vel = 0;
       } else if (aimed && aimed.type === 'study'){
         openStudy(aimed.beat);
+      } else if (aimed && aimed.type === 'welcomevid'){
+        const v = WELCOME_TV.v;
+        if (v){
+          if (v.muted){ v.muted = false; WELCOME_TV.userPaused = false; v.play().catch(()=>{}); }
+          else if (WELCOME_TV.userPaused){ WELCOME_TV.userPaused = false; v.play().catch(()=>{}); }
+          else { WELCOME_TV.userPaused = true; v.pause(); }
+        }
       } else {
         // empty space is empty: a click there only releases a focus,
         // it never opens anything the visitor didn't aim at
@@ -8836,6 +8921,7 @@ function frame(){
   drawFactory(t);
   drawFinaleTable(t);
   drawProps(false);
+  drawWelcomeTV();    // the film stands on the welcome bench
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
     if (Math.abs(b.x - cam.x) > 3400) continue;
@@ -9020,6 +9106,7 @@ async function boot(){
   SECTIONS.neu = makeSection('neu');
   initSeamVideo();
   initProjectors();
+  initWelcomeTV();
   initMusic();
   MAP_SPRITE = makeMapSprite();
   USA_SPRITE = makeUsaSprite();
