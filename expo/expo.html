@@ -2061,9 +2061,10 @@ function drawFilmPanel(x, wWorld, welcome){
   const kk = k(T.lz), sx = px(x, kk);
   const sw = wWorld * kk * SS, sh = sw * 9/16;
   if (sx < -sw || sx > W + sw) return null;
-  const bez = 8 * kk * SS, neck = 14 * kk * SS, footH = 8 * kk * SS;
+  const bez = 13 * kk * SS, neck = 18 * kk * SS, baseH = 13 * kk * SS;
   const footY = py(CFG.benchY - 2, kk);
-  const top = footY - footH - neck - sh - bez*2;
+  const top = footY - baseH - neck - sh - bez*2;
+  const pr = 7 * kk * SS;                       // gently rounded corners
   // contact shadow — the same recipe the standing prints use
   ctx.save();
   ctx.translate(sx, footY); ctx.scale(1, 0.20); ctx.translate(-sx, -footY);
@@ -2071,15 +2072,49 @@ function drawFilmPanel(x, wWorld, welcome){
   sg.addColorStop(0, 'rgba(0,0,0,0.42)'); sg.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = sg; ctx.fillRect(sx - sw*0.6, footY - sw*0.6, sw*1.2, sw*1.2);
   ctx.restore();
-  // the low foot and its neck
-  ctx.fillStyle = '#161310';
-  ctx.fillRect(sx - 5*kk*SS, footY - footH - neck, 10*kk*SS, neck + 2*SS);
-  ctx.beginPath(); ctx.roundRect(sx - 85*kk*SS, footY - footH, 170*kk*SS, footH, 3*SS); ctx.fill();
-  // the panel: a near-black slab with a thin border catching the lamp
-  ctx.fillStyle = '#0b0a09';
-  ctx.beginPath(); ctx.roundRect(sx - sw/2 - bez, top, sw + bez*2, sh + bez*2, 4*SS); ctx.fill();
-  ctx.strokeStyle = 'rgba(214,188,150,0.22)'; ctx.lineWidth = 1*SS;
-  ctx.strokeRect(sx - sw/2 - bez + 0.5*SS, top + 0.5*SS, sw + bez*2 - SS, sh + bez*2 - SS);
+  /* the stand, after the reference set: a short tapered neck flaring into a
+     curved gloss base — not a flat bar */
+  const ng = ctx.createLinearGradient(0, footY - baseH - neck, 0, footY);
+  ng.addColorStop(0, '#26282c'); ng.addColorStop(0.5, '#101114'); ng.addColorStop(1, '#050607');
+  ctx.fillStyle = ng;
+  ctx.beginPath();
+  ctx.moveTo(sx - 13*kk*SS, footY - baseH - neck);
+  ctx.lineTo(sx + 13*kk*SS, footY - baseH - neck);
+  ctx.lineTo(sx + 21*kk*SS, footY - baseH + 2*SS);
+  ctx.lineTo(sx - 21*kk*SS, footY - baseH + 2*SS);
+  ctx.closePath(); ctx.fill();
+  const bg2 = ctx.createLinearGradient(0, footY - baseH - 6*kk*SS, 0, footY);
+  bg2.addColorStop(0, '#43464c'); bg2.addColorStop(0.45, '#1b1d21'); bg2.addColorStop(1, '#08090b');
+  ctx.fillStyle = bg2;
+  ctx.beginPath();
+  ctx.ellipse(sx, footY - baseH/2, 102*kk*SS, baseH*0.72, 0, 0, Math.PI*2);
+  ctx.fill();
+  // the gloss streak riding the base's crown
+  ctx.fillStyle = 'rgba(235,242,248,0.30)';
+  ctx.beginPath();
+  ctx.ellipse(sx, footY - baseH*0.88, 84*kk*SS, 2.4*kk*SS, 0, 0, Math.PI*2);
+  ctx.fill();
+  /* the panel: a gloss-black slab. The bezel carries a sheen falling from the
+     top, and the outer edge is drawn by a cool rim light, brightest above —
+     the outline of the reference set */
+  ctx.fillStyle = '#0a0a0c';
+  ctx.beginPath(); ctx.roundRect(sx - sw/2 - bez, top, sw + bez*2, sh + bez*2, pr); ctx.fill();
+  const sheen = ctx.createLinearGradient(0, top, 0, top + sh + bez*2);
+  sheen.addColorStop(0, 'rgba(255,255,255,0.10)');
+  sheen.addColorStop(0.18, 'rgba(255,255,255,0.03)');
+  sheen.addColorStop(0.5, 'rgba(255,255,255,0)');
+  sheen.addColorStop(1, 'rgba(255,255,255,0.05)');
+  ctx.fillStyle = sheen;
+  ctx.beginPath(); ctx.roundRect(sx - sw/2 - bez, top, sw + bez*2, sh + bez*2, pr); ctx.fill();
+  const rim = ctx.createLinearGradient(0, top, 0, top + sh + bez*2);
+  rim.addColorStop(0, 'rgba(200,222,238,0.55)');
+  rim.addColorStop(0.3, 'rgba(160,178,192,0.20)');
+  rim.addColorStop(1, 'rgba(130,140,150,0.14)');
+  ctx.strokeStyle = rim; ctx.lineWidth = 1.4*SS;
+  ctx.beginPath(); ctx.roundRect(sx - sw/2 - bez + 0.7*SS, top + 0.7*SS, sw + bez*2 - 1.4*SS, sh + bez*2 - 1.4*SS, pr); ctx.stroke();
+  // the screen sits in its own dark inset
+  ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.lineWidth = 1.2*SS;
+  ctx.strokeRect(sx - sw/2 - 1.2*SS, top + bez - 1.2*SS, sw + 2.4*SS, sh + 2.4*SS);
   const vx = sx - sw/2, vy = top + bez;
   ctx.save();
   ctx.beginPath(); ctx.rect(vx, vy, sw, sh); ctx.clip();
