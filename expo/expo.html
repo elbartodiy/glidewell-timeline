@@ -1080,6 +1080,9 @@ function initTables(){
       if (best != null) it.dx = best - b.x;
     }
   }
+  /* the film relays are seated by the same tables — reseat them whenever the
+     tables change (the photo-skin rebuild moves the spans after boot) */
+  try { initFilmRelays(); } catch(e){}
 }
 
 /* ---------------- RENDER SETUP ---------------- */
@@ -1911,35 +1914,9 @@ function cacheWrap(){
   }
 }
 
-function drawIntro(){
-  const kk = k(wallZAt(INTRO_X) - 8);
-  const cx = px(INTRO_X, kk);
-  if (cx < -1400 || cx > W + 1400) return;
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(236,210,165,0.95)';
-  ctx.font = eraFont(64 * kk * SS);
-  ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
-  // the apex of the welcome pyramid: the Glidewell mark alone, up under the
-  // ceiling — it belongs to the close-up and dissolves away with the zoom-out
-  if (IMGS.logo2026 && state.introFade > 0.02){
-    const ms = 44 * kk * SS;
-    const my = py(88, kk);
-    ctx.save();
-    ctx.globalAlpha = state.introFade;
-    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
-    ctx.beginPath(); ctx.roundRect(cx - ms/2, my - ms/2, ms, ms, 5*kk*SS); ctx.clip();
-    ctx.drawImage(IMGS.logo2026.el, cx - ms/2, my - ms/2, ms, ms);
-    ctx.restore();
-  }
-  ctx.font = eraFont(64 * kk * SS);
-  // the whole text block lives high on the wall now: the film below owns
-  // the space the still life used to hold, so the title clears its panel
-  ctx.fillText('HOW GOOD DENTISTRY', cx, py(180, kk));
-  ctx.fillText('STOPPED BEING A LUXURY', cx, py(252, kk));
-  // the tour line moved down with the film: drawWelcomeTV sets it under the panel
-  ctx.restore();
-}
+/* The welcome inscription lives inside drawWelcomeTV now: the mark, the title,
+   the film and the tour line are one composition anchored at one depth, so the
+   zoom-out cannot pull them apart. */
 
 /* ---------------- WELCOME FILM · a flat panel on the bench ----------------
    The preview movie plays where the still life used to stand: a plain plasma
@@ -1951,24 +1928,139 @@ function initWelcomeTV(){
   const v = document.createElement('video');
   v.src = WELCOME_TV.src; v.muted = true; v.loop = true; v.playsInline = true;
   v.preload = 'auto';
-  v.play().catch(() => {                      // a browser that wants a gesture first
-    const go = () => { v.play().catch(()=>{}); window.removeEventListener('pointerdown', go); };
-    window.addEventListener('pointerdown', go);
-  });
+  // no autoplay: the set opens on its menu screen, and ENTER starts the film.
+  // The tape is held on a face for the menu's still.
+  v.addEventListener('loadeddata', () => { try { v.currentTime = 80; } catch(e){} });
   WELCOME_TV.v = v;
 }
-function drawWelcomeTV(){
-  const T = WELCOME_TV, v = T.v;
-  // a kiosk PC should not decode a film nobody is looking at
-  if (Math.abs(T.x - cam.x) > 3600){ if (v && !v.paused) v.pause(); return; }
-  if (v){
-    const wanted = !state.clip && !state.study && !state.person && !state.people && !T.userPaused;
-    if (wanted && v.paused) v.play().catch(()=>{});
-    else if ((state.clip || T.userPaused) && !v.paused) v.pause();
+/* One film, many screens. The film is engaged once its sound is on; from then
+   on it keeps playing while the visitor travels, and relay panels scattered
+   down the rail pick the picture up wherever the welcome set is out of shot.
+   Playback lives here, not in the draw: a screen out of the frame must not
+   silence (or un-silence) the tape. */
+function updateFilm(){
+  const T = WELCOME_TV, v = T.v; if (!v) return;
+  // only another VOICE stops the film — reading pages does not
+  const busy = state.clip || (state.person && state.person.playing != null);
+  const engaged = !v.muted;                 // ENTER pressed = the visitor asked for it
+  const wanted = engaged && !T.userPaused && !busy;
+  if (wanted && v.paused) v.play().catch(()=>{});
+  else if (!wanted && !v.paused) v.pause();
+}
+/* Relay stands: one every ~1.5 screens of travel, wherever a table span has
+   room — never inside a recreation, a cut bay, or a beat's own composition.
+   Temporary furniture: the same plain panel everywhere, until each era gets
+   its own set (a projector for the craft years, a monitor for the nineties). */
+const FILM_RELAYS = [];
+function initFilmRelays(){
+  FILM_RELAYS.length = 0;
+  const STEP = 2800, HALF = 260;
+  const recs = [[REC_L, REC_R], [REC2_L, REC2_R], [REC3_L, REC3_R], [REC4_L, REC4_R],
+                [REC93_L, REC93_R], [REC18_L, REC18_R], [REC23_L, REC23_R]];
+  /* what already stands on the benches: a relay may not brush any of it */
+  const occ = [];
+  const take = (cx, w) => occ.push([cx - w/2 - 70, cx + w/2 + 70]);
+  for (const b of BEATS){
+    for (const it of (b.st || [])) take(b.x + it.dx, it.w);
+    for (const it of (b.table || [])) take(b.x + it.dx, it.w);
+    for (const p of (b.props || [])) take(b.x + p.dx, p.w || 300);
+    if (b.rig) take(b.x + b.rig.dx, b.rig.w || 400);
+    if (b.ped) take(b.x + (b.ped.dx || 0), 320);
+    if (b.album) take(b.x + b.album.dx, b.album.w || 300);
   }
-  const kk = k(T.lz), sx = px(T.x, kk);
-  const sw = T.w * kk * SS, sh = sw * 9/16;
-  if (sx < -sw || sx > W + sw) return;
+  for (const p of PROPS) if (!p.mid) take(p.x, p.w || 140);
+  take(FACT_X, 2200);                               // the robotic line
+  take(FIN_X, 1200);                                // the finale table
+  const badWith = (ground, half) => {
+    const g = occ.concat(BEATS.map(b => [b.x - ground/2, b.x + ground/2]));
+    return x =>
+      g.some(([a, b]) => x + half > a && x - half < b) ||
+      recs.some(([a, b]) => x > a - 300 && x < b + 300) ||
+      PLATES.some(p => Math.abs(x - p.x) < (p.w || 0)/2 + 300);
+  };
+  /* two passes per slot: first with generous air around each year, then — in
+     the dense late eras, where the years stand 700 apart — squeezed in
+     wherever the real objects allow it */
+  const PASSES = [badWith(620, 255), badWith(260, 240)];
+  for (let want = WELCOME_TV.x + STEP; want < WORLD_END - 800; want += STEP){
+    let best = null;
+    for (const bad of PASSES){
+      let bd = 1e9;
+      for (const tb of TABLES){
+        if (tb.x1 - tb.x0 < HALF*2 + 60) continue;
+        const c0 = Math.max(tb.x0 + HALF + 20, want - 1400);
+        const c1 = Math.min(tb.x1 - HALF - 20, want + 1400);
+        for (let c = c0; c <= c1; c += 60){
+          if (bad(c)) continue;
+          const d = Math.abs(c - want);
+          if (d < bd){ bd = d; best = c; }
+        }
+      }
+      if (best != null) break;
+    }
+    if (best != null) FILM_RELAYS.push({x: best});
+  }
+  if (DBG) console.log('film relays:', FILM_RELAYS.map(r => r.x | 0).join(', '));
+}
+/* The menu screen, after the museum kiosks: title, a held frame, a few lines
+   and one ENTER — no logos, no chrome. Drawn inside the panel's own clip. */
+function drawFilmMenu(vx, vy, sw, sh, v){
+  const g0 = ctx.createLinearGradient(vx, vy, vx, vy + sh);
+  g0.addColorStop(0, '#23272c'); g0.addColorStop(1, '#0b0d10');
+  ctx.fillStyle = g0; ctx.fillRect(vx, vy, sw, sh);
+  const mx = vx + sw*0.07;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(245,247,249,0.96)';
+  ctx.font = `600 ${Math.max(8, sh*0.082) | 0}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
+  ctx.fillText('A CENTURY OF ACCESS', mx, vy + sh*0.16);
+  ctx.fillStyle = 'rgba(198,205,212,0.7)';
+  ctx.font = `500 ${Math.max(7, sh*0.04) | 0}px "Helvetica Neue", Arial, sans-serif`;
+  ctx.fillText('PREVIEW', mx, vy + sh*0.235);
+  // the held frame stands in for the poster
+  const pw = sw*0.42, ph = pw*9/16, fx = mx, fy = vy + sh*0.31;
+  ctx.fillStyle = '#000'; ctx.fillRect(fx, fy, pw, ph);
+  if (v && v.videoWidth && v.readyState >= 2){
+    ctx.save();
+    ctx.beginPath(); ctx.rect(fx, fy, pw, ph); ctx.clip();
+    const s = Math.max(pw / v.videoWidth, ph / v.videoHeight);
+    ctx.drawImage(v, fx + pw/2 - v.videoWidth*s/2, fy + ph/2 - v.videoHeight*s/2,
+                  v.videoWidth*s, v.videoHeight*s);
+    ctx.restore();
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 1*SS;
+  ctx.strokeRect(fx, fy, pw, ph);
+  // the note
+  const tx = vx + sw*0.54, tw = sw*0.39;
+  const fs = Math.max(7, sh*0.046);
+  ctx.font = `${fs | 0}px "Helvetica Neue", Arial, sans-serif`;
+  ctx.fillStyle = 'rgba(226,231,236,0.88)';
+  let yy = vy + sh*0.33, line = '';
+  const note = 'In 1970 a hand technician named Jim Glidewell opened a one-man ' +
+    'ceramics lab in Orange County. This film follows the century that made ' +
+    'good dentistry affordable — the hands, the machines and the people behind it.';
+  for (const word of note.split(' ')){
+    const t2 = line ? line + ' ' + word : word;
+    if (ctx.measureText(t2).width > tw && line){ ctx.fillText(line, tx, yy); yy += fs*1.5; line = word; }
+    else line = t2;
+  }
+  if (line){ ctx.fillText(line, tx, yy); yy += fs*1.5; }
+  ctx.fillStyle = 'rgba(238,242,246,0.93)';
+  ctx.fillText('Enjoy the film!', tx, yy + fs*0.7);
+  // ENTER — the one control on the screen
+  const bw = sw*0.16, bh = sh*0.1;
+  const bx = vx + sw*0.93 - bw, by = vy + sh*0.87 - bh;
+  ctx.fillStyle = 'rgba(248,249,250,0.95)';
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.fillStyle = '#15181c';
+  ctx.textAlign = 'center';
+  ctx.font = `600 ${Math.max(7, sh*0.044) | 0}px "Helvetica Neue", Arial, sans-serif`;
+  ctx.fillText('ENTER', bx + bw/2, by + bh*0.66);
+}
+function drawFilmPanel(x, wWorld, welcome){
+  const T = WELCOME_TV, v = T.v;
+  const kk = k(T.lz), sx = px(x, kk);
+  const sw = wWorld * kk * SS, sh = sw * 9/16;
+  if (sx < -sw || sx > W + sw) return null;
   const bez = 8 * kk * SS, neck = 14 * kk * SS, footH = 8 * kk * SS;
   const footY = py(CFG.benchY - 2, kk);
   const top = footY - footH - neck - sh - bez*2;
@@ -1993,7 +2085,10 @@ function drawWelcomeTV(){
   ctx.beginPath(); ctx.rect(vx, vy, sw, sh); ctx.clip();
   ctx.fillStyle = '#000';
   ctx.fillRect(vx, vy, sw, sh);
-  if (v && v.videoWidth && v.readyState >= 2){
+  if (v && v.muted){
+    // the set opens on its menu — a museum kiosk screen, and ENTER rolls the film
+    drawFilmMenu(vx, vy, sw, sh, v);
+  } else if (v && v.videoWidth && v.readyState >= 2){
     const s = Math.max(sw / v.videoWidth, sh / v.videoHeight);
     ctx.drawImage(v, sx - v.videoWidth*s/2, vy + sh/2 - v.videoHeight*s/2,
                   v.videoWidth*s, v.videoHeight*s);
@@ -2003,33 +2098,64 @@ function drawWelcomeTV(){
     ctx.font = eraFont(15 * kk * SS);
     ctx.fillText('THE FILM', sx, vy + sh/2 + 5*kk*SS);
   }
-  if (v && v.readyState >= 2){
-    ctx.textAlign = 'center';
-    if (T.userPaused){
-      // a thin outlined play mark, not a badge
-      ctx.strokeStyle = 'rgba(252,250,244,0.9)'; ctx.lineWidth = 2*SS;
-      ctx.beginPath();
-      ctx.moveTo(sx - 9*kk*SS, vy + sh/2 - 15*kk*SS);
-      ctx.lineTo(sx + 15*kk*SS, vy + sh/2);
-      ctx.lineTo(sx - 9*kk*SS, vy + sh/2 + 15*kk*SS);
-      ctx.closePath(); ctx.stroke();
-    } else if (v.muted){
-      ctx.fillStyle = 'rgba(236,210,165,0.75)';
-      ctx.font = eraFont(13 * kk * SS);
-      try { ctx.letterSpacing = `${2*kk*SS}px`; } catch(e){}
-      ctx.fillText('TAP FOR SOUND', sx, vy + sh - 12*kk*SS);
-      try { ctx.letterSpacing = '0px'; } catch(e){}
-    }
+  if (v && !v.muted && v.readyState >= 2 && T.userPaused){
+    // a thin outlined play mark, not a badge
+    ctx.strokeStyle = 'rgba(252,250,244,0.9)'; ctx.lineWidth = 2*SS;
+    ctx.beginPath();
+    ctx.moveTo(sx - 9*kk*SS, vy + sh/2 - 15*kk*SS);
+    ctx.lineTo(sx + 15*kk*SS, vy + sh/2);
+    ctx.lineTo(sx - 9*kk*SS, vy + sh/2 + 15*kk*SS);
+    ctx.closePath(); ctx.stroke();
   }
   ctx.restore();
-  // the tour line sits under the panel now, on the counter's front edge
-  ctx.textAlign = 'center';
-  ctx.font = eraFont(16 * kk * SS);
-  try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
-  ctx.fillStyle = 'rgba(200,172,132,0.65)';
-  ctx.fillText('GLIDEWELL HISTORY TOUR →', sx, footY + 34*kk*SS);
-  try { ctx.letterSpacing = '0px'; } catch(e){}
   pushHit(vx, vy, sw, sh, {type: 'welcomevid'});
+  return {sx, kk, footY, top};
+}
+function drawWelcomeTV(){
+  const T = WELCOME_TV;
+  if (Math.abs(T.x - cam.x) > 3600) return;
+  const g = drawFilmPanel(T.x, T.w, true);
+  if (!g) return;
+  const {sx, kk, footY, top} = g;
+  // the inscription rides with the panel — one poster, one depth, no drift
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
+  if (IMGS.logo2026 && state.introFade > 0.02){
+    // the mark at the apex belongs to the close-up and dissolves with the zoom-out
+    const ms = 40 * kk * SS, my = top - 160 * kk * SS;
+    ctx.save();
+    ctx.globalAlpha = state.introFade;
+    ctx.beginPath(); ctx.roundRect(sx - ms/2, my - ms/2, ms, ms, 5*kk*SS); ctx.clip();
+    ctx.drawImage(IMGS.logo2026.el, sx - ms/2, my - ms/2, ms, ms);
+    ctx.restore();
+  }
+  ctx.fillStyle = 'rgba(236,210,165,0.95)';
+  ctx.font = eraFont(42 * kk * SS);
+  ctx.fillText('HOW GOOD DENTISTRY', sx, top - 96 * kk * SS);
+  ctx.fillText('STOPPED BEING A LUXURY', sx, top - 48 * kk * SS);
+  ctx.restore();
+  // the tour line sits under the panel, on the cabinet face — clear of the
+  // marble edge, which used to cut straight through it. Hidden during the
+  // close-up hold, where it would land on the wheel hint.
+  const tourA = 0.65 * (1 - (state.introFade || 0));
+  if (tourA > 0.03){
+    ctx.textAlign = 'center';
+    ctx.font = eraFont(16 * kk * SS);
+    try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
+    ctx.fillStyle = `rgba(200,172,132,${tourA.toFixed(3)})`;
+    ctx.fillText('GLIDEWELL HISTORY TOUR →', sx, footY + 64*kk*SS);
+    try { ctx.letterSpacing = '0px'; } catch(e){}
+  }
+}
+function drawFilmRelays(){
+  const v = WELCOME_TV.v;
+  // relays exist only for the engaged film: no sound, no extra furniture
+  if (!v || v.muted || v.readyState < 2) return;
+  for (const r of FILM_RELAYS){
+    if (Math.abs(r.x - cam.x) > 2600) continue;
+    drawFilmPanel(r.x, 430, false);
+  }
 }
 
 const FIN_X = SHIFT(29750);
@@ -5422,6 +5548,9 @@ function initDecor(){
     else PROPS.splice(i, 1);
   }
 
+  // relays are seated only now: TABLES and the settled PROPS both exist
+  initFilmRelays();
+
   JIM_FIG = makeFigure(99);
   BOOK_SPRITE = makeBookPyramid();
   BOOK_CARD = makeBookCard();
@@ -8208,6 +8337,7 @@ function update(dt){
   state.time += dt;
   state.dt = dt;
   updateMusic(dt);
+  updateFilm();
 
   if (inp.anyInput){
     state.idle = 0;
@@ -8873,7 +9003,6 @@ function frame(){
   for (let i = 0; i < LIGHT_GRID.length; i++) drawLampPool(LIGHT_GRID[i].x, lampFlicker(t, i+1));
 
   drawTallUnits();      // furniture against the wall, before anything hung on it
-  drawIntro();
   drawOutro();
   drawSheets();
 
@@ -8926,6 +9055,7 @@ function frame(){
   drawFinaleTable(t);
   drawProps(false);
   drawWelcomeTV();    // the film stands on the welcome bench
+  drawFilmRelays();   // and its relays pick it up down the rail
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
     if (Math.abs(b.x - cam.x) > 3400) continue;
@@ -9111,6 +9241,8 @@ async function boot(){
   initSeamVideo();
   initProjectors();
   initWelcomeTV();
+  // reseat the film relays once everything (skin, props) has settled
+  setTimeout(initFilmRelays, 2500);
   initMusic();
   MAP_SPRITE = makeMapSprite();
   USA_SPRITE = makeUsaSprite();
