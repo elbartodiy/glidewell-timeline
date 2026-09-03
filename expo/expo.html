@@ -2485,7 +2485,11 @@ function updateMusic(dt){
   const a = MUSIC.el; if (!a) return;
   // a speaking voice always wins; the attract loop plays a little lower still
   let want = MUSIC.off ? 0 : MUSIC.vol;
-  if (state.clip) want *= MUSIC.duck;
+  const film = WELCOME_TV.v, voice = state.person && state.person.v;
+  const speaking = state.clip ||
+        (film && !film.paused && !film.muted) ||
+        (voice && !voice.paused && !voice.muted);
+  if (speaking) want *= MUSIC.duck;
   if (state.mode === 'attract') want *= 0.75;
   want *= 1 - (state.attract.fade || 0);
   MUSIC.cur += (want - MUSIC.cur) * Math.min(1, dt * 2.2);
