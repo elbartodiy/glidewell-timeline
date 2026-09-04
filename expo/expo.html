@@ -50,7 +50,7 @@ const BEATS = [
          {img:'old2', w:290, dx:-4100, cy:360, rot:-0.4, cap:'Dentistry before the laboratory'},
          {img:'old3', w:290, dx:-3710, cy:360, rot:0.3, cap:'The barber-surgeon\u2019s chair'},
          {img:'old4', w:290, dx:-3330, cy:360, rot:-0.3, cap:'The old fear of the dentist'}],
-   table:[], st:[{img:'invest', w:280, dx:-320, lz:80}]},
+   table:[], st:[{img:'invest', w:280, dx:-390, lz:12, lift:32}]},
 
   {x:2450, y:'1970', t:'FOUNDED', tier:1, fly:true, yLift:96,   // clear of the bench lamp
    th:'One man, one bench — betting that affordable was a business model.',
@@ -1433,13 +1433,15 @@ function drawFloor(){
 }
 
 function drawLampPool(x, intensity){
-  // pool of light on the wall behind a beat, colored by its era
+  // pool of light on the wall behind a beat, colored by its era — and from
+  // 1970 on, by its NEW wiring: white light, not the pioneer amber
   const seg = segAt(x);
   const kk = k(wallZAt(x) - 4);
   const cx = px(x, kk), cy = py(330, kk);
   const r = seg.light.poolR * kk * SS;
   if (cx < -r || cx > W + r) return;
-  drawGlow(seg.light.pool, cx, cy - r*0.12, r, seg.light.poolA * intensity);
+  const pool = (segIdx(x) === 0 && x >= SHIFT(2200)) ? '244,240,228' : seg.light.pool;
+  drawGlow(pool, cx, cy - r*0.12, r, seg.light.poolA * intensity);
 }
 
 function benchTiles(tex, kk, srcY, srcH, dy, dh, wx0, wx1){
@@ -5122,7 +5124,7 @@ function drawLamp(x, t, seed){
      whiter light, and NO flicker — the pioneer-era bulbs stay behind, at 1907. */
   const modern = x >= SHIFT(2200);
   const inten = modern ? 0.97 : lampFlicker(t, seed);
-  const bulbY = py(modern ? -16 : 38, kk);  // the new fixtures ride higher, clear of a flying year
+  const bulbY = py(modern ? -44 : 38, kk);  // the new fixtures ride higher, clear of a flying year
   // cord
   ctx.strokeStyle = modern ? 'rgba(48,40,30,0.9)' : 'rgba(20,10,4,0.9)';
   ctx.lineWidth = 3*kk*SS;
@@ -6406,6 +6408,9 @@ function drawFigures(){
 }
 function drawProps(midPass){
   for (const p of PROPS){
+    /* era 1's counter is a photograph up to the cabinet: things standing on a
+       painted surface take a lifted foot, or they read sunk below its lip */
+    if (p._lifted == null){ p._lifted = (p.x < PLATE_FROM) ? 26 : 0; }
     if (midPass === 'late'){ if (!p.late) continue; }
     else if ((!!p.mid) !== !!midPass || p.late) continue;
     if (Math.abs(p.x - cam.x) > 2200) continue;
@@ -6414,7 +6419,7 @@ function drawProps(midPass){
     const sx = px(p.x, kk);
     if (sx < -260 || sx > W + 260) continue;
     const scale = (p.w / sp.w) * kk * SS;
-    const syFoot = (p.mid && midPass !== 'late') ? py(1080, kk) : py(CFG.benchY - 2, kk);
+    const syFoot = (p.mid && midPass !== 'late') ? py(1080, kk) : py(CFG.benchY - 2 - p._lifted, kk);
     /* The join. Every one of these was a single drawImage with nothing under
        it, so fifty objects hovered a hair above the counter in every frame —
        while a mere pinned photograph got a proper contact shadow. An object
@@ -6771,11 +6776,14 @@ function drawPedestal(b, t, hero){
       const fx = sx + s * colW * 3.0;                    // the fixture, up top
       // beam direction: straight down -> through the exhibit, by lock
       const xEnd = fx + ((sx - fx) * (yEnd / Math.max(1, yObj))) * lock;
-      const tObj = Math.max(0.05, Math.min(0.85, yObj / yEnd));
-      const tTable = Math.max(tObj + 0.05, Math.min(0.96, py(700, kk) / yEnd));
-      softBeam(fx, xEnd, 0, yEnd, colW * 0.22, colW * 0.34, warmC, hero,
-               [[0, 0.12], [tObj, 1], [tTable, 0.42],
-                [tTable + (1 - tTable) * 0.5, 0.14], [1, 0]]);
+      const tObj = Math.max(0.05, Math.min(0.8, yObj / yEnd));
+      const tAbove = Math.max(tObj + 0.04, Math.min(0.9, py(628, kk) / yEnd));
+      const tTable = Math.max(tAbove + 0.04, Math.min(0.95, py(700, kk) / yEnd));
+      /* wider at the foot, and the power starts leaking just ABOVE the table:
+         from there down it is haze, not beam */
+      softBeam(fx, xEnd, 0, yEnd, colW * 0.22, colW * 0.48, warmC, hero,
+               [[0, 0.12], [tObj, 1], [tAbove, 0.55], [tTable, 0.26],
+                [tTable + (1 - tTable) * 0.5, 0.09], [1, 0]]);
       // the fixture itself
       ctx.fillStyle = 'rgba(20,20,22,0.9)';
       ctx.fillRect(fx - 9*SS, 0, 18*SS, 12*SS);
