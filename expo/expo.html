@@ -887,7 +887,6 @@ function attachMouseDriver(el){
     // centre under the cursor.
     if (musicMarkHit(pt)){ toggleMusic(); down = false; return; }
     if (soundMarkHit(pt)){ toggleSound(); down = false; return; }
-    if (jimMarkHit(pt)){ toggleJim(); down = false; return; }
     if (ruleHit(pt)){
       const g = ruleGeom();
       const grabbed = Math.abs(g.at(cam.x) - pt.x) < Math.max(18 * SS, (g.at(cam.x + g.half) - g.at(cam.x - g.half)) / 2);
@@ -918,12 +917,6 @@ function attachMouseDriver(el){
     if (moved < 6) Input.act(toBuf(e));  // a click = the button, aimed at a point
   });
   window.addEventListener('keydown', e => {
-    if (e.key === 'j' || e.key === 'J' || e.key === '\u043e' || e.key === '\u041e'){ toggleJim(); return; }
-    // while Jim has the arrows, they are his: the hall does not also lurch
-    const his = jim.on && jim.phase === 'live';
-    if (his && (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' ||
-                e.key === ' ' || e.key === 'w' || e.key === 'W' ||
-                e.key === 'a' || e.key === 'A' || e.key === 'd' || e.key === 'D')) return;
     if (e.key === 'ArrowRight') Input.push(900);
     else if (e.key === 'ArrowLeft') Input.push(-900);
     else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); Input.act(); }
@@ -2679,222 +2672,6 @@ function drawFilmRelays(){
   }
 }
 
-/* ============================ ?play=1 =================================
-   JIM WALKS THE HALL. A side-scroller laid over the exhibition, and the level
-   is not drawn twice: the counter IS the walkway, the recreations ARE the pits.
-   TABLES — the same list that decides where a lamp may stand — is read as the
-   ground, its drawer joints closed up (a joint is not a hole) and its wide
-   breaks left open as the drops into 1979, 1989, the Digital Revolution.
-
-   The feel is lifted number for number from the arcade cabinet's platformer —
-   run 265, accel 2300, gravity 1900, jump -660, coyote time, an 0.11 s jump
-   buffer, the release-cut to -180 that buys a short hop, a 0.92 double jump.
-   One scalar carries them across: PU, world units per cabinet unit, set so
-   that Jim stands exactly a tenth of the frame at his working depth, the same
-   fraction of the screen its hero has. Same hand, same hall. */
-const PLAY = {z: 200, deck: CFG.benchY, floor: 1080, gapMerge: 300};
-PLAY.kz = CFG.F / (CFG.F + PLAY.z);           // his plane never moves in z
-PLAY.PU = 108 / (58 * PLAY.kz);               // a tenth of 1080, in world units
-{
-  const U = PLAY.PU;
-  PLAY.h = 58 * U;
-  PLAY.run = 265 * U; PLAY.accel = 2300 * U; PLAY.brake = 2600 * U;
-  PLAY.grav = 1900 * U; PLAY.jump = -660 * U; PLAY.cut = -180 * U;
-  PLAY.coyote = 0.10; PLAY.buffer = 0.11; PLAY.dbl = 0.92;
-}
-/* He is a guest, not a mode: the same little switch that silences the room
-   calls him in and sends him away. On — he runs in from off the left edge and
-   the camera picks him up; off — he keeps running right, out past the frame,
-   and the wheel gets its hall back. */
-const jim = {on: false, phase: 'off',        // 'off' | 'enter' | 'live' | 'exit'
-             x: 0, y: PLAY.floor, vx: 0, vy: 0, onGround: true,
-             coyote: 0, buf: 0, face: 1, run: 0, dbl: 1, land: 0};
-const KEYS = {left: false, right: false, jump: false, jumpEdge: false};
-function worldAtScreen(sx, z){ const kk = k(z); return cam.x + BR + (sx - W/2) / (kk * SS); }
-/* The level, read out of the room once. Counter runs whose gap is a joint are
-   welded into one walkway; what is left over is a pit with the hall's floor at
-   the bottom of it, and the counter's end is a cliff wall he cannot walk into. */
-function playLevel(){
-  if (PLAY._lvl) return PLAY._lvl;
-  const t = [...TABLES].sort((a, b) => a.x0 - b.x0);
-  const runs = [];
-  for (const tb of t){
-    const last = runs[runs.length - 1];
-    if (last && tb.x0 - last.x1 < PLAY.gapMerge) last.x1 = Math.max(last.x1, tb.x1);
-    else runs.push({x0: tb.x0, x1: tb.x1});
-  }
-  const pits = [];
-  pits.push({x0: INTRO_X - 3000, x1: runs[0].x0});
-  for (let i = 1; i < runs.length; i++) pits.push({x0: runs[i-1].x1, x1: runs[i].x0});
-  pits.push({x0: runs[runs.length-1].x1, x1: WORLD_END + 3000});
-  PLAY._lvl = {runs, pits};
-  return PLAY._lvl;
-}
-function pitAt(x){ return playLevel().pits.find(p => x >= p.x0 && x <= p.x1) || null; }
-function runAt(x){ return playLevel().runs.find(r => x >= r.x0 + 8 && x <= r.x1 - 8) || null; }
-function updatePlay(dt){
-  const P = PLAY, L = playLevel();
-  // entering and leaving, he runs himself; in between, the arrows are his
-  let dir = (KEYS.left ? -1 : 0) + (KEYS.right ? 1 : 0);
-  if (jim.phase === 'enter'){
-    dir = 1;
-    if (px(jim.x, P.kz) > 200 * SS) jim.phase = 'live';
-  } else if (jim.phase === 'exit'){
-    dir = 1;
-    jim.leaving = (jim.leaving || 0) + dt;
-    // out of the frame, or out of patience: leaving is never something he can
-    // get stuck doing — a pit wall must not hold him in the hall
-    if (px(jim.x, P.kz) > W + 160 * SS || jim.leaving > 3){
-      jim.phase = 'off'; jim.on = false; jim.leaving = 0; return;
-    }
-  }
-  if (dir){ jim.vx += dir * P.accel * dt; jim.face = dir; }
-  else jim.vx -= Math.sign(jim.vx) * Math.min(Math.abs(jim.vx), P.brake * dt);
-  jim.vx = Math.max(-P.run, Math.min(P.run, jim.vx));
-  jim.coyote -= dt; jim.buf -= dt;
-  if (KEYS.jumpEdge){ jim.buf = P.buffer; KEYS.jumpEdge = false; }
-  if (jim.buf > 0){
-    if (jim.coyote > 0){ jim.vy = P.jump; jim.coyote = 0; jim.buf = 0; jim.onGround = false; }
-    else if (jim.dbl > 0){ jim.dbl--; jim.vy = P.jump * P.dbl; jim.buf = 0; }
-  }
-  if (!KEYS.jump && jim.vy < P.cut) jim.vy = P.cut;   // let go early, hop short
-  jim.vy += P.grav * dt;
-  jim.x += jim.vx * dt;
-  const yPrev = jim.y;
-  jim.y += jim.vy * dt;
-  // the counter is a cliff, not a bridge you can walk under: below its top,
-  // the pit he is in has walls
-  if (jim.y > P.deck + 30 && jim.phase !== 'exit'){
-    const pit = pitAt(jim.x);
-    if (pit){
-      if (jim.x < pit.x0 + 30){ jim.x = pit.x0 + 30; jim.vx = 0; }
-      if (jim.x > pit.x1 - 30){ jim.x = pit.x1 - 30; jim.vx = 0; }
-    }
-  }
-  // the surfaces under him: the walkway where there is one, the floor in a pit
-  jim.onGround = false;
-  if (jim.vy >= 0){
-    const cands = [];
-    const r = runAt(jim.x); if (r) cands.push(P.deck);
-    if (pitAt(jim.x)) cands.push(P.floor);
-    for (const y of cands){
-      if (yPrev <= y + 1 && jim.y >= y){
-        jim.y = y; jim.vy = 0; jim.onGround = true;
-        if (!jim.land) jim.land = 0.16;
-        break;
-      }
-    }
-    // walked off the counter with no pit under him? the floor still catches him
-    if (!jim.onGround && !cands.length && jim.y >= P.floor){
-      jim.y = P.floor; jim.vy = 0; jim.onGround = true;
-    }
-  }
-  if (jim.onGround){ jim.coyote = P.coyote; jim.dbl = 1; }
-  jim.land = Math.max(0, jim.land - dt);
-  jim.run = (Math.abs(jim.vx) > 30 && jim.onGround) ? jim.run + dt * (5 + Math.abs(jim.vx) / (P.run / 7)) : 0;
-  jim.x = Math.max(INTRO_X - 900, Math.min(WORLD_END + 900, jim.x));
-  if (jim.y > P.floor + 400){ jim.y = P.floor; jim.vy = 0; }     // never lost
-  // the camera stops steering and starts following — but only while he walks
-  // the hall: coming in and going out, the frame holds still and he crosses it
-  if (jim.phase === 'live'){
-    const dead = 240;
-    if (cam.x < jim.x - dead) cam.x = jim.x - dead;
-    if (cam.x > jim.x + dead) cam.x = jim.x + dead;
-    cam.vel = 0;
-  }
-}
-/* Jim of 1970, from primitives: dark hair, the heavy glasses, the striped
-   shirt of the photograph hanging over the bench. Built the way the cabinet
-   builds its hero — a run phase in the legs, a lean in the air, a squash on
-   landing — in this hall's palette and at this hall's depth. */
-function drawJim(){
-  if (!jim.on) return;
-  const kk = PLAY.kz, sx = px(jim.x, kk), sy = py(jim.y, kk);
-  if (sx < -240 || sx > W + 240) return;
-  const s = (PLAY.h * kk * SS) / 58;          // one unit here = one unit there
-  const air = !jim.onGround;
-  const sw = air ? 0 : Math.sin(jim.run);
-  const squash = jim.land > 0 ? 1 - jim.land * 0.8 : 1;
-  contactShadow(sx, sy, 26 * s, jim.onGround ? 0.42 : 0.16);
-  ctx.save();
-  ctx.translate(sx, sy);
-  ctx.scale(jim.face * s * (2 - squash), s * squash);
-  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  // legs and shoes
-  ctx.strokeStyle = '#2b3550'; ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(-1, -20); ctx.lineTo(-3 + sw * 6, air ? -6 : -1);
-  ctx.moveTo(1, -20);  ctx.lineTo(3 - sw * 6, air ? -9 : -1);
-  ctx.stroke();
-  ctx.strokeStyle = '#3a2a1c'; ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(-3 + sw * 6, air ? -5 : 0); ctx.lineTo(-6.5 + sw * 6, air ? -5 : 0);
-  ctx.moveTo(3 - sw * 6, air ? -8 : 0);  ctx.lineTo(6.5 - sw * 6, air ? -8 : 0);
-  ctx.stroke();
-  // arms first: they hang behind the shirt's near sleeve
-  ctx.strokeStyle = '#e8b58e'; ctx.lineWidth = 3.8;
-  ctx.beginPath();
-  ctx.moveTo(-5.4, -33); ctx.lineTo(-8.5 - sw * 5, air ? -27 : -22);
-  ctx.moveTo(5.4, -33);  ctx.lineTo(8.5 + sw * 5,  air ? -27 : -22);
-  ctx.stroke();
-  // the striped shirt
-  ctx.fillStyle = '#7d2530';
-  ctx.beginPath(); ctx.roundRect(-7.4, -37, 14.8, 19, 4.5); ctx.fill();
-  ctx.save();
-  ctx.beginPath(); ctx.roundRect(-7.4, -37, 14.8, 19, 4.5); ctx.clip();
-  ctx.strokeStyle = 'rgba(56,68,114,0.92)'; ctx.lineWidth = 2.2;
-  for (let i = 0; i < 3; i++){
-    ctx.beginPath(); ctx.moveTo(-8, -34.4 + i * 5.8); ctx.lineTo(8, -34.4 + i * 5.8); ctx.stroke();
-  }
-  ctx.restore();
-  // neck
-  ctx.strokeStyle = '#dca97f'; ctx.lineWidth = 3.4;
-  ctx.beginPath(); ctx.moveTo(0, -37.4); ctx.lineTo(0, -40); ctx.stroke();
-  // head, the dark hair, the heavy glasses of the photograph on the wall
-  ctx.fillStyle = '#f2c69f';
-  ctx.beginPath(); ctx.arc(0, -47.6, 7.8, 0, 7); ctx.fill();
-  ctx.fillStyle = '#241a12';
-  ctx.beginPath(); ctx.arc(0, -48.6, 7.9, Math.PI * 1.05, Math.PI * 2.02); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(-5.6, -48.4, 2.2, 2.9, 0.22, 0, 7); ctx.fill();
-  ctx.strokeStyle = 'rgba(52,40,30,0.9)'; ctx.lineWidth = 0.95;
-  ctx.beginPath();
-  ctx.arc(2.4, -47.4, 2.6, 0, 7);
-  ctx.moveTo(-0.2, -47.8); ctx.lineTo(-1.8, -47.8);
-  ctx.moveTo(5.0, -47.8); ctx.lineTo(7.2, -48.4);
-  ctx.stroke();
-  ctx.restore();
-}
-function toggleJim(){
-  if (jim.phase === 'off' || jim.phase === 'exit'){
-    jim.on = true; jim.phase = 'enter';
-    jim.x = worldAtScreen(-100 * SS, PLAY.z);   // just outside the left edge
-    jim.y = runAt(jim.x) ? PLAY.deck : PLAY.floor;
-    jim.vx = PLAY.run * 0.85; jim.vy = 0;
-    jim.face = 1; jim.dbl = 1; jim.coyote = 0; jim.buf = 0; jim.land = 0;
-    jim.onGround = true; jim.run = 0; jim.leaving = 0;
-    KEYS.left = KEYS.right = KEYS.jump = KEYS.jumpEdge = false;
-    state.mode = 'live'; state.idle = 0;        // the attract tour lets go
-    if (state.introHold){ state.introHold = false; state.introFade = 0; }
-  } else {
-    jim.phase = 'exit';                         // he runs out to the right
-    KEYS.left = KEYS.right = KEYS.jump = KEYS.jumpEdge = false;
-  }
-}
-{
-  const set = (e, down) => {
-    if (!jim.on || jim.phase !== 'live') return;
-    const kk = e.key;
-    if (kk === 'ArrowLeft'  || kk === 'a' || kk === 'A'){ KEYS.left = down; e.preventDefault(); }
-    if (kk === 'ArrowRight' || kk === 'd' || kk === 'D'){ KEYS.right = down; e.preventDefault(); }
-    if (kk === ' ' || kk === 'ArrowUp' || kk === 'w' || kk === 'W'){
-      if (down && !KEYS.jump) KEYS.jumpEdge = true;
-      KEYS.jump = down; e.preventDefault();
-    }
-  };
-  window.addEventListener('keydown', e => set(e, true));
-  window.addEventListener('keyup',   e => set(e, false));
-}
-
 const FIN_X = SHIFT(29750);
 function drawOutro(){
   // the finale is the mirror of the welcome: the mark under the ceiling,
@@ -3285,7 +3062,6 @@ function toggleMusic(){
    in by the slash, not by a label. */
 function musicMarkBox(){ const s = 22 * SS; return {x: 26 * SS, y: 26 * SS, w: s, h: s}; }
 function soundMarkBox(){ const s = 22 * SS; return {x: 68 * SS, y: 26 * SS, w: s, h: s}; }
-function jimMarkBox(){ const s = 22 * SS; return {x: 110 * SS, y: 26 * SS, w: s, h: s}; }
 function markHit(b, pt){
   if (!pt) return false;
   const pad = 10 * SS;
@@ -3294,7 +3070,6 @@ function markHit(b, pt){
 }
 function musicMarkHit(pt){ return markHit(musicMarkBox(), pt); }
 function soundMarkHit(pt){ return markHit(soundMarkBox(), pt); }
-function jimMarkHit(pt){ return markHit(jimMarkBox(), pt); }
 function drawMusicMark(){
   const A = Math.max(0.25, state.ruleA);          // they live with the rule
   if (A < 0.03) return;
@@ -3353,29 +3128,6 @@ function drawMusicMark(){
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
-    }
-  }
-  // THE WALKER — calls Jim into the hall and sends him out of it
-  {
-    const b = jimMarkBox();
-    const hot = jimMarkHit(Input.hover) ? 1 : 0;
-    const a = (jim.on ? 0.42 : 0.30) * A + 0.28 * hot;
-    ctx.strokeStyle = `rgba(${seg.ink},${a.toFixed(3)})`;
-    ctx.fillStyle = `rgba(${seg.ink},${a.toFixed(3)})`;
-    ctx.lineWidth = 1.7 * SS;
-    const cx = b.x + b.w * 0.44, cy = b.y + b.h * 0.5, sq = b.h;
-    ctx.beginPath(); ctx.arc(cx - sq*0.02, cy - sq*0.30, sq*0.11, 0, 7); ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(cx - sq*0.02, cy - sq*0.18); ctx.lineTo(cx + sq*0.04, cy + sq*0.04);
-    ctx.moveTo(cx + sq*0.04, cy + sq*0.04); ctx.lineTo(cx + sq*0.20, cy + sq*0.32);
-    ctx.moveTo(cx + sq*0.04, cy + sq*0.04); ctx.lineTo(cx - sq*0.20, cy + sq*0.30);
-    ctx.moveTo(cx - sq*0.02, cy - sq*0.12); ctx.lineTo(cx + sq*0.22, cy - sq*0.04);
-    ctx.moveTo(cx - sq*0.02, cy - sq*0.12); ctx.lineTo(cx - sq*0.24, cy - sq*0.02);
-    ctx.stroke();
-    if (!jim.on){
-      ctx.beginPath();
-      ctx.moveTo(cx - sq*0.36, cy - sq*0.36); ctx.lineTo(cx + sq*0.42, cy + sq*0.40);
-      ctx.stroke();
     }
   }
   ctx.restore();
@@ -9452,8 +9204,7 @@ function update(dt){
       state.attract.fade = 0;
     }
   } else {
-    if (jim.on) state.idle = 0;                 // a walker in the hall is not an empty hall
-    else state.idle += dt;
+    state.idle += dt;
     if (state.mode === 'live' && state.idle > CFG.idleToAttract){
       state.mode = 'attract';
       state.study = null; state.person = null; state.people = null;
@@ -9517,8 +9268,7 @@ function update(dt){
       cam.vel = 0;
     } else {
       if (Math.abs(inp.impulse) > 24) startFilm();   // the wheel starts the show
-      if (jim.phase === 'live') cam.vel = 0;         // he steers now, not the wheel
-      else cam.vel += inp.impulse;
+      cam.vel += inp.impulse;
     }
     if (inp.action && state.openBox && !state.openBox.closing){
       state.openBox.closing = true;
@@ -9615,8 +9365,7 @@ function update(dt){
   cam.vel = Math.max(-CFG.maxVel, Math.min(CFG.maxVel, cam.vel));
   cam.vel *= Math.pow(Math.E, -CFG.friction * dt);
   cam.x += cam.vel * dt;
-  if (jim.on && !state.study && !state.person && !state.people && !state.inspect && !state.clip)
-    updatePlay(Math.min(dt, 1/30));      // one physics step, never a long one
+
   // ---- the yard video splice ----
   const SE = spliceEdges();
   if (state.splice){
@@ -10301,7 +10050,6 @@ function frame(){
       else ctx.fillRect(0, 0, Math.max(0, x1), H);
     }
   }
-  drawJim();        // he walks in front of everything the hall stands on
   drawSeamVideo();
   drawBloom();
   drawGrade(t);
@@ -10317,7 +10065,7 @@ function frame(){
   drawAttractHint(t);
   // pointer affordance
   if (Input.hover && state.mode === 'live'){
-    document.body.style.cursor = (musicMarkHit(Input.hover) || soundMarkHit(Input.hover) || jimMarkHit(Input.hover)) ? 'pointer'
+    document.body.style.cursor = (musicMarkHit(Input.hover) || soundMarkHit(Input.hover)) ? 'pointer'
       : ruleHit(Input.hover) ? 'ew-resize'
       : ((!state.inspect && hitAt(Input.hover.x, Input.hover.y)) ? 'pointer' : '');
   }
@@ -10544,7 +10292,6 @@ async function boot(){
                  if (sc) setTimeout(() => { if (state.study) state.study.scroll = parseFloat(sc[1]); }, 900); }
     else console.log('study: no beat with year ' + stu[1]);
   }
-  if (/[?&]play=1/.test(location.search)) setTimeout(toggleJim, 200);
   if (/[?&]people=1/.test(location.search)){
     state.mode = 'live'; state.introHold = false; state.introFade = 0;
     state.ruleA = 1; state.idle = 0;
