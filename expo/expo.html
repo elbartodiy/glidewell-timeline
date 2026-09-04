@@ -2019,7 +2019,9 @@ function initFilmRelays(){
     {kind: 'crt95',  x: SHIFT(12700), lz: 70, w: 290},            // the nineties set by 1995
     {kind: 'proj',   x: SHIFT(15330), w: 1260, cy: 318},          // 1999: high on the wall, air under it
     {kind: 'lcd05',  x: SHIFT(18150), lz: 16, w: 235},            // the office LCD between 2005 and 2007
-    {kind: 'plasma', x: SHIFT(22240), w: 640, cy: 454, h: 428},   // between 2009 and the 2010s, down to the counter
+    /* the wall is DEEP here (k≈0.39): to meet the counter's on-screen line the
+       panel's world bottom runs to ~1074 — the counter, drawn later, crops it */
+    {kind: 'plasma', x: SHIFT(22240), w: 640, cy: 657, h: 834},   // between 2009 and the 2010s, down to the counter
     {kind: 'vwall',  x: 33060, w: 900, top: -30, h: 850}          // the backdrop wall behind 2022 → 2023, up to the soffit
   );
   if (DBG) console.log('film screens:', FILM_RELAYS.map(r => r.kind + '@' + (r.x | 0)).join(', '));
