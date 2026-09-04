@@ -55,7 +55,9 @@ const BEATS = [
   {x:2450, y:'1970', t:'FOUNDED', tier:1, fly:true, yLift:96,   // clear of the bench lamp
    th:'One man, one bench — betting that affordable was a business model.',
    d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
-   wall:[{img:'jim1970', w:420, dx:1080, cy:400, hero:true}],
+   /* Jim at the bench hangs on the walk-up: between the threshold cabinet and
+      the family album, not past the founding bay */
+   wall:[{img:'jim1970', w:420, dx:-1360, cy:400, hero:true}],
    table:[],
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
@@ -81,7 +83,7 @@ const BEATS = [
    th:'Reach is the lever — the flywheel’s first turn.',
    d:'The first direct-mail campaign rewrites the model: reach dentists anywhere, not just nearby.',
    wall:[{img:'jim76', w:360, dx:-430, cy:380, rot:0.8},
-         {img:'lab4int', w:400, dx:440, cy:380, rot:-1.0}],
+         {img:'lab4int', w:400, dx:240, cy:380, rot:-1.0}],
    table:[]},
 
   /* ---- ERA 2 · the mail-order workshop, 1979–1989 ---- */
@@ -113,7 +115,7 @@ const BEATS = [
    pinZ:728,   // the numeral is riveted to the recreation panel: it grows in place, never drifts
    th:'',
    d:'Still in Orange, California: 175 people now serve more than 3,500 dentists, and 95% of cases arrive by mail. The lab is national without having left the county.',
-   wall:[{img:'lab5move', w:300, dx:-850, cy:400, rot:-0.6, style:'white'}],
+   wall:[{img:'lab5move', w:300, dx:-750, cy:400, rot:-0.6, style:'white'}],
    table:[],
    ped:{obj:'bizcard', dx:0, low:true}},
 
@@ -1957,55 +1959,31 @@ function updateFilm(){
    its own set (a projector for the craft years, a monitor for the nineties). */
 const FILM_RELAYS = [];
 function initFilmRelays(){
+  /* The film's furniture, era by era — hand-seated, not scattered:
+     a 1970s wooden console under its own lamp, hanging tube sets for 1976 and
+     1988, a nineties set for 1995, a projector throwing onto the wall for
+     1999, a wall plasma between 2009 and the 2010s, a tiled screen wall
+     between 2022 and 2023, and a plain panel before the finale.
+     Every tube screen is 4:3 — the film keeps its middle, the ears go. */
   FILM_RELAYS.length = 0;
-  const STEP = 2800, HALF = 260;
-  const recs = [[REC_L, REC_R], [REC2_L, REC2_R], [REC3_L, REC3_R], [REC4_L, REC4_R],
-                [REC93_L, REC93_R], [REC18_L, REC18_R], [REC23_L, REC23_R]];
-  /* what already stands on the benches: a relay may not brush any of it */
-  const occ = [];
-  const take = (cx, w) => occ.push([cx - w/2 - 70, cx + w/2 + 70]);
-  for (const b of BEATS){
-    for (const it of (b.st || [])) take(b.x + it.dx, it.w);
-    for (const it of (b.table || [])) take(b.x + it.dx, it.w);
-    for (const p of (b.props || [])) take(b.x + p.dx, p.w || 300);
-    if (b.rig) take(b.x + b.rig.dx, b.rig.w || 400);
-    if (b.ped) take(b.x + (b.ped.dx || 0), 320);
-    if (b.album) take(b.x + b.album.dx, b.album.w || 300);
-  }
-  for (const p of PROPS) if (!p.mid) take(p.x, p.w || 140);
-  take(FACT_X, 2200);                               // the robotic line
-  take(FIN_X, 1200);                                // the finale table
-  const badWith = (ground, half) => {
-    const g = occ.concat(BEATS.map(b => [b.x - ground/2, b.x + ground/2]));
-    return x =>
-      g.some(([a, b]) => x + half > a && x - half < b) ||
-      recs.some(([a, b]) => x > a - 300 && x < b + 300) ||
-      PLATES.some(p => Math.abs(x - p.x) < (p.w || 0)/2 + 300);
-  };
-  /* two passes per slot: first with generous air around each year, then — in
-     the dense late eras, where the years stand 700 apart — squeezed in
-     wherever the real objects allow it */
-  const PASSES = [badWith(620, 255), badWith(260, 240)];
-  for (let want = WELCOME_TV.x + STEP; want < WORLD_END - 800; want += STEP){
-    let best = null;
-    for (const bad of PASSES){
-      let bd = 1e9;
-      for (const tb of TABLES){
-        if (tb.x1 - tb.x0 < HALF*2 + 60) continue;
-        const c0 = Math.max(tb.x0 + HALF + 20, want - 1400);
-        const c1 = Math.min(tb.x1 - HALF - 20, want + 1400);
-        for (let c = c0; c <= c1; c += 60){
-          if (bad(c)) continue;
-          const d = Math.abs(c - want);
-          if (d < bd){ bd = d; best = c; }
-        }
-      }
-      if (best != null) break;
-    }
-    if (best != null) FILM_RELAYS.push({x: best});
-  }
-  if (DBG) console.log('film relays:', FILM_RELAYS.map(r => r.x | 0).join(', '));
+  // the seventies console stands under the first free-standing lamp to the
+  // right of the founding bay (the bay itself is a photograph — nothing may
+  // stand inside it at depth, or it slides against the painted counter)
+  const bayEnd = PLATES.length ? PLATES[0].x + (PLATES[0].w || 0)/2 + 200 : SHIFT(3600);
+  const lamp = LIGHT_GRID.map(L => L.x).filter(x => x > bayEnd && x < SHIFT(3450) - 320)
+                         .sort((a, b) => a - b)[0];
+  FILM_RELAYS.push(
+    {kind: 'crt70',  x: lamp != null ? lamp : bayEnd + 400, w: 250},
+    {kind: 'hang',   x: SHIFT(6060),  w: 320, cy: 320, era: 0},   // after 1976, before the 1979 column
+    {kind: 'hang',   x: SHIFT(10070), w: 320, cy: 320, era: 1},   // 1988, another housing
+    {kind: 'crt95',  x: SHIFT(12700), lz: 70, w: 290},            // the nineties set by 1995
+    {kind: 'proj',   x: SHIFT(15330), w: 460, cy: 430},           // 1999: thrown onto the wall
+    {kind: 'plasma', x: SHIFT(22240), w: 450, cy: 370},           // between 2009 and the 2010s
+    {kind: 'vwall',  x: 33060, w: 900, top: 140, h: 680}          // the backdrop wall behind 2022 → 2023
+  );
+  if (DBG) console.log('film screens:', FILM_RELAYS.map(r => r.kind + '@' + (r.x | 0)).join(', '));
 }
+
 function drawFilmPanel(x, wWorld, welcome){
   const T = WELCOME_TV, v = T.v;
   /* the welcome set stands on the PHOTOGRAPHED counter, and that counter is
@@ -2146,13 +2124,263 @@ function drawWelcomeTV(){
     try { ctx.letterSpacing = '0px'; } catch(e){}
   }
 }
+/* the film, cover-cropped into any rectangle (a 4:3 rect trims the ears),
+   plus the tap target and the paused mark — shared by every era screen */
+function filmInto(vx, vy, vw, vh, dim){
+  const v = WELCOME_TV.v;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(vx, vy, vw, vh); ctx.clip();
+  ctx.fillStyle = '#000'; ctx.fillRect(vx, vy, vw, vh);
+  if (v && v.videoWidth && v.readyState >= 2){
+    const sc = Math.max(vw / v.videoWidth, vh / v.videoHeight);
+    if (dim) ctx.globalAlpha = dim;
+    ctx.drawImage(v, vx + vw/2 - v.videoWidth*sc/2, vy + vh/2 - v.videoHeight*sc/2,
+                  v.videoWidth*sc, v.videoHeight*sc);
+    ctx.globalAlpha = 1;
+  }
+  if (WELCOME_TV.userPaused){
+    ctx.strokeStyle = 'rgba(252,250,244,0.9)'; ctx.lineWidth = 2*SS;
+    const m = Math.min(vw, vh);
+    ctx.beginPath();
+    ctx.moveTo(vx + vw/2 - m*0.06, vy + vh/2 - m*0.1);
+    ctx.lineTo(vx + vw/2 + m*0.1, vy + vh/2);
+    ctx.lineTo(vx + vw/2 - m*0.06, vy + vh/2 + m*0.1);
+    ctx.closePath(); ctx.stroke();
+  }
+  ctx.restore();
+  pushHit(vx, vy, vw, vh, {type: 'welcomevid'});
+}
+/* the seventies console: a wooden cabinet on the photographed counter — so it
+   is riveted to the front plane like the counter itself, standing a long step
+   back from the lip (smaller and higher IS further, on a painted surface) */
+function drawFilmCRT70(r){
+  const kk = k(8), sx = px(r.x, kk);
+  const scw = r.w * kk * SS, sch = scw * 3/4;
+  const pad = 12 * kk * SS, strip = 42 * kk * SS;
+  const cabW = scw + strip + pad*3, cabH = sch + pad*2;
+  if (sx < -cabW || sx > W + cabW) return;
+  const footY = py(CFG.benchY - 22, kk), legH = 12 * kk * SS;
+  const x0 = sx - cabW/2, y0 = footY - legH - cabH;
+  contactShadow(sx, footY, cabW * 0.55, 0.3);
+  // splayed pegs
+  ctx.strokeStyle = '#1c1208'; ctx.lineWidth = 4*kk*SS; ctx.lineCap = 'round';
+  for (const sgn of [-1, 1]){
+    ctx.beginPath();
+    ctx.moveTo(sx + sgn*(cabW/2 - 16*kk*SS), footY - legH);
+    ctx.lineTo(sx + sgn*(cabW/2 - 6*kk*SS), footY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(sx + sgn*(cabW/2 - 60*kk*SS), footY - legH);
+    ctx.lineTo(sx + sgn*(cabW/2 - 66*kk*SS), footY);
+    ctx.stroke();
+  }
+  ctx.lineCap = 'butt';
+  // the wooden box
+  const wg = ctx.createLinearGradient(0, y0, 0, y0 + cabH);
+  wg.addColorStop(0, '#54402a'); wg.addColorStop(0.5, '#3c2c1a'); wg.addColorStop(1, '#241708');
+  ctx.fillStyle = wg;
+  ctx.beginPath(); ctx.roundRect(x0, y0, cabW, cabH, 5*kk*SS); ctx.fill();
+  ctx.strokeStyle = 'rgba(230,200,150,0.20)'; ctx.lineWidth = 1*SS;
+  ctx.beginPath(); ctx.roundRect(x0 + 0.5*SS, y0 + 0.5*SS, cabW - SS, cabH - SS, 5*kk*SS); ctx.stroke();
+  // the tube: rounded like glass, film inside
+  ctx.fillStyle = '#0a0908';
+  ctx.beginPath(); ctx.roundRect(x0 + pad - 3*SS, y0 + pad - 3*SS, scw + 6*SS, sch + 6*SS, 14*kk*SS); ctx.fill();
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(x0 + pad, y0 + pad, scw, sch, 12*kk*SS); ctx.clip();
+  filmInto(x0 + pad, y0 + pad, scw, sch, 0.92);
+  // glass sheen across the tube's corner
+  const gl = ctx.createLinearGradient(x0 + pad, y0 + pad, x0 + pad + scw*0.5, y0 + pad + sch);
+  gl.addColorStop(0, 'rgba(255,255,255,0.10)'); gl.addColorStop(0.35, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gl; ctx.fillRect(x0 + pad, y0 + pad, scw, sch);
+  ctx.restore();
+  // the control strip: two knobs and a slotted grille
+  const cxk = x0 + pad*2 + scw + strip/2;
+  for (const [ky, kr] of [[0.22, 9], [0.42, 7]]){
+    ctx.fillStyle = '#171006';
+    ctx.beginPath(); ctx.arc(cxk, y0 + cabH*ky, kr*kk*SS, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(226,198,150,0.5)'; ctx.lineWidth = 1.2*SS;
+    ctx.beginPath(); ctx.arc(cxk, y0 + cabH*ky, kr*kk*SS, 0, 7); ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(20,12,4,0.8)'; ctx.lineWidth = 1.6*kk*SS;
+  for (let i = 0; i < 5; i++){
+    const gy = y0 + cabH*0.62 + i*5.5*kk*SS;
+    ctx.beginPath(); ctx.moveTo(cxk - strip*0.32, gy); ctx.lineTo(cxk + strip*0.32, gy); ctx.stroke();
+  }
+}
+/* a hanging tube set — public-hall television on two rods from the ceiling.
+   era 0: the seventies-brown housing; era 1: the eighties grey plastic */
+function drawFilmHangTV(r){
+  const wz = (segAt(r.x).tz || wallZAt(r.x)) - 40;
+  const kk = k(wz), sx = wallSX(r.x, 0, kk);
+  rivet('film:hang:' + r.x, sx, k(exhibitZ(r.x)));
+  const scw = r.w * kk * SS, sch = scw * 3/4;
+  const pad = 11 * kk * SS;
+  const bw = scw + pad*2, bh = sch + pad*2;
+  if (sx < -bw || sx > W + bw) return;
+  const cy = py(r.cy, kk);
+  const y0 = cy - bh/2, x0 = sx - bw/2;
+  // the rods
+  ctx.strokeStyle = 'rgba(30,28,25,0.9)'; ctx.lineWidth = 3.4*kk*SS;
+  for (const sgn of [-0.3, 0.3]){
+    ctx.beginPath(); ctx.moveTo(sx + bw*sgn, 0); ctx.lineTo(sx + bw*sgn, y0 + 4*SS); ctx.stroke();
+  }
+  // the housing
+  const hg = ctx.createLinearGradient(0, y0, 0, y0 + bh);
+  if (r.era === 0){ hg.addColorStop(0, '#3a2e20'); hg.addColorStop(1, '#191007'); }
+  else            { hg.addColorStop(0, '#b8b4aa'); hg.addColorStop(1, '#767268'); }
+  ctx.fillStyle = hg;
+  ctx.beginPath(); ctx.roundRect(x0, y0, bw, bh, 6*kk*SS); ctx.fill();
+  ctx.strokeStyle = r.era === 0 ? 'rgba(220,190,140,0.25)' : 'rgba(40,38,34,0.6)';
+  ctx.lineWidth = 1*SS;
+  ctx.beginPath(); ctx.roundRect(x0 + 0.5*SS, y0 + 0.5*SS, bw - SS, bh - SS, 6*kk*SS); ctx.stroke();
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(x0 + pad, y0 + pad, scw, sch, 10*kk*SS); ctx.clip();
+  filmInto(x0 + pad, y0 + pad, scw, sch, 0.94);
+  ctx.restore();
+}
+/* the nineties set stands on the real (procedural) bench at real depth */
+function drawFilmCRT95(r){
+  const kk = k(r.lz || 70), sx = px(r.x, kk);
+  const scw = r.w * kk * SS, sch = scw * 3/4;
+  const pad = 10 * kk * SS, chin = 26 * kk * SS;
+  const bw = scw + pad*2, bh = sch + pad + chin;
+  if (sx < -bw || sx > W + bw) return;
+  const footY = py(CFG.benchY - 2, kk);
+  const x0 = sx - bw/2, y0 = footY - bh;
+  contactShadow(sx, footY, bw * 0.55, 0.28);
+  const pg = ctx.createLinearGradient(0, y0, 0, y0 + bh);
+  pg.addColorStop(0, '#8e8b82'); pg.addColorStop(0.6, '#6d6a62'); pg.addColorStop(1, '#4a4740');
+  ctx.fillStyle = pg;
+  ctx.beginPath(); ctx.roundRect(x0, y0, bw, bh, 7*kk*SS); ctx.fill();
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(x0 + pad, y0 + pad, scw, sch, 9*kk*SS); ctx.clip();
+  filmInto(x0 + pad, y0 + pad, scw, sch, 0.95);
+  ctx.restore();
+  // the chin: a speaker grille and one power dot
+  ctx.strokeStyle = 'rgba(30,28,24,0.55)'; ctx.lineWidth = 1.4*kk*SS;
+  for (let i = 0; i < 3; i++){
+    const gy = y0 + pad + sch + chin*0.3 + i*4.4*kk*SS;
+    ctx.beginPath(); ctx.moveTo(x0 + bw*0.08, gy); ctx.lineTo(x0 + bw*0.4, gy); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(140,220,120,0.9)';
+  ctx.beginPath(); ctx.arc(x0 + bw*0.9, y0 + pad + sch + chin*0.5, 2*kk*SS, 0, 7); ctx.fill();
+}
+/* 1999: the film is thrown onto the wall — a picture with no bezel at all,
+   a beam, and a small projector standing on the bench */
+function drawFilmProjector(r){
+  const wz = wallZAt(r.x) - 10;
+  const kk = k(wz), sx = wallSX(r.x, 0, kk);
+  rivet('film:proj:' + r.x, sx, k(exhibitZ(r.x)));
+  const pw = r.w * kk * SS, ph = pw * 3/4;
+  if (sx < -pw || sx > W + pw) return;
+  const cy = py(r.cy, kk);
+  const px0 = sx - pw/2, py0 = cy - ph/2;
+  // the machine on the bench, forward of the wall
+  const km = k(60), mx = px(r.x, km);
+  const mw = 70 * km * SS, mh = 26 * km * SS;
+  const mFoot = py(CFG.benchY - 2, km);
+  // the beam first, so the machine and the picture both sit over it
+  const lensX = mx, lensY = mFoot - mh*0.55;
+  const bg = ctx.createLinearGradient(lensX, lensY, sx, cy);
+  bg.addColorStop(0, 'rgba(215,225,240,0.16)'); bg.addColorStop(1, 'rgba(215,225,240,0.04)');
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.moveTo(lensX - 6*SS, lensY);
+  ctx.lineTo(px0, py0);
+  ctx.lineTo(px0, py0 + ph);
+  ctx.lineTo(lensX - 6*SS, lensY + 4*SS);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(lensX + 6*SS, lensY);
+  ctx.lineTo(px0 + pw, py0);
+  ctx.lineTo(px0 + pw, py0 + ph);
+  ctx.lineTo(lensX + 6*SS, lensY + 4*SS);
+  ctx.closePath(); ctx.fill();
+  // the picture: light on plaster — dimmer, soft edged, no frame
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(px0, py0, pw, ph, 3*SS); ctx.clip();
+  filmInto(px0, py0, pw, ph, 0.78);
+  const vg = ctx.createRadialGradient(sx, cy, Math.min(pw, ph)*0.35, sx, cy, Math.max(pw, ph)*0.72);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(20,22,28,0.5)');
+  ctx.fillStyle = vg; ctx.fillRect(px0, py0, pw, ph);
+  ctx.restore();
+  // the projector itself
+  contactShadow(mx, mFoot, mw * 0.6, 0.28);
+  const mg = ctx.createLinearGradient(0, mFoot - mh, 0, mFoot);
+  mg.addColorStop(0, '#4a4c50'); mg.addColorStop(1, '#1b1c1f');
+  ctx.fillStyle = mg;
+  ctx.beginPath(); ctx.roundRect(mx - mw/2, mFoot - mh, mw, mh, 4*SS); ctx.fill();
+  ctx.fillStyle = 'rgba(225,235,250,0.9)';
+  ctx.beginPath(); ctx.arc(mx, mFoot - mh*0.55, 4.5*km*SS, 0, 7); ctx.fill();
+}
+/* a wall-mounted plasma — no foot, thin frame, straight onto the wall */
+function drawFilmWallPlasma(r){
+  const wz = wallZAt(r.x) - 16;
+  const kk = k(wz), sx = wallSX(r.x, 0, kk);
+  rivet('film:plasma:' + r.x, sx, k(exhibitZ(r.x)));
+  const vw = r.w * kk * SS, vh = vw * 9/16;
+  const bez = 9 * kk * SS;
+  if (sx < -vw || sx > W + vw) return;
+  const cy = py(r.cy, kk);
+  const x0 = sx - vw/2 - bez, y0 = cy - vh/2 - bez;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 16*SS; ctx.shadowOffsetY = 6*SS;
+  ctx.fillStyle = '#0a0a0c';
+  ctx.beginPath(); ctx.roundRect(x0, y0, vw + bez*2, vh + bez*2, 5*kk*SS); ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(190,205,218,0.28)'; ctx.lineWidth = 1*SS;
+  ctx.beginPath(); ctx.roundRect(x0 + 0.5*SS, y0 + 0.5*SS, vw + bez*2 - SS, vh + bez*2 - SS, 5*kk*SS); ctx.stroke();
+  filmInto(sx - vw/2, cy - vh/2, vw, vh);
+}
+/* the screen wall of the white years: a full-height backdrop mounted on the
+   deep wall — the 2022 column, the 2023 crossing, the years and the counter
+   all stand IN FRONT of it, and the bench hides its lower edge. Drawn right
+   after the wall itself, before everything else. */
+function drawFilmVideoWall(){
+  const v = WELCOME_TV.v;
+  if (!v || v.muted || v.readyState < 2) return;
+  const r = FILM_RELAYS.find(q => q.kind === 'vwall');
+  if (!r || Math.abs(r.x - cam.x) > 3200) return;
+  // the rivet law: an object mounted ON the wall lives at the WALL's depth —
+  // on the text plane it slid against the lamp rail bolted right above it
+  const wz = wallZAt(r.x) - 6;
+  const kk = k(wz), sx = wallSX(r.x, 0, kk);
+  rivet('film:vwall:' + r.x, sx, k(exhibitZ(r.x)));
+  const vw = r.w * kk * SS;
+  if (sx < -vw || sx > W + vw) return;
+  const y0 = py(r.top, kk), y1 = py(r.top + r.h, kk);
+  const x0 = sx - vw/2, hgt = y1 - y0;
+  ctx.fillStyle = '#050607';
+  ctx.fillRect(x0 - 4*SS, y0 - 4*SS, vw + 8*SS, hgt + 8*SS);
+  filmInto(x0, y0, vw, hgt);
+  // the LED pitch: this is a wall of diodes, not a monitor — a coarse dark
+  // grid over the picture reads as giant pixels
+  const pitch = Math.max(4*SS, 8 * kk * SS);
+  ctx.strokeStyle = 'rgba(0,0,0,0.30)';
+  ctx.lineWidth = Math.max(1, pitch * 0.24);
+  ctx.beginPath();
+  for (let gx = x0 + pitch; gx < x0 + vw; gx += pitch){ ctx.moveTo(gx, y0); ctx.lineTo(gx, y1); }
+  for (let gy = y0 + pitch; gy < y1; gy += pitch){ ctx.moveTo(x0, gy); ctx.lineTo(x0 + vw, gy); }
+  ctx.stroke();
+  // and the panel seams of the rig it is built from
+  ctx.strokeStyle = 'rgba(5,6,8,0.85)'; ctx.lineWidth = 2.4*SS;
+  ctx.beginPath();
+  for (let i = 1; i < 4; i++){ ctx.moveTo(x0 + vw*i/4, y0); ctx.lineTo(x0 + vw*i/4, y1); }
+  for (let i = 1; i < 3; i++){ ctx.moveTo(x0, y0 + hgt*i/3); ctx.lineTo(x0 + vw, y0 + hgt*i/3); }
+  ctx.stroke();
+}
 function drawFilmRelays(){
   const v = WELCOME_TV.v;
-  // relays exist only for the engaged film: no sound, no extra furniture
+  // the era screens light up only for the engaged film: no sound, no furniture
   if (!v || v.muted || v.readyState < 2) return;
   for (const r of FILM_RELAYS){
-    if (Math.abs(r.x - cam.x) > 2600) continue;
-    drawFilmPanel(r.x, 430, false);
+    if (Math.abs(r.x - cam.x) > 2800) continue;
+    if (r.kind === 'crt70') drawFilmCRT70(r);
+    else if (r.kind === 'hang') drawFilmHangTV(r);
+    else if (r.kind === 'crt95') drawFilmCRT95(r);
+    else if (r.kind === 'proj') drawFilmProjector(r);
+    else if (r.kind === 'plasma') drawFilmWallPlasma(r);
+    else if (r.kind !== 'vwall') drawFilmPanel(r.x, r.w || 430, false);
   }
 }
 
@@ -5469,6 +5697,7 @@ async function loadPhotoSkin(){
     ph_tray34: 'tray_2.png',
     ph_crate: 'crate_0.png',
     ph_cabinet: 'cabinet_1907.png',
+    ph_casebox: 'case_box.png',       // the mailed case, open — the real photograph
     bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
     bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
   };
@@ -6395,14 +6624,17 @@ function makeBookCard(){
   return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
 }
 function drawBookPyramid(b, t){
-  const kk = k(155);
+  /* near the front plane: at 155 deep the pile slid against the counter's
+     own edge with every turn of the wheel — the slower a thing on the table
+     moves, the looser it reads bolted to it */
+  const kk = k(55);
   const sx = px(b.x + b.pyr.dx, kk);
   if (sx < -600 || sx > W + 600) return;
   const wWorld = b.pyr.w;
   const scale = (wWorld / BOOK_SPRITE.w) * kk * SS;
   const sy = py(CFG.benchY - 2, kk);
   pushHit(sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale, BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale,
-          {type:'photo', sp: BOOK_CARD, wx: b.x + b.pyr.dx, cy: CFG.benchY - 190, z: 155, w: 420,
+          {type:'photo', sp: BOOK_CARD, wx: b.x + b.pyr.dx, cy: CFG.benchY - 190, z: 55, w: 420,
            beat: BEATS.indexOf(b)});
   ctx.drawImage(BOOK_SPRITE.c, sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale,
                 BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale);
@@ -6539,8 +6771,8 @@ function makeBannerVert(title, sub, cta, imgName){
 function initBanners(){
   BANNERS = [
     {x: SHIFT(21505), w: 550, sp: makeBanner('BRUXZIR®', 'The best dentistry — made affordable', 'THE #1 CROWN')},
-    {x: SHIFT(22860), w: 550, sp: makeBanner('GLIDEWELL HT™', 'Premium implant, a fraction of the price', 'PREMIUM · AFFORDABLE')},
-    {x: SHIFT(23595), w: 240, cy: 590, sp: makeBannerVert('GLIDEWELL.IO', 'The lab moves\ninto your office', 'SINGLE-VISIT', 'fastmill')},
+    {x: SHIFT(23180), w: 550, sp: makeBanner('GLIDEWELL HT™', 'Premium implant, a fraction of the price', 'PREMIUM · AFFORDABLE')},
+    {x: SHIFT(23915), w: 240, cy: 590, sp: makeBannerVert('GLIDEWELL.IO', 'The lab moves\ninto your office', 'SINGLE-VISIT', 'fastmill')},
     {x: SHIFT(27700), w: 480, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
   ];
 }
@@ -7255,6 +7487,36 @@ function drawOpenBox(){
   const cx = W / 2, cy = H * 0.50, S2 = Math.min(W / 1120, H / 760) * (0.86 + 0.14 * e);
   const bw2 = 640 * S2, bh2 = 380 * S2, fl = 132 * S2;
   ctx.globalAlpha = a;
+  const box = PROP_SPRITES.ph_casebox;
+  if (box){
+    // the real thing, photographed — the drawn carton is retired. On closing,
+    // the trays still dissolve into digits: the case becoming data.
+    const ph = Math.min(H * 0.70, W * 0.60 * box.h / box.w);
+    const pw = ph * box.w / box.h;
+    const bx = cx - pw/2, by = cy - ph/2;
+    ctx.globalAlpha = a * Math.max(0, 1 - dz * 1.15);
+    ctx.drawImage(box.c, bx, by, pw, ph);
+    if (dz > 0){
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      drawBits(bx + pw*0.37, by + ph*0.55, pw*0.30, dz, 20230301);
+      drawBits(bx + pw*0.67, by + ph*0.57, pw*0.26, dz, 20230302);
+      ctx.restore();
+    }
+    ctx.globalAlpha = a * Math.max(0, 1 - dz * 1.6);
+    ctx.textAlign = 'center';
+    ctx.font = eraFont(26 * S2, '700', SEGMENTS[3].font);
+    ctx.fillStyle = 'rgba(232,238,244,0.92)';
+    ctx.fillText('ONE CASE, AS IT ARRIVED', cx, by - 44 * S2);
+    ctx.font = eraFont(20 * S2, '', SEGMENTS[3].font);
+    ctx.fillStyle = 'rgba(190,200,212,0.8)';
+    ctx.fillText('both jaws, still in the trays they were taken in', cx, by - 14 * S2);
+    ctx.font = eraFont(17 * S2, '', SEGMENTS[3].font);
+    ctx.fillStyle = 'rgba(150,162,175,0.7)';
+    ctx.fillText('click anywhere to close', cx, by + ph + 40 * S2);
+    ctx.restore();
+    return;
+  }
   // the flaps, folded back
   ctx.fillStyle = '#c8bda6';
   for (const [x0, y0, x1, y1, x2, y2, x3, y3] of [
@@ -8987,6 +9249,7 @@ function frame(){
 
   drawFloor();
   drawWall();
+  drawFilmVideoWall();   // the film backdrop sits directly on the deep wall
   drawShowroom(t);   // the room the last stretch is actually set in
   // recreations stand proud of the deeper era walls — they paint on top
   drawMapWall(t);
@@ -9039,6 +9302,10 @@ function frame(){
   drawStage(t);
   drawFigures();
   drawProps(true);
+  /* the factory is floor machinery standing BEHIND the counter line: drawn
+     here, in the mid-ground, so the 2018 bay's own table can occlude it as it
+     enters the frame — it used to ride in the table pass, over that table */
+  drawFactory(t);
 
   drawEra1Bench();    // era 1, up to the cabinet: its own photographed counter
   drawEra2Bench();    // era 2, 1980 to the 1989 recreation
@@ -9049,7 +9316,6 @@ function frame(){
   drawProjectors(t, 'machine');   // it stands on the bench, so it comes after it
 
   // table items
-  drawFactory(t);
   drawFinaleTable(t);
   drawProps(false);
   drawWelcomeTV();    // the film stands on the welcome bench
