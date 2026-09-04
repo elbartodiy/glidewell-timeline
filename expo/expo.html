@@ -3508,7 +3508,10 @@ function drawMapHero(t, h){
     // the same soft-shouldered shaft the rest of the hall uses — these two
     // were the last hard-edged quads standing
     const tMap = Math.max(0.05, Math.min(0.9, cyS / yEnd));
-    softBeam(fx, xEnd, 0, yEnd, 26*SS, 110*kk*SS, '255,246,220', 0.065 * h,
+    /* the beam opens wide enough that AT the map it is as broad as the map:
+       target half-width at the picture's level, back-solved to the foot */
+    const halfB = (26*SS + (w/2 - 26*SS) / tMap);
+    softBeam(fx, xEnd, 0, yEnd, 26*SS, halfB, '255,246,220', 0.065 * h,
              [[0, 0.2], [tMap, 1], [tMap + (1 - tMap) * 0.5, 0.4], [1, 0]]);
     ctx.fillStyle = 'rgba(20,20,22,0.9)';
     ctx.fillRect(fx - 9*SS, 0, 18*SS, 12*SS);
