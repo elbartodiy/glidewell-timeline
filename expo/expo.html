@@ -2015,7 +2015,7 @@ function initFilmRelays(){
   FILM_RELAYS.push(
     {kind: 'crt70',  x: lamp != null ? lamp : bayEnd + 400, w: 250},
     {kind: 'hang',   x: SHIFT(6060),  w: 320, cy: 320, era: 0},   // after 1976, before the 1979 column
-    {kind: 'hang',   x: (BEATS.find(b => b.y === '1988') || {x: SHIFT(10250) - 400}).x + 400, w: 320, cy: 282, era: 1},   // 1988 — right of the year, and it moves with it
+    {kind: 'hang',   x: (BEATS.find(b => b.y === '1988') || {x: SHIFT(10250) - 520}).x + 520, w: 320, cy: 282, era: 1},   // 1988 — right of the year, and it moves with it
     {kind: 'crt95',  x: SHIFT(12700), lz: 70, w: 290},            // the nineties set by 1995
     {kind: 'proj',   x: SHIFT(15330), w: 1500, cy: 398},          // 1999: thrown HUGE onto the wall
     {kind: 'lcd05',  x: SHIFT(18150), lz: 16, w: 235},            // the office LCD between 2005 and 2007
@@ -2132,7 +2132,7 @@ let WELCOME_PSHEET = null;
 function welcomeSheetGeom(){
   const T = WELCOME_TV;
   const kw = k(wallZAt(T.x) - 8), cxw = px(T.x, kw);
-  const shW = 780 * kw * SS, shT = py(232, kw), shB = py(852, kw);
+  const shW = 900 * kw * SS, shT = py(206, kw), shB = py(860, kw);
   return {kw, cxw, shW, shT, shB, xL: cxw - shW/2, xR: cxw + shW/2};
 }
 /* the cloth lives in the WALL layer: its hem drops behind the counter, and the
@@ -2188,8 +2188,8 @@ function drawWelcomeSheet(){
   }
   // the thrown picture: light on cloth, feathered — none before the show starts
   if (v && v.videoWidth && v.readyState >= 2 && !(v.muted && v.paused)){
-    const ivx = xL + 34*kw*SS, ivy = shT + 30*kw*SS;
-    const ivw = shW - 68*kw*SS, ivh = (shB - shT) - 60*kw*SS;
+    const ivx = xL + 20*kw*SS, ivy = shT + 18*kw*SS;
+    const ivw = shW - 40*kw*SS, ivh = (shB - shT) - 36*kw*SS;
     const pw2 = Math.max(2, ivw | 0), ph2 = Math.max(2, ivh | 0);
     if (!WELCOME_PSHEET) WELCOME_PSHEET = document.createElement('canvas');
     const pc = WELCOME_PSHEET;
@@ -2246,41 +2246,39 @@ function drawWelcomeTV(){
   const T = WELCOME_TV, v = T.v;
   if (Math.abs(T.x - cam.x) > 3600) return;
   const {kw, cxw, shW, shT, shB, xL, xR} = welcomeSheetGeom();
-  // the projector on the counter, and its throw
-  const km = k(8), mx = px(T.x, km);
-  const mFoot = py(CFG.benchY - 34, km);
-  const mw = 66 * km * SS, mh = 34 * km * SS;
-  const lensY = mFoot - mh * 0.62;
+  // the projector: a dark box hung under the ceiling, read as a silhouette —
+  // the beam falls from above onto the cloth, and the machine stays quiet
+  const km = k(60), mx = px(T.x, km);
+  const bw2 = 54 * km * SS, bh2 = 20 * km * SS;
+  const boxY = py(-6, km);                     // just under the ceiling line
+  const lensX = mx, lensY = boxY + bh2;
   if (v && !v.paused){
-    for (const [w2, a2] of [[1, 0.045], [0.72, 0.07], [0.42, 0.10]]){
-      const bg2 = ctx.createLinearGradient(mx, lensY, cxw, (shT + shB)/2);
+    for (const [w2, a2] of [[1, 0.022], [0.86, 0.03], [0.7, 0.038], [0.52, 0.048], [0.34, 0.06]]){
+      const bg2 = ctx.createLinearGradient(lensX, lensY, cxw, (shT + shB)/2);
       bg2.addColorStop(0, `rgba(255,238,205,${(a2 * 2.1).toFixed(3)})`);
       bg2.addColorStop(1, `rgba(255,238,205,${(a2 * 0.5).toFixed(3)})`);
       ctx.fillStyle = bg2;
       const t0 = shT + (shB - shT) * (1 - w2) / 2, t1 = shB - (shB - shT) * (1 - w2) / 2;
       const l0 = xL + shW * (1 - w2) / 2, l1 = xR - shW * (1 - w2) / 2;
       ctx.beginPath();
-      ctx.moveTo(mx - 5*SS*w2, lensY);
+      ctx.moveTo(lensX - 5*SS*w2, lensY);
       ctx.lineTo(l0, t0); ctx.lineTo(l0, t1);
-      ctx.lineTo(mx - 5*SS*w2, lensY + 3*SS);
+      ctx.lineTo(lensX - 5*SS*w2, lensY + 3*SS);
       ctx.closePath(); ctx.fill();
       ctx.beginPath();
-      ctx.moveTo(mx + 5*SS*w2, lensY);
+      ctx.moveTo(lensX + 5*SS*w2, lensY);
       ctx.lineTo(l1, t0); ctx.lineTo(l1, t1);
-      ctx.lineTo(mx + 5*SS*w2, lensY + 3*SS);
+      ctx.lineTo(lensX + 5*SS*w2, lensY + 3*SS);
       ctx.closePath(); ctx.fill();
     }
   }
-  contactShadow(mx, mFoot, mw * 0.62, 0.3);
-  const mg2 = ctx.createLinearGradient(0, mFoot - mh, 0, mFoot);
-  mg2.addColorStop(0, '#3d3128'); mg2.addColorStop(1, '#171310');
-  ctx.fillStyle = mg2;
-  ctx.beginPath(); ctx.roundRect(mx - mw/2, mFoot - mh, mw, mh, 3.5*SS); ctx.fill();
-  // the reel above the body, and the lamp eye
-  ctx.strokeStyle = '#241c14'; ctx.lineWidth = 3*km*SS;
-  ctx.beginPath(); ctx.arc(mx - mw*0.18, mFoot - mh - 12*km*SS, 12*km*SS, 0, 7); ctx.stroke();
-  ctx.fillStyle = 'rgba(255,236,200,0.95)';
-  ctx.beginPath(); ctx.arc(mx, lensY, 3.6*km*SS, 0, 7); ctx.fill();
+  // the mount, then the box — silhouette only, no detailing to pull the eye
+  ctx.strokeStyle = 'rgba(14,10,6,0.9)'; ctx.lineWidth = 3*km*SS;
+  ctx.beginPath(); ctx.moveTo(mx, 0); ctx.lineTo(mx, boxY); ctx.stroke();
+  ctx.fillStyle = '#100c08';
+  ctx.beginPath(); ctx.roundRect(mx - bw2/2, boxY, bw2, bh2, 3*SS); ctx.fill();
+  ctx.fillStyle = 'rgba(255,236,200,0.9)';
+  ctx.beginPath(); ctx.arc(lensX, lensY - 3*km*SS, 3.2*km*SS, 0, 7); ctx.fill();
   /* the inscription is LETTERING ON THE WALL, not a label on the set: it lives
      at the wall's own depth, so pulling back leaves it hanging on the plaster
      where it was painted */
@@ -2288,7 +2286,7 @@ function drawWelcomeTV(){
   ctx.textAlign = 'center';
   ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
   if (IMGS.logo2026 && state.introFade > 0.02){
-    const ms = 42 * kw * SS, my = py(64, kw);
+    const ms = 42 * kw * SS, my = py(46, kw);
     ctx.save();
     ctx.globalAlpha = state.introFade;
     ctx.beginPath(); ctx.roundRect(cxw - ms/2, my - ms/2, ms, ms, 5*kw*SS); ctx.clip();
@@ -2297,8 +2295,8 @@ function drawWelcomeTV(){
   }
   ctx.fillStyle = 'rgba(236,210,165,0.95)';
   ctx.font = eraFont(54 * kw * SS);
-  ctx.fillText('HOW GOOD DENTISTRY', cxw, py(146, kw));
-  ctx.fillText('STOPPED BEING A LUXURY', cxw, py(208, kw));
+  ctx.fillText('HOW GOOD DENTISTRY', cxw, py(122, kw));
+  ctx.fillText('STOPPED BEING A LUXURY', cxw, py(180, kw));
   ctx.restore();
   // the tour line on the cabinet face, hidden during the close-up hold
   const tourA = 0.65 * (1 - (state.introFade || 0));
