@@ -4811,7 +4811,7 @@ function drawRec4(t){
     const near = Math.max(0, 1 - Math.abs(mid - cam.x) / 900);
     const flare = near * near;
     const nw = 560 * kn * SS;
-    const nTop = py(30, kn), nBot = py(712, kn);
+    const nTop = py(30, kn), nBot = py(970, kn);
     const r = nw / 2;
     const capsule = () => {
       ctx.beginPath();
@@ -4835,13 +4835,14 @@ function drawRec4(t){
     if (flare > 0.02) drawGlow('165,222,255', nx, (nTop + nBot)/2, nw * 1.15, 0.22 * flare);
     capsule(); ctx.strokeStyle = 'rgba(200,238,255,0.95)'; ctx.lineWidth = 1.2*SS; ctx.stroke();
     // light pooling at the capsule's floor
-    const pgl = ctx.createRadialGradient(nx, nBot - r*0.4, 4, nx, nBot - r*0.4, nw*0.9);
+    const dockY = py(946, kn);                // the stand sits ON the counter's line
+    const pgl = ctx.createRadialGradient(nx, dockY - 8*SS, 4, nx, dockY - 8*SS, nw*0.9);
     pgl.addColorStop(0, 'rgba(140,215,255,0.20)'); pgl.addColorStop(1, 'rgba(140,215,255,0)');
     ctx.fillStyle = pgl;
-    ctx.fillRect(nx - nw, nBot - r - nw*0.5, nw*2, nw);
+    ctx.fillRect(nx - nw, dockY - 8*SS - nw*0.7, nw*2, nw*1.4);
     // the wand, to the reference: white body, two blue keys, a low dock
-    const wandH = (nBot - nTop) * 0.88, wandW = nw * 0.34;
-    const wTop = nBot - r*0.30 - wandH, wCx = nx;
+    const wTop = nTop + (nBot - nTop) * 0.09, wCx = nx;
+    const wandH = dockY - wTop, wandW = nw * 0.34;
     ctx.save();
     ctx.shadowColor = 'rgba(40,60,80,0.30)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetX = 3*SS;
     const wg2 = ctx.createLinearGradient(wCx - wandW/2, 0, wCx + wandW/2, 0);
@@ -4856,7 +4857,7 @@ function drawRec4(t){
     ctx.lineTo(wCx + wandW/2 - 1.5*SS, wTop + wandH*0.20);
     ctx.stroke();
     // two blue keys
-    for (const [f, rr] of [[0.46, 0.22], [0.60, 0.13]]){
+    for (const [f, rr] of [[0.56, 0.20], [0.68, 0.12]]){
       ctx.fillStyle = '#2f62c8';
       ctx.beginPath(); ctx.arc(wCx, wTop + wandH*f, wandW*rr, 0, 7); ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1*SS;
@@ -4867,9 +4868,9 @@ function drawRec4(t){
     const dg = ctx.createLinearGradient(0, nBot - r*0.42 - dH, 0, nBot - r*0.42 + dH);
     dg.addColorStop(0, '#dde1e5'); dg.addColorStop(1, '#aab0b6');
     ctx.fillStyle = dg;
-    ctx.beginPath(); ctx.roundRect(wCx - dW/2, nBot - r*0.30 - dH*0.5, dW, dH*1.5, 3*SS); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(wCx - dW/2, dockY - dH*0.5, dW, dH*1.5, 3*SS); ctx.fill();
     ctx.fillStyle = 'rgba(60,70,80,0.35)';
-    ctx.beginPath(); ctx.ellipse(wCx, nBot - r*0.30 - dH*0.4, wandW*0.62, 2.4*kn*SS, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(wCx, dockY - dH*0.4, wandW*0.62, 2.4*kn*SS, 0, 0, 7); ctx.fill();
   }
   // pilaster columns with the ice trim
   for (const wxc of [REC4_L, REC4_R]){
