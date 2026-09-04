@@ -57,7 +57,7 @@ const BEATS = [
    d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
    /* Jim at the bench hangs on the walk-up: a full photo-width of clear wall
       between the cabinet and the frame, then the family album on the counter */
-   wall:[{img:'jim1970', w:420, dx:-825, cy:290, hero:true}],
+   wall:[{img:'jim1970', w:420, dx:-825, cy:235, hero:true}],
    table:[],
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
@@ -5059,23 +5059,33 @@ function drawLamp(x, t, seed){
      whiter light, and NO flicker — the pioneer-era bulbs stay behind, at 1907. */
   const modern = x >= SHIFT(2200);
   const inten = modern ? 0.97 : lampFlicker(t, seed);
-  const bulbY = py(38, kk);
+  const bulbY = py(modern ? 12 : 38, kk);   // the new fixtures ride higher, clear of a flying year
   // cord
   ctx.strokeStyle = modern ? 'rgba(48,40,30,0.9)' : 'rgba(20,10,4,0.9)';
   ctx.lineWidth = 3*kk*SS;
   ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, bulbY); ctx.stroke();
   if (modern){
-    // a rounded cream dome
-    const dg2 = ctx.createLinearGradient(sx - 46*kk*SS, 0, sx + 46*kk*SS, 0);
-    dg2.addColorStop(0, '#cfc7b4'); dg2.addColorStop(0.45, '#efe9da'); dg2.addColorStop(1, '#b9b19e');
+    /* a long rectangular pendant, top corners rounded, bottom edge straight —
+       and honestly shaded: the light is UNDER it, so the crown sits in its own
+       shadow and only the lower rim burns */
+    const wHalf = 92*kk*SS, hSh = 26*kk*SS, rr = 9*kk*SS;
+    const topY = bulbY - hSh;
+    const dg2 = ctx.createLinearGradient(0, topY, 0, bulbY);
+    dg2.addColorStop(0, '#8a8371');
+    dg2.addColorStop(0.55, '#b6ad96');
+    dg2.addColorStop(1, '#efe6cf');
     ctx.fillStyle = dg2;
     ctx.beginPath();
-    ctx.moveTo(sx - 46*kk*SS, bulbY);
-    ctx.quadraticCurveTo(sx - 44*kk*SS, bulbY - 32*kk*SS, sx, bulbY - 34*kk*SS);
-    ctx.quadraticCurveTo(sx + 44*kk*SS, bulbY - 32*kk*SS, sx + 46*kk*SS, bulbY);
+    ctx.moveTo(sx - wHalf, bulbY);
+    ctx.lineTo(sx - wHalf, topY + rr);
+    ctx.quadraticCurveTo(sx - wHalf, topY, sx - wHalf + rr, topY);
+    ctx.lineTo(sx + wHalf - rr, topY);
+    ctx.quadraticCurveTo(sx + wHalf, topY, sx + wHalf, topY + rr);
+    ctx.lineTo(sx + wHalf, bulbY);
     ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = 'rgba(60,52,40,0.35)'; ctx.lineWidth = 1*SS;
-    ctx.beginPath(); ctx.moveTo(sx - 46*kk*SS, bulbY); ctx.lineTo(sx + 46*kk*SS, bulbY); ctx.stroke();
+    // the burning lower rim
+    ctx.fillStyle = 'rgba(255,246,224,0.6)';
+    ctx.fillRect(sx - wHalf + 2*SS, bulbY - 2.4*kk*SS, wHalf*2 - 4*SS, 2.4*kk*SS);
   } else {
     // shade silhouette
     ctx.fillStyle = '#1c1006';
@@ -5091,7 +5101,7 @@ function drawLamp(x, t, seed){
   drawGlow(modern ? '248,243,228' : '255,225,155', sx, bulbY + r*0.5, r*2.2, 0.85*inten);
   // light cone — soft-shouldered, and it dies out rather than being cut
   softBeam(sx, px(x, k(120)), bulbY, py(CFG.benchY + 80, k(120)),
-           40*kk*SS, 355*kk*SS, modern ? '250,246,232' : '255,205,125', 0.075*inten,
+           (modern ? 84 : 40)*kk*SS, 355*kk*SS, modern ? '250,246,232' : '255,205,125', 0.075*inten,
            [[0, 1], [0.58, 0.55], [0.85, 0.16], [1, 0]]);
   // pool on the table
   const kf = k(160);
