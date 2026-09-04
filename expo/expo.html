@@ -4943,8 +4943,11 @@ function drawRec4(t){
        reference: a white wand on its dock in a well of ice light. */
     const kn = k(996);
     const nx = px(mid, kn);
-    const nw = 400 * kn * SS;
-    const nTop = py(96, kn), nBot = py(700, kn);
+    /* the exhibit flares as you arrive, the way the years and lamps do */
+    const near = Math.max(0, 1 - Math.abs(mid - cam.x) / 900);
+    const flare = near * near;
+    const nw = 560 * kn * SS;
+    const nTop = py(30, kn), nBot = py(712, kn);
     const r = nw / 2;
     const capsule = () => {
       ctx.beginPath();
@@ -4961,9 +4964,11 @@ function drawRec4(t){
     capsule(); ctx.strokeStyle = 'rgba(90,100,112,0.22)'; ctx.lineWidth = 3*SS; ctx.stroke();
     // the ice rim: a wide soft halo, then the crisp line that draws the shape
     ctx.save();
-    ctx.shadowColor = 'rgba(130,210,255,0.9)'; ctx.shadowBlur = 18*SS;
-    capsule(); ctx.strokeStyle = 'rgba(150,220,255,0.85)'; ctx.lineWidth = 2.2*SS; ctx.stroke();
+    ctx.shadowColor = 'rgba(130,210,255,0.9)'; ctx.shadowBlur = (18 + 16*flare)*SS;
+    capsule(); ctx.strokeStyle = `rgba(150,220,255,${(0.85 + 0.15*flare).toFixed(3)})`;
+    ctx.lineWidth = (2.2 + 1.2*flare)*SS; ctx.stroke();
     ctx.restore();
+    if (flare > 0.02) drawGlow('165,222,255', nx, (nTop + nBot)/2, nw * 1.15, 0.22 * flare);
     capsule(); ctx.strokeStyle = 'rgba(200,238,255,0.95)'; ctx.lineWidth = 1.2*SS; ctx.stroke();
     // light pooling at the capsule's floor
     const pgl = ctx.createRadialGradient(nx, nBot - r*0.4, 4, nx, nBot - r*0.4, nw*0.9);
@@ -4971,8 +4976,8 @@ function drawRec4(t){
     ctx.fillStyle = pgl;
     ctx.fillRect(nx - nw, nBot - r - nw*0.5, nw*2, nw);
     // the wand, to the reference: white body, two blue keys, a low dock
-    const wandH = (nBot - nTop) * 0.80, wandW = nw * 0.30;
-    const wTop = nBot - r*0.42 - wandH, wCx = nx;
+    const wandH = (nBot - nTop) * 0.88, wandW = nw * 0.34;
+    const wTop = nBot - r*0.30 - wandH, wCx = nx;
     ctx.save();
     ctx.shadowColor = 'rgba(40,60,80,0.30)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetX = 3*SS;
     const wg2 = ctx.createLinearGradient(wCx - wandW/2, 0, wCx + wandW/2, 0);
@@ -4994,13 +4999,13 @@ function drawRec4(t){
       ctx.beginPath(); ctx.arc(wCx, wTop + wandH*f, wandW*rr, 0, 7); ctx.stroke();
     }
     // the dock it stands in
-    const dW = wandW*1.7, dH = wandH*0.08;
+    const dW = wandW*1.6, dH = wandH*0.07;
     const dg = ctx.createLinearGradient(0, nBot - r*0.42 - dH, 0, nBot - r*0.42 + dH);
     dg.addColorStop(0, '#dde1e5'); dg.addColorStop(1, '#aab0b6');
     ctx.fillStyle = dg;
-    ctx.beginPath(); ctx.roundRect(wCx - dW/2, nBot - r*0.42 - dH*0.5, dW, dH*1.5, 3*SS); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(wCx - dW/2, nBot - r*0.30 - dH*0.5, dW, dH*1.5, 3*SS); ctx.fill();
     ctx.fillStyle = 'rgba(60,70,80,0.35)';
-    ctx.beginPath(); ctx.ellipse(wCx, nBot - r*0.42 - dH*0.4, wandW*0.62, 2.4*kn*SS, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(wCx, nBot - r*0.30 - dH*0.4, wandW*0.62, 2.4*kn*SS, 0, 0, 7); ctx.fill();
   }
   // pilaster columns with the ice trim
   for (const wxc of [REC4_L, REC4_R]){
