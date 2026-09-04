@@ -5003,7 +5003,13 @@ function drawRec4(t){
     const near = Math.max(0, 1 - Math.abs(mid - cam.x) / 900);
     const flare = near * near;
     const nw = 560 * kn * SS;
-    const nTop = py(30, kn), nBot = py(970, kn);
+    /* THE CASE RUNS TO THE FLOOR. It used to stop as a pill floating in the
+       middle of a tall lit bay, with the dock hanging out below its bottom arc
+       and a hand's width of empty panel under it. It cannot grow upward — the
+       year stands there — so it grows down: the niche carries on past the
+       instrument's own floor and is cut off by the counter in front of it, the
+       way the niche in the reference photograph is. */
+    const nTop = py(30, kn), nBot = py(1220, kn);
     const r = nw / 2;
     const capsule = () => {
       ctx.beginPath();
@@ -5027,7 +5033,7 @@ function drawRec4(t){
     if (flare > 0.02) drawGlow('165,222,255', nx, (nTop + nBot)/2, nw * 1.15, 0.22 * flare);
     capsule(); ctx.strokeStyle = 'rgba(200,238,255,0.95)'; ctx.lineWidth = 1.2*SS; ctx.stroke();
     // light pooling at the capsule's floor
-    const dockY = py(1032, kn);               // the stand meets the floor of the capsule
+    const dockY = py(1080, kn);               // the instrument stands on the hall's own floor
     const pgl = ctx.createRadialGradient(nx, dockY - 8*SS, 4, nx, dockY - 8*SS, nw*0.9);
     pgl.addColorStop(0, 'rgba(140,215,255,0.20)'); pgl.addColorStop(1, 'rgba(140,215,255,0)');
     ctx.fillStyle = pgl;
@@ -5042,10 +5048,8 @@ function drawRec4(t){
     /* It stands on the dock, so it grows upward — and the case is the limit:
        asked for half again as big, it takes as much of that as fits between
        the dock and the top of its own vitrine. */
-    const GROW = 1.5;
     const wCx = nx;
-    const wandH = Math.min(dockY - (nTop + 6*SS),
-                           (dockY - (nTop + (nBot - nTop) * 0.30)) * GROW);
+    const wandH = dockY - (nTop + 6*SS);      // top of the case to the floor of it
     const wTop = dockY - wandH;
     const wandW = sp ? wandH * sp.w / sp.h : nw * 0.34;
     if (sp){
@@ -9359,7 +9363,16 @@ function update(dt){
     } else if (A.phase === 'fadeout'){
       cam.vel *= Math.pow(0.01, dt);
       A.fade = Math.min(1, A.fade + dt*1.2);
-      if (A.fade >= 1){ cam.x = INTRO_X; cam.vel = 0; cam.z = 430; cam.zTarget = 430; state.introHold = true; A.phase = 'fadein'; A.beatIdx = -1; }
+      /* THE TOUR ONLY EVER RAN ONCE. `atFinale` is raised when the cruise
+         reaches the packshot, so that the dwell there ends the story in a fade
+         instead of cruising off the end of the hall — but it was never lowered
+         again. Coming back to the title with it still raised, the very next
+         dwell read "you are at the finale" and faded out again: the hall sat
+         on its opening close-up and blinked to black every seven seconds, for
+         good. It is a new tour, so it is not at the finale. */
+      if (A.fade >= 1){ cam.x = INTRO_X; cam.vel = 0; cam.z = 430; cam.zTarget = 430;
+                        state.introHold = true; A.phase = 'fadein'; A.beatIdx = -1;
+                        A.atFinale = false; A.stopX = null; }
     } else if (A.phase === 'fadein'){
       A.fade = Math.max(0, A.fade - dt*1.2);
       if (A.fade <= 0){ A.phase = 'dwell'; A.dwell = -2.2; }
