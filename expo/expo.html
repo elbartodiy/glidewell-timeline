@@ -55,9 +55,9 @@ const BEATS = [
   {x:2450, y:'1970', t:'FOUNDED', tier:1, fly:true, yLift:96,   // clear of the bench lamp
    th:'One man, one bench — betting that affordable was a business model.',
    d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
-   /* Jim at the bench hangs on the walk-up: between the threshold cabinet and
-      the family album, not past the founding bay */
-   wall:[{img:'jim1970', w:420, dx:-1360, cy:400, hero:true}],
+   /* Jim at the bench hangs on the walk-up: a full photo-width of clear wall
+      between the cabinet and the frame, then the family album on the counter */
+   wall:[{img:'jim1970', w:420, dx:-825, cy:400, hero:true}],
    table:[],
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
@@ -1930,12 +1930,10 @@ function initWelcomeTV(){
   const v = document.createElement('video');
   v.src = WELCOME_TV.src; v.muted = true; v.loop = true; v.playsInline = true;
   v.preload = 'auto';
-  // the film rolls the moment the hall opens — no menu, no titles, just the
-  // picture. Sound arrives with the first tap (the browser demands a gesture).
-  v.play().catch(() => {
-    const go = () => { v.play().catch(()=>{}); window.removeEventListener('pointerdown', go); };
-    window.addEventListener('pointerdown', go);
-  });
+  /* no autoplay at all: a muted start was eating the first line of the film.
+     The set waits on a poster frame; the first tap starts picture and sound
+     together, from the top. */
+  v.addEventListener('loadeddata', () => { if (v.muted){ try { v.currentTime = 80; } catch(e){} } });
   WELCOME_TV.v = v;
 }
 /* One film, many screens. The film is engaged once its sound is on; from then
@@ -1947,9 +1945,8 @@ function updateFilm(){
   const T = WELCOME_TV, v = T.v; if (!v) return;
   // only another VOICE stops the film — reading pages does not
   const busy = state.clip || (state.person && state.person.playing != null);
-  const engaged = !v.muted;                 // sound on = the visitor asked for it
-  const nearWelcome = Math.abs(T.x - cam.x) < 3600;
-  const wanted = !T.userPaused && !busy && (engaged || nearWelcome);
+  const engaged = !v.muted;                 // the tap started it — sound and all
+  const wanted = engaged && !T.userPaused && !busy;
   if (wanted && v.paused) v.play().catch(()=>{});
   else if (!wanted && !v.paused) v.pause();
 }
@@ -2074,8 +2071,8 @@ function drawFilmPanel(x, wWorld, welcome){
     ctx.font = eraFont(15 * kk * SS);
     ctx.fillText('THE FILM', sx, vy + sh/2 + 5*kk*SS);
   }
-  if (v && !v.muted && v.readyState >= 2 && T.userPaused){
-    // a thin outlined play mark, not a badge
+  if (v && v.readyState >= 2 && (v.muted || T.userPaused)){
+    // a thin outlined play mark, not a badge — on the poster and on a pause
     ctx.strokeStyle = 'rgba(252,250,244,0.9)'; ctx.lineWidth = 2*SS;
     ctx.beginPath();
     ctx.moveTo(sx - 9*kk*SS, vy + sh/2 - 15*kk*SS);
@@ -8698,7 +8695,11 @@ function update(dt){
       } else if (aimed && aimed.type === 'welcomevid'){
         const v = WELCOME_TV.v;
         if (v){
-          if (v.muted){ v.muted = false; WELCOME_TV.userPaused = false; v.play().catch(()=>{}); }
+          if (v.muted){
+            // the first tap starts the film from the top, sound and all
+            try { v.currentTime = 0; } catch(e){}
+            v.muted = false; WELCOME_TV.userPaused = false; v.play().catch(()=>{});
+          }
           else if (WELCOME_TV.userPaused){ WELCOME_TV.userPaused = false; v.play().catch(()=>{}); }
           else { WELCOME_TV.userPaused = true; v.pause(); }
         }
