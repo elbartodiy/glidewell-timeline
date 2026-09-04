@@ -1164,9 +1164,20 @@ const BEAM_PASSES = (() => {
   return P;
 })();
 function softBeam(xa, xb, yA, yB, halfA, halfB, rgb, peak, stops){
-  for (const [w, a] of BEAM_PASSES){
+  const n = BEAM_PASSES.length;
+  for (let i = 0; i < n; i++){
+    const [w, a] = BEAM_PASSES[i];
+    /* THE FOOT OF THE BEAM IS A LINE, NOT A POINT. With one shared fade curve
+       the faint outer passes drop below visibility long before the bright
+       core does, and the envelope sharpens to a spike. So the fainter a pass,
+       the SLOWER its curve (m^p, p<1): every pass now reaches zero at the same
+       height, and the beam ends wide, together. `comp` gives back the
+       brightness the gentler curve would otherwise add. */
+    const p = 0.45 + 0.55 * (i / (n - 1));
+    const comp = Math.pow(0.62, 1 - p);
     const g = ctx.createLinearGradient(0, yA, 0, yB);
-    for (const [t, m] of stops) g.addColorStop(t, `rgba(${rgb},${(peak * a * m).toFixed(4)})`);
+    for (const [t, m] of stops)
+      g.addColorStop(t, `rgba(${rgb},${(peak * a * Math.pow(m, p) * comp).toFixed(4)})`);
     ctx.fillStyle = g;
     ctx.beginPath();
     // the head keeps its width; the foot is where the spread happens
