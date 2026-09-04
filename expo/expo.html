@@ -235,7 +235,7 @@ const BEATS = [
   {x:26340, y:'2022', t:'FASTSCAN.IO',
    th:'The front door to the all-digital workflow.',
    d:'fastscan.io, built with Medit, folds an intraoral scanner into the ecosystem — no impressions, no remakes, data straight into design and mill.',
-   wall:[{img:'jimnow', w:310, dx:-760, cy:262, rot:0.5, cap:'Jim Glidewell', style:'white', pz:995}],
+   wall:[],
    table:[], pyr:{dx:520, w:460},
    /* no pedestal: the scanner lives in the lit capsule on the panel */},
 
@@ -1019,6 +1019,8 @@ function initTables(){
      counter before the portal; from the portal's left edge to where the book
      pile lies there is no counter at all — the white years' table STARTS at
      the books, and the first thing lying on it is the book. */
+  /* the little 2005 island goes — that scrap of counter had no reason */
+  BENCH_BREAKS.push({x: SHIFT(18150), half: 330});
   {
     const b22 = BEATS.find(b => b.y === '2022');
     const bookL = (b22 && b22.pyr ? b22.x + b22.pyr.dx : REC4_R + 640) - 270;
@@ -1226,6 +1228,11 @@ const grains = [];
 
 let BR = 0;   // camera breath — render-only micro-drift so a resting frame never freezes
 function k(z){ return CFG.F / (CFG.F + z - cam.z); }
+/* THE BOLT. Objects standing ON a counter take the counter's near plane, not
+   their own depth: at depth they slide against the front edge with every turn
+   of the wheel, and the hall read as furniture on casters. Floor machinery
+   keeps its real depth — the floor is deep by nature. */
+function bz(z){ return Math.min(z == null ? 60 : z, 18); }
 function px(x, kk){ return W/2 + (x - cam.x - BR) * kk * SS; }
 function py(y, kk){ return (CFG.horizon + (y - CFG.horizon) * kk) * SS; }
 
@@ -1525,7 +1532,7 @@ function drawBench(){
       ctx.font = `${Math.round(26*SS)}px ${seg.font}`;
       ctx.fillStyle = seg.railInk;
       ctx.fillRect(bx - 1, yTopF + 2*SS, 2, 14*SS);
-      if ((!b.sub || b.under) && !b.plaque) ctx.fillText(b.y, bx, yTopF + 42*SS);
+      if ((!b.sub || b.under) && !b.plaque) ctx.fillText(b.y, bx, yTopF + 25*SS);
       if (b.under){
         // a fact parked under the tabletop — quiet, until we find it a home
         ctx.font = `${Math.round(21*SS)}px ${seg.font}`;
@@ -1564,7 +1571,7 @@ function drawSprite(sp, x, yCenter, z, wWorld, rotDeg, alpha, hit, sxRivet){
 }
 
 function drawStandingPrint(sp, x, lz, wWorld, hit, lift){
-  const kk = k(lz);
+  const kk = k(bz(lz));
   const sx = px(x, kk);
   if (sx < -500 || sx > W + 500) return;
   const scale = (wWorld / sp.inner.w) * kk * SS;
@@ -1582,8 +1589,8 @@ function drawStandingPrint(sp, x, lz, wWorld, hit, lift){
   ctx.drawImage(sp.c, sx - sw/2, syFoot - sh + 6*kk*SS, sw, sh);
 }
 function drawLyingPrint(sp, x, lz, wWorld, rotDeg, hit){
-  // print lying on the tabletop at depth lz — foreshortened
-  const kk = k(lz);
+  // print lying on the tabletop — bolted to the counter's near plane
+  const kk = k(bz(lz));
   const sx = px(x, kk);
   if (sx < -600 || sx > W + 600) return;
   const sy = py(CFG.benchY, kk);
@@ -2049,7 +2056,7 @@ function initFilmRelays(){
     {kind: 'hang',   x: (BEATS.find(b => b.y === '1988') || {x: SHIFT(10250) - 520}).x + 520, w: 320, cy: 282, era: 1},   // 1988 — right of the year, and it moves with it
     {kind: 'crt95',  x: SHIFT(12700), lz: 70, w: 290},            // the nineties set by 1995
     {kind: 'proj',   x: SHIFT(15330), w: 1260, cy: 318},          // 1999: high on the wall, air under it
-    {kind: 'lcd05',  x: SHIFT(18150), lz: 16, w: 235},            // the office LCD between 2005 and 2007
+    {kind: 'lcd05',  x: SHIFT(17330), lz: 16, w: 235},            // the office LCD on the counter before 2005
     /* 16:9, as a plasma is — larger, and measured on the deep wall (k≈0.39) so
        its top clears the taglines (screen-wise below them) and its bottom stops
        short of the counters' line with a little air */
@@ -3564,7 +3571,7 @@ function drawRec23(t){
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(60,70,84,0.95)';
-  ctx.fillText('march 2023 \u00b7 the digital impressions outnumber the physical', cx, py(112, kk));
+  ctx.fillText('march 2023 \u00b7 the digital impressions outnumber the physical', cx, py(66, kk));
   ctx.restore();
 
   const ph = crossPhase(mid);
@@ -3642,7 +3649,7 @@ function boxPile(){
   return BOX_PILE;
 }
 function drawBoxPile(b, t){
-  const g = b.rig, kk = k(g.lz ?? 150);
+  const g = b.rig, kk = k(bz(g.lz ?? 150));
   const sx = px(b.x + (g.dx || 0), kk);
   const S1 = (g.w || 300) * kk * SS / 240;
   const foot = py(CFG.benchY - 2, kk);
@@ -3745,7 +3752,7 @@ function drawRec18(t){
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(60,70,84,0.95)';
-  ctx.fillText('no hand drew it \u00b7 no tool cut it \u00b7 it was proposed', cx, py(112, kk));
+  ctx.fillText('no hand drew it \u00b7 no tool cut it \u00b7 it was proposed', cx, py(66, kk));
   ctx.restore();
 
   for (const wxc of [REC18_L, REC18_R]){
@@ -3768,7 +3775,7 @@ function drawRec18(t){
    that was christened later, and in 2018 this was simply the software the lab
    designed in. What is drawn here is the layout, not the branding. */
 function drawDesignStation(b, t){
-  const g = b.rig, kk = k(g.lz ?? 120);
+  const g = b.rig, kk = k(bz(g.lz ?? 120));
   const sx = px(b.x + (g.dx || 0), kk);
   const W2 = (g.w || 540) * kk * SS, H2 = W2 * 0.58;
   const foot = py(CFG.benchY - 2, kk);
@@ -4805,11 +4812,11 @@ function drawRec2(t){
   ctx.font = eraFont(58 * kk * SS, '700', SEGMENTS[3].font);
   try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(32,42,54,0.96)';
-  ctx.fillText('THE DIGITAL REVOLUTION', cx, py(46, kk));
+  ctx.fillText('THE DIGITAL REVOLUTION', cx, py(8, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(60,70,84,0.95)';
-  ctx.fillText('the impression becomes a scan \u00b7 the crown becomes a file', cx, py(112, kk));
+  ctx.fillText('the impression becomes a scan \u00b7 the crown becomes a file', cx, py(66, kk));
   // era markers on the panel shoulders: inside the panel, clear of the columns
   ctx.font = eraFont(24 * kk * SS, '700', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(110,120,132,0.7)';
@@ -4936,7 +4943,15 @@ function drawRec4(t){
     ctx.fillStyle = 'rgba(60,70,80,0.35)';
     ctx.beginPath(); ctx.ellipse(wCx, dockY - dH*0.4, wandW*0.62, 2.4*kn*SS, 0, 0, 7); ctx.fill();
   }
-  // pilaster columns with the ice trim
+  drawRec4Columns(yBase);
+}
+/* the pilasters are drawn twice: once with the panel, and once again AFTER the
+   floor sheen — a column stands ON the floor, so its body must sit over the
+   reflection, not under a milky wash of it */
+function drawRec4Columns(yBase){
+  if (yBase == null) yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const mid = (REC4_L + REC4_R) / 2;
+  if (Math.abs(cam.x - mid) > 2800) return;
   for (const wxc of [REC4_L, REC4_R]){
     const kc = k(992);
     const sxc = px(wxc, kc);
@@ -5336,7 +5351,7 @@ function drawScreenScan(g, r, t, prog){
 }
 function drawMonitor(p, x, z, wWorld, t){
   const mon = MONS[p.kind]; if (!mon) return;
-  const kk = k(z);
+  const kk = k(bz(z));
   const sx = px(x, kk);
   if (sx < -500 || sx > W + 500) return;
   const scale = (wWorld / mon.w) * kk * SS;
@@ -6196,7 +6211,7 @@ function drawCrownBlob(x, y, r, a){
 /* A counter machine is a data row, not an edit inside the frame loop. */
 const RIGS = {};
 function drawDiscMill(b, t){
-  const g = b.rig, kk = k(g.lz ?? 150);
+  const g = b.rig, kk = k(bz(g.lz ?? 150));
   const sx = px(b.x + (g.dx || 0), kk);
   const S1 = (g.w || 240) * kk * SS / 240;
   const foot = py(CFG.benchY - 2, kk);
@@ -6414,7 +6429,7 @@ function drawProps(midPass){
     else if ((!!p.mid) !== !!midPass || p.late) continue;
     if (Math.abs(p.x - cam.x) > 2200) continue;
     const sp = PROP_SPRITES[p.kind];
-    const kk = k(p.z);
+    const kk = k(p.mid ? p.z : bz(p.z));
     const sx = px(p.x, kk);
     if (sx < -260 || sx > W + 260) continue;
     const scale = (p.w / sp.w) * kk * SS;
@@ -6519,7 +6534,7 @@ function drawAlbum(b, i, t, dt){
     (lockV !== false && ((state.restBeat === i && state.restTime > 0.5) || state.focusBeat === i));
   albumAnim[i] += ((open ? 1 : 0) - albumAnim[i]) * Math.min(1, dt*4);
   const a = albumAnim[i];
-  const kk = k(b.album.lz);
+  const kk = k(bz(b.album.lz));
   const sx = px(b.x + b.album.dx, kk);
   if (sx < -600 || sx > W + 600) return;
   const sy = py(CFG.benchY, kk);
@@ -9739,6 +9754,16 @@ function frame(){
     if (b.plasma) drawPlasmaPanel(b, t);
   }
   drawBanners(t);
+  /* grounded years are LETTERING ON THE WALL: they paint here, before the
+     furniture, so a standing photograph passes over them the way any object
+     passes over what is written on the plaster. Flying and focused years keep
+     the late pass — they travel toward the camera and must ride above. */
+  for (let i = 0; i < BEATS.length; i++){
+    const b = BEATS[i];
+    if (Math.abs(b.x - cam.x) > 3400) continue;
+    const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
+    if (!b.fly && focusAmt <= 0.01) drawBeatText(b, focusAmt);
+  }
   drawProjectors(t, 'light');   // light lands on the WALL; the bench will crop it
 
   // mid-ground: people and machines stand in front of the wall...
@@ -9754,6 +9779,7 @@ function frame(){
   drawEra2Bench();    // era 2, 1980 to the 1989 recreation
   drawPlateBench(t);  // and the founding bay, cut from its centrepiece
   drawFloorSheen();   // before the counter, so the counter covers it and the
+  drawRec4Columns();  // the portal's columns stand ON that floor — over its sheen
   drawBench();        // reflection can never be laid over the furniture
   drawShowroomLight(t);   // light coming OUT of the furniture, so after it
   drawProjectors(t, 'machine');   // it stands on the bench, so it comes after it
@@ -9813,7 +9839,7 @@ function frame(){
     const b = BEATS[i];
     if (Math.abs(b.x - cam.x) > 3400) continue;
     const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
-    drawBeatText(b, focusAmt);
+    if (b.fly || focusAmt > 0.01) drawBeatText(b, focusAmt);
   }
 
   // hero pass: as you pass a landmark stand, the world dims and a spotlight takes it
