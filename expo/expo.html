@@ -2723,7 +2723,8 @@ function drawFinaleTable(t){
     const w = gd.w * kk * SS, h = w * sp.h / sp.w;
     const yF = py(CFG.benchY - 2, kk);
     drawGlow('190,225,255', sx, yF - h*0.45, w*1.5, 0.10);
-    ctx.drawImage(spriteMip(sp, w, h), sx - w/2, yF - h, w, h);
+    const dw = Math.round(w), dh = Math.round(h);
+    ctx.drawImage(spriteMip(sp, dw, dh), Math.round(sx - dw/2), Math.round(yF - dh), dw, dh);
     pushHit(sx - w/2, yF - h, w, h,
             {type:'photo', sp: Object.assign({inner:{w:sp.w, h:sp.h}}, sp),
              wx: FIN_X + gd.dx, cy: CFG.benchY - 120, z: gd.z, w: gd.w * 2.2,
@@ -5050,7 +5051,14 @@ function drawRec4(t){
     if (sp){
       ctx.save();
       ctx.shadowColor = 'rgba(40,60,80,0.34)'; ctx.shadowBlur = 9*SS; ctx.shadowOffsetX = 3*SS;
-      ctx.drawImage(spriteMip(sp, wandW, wandH), wCx - wandW/2, wTop, wandW, wandH);
+      /* AND IT LANDS ON WHOLE PIXELS. The prescaled copy removes the boiling
+         that comes from re-reducing the photograph every frame; this removes
+         what is left — the bilinear smear of a rigid object sitting at x.37 in
+         one frame and x.51 in the next. It steps a pixel at a time across the
+         frame instead of dissolving between them, and the case it stands in is
+         a soft glow that cannot show the half-pixel of slip. */
+      const dw = Math.round(wandW), dh = Math.round(wandH);
+      ctx.drawImage(spriteMip(sp, dw, dh), Math.round(wCx - dw/2), Math.round(wTop), dw, dh);
       ctx.restore();
     }
     /* the dock came with the photograph — it is the instrument's own cradle,
@@ -6714,14 +6722,16 @@ function drawAlbum(b, i, t, dt){
    — and the result is kept. Sizes are bucketed to 4 px so that a zoom reuses
    one instead of building a new one every frame, and the last few pixels of
    fit are done by the draw itself, where a 1:1 blit is a clean shift rather
-   than a decimation. */
+   than a decimation. Sizes are whole pixels, so an object that holds its size
+   — which is most of them, since only a zoom changes it — reuses one copy for
+   as long as it is on screen. */
 const MIPS = new Map();
 let MIP_SEQ = 0;
 function spriteMip(sp, w, h){
   const src = sp.c;
   const srcW = src.naturalWidth || src.width, srcH = src.naturalHeight || src.height;
   if (!srcW || !srcH) return src;
-  const tw = Math.max(1, Math.round(w / 4) * 4), th = Math.max(1, Math.round(h / 4) * 4);
+  const tw = Math.max(1, Math.round(w)), th = Math.max(1, Math.round(h));
   if (tw >= srcW * 0.8) return src;              // barely a reduction — nothing to gain
   if (!sp._mid) sp._mid = 'm' + (++MIP_SEQ);
   const id = sp._mid + ':' + tw + 'x' + th;
@@ -6738,7 +6748,10 @@ function spriteMip(sp, w, h){
   const c = document.createElement('canvas'); c.width = tw; c.height = th;
   const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
   g.drawImage(cur, 0, 0, tw, th);
-  if (MIPS.size > 48) MIPS.clear();              // a resize should not hoard them
+  /* a zoom walks the size a pixel at a time, so the cache has to be allowed to
+     hold a run of them — and when it is full it drops its oldest rather than
+     emptying itself, which would throw away the ten the hall is actually using */
+  while (MIPS.size > 200) MIPS.delete(MIPS.keys().next().value);
   MIPS.set(id, c);
   return c;
 }
@@ -6980,7 +6993,12 @@ function drawPedestal(b, t, hero){
   /* a wide, low machine needs more of the cap than a puck does — `wide` lets
      an exhibit ask for it, and the dome is 172 units across, so it still fits */
   const ow = 120 * (ped.wide || 1) * (ped.vitrine ? 1.25 : big) * kk * SS, oh = ow * obj.h / obj.w;
-  ctx.drawImage(spriteMip(obj, ow, oh), sx - ow/2, yTop - oh - 4*kk*SS, ow, oh);
+  // whole pixels, like the vitrine's wand: a rigid object that lands between
+  // two pixels re-smears itself every frame and its contour crawls
+  {
+    const dw = Math.round(ow), dh = Math.round(oh);
+    ctx.drawImage(spriteMip(obj, dw, dh), Math.round(sx - dw/2), Math.round(yTop - dh - 4*kk*SS), dw, dh);
+  }
   // glass dome: one clean outline, the sheen lives on the glass itself
   // (a vitrine pedestal has the capsule for a case — no dome, no spotlight halo)
   if (!ped.vitrine){
