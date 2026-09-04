@@ -2123,7 +2123,7 @@ function drawWelcomeTV(){
 }
 /* the film, cover-cropped into any rectangle (a 4:3 rect trims the ears),
    plus the tap target and the paused mark — shared by every era screen */
-function filmInto(vx, vy, vw, vh, dim){
+function filmInto(vx, vy, vw, vh, dim, tone){
   const v = WELCOME_TV.v;
   ctx.save();
   ctx.beginPath(); ctx.rect(vx, vy, vw, vh); ctx.clip();
@@ -2131,8 +2131,11 @@ function filmInto(vx, vy, vw, vh, dim){
   if (v && v.videoWidth && v.readyState >= 2){
     const sc = Math.max(vw / v.videoWidth, vh / v.videoHeight);
     if (dim) ctx.globalAlpha = dim;
+    // the tube grades the tape: each era's set shows the film in its own colour
+    if (tone){ try { ctx.filter = tone; } catch(e){} }
     ctx.drawImage(v, vx + vw/2 - v.videoWidth*sc/2, vy + vh/2 - v.videoHeight*sc/2,
                   v.videoWidth*sc, v.videoHeight*sc);
+    if (tone) ctx.filter = 'none';
     ctx.globalAlpha = 1;
   }
   if (WELCOME_TV.userPaused){
@@ -2184,7 +2187,11 @@ function drawFilmCRT70(r){
   ctx.beginPath(); ctx.roundRect(x0 + pad - 3*SS, y0 + pad - 3*SS, scw + 6*SS, sch + 6*SS, 14*kk*SS); ctx.fill();
   ctx.save();
   ctx.beginPath(); ctx.roundRect(x0 + pad, y0 + pad, scw, sch, 12*kk*SS); ctx.clip();
-  filmInto(x0 + pad, y0 + pad, scw, sch, 0.92);
+  filmInto(x0 + pad, y0 + pad, scw, sch, 0.92,
+           'grayscale(1) contrast(1.06) brightness(1.05)');
+  // the faint cool cast of a monochrome tube
+  ctx.fillStyle = 'rgba(170,195,215,0.05)';
+  ctx.fillRect(x0 + pad, y0 + pad, scw, sch);
   // glass sheen across the tube's corner
   const gl = ctx.createLinearGradient(x0 + pad, y0 + pad, x0 + pad + scw*0.5, y0 + pad + sch);
   gl.addColorStop(0, 'rgba(255,255,255,0.10)'); gl.addColorStop(0.35, 'rgba(255,255,255,0)');
@@ -2232,7 +2239,9 @@ function drawFilmHangTV(r){
   ctx.beginPath(); ctx.roundRect(x0 + 0.5*SS, y0 + 0.5*SS, bw - SS, bh - SS, 6*kk*SS); ctx.stroke();
   ctx.save();
   ctx.beginPath(); ctx.roundRect(x0 + pad, y0 + pad, scw, sch, 10*kk*SS); ctx.clip();
-  filmInto(x0 + pad, y0 + pad, scw, sch, 0.94);
+  filmInto(x0 + pad, y0 + pad, scw, sch, 0.94,
+           r.era === 0 ? 'sepia(0.22) saturate(1.45) contrast(0.92) brightness(1.03)'
+                       : 'saturate(0.82) contrast(0.9) brightness(1.06)');
   ctx.restore();
 }
 /* the nineties set stands on the real (procedural) bench at real depth */
@@ -2251,7 +2260,7 @@ function drawFilmCRT95(r){
   ctx.beginPath(); ctx.roundRect(x0, y0, bw, bh, 7*kk*SS); ctx.fill();
   ctx.save();
   ctx.beginPath(); ctx.roundRect(x0 + pad, y0 + pad, scw, sch, 9*kk*SS); ctx.clip();
-  filmInto(x0 + pad, y0 + pad, scw, sch, 0.95);
+  filmInto(x0 + pad, y0 + pad, scw, sch, 0.95, 'saturate(0.94) contrast(0.97)');
   ctx.restore();
   // the chin: a speaker grille and one power dot
   ctx.strokeStyle = 'rgba(30,28,24,0.55)'; ctx.lineWidth = 1.4*kk*SS;
