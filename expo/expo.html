@@ -1985,19 +1985,23 @@ const WELCOME_TV = {x: INTRO_X, lz: 70, w: 490, src: 'media/movie_pre.mp4'};
 function initWelcomeTV(){
   const v = document.createElement('video');
   v.src = WELCOME_TV.src; v.loop = true; v.playsInline = true;
-  v.preload = 'auto';
-  /* the film starts WITH the page: sound and all where the browser allows it
-     (the kiosk will), silently where it does not — and then the first tap
-     restarts it from the top with the sound on, so no line is ever lost. */
-  v.muted = false;
-  v.play().catch(() => {
-    v.muted = true;
-    v.play().catch(() => {
-      const go = () => { v.play().catch(()=>{}); window.removeEventListener('pointerdown', go); };
-      window.addEventListener('pointerdown', go);
-    });
-  });
+  v.preload = 'auto'; v.muted = true;   // muted = not started yet
+  /* NOTHING plays at first: the set holds the film's opening frame — the
+     instruments — as its own poster. The show starts with the first gesture:
+     a tap on the screen, or the first turn of the wheel. Either one is play. */
   WELCOME_TV.v = v;
+}
+function startFilm(){
+  const T = WELCOME_TV, v = T.v;
+  if (!v || !v.muted) return;
+  try { v.currentTime = 0; } catch(e){}
+  v.muted = false; T.userPaused = false;
+  v.play().catch(() => {
+    // the gesture was not one the browser honours: roll silent, the first
+    // tap will bring the sound (and the top of the film) with it
+    v.muted = true;
+    v.play().catch(()=>{});
+  });
 }
 /* One film, many screens. The film is engaged once its sound is on; from then
    on it keeps playing while the visitor travels, and relay panels scattered
@@ -2010,8 +2014,7 @@ function updateFilm(){
   const busy = state.clip || (state.person && state.person.playing != null) ||
         (state.study && state.study.railV && !state.study.railV.paused);
   const engaged = !v.muted;                 // sound on = a real showing
-  const nearWelcome = Math.abs(T.x - cam.x) < 3600;
-  const wanted = (engaged || nearWelcome) && !T.userPaused && !busy;
+  const wanted = engaged && !T.userPaused && !busy;
   /* the film never snaps: it bows out over a second — volume slides down,
      THEN it pauses, holding its place — and slides back up when it returns */
   const dt = state.dt || 0.016;
@@ -9106,6 +9109,7 @@ function update(dt){
       } else if (S.scroll < -200 || inp.action === true) S.closing = true;
       cam.vel = 0;
     } else {
+      if (Math.abs(inp.impulse) > 24) startFilm();   // the wheel starts the show
       cam.vel += inp.impulse;
     }
     if (inp.action && state.openBox && !state.openBox.closing){
@@ -9144,9 +9148,7 @@ function update(dt){
         const v = WELCOME_TV.v;
         if (v){
           if (v.muted){
-            // the first tap starts the film from the top, sound and all
-            try { v.currentTime = 0; } catch(e){}
-            v.muted = false; WELCOME_TV.userPaused = false; v.play().catch(()=>{});
+            startFilm();   // the first tap starts the film from the top, sound and all
           }
           else if (WELCOME_TV.userPaused){ WELCOME_TV.userPaused = false; v.play().catch(()=>{}); }
           else { WELCOME_TV.userPaused = true; v.pause(); }
