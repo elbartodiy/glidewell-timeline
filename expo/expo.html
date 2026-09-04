@@ -2022,7 +2022,7 @@ function initFilmRelays(){
     /* 16:9, as a plasma is — larger, and measured on the deep wall (k≈0.39) so
        its top clears the taglines (screen-wise below them) and its bottom stops
        short of the counters' line with a little air */
-    {kind: 'plasma', x: SHIFT(22240), w: 780, cy: 800},           // between 2009 and the 2010s
+    {kind: 'plasma', x: SHIFT(22240), w: 880, cy: 738},           // between 2009 and the 2010s
     {kind: 'vwall',  x: 33060, w: 900, top: -30, h: 850}          // the backdrop wall behind 2022 → 2023, up to the soffit
   );
   if (DBG) console.log('film screens:', FILM_RELAYS.map(r => r.kind + '@' + (r.x | 0)).join(', '));
@@ -2131,165 +2131,22 @@ function drawFilmPanel(x, wWorld, welcome){
   pushHit(vx, vy, sw, sh, {type: 'welcomevid'});
   return {sx, kk, footY, top};
 }
-let WELCOME_PSHEET = null;
-function welcomeSheetGeom(){
-  const T = WELCOME_TV;
-  const kw = k(wallZAt(T.x) - 8), cxw = px(T.x, kw);
-  const shW = 900 * kw * SS, shT = py(206, kw), shB = py(860, kw);
-  return {kw, cxw, shW, shT, shB, xL: cxw - shW/2, xR: cxw + shW/2};
-}
-/* the cloth lives in the WALL layer: its hem drops behind the counter, and the
-   counter — drawn later — hides it, the way a real sheet would hang */
-function drawWelcomeSheet(){
-  const T = WELCOME_TV, v = T.v;
-  if (Math.abs(T.x - cam.x) > 3600) return;
-  const {kw, cxw, shW, shT, shB, xL, xR} = welcomeSheetGeom();
-  if (xR < 0 || xL > W) return;
-  const sag = 14 * kw * SS, tuck = 10 * kw * SS;
-  ctx.save();
-  // its shadow on the boards
-  ctx.fillStyle = 'rgba(10,6,3,0.30)';
-  ctx.beginPath();
-  ctx.moveTo(xL + 7*SS, shT + 9*SS);
-  ctx.lineTo(xR + 8*SS, shT + 11*SS);
-  ctx.lineTo(xR - tuck + 9*SS, shB + 9*SS);
-  ctx.lineTo(xL + tuck + 6*SS, shB + 7*SS);
-  ctx.closePath(); ctx.fill();
-  // the cloth
-  const cg = ctx.createLinearGradient(0, shT, 0, shB);
-  cg.addColorStop(0, '#f4efe4'); cg.addColorStop(0.55, '#ece6d8'); cg.addColorStop(1, '#dcd5c3');
-  ctx.fillStyle = cg;
-  const cloth = new Path2D();
-  cloth.moveTo(xL, shT);
-  cloth.quadraticCurveTo(cxw - shW*0.24, shT + sag, cxw, shT + sag*0.75);
-  cloth.quadraticCurveTo(cxw + shW*0.26, shT + sag*1.1, xR, shT);
-  cloth.lineTo(xR - tuck, shB - 8*kw*SS);
-  cloth.quadraticCurveTo(cxw + shW*0.24, shB + 6*kw*SS, cxw, shB - 3*kw*SS);
-  cloth.quadraticCurveTo(cxw - shW*0.26, shB + 7*kw*SS, xL + tuck, shB - 6*kw*SS);
-  cloth.closePath();
-  ctx.fill(cloth);
-  ctx.save();
-  ctx.clip(cloth);
-  // hanging folds, and two faint pressing creases across
-  for (const f of [0.14, 0.30, 0.47, 0.63, 0.82]){
-    const fx = xL + shW * f;
-    const fg = ctx.createLinearGradient(fx - 16*kw*SS, 0, fx + 16*kw*SS, 0);
-    fg.addColorStop(0, 'rgba(120,105,80,0)');
-    fg.addColorStop(0.5, 'rgba(120,105,80,0.075)');
-    fg.addColorStop(1, 'rgba(120,105,80,0)');
-    ctx.fillStyle = fg;
-    ctx.fillRect(fx - 16*kw*SS, shT, 32*kw*SS, shB - shT);
-  }
-  for (const fy of [0.36, 0.68]){
-    const yy = shT + (shB - shT) * fy;
-    const hg2 = ctx.createLinearGradient(0, yy - 6*kw*SS, 0, yy + 6*kw*SS);
-    hg2.addColorStop(0, 'rgba(120,105,80,0)');
-    hg2.addColorStop(0.5, 'rgba(120,105,80,0.05)');
-    hg2.addColorStop(1, 'rgba(120,105,80,0)');
-    ctx.fillStyle = hg2;
-    ctx.fillRect(xL, yy - 6*kw*SS, shW, 12*kw*SS);
-  }
-  // the thrown picture: light on cloth, feathered — none before the show starts
-  if (v && v.videoWidth && v.readyState >= 2 && !(v.muted && v.paused)){
-    const ivx = xL + 20*kw*SS, ivy = shT + 18*kw*SS;
-    const ivw = shW - 40*kw*SS, ivh = (shB - shT) - 36*kw*SS;
-    const pw2 = Math.max(2, ivw | 0), ph2 = Math.max(2, ivh | 0);
-    if (!WELCOME_PSHEET) WELCOME_PSHEET = document.createElement('canvas');
-    const pc = WELCOME_PSHEET;
-    if (pc.width !== pw2 || pc.height !== ph2){ pc.width = pw2; pc.height = ph2; }
-    const g2 = pc.getContext('2d');
-    g2.clearRect(0, 0, pw2, ph2);
-    const sc3 = Math.max(pw2 / v.videoWidth, ph2 / v.videoHeight);
-    // old-school picture, in COLOUR: warm faded stock, not a newsreel
-    try { g2.filter = 'sepia(0.18) saturate(1.18) contrast(1.05) brightness(1.03)'; } catch(e){}
-    g2.globalAlpha = 0.82;
-    g2.drawImage(v, pw2/2 - v.videoWidth*sc3/2, ph2/2 - v.videoHeight*sc3/2,
-                 v.videoWidth*sc3, v.videoHeight*sc3);
-    g2.filter = 'none'; g2.globalAlpha = 1;
-    g2.globalCompositeOperation = 'destination-out';
-    const fth = Math.max(6, pw2 * 0.05);
-    for (const [gx0, gy0, gx1, gy1, wgt, hgt] of [
-      [0, 0, fth, 0, fth, ph2], [pw2, 0, pw2 - fth, 0, fth, ph2],
-      [0, 0, 0, fth, pw2, fth], [0, ph2, 0, ph2 - fth, pw2, fth]]){
-      const eg = g2.createLinearGradient(gx0, gy0, gx1, gy1);
-      eg.addColorStop(0, 'rgba(0,0,0,1)'); eg.addColorStop(1, 'rgba(0,0,0,0)');
-      g2.fillStyle = eg;
-      g2.fillRect(Math.min(gx0, gx1), Math.min(gy0, gy1), wgt, hgt);
-    }
-    g2.globalCompositeOperation = 'source-over';
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.drawImage(pc, ivx, ivy);
-    ctx.globalCompositeOperation = 'screen';
-    ctx.globalAlpha = 0.55;
-    ctx.drawImage(pc, ivx, ivy);
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = 'source-over';
-  }
-  // the pins along the top edge
-  ctx.fillStyle = '#3a2c1c';
-  for (const nf of [0.012, 0.34, 0.66, 0.988]){
-    const nx = xL + shW * nf;
-    const ny = shT + (nf > 0.2 && nf < 0.8 ? sag * 0.8 : 3*kw*SS);
-    ctx.beginPath(); ctx.arc(nx, ny, 2.6*kw*SS, 0, 7); ctx.fill();
-  }
-  // the mark to start it, and the mark of a held reel
-  if (v && v.readyState >= 2 && (v.muted || T.userPaused)){
-    ctx.strokeStyle = 'rgba(90,70,48,0.85)'; ctx.lineWidth = 2*SS;
-    const mcx = cxw, mcy = shT + (shB - shT) * 0.4, mr = 16*kw*SS;
-    ctx.beginPath();
-    ctx.moveTo(mcx - mr*0.55, mcy - mr);
-    ctx.lineTo(mcx + mr, mcy);
-    ctx.lineTo(mcx - mr*0.55, mcy + mr);
-    ctx.closePath(); ctx.stroke();
-  }
-  ctx.restore();
-  pushHit(xL, shT, shW, shB - shT, {type: 'welcomevid'});
-}
 function drawWelcomeTV(){
-  const T = WELCOME_TV, v = T.v;
+  const T = WELCOME_TV;
   if (Math.abs(T.x - cam.x) > 3600) return;
-  const {kw, cxw, shW, shT, shB, xL, xR} = welcomeSheetGeom();
-  // the projector: a dark box hung under the ceiling, read as a silhouette —
-  // the beam falls from above onto the cloth, and the machine stays quiet
-  const km = k(60), mx = px(T.x, km);
-  const bw2 = 54 * km * SS, bh2 = 20 * km * SS;
-  const boxY = py(-6, km);                     // just under the ceiling line
-  const lensX = mx, lensY = boxY + bh2;
-  if (v && !v.paused){
-    for (const [w2, a2] of [[1, 0.022], [0.86, 0.03], [0.7, 0.038], [0.52, 0.048], [0.34, 0.06]]){
-      const bg2 = ctx.createLinearGradient(lensX, lensY, cxw, (shT + shB)/2);
-      bg2.addColorStop(0, `rgba(255,238,205,${(a2 * 2.1).toFixed(3)})`);
-      bg2.addColorStop(1, `rgba(255,238,205,${(a2 * 0.5).toFixed(3)})`);
-      ctx.fillStyle = bg2;
-      const t0 = shT + (shB - shT) * (1 - w2) / 2, t1 = shB - (shB - shT) * (1 - w2) / 2;
-      const l0 = xL + shW * (1 - w2) / 2, l1 = xR - shW * (1 - w2) / 2;
-      ctx.beginPath();
-      ctx.moveTo(lensX - 5*SS*w2, lensY);
-      ctx.lineTo(l0, t0); ctx.lineTo(l0, t1);
-      ctx.lineTo(lensX - 5*SS*w2, lensY + 3*SS);
-      ctx.closePath(); ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(lensX + 5*SS*w2, lensY);
-      ctx.lineTo(l1, t0); ctx.lineTo(l1, t1);
-      ctx.lineTo(lensX + 5*SS*w2, lensY + 3*SS);
-      ctx.closePath(); ctx.fill();
-    }
-  }
-  // the mount, then the box — silhouette only, no detailing to pull the eye
-  ctx.strokeStyle = 'rgba(14,10,6,0.9)'; ctx.lineWidth = 3*km*SS;
-  ctx.beginPath(); ctx.moveTo(mx, 0); ctx.lineTo(mx, boxY); ctx.stroke();
-  ctx.fillStyle = '#100c08';
-  ctx.beginPath(); ctx.roundRect(mx - bw2/2, boxY, bw2, bh2, 3*SS); ctx.fill();
-  ctx.fillStyle = 'rgba(255,236,200,0.9)';
-  ctx.beginPath(); ctx.arc(lensX, lensY - 3*km*SS, 3.2*km*SS, 0, 7); ctx.fill();
+  const g = drawFilmPanel(T.x, T.w, true);
+  if (!g) return;
+  const {sx, kk, footY} = g;
   /* the inscription is LETTERING ON THE WALL, not a label on the set: it lives
      at the wall's own depth, so pulling back leaves it hanging on the plaster
-     where it was painted */
+     where it was painted — and a size down, so the film stays the hero */
+  const kw = k(wallZAt(T.x) - 8), cxw = px(T.x, kw);
   ctx.save();
   ctx.textAlign = 'center';
   ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
   if (IMGS.logo2026 && state.introFade > 0.02){
-    const ms = 42 * kw * SS, my = py(46, kw);
+    // the mark at the apex belongs to the close-up and dissolves with the zoom-out
+    const ms = 42 * kw * SS, my = py(64, kw);
     ctx.save();
     ctx.globalAlpha = state.introFade;
     ctx.beginPath(); ctx.roundRect(cxw - ms/2, my - ms/2, ms, ms, 5*kw*SS); ctx.clip();
@@ -2298,17 +2155,19 @@ function drawWelcomeTV(){
   }
   ctx.fillStyle = 'rgba(236,210,165,0.95)';
   ctx.font = eraFont(54 * kw * SS);
-  ctx.fillText('HOW GOOD DENTISTRY', cxw, py(122, kw));
-  ctx.fillText('STOPPED BEING A LUXURY', cxw, py(180, kw));
+  ctx.fillText('HOW GOOD DENTISTRY', cxw, py(146, kw));
+  ctx.fillText('STOPPED BEING A LUXURY', cxw, py(208, kw));
   ctx.restore();
-  // the tour line on the cabinet face, hidden during the close-up hold
+  // the tour line sits under the panel, on the cabinet face — clear of the
+  // marble edge, which used to cut straight through it. Hidden during the
+  // close-up hold, where it would land on the wheel hint.
   const tourA = 0.65 * (1 - (state.introFade || 0));
   if (tourA > 0.03){
     ctx.textAlign = 'center';
-    ctx.font = eraFont(16 * km * SS);
-    try { ctx.letterSpacing = `${3.5*km*SS}px`; } catch(e){}
+    ctx.font = eraFont(16 * kk * SS);
+    try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
     ctx.fillStyle = `rgba(200,172,132,${tourA.toFixed(3)})`;
-    ctx.fillText('GLIDEWELL HISTORY TOUR →', mx, py(CFG.benchY - 30, km) + 64*km*SS);
+    ctx.fillText('GLIDEWELL HISTORY TOUR →', sx, footY + 64*kk*SS);
     try { ctx.letterSpacing = '0px'; } catch(e){}
   }
 }
@@ -2596,8 +2455,11 @@ function drawFilmLCD05(r){
   ctx.beginPath(); ctx.arc(sx + bw/2 - 14*kk*SS, y0 + bh - bez*0.45, 2*kk*SS, 0, 7); ctx.fill();
 }
 /* a wall-mounted plasma — no foot, thin frame, straight onto the wall */
-function drawFilmWallPlasma(r){
+function drawFilmWallPlasma(){
   const v = WELCOME_TV.v;
+  if (!v || v.muted || v.readyState < 2) return;
+  const r = FILM_RELAYS.find(q => q.kind === 'plasma');
+  if (!r || Math.abs(r.x - cam.x) > 2800) return;
   const wz = wallZAt(r.x) - 16;
   const kk = k(wz), sx = wallSX(r.x, 0, kk);
   rivet('film:plasma:' + r.x, sx, k(exhibitZ(r.x)));
@@ -2682,8 +2544,7 @@ function drawFilmRelays(){
     else if (r.kind === 'crt95') drawFilmCRT95(r);
     else if (r.kind === 'lcd05') drawFilmLCD05(r);
     else if (r.kind === 'proj') drawFilmProjector(r);
-    else if (r.kind === 'plasma') drawFilmWallPlasma(r);
-    else if (r.kind !== 'vwall') drawFilmPanel(r.x, r.w || 430, false);
+    else if (r.kind !== 'vwall' && r.kind !== 'plasma') drawFilmPanel(r.x, r.w || 430, false);
   }
 }
 
@@ -9738,7 +9599,7 @@ function frame(){
   drawWall();
   drawFilmVideoWall();   // the film backdrop sits directly on the deep wall
   drawFilmProjectorWall();   // and the 1999 throw washes over the plaster
-  drawWelcomeSheet();    // the opening sheet hangs on the boards, hem behind the counter
+  drawFilmWallPlasma();      // the 2009 plasma hangs on the wall, behind the counters
   drawShowroom(t);   // the room the last stretch is actually set in
   // recreations stand proud of the deeper era walls — they paint on top
   drawMapWall(t);
