@@ -236,7 +236,7 @@ const BEATS = [
    d:'fastscan.io, built with Medit, folds an intraoral scanner into the ecosystem — no impressions, no remakes, data straight into design and mill.',
    wall:[{img:'jimnow', w:250, dx:-520, cy:360, rot:0.5, cap:'Jim Glidewell', style:'white', pz:995}],
    table:[], pyr:{dx:520, w:460},
-   ped:{obj:'scanner', dx:0, gapHalf:400}},
+   ped:{obj:'scanner', dx:0, gapHalf:400, vitrine:true}},
 
   {x:26900, y:'2023', t:'', tier:1, yLift:110,
    th:'',
@@ -1976,7 +1976,7 @@ function initFilmRelays(){
     {kind: 'hang',   x: SHIFT(6060),  w: 320, cy: 320, era: 0},   // after 1976, before the 1979 column
     {kind: 'hang',   x: SHIFT(10250), w: 320, cy: 282, era: 1},   // 1988 — higher and right of the year
     {kind: 'crt95',  x: SHIFT(12700), lz: 70, w: 290},            // the nineties set by 1995
-    {kind: 'proj',   x: SHIFT(15330), w: 460, cy: 430},           // 1999: thrown onto the wall
+    {kind: 'proj',   x: SHIFT(15330), w: 1500, cy: 470},          // 1999: thrown HUGE onto the wall
     {kind: 'plasma', x: SHIFT(22240), w: 450, cy: 370},           // between 2009 and the 2010s
     {kind: 'vwall',  x: 33060, w: 900, top: 140, h: 680}          // the backdrop wall behind 2022 → 2023
   );
@@ -2273,46 +2273,62 @@ function drawFilmCRT95(r){
   ctx.fillStyle = 'rgba(140,220,120,0.9)';
   ctx.beginPath(); ctx.arc(x0 + bw*0.9, y0 + pad + sch + chin*0.5, 2*kk*SS, 0, 7); ctx.fill();
 }
-/* 1999: the film is thrown onto the wall — a picture with no bezel at all,
-   a beam, and a small projector standing on the bench */
-function drawFilmProjector(r){
+/* 1999: the film is thrown onto the wall — LIGHT, not a screen: huge,
+   translucent, washed over the plaster. The picture lives in the wall layer,
+   so the counter hides its lower reach; the beam and the little machine ride
+   the later pass, over the furniture. */
+function filmProjGeom(r){
   const wz = wallZAt(r.x) - 10;
   const kk = k(wz), sx = wallSX(r.x, 0, kk);
-  rivet('film:proj:' + r.x, sx, k(exhibitZ(r.x)));
-  const pw = r.w * kk * SS, ph = pw * 3/4;
-  if (sx < -pw || sx > W + pw) return;
+  const pw = r.w * kk * SS, ph = pw * 9/16;
   const cy = py(r.cy, kk);
-  const px0 = sx - pw/2, py0 = cy - ph/2;
+  return {kk, sx, pw, ph, px0: sx - pw/2, py0: cy - ph/2, cy};
+}
+function drawFilmProjectorWall(){
+  const v = WELCOME_TV.v;
+  if (!v || v.muted || v.readyState < 2) return;
+  const r = FILM_RELAYS.find(q => q.kind === 'proj');
+  if (!r || Math.abs(r.x - cam.x) > 3200) return;
+  const g = filmProjGeom(r);
+  if (g.sx < -g.pw && g.sx > W + g.pw) return;
+  rivet('film:proj:' + r.x, g.sx, k(exhibitZ(r.x)));
+  // projected light ADDS to the wall: screen composite, well under full strength
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  filmInto(g.px0, g.py0, g.pw, g.ph, 0.65);
+  ctx.restore();
+  // the soft falloff a real throw has at its corners
+  const vg = ctx.createRadialGradient(g.sx, g.cy, Math.min(g.pw, g.ph)*0.34,
+                                      g.sx, g.cy, Math.max(g.pw, g.ph)*0.70);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(16,18,22,0.35)');
+  ctx.save();
+  ctx.beginPath(); ctx.rect(g.px0, g.py0, g.pw, g.ph); ctx.clip();
+  ctx.fillStyle = vg; ctx.fillRect(g.px0, g.py0, g.pw, g.ph);
+  ctx.restore();
+}
+function drawFilmProjector(r){
+  const g = filmProjGeom(r);
+  if (g.sx < -g.pw && g.sx > W + g.pw) return;
   // the machine on the bench, forward of the wall
   const km = k(60), mx = px(r.x, km);
   const mw = 70 * km * SS, mh = 26 * km * SS;
   const mFoot = py(CFG.benchY - 2, km);
-  // the beam first, so the machine and the picture both sit over it
   const lensX = mx, lensY = mFoot - mh*0.55;
-  const bg = ctx.createLinearGradient(lensX, lensY, sx, cy);
-  bg.addColorStop(0, 'rgba(215,225,240,0.16)'); bg.addColorStop(1, 'rgba(215,225,240,0.04)');
+  const bg = ctx.createLinearGradient(lensX, lensY, g.sx, g.cy);
+  bg.addColorStop(0, 'rgba(215,225,240,0.15)'); bg.addColorStop(1, 'rgba(215,225,240,0.03)');
   ctx.fillStyle = bg;
   ctx.beginPath();
   ctx.moveTo(lensX - 6*SS, lensY);
-  ctx.lineTo(px0, py0);
-  ctx.lineTo(px0, py0 + ph);
+  ctx.lineTo(g.px0, g.py0);
+  ctx.lineTo(g.px0, g.py0 + g.ph);
   ctx.lineTo(lensX - 6*SS, lensY + 4*SS);
   ctx.closePath(); ctx.fill();
   ctx.beginPath();
   ctx.moveTo(lensX + 6*SS, lensY);
-  ctx.lineTo(px0 + pw, py0);
-  ctx.lineTo(px0 + pw, py0 + ph);
+  ctx.lineTo(g.px0 + g.pw, g.py0);
+  ctx.lineTo(g.px0 + g.pw, g.py0 + g.ph);
   ctx.lineTo(lensX + 6*SS, lensY + 4*SS);
   ctx.closePath(); ctx.fill();
-  // the picture: light on plaster — dimmer, soft edged, no frame
-  ctx.save();
-  ctx.beginPath(); ctx.roundRect(px0, py0, pw, ph, 3*SS); ctx.clip();
-  filmInto(px0, py0, pw, ph, 0.78);
-  const vg = ctx.createRadialGradient(sx, cy, Math.min(pw, ph)*0.35, sx, cy, Math.max(pw, ph)*0.72);
-  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(20,22,28,0.5)');
-  ctx.fillStyle = vg; ctx.fillRect(px0, py0, pw, ph);
-  ctx.restore();
-  // the projector itself
   contactShadow(mx, mFoot, mw * 0.6, 0.28);
   const mg = ctx.createLinearGradient(0, mFoot - mh, 0, mFoot);
   mg.addColorStop(0, '#4a4c50'); mg.addColorStop(1, '#1b1c1f');
@@ -4609,6 +4625,43 @@ function drawRec4(t){
     ctx.fillStyle = sg;
     ctx.fillRect(swx - 40*SS, 0, 80*SS, yBase);
   }
+  /* the display capsule, after the reference: a stadium-shaped niche sunk
+     into the panel and rimmed with ice light — the scanner's own vitrine.
+     The pedestal and the instrument stand in front of it, on their own depth. */
+  {
+    /* mid-depth, not on the deep panel: at the panel's distance the capsule
+       hid behind the pedestal. It stands in the counter break, a freestanding
+       light wall right behind the instrument. */
+    const kn = k(240);
+    const nx = px(mid, kn);
+    const nw = 360 * kn * SS;
+    const nTop = py(90, kn), nBot = py(700, kn);
+    const r = nw / 2;
+    const capsule = () => {
+      ctx.beginPath();
+      ctx.moveTo(nx - r, nTop + r);
+      ctx.arc(nx, nTop + r, r, Math.PI, 0);
+      ctx.lineTo(nx + r, nBot - r);
+      ctx.arc(nx, nBot - r, r, 0, Math.PI);
+      ctx.closePath();
+    };
+    // the recess: cooler and a step deeper than the panel around it
+    const ig = ctx.createLinearGradient(0, nTop, 0, nBot);
+    ig.addColorStop(0, '#e5eaf0'); ig.addColorStop(0.55, '#f2f5f8'); ig.addColorStop(1, '#d0d7de');
+    capsule(); ctx.fillStyle = ig; ctx.fill();
+    capsule(); ctx.strokeStyle = 'rgba(90,100,112,0.22)'; ctx.lineWidth = 3*SS; ctx.stroke();
+    // the ice rim: a wide soft halo, then the crisp line that draws the shape
+    ctx.save();
+    ctx.shadowColor = 'rgba(130,210,255,0.9)'; ctx.shadowBlur = 18*SS;
+    capsule(); ctx.strokeStyle = 'rgba(150,220,255,0.85)'; ctx.lineWidth = 2.2*SS; ctx.stroke();
+    ctx.restore();
+    capsule(); ctx.strokeStyle = 'rgba(200,238,255,0.95)'; ctx.lineWidth = 1.2*SS; ctx.stroke();
+    // light pooling at the capsule's floor
+    const pgl = ctx.createRadialGradient(nx, nBot - r*0.4, 4, nx, nBot - r*0.4, nw*0.9);
+    pgl.addColorStop(0, 'rgba(140,215,255,0.20)'); pgl.addColorStop(1, 'rgba(140,215,255,0)');
+    ctx.fillStyle = pgl;
+    ctx.fillRect(nx - nw, nBot - r - nw*0.5, nw*2, nw);
+  }
   // pilaster columns with the ice trim
   for (const wxc of [REC4_L, REC4_R]){
     const kc = k(992);
@@ -6390,16 +6443,16 @@ function drawPedestal(b, t, hero){
   const z = -90, kk = k(z);
   const x = b.x + (ped.dx ?? -430);
   const sx = px(x, kk);
-  const colW = 165 * (ped.big ? 1.35 : 1) * kk * SS;
+  const colW = 165 * (ped.big ? 1.35 : (ped.vitrine ? 0.8 : 1)) * kk * SS;
   if (sx < -colW*2 || sx > W + colW*2) return;
   const era = segIdx(b.x);
   const big = ped.big ? 1.3 : 1;
-  const yTop = py(ped.big ? 540 : (ped.low ? 668 : 535), kk);
+  const yTop = py(ped.big ? 540 : (ped.low ? 668 : (ped.vitrine ? 625 : 535)), kk);
   pushHit(sx - colW*0.7*big, yTop - 150*kk*SS*big, colW*1.4*big, H - yTop + 150*kk*SS, {type:'focus', beat: BEATS.indexOf(b), anchor: x});
   const warmC = era === 0 ? '255,215,140' : '225,240,255';
   // two side spotlights swing in and lock their beams exactly on the exhibit;
   // brightness peaks AT the object, then the light falls away
-  if (hero > 0.02){
+  if (hero > 0.02 && !ped.vitrine){   // a vitrine glows from its own capsule — no crossed spotlights
     const lock = Math.min(1, hero * 1.7);
     const objSprite = PED_SPRITES[ped.obj];
     const objH = 120 * (ped.big ? 1.3 : 1) * kk * SS * objSprite.h / objSprite.w;
@@ -6465,22 +6518,25 @@ function drawPedestal(b, t, hero){
   }
   // the object
   const obj = PED_SPRITES[ped.obj];
-  const ow = 120 * big * kk * SS, oh = ow * obj.h / obj.w;
+  const ow = 120 * (ped.vitrine ? 1.25 : big) * kk * SS, oh = ow * obj.h / obj.w;
   ctx.drawImage(obj.c, sx - ow/2, yTop - oh - 4*kk*SS, ow, oh);
   // glass dome: one clean outline, the sheen lives on the glass itself
-  ctx.strokeStyle = 'rgba(235,245,255,0.30)';
-  ctx.lineWidth = 1.6*SS;
-  ctx.beginPath();
-  ctx.ellipse(sx, yTop - 4*kk*SS, colW*0.52, oh*1.22, 0, Math.PI, 0);
-  ctx.stroke();
-  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-  ctx.lineWidth = 3*SS;
-  ctx.beginPath();
-  ctx.ellipse(sx, yTop - 4*kk*SS, colW*0.42, oh*1.04, 0, Math.PI*1.12, Math.PI*1.42);
-  ctx.stroke();
-  // halo of its own little spotlight — swells with the hero pass
-  const inten = (0.9 + 0.1*Math.sin(t*3 + b.x)) * (1 + (hero||0)*1.4);
-  drawGlow(warmC, sx, yTop - oh*0.6, colW*1.5, 0.16*inten);
+  // (a vitrine pedestal has the capsule for a case — no dome, no spotlight halo)
+  if (!ped.vitrine){
+    ctx.strokeStyle = 'rgba(235,245,255,0.30)';
+    ctx.lineWidth = 1.6*SS;
+    ctx.beginPath();
+    ctx.ellipse(sx, yTop - 4*kk*SS, colW*0.52, oh*1.22, 0, Math.PI, 0);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 3*SS;
+    ctx.beginPath();
+    ctx.ellipse(sx, yTop - 4*kk*SS, colW*0.42, oh*1.04, 0, Math.PI*1.12, Math.PI*1.42);
+    ctx.stroke();
+    // halo of its own little spotlight — swells with the hero pass
+    const inten = (0.9 + 0.1*Math.sin(t*3 + b.x)) * (1 + (hero||0)*1.4);
+    drawGlow(warmC, sx, yTop - oh*0.6, colW*1.5, 0.16*inten);
+  }
 }
 
 /* ---------------- PLASMAS · living wall screens of the white room ---------------- */
@@ -9262,6 +9318,7 @@ function frame(){
   drawFloor();
   drawWall();
   drawFilmVideoWall();   // the film backdrop sits directly on the deep wall
+  drawFilmProjectorWall();   // and the 1999 throw washes over the plaster
   drawShowroom(t);   // the room the last stretch is actually set in
   // recreations stand proud of the deeper era walls — they paint on top
   drawMapWall(t);
