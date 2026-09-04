@@ -451,19 +451,19 @@ const SEGMENTS = [
    ink:'223,226,214', lamp:'tube', dust:false,
    rail:'rgba(165,175,172,0.5)', railInk:'rgba(198,208,202,0.7)',
    light:{pool:'214,240,224', poolR:820, poolA:0.20},
-   bgc:[10,12,11], grain:0.038},
+   bgc:[10,12,11], grain:0.014},
   {x0:REC3_R, x1:REC2_L, z0:850, z1:850, tz:680, wall:'wall3', bench:'bench3', front:'front3',
    font:'Verdana, Tahoma, "DejaVu Sans", sans-serif',
    ink:'226,232,238', lamp:'tube', dust:false,
    rail:'rgba(185,196,202,0.5)', railInk:'rgba(212,222,228,0.75)',
    light:{pool:'218,232,252', poolR:1250, poolA:0.13},
-   bgc:[26,29,34], grain:0.016},
+   bgc:[26,29,34], grain:0},
   {x0:REC2_R, x1:WORLD_END+2800, z0:1400, z1:1400, tz:680, wall:'wall4', bench:'bench4', front:'front4',
    font:'"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'55,64,76', lamp:'tube', dust:false,
    rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
    light:{pool:'225,240,255', poolR:1350, poolA:0.12},
-   bgc:[30,33,38], grain:0.012, bInsetR:4100, shade:0.46, floor:true},
+   bgc:[30,33,38], grain:0, bInsetR:4100, shade:0.46, floor:true},
 ];
 const SEAMS = [];   // era changes happen through the recreations now
 /* (dormant) the generated flyover clip can still play across the 1989
@@ -3131,15 +3131,9 @@ function drawRuleThumb(mx, y, tw, S, A, warm){
     ctx.strokeStyle = `rgba(${S.edge},${(0.35 * A).toFixed(3)})`;
     ctx.beginPath(); ctx.moveTo(mx - tw/2 + h*0.5, top + 3*SS); ctx.lineTo(mx + tw/2 - h*0.5, top + 3*SS); ctx.stroke();
   } else if (S.form === 'plate'){
-    // stamped and riveted: chamfered corners, two square heads
-    const c = 5 * SS;
+    // stamped and riveted: a STRAIGHT plate — square ends, two square heads
     ctx.fillStyle = body; ctx.strokeStyle = edge;
-    ctx.beginPath();
-    ctx.moveTo(mx - tw/2 + c, top); ctx.lineTo(mx + tw/2 - c, top);
-    ctx.lineTo(mx + tw/2, top + c); ctx.lineTo(mx + tw/2, bot - c);
-    ctx.lineTo(mx + tw/2 - c, bot); ctx.lineTo(mx - tw/2 + c, bot);
-    ctx.lineTo(mx - tw/2, bot - c); ctx.lineTo(mx - tw/2, top + c);
-    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.rect(mx - tw/2, top, tw, h); ctx.fill(); ctx.stroke();
     ctx.fillStyle = bright;
     for (const s of [-1, 1]) ctx.fillRect(mx + s * (tw/2 - 11*SS) - 1.6*SS, y - 1.6*SS, 3.2*SS, 3.2*SS);
   } else if (S.form === 'frame'){
@@ -7733,9 +7727,13 @@ function drawGrade(t){
   ctx.globalAlpha = 0.35 + 0.65*sh;
   ctx.drawImage(VIG, 0, 0, W, H);
   ctx.globalAlpha = 1;
-  // film grain — settles down as time moves forward
+  // film grain — settles down as time moves forward, and already eases off
+  // through the late seventies, before the era even turns
   const g = grains[(t*10|0) % grains.length];
-  ctx.globalAlpha = ambient(cam.x).grain;
+  let gr = ambient(cam.x).grain;
+  if (segIdx(cam.x) === 0 && cam.x > SHIFT(2200))
+    gr *= 1 - 0.35 * Math.min(1, (cam.x - SHIFT(2200)) / Math.max(1, REC_L - SHIFT(2200)));
+  ctx.globalAlpha = gr;
   ctx.fillStyle = g.pat || (g.pat = ctx.createPattern(g.c, 'repeat'));
   ctx.fillRect(0, 0, W, H);
   ctx.globalAlpha = 1;
