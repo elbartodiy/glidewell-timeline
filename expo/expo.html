@@ -142,9 +142,9 @@ const BEATS = [
   {x:14150, y:'1998', t:'CHAIRSIDE PERSPECTIVES', minor:true, yLift:190,
    th:'Teaching becomes a channel — reach turns into trust.',
    d:'The Chairside Perspectives newsletter begins — the seed of the Chairside magazine and Glidewell’s teaching voice.',
-   wall:[{img:'chairv1', w:230, dx:-340, top:150, rot:-0.4, style:'white', cap:'Vol 1, Issue 1 · 2006', link:'https://glidewelldental.com/education/chairside-magazine'},
-         {img:'chairv12', w:230, dx:0, top:150, style:'white', cap:'Vol 12 · 2017', link:'https://glidewelldental.com/education/chairside-magazine'},
-         {img:'chairv21', w:230, dx:340, top:150, rot:0.4, style:'white', cap:'Vol 21 · 2026', link:'https://glidewelldental.com/education/chairside-magazine'}], table:[]},
+   wall:[{img:'chairv1', w:285, dx:-340, top:150, rot:-0.4, style:'white', cap:'Vol 1, Issue 1 · 2006', link:'https://glidewelldental.com/education/chairside-magazine'},
+         {img:'chairv12', w:285, dx:0, top:150, style:'white', cap:'Vol 12 · 2017', link:'https://glidewelldental.com/education/chairside-magazine'},
+         {img:'chairv21', w:285, dx:340, top:150, rot:0.4, style:'white', cap:'Vol 21 · 2026', link:'https://glidewelldental.com/education/chairside-magazine'}], table:[]},
 
   {x:14925, y:'1999', t:'IN-CERAM ZIRCONIA', minor:true, yLift:190,
    th:'The zirconia story starts quietly, long before the revolution.',
@@ -10145,8 +10145,12 @@ async function boot(){
     const wallL = seg.x0 + (seg.wInsetL || 0), wallR = seg.x1 - (seg.wInsetR || 0);
     for (const it of b.wall){
       const sp = SPRITES[it.img]; if (!sp) continue;
+      /* the ceiling on height is the room the picture actually has: hung from
+         the default line it may run to 690, and a picture that names a higher
+         line of its own may grow down to the same place */
+      const maxH = Math.max(120, 690 - (it.top != null ? it.top : 360));
       let h = sp.h * (it.w / sp.inner.w);
-      if (h > 330){ it.w *= 330 / h; h = 330; }
+      if (h > maxH){ it.w *= maxH / h; h = maxH; }
       it.cy = (it.top != null ? it.top : 360) + h/2;
       const half = sp.w * (it.w / sp.inner.w) / 2 + 30;
       const x = b.x + it.dx;
