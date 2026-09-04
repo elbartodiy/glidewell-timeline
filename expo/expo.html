@@ -209,7 +209,7 @@ const BEATS = [
    d:'Announced November 2017, in the office from March 2018: the iTero Element scanner, the fastdesign.io design station, the fastmill.io mill — and BruxZir NOW, the only fully sintered chairside zirconia, so nothing needs firing after the cut. The lab’s own AI moves into the practice as CrownAI and MarginAI. The barrier was never the technique. It was the inconvenience.',
    wall:[],
    table:[],
-   ped:{obj:'millSt', dx:0}},
+   ped:{obj:'millSt', dx:0, wide:1.28}},
 
   {x:24450, y:'2018', t:'', tier:1, yLift:110,
    pinZ:1000,
@@ -2714,7 +2714,7 @@ function drawFinaleTable(t){
     {sp:'puck',    dx:-330, z:95, w:110, cap:'BruxZir\u00ae solid zirconia'},
     {sp:'scanner', dx:-165, z:70, w:150, cap:'fastscan.io\u2122'},
     {sp:'crown2',  dx:10,   z:45, w:175, cap:'BruxZir\u00ae crown'},
-    {sp:'millSt',  dx:205,  z:75, w:185, cap:'fastmill.io\u2122'},
+    {sp:'millSt',  dx:225,  z:75, w:250, cap:'fastmill.io\u2122'},   // a wide machine, not a card
   ];
   for (const gd of GOODS){
     const sp = PED_SPRITES[gd.sp]; if (!sp) continue;
@@ -6203,6 +6203,7 @@ async function loadPhotoSkin(){
     ph_cabinet: 'cabinet_1907.png',
     ph_casebox: 'case_box.png',       // the mailed case, open — the real photograph
     ph_scanner: 'scanner.png',        // fastscan.io, the instrument itself, not a drawing of it
+    ph_mill: 'mill_io.png',           // fastmill.io, the same — cut out of its studio render
     bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
     bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
   };
@@ -6828,58 +6829,6 @@ function makePedObj(kind){
     g.fillStyle = 'rgba(140,220,255,0.30)';
     g.beginPath(); g.ellipse(24, 20, 14, 22, 0.4, 0, 7); g.fill();
     g.restore();
-  } else if (kind === 'millSt'){
-    /* fastmill.io, drawn from the machine rather than from imagination. It mills
-       on the HORIZONTAL: the blank is a small puck held frontally in a steel hub
-       on the right, and the bur comes in from the LEFT on a horizontal spindle
-       with its polished flange behind it. Nothing here descends from above. */
-    size(210, 172);
-    const bg = g.createLinearGradient(0, 26, 0, 164);
-    bg.addColorStop(0, '#f4f5f7'); bg.addColorStop(.62, '#dcdee1'); bg.addColorStop(1, '#b6b9bd');
-    g.fillStyle = bg;
-    g.beginPath(); g.roundRect(10, 30, 190, 132, 16); g.fill();
-    // the hinged lid standing up over the chamber, with its own window
-    g.fillStyle = '#e6e8ea';
-    g.beginPath(); g.roundRect(126, 6, 56, 68, 14); g.fill();
-    g.fillStyle = '#20262c';
-    g.beginPath(); g.roundRect(139, 18, 30, 40, 6); g.fill();
-    // the chamber: a white cavity with concentric ridges turned into it
-    g.save();
-    g.beginPath(); g.roundRect(124, 62, 62, 66, 9); g.clip();
-    const ch = g.createLinearGradient(124, 62, 186, 128);
-    ch.addColorStop(0, '#fbfbfa'); ch.addColorStop(1, '#c9ccce');
-    g.fillStyle = ch; g.fillRect(124, 62, 62, 66);
-    g.strokeStyle = 'rgba(150,156,160,0.55)';
-    for (let i = 1; i <= 3; i++){
-      g.lineWidth = 1.6;
-      g.beginPath(); g.ellipse(163, 95, 8 + i * 7, 7 + i * 6.5, 0, 0, 7); g.stroke();
-    }
-    // spindle flange on the left, and the bur running right, on the level
-    const fl = g.createLinearGradient(126, 78, 144, 112);
-    fl.addColorStop(0, '#e8eaec'); fl.addColorStop(.5, '#9aa0a6'); fl.addColorStop(1, '#6f757b');
-    g.fillStyle = fl;
-    g.beginPath(); g.ellipse(133, 95, 9, 19, 0, 0, 7); g.fill();
-    g.fillStyle = '#7d838a'; g.fillRect(133, 92, 12, 6);
-    g.fillStyle = '#4d5257'; g.fillRect(145, 93.4, 5, 3.2);        // collet
-    g.fillStyle = '#b9bec3'; g.fillRect(150, 93.8, 14, 2.4);       // the diamond bur
-    // the blank, mounted frontally in its hub on the right
-    g.fillStyle = '#8d9298';
-    g.beginPath(); g.ellipse(176, 95, 7, 13, 0, 0, 7); g.fill();
-    const pk = g.createLinearGradient(163, 84, 175, 106);
-    pk.addColorStop(0, '#f0e7d2'); pk.addColorStop(1, '#cfc2a6');
-    g.fillStyle = pk;
-    g.beginPath(); g.roundRect(163, 84, 12, 22, 3); g.fill();
-    g.restore();
-    g.strokeStyle = 'rgba(90,96,102,0.55)'; g.lineWidth = 1.4;
-    g.beginPath(); g.roundRect(124, 62, 62, 66, 9); g.stroke();
-    // the hairline across the front, and the wordmarks
-    g.fillStyle = 'rgba(139,111,208,0.85)'; g.fillRect(20, 112, 100, 1.6);
-    g.fillStyle = 'rgba(70,76,82,0.9)';
-    g.font = '600 13px "Helvetica Neue", Arial, sans-serif';
-    g.fillText('fastmill.io', 22, 104);
-    g.fillStyle = 'rgba(120,126,132,0.8)';
-    g.font = '600 9px "Helvetica Neue", Arial, sans-serif';
-    g.fillText('glidewell.io', 128, 150);
   } else if (kind === 'scanner'){
     size(150, 170);
     /* the same instrument as the one in the 2022 vitrine, and the same
@@ -7012,7 +6961,9 @@ function drawPedestal(b, t, hero){
   }
   // the object
   const obj = PED_SPRITES[ped.obj];
-  const ow = 120 * (ped.vitrine ? 1.25 : big) * kk * SS, oh = ow * obj.h / obj.w;
+  /* a wide, low machine needs more of the cap than a puck does — `wide` lets
+     an exhibit ask for it, and the dome is 172 units across, so it still fits */
+  const ow = 120 * (ped.wide || 1) * (ped.vitrine ? 1.25 : big) * kk * SS, oh = ow * obj.h / obj.w;
   ctx.drawImage(obj.c, sx - ow/2, yTop - oh - 4*kk*SS, ow, oh);
   // glass dome: one clean outline, the sheen lives on the glass itself
   // (a vitrine pedestal has the capsule for a case — no dome, no spotlight halo)
@@ -10188,7 +10139,10 @@ async function boot(){
   PED_SPRITES.scanner = makePedObj('scanner');
   PED_SPRITES.dataTooth = makePedObj('dataTooth');
   PED_SPRITES.crown2 = makePedObj('crown2');
-  PED_SPRITES.millSt = makePedObj('millSt');
+  /* fastmill.io is a photograph now, not a drawing of a machine: the same
+     render Eldar cut for the vitrine's wand, cropped above its studio feet so
+     it stands on whatever it is put on instead of carrying a second shadow. */
+  PED_SPRITES.millSt = PROP_SPRITES.ph_mill || makePedObj('puck');
   for (const pid in PEOPLE)
     if (IMGS[PEOPLE[pid].img]) PERSON_SPRITES[pid] = makePrint(PEOPLE[pid].img, {style:'white'});
   initAlbums();
