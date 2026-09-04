@@ -1152,9 +1152,19 @@ function contactShadow(sx, syFoot, wide, strength){
    further it has travelled. So the shaft is laid in nested passes — the widest
    faintest, the narrowest brightest — and each pass spreads more at the foot
    than at the head, which is the feather from top to bottom. */
+const BEAM_PASSES = (() => {
+  /* nine nested passes on a smooth power curve: five flat steps read as
+     stripes when the beam is large — the shoulder needs a gradient's worth
+     of layers to die away like light */
+  const P = [];
+  for (let i = 0; i < 9; i++){
+    const t = i / 8;
+    P.push([1.7 - 1.56 * t, 0.62 * (0.06 + 0.94 * Math.pow(t, 1.7))]);
+  }
+  return P;
+})();
 function softBeam(xa, xb, yA, yB, halfA, halfB, rgb, peak, stops){
-  const PASSES = [[1.55, 0.16], [1.22, 0.26], [0.92, 0.40], [0.62, 0.62], [0.34, 0.92]];
-  for (const [w, a] of PASSES){
+  for (const [w, a] of BEAM_PASSES){
     const g = ctx.createLinearGradient(0, yA, 0, yB);
     for (const [t, m] of stops) g.addColorStop(t, `rgba(${rgb},${(peak * a * m).toFixed(4)})`);
     ctx.fillStyle = g;
@@ -2117,21 +2127,149 @@ function drawFilmPanel(x, wWorld, welcome){
   pushHit(vx, vy, sw, sh, {type: 'welcomevid'});
   return {sx, kk, footY, top};
 }
+let WELCOME_PSHEET = null;
 function drawWelcomeTV(){
-  const T = WELCOME_TV;
+  const T = WELCOME_TV, v = T.v;
   if (Math.abs(T.x - cam.x) > 3600) return;
-  const g = drawFilmPanel(T.x, T.w, true);
-  if (!g) return;
-  const {sx, kk, footY} = g;
+  /* THE OPENING IS A PICTURE SHOW, 1907-style: a white sheet pinned to the
+     boards, a projector on the counter, and the film thrown onto the cloth —
+     no television in a hall that predates one. */
+  const kw = k(wallZAt(T.x) - 8), cxw = px(T.x, kw);
+  // the sheet: pinned at two corners, sagging a little, waving at the hem
+  const shW = 560 * kw * SS, shT = py(238, kw), shB = py(662, kw);
+  const sag = 9 * kw * SS, tuck = 7 * kw * SS;
+  const xL = cxw - shW/2, xR = cxw + shW/2;
+  if (xR > 0 && xL < W){
+    ctx.save();
+    // its shadow on the boards
+    ctx.fillStyle = 'rgba(10,6,3,0.30)';
+    ctx.beginPath();
+    ctx.moveTo(xL + 6*SS, shT + 8*SS);
+    ctx.lineTo(xR + 7*SS, shT + 10*SS);
+    ctx.lineTo(xR - tuck + 8*SS, shB + 9*SS);
+    ctx.lineTo(xL + tuck + 5*SS, shB + 7*SS);
+    ctx.closePath(); ctx.fill();
+    // the cloth
+    const cg = ctx.createLinearGradient(0, shT, 0, shB);
+    cg.addColorStop(0, '#f4efe4'); cg.addColorStop(0.6, '#ece6d8'); cg.addColorStop(1, '#ded7c6');
+    ctx.fillStyle = cg;
+    const cloth = new Path2D();
+    cloth.moveTo(xL, shT);
+    cloth.quadraticCurveTo(cxw, shT + sag, xR, shT);
+    cloth.lineTo(xR - tuck, shB - 6*kw*SS);
+    cloth.quadraticCurveTo(cxw + shW*0.22, shB + 5*kw*SS, cxw, shB - 2*kw*SS);
+    cloth.quadraticCurveTo(cxw - shW*0.24, shB + 6*kw*SS, xL + tuck, shB - 5*kw*SS);
+    cloth.closePath();
+    ctx.fill(cloth);
+    // folds: soft vertical shading where the cloth hangs
+    ctx.save();
+    ctx.clip(cloth);
+    for (const f of [0.2, 0.38, 0.57, 0.78]){
+      const fx = xL + shW * f;
+      const fg = ctx.createLinearGradient(fx - 14*kw*SS, 0, fx + 14*kw*SS, 0);
+      fg.addColorStop(0, 'rgba(120,105,80,0)');
+      fg.addColorStop(0.5, 'rgba(120,105,80,0.07)');
+      fg.addColorStop(1, 'rgba(120,105,80,0)');
+      ctx.fillStyle = fg;
+      ctx.fillRect(fx - 14*kw*SS, shT, 28*kw*SS, shB - shT);
+    }
+    // the thrown picture: light on cloth, feathered, in the projector's own
+    // tone — and none at all before the show is started
+    if (v && v.videoWidth && v.readyState >= 2 && !(v.muted && v.paused)){
+      const ivx = xL + 26*kw*SS, ivy = shT + 22*kw*SS;
+      const ivw = shW - 52*kw*SS, ivh = (shB - shT) - 44*kw*SS;
+      const pw2 = Math.max(2, ivw | 0), ph2 = Math.max(2, ivh | 0);
+      if (!WELCOME_PSHEET) WELCOME_PSHEET = document.createElement('canvas');
+      const pc = WELCOME_PSHEET;
+      if (pc.width !== pw2 || pc.height !== ph2){ pc.width = pw2; pc.height = ph2; }
+      const g2 = pc.getContext('2d');
+      g2.clearRect(0, 0, pw2, ph2);
+      const sc3 = Math.max(pw2 / v.videoWidth, ph2 / v.videoHeight);
+      try { g2.filter = 'grayscale(0.9) sepia(0.28) contrast(1.06) brightness(1.02)'; } catch(e){}
+      g2.globalAlpha = 0.82;
+      g2.drawImage(v, pw2/2 - v.videoWidth*sc3/2, ph2/2 - v.videoHeight*sc3/2,
+                   v.videoWidth*sc3, v.videoHeight*sc3);
+      g2.filter = 'none'; g2.globalAlpha = 1;
+      g2.globalCompositeOperation = 'destination-out';
+      const fth = Math.max(6, pw2 * 0.05);
+      for (const [gx0, gy0, gx1, gy1, wgt, hgt] of [
+        [0, 0, fth, 0, fth, ph2], [pw2, 0, pw2 - fth, 0, fth, ph2],
+        [0, 0, 0, fth, pw2, fth], [0, ph2, 0, ph2 - fth, pw2, fth]]){
+        const eg = g2.createLinearGradient(gx0, gy0, gx1, gy1);
+        eg.addColorStop(0, 'rgba(0,0,0,1)'); eg.addColorStop(1, 'rgba(0,0,0,0)');
+        g2.fillStyle = eg;
+        g2.fillRect(Math.min(gx0, gx1), Math.min(gy0, gy1), wgt, hgt);
+      }
+      g2.globalCompositeOperation = 'source-over';
+      ctx.save();
+      ctx.clip(cloth);
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.drawImage(pc, ivx, ivy);
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = 0.55;
+      ctx.drawImage(pc, ivx, ivy);
+      ctx.restore();
+    }
+    // the pins
+    ctx.fillStyle = '#3a2c1c';
+    for (const nx of [xL + 6*kw*SS, xR - 6*kw*SS]){
+      ctx.beginPath(); ctx.arc(nx, shT + 3*kw*SS, 2.6*kw*SS, 0, 7); ctx.fill();
+    }
+    // the mark to start it, and the mark of a held reel
+    if (v && v.readyState >= 2 && (v.muted || T.userPaused)){
+      ctx.strokeStyle = 'rgba(90,70,48,0.85)'; ctx.lineWidth = 2*SS;
+      const mcx = cxw, mcy = (shT + shB)/2, mr = 16*kw*SS;
+      ctx.beginPath();
+      ctx.moveTo(mcx - mr*0.55, mcy - mr);
+      ctx.lineTo(mcx + mr, mcy);
+      ctx.lineTo(mcx - mr*0.55, mcy + mr);
+      ctx.closePath(); ctx.stroke();
+    }
+    ctx.restore();
+    pushHit(xL, shT, shW, shB - shT, {type: 'welcomevid'});
+  }
+  // the projector on the counter, and its throw
+  const km = k(8), mx = px(T.x, km);
+  const mFoot = py(CFG.benchY - 34, km);
+  const mw = 66 * km * SS, mh = 34 * km * SS;
+  const lensY = mFoot - mh * 0.62;
+  if (v && !v.paused){
+    for (const [w2, a2] of [[1, 0.045], [0.72, 0.07], [0.42, 0.10]]){
+      const bg2 = ctx.createLinearGradient(mx, lensY, cxw, (shT + shB)/2);
+      bg2.addColorStop(0, `rgba(255,238,205,${(a2 * 2.1).toFixed(3)})`);
+      bg2.addColorStop(1, `rgba(255,238,205,${(a2 * 0.5).toFixed(3)})`);
+      ctx.fillStyle = bg2;
+      const t0 = shT + (shB - shT) * (1 - w2) / 2, t1 = shB - (shB - shT) * (1 - w2) / 2;
+      const l0 = xL + shW * (1 - w2) / 2, l1 = xR - shW * (1 - w2) / 2;
+      ctx.beginPath();
+      ctx.moveTo(mx - 5*SS*w2, lensY);
+      ctx.lineTo(l0, t0); ctx.lineTo(l0, t1);
+      ctx.lineTo(mx - 5*SS*w2, lensY + 3*SS);
+      ctx.closePath(); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(mx + 5*SS*w2, lensY);
+      ctx.lineTo(l1, t0); ctx.lineTo(l1, t1);
+      ctx.lineTo(mx + 5*SS*w2, lensY + 3*SS);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  contactShadow(mx, mFoot, mw * 0.62, 0.3);
+  const mg2 = ctx.createLinearGradient(0, mFoot - mh, 0, mFoot);
+  mg2.addColorStop(0, '#3d3128'); mg2.addColorStop(1, '#171310');
+  ctx.fillStyle = mg2;
+  ctx.beginPath(); ctx.roundRect(mx - mw/2, mFoot - mh, mw, mh, 3.5*SS); ctx.fill();
+  // the reel above the body, and the lamp eye
+  ctx.strokeStyle = '#241c14'; ctx.lineWidth = 3*km*SS;
+  ctx.beginPath(); ctx.arc(mx - mw*0.18, mFoot - mh - 12*km*SS, 12*km*SS, 0, 7); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,236,200,0.95)';
+  ctx.beginPath(); ctx.arc(mx, lensY, 3.6*km*SS, 0, 7); ctx.fill();
   /* the inscription is LETTERING ON THE WALL, not a label on the set: it lives
      at the wall's own depth, so pulling back leaves it hanging on the plaster
-     where it was painted — and a size down, so the film stays the hero */
-  const kw = k(wallZAt(T.x) - 8), cxw = px(T.x, kw);
+     where it was painted */
   ctx.save();
   ctx.textAlign = 'center';
   ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
   if (IMGS.logo2026 && state.introFade > 0.02){
-    // the mark at the apex belongs to the close-up and dissolves with the zoom-out
     const ms = 42 * kw * SS, my = py(64, kw);
     ctx.save();
     ctx.globalAlpha = state.introFade;
@@ -2144,16 +2282,14 @@ function drawWelcomeTV(){
   ctx.fillText('HOW GOOD DENTISTRY', cxw, py(146, kw));
   ctx.fillText('STOPPED BEING A LUXURY', cxw, py(208, kw));
   ctx.restore();
-  // the tour line sits under the panel, on the cabinet face — clear of the
-  // marble edge, which used to cut straight through it. Hidden during the
-  // close-up hold, where it would land on the wheel hint.
+  // the tour line on the cabinet face, hidden during the close-up hold
   const tourA = 0.65 * (1 - (state.introFade || 0));
   if (tourA > 0.03){
     ctx.textAlign = 'center';
-    ctx.font = eraFont(16 * kk * SS);
-    try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
+    ctx.font = eraFont(16 * km * SS);
+    try { ctx.letterSpacing = `${3.5*km*SS}px`; } catch(e){}
     ctx.fillStyle = `rgba(200,172,132,${tourA.toFixed(3)})`;
-    ctx.fillText('GLIDEWELL HISTORY TOUR →', sx, footY + 64*kk*SS);
+    ctx.fillText('GLIDEWELL HISTORY TOUR →', mx, py(CFG.benchY - 30, km) + 64*km*SS);
     try { ctx.letterSpacing = '0px'; } catch(e){}
   }
 }
@@ -2374,21 +2510,28 @@ function drawFilmProjector(r){
   const mw = 70 * km * SS, mh = 26 * km * SS;
   const mFoot = py(CFG.benchY - 2, km);
   const lensX = mx, lensY = mFoot - mh*0.55;
-  const bg = ctx.createLinearGradient(lensX, lensY, g.sx, g.cy);
-  bg.addColorStop(0, 'rgba(215,225,240,0.15)'); bg.addColorStop(1, 'rgba(215,225,240,0.03)');
-  ctx.fillStyle = bg;
-  ctx.beginPath();
-  ctx.moveTo(lensX - 6*SS, lensY);
-  ctx.lineTo(g.px0, g.py0);
-  ctx.lineTo(g.px0, g.py0 + g.ph);
-  ctx.lineTo(lensX - 6*SS, lensY + 4*SS);
-  ctx.closePath(); ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(lensX + 6*SS, lensY);
-  ctx.lineTo(g.px0 + g.pw, g.py0);
-  ctx.lineTo(g.px0 + g.pw, g.py0 + g.ph);
-  ctx.lineTo(lensX + 6*SS, lensY + 4*SS);
-  ctx.closePath(); ctx.fill();
+  /* the throw in nested passes: hard-edged quads read as glass panes; layered
+     shrinking ones die away sideways like light through dust */
+  for (const [w, a] of [[1, 0.05], [0.72, 0.075], [0.42, 0.11]]){
+    const bg = ctx.createLinearGradient(lensX, lensY, g.sx, g.cy);
+    bg.addColorStop(0, `rgba(215,225,240,${(a * 2.2).toFixed(3)})`);
+    bg.addColorStop(1, `rgba(215,225,240,${(a * 0.45).toFixed(3)})`);
+    ctx.fillStyle = bg;
+    const t0 = g.py0 + g.ph * (1 - w) / 2, t1 = g.py0 + g.ph - g.ph * (1 - w) / 2;
+    const l0 = g.px0 + g.pw * (1 - w) / 2, l1 = g.px0 + g.pw - g.pw * (1 - w) / 2;
+    ctx.beginPath();
+    ctx.moveTo(lensX - 6*SS*w, lensY);
+    ctx.lineTo(l0, t0);
+    ctx.lineTo(l0, t1);
+    ctx.lineTo(lensX - 6*SS*w, lensY + 4*SS);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(lensX + 6*SS*w, lensY);
+    ctx.lineTo(l1, t0);
+    ctx.lineTo(l1, t1);
+    ctx.lineTo(lensX + 6*SS*w, lensY + 4*SS);
+    ctx.closePath(); ctx.fill();
+  }
   contactShadow(mx, mFoot, mw * 0.6, 0.28);
   const mg = ctx.createLinearGradient(0, mFoot - mh, 0, mFoot);
   mg.addColorStop(0, '#4a4c50'); mg.addColorStop(1, '#1b1c1f');
@@ -5042,17 +5185,10 @@ function drawLamp(x, t, seed){
   // bulb glow
   const r = 34*kk*SS;
   drawGlow('255,225,155', sx, bulbY + r*0.5, r*2.2, 0.85*inten);
-  // light cone
-  const coneG = ctx.createLinearGradient(0, bulbY, 0, py(CFG.benchY, k(120)));
-  coneG.addColorStop(0, `rgba(255,210,130,${0.13*inten})`);
-  coneG.addColorStop(1, 'rgba(255,190,110,0)');
-  ctx.fillStyle = coneG;
-  ctx.beginPath();
-  ctx.moveTo(sx - 40*kk*SS, bulbY);
-  ctx.lineTo(sx + 40*kk*SS, bulbY);
-  ctx.lineTo(sx + 330*kk*SS, py(CFG.benchY, k(120)));
-  ctx.lineTo(sx - 330*kk*SS, py(CFG.benchY, k(120)));
-  ctx.closePath(); ctx.fill();
+  // light cone — soft-shouldered, and it dies out rather than being cut
+  softBeam(sx, px(x, k(120)), bulbY, py(CFG.benchY, k(120)),
+           40*kk*SS, 330*kk*SS, '255,205,125', 0.075*inten,
+           [[0, 1], [0.7, 0.5], [1, 0]]);
   // pool on the table
   const kf = k(160);
   drawGlow('255,205,120', px(x,kf), py(CFG.benchY - 4, kf), 300*kf*SS, 0.16*inten, 0.28);
@@ -7464,15 +7600,9 @@ function drawStage(t){
   const jw = JIM_FIG.w * jscale, jhh = JIM_FIG.h * jscale;
   const jFoot = py(950, kJ);
   pushHit(jx - jw/2, jFoot - jhh, jw, jhh, {type:'focus', beat: BEATS.length - 1, anchor: STAGE_X});
-  // spotlight cone
-  const cg = ctx.createLinearGradient(0, 0, 0, jFoot);
-  cg.addColorStop(0, 'rgba(255,248,225,0.05)');
-  cg.addColorStop(1, 'rgba(255,244,210,0.30)');
-  ctx.fillStyle = cg;
-  ctx.beginPath();
-  ctx.moveTo(jx - 60*kJ*SS, 0); ctx.lineTo(jx + 60*kJ*SS, 0);
-  ctx.lineTo(jx + 260*kJ*SS, jFoot); ctx.lineTo(jx - 260*kJ*SS, jFoot);
-  ctx.closePath(); ctx.fill();
+  // spotlight cone — soft shoulders, brightening toward the man it lights
+  softBeam(jx, jx, 0, jFoot, 60*kJ*SS, 260*kJ*SS, '255,246,216', 0.135,
+           [[0, 0.16], [0.8, 1], [1, 0.85]]);
   ctx.drawImage(JIM_FIG.c, jx - jw/2, jFoot - jhh, jw, jhh);
   // pool of light at his feet
   const pg = ctx.createRadialGradient(jx, jFoot, 6, jx, jFoot, 260*kJ*SS);
