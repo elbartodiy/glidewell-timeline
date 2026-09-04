@@ -2132,7 +2132,7 @@ function drawWelcomeTV(){
   ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
   if (IMGS.logo2026 && state.introFade > 0.02){
     // the mark at the apex belongs to the close-up and dissolves with the zoom-out
-    const ms = 42 * kw * SS, my = py(84, kw);
+    const ms = 42 * kw * SS, my = py(64, kw);
     ctx.save();
     ctx.globalAlpha = state.introFade;
     ctx.beginPath(); ctx.roundRect(cxw - ms/2, my - ms/2, ms, ms, 5*kw*SS); ctx.clip();
@@ -2141,8 +2141,8 @@ function drawWelcomeTV(){
   }
   ctx.fillStyle = 'rgba(236,210,165,0.95)';
   ctx.font = eraFont(54 * kw * SS);
-  ctx.fillText('HOW GOOD DENTISTRY', cxw, py(178, kw));
-  ctx.fillText('STOPPED BEING A LUXURY', cxw, py(240, kw));
+  ctx.fillText('HOW GOOD DENTISTRY', cxw, py(146, kw));
+  ctx.fillText('STOPPED BEING A LUXURY', cxw, py(208, kw));
   ctx.restore();
   // the tour line sits under the panel, on the cabinet face — clear of the
   // marble edge, which used to cut straight through it. Hidden during the
@@ -4812,7 +4812,7 @@ function drawRec4(t){
     ctx.fillStyle = pgl;
     ctx.fillRect(nx - nw, nBot - r - nw*0.5, nw*2, nw);
     // the wand, to the reference: white body, two blue keys, a low dock
-    const wandH = (nBot - nTop) * 0.56, wandW = nw * 0.20;
+    const wandH = (nBot - nTop) * 0.80, wandW = nw * 0.30;
     const wTop = nBot - r*0.42 - wandH, wCx = nx;
     ctx.save();
     ctx.shadowColor = 'rgba(40,60,80,0.30)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetX = 3*SS;
@@ -4835,7 +4835,7 @@ function drawRec4(t){
       ctx.beginPath(); ctx.arc(wCx, wTop + wandH*f, wandW*rr, 0, 7); ctx.stroke();
     }
     // the dock it stands in
-    const dW = wandW*1.9, dH = wandH*0.10;
+    const dW = wandW*1.7, dH = wandH*0.08;
     const dg = ctx.createLinearGradient(0, nBot - r*0.42 - dH, 0, nBot - r*0.42 + dH);
     dg.addColorStop(0, '#dde1e5'); dg.addColorStop(1, '#aab0b6');
     ctx.fillStyle = dg;
