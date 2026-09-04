@@ -2446,7 +2446,10 @@ function drawFilmProjectorWall(){
   rivet('film:proj:' + r.x, g.sx, k(exhibitZ(r.x)));
   /* composed on its own sheet so the edges can FEATHER: hard edges read as a
      screen, and this is light on plaster */
-  const pw = Math.max(2, g.pw | 0), ph = Math.max(2, g.ph | 0);
+  /* half resolution: this is soft light thrown on plaster, not a screen —
+     at full size the first bake of the sheet, its mask and its vignette cost
+     a quarter-second the moment you walked up to 1999. */
+  const pw = Math.max(2, (g.pw * 0.5) | 0), ph = Math.max(2, (g.ph * 0.5) | 0);
   if (!PROJ_SHEET) PROJ_SHEET = document.createElement('canvas');
   const pc = PROJ_SHEET;
   const resized = pc.width !== pw || pc.height !== ph;
@@ -2492,7 +2495,8 @@ function drawFilmProjectorWall(){
   gg.globalCompositeOperation = 'source-over';
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
-  ctx.drawImage(pc, g.px0, g.py0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(pc, g.px0, g.py0, g.pw, g.ph);
   ctx.restore();
   pushHit(g.px0, g.py0, g.pw, g.ph, {type: 'welcomevid'});
 }
@@ -2678,14 +2682,9 @@ function drawOutro(){
   const cx = px(FIN_X, kw);
   ctx.save();
   ctx.textAlign = 'center';
-  if (IMGS.logo2026){
-    const ms = 42 * kw * SS, my = py(92, kw);
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
-    ctx.beginPath(); ctx.roundRect(cx - ms/2, my - ms/2, ms, ms, 5*kw*SS); ctx.clip();
-    ctx.drawImage(IMGS.logo2026.el, cx - ms/2, my - ms/2, ms, ms);
-    ctx.restore();
-  }
+  /* the finale's floating mark is gone with the others: at the far end the
+     walnut soffit runs across that very height, so the mark read as a lone
+     letter stuck on a beam. The closing line carries the ending by itself. */
   ctx.fillStyle = `rgba(${seg.ink},0.6)`;
   ctx.font = eraFont(56 * kw * SS, '', seg.font);
   try { ctx.letterSpacing = `${6*kw*SS}px`; } catch(e){}
@@ -9911,6 +9910,13 @@ function frame(){
   }
   drawProjectors(t, 'light');   // light lands on the WALL; the bench will crop it
 
+  /* THE REFLECTION IS UNDER EVERYTHING THAT STANDS ON IT. It used to be laid
+     after the stage and the figures, so the polished floor was painted OVER
+     the speaker's plinth and the silhouettes — a veil across the people rather
+     than a shine beneath them. It reflects the wall band, which is already
+     drawn, and everything standing on the floor now covers it in turn. */
+  drawFloorSheen();
+
   // mid-ground: people and machines stand in front of the wall...
   drawStage(t);
   drawFigures();
@@ -9923,7 +9929,6 @@ function frame(){
   drawEra1Bench();    // era 1, up to the cabinet: its own photographed counter
   drawEra2Bench();    // era 2, 1980 to the 1989 recreation
   drawPlateBench(t);  // and the founding bay, cut from its centrepiece
-  drawFloorSheen();   // before the counter, so the counter covers it and the
   drawRec4Columns(null, true);  // the portal's columns stand ON that floor — over its sheen
   drawBench();        // reflection can never be laid over the furniture
   drawShowroomLight(t);   // light coming OUT of the furniture, so after it
