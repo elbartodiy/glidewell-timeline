@@ -178,7 +178,8 @@ const BEATS = [
    th:'Nobody called it AI training data yet — but that is what it was.',
    d:'The lab accepts its first intraoral scan instead of a physical impression — the moment the case archive starts becoming data.',
    wall:[], table:[],
-   props:[{kind:'lcd', dx:535, lz:55, w:300}],
+   /* the CAD screen gave its island to the film: an office LCD of the mid
+      2000s stands there now (kind lcd05 in the film relays) */
    ped:{obj:'dataTooth', dx:0}},
 
   /* ---- ERA 4 · the white room, 2009–2026 ---- */
@@ -1977,6 +1978,7 @@ function initFilmRelays(){
     {kind: 'hang',   x: SHIFT(10250), w: 320, cy: 282, era: 1},   // 1988 — higher and right of the year
     {kind: 'crt95',  x: SHIFT(12700), lz: 70, w: 290},            // the nineties set by 1995
     {kind: 'proj',   x: SHIFT(15330), w: 1500, cy: 470},          // 1999: thrown HUGE onto the wall
+    {kind: 'lcd05',  x: SHIFT(18700) + 535, lz: 55, w: 250},      // 2007: the office LCD on the island
     {kind: 'plasma', x: SHIFT(22240), w: 450, cy: 370},           // between 2009 and the 2010s
     {kind: 'vwall',  x: 33060, w: 900, top: 140, h: 680}          // the backdrop wall behind 2022 → 2023
   );
@@ -2337,6 +2339,41 @@ function drawFilmProjector(r){
   ctx.fillStyle = 'rgba(225,235,250,0.9)';
   ctx.beginPath(); ctx.arc(mx, mFoot - mh*0.55, 4.5*km*SS, 0, 7); ctx.fill();
 }
+/* the office LCD of the mid-2000s: putty plastic, a THICK bezel, a trapezoid
+   neck on an oval foot — the monitor the first digital case arrived on */
+function drawFilmLCD05(r){
+  const kk = k(r.lz || 55), sx = px(r.x, kk);
+  const scw = r.w * kk * SS, sch = scw * 3/4;
+  const bez = 13 * kk * SS;
+  const bw = scw + bez*2, bh = sch + bez*2;
+  if (sx < -bw || sx > W + bw) return;
+  const footY = py(CFG.benchY - 2, kk);
+  const baseH = 7*kk*SS, neckH = 22*kk*SS;
+  const y0 = footY - baseH - neckH - bh;
+  contactShadow(sx, footY, bw*0.5, 0.28);
+  ctx.fillStyle = '#8f8c84';
+  ctx.beginPath(); ctx.ellipse(sx, footY - baseH, 58*kk*SS, baseH, 0, 0, 7); ctx.fill();
+  const ng = ctx.createLinearGradient(0, y0 + bh, 0, footY);
+  ng.addColorStop(0, '#b9b6ae'); ng.addColorStop(1, '#7e7b74');
+  ctx.fillStyle = ng;
+  ctx.beginPath();
+  ctx.moveTo(sx - 12*kk*SS, y0 + bh - 2*SS);
+  ctx.lineTo(sx + 12*kk*SS, y0 + bh - 2*SS);
+  ctx.lineTo(sx + 20*kk*SS, footY - baseH);
+  ctx.lineTo(sx - 20*kk*SS, footY - baseH);
+  ctx.closePath(); ctx.fill();
+  const pg = ctx.createLinearGradient(0, y0, 0, y0 + bh);
+  pg.addColorStop(0, '#d9d6cd'); pg.addColorStop(0.6, '#c2bfb6'); pg.addColorStop(1, '#a09d94');
+  ctx.fillStyle = pg;
+  ctx.beginPath(); ctx.roundRect(sx - bw/2, y0, bw, bh, 5*kk*SS); ctx.fill();
+  ctx.strokeStyle = 'rgba(70,68,62,0.5)'; ctx.lineWidth = 1*SS;
+  ctx.beginPath(); ctx.roundRect(sx - bw/2 + 0.5*SS, y0 + 0.5*SS, bw - SS, bh - SS, 5*kk*SS); ctx.stroke();
+  ctx.fillStyle = '#111316';
+  ctx.fillRect(sx - scw/2 - 2*SS, y0 + bez - 2*SS, scw + 4*SS, sch + 4*SS);
+  filmInto(sx - scw/2, y0 + bez, scw, sch, 0.97, 'saturate(0.9) contrast(1.02) brightness(1.06)');
+  ctx.fillStyle = 'rgba(120,220,140,0.95)';
+  ctx.beginPath(); ctx.arc(sx + bw/2 - 14*kk*SS, y0 + bh - bez*0.45, 2*kk*SS, 0, 7); ctx.fill();
+}
 /* a wall-mounted plasma — no foot, thin frame, straight onto the wall */
 function drawFilmWallPlasma(r){
   const wz = wallZAt(r.x) - 16;
@@ -2402,6 +2439,7 @@ function drawFilmRelays(){
     if (r.kind === 'crt70') drawFilmCRT70(r);
     else if (r.kind === 'hang') drawFilmHangTV(r);
     else if (r.kind === 'crt95') drawFilmCRT95(r);
+    else if (r.kind === 'lcd05') drawFilmLCD05(r);
     else if (r.kind === 'proj') drawFilmProjector(r);
     else if (r.kind === 'plasma') drawFilmWallPlasma(r);
     else if (r.kind !== 'vwall') drawFilmPanel(r.x, r.w || 430, false);
