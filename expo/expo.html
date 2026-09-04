@@ -2188,9 +2188,11 @@ function drawFilmPanel(x, wWorld, welcome){
 function drawWelcomeTV(){
   const T = WELCOME_TV;
   if (Math.abs(T.x - cam.x) > 3600) return;
-  const g = drawFilmPanel(T.x, T.w, true);
-  if (!g) return;
-  const {sx, kk, footY} = g;
+  /* the panel and the lettering cull SEPARATELY: the set is nearer and leaves
+     the frame first — the words on the wall stay until THEY reach the edge */
+  drawFilmPanel(T.x, T.w, true);
+  const kk = k(8), sx = px(T.x, kk);
+  const footY = py(CFG.benchY - 30, kk);
   /* the inscription is LETTERING ON THE WALL, not a label on the set: it lives
      at the wall's own depth, so pulling back leaves it hanging on the plaster
      where it was painted — and a size down, so the film stays the hero */
