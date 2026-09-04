@@ -5031,37 +5031,32 @@ function drawRec4(t){
     pgl.addColorStop(0, 'rgba(140,215,255,0.20)'); pgl.addColorStop(1, 'rgba(140,215,255,0)');
     ctx.fillStyle = pgl;
     ctx.fillRect(nx - nw, dockY - 8*SS - nw*0.7, nw*2, nw*1.4);
-    // the wand, to the reference: white body, two blue keys, a low dock
-    const wTop = nTop + (nBot - nTop) * 0.06, wCx = nx;
-    const wandH = dockY - wTop, wandW = nw * 0.34;
-    ctx.save();
-    ctx.shadowColor = 'rgba(40,60,80,0.30)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetX = 3*SS;
-    const wg2 = ctx.createLinearGradient(wCx - wandW/2, 0, wCx + wandW/2, 0);
-    wg2.addColorStop(0, '#fbfcfd'); wg2.addColorStop(0.55, '#eef1f4'); wg2.addColorStop(1, '#c9ced4');
-    ctx.fillStyle = wg2;
-    ctx.beginPath(); ctx.roundRect(wCx - wandW/2, wTop, wandW, wandH, wandW/2); ctx.fill();
-    ctx.restore();
-    // the seam where the tip meets the body
-    ctx.strokeStyle = 'rgba(120,130,140,0.45)'; ctx.lineWidth = 1*SS;
-    ctx.beginPath();
-    ctx.moveTo(wCx - wandW/2 + 1.5*SS, wTop + wandH*0.20);
-    ctx.lineTo(wCx + wandW/2 - 1.5*SS, wTop + wandH*0.20);
-    ctx.stroke();
-    // two blue keys
-    for (const [f, rr] of [[0.56, 0.20], [0.68, 0.12]]){
-      ctx.fillStyle = '#2f62c8';
-      ctx.beginPath(); ctx.arc(wCx, wTop + wandH*f, wandW*rr, 0, 7); ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1*SS;
-      ctx.beginPath(); ctx.arc(wCx, wTop + wandH*f, wandW*rr, 0, 7); ctx.stroke();
+    /* THE INSTRUMENT ITSELF, not a drawing of it. This used to be a wand built
+       from a rounded rectangle and two blue circles, standing in for the real
+       thing at the one place in the hall where the real thing is the exhibit.
+       Now it is the product photograph, standing on the floor of its case and
+       keeping its own proportion — the height is the case's, the width follows
+       from the picture, so it can never be squeezed to fit. */
+    const sp = PROP_SPRITES.ph_scanner;
+    // the tip starts below the plate's own two lines, not through them
+    const wTop = nTop + (nBot - nTop) * 0.30, wCx = nx;
+    const wandH = dockY - wTop;
+    const wandW = sp ? wandH * sp.w / sp.h : nw * 0.34;
+    if (sp){
+      ctx.save();
+      ctx.shadowColor = 'rgba(40,60,80,0.34)'; ctx.shadowBlur = 9*SS; ctx.shadowOffsetX = 3*SS;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(sp.c, wCx - wandW/2, wTop, wandW, wandH);
+      ctx.restore();
     }
     // the dock it stands in
-    const dW = wandW*1.6, dH = wandH*0.07;
+    const dW = wandW*2.2, dH = wandH*0.07;
     const dg = ctx.createLinearGradient(0, nBot - r*0.42 - dH, 0, nBot - r*0.42 + dH);
     dg.addColorStop(0, '#dde1e5'); dg.addColorStop(1, '#aab0b6');
     ctx.fillStyle = dg;
     ctx.beginPath(); ctx.roundRect(wCx - dW/2, dockY - dH*0.5, dW, dH*1.5, 3*SS); ctx.fill();
     ctx.fillStyle = 'rgba(60,70,80,0.35)';
-    ctx.beginPath(); ctx.ellipse(wCx, dockY - dH*0.4, wandW*0.62, 2.4*kn*SS, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(wCx, dockY - dH*0.4, wandW*0.85, 2.4*kn*SS, 0, 0, 7); ctx.fill();
   }
   drawRec4Columns(yBase);
 }
@@ -6202,6 +6197,7 @@ async function loadPhotoSkin(){
     ph_crate: 'crate_0.png',
     ph_cabinet: 'cabinet_1907.png',
     ph_casebox: 'case_box.png',       // the mailed case, open — the real photograph
+    ph_scanner: 'scanner.png',        // fastscan.io, the instrument itself, not a drawing of it
     bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
     bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
   };
@@ -6866,20 +6862,24 @@ function makePedObj(kind){
     g.fillText('glidewell.io', 128, 150);
   } else if (kind === 'scanner'){
     c.width = 150; c.height = 170;
-    // intraoral scanner wand resting on its cradle
-    g.save(); g.translate(75, 90); g.rotate(-0.5);
-    const body = g.createLinearGradient(-14, -70, 16, 60);
-    body.addColorStop(0, '#eef1f4'); body.addColorStop(.6, '#c8cdd2'); body.addColorStop(1, '#9aa0a6');
-    g.fillStyle = body;
-    g.beginPath(); g.roundRect(-13, -66, 26, 118, 12); g.fill();
-    g.fillStyle = '#3d4348';
-    g.beginPath(); g.roundRect(-9, -78, 26, 26, 8); g.fill();   // tip
-    g.fillStyle = 'rgba(110,190,255,0.85)';
-    g.fillRect(-2, 14, 6, 22);                                   // status light
-    g.restore();
-    g.fillStyle = '#33373b';                                     // cradle
-    g.beginPath(); g.roundRect(30, 128, 90, 16, 6); g.fill();
-    g.beginPath(); g.roundRect(62, 96, 26, 36, 6); g.fill();
+    /* the same instrument as the one in the 2022 vitrine, and the same
+       photograph: it leans in its cradle here instead of standing, but it is
+       the product, not a grey stick with a dark cap. The cradle's post is
+       behind it and the base plate in front, so it reads as held. */
+    const sp = PROP_SPRITES.ph_scanner;
+    g.fillStyle = '#33373b';
+    g.beginPath(); g.roundRect(62, 96, 26, 36, 6); g.fill();     // the post it leans on
+    if (sp){
+      const H = 126, wdt = H * sp.w / sp.h;
+      g.save();
+      g.translate(80, 132); g.rotate(-0.42);
+      g.shadowColor = 'rgba(30,40,50,0.35)'; g.shadowBlur = 6; g.shadowOffsetX = 2;
+      g.imageSmoothingQuality = 'high';
+      g.drawImage(sp.c, -wdt/2, -H, wdt, H);
+      g.restore();
+    }
+    g.fillStyle = '#33373b';
+    g.beginPath(); g.roundRect(30, 128, 90, 16, 6); g.fill();    // the base plate
   } else {
     c.width = 190; c.height = 130;
     // zirconia milling puck
