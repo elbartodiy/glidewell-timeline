@@ -2197,7 +2197,8 @@ function drawWelcomeSheet(){
     const g2 = pc.getContext('2d');
     g2.clearRect(0, 0, pw2, ph2);
     const sc3 = Math.max(pw2 / v.videoWidth, ph2 / v.videoHeight);
-    try { g2.filter = 'grayscale(0.9) sepia(0.28) contrast(1.06) brightness(1.02)'; } catch(e){}
+    // old-school picture, in COLOUR: warm faded stock, not a newsreel
+    try { g2.filter = 'sepia(0.18) saturate(1.18) contrast(1.05) brightness(1.03)'; } catch(e){}
     g2.globalAlpha = 0.82;
     g2.drawImage(v, pw2/2 - v.videoWidth*sc3/2, ph2/2 - v.videoHeight*sc3/2,
                  v.videoWidth*sc3, v.videoHeight*sc3);
@@ -5186,29 +5187,48 @@ function drawLamp(x, t, seed){
   let sx = px(x, kk);
   if (sx < -300 || sx > W + 300) return 0;
   sx += Math.sin(t*0.55 + seed*2.1) * 6 * kk * SS;   // slow pendulum sway
-  const inten = lampFlicker(t, seed);
+  /* From the founding on, the wiring is new: cream rounded shades, steadier
+     whiter light, and NO flicker — the pioneer-era bulbs stay behind, at 1907. */
+  const modern = x >= SHIFT(2200);
+  const inten = modern ? 0.97 : lampFlicker(t, seed);
   const bulbY = py(38, kk);
   // cord
-  ctx.strokeStyle = 'rgba(20,10,4,0.9)'; ctx.lineWidth = 3*kk*SS;
+  ctx.strokeStyle = modern ? 'rgba(48,40,30,0.9)' : 'rgba(20,10,4,0.9)';
+  ctx.lineWidth = 3*kk*SS;
   ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, bulbY); ctx.stroke();
-  // shade silhouette
-  ctx.fillStyle = '#1c1006';
-  ctx.beginPath();
-  ctx.moveTo(sx - 46*kk*SS, bulbY);
-  ctx.lineTo(sx + 46*kk*SS, bulbY);
-  ctx.lineTo(sx + 16*kk*SS, bulbY - 30*kk*SS);
-  ctx.lineTo(sx - 16*kk*SS, bulbY - 30*kk*SS);
-  ctx.closePath(); ctx.fill();
+  if (modern){
+    // a rounded cream dome
+    const dg2 = ctx.createLinearGradient(sx - 46*kk*SS, 0, sx + 46*kk*SS, 0);
+    dg2.addColorStop(0, '#cfc7b4'); dg2.addColorStop(0.45, '#efe9da'); dg2.addColorStop(1, '#b9b19e');
+    ctx.fillStyle = dg2;
+    ctx.beginPath();
+    ctx.moveTo(sx - 46*kk*SS, bulbY);
+    ctx.quadraticCurveTo(sx - 44*kk*SS, bulbY - 32*kk*SS, sx, bulbY - 34*kk*SS);
+    ctx.quadraticCurveTo(sx + 44*kk*SS, bulbY - 32*kk*SS, sx + 46*kk*SS, bulbY);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(60,52,40,0.35)'; ctx.lineWidth = 1*SS;
+    ctx.beginPath(); ctx.moveTo(sx - 46*kk*SS, bulbY); ctx.lineTo(sx + 46*kk*SS, bulbY); ctx.stroke();
+  } else {
+    // shade silhouette
+    ctx.fillStyle = '#1c1006';
+    ctx.beginPath();
+    ctx.moveTo(sx - 46*kk*SS, bulbY);
+    ctx.lineTo(sx + 46*kk*SS, bulbY);
+    ctx.lineTo(sx + 16*kk*SS, bulbY - 30*kk*SS);
+    ctx.lineTo(sx - 16*kk*SS, bulbY - 30*kk*SS);
+    ctx.closePath(); ctx.fill();
+  }
   // bulb glow
   const r = 34*kk*SS;
-  drawGlow('255,225,155', sx, bulbY + r*0.5, r*2.2, 0.85*inten);
+  drawGlow(modern ? '248,243,228' : '255,225,155', sx, bulbY + r*0.5, r*2.2, 0.85*inten);
   // light cone — soft-shouldered, and it dies out rather than being cut
   softBeam(sx, px(x, k(120)), bulbY, py(CFG.benchY, k(120)),
-           40*kk*SS, 330*kk*SS, '255,205,125', 0.075*inten,
+           40*kk*SS, 330*kk*SS, modern ? '250,246,232' : '255,205,125', 0.075*inten,
            [[0, 1], [0.7, 0.5], [1, 0]]);
   // pool on the table
   const kf = k(160);
-  drawGlow('255,205,120', px(x,kf), py(CFG.benchY - 4, kf), 300*kf*SS, 0.16*inten, 0.28);
+  drawGlow(modern ? '248,242,226' : '255,205,120',
+           px(x,kf), py(CFG.benchY - 4, kf), 300*kf*SS, 0.16*inten, 0.28);
   return inten;
 }
 
