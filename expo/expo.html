@@ -1124,10 +1124,11 @@ function resize(){
   const dpr = Math.min(window.devicePixelRatio || 1, CFG.dprCap);
   W = cv.width = Math.round(innerWidth * dpr * RQ);
   H = cv.height = Math.round(innerHeight * dpr * RQ);
-  /* high-quality minification: baked 1-2px sprite lines sampled bilinearly
-     CRAWL as the camera pans — Chrome's 'high' filter mips them steady.
-     (Resizing the canvas resets context state, so it is set here.) */
-  ctx.imageSmoothingQuality = 'high';
+  /* 'medium' filtering globally: 'high' was applied to EVERYTHING, including
+     the era-1 counter — the largest photograph in the hall, repainted every
+     frame — and 1970 began to stutter. The photo prints, where thin baked
+     lines actually crawl, opt into 'high' for their own draw only. */
+  ctx.imageSmoothingQuality = 'medium';
   SS = H / CFG.refH;
   VIG = null;
 }
@@ -1568,6 +1569,8 @@ function drawSprite(sp, x, yCenter, z, wWorld, rotDeg, alpha, hit, sxRivet){
   if (hit) pushHit(sx - sp.w*scale/2, sy - sp.h*scale/2, sp.w*scale, sp.h*scale, hit);
   ctx.save();
   ctx.globalAlpha = alpha == null ? 1 : alpha;
+  // prints carry baked hairlines: they alone pay for the high-quality filter
+  ctx.imageSmoothingQuality = 'high';
   ctx.translate(sx, sy);
   if (rotDeg) ctx.rotate(rotDeg * Math.PI/180);
   ctx.drawImage(sp.c, -sp.w*scale/2, -sp.h*scale/2, sp.w*scale, sp.h*scale);
@@ -1590,7 +1593,9 @@ function drawStandingPrint(sp, x, lz, wWorld, hit, lift){
   ctx.fillStyle = sg;
   ctx.fillRect(sx - sw*0.55, syFoot - sw*0.55, sw*1.1, sw*1.1);
   ctx.restore();
+  ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(sp.c, sx - sw/2, syFoot - sh + 6*kk*SS, sw, sh);
+  ctx.imageSmoothingQuality = 'medium';
 }
 function drawLyingPrint(sp, x, lz, wWorld, rotDeg, hit){
   // print lying on the tabletop — bolted to the counter's near plane
