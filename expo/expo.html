@@ -115,8 +115,10 @@ const BEATS = [
    pinZ:728,   // the numeral is riveted to the recreation panel: it grows in place, never drifts
    th:'',
    d:'Still in Orange, California: 175 people now serve more than 3,500 dentists, and 95% of cases arrive by mail. The lab is national without having left the county.',
-   wall:[{img:'lab5move', w:300, dx:-750, cy:400, rot:-0.6, style:'white'}],
-   table:[],
+   /* the move photo came off the wall and stands on the counter instead —
+      the 1988 hanging set needed that stretch of wall */
+   wall:[],
+   table:[], st:[{img:'lab5move', w:250, dx:-750, lz:85}],
    ped:{obj:'bizcard', dx:0, low:true}},
 
   /* ---- ERA 3 · the computer arrives, 1995–2007
@@ -1972,7 +1974,7 @@ function initFilmRelays(){
   FILM_RELAYS.push(
     {kind: 'crt70',  x: lamp != null ? lamp : bayEnd + 400, w: 250},
     {kind: 'hang',   x: SHIFT(6060),  w: 320, cy: 320, era: 0},   // after 1976, before the 1979 column
-    {kind: 'hang',   x: SHIFT(10070), w: 320, cy: 320, era: 1},   // 1988, another housing
+    {kind: 'hang',   x: SHIFT(10250), w: 320, cy: 282, era: 1},   // 1988 — higher and right of the year
     {kind: 'crt95',  x: SHIFT(12700), lz: 70, w: 290},            // the nineties set by 1995
     {kind: 'proj',   x: SHIFT(15330), w: 460, cy: 430},           // 1999: thrown onto the wall
     {kind: 'plasma', x: SHIFT(22240), w: 450, cy: 370},           // between 2009 and the 2010s
