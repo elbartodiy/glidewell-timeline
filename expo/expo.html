@@ -2585,7 +2585,11 @@ function ambiColor(v){
       const d = g2.getImageData(0, 0, 4, 4).data;
       let r = 0, g = 0, b = 0;
       for (let i = 0; i < 64; i += 4){ r += d[i]; g += d[i+1]; b += d[i+2]; }
-      AMBI.c = `${(r/16*1.25)|0},${(g/16*1.25)|0},${(b/16*1.25)|0}`;
+      /* quantized to 24 steps: glowSprite caches a 256x256 canvas per colour
+         STRING, and a freely drifting colour minted a new one every sample —
+         an unbounded cache and an allocation every third of a second */
+      const q = n => Math.min(255, Math.round(n / 24) * 24);
+      AMBI.c = `${q(r/16*1.25)},${q(g/16*1.25)},${q(b/16*1.25)}`;
     } catch(e){}
   }
   return AMBI.c;
@@ -3507,7 +3511,7 @@ function drawProgress(t){
    quarter resolution, blurred, and added back — cheap enough for the N100 at
    480x270, and it is what makes the hall stop looking vector. `?nobloom` off. */
 const BLOOM_ON = !/[?&]nobloom/.test(location.search);
-let BLOOM = null;
+let BLOOM = null, BLOOM_S = null;
 function drawBloom(){
   if (!BLOOM_ON || !W || !H) return;
   const bw = Math.max(2, W >> 2), bh = Math.max(2, H >> 2);
@@ -3517,16 +3521,29 @@ function drawBloom(){
   }
   const g = BLOOM.getContext('2d');
   g.clearRect(0, 0, bw, bh);
-  // brightness 0.47 + contrast 8 puts the knee at ~0.93: only what is already
-  // near white spills, so a lit wall stays a wall and does not become a lamp
-  g.filter = `brightness(0.47) contrast(8) blur(${Math.max(2, bw*0.008).toFixed(1)}px)`;
+  /* brightness 0.47 + contrast 8 puts the knee at ~0.93: only what is already
+     near white spills, so a lit wall stays a wall and does not become a lamp.
+     The BLUR is no longer a filter — a canvas blur() runs on the software
+     rasterizer and cost more than everything else in the frame put together.
+     The spill is downscaled once more instead: bilinear minification IS a
+     blur, and it rides the GPU. */
+  g.filter = 'brightness(0.47) contrast(8)';
   g.drawImage(ctx.canvas, 0, 0, bw, bh);
   g.filter = 'none';
+  const sw2 = Math.max(2, bw >> 2), sh2 = Math.max(2, bh >> 2);
+  if (!BLOOM_S || BLOOM_S.width !== sw2 || BLOOM_S.height !== sh2){
+    BLOOM_S = document.createElement('canvas');
+    BLOOM_S.width = sw2; BLOOM_S.height = sh2;
+  }
+  const g2 = BLOOM_S.getContext('2d');
+  g2.clearRect(0, 0, sw2, sh2);
+  g2.imageSmoothingEnabled = true;
+  g2.drawImage(BLOOM, 0, 0, sw2, sh2);
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   ctx.globalAlpha = 0.11;
   ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(BLOOM, 0, 0, W, H);
+  ctx.drawImage(BLOOM_S, 0, 0, W, H);
   ctx.restore();
 }
 
@@ -8361,6 +8378,7 @@ function openStudy(i){
     state.study.railV = v; state.study.railSrc = m.src;
   }
 }
+let FROST = null;
 function drawStudy(){
   const S = state.study; if (!S) return;
   S.amt += ((S.closing ? 0 : 1) - S.amt) * Math.min(1, (state.dt || 0.016) * 5);
@@ -8414,8 +8432,21 @@ function drawStudy(){
     // then veiled and dusted with grain — matte, not see-through
     ctx.save();
     ctx.beginPath(); ctx.roundRect(wx0, wy0, ww, wh, K.r*SS); ctx.clip();
-    try { ctx.filter = `blur(${16*SS}px)`; ctx.drawImage(cv, 0, 0); } catch(err){}
-    ctx.filter = 'none';
+    /* frosted, without the software rasterizer: a blur() filter over the whole
+       frame cost more than the rest of the page together. Minifying the frame
+       and blowing it back up IS a blur, and it rides the GPU. */
+    try {
+      const fw = Math.max(2, W >> 4), fh = Math.max(2, H >> 4);
+      if (!FROST || FROST.width !== fw || FROST.height !== fh){
+        FROST = document.createElement('canvas'); FROST.width = fw; FROST.height = fh;
+      }
+      const gf = FROST.getContext('2d');
+      gf.clearRect(0, 0, fw, fh);
+      gf.imageSmoothingEnabled = true;
+      gf.drawImage(cv, 0, 0, fw, fh);
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(FROST, 0, 0, W, H);
+    } catch(err){}
     ctx.fillStyle = 'rgba(238,244,250,0.18)';
     ctx.fillRect(wx0, wy0, ww, wh);
     const gn = grains[(state.time*10|0) % grains.length];
@@ -9632,6 +9663,7 @@ function drawShowroomLight(t){
    painted so far is folded down across the floor line and faded out — so the
    reflection is of whatever is actually standing there, and stays true by
    construction rather than by being drawn twice. */
+let SHEEN = null;
 function drawFloorSheen(){
   if (cam.x < SHOW_L - 2400 || cam.x > SHOW_R + 2400) return;
   /* A REFLECTION IS BOUNDED BY THE FLOOR IT LIES ON. This was clipped to
@@ -9665,14 +9697,32 @@ function drawFloorSheen(){
      and it is gone within the near half of the band. */
   if (sx1 - sx0 > 2 && yTop - band > 0){
     const N = 14;
+    /* ONE READ, NOT FOURTEEN. Each drawImage of the canvas into itself forces
+       the compositor to resolve and copy the whole backing store; fourteen of
+       them per frame was the stall you could feel in the white era. The band
+       above the fold is copied ONCE into a scratch canvas, and the slices are
+       then cut from that copy — GPU to GPU. */
+    const cw = Math.max(2, Math.ceil(sx1 - sx0)), ch = Math.max(2, Math.ceil(band));
+    /* the scratch is sized to the FRAME, not to this moment's visible span:
+       the span changes with every turn of the wheel, and a per-frame canvas
+       allocation is a garbage machine (620 of them in one pass of the hall) */
+    const capW = Math.max(2, Math.ceil(W)), capH = ((ch + 31) >> 5) << 5;
+    if (!SHEEN || SHEEN.width < capW || SHEEN.height < capH){
+      SHEEN = document.createElement('canvas');
+      SHEEN.width = capW; SHEEN.height = Math.max(capH, 32);
+    }
+    const gs = SHEEN.getContext('2d');
+    gs.clearRect(0, 0, cw, ch);
+    gs.drawImage(ctx.canvas, sx0, yTop - band, cw, ch, 0, 0, cw, ch);
+    const hh = band / N;
     for (let s = 0; s < N; s++){
       const u = s / N, a = 0.34 * (1 - u) * (1 - u);
       if (a < 0.004) break;
-      const hh = band / N;
       ctx.globalAlpha = a;
       ctx.scale(1, -1);
-      ctx.drawImage(ctx.canvas, sx0, yTop - (s + 1) * hh, sx1 - sx0, hh,
-                                sx0, -(yTop + (s + 1) * hh), sx1 - sx0, hh);
+      // the same strip the old code took: (s+1) slices up from the fold
+      ctx.drawImage(SHEEN, 0, ch - (s + 1) * hh, cw, hh,
+                    sx0, -(yTop + (s + 1) * hh), cw, hh);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
     ctx.globalAlpha = 1;
