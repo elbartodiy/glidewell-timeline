@@ -1997,10 +1997,15 @@ function startFilm(){
   try { v.currentTime = 0; } catch(e){}
   v.muted = false; T.userPaused = false;
   v.play().catch(() => {
-    // the gesture was not one the browser honours: roll silent, the first
-    // tap will bring the sound (and the top of the film) with it
+    /* the wheel is not a gesture the browser honours for sound: stay on the
+       poster, and the first real touch anywhere starts the show properly */
     v.muted = true;
-    v.play().catch(()=>{});
+    try { v.pause(); v.currentTime = 0; } catch(e){}
+    if (!T._armed){
+      T._armed = true;
+      const go = () => { window.removeEventListener('pointerdown', go); startFilm(); };
+      window.addEventListener('pointerdown', go);
+    }
   });
 }
 /* One film, many screens. The film is engaged once its sound is on; from then
@@ -2152,7 +2157,12 @@ function drawFilmPanel(x, wWorld, welcome){
   ctx.beginPath(); ctx.rect(vx, vy, sw, sh); ctx.clip();
   ctx.fillStyle = '#000';
   ctx.fillRect(vx, vy, sw, sh);
-  if (v && v.videoWidth && v.readyState >= 2){
+  if (welcome && v && v.muted && PROP_SPRITES.ph_cover){
+    // before the show: the film's own cover, not a frozen frame
+    const cvr = PROP_SPRITES.ph_cover;
+    const s = Math.max(sw / cvr.w, sh / cvr.h);
+    ctx.drawImage(cvr.c, sx - cvr.w*s/2, vy + sh/2 - cvr.h*s/2, cvr.w*s, cvr.h*s);
+  } else if (v && v.videoWidth && v.readyState >= 2){
     const s = Math.max(sw / v.videoWidth, sh / v.videoHeight);
     ctx.drawImage(v, sx - v.videoWidth*s/2, vy + sh/2 - v.videoHeight*s/2,
                   v.videoWidth*s, v.videoHeight*s);
@@ -6068,6 +6078,7 @@ async function loadPhotoSkin(){
     ph_crate: 'crate_0.png',
     ph_cabinet: 'cabinet_1907.png',
     ph_casebox: 'case_box.png',       // the mailed case, open — the real photograph
+    ph_cover: 'cover.jpg',            // the film's cover — the poster before the show
     bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
     bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
   };
