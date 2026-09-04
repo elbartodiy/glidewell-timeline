@@ -2019,7 +2019,7 @@ function initFilmRelays(){
     {kind: 'crt95',  x: SHIFT(12700), lz: 70, w: 290},            // the nineties set by 1995
     {kind: 'proj',   x: SHIFT(15330), w: 1260, cy: 318},          // 1999: high on the wall, air under it
     {kind: 'lcd05',  x: SHIFT(18150), lz: 16, w: 235},            // the office LCD between 2005 and 2007
-    {kind: 'plasma', x: SHIFT(22240), w: 640, cy: 385},           // between 2009 and the 2010s
+    {kind: 'plasma', x: SHIFT(22240), w: 640, cy: 454, h: 428},   // between 2009 and the 2010s, down to the counter
     {kind: 'vwall',  x: 33060, w: 900, top: -30, h: 850}          // the backdrop wall behind 2022 → 2023, up to the soffit
   );
   if (DBG) console.log('film screens:', FILM_RELAYS.map(r => r.kind + '@' + (r.x | 0)).join(', '));
@@ -2598,7 +2598,7 @@ function drawFilmWallPlasma(r){
   const wz = wallZAt(r.x) - 16;
   const kk = k(wz), sx = wallSX(r.x, 0, kk);
   rivet('film:plasma:' + r.x, sx, k(exhibitZ(r.x)));
-  const vw = r.w * kk * SS, vh = vw * 9/16;
+  const vw = r.w * kk * SS, vh = r.h ? r.h * kk * SS : vw * 9/16;
   const bez = 9 * kk * SS;
   if (sx < -vw || sx > W + vw) return;
   const cy = py(r.cy, kk);
@@ -9390,11 +9390,6 @@ function drawShowroom(t){
     ctx.fillRect(x0, yy, x1 - x0, 1.6 * SS);
   }
   ctx.restore();
-  /* Red in small doses, because the mark is red: a hairline reveal under the
-     ribbon. Enough that the eye finds the accent without the room becoming
-     about it. */
-  ctx.fillStyle = 'rgba(196,46,34,0.5)';
-  ctx.fillRect(Math.max(0, x0), yB - 2.2 * kk * SS, x1 - Math.max(0, x0), 2.2 * kk * SS);
   /* the return at the near end: end grain, then the shadow it throws on the wall
      beside it, so the run begins somewhere instead of simply appearing */
   if (x0 > -40){
@@ -9411,11 +9406,15 @@ function drawShowroom(t){
   sh.addColorStop(0, 'rgba(30,22,14,0.22)'); sh.addColorStop(1, 'rgba(30,22,14,0)');
   ctx.fillStyle = sh;
   /* the shadow stops where the wood does: past the quarter-round the beam's
-     underside lifts away, so the full-strength shadow ran on under nothing */
+     underside lifts away — and the tail dies in many small steps that read as
+     one smooth fade, not a two-step drop */
   ctx.fillRect(Math.max(0, x0), yB, (x1 - turn) - Math.max(0, x0), 70 * kk * SS);
   ctx.save();
-  ctx.globalAlpha = 0.45;
-  ctx.fillRect(x1 - turn, yB, turn * 0.5, 70 * kk * SS);
+  const NT = 8, tailW = turn * 0.92;
+  for (let i = 0; i < NT; i++){
+    ctx.globalAlpha = Math.pow(1 - (i + 0.5) / NT, 1.4);
+    ctx.fillRect(x1 - turn + tailW * i / NT, yB, tailW / NT + 1, 70 * kk * SS);
+  }
   ctx.restore();
   // downlights set into it, and the pools they throw
   ctx.globalCompositeOperation = 'lighter';
