@@ -62,7 +62,7 @@ const BEATS = [
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
      The album belongs to the walk up to 1970, not to the moment of it. */
-  album:{dx:-980, lz:85, w:300, edgeOK:true, title:'THE FAMILY ALBUM',
+  album:{dx:-1310, lz:85, w:300, edgeOK:true, title:'THE FAMILY ALBUM',
           photos:[['father42','jim15'],['jim18','jim1970']]}},
 
   {x:3450, y:'1970s', t:'PFM ERA', plaque:true,
@@ -95,15 +95,15 @@ const BEATS = [
   {x:7990, y:'1980', t:'STUDY PROGRAM',
    th:'Education as a bond — long before it was a marketing channel.',
    d:'An International Study Program brings dentists in from Japan and abroad to train in the US — the root of Jim’s lifelong belief in teaching and symposia.',
-   wall:[{img:'joeha', w:280, dx:-240, cy:350, rot:-0.8},
-         {img:'lab3ext', w:380, dx:430, cy:380, rot:0.5}],
+   wall:[{img:'joeha', w:280, dx:-240, cy:350},
+         {img:'lab3ext', w:380, dx:430, cy:380}],
    table:[]},
 
   {x:8750, y:'1984', t:'CONSOLIDATION',
    th:'One machine, fed nationally — the model that scales.',
    d:'Nine labs merge into one centralized plant in Orange (15,000 sq ft, 42 staff); mail now brings the majority of cases.',
-   wall:[{img:'lab3ben', w:400, dx:-440, cy:380, rot:0.4},
-         {img:'lab3rec', w:380, dx:440, cy:380, rot:-0.9}],
+   wall:[{img:'lab3ben', w:400, dx:-440, cy:380},
+         {img:'lab3rec', w:380, dx:440, cy:380}],
    table:[]},
 
   {x:9850, y:'1988', t:'BIOTEMPS',
@@ -118,7 +118,7 @@ const BEATS = [
    /* the move photo came off the wall and stands on the counter instead —
       the 1988 hanging set needed that stretch of wall */
    wall:[],
-   table:[], st:[{img:'lab5move', w:250, dx:-750, lz:85}],
+   table:[], st:[{img:'lab5move', w:250, dx:-750, lz:12, lift:34}],
    ped:{obj:'bizcard', dx:0, low:true}},
 
   /* ---- ERA 3 · the computer arrives, 1995–2007
@@ -223,7 +223,7 @@ const BEATS = [
    wall:[], table:[],
    plasma:{dx:330, cy:566, w:430, mode:'wave'}},
 
-  {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870,
+  {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870, yLift:-72,
    th:'Reinvesting in the profession — and our channel for finding hero dentists.',
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
    wall:[],
@@ -235,7 +235,7 @@ const BEATS = [
   {x:26340, y:'2022', t:'FASTSCAN.IO',
    th:'The front door to the all-digital workflow.',
    d:'fastscan.io, built with Medit, folds an intraoral scanner into the ecosystem — no impressions, no remakes, data straight into design and mill.',
-   wall:[{img:'jimnow', w:250, dx:-760, cy:330, rot:0.5, cap:'Jim Glidewell', style:'white', pz:995}],
+   wall:[{img:'jimnow', w:310, dx:-760, cy:262, rot:0.5, cap:'Jim Glidewell', style:'white', pz:995}],
    table:[], pyr:{dx:520, w:460},
    /* no pedestal: the scanner lives in the lit capsule on the panel */},
 
@@ -1173,8 +1173,8 @@ function softBeam(xa, xb, yA, yB, halfA, halfB, rgb, peak, stops){
        the SLOWER its curve (m^p, p<1): every pass now reaches zero at the same
        height, and the beam ends wide, together. `comp` gives back the
        brightness the gentler curve would otherwise add. */
-    const p = 0.45 + 0.55 * (i / (n - 1));
-    const comp = Math.pow(0.62, 1 - p);
+    const p = 0.26 + 0.74 * (i / (n - 1));
+    const comp = Math.pow(0.52, 1 - p);
     const g = ctx.createLinearGradient(0, yA, 0, yB);
     for (const [t, m] of stops)
       g.addColorStop(t, `rgba(${rgb},${(peak * a * Math.pow(m, p) * comp).toFixed(4)})`);
@@ -1551,13 +1551,13 @@ function drawSprite(sp, x, yCenter, z, wWorld, rotDeg, alpha, hit, sxRivet){
   ctx.restore();
 }
 
-function drawStandingPrint(sp, x, lz, wWorld, hit){
+function drawStandingPrint(sp, x, lz, wWorld, hit, lift){
   const kk = k(lz);
   const sx = px(x, kk);
   if (sx < -500 || sx > W + 500) return;
   const scale = (wWorld / sp.inner.w) * kk * SS;
   const sw = sp.w * scale, sh = sp.h * scale;
-  const syFoot = py(CFG.benchY - 2, kk);
+  const syFoot = py(CFG.benchY - (lift || 2), kk);
   if (hit) pushHit(sx - sw/2, syFoot - sh, sw, sh, hit);
   // contact shadow
   ctx.save();
@@ -4845,13 +4845,13 @@ function drawRec4(t){
     if (flare > 0.02) drawGlow('165,222,255', nx, (nTop + nBot)/2, nw * 1.15, 0.22 * flare);
     capsule(); ctx.strokeStyle = 'rgba(200,238,255,0.95)'; ctx.lineWidth = 1.2*SS; ctx.stroke();
     // light pooling at the capsule's floor
-    const dockY = py(946, kn);                // the stand sits ON the counter's line
+    const dockY = py(916, kn);                // the stand rides a step above the counter's line
     const pgl = ctx.createRadialGradient(nx, dockY - 8*SS, 4, nx, dockY - 8*SS, nw*0.9);
     pgl.addColorStop(0, 'rgba(140,215,255,0.20)'); pgl.addColorStop(1, 'rgba(140,215,255,0)');
     ctx.fillStyle = pgl;
     ctx.fillRect(nx - nw, dockY - 8*SS - nw*0.7, nw*2, nw*1.4);
     // the wand, to the reference: white body, two blue keys, a low dock
-    const wTop = nTop + (nBot - nTop) * 0.09, wCx = nx;
+    const wTop = nTop + (nBot - nTop) * 0.06, wCx = nx;
     const wandH = dockY - wTop, wandW = nw * 0.34;
     ctx.save();
     ctx.shadowColor = 'rgba(40,60,80,0.30)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetX = 3*SS;
@@ -5069,7 +5069,7 @@ function drawLamp(x, t, seed){
      whiter light, and NO flicker — the pioneer-era bulbs stay behind, at 1907. */
   const modern = x >= SHIFT(2200);
   const inten = modern ? 0.97 : lampFlicker(t, seed);
-  const bulbY = py(modern ? 12 : 38, kk);   // the new fixtures ride higher, clear of a flying year
+  const bulbY = py(modern ? -16 : 38, kk);  // the new fixtures ride higher, clear of a flying year
   // cord
   ctx.strokeStyle = modern ? 'rgba(48,40,30,0.9)' : 'rgba(20,10,4,0.9)';
   ctx.lineWidth = 3*kk*SS;
@@ -5081,9 +5081,9 @@ function drawLamp(x, t, seed){
     const wHalf = 92*kk*SS, hSh = 26*kk*SS, rr = 9*kk*SS;
     const topY = bulbY - hSh;
     const dg2 = ctx.createLinearGradient(0, topY, 0, bulbY);
-    dg2.addColorStop(0, '#8a8371');
-    dg2.addColorStop(0.55, '#b6ad96');
-    dg2.addColorStop(1, '#efe6cf');
+    dg2.addColorStop(0, '#5f594b');
+    dg2.addColorStop(0.55, '#948c77');
+    dg2.addColorStop(1, '#e6dcc2');
     ctx.fillStyle = dg2;
     ctx.beginPath();
     ctx.moveTo(sx - wHalf, bulbY);
@@ -5106,9 +5106,10 @@ function drawLamp(x, t, seed){
     ctx.lineTo(sx - 16*kk*SS, bulbY - 30*kk*SS);
     ctx.closePath(); ctx.fill();
   }
-  // bulb glow
+  // bulb glow — a LONG fixture sheds a long glow, not a bulb's ball
   const r = 34*kk*SS;
-  drawGlow(modern ? '248,243,228' : '255,225,155', sx, bulbY + r*0.5, r*2.2, 0.85*inten);
+  if (modern) drawGlow('248,243,228', sx, bulbY + 8*kk*SS, 108*kk*SS, 0.7*inten, 0.32);
+  else drawGlow('255,225,155', sx, bulbY + r*0.5, r*2.2, 0.85*inten);
   // light cone — soft-shouldered, and it dies out rather than being cut
   softBeam(sx, px(x, k(120)), bulbY, py(CFG.benchY + 80, k(120)),
            (modern ? 84 : 40)*kk*SS, 355*kk*SS, modern ? '250,246,232' : '255,205,125', 0.075*inten,
@@ -6030,6 +6031,10 @@ function initDecor(){
       if (!eraProps[si].length) break;
       if (BEATS.some(bt => Math.abs(bt.x - x) < 430)) continue;
       if (BENCH_BREAKS.some(v => Math.abs(v.x - x) < v.half + 130)) continue;
+      /* not on a PAINTED counter: an object at depth slides against a flat
+         photograph — the founding plate and era 2's photographed run */
+      if (PLATES.some(pl => Math.abs(x - pl.x) < (pl.w || 0)/2 + 120)) continue;
+      if (x > SHIFT(7550) && x < REC3_L) continue;
       const kinds = eraProps[si];
       PROPS.push({x, z: 45 + R()*60, kind: kinds[(R()*kinds.length)|0],
                   w: 95 + R()*60, flip: R() > 0.5});
@@ -9708,7 +9713,8 @@ function frame(){
       const sp = SPRITES[it.img]; if (!sp) continue;
       const hW = sp.h * (it.w / sp.inner.w);
       drawStandingPrint(sp, b.x + it.dx, it.lz, it.w,
-        {type:'photo', sp, wx: b.x + it.dx, cy: CFG.benchY - hW/2, z: it.lz, w: it.w, cap: it.cap, beat: i});
+        {type:'photo', sp, wx: b.x + it.dx, cy: CFG.benchY - hW/2, z: it.lz, w: it.w, cap: it.cap, beat: i},
+        it.lift);
     }
     if (b.rig && RIGS[b.rig.kind]) RIGS[b.rig.kind](b, t);
     for (const p of (b.props || [])) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
