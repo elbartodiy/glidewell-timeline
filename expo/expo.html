@@ -62,7 +62,7 @@ const BEATS = [
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
      The album belongs to the walk up to 1970, not to the moment of it. */
-  album:{dx:-1500, lz:85, w:300, edgeOK:true, title:'THE FAMILY ALBUM',
+  album:{dx:-1420, lz:85, w:300, edgeOK:true, title:'THE FAMILY ALBUM',
           photos:[['father42','jim15'],['jim18','jim1970']]}},
 
   {x:3450, y:'1970s', t:'PFM ERA', plaque:true,
@@ -4308,10 +4308,25 @@ function drawMapWall(t){
   ctx.drawImage(sp.c, cx - w/2, cyS - h/2, w, h);
   // the red carpet running up to the map
   {
-    const kNear = k(-40), kFar = k(590);
-    const yNear = H, yFar = py(1064, kFar);
+    /* A RUG, NOT A ROAD. Run out to the bottom of the frame it reached ground
+       the counters stand on, so from any position but dead centre it read as a
+       wedge sliced off by a cabinet. It now lies inside the bay: from the wall
+       to the mouth of the recreation, and no further. */
+    const kNear = k(40), kFar = k(590);
+    const yNear = py(1080, kNear), yFar = py(1064, kFar);
     const cxN = px(mid, kNear), cxF = px(mid, kFar);
     const wN = 330 * kNear * SS, wF = 150 * kFar * SS;
+    /* THE RUNNER BELONGS TO THE BAY. It used to be laid from the map right out
+       to the bottom of the frame — across ground the counter stands on — and
+       the counter, painted later, cut it off down a hard vertical line. It is
+       clipped to the recreation's own opening now, the same ground its pale
+       slab covers, so it ends where the room ends and not where a cabinet
+       happens to be. */
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(px(REC_L, kFar), yFar); ctx.lineTo(px(REC_R, kFar), yFar);
+    ctx.lineTo(px(REC_R, kNear), yNear); ctx.lineTo(px(REC_L, kNear), yNear);
+    ctx.closePath(); ctx.clip();
     const cg = ctx.createLinearGradient(0, yFar, 0, yNear);
     cg.addColorStop(0, '#5a0f18');
     cg.addColorStop(0.6, '#7c1622');
@@ -4334,17 +4349,33 @@ function drawMapWall(t){
       ctx.fillStyle = `rgba(255,235,215,${(0.030 * (1 - u * 0.5)).toFixed(3)})`;
       ctx.fillRect(cxF + (cxN - cxF) * uu - ww, yy, ww * 2, Math.max(1, 2.2 * SS * (0.4 + uu)));
     }
-    // and it is not flat: the light falls off toward both selvedges
-    const eg = ctx.createLinearGradient(cxN - wN, 0, cxN + wN, 0);
-    eg.addColorStop(0, 'rgba(20,4,8,0.42)');
-    eg.addColorStop(0.28, 'rgba(20,4,8,0)');
-    eg.addColorStop(0.72, 'rgba(20,4,8,0)');
-    eg.addColorStop(1, 'rgba(20,4,8,0.46)');
-    ctx.fillStyle = eg; ctx.fillRect(cxN - wN, yFar, wN * 2, yNear - yFar);
+    /* AND THE SHADING FOLLOWS THE WEAVE. The fall-off toward the selvedges used
+       to be ONE gradient laid across the runner's NEAR width over the whole
+       trapezoid — but the runner narrows with distance, so up at the map the
+       dark edges fell outside the carpet and its middle was left flat and
+       bright. That mismatch, sliding as the camera moved, is the noise. The
+       shading is cut in slices now, each taking the width the carpet actually
+       has at that depth. */
+    const NS = 22;
+    for (let i = 0; i < NS; i++){
+      const u0 = i / NS, u1 = (i + 1) / NS;
+      const uu0 = u0 * u0, uu1 = u1 * u1;          // same easing as the pile
+      const y0 = yFar + (yNear - yFar) * uu0, y1 = yFar + (yNear - yFar) * uu1;
+      const w0 = wF + (wN - wF) * uu0;
+      const c0 = cxF + (cxN - cxF) * uu0;
+      const eg = ctx.createLinearGradient(c0 - w0, 0, c0 + w0, 0);
+      eg.addColorStop(0, 'rgba(20,4,8,0.42)');
+      eg.addColorStop(0.28, 'rgba(20,4,8,0)');
+      eg.addColorStop(0.72, 'rgba(20,4,8,0)');
+      eg.addColorStop(1, 'rgba(20,4,8,0.46)');
+      ctx.fillStyle = eg;
+      ctx.fillRect(c0 - w0, y0, w0 * 2, (y1 - y0) + 1);
+    }
     ctx.restore();
     ctx.strokeStyle = 'rgba(235,195,120,0.4)'; ctx.lineWidth = 2.5*SS;
     ctx.beginPath(); ctx.moveTo(cxN - wN + 10*SS, yNear); ctx.lineTo(cxF - wF + 5*SS, yFar); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cxN + wN - 10*SS, yNear); ctx.lineTo(cxF + wF - 5*SS, yFar); ctx.stroke();
+    ctx.restore();   // the bay clip
   }
   // pilaster columns on both edges — same plane as the walls they join
   for (const wxc of [REC_L, REC_R]){
@@ -6214,6 +6245,14 @@ function initDecor(){
     // pinned sheets between beats (not in the white room)
     for (let x = a + 300; si < 3 && x < b; x += 620 + R()*480){
       if (BEATS.some(bt => Math.abs(bt.x - x) < 560)) continue;
+      /* and clear of the framed photographs: a sketch pinned behind a frame is
+         a sketch nobody sees. The frames own their stretch of wall; these take
+         what is left between them. */
+      if (BEATS.some(bt => (bt.wall || []).some(it => {
+            const sp = SPRITES[it.img];
+            const halfW = sp ? sp.w * (it.w / sp.inner.w) / 2 : (it.w || 300) / 2;
+            return Math.abs(bt.x + it.dx - x) < halfW + 190;
+          }))) continue;
       SHEETS.push({x, cy: 210 + R()*230, era: si, rot: (R()-0.5)*7,
                    w: 130 + R()*60, sprite: makeSheet(si, (x|0))});
     }
@@ -9665,9 +9704,20 @@ function drawFloorSheen(){
   const yBot = py(1080, k(CFG.benchDepth));
   const band = yBot - yTop;
   if (band < 3) return;
-  const kW = k((SEGMENTS[3].z0 || 1400) - 8), kS = k(CFG.benchDepth);
-  const a0 = px(SHOW_L, kW), a1 = px(SHOW_R, kW);
-  const b0 = px(SHOW_L, kS), b1 = px(SHOW_R, kS);
+  /* THE REFLECTION SITS ON THE FLOOR'S OWN EDGES. Its sides used to be measured
+     at the WALL's depth up top and the counter's depth below, while the floor
+     beneath draws its zone edges from the counter's depth down to the near
+     plane — two different diagonals for one boundary, so a wedge of unreflected
+     floor opened at the portal and slid about as the camera moved. The sides
+     are now sampled ON the floor's line, at the two heights the band spans. */
+  const kSeam = k(CFG.benchDepth), kNear = k(-40);
+  const onFloorEdge = (wx, y) => {
+    const xT = px(wx, kSeam), xB = px(wx, kNear);
+    const t = (y - yTop) / Math.max(1, H - yTop);
+    return xT + (xB - xT) * t;
+  };
+  const a0 = onFloorEdge(SHOW_L, yTop), a1 = onFloorEdge(SHOW_R, yTop);
+  const b0 = onFloorEdge(SHOW_L, yBot), b1 = onFloorEdge(SHOW_R, yBot);
   if (Math.max(a1, b1) < 0 || Math.min(a0, b0) > W) return;
   ctx.save();
   ctx.beginPath();
