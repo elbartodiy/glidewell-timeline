@@ -57,12 +57,12 @@ const BEATS = [
    d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
    /* Jim at the bench hangs on the walk-up: a full photo-width of clear wall
       between the cabinet and the frame, then the family album on the counter */
-   wall:[{img:'jim1970', w:420, dx:-825, cy:235, hero:true}],
+   wall:[{img:'jim1970', w:420, dx:-825, cy:120, hero:true}],
    table:[],
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
      The album belongs to the walk up to 1970, not to the moment of it. */
-  album:{dx:-1310, lz:85, w:300, edgeOK:true, title:'THE FAMILY ALBUM',
+  album:{dx:-1500, lz:85, w:300, edgeOK:true, title:'THE FAMILY ALBUM',
           photos:[['father42','jim15'],['jim18','jim1970']]}},
 
   {x:3450, y:'1970s', t:'PFM ERA', plaque:true,
@@ -73,7 +73,7 @@ const BEATS = [
    album:{dx:-160, lz:85, w:310, title:'THE PFM CRAFT',
           photos:[['porc','artic'],['dietrim','wax']]}},
 
-  {x:4400, y:'1973', t:'SECOND LAB',
+  {x:4400, y:'1973', t:'SECOND LAB', yLift:95,
    th:'Growth by addition — before growth by system.',
    d:'Jim opens a second lab in El Toro — the one-man bench starts to multiply.',
    wall:[{img:'rose', w:300, dx:-560, cy:360, rot:0.4}],
@@ -123,30 +123,30 @@ const BEATS = [
 
   /* ---- ERA 3 · the computer arrives, 1995–2007
           (1993 · Newport Beach happens inside the video splice) ---- */
-  {x:12150, y:'1993', t:'', tier:1, ink:'56,58,64',
-   yLift:120,   // it sits above the screen instead of landing on it, and it does not grow
+  {x:12150, y:'1993', t:'', tier:1, ink:'56,58,64', 
+   yLift:200,   // it sits above the screen instead of landing on it, and it does not grow
    th:'',
    d:'15 April 1993: 71,000 sq ft at 4141 MacArthur Blvd — nearly five times the floor the nine labs were consolidated into, and the address the company grew up in.',
    wall:[], table:[]},
-  {x:12590, y:'1995', t:'OPERATORY · PLAYSAFE', minor:true, yLift:110,
+  {x:12590, y:'1995', t:'OPERATORY · PLAYSAFE', minor:true, yLift:190,
    th:'Test where dentists work — and step beyond the crown.',
    d:'An in-house operatory opens to test materials on real patients; PlaySafe mouthguards launch.',
    wall:[], table:[],
    props:[{kind:'crt', dx:-160, lz:75, w:290, col:'amber'}]},
 
-  {x:13370, y:'1996', t:'SILENT NITE', minor:true, yLift:110,
+  {x:13370, y:'1996', t:'SILENT NITE', minor:true, yLift:190,
    th:'Dentistry beyond repair: keeping problems from starting.',
    d:'Silent Nite anti-snoring appliances launch — Glidewell’s signature move into sleep and prevention.',
    wall:[], table:[]},
 
-  {x:14150, y:'1998', t:'CHAIRSIDE PERSPECTIVES', minor:true, yLift:110,
+  {x:14150, y:'1998', t:'CHAIRSIDE PERSPECTIVES', minor:true, yLift:190,
    th:'Teaching becomes a channel — reach turns into trust.',
    d:'The Chairside Perspectives newsletter begins — the seed of the Chairside magazine and Glidewell’s teaching voice.',
    wall:[{img:'chairv1', w:230, dx:-340, cy:360, rot:-0.4, style:'white', cap:'Vol 1, Issue 1 · 2006', link:'https://glidewelldental.com/education/chairside-magazine'},
          {img:'chairv12', w:230, dx:0, cy:360, style:'white', cap:'Vol 12 · 2017', link:'https://glidewelldental.com/education/chairside-magazine'},
          {img:'chairv21', w:230, dx:340, cy:360, rot:0.4, style:'white', cap:'Vol 21 · 2026', link:'https://glidewelldental.com/education/chairside-magazine'}], table:[]},
 
-  {x:14925, y:'1999', t:'IN-CERAM ZIRCONIA', minor:true, yLift:110,
+  {x:14925, y:'1999', t:'IN-CERAM ZIRCONIA', minor:true, yLift:190,
    th:'The zirconia story starts quietly, long before the revolution.',
    d:'In-Ceram Zirconia material arrives — zirconia enters the lab a full decade before BruxZir.',
    wall:[], table:[]},
@@ -159,7 +159,7 @@ const BEATS = [
    ped:{obj:'puck', dx:0},
    props:[{kind:'crt', dx:700, lz:130, w:320, label:'CAD REVOLUTION'}]},
 
-  {x:16700, y:'2001', t:'WEB · CLINICAL VOICE', minor:true, yLift:110,
+  {x:16700, y:'2001', t:'WEB · CLINICAL VOICE', minor:true, yLift:190,
    th:'The lab learns to publish — online and on camera.',
    d:'The first Glidewell Laboratories website goes live; the brand gains its clinical-education voice on camera.',
    wall:[], table:[]},
@@ -169,7 +169,7 @@ const BEATS = [
    d:'An in-house plastic-injection division starts making boxes, articulators and supplies — the vertical-integration playbook.',
    wall:[], table:[]},
 
-  {x:17700, y:'2005', t:'PRISMATIK', minor:true, yLift:110,
+  {x:17700, y:'2005', t:'PRISMATIK', minor:true, yLift:190,
    th:'The front tooth, made rather than bought.',
    d:'January 2005: a full line of leucite-reinforced pressed ceramics under Glidewell’s own Prismatik brand — the esthetic front tooth made in-house rather than bought in. A year later Prismatik Dentalcraft becomes a manufacturing division of its own.',
    wall:[], table:[]},
@@ -959,7 +959,10 @@ function nearestBeat(x){
    bay was cut it landed at 2680 — a hand's width past the change of wall — and
    punched a bright slot straight through the dark counter. Moved back to where
    it was in the room rather than where it was in the array. */
-const BENCH_BREAKS = [1700, 3830, 7350, 9250, 13100, 17900, 22280]
+/* 3830 landed 200 units from 1973 — a joint in the counter directly under
+   that year's photographs. Moved to the midpoint between 1970s and 1973,
+   where a joint reads as the seam between two bays. */
+const BENCH_BREAKS = [1700, 3345, 7350, 9250, 13100, 17900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
 // the counter clears out from the 1989 portal all the way past the 1993 stand:
