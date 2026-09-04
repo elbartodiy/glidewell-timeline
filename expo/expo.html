@@ -1751,7 +1751,8 @@ function drawHungYear(b, seg, cx, band, fScale, focusAmt, near){
   for (const s of [-0.34, 0.34]){
     ctx.beginPath();
     ctx.moveTo(cx + wid * s, 0);
-    ctx.lineTo(cx + wid * s, yBase - cap);
+    // never past the band: a wire that overshoots lands on whatever hangs below
+    ctx.lineTo(cx + wid * s, Math.min(yBase - cap, band.yB + 6 * SS));
     ctx.stroke();
   }
   /* THE HALO IS CAST, NOT PAINTED. Laying the glow by filling the glyph in white
@@ -2128,106 +2129,122 @@ function drawFilmPanel(x, wWorld, welcome){
   return {sx, kk, footY, top};
 }
 let WELCOME_PSHEET = null;
+function welcomeSheetGeom(){
+  const T = WELCOME_TV;
+  const kw = k(wallZAt(T.x) - 8), cxw = px(T.x, kw);
+  const shW = 780 * kw * SS, shT = py(232, kw), shB = py(852, kw);
+  return {kw, cxw, shW, shT, shB, xL: cxw - shW/2, xR: cxw + shW/2};
+}
+/* the cloth lives in the WALL layer: its hem drops behind the counter, and the
+   counter — drawn later — hides it, the way a real sheet would hang */
+function drawWelcomeSheet(){
+  const T = WELCOME_TV, v = T.v;
+  if (Math.abs(T.x - cam.x) > 3600) return;
+  const {kw, cxw, shW, shT, shB, xL, xR} = welcomeSheetGeom();
+  if (xR < 0 || xL > W) return;
+  const sag = 14 * kw * SS, tuck = 10 * kw * SS;
+  ctx.save();
+  // its shadow on the boards
+  ctx.fillStyle = 'rgba(10,6,3,0.30)';
+  ctx.beginPath();
+  ctx.moveTo(xL + 7*SS, shT + 9*SS);
+  ctx.lineTo(xR + 8*SS, shT + 11*SS);
+  ctx.lineTo(xR - tuck + 9*SS, shB + 9*SS);
+  ctx.lineTo(xL + tuck + 6*SS, shB + 7*SS);
+  ctx.closePath(); ctx.fill();
+  // the cloth
+  const cg = ctx.createLinearGradient(0, shT, 0, shB);
+  cg.addColorStop(0, '#f4efe4'); cg.addColorStop(0.55, '#ece6d8'); cg.addColorStop(1, '#dcd5c3');
+  ctx.fillStyle = cg;
+  const cloth = new Path2D();
+  cloth.moveTo(xL, shT);
+  cloth.quadraticCurveTo(cxw - shW*0.24, shT + sag, cxw, shT + sag*0.75);
+  cloth.quadraticCurveTo(cxw + shW*0.26, shT + sag*1.1, xR, shT);
+  cloth.lineTo(xR - tuck, shB - 8*kw*SS);
+  cloth.quadraticCurveTo(cxw + shW*0.24, shB + 6*kw*SS, cxw, shB - 3*kw*SS);
+  cloth.quadraticCurveTo(cxw - shW*0.26, shB + 7*kw*SS, xL + tuck, shB - 6*kw*SS);
+  cloth.closePath();
+  ctx.fill(cloth);
+  ctx.save();
+  ctx.clip(cloth);
+  // hanging folds, and two faint pressing creases across
+  for (const f of [0.14, 0.30, 0.47, 0.63, 0.82]){
+    const fx = xL + shW * f;
+    const fg = ctx.createLinearGradient(fx - 16*kw*SS, 0, fx + 16*kw*SS, 0);
+    fg.addColorStop(0, 'rgba(120,105,80,0)');
+    fg.addColorStop(0.5, 'rgba(120,105,80,0.075)');
+    fg.addColorStop(1, 'rgba(120,105,80,0)');
+    ctx.fillStyle = fg;
+    ctx.fillRect(fx - 16*kw*SS, shT, 32*kw*SS, shB - shT);
+  }
+  for (const fy of [0.36, 0.68]){
+    const yy = shT + (shB - shT) * fy;
+    const hg2 = ctx.createLinearGradient(0, yy - 6*kw*SS, 0, yy + 6*kw*SS);
+    hg2.addColorStop(0, 'rgba(120,105,80,0)');
+    hg2.addColorStop(0.5, 'rgba(120,105,80,0.05)');
+    hg2.addColorStop(1, 'rgba(120,105,80,0)');
+    ctx.fillStyle = hg2;
+    ctx.fillRect(xL, yy - 6*kw*SS, shW, 12*kw*SS);
+  }
+  // the thrown picture: light on cloth, feathered — none before the show starts
+  if (v && v.videoWidth && v.readyState >= 2 && !(v.muted && v.paused)){
+    const ivx = xL + 34*kw*SS, ivy = shT + 30*kw*SS;
+    const ivw = shW - 68*kw*SS, ivh = (shB - shT) - 60*kw*SS;
+    const pw2 = Math.max(2, ivw | 0), ph2 = Math.max(2, ivh | 0);
+    if (!WELCOME_PSHEET) WELCOME_PSHEET = document.createElement('canvas');
+    const pc = WELCOME_PSHEET;
+    if (pc.width !== pw2 || pc.height !== ph2){ pc.width = pw2; pc.height = ph2; }
+    const g2 = pc.getContext('2d');
+    g2.clearRect(0, 0, pw2, ph2);
+    const sc3 = Math.max(pw2 / v.videoWidth, ph2 / v.videoHeight);
+    try { g2.filter = 'grayscale(0.9) sepia(0.28) contrast(1.06) brightness(1.02)'; } catch(e){}
+    g2.globalAlpha = 0.82;
+    g2.drawImage(v, pw2/2 - v.videoWidth*sc3/2, ph2/2 - v.videoHeight*sc3/2,
+                 v.videoWidth*sc3, v.videoHeight*sc3);
+    g2.filter = 'none'; g2.globalAlpha = 1;
+    g2.globalCompositeOperation = 'destination-out';
+    const fth = Math.max(6, pw2 * 0.05);
+    for (const [gx0, gy0, gx1, gy1, wgt, hgt] of [
+      [0, 0, fth, 0, fth, ph2], [pw2, 0, pw2 - fth, 0, fth, ph2],
+      [0, 0, 0, fth, pw2, fth], [0, ph2, 0, ph2 - fth, pw2, fth]]){
+      const eg = g2.createLinearGradient(gx0, gy0, gx1, gy1);
+      eg.addColorStop(0, 'rgba(0,0,0,1)'); eg.addColorStop(1, 'rgba(0,0,0,0)');
+      g2.fillStyle = eg;
+      g2.fillRect(Math.min(gx0, gx1), Math.min(gy0, gy1), wgt, hgt);
+    }
+    g2.globalCompositeOperation = 'source-over';
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.drawImage(pc, ivx, ivy);
+    ctx.globalCompositeOperation = 'screen';
+    ctx.globalAlpha = 0.55;
+    ctx.drawImage(pc, ivx, ivy);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  // the pins along the top edge
+  ctx.fillStyle = '#3a2c1c';
+  for (const nf of [0.012, 0.34, 0.66, 0.988]){
+    const nx = xL + shW * nf;
+    const ny = shT + (nf > 0.2 && nf < 0.8 ? sag * 0.8 : 3*kw*SS);
+    ctx.beginPath(); ctx.arc(nx, ny, 2.6*kw*SS, 0, 7); ctx.fill();
+  }
+  // the mark to start it, and the mark of a held reel
+  if (v && v.readyState >= 2 && (v.muted || T.userPaused)){
+    ctx.strokeStyle = 'rgba(90,70,48,0.85)'; ctx.lineWidth = 2*SS;
+    const mcx = cxw, mcy = shT + (shB - shT) * 0.4, mr = 16*kw*SS;
+    ctx.beginPath();
+    ctx.moveTo(mcx - mr*0.55, mcy - mr);
+    ctx.lineTo(mcx + mr, mcy);
+    ctx.lineTo(mcx - mr*0.55, mcy + mr);
+    ctx.closePath(); ctx.stroke();
+  }
+  ctx.restore();
+  pushHit(xL, shT, shW, shB - shT, {type: 'welcomevid'});
+}
 function drawWelcomeTV(){
   const T = WELCOME_TV, v = T.v;
   if (Math.abs(T.x - cam.x) > 3600) return;
-  /* THE OPENING IS A PICTURE SHOW, 1907-style: a white sheet pinned to the
-     boards, a projector on the counter, and the film thrown onto the cloth —
-     no television in a hall that predates one. */
-  const kw = k(wallZAt(T.x) - 8), cxw = px(T.x, kw);
-  // the sheet: pinned at two corners, sagging a little, waving at the hem
-  const shW = 560 * kw * SS, shT = py(238, kw), shB = py(662, kw);
-  const sag = 9 * kw * SS, tuck = 7 * kw * SS;
-  const xL = cxw - shW/2, xR = cxw + shW/2;
-  if (xR > 0 && xL < W){
-    ctx.save();
-    // its shadow on the boards
-    ctx.fillStyle = 'rgba(10,6,3,0.30)';
-    ctx.beginPath();
-    ctx.moveTo(xL + 6*SS, shT + 8*SS);
-    ctx.lineTo(xR + 7*SS, shT + 10*SS);
-    ctx.lineTo(xR - tuck + 8*SS, shB + 9*SS);
-    ctx.lineTo(xL + tuck + 5*SS, shB + 7*SS);
-    ctx.closePath(); ctx.fill();
-    // the cloth
-    const cg = ctx.createLinearGradient(0, shT, 0, shB);
-    cg.addColorStop(0, '#f4efe4'); cg.addColorStop(0.6, '#ece6d8'); cg.addColorStop(1, '#ded7c6');
-    ctx.fillStyle = cg;
-    const cloth = new Path2D();
-    cloth.moveTo(xL, shT);
-    cloth.quadraticCurveTo(cxw, shT + sag, xR, shT);
-    cloth.lineTo(xR - tuck, shB - 6*kw*SS);
-    cloth.quadraticCurveTo(cxw + shW*0.22, shB + 5*kw*SS, cxw, shB - 2*kw*SS);
-    cloth.quadraticCurveTo(cxw - shW*0.24, shB + 6*kw*SS, xL + tuck, shB - 5*kw*SS);
-    cloth.closePath();
-    ctx.fill(cloth);
-    // folds: soft vertical shading where the cloth hangs
-    ctx.save();
-    ctx.clip(cloth);
-    for (const f of [0.2, 0.38, 0.57, 0.78]){
-      const fx = xL + shW * f;
-      const fg = ctx.createLinearGradient(fx - 14*kw*SS, 0, fx + 14*kw*SS, 0);
-      fg.addColorStop(0, 'rgba(120,105,80,0)');
-      fg.addColorStop(0.5, 'rgba(120,105,80,0.07)');
-      fg.addColorStop(1, 'rgba(120,105,80,0)');
-      ctx.fillStyle = fg;
-      ctx.fillRect(fx - 14*kw*SS, shT, 28*kw*SS, shB - shT);
-    }
-    // the thrown picture: light on cloth, feathered, in the projector's own
-    // tone — and none at all before the show is started
-    if (v && v.videoWidth && v.readyState >= 2 && !(v.muted && v.paused)){
-      const ivx = xL + 26*kw*SS, ivy = shT + 22*kw*SS;
-      const ivw = shW - 52*kw*SS, ivh = (shB - shT) - 44*kw*SS;
-      const pw2 = Math.max(2, ivw | 0), ph2 = Math.max(2, ivh | 0);
-      if (!WELCOME_PSHEET) WELCOME_PSHEET = document.createElement('canvas');
-      const pc = WELCOME_PSHEET;
-      if (pc.width !== pw2 || pc.height !== ph2){ pc.width = pw2; pc.height = ph2; }
-      const g2 = pc.getContext('2d');
-      g2.clearRect(0, 0, pw2, ph2);
-      const sc3 = Math.max(pw2 / v.videoWidth, ph2 / v.videoHeight);
-      try { g2.filter = 'grayscale(0.9) sepia(0.28) contrast(1.06) brightness(1.02)'; } catch(e){}
-      g2.globalAlpha = 0.82;
-      g2.drawImage(v, pw2/2 - v.videoWidth*sc3/2, ph2/2 - v.videoHeight*sc3/2,
-                   v.videoWidth*sc3, v.videoHeight*sc3);
-      g2.filter = 'none'; g2.globalAlpha = 1;
-      g2.globalCompositeOperation = 'destination-out';
-      const fth = Math.max(6, pw2 * 0.05);
-      for (const [gx0, gy0, gx1, gy1, wgt, hgt] of [
-        [0, 0, fth, 0, fth, ph2], [pw2, 0, pw2 - fth, 0, fth, ph2],
-        [0, 0, 0, fth, pw2, fth], [0, ph2, 0, ph2 - fth, pw2, fth]]){
-        const eg = g2.createLinearGradient(gx0, gy0, gx1, gy1);
-        eg.addColorStop(0, 'rgba(0,0,0,1)'); eg.addColorStop(1, 'rgba(0,0,0,0)');
-        g2.fillStyle = eg;
-        g2.fillRect(Math.min(gx0, gx1), Math.min(gy0, gy1), wgt, hgt);
-      }
-      g2.globalCompositeOperation = 'source-over';
-      ctx.save();
-      ctx.clip(cloth);
-      ctx.globalCompositeOperation = 'multiply';
-      ctx.drawImage(pc, ivx, ivy);
-      ctx.globalCompositeOperation = 'screen';
-      ctx.globalAlpha = 0.55;
-      ctx.drawImage(pc, ivx, ivy);
-      ctx.restore();
-    }
-    // the pins
-    ctx.fillStyle = '#3a2c1c';
-    for (const nx of [xL + 6*kw*SS, xR - 6*kw*SS]){
-      ctx.beginPath(); ctx.arc(nx, shT + 3*kw*SS, 2.6*kw*SS, 0, 7); ctx.fill();
-    }
-    // the mark to start it, and the mark of a held reel
-    if (v && v.readyState >= 2 && (v.muted || T.userPaused)){
-      ctx.strokeStyle = 'rgba(90,70,48,0.85)'; ctx.lineWidth = 2*SS;
-      const mcx = cxw, mcy = (shT + shB)/2, mr = 16*kw*SS;
-      ctx.beginPath();
-      ctx.moveTo(mcx - mr*0.55, mcy - mr);
-      ctx.lineTo(mcx + mr, mcy);
-      ctx.lineTo(mcx - mr*0.55, mcy + mr);
-      ctx.closePath(); ctx.stroke();
-    }
-    ctx.restore();
-    pushHit(xL, shT, shW, shB - shT, {type: 'welcomevid'});
-  }
+  const {kw, cxw, shW, shT, shB, xL, xR} = welcomeSheetGeom();
   // the projector on the counter, and its throw
   const km = k(8), mx = px(T.x, km);
   const mFoot = py(CFG.benchY - 34, km);
@@ -9696,6 +9713,7 @@ function frame(){
   drawWall();
   drawFilmVideoWall();   // the film backdrop sits directly on the deep wall
   drawFilmProjectorWall();   // and the 1999 throw washes over the plaster
+  drawWelcomeSheet();    // the opening sheet hangs on the boards, hem behind the counter
   drawShowroom(t);   // the room the last stretch is actually set in
   // recreations stand proud of the deeper era walls — they paint on top
   drawMapWall(t);
