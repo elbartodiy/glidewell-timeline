@@ -221,7 +221,7 @@ const BEATS = [
    th:'The analog→digital climax: robots make crowns.',
    d:'Automated, AI-designed, robotic monolithic production.',
    wall:[], table:[],
-   plasma:{dx:330, cy:566, w:430, mode:'wave'}},
+   plasma:{dx:330, cy:470, w:430, mode:'wave'}},
 
   {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870, yLift:-72,
    th:'Reinvesting in the profession — and our channel for finding hero dentists.',
@@ -4611,6 +4611,41 @@ function drawRec2(t){
   const w = 360 * kk * SS, h = w * sp.h / sp.w;
   const cx = px(mid, kk), cyS = py(400, kk);
   const nw = 600 * kk * SS, nh = 520 * kk * SS;
+  /* THE SCAN ARRIVED ON A WEBSITE. 2007 was not the stone age of the web —
+     so the display wears the browser chrome of its year: a brushed titlebar,
+     the three window dots, an address field with the case number. The dark
+     screen below is the page, and the point cloud is its content. */
+  {
+    const hh = 46 * kk * SS;
+    const bx0 = cx - nw/2, by0 = cyS - nh/2 - hh;
+    ctx.save();
+    ctx.shadowColor = 'rgba(20,30,40,0.35)'; ctx.shadowBlur = 14*SS; ctx.shadowOffsetY = 5*SS;
+    ctx.fillStyle = '#aeb8c2';
+    ctx.beginPath(); ctx.roundRect(bx0 - 6*SS, by0 - 6*SS, nw + 12*SS, nh + hh + 12*SS, 9*SS); ctx.fill();
+    ctx.restore();
+    const tg = ctx.createLinearGradient(0, by0, 0, by0 + hh);
+    tg.addColorStop(0, '#eef2f6'); tg.addColorStop(0.5, '#cfd8e0'); tg.addColorStop(1, '#b4bfc9');
+    ctx.fillStyle = tg;
+    ctx.beginPath(); ctx.roundRect(bx0, by0, nw, hh, 7*SS); ctx.fill();
+    ctx.fillRect(bx0, by0 + hh*0.6, nw, hh*0.4);
+    let dx0 = bx0 + 16*kk*SS;
+    for (const col of ['#dd7168', '#e5b356', '#8cc06c']){
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(dx0, by0 + hh/2, 6*kk*SS, 0, 7); ctx.fill();
+      dx0 += 20*kk*SS;
+    }
+    const ax0 = bx0 + 76*kk*SS, aw = nw - 96*kk*SS, ah = hh*0.52;
+    ctx.fillStyle = '#fdfdfe';
+    ctx.beginPath(); ctx.roundRect(ax0, by0 + (hh - ah)/2, aw, ah, ah/2); ctx.fill();
+    ctx.strokeStyle = 'rgba(90,105,120,0.45)'; ctx.lineWidth = 1*SS;
+    ctx.beginPath(); ctx.roundRect(ax0, by0 + (hh - ah)/2, aw, ah, ah/2); ctx.stroke();
+    ctx.fillStyle = '#5a6672';
+    ctx.font = `${Math.max(7, 15 * kk * SS) | 0}px "Helvetica Neue", Arial, sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText('http://www.glidewelldental.com/cases/C-1029478 · digital impression',
+                 ax0 + 12*kk*SS, by0 + hh/2 + 5*kk*SS);
+    ctx.textAlign = 'center';
+  }
   const ng = ctx.createLinearGradient(0, cyS - nh/2, 0, cyS + nh/2);
   ng.addColorStop(0, '#1f242b'); ng.addColorStop(1, '#2c333c');
   ctx.fillStyle = ng;
@@ -8607,6 +8642,8 @@ function openPerson(id){
   if (!PEOPLE[id]) return;
   if (state.person) personStop(state.person);
   state.person = {id, scroll: 0, amt: 0, maxScroll: 1, playing: null, v: null};
+  // the voice starts as the page opens; the hall film bows out on its own
+  if (PEOPLE[id].clips && PEOPLE[id].clips.length) personPlay(state.person, 0);
 }
 function personPlay(S, i){
   const P = PEOPLE[S.id], c = P.clips && P.clips[i];
@@ -8846,9 +8883,9 @@ function drawPerson(){
   ctx.font = K.font(18);
   ctx.textAlign = 'center';
   ctx.fillStyle = `rgba(${K.dim},0.75)`;
-  const foot = watching ? '· scroll the rail · tap the picture to pause ·'
-                        : '· scroll to read · tap to go back ·';
-  ctx.fillText(foot, W/2, Math.max(y, my) + 28*SS);
+  if (!watching){
+    ctx.fillText('· scroll to read · tap to go back ·', W/2, Math.max(y, my) + 28*SS);
+  }
   ctx.restore();
   state.cardRect = {x: wx0, y: wy0, w: ww, h: wh, r: K.r*SS};
   S.maxScroll = Math.max(1, (Math.max(y, my) + 170*SS + S.scroll * SS - (wy0 + wh)) / SS);
@@ -9779,6 +9816,13 @@ function frame(){
     ctx.fillRect(0, 0, W, H);
   }
   for (const b of BEATS) if (b.ped && Math.abs(b.x - cam.x) < 2000) drawPedestal(b, t, hero);
+  /* the factory is the exhibit of its own catharsis: the room dims, the line
+     does NOT — it is drawn again over the veil, machines, shafts and all,
+     exactly the way the pedestals climb back out of the dark */
+  {
+    const hF = Math.max(0, 1 - Math.abs(FACT_X - cam.x)/680);
+    if (hF > 0.02) drawFactory(t);
+  }
   drawMapHero(t, hMap);
   drawRec2Front(t);      // the milled crown belongs to the near plane, in front of its portal
   // the founding bench stands IN FRONT of its own year: the numerals are
