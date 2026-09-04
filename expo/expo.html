@@ -8,10 +8,42 @@
   html,body{margin:0;padding:0;height:100%;background:#0d0906;overflow:hidden;cursor:grab}
   body.dragging{cursor:grabbing}
   canvas{display:block;width:100vw;height:100vh}
+  /* THE WORKING NOTE. Everything else in this file is painted on canvas, which
+     cannot be selected or copied — and the whole point of this one is that it
+     can. So it is real HTML over the hall: a sheet of text you can drag-select
+     a line out of, or take whole with one button. */
+  #doc{position:fixed;inset:0;z-index:50;display:none;cursor:auto;
+       background:rgba(8,6,4,0.82);backdrop-filter:blur(3px)}
+  #doc.on{display:flex;align-items:center;justify-content:center}
+  #docPanel{width:min(920px,92vw);max-height:86vh;display:flex;flex-direction:column;
+            background:#141210;color:#e8e2d6;border:1px solid rgba(220,205,175,0.18);
+            border-radius:4px;box-shadow:0 40px 120px rgba(0,0,0,0.7)}
+  #docHead{display:flex;align-items:baseline;gap:16px;padding:18px 24px 14px;
+           border-bottom:1px solid rgba(220,205,175,0.14)}
+  #docHead h1{margin:0;font:500 15px/1.2 "Helvetica Neue",Arial,sans-serif;
+              letter-spacing:.16em;text-transform:uppercase;color:#d8cdb4}
+  #docHead .sub{font:italic 12px/1.2 Georgia,serif;color:#8d8377;flex:1}
+  #doc button{font:500 11px/1 "Helvetica Neue",Arial,sans-serif;letter-spacing:.12em;
+              text-transform:uppercase;color:#d8cdb4;background:transparent;cursor:pointer;
+              border:1px solid rgba(220,205,175,0.28);border-radius:3px;padding:7px 12px}
+  #doc button:hover{background:rgba(220,205,175,0.10)}
+  #docBody{overflow:auto;padding:18px 24px 26px;margin:0;white-space:pre-wrap;
+           user-select:text;-webkit-user-select:text;
+           font:13px/1.62 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#ddd6c8}
+  #docBody::selection{background:rgba(200,170,110,0.35)}
 </style>
 </head>
 <body>
 <canvas id="view"></canvas>
+<div id="doc"><div id="docPanel">
+  <div id="docHead">
+    <h1>Timeline &mdash; open items</h1>
+    <span class="sub">what the hall publishes, what it does not, and where the rest belongs</span>
+    <button id="docCopy">Copy all</button>
+    <button id="docClose">Close</button>
+  </div>
+  <pre id="docBody"></pre>
+</div></div>
 <script>
 'use strict';
 /* ============================================================================
@@ -50,6 +82,9 @@ const BEATS = [
          {img:'old2', w:290, dx:-4100, cy:360, rot:-0.4, cap:'Dentistry before the laboratory'},
          {img:'old3', w:290, dx:-3710, cy:360, rot:0.3, cap:'The barber-surgeon\u2019s chair'},
          {img:'old4', w:290, dx:-3330, cy:360, rot:-0.3, cap:'The old fear of the dentist'}],
+   /* pinned at the end of the row of old prints, before the hall proper
+      begins: the working note, and the only thing here you can copy out */
+   doc:{dx:-2955, w:250, cy:520, rot:0.9},   // cy = the prints' hanging line 360 plus half its own height
    table:[], st:[{img:'invest', w:280, dx:-390, lz:12, lift:32}]},
 
   {x:2450, y:'1970', t:'FOUNDED', tier:1, fly:true, yLift:96,   // clear of the bench lamp
@@ -232,7 +267,7 @@ const BEATS = [
        {img:'nadia', w:120, dx:206, lz:30, lift:26, cap:'Dr. Nadia Rodriguez · GL alum'},
        {img:'bianca', w:120, dx:357, lz:30, lift:26, cap:'Dr. Bianca Clark · GL alum'}]},
 
-  {x:26340, y:'2022', t:'FASTSCAN.IO',
+  {x:26340, y:'2022', t:'FASTSCAN.IO', thBelow:true,   // the bay is a photograph; the italic line cannot live on it
    th:'The front door to the all-digital workflow.',
    d:'fastscan.io, built with Medit, folds an intraoral scanner into the ecosystem — no impressions, no remakes, data straight into design and mill.',
    wall:[],
@@ -917,6 +952,7 @@ function attachMouseDriver(el){
     if (moved < 6) Input.act(toBuf(e));  // a click = the button, aimed at a point
   });
   window.addEventListener('keydown', e => {
+    if (state.docOpen) return;          // the note has the keyboard
     if (e.key === 'ArrowRight') Input.push(900);
     else if (e.key === 'ArrowLeft') Input.push(-900);
     else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); Input.act(); }
@@ -928,6 +964,8 @@ function attachMouseDriver(el){
 /* ---------------- CAMERA / STATE ---------------- */
 const cam = { x: INTRO_X, vel: 0, z: 430, zTarget: 430 };   // the tour opens zoomed tight on the still life
 const state = {
+  docOpen: false,         // the working note is up: the hall keeps its hands off
+  docHot: false,
   mode: 'attract',        // 'attract' | 'live'
   idle: 0,
   attract: { phase: 'dwell', dwell: -2.2, beatIdx: -1, fade: 0 }, // opens holding the title close-up
@@ -1124,6 +1162,177 @@ function initTables(){
 }
 
 /* ---------------- RENDER SETUP ---------------- */
+/* ============================ THE WORKING NOTE ============================
+   A sheet pinned at the end of the row of old prints, before the hall proper
+   begins — the audit of what this timeline still owes. It is the one thing
+   here that is NOT painted on canvas, because the point of it is that the text
+   can be selected and carried out. */
+const DOC_TEXT = `ЛЕНТА — ЧТО ОПУБЛИКОВАНО, ЧЕГО НЕТ
+Сверка канонического списка фактов (~90 пунктов) с тем, что реально стоит
+в BEATS и в страницах STUDY_MORE. Составлено 4 сентября 2026.
+Сейчас на стене 32 бита, у 20 из них есть страница с подробностями.
+
+
+1. УЖЕ СТОИТ НА СТЕНЕ И СПИСКОМ ПОДТВЕРЖДАЕТСЯ
+
+1907 лост-вакс · 1970 основание · 1970-е PFM · 1973 второй лаб ·
+1976 direct-mail · 1979 девять лабораторий · 1984 консолидация
+(+ «большинство заказов не местные» — внутри бита) · 1988 BioTemps ·
+1989 (175 человек / 3500 дантистов / 95 % почтой) · 1993 Newport, 71 000 sq ft ·
+1995 операторская + PlaySafe · 1996 Silent Nite · 1998 Chairside Perspectives ·
+1999 In-Ceram Zirconia · 2000 Plastic Injection · 2001 первый сайт ·
+2005 Prismatik (+ Dentalcraft 2006) · 2007 первый цифровой слепок ·
+2009 BruxZir (+ Authorized BruxZir Lab) · 2009–13 screw-retained
+(+ Inclusive TRS 2012, Full-Arch 2013) · 2012 IOS / FastScan (+ ITC 2011) ·
+2015 Hahn · 2017 glidewell.io · 2018 первая AI-коронка (+ UC Berkeley) ·
+2022 fastscan.io · 2023 кроссовер цифры и физики.
+
+
+2. КРУПНОЕ, ЧЕГО НЕТ — ВЫНЕСТИ ГОДОМ НА СТЕНУ
+
+  декабрь 2001 — BioTemps переезжает в Irvine, 92 000 sq ft.
+      Почему на стену: у нас есть цепочка переездов 1973 → 1984 → 1993
+      и обрыв. Irvine — кампус, на котором компания сидит сейчас;
+      его на таймлайне просто нет.
+
+  май 2023 — fastprint.io (с LuxCreo).
+      Почему на стену: в экосистеме на стене есть СКАН и ФРЕЗА,
+      но нет ПЕЧАТИ. Третий глагол отсутствует как класс.
+
+  май 2024 — Clear Aligners (powered by ProMonitoring).
+      Почему на стену: целой продуктовой категории нет. И это финал
+      линии «дальше коронки»: PlaySafe → Silent Nite → элайнеры.
+
+  Пограничные, решить да/нет:
+  • январь 2013 — Obsidian Lithium Silicate. Второе после BruxZir имя,
+    которое профессия знает.
+  • май 2025 — Glidewell TV. Замыкает линию обучения:
+    рассылка 1998 → журнал 2006 → Chairside Live 2012 → YouTube →
+    своя стриминговая сеть.
+
+
+3. В ДЕТАЛИ — НЕ ВЫНОСЯ ГОДОМ НА СТЕНУ
+
+  Страница 1970 (основание)
+  • 1966 — вернулся из ВМФ и продавал страховки Prudential и New York Life
+    от двери к двери в Лас-Вегасе, в 21 год. Сильная деталь: это же
+    объясняет инстинкт direct-mail 1976.
+  • 1969 — техник в частной практике в Санта-Ане.
+  • январь 1970 — Tustin, ПЯТЬ дантистов.
+  • 1971 — переезд в бóльшее помещение в Orange.
+  • 1976 — третий переезд, снова в Orange.
+
+  Страница 1998 (обучение и медиа)
+  • июнь 1998 — д-р Walter Havekorst, Director of Education.
+  • 2006 — первый номер Chairside Magazine.
+  • март 2014 — Lab Perspectives.
+  • май 2012 — Chairside Live, еженедельная веб-серия.
+  • май 2025 — Glidewell TV. Апрель 2026 — YouTube, 150 000 подписчиков.
+
+  Страница 2000 (R&D)
+  • февраль 2000 — Transition Crowns & Bridges.
+  • октябрь 2000 — Capture, собственная VPS-формула.
+  • ноябрь 2000 — BioPress.
+    Три собственных материала за один год — это и есть доказательство,
+    что R&D родился; сейчас бит держится только на истории с Artglass
+    и Реллой Кристенсен.
+  • ноябрь 2002 — belleGlass (Kerr). Январь 2003 — Wol-Ceram.
+    Апрель 2003 — переход PFM на Ceramco 3.
+
+  Страница 2001 (сайт и голос)
+  • февраль 2001 — назвать Майка ДиТоллу по имени; сейчас он
+    «голос на камеру» безымянно.
+  • июль 2001 — Comfort Bite Splints → ноябрь 2022 Comfort3D.
+
+  Имплантология (страницы 2009–13 и 2015)
+  • апрель 2011 — Inclusive Mini Implant System.
+  • февраль 2012 — Inclusive Tapered Implant.
+  • сентябрь 2016 — Newport Surgical: костные материалы, мембраны, инструменты.
+  • ноябрь 2018 — цифровое планирование и хирургические шаблоны.
+  • июль 2022 — полноарочные шаблоны с опорой на ткань и кость.
+  • август 2025 — GlidePRO Stackable. Август 2026 — GlidePRO Complete.
+  • 2025 — 4 млн имплант-реставраций.
+
+  Семейство BruxZir (страница 2009)
+  • август 2015 — BruxZir NOW, блоки для chairside.
+  • март 2015 — BruxZir Anterior.
+  • май 2018 — BruxZir Esthetic, первый на рынке 5Y-цирконий
+    для всех показаний, от коронки до полноарочного протеза.
+  • июнь 2020 — Esthetic NOW. Июнь 2021 — Shade Guide.
+  • январь 2022 — NOW Bridge Block. Октябрь 2024 — Next-Day BruxZir.
+  • февраль 2025 — BruxZir Fusion.
+
+  Сон и аппараты (страница 1996)
+  • январь 2010 — aveoTSD.
+  • ноябрь 2022 — Comfort3D, первый цифровой печатный ночной каппа-сплинт.
+  • май 2023 — покупка ORB Innovations: трекинг в аппаратах.
+  • 25 марта 2025 — 10 млн оральных аппаратов.
+
+  Данные (страница 2007)
+  • сентябрь 2010 — Clear-Lock Retainers for Life: скан хранится 30 лет.
+    Ранняя версия той же мысли, что архив случаев становится данными.
+
+  AI (страница 2020)
+  • май 2021 — CrownAI, fastdesign.io 10.1.
+  • июль 2021 — MarginAI, fastdesign.io 10.3.
+  • 2025 — 4 млн реставраций, спроектированных AI.
+
+  Страница 2026
+  • 85 млн единиц продукции за всё время.
+  • 2 млн коронок, отфрезерованных пользователями glidewell.io chairside.
+
+
+4. РАСХОЖДЕНИЯ — НУЖНО РЕШЕНИЕ
+
+  1) 1970. У нас в тексте «Orange County» и «кухонный стол».
+     В списке — Tustin и пять дантистов. Что оставляем?
+     «Пять дантистов» взять обязательно: лучшая цифра во всём начале.
+
+  2) BruxZir NOW. Наш бит 2017 подаёт его как часть glidewell.io.
+     В списке блоки — август 2015, за два года до.
+
+  3) Трёх наших битов нет в списке: 1980 Study Program,
+     2019 BruxZir Factory, 2019 Guiding Leaders.
+     Список неполный или даты надо перепроверить?
+
+  4) 2000 «R&D IS BORN» — наша редакторская конструкция, такого
+     события в списке нет. Оставить, но подпереть тремя материалами
+     2000 года (см. раздел 3).
+
+  5) «July 2026 — 85 млн единиц» стоит в списке между маем и августом
+     2025. Похоже на опечатку: вероятно, июль 2025.
+`;
+function openDoc(){
+  const el = document.getElementById('doc');
+  document.getElementById('docBody').textContent = DOC_TEXT;
+  el.classList.add('on');
+  state.docOpen = true;
+}
+function closeDoc(){
+  document.getElementById('doc').classList.remove('on');
+  state.docOpen = false;
+}
+function initDoc(){
+  const el = document.getElementById('doc');
+  document.getElementById('docClose').addEventListener('click', closeDoc);
+  el.addEventListener('pointerdown', e => { if (e.target === el) closeDoc(); });
+  document.getElementById('docCopy').addEventListener('click', async () => {
+    const btn = document.getElementById('docCopy');
+    try { await navigator.clipboard.writeText(DOC_TEXT); }
+    catch (err){
+      // no clipboard permission: fall back to selecting it for the hand
+      const r = document.createRange(); r.selectNodeContents(document.getElementById('docBody'));
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      try { document.execCommand('copy'); } catch (e2){}
+    }
+    btn.textContent = 'Copied';
+    setTimeout(() => { btn.textContent = 'Copy all'; }, 1400);
+  });
+  window.addEventListener('keydown', e => {
+    if (state.docOpen && e.key === 'Escape'){ closeDoc(); e.preventDefault(); }
+  });
+}
+
 const cv = document.getElementById('view');
 cv.style.transform = 'translateZ(0)';   // pin the canvas to its own compositor layer (anti-ghosting)
 const ctx = cv.getContext('2d', {alpha:false});
@@ -1710,7 +1919,7 @@ function drawBeatText(b, focusAmt){
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
       ctx.fillText(b.t, cx, mixN(py(tY + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
       try { ctx.letterSpacing = '0px'; } catch(e){}
-      if (near > 0.25 && b.th && fFade > 0.05){
+      if (near > 0.25 && b.th && !b.thBelow && fFade > 0.05){
         ctx.font = eraFont(30 * (seg.tScale || 1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${((near-0.25)/0.75 * 0.72 * fFade).toFixed(3)})`;
         drawLines(b._th, cx, py(tY + 54 + cd - (b.yLift || 0), kk), 38 * kk * SS);
@@ -1769,7 +1978,7 @@ function drawBeatText(b, focusAmt){
       if (near > 0.25 && b.th){
         ctx.font = eraFont(30 * (b.minor?0.8:1) * (seg.tScale||1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
-        if (fFade > 0.05) drawLines(b._th, cx, py((b.minor ? tY + 46 : tY + 54) + cd - (b.yLift || 0), kk), 38 * (b.minor?0.8:1) * kk * SS);
+        if (fFade > 0.05 && !b.thBelow) drawLines(b._th, cx, py((b.minor ? tY + 46 : tY + 54) + cd - (b.yLift || 0), kk), 38 * (b.minor?0.8:1) * kk * SS);
       }
       ctx.restore();
       ctx.globalAlpha = 1;
@@ -1885,6 +2094,18 @@ function drawBenchDescs(){
      longer captions grow upward. */
   {
         const top = H * 0.905 - (b._d.length - 1) * 32 * SS;
+        /* Some beats cannot carry their thesis under the title: at 2022 the
+           whole bay is a photograph and an italic line laid over it is simply
+           unreadable. Those ask for it here instead, one line above the
+           caption, where the frame is quiet. */
+        if (b.thBelow && b.th){
+          ctx.save();
+          ctx.textAlign = 'center';
+          ctx.font = eraFont(22 * SS, 'italic', seg.font);
+          ctx.fillStyle = `rgba(${descInk(seg)},${(dAmt * 0.66).toFixed(3)})`;
+          ctx.fillText(b.th, W * 0.5, top - 46 * SS);
+          ctx.restore();
+        }
         let wide = 0;
         for (const ln of b._d) wide = Math.max(wide, ctx.measureText(ln).width);
         drawLines(b._d, W * 0.5, top, 32 * SS);
@@ -1955,6 +2176,16 @@ function drawBenchDescs(){
     ctx.fillStyle = `rgba(${ink},${(dAmt * 0.9).toFixed(3)})`;
     if (shadow){ ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 2*SS; }
     const capTop = py(CFG.benchY, kf) + 78*SS + slabDrop;
+    /* Some beats cannot carry their thesis under the title: at 2022 the whole
+       bay is a photograph and an italic line laid over it is unreadable. Those
+       ask for it here instead, one line above the caption, where it is quiet. */
+    if (b.thBelow && b.th){
+      ctx.save();
+      ctx.font = eraFont(22 * SS, 'italic', seg.font);
+      ctx.fillStyle = `rgba(${ink},${(dAmt * 0.70).toFixed(3)})`;
+      ctx.fillText(b.th, cw, capTop - 44 * SS);
+      ctx.restore();
+    }
     let capW = 0;
     for (const ln of b._d) capW = Math.max(capW, ctx.measureText(ln).width);
     drawLines(b._d, cw, capTop, 32 * SS);
@@ -4990,86 +5221,39 @@ function drawRec4(t){
     ctx.fillStyle = sg;
     ctx.fillRect(swx - 40*SS, 0, 80*SS, yBase);
   }
-  /* the display capsule, after the reference: a stadium-shaped niche sunk
-     into the panel and rimmed with ice light — the scanner's own vitrine.
-     The pedestal and the instrument stand in front of it, on their own depth. */
+  /* THE BAY IS THE PICTURE. This used to be a stadium-shaped niche drawn with
+     gradients, with the instrument cut out of its own photograph and stood
+     inside it — two renderings of the same reference, one on top of the other,
+     and the cutout wandered against the drawn light as the camera moved.
+
+     The reference already IS a niche in a wall above a plinth, photographed
+     square on. So it goes in whole, as a rectangle, filling the bay from one
+     column to the other: no cutting, nothing to slip. It is cover-fitted, which
+     crops its outer wall and keeps the lit niche, and it lands on whole pixels
+     so a rigid picture crossing the frame cannot boil. */
   {
-    /* ON the panel, fixed between the columns — it does not ride anything.
-       The instrument is drawn inside it, a display graphic after the
-       reference: a white wand on its dock in a well of ice light. */
-    const kn = k(996);
-    const nx = px(mid, kn);
-    /* the exhibit flares as you arrive, the way the years and lamps do */
-    const near = Math.max(0, 1 - Math.abs(mid - cam.x) / 900);
-    const flare = near * near;
-    const nw = 560 * kn * SS;
-    /* THE CASE RUNS TO THE FLOOR. It used to stop as a pill floating in the
-       middle of a tall lit bay, with the dock hanging out below its bottom arc
-       and a hand's width of empty panel under it. It cannot grow upward — the
-       year stands there — so it grows down: the niche carries on past the
-       instrument's own floor and is cut off by the counter in front of it, the
-       way the niche in the reference photograph is. */
-    const nTop = py(30, kn), nBot = py(1220, kn);
-    const r = nw / 2;
-    const capsule = () => {
-      ctx.beginPath();
-      ctx.moveTo(nx - r, nTop + r);
-      ctx.arc(nx, nTop + r, r, Math.PI, 0);
-      ctx.lineTo(nx + r, nBot - r);
-      ctx.arc(nx, nBot - r, r, 0, Math.PI);
-      ctx.closePath();
-    };
-    // the recess: cooler and a step deeper than the panel around it
-    const ig = ctx.createLinearGradient(0, nTop, 0, nBot);
-    ig.addColorStop(0, '#e5eaf0'); ig.addColorStop(0.55, '#f2f5f8'); ig.addColorStop(1, '#d0d7de');
-    capsule(); ctx.fillStyle = ig; ctx.fill();
-    capsule(); ctx.strokeStyle = 'rgba(90,100,112,0.22)'; ctx.lineWidth = 3*SS; ctx.stroke();
-    // the ice rim: a wide soft halo, then the crisp line that draws the shape
-    ctx.save();
-    ctx.shadowColor = 'rgba(130,210,255,0.9)'; ctx.shadowBlur = (18 + 16*flare)*SS;
-    capsule(); ctx.strokeStyle = `rgba(150,220,255,${(0.85 + 0.15*flare).toFixed(3)})`;
-    ctx.lineWidth = (2.2 + 1.2*flare)*SS; ctx.stroke();
-    ctx.restore();
-    if (flare > 0.02) drawGlow('165,222,255', nx, (nTop + nBot)/2, nw * 1.15, 0.22 * flare);
-    capsule(); ctx.strokeStyle = 'rgba(200,238,255,0.95)'; ctx.lineWidth = 1.2*SS; ctx.stroke();
-    // light pooling at the capsule's floor
-    const dockY = py(1080, kn);               // the instrument stands on the hall's own floor
-    const pgl = ctx.createRadialGradient(nx, dockY - 8*SS, 4, nx, dockY - 8*SS, nw*0.9);
-    pgl.addColorStop(0, 'rgba(140,215,255,0.20)'); pgl.addColorStop(1, 'rgba(140,215,255,0)');
-    ctx.fillStyle = pgl;
-    ctx.fillRect(nx - nw, dockY - 8*SS - nw*0.7, nw*2, nw*1.4);
-    /* THE INSTRUMENT ITSELF, not a drawing of it. This used to be a wand built
-       from a rounded rectangle and two blue circles, standing in for the real
-       thing at the one place in the hall where the real thing is the exhibit.
-       Now it is the product photograph, standing on the floor of its case and
-       keeping its own proportion — the height is the case's, the width follows
-       from the picture, so it can never be squeezed to fit. */
-    const sp = PROP_SPRITES.ph_scanner;
-    /* It stands on the dock, so it grows upward — and the case is the limit:
-       asked for half again as big, it takes as much of that as fits between
-       the dock and the top of its own vitrine. */
-    const wCx = nx;
-    const wandH = dockY - (nTop + 6*SS);      // top of the case to the floor of it
-    const wTop = dockY - wandH;
-    const wandW = sp ? wandH * sp.w / sp.h : nw * 0.34;
+    const sp = PROP_SPRITES.ph_scanbay;
     if (sp){
+      const kc = k(992);
+      const cw = 120 * kc * SS;                       // the columns' own width
+      const bx0 = px(REC4_L, kc) + cw/2, bx1 = px(REC4_R, kc) - cw/2;
+      const bw = Math.max(1, bx1 - bx0), bh = yBase;
+      const scale = Math.max(bw / sp.w, bh / sp.h);   // cover: fill it, crop the rest
+      const dw = sp.w * scale, dh = sp.h * scale;
       ctx.save();
-      ctx.shadowColor = 'rgba(40,60,80,0.34)'; ctx.shadowBlur = 9*SS; ctx.shadowOffsetX = 3*SS;
-      /* AND IT LANDS ON WHOLE PIXELS. The prescaled copy removes the boiling
-         that comes from re-reducing the photograph every frame; this removes
-         what is left — the bilinear smear of a rigid object sitting at x.37 in
-         one frame and x.51 in the next. It steps a pixel at a time across the
-         frame instead of dissolving between them, and the case it stands in is
-         a soft glow that cannot show the half-pixel of slip. */
-      const dw = Math.round(wandW), dh = Math.round(wandH);
-      ctx.drawImage(spriteMip(sp, dw, dh), Math.round(wCx - dw/2), Math.round(wTop), dw, dh);
+      ctx.beginPath(); ctx.rect(Math.round(bx0), 0, Math.round(bw), Math.round(bh)); ctx.clip();
+      ctx.drawImage(spriteMip(sp, Math.round(dw), Math.round(dh)),
+                    Math.round(bx0 + (bw - dw) / 2), Math.round(bh - dh),
+                    Math.round(dw), Math.round(dh));
+      /* the exhibit flares as you arrive, the way the years and the lamps do */
+      const near = Math.max(0, 1 - Math.abs(mid - cam.x) / 900);
+      if (near > 0.02){
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = 'rgba(120,190,255,' + (0.05 * near * near).toFixed(3) + ')';
+        ctx.fillRect(bx0, 0, bw, bh);
+      }
       ctx.restore();
     }
-    /* the dock came with the photograph — it is the instrument's own cradle,
-       not a plate drawn under it — so all the room still owes it is the shadow
-       where it meets the floor of the case */
-    ctx.fillStyle = 'rgba(60,70,80,0.28)';
-    ctx.beginPath(); ctx.ellipse(wCx, dockY - 1.5*kn*SS, wandW*0.60, 3.0*kn*SS, 0, 0, 7); ctx.fill();
   }
   drawRec4Columns(yBase);
 }
@@ -6212,6 +6396,7 @@ async function loadPhotoSkin(){
     ph_casebox: 'case_box.png',       // the mailed case, open — the real photograph
     ph_scanner: 'scanner.png',        // fastscan.io, the instrument itself, not a drawing of it
     ph_mill: 'mill_io.png',           // fastmill.io, the same — cut out of its studio render
+    ph_scanbay: 'scan_bay.jpg',       // the 2022 bay: the whole render, rectangle and all
     bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
     bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
   };
@@ -7020,6 +7205,55 @@ function drawPedestal(b, t, hero){
     const inten = (0.9 + 0.1*Math.sin(t*3 + b.x)) * (1 + (hero||0)*1.4);
     drawGlow(warmC, sx, yTop - oh*0.6, colW*1.5, 0.16*inten);
   }
+}
+
+/* A TYPED SHEET, PINNED. It hangs on the same line as the old prints and in
+   the same frames, because it is standing in their row — but it is paper, not
+   a photograph: a heading, a rule, and the grey suggestion of type. It is a
+   working document, so it says so, and it does not pretend to be an exhibit. */
+function drawDocCard(b, bi){
+  const d = b.doc;
+  const wz = (segAt(b.x).tz || wallZAt(b.x)) - 12, kk = k(wz);
+  const ax = wallSX(b.x, d.dx, kk);
+  rivet('doc:' + b.x, ax, k(exhibitZ(b.x)));
+  const w = d.w * kk * SS, h = w * 1.28;
+  const cy = py(d.cy, kk);
+  if (ax < -w * 2 || ax > W + w * 2) return;
+  const hot = state.docHot ? 1 : 0;
+  ctx.save();
+  ctx.translate(ax, cy);
+  ctx.rotate((d.rot || 0) * Math.PI / 180);
+  // the frame, then the paper inside it
+  ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 14 * kk * SS; ctx.shadowOffsetY = 6 * kk * SS;
+  ctx.fillStyle = '#2c2118';
+  ctx.fillRect(-w/2, -h/2, w, h);
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  const pad = w * 0.055;
+  const pg = ctx.createLinearGradient(0, -h/2, 0, h/2);
+  pg.addColorStop(0, '#efe6d2'); pg.addColorStop(1, '#d9cdb4');
+  ctx.fillStyle = pg;
+  ctx.fillRect(-w/2 + pad, -h/2 + pad, w - pad*2, h - pad*2);
+  // heading, rule, and the grey ghost of the text under it
+  const ix = -w/2 + pad*2.1, iw = w - pad*4.2;
+  ctx.fillStyle = 'rgba(52,42,30,0.92)';
+  ctx.font = `600 ${(w*0.082).toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;
+  ctx.textAlign = 'left';
+  try { ctx.letterSpacing = (w*0.014).toFixed(1) + 'px'; } catch(e){}
+  ctx.fillText('OPEN ITEMS', ix, -h/2 + pad*3.6);
+  try { ctx.letterSpacing = '0px'; } catch(e){}
+  ctx.fillStyle = 'rgba(120,40,30,0.75)';
+  ctx.fillRect(ix, -h/2 + pad*4.5, iw * 0.42, Math.max(1, w*0.012));
+  const rows = [0.92, 0.74, 0.86, 0.55, 0, 0.88, 0.70, 0.90, 0.62, 0, 0.84, 0.66, 0.79];
+  let ry = -h/2 + pad*6.4;
+  for (const r of rows){
+    if (r > 0){
+      ctx.fillStyle = 'rgba(70,60,46,' + (0.30 + 0.16*hot).toFixed(2) + ')';
+      ctx.fillRect(ix, ry, iw * r, Math.max(1, w*0.016));
+    }
+    ry += h * 0.052;
+  }
+  ctx.restore();
+  pushHit(ax - w/2, cy - h/2, w, h, {type:'doc'});
 }
 
 /* ---------------- PLASMAS · living wall screens of the white room ---------------- */
@@ -9283,7 +9517,9 @@ function update(dt){
       state.openBox.closing = true;
     } else if (inp.action && !state.inspect && !state.study && !state.person && !state.people && !state.openBox){
       const aimed = (typeof inp.action === 'object') ? hitAt(inp.action.x, inp.action.y) : null;
-      if (aimed && aimed.type === 'photo'){
+      if (aimed && aimed.type === 'doc'){
+        openDoc();
+      } else if (aimed && aimed.type === 'photo'){
         state.inspect = {sp: aimed.sp, wx: aimed.wx, cy: aimed.cy, z: aimed.z, w: aimed.w,
                          cap: aimed.cap, link: aimed.link, beat: aimed.beat, table: false, amt: 0};
         cam.vel = 0;
@@ -9891,6 +10127,7 @@ function frame(){
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
     if (Math.abs(b.x - cam.x) > 3400) continue;
+    if (b.doc) drawDocCard(b, i);
     for (const it of b.wall){
       const sp = SPRITES[it.img]; if (!sp) continue;
       // sized on the era's text plane (equal framing everywhere), but
@@ -10083,6 +10320,8 @@ function frame(){
   drawAttractHint(t);
   // pointer affordance
   if (Input.hover && state.mode === 'live'){
+    const aimHover = (!state.inspect && hitAt(Input.hover.x, Input.hover.y)) || null;
+    state.docHot = !!(aimHover && aimHover.type === 'doc');
     document.body.style.cursor = (musicMarkHit(Input.hover) || soundMarkHit(Input.hover)) ? 'pointer'
       : ruleHit(Input.hover) ? 'ew-resize'
       : ((!state.inspect && hitAt(Input.hover.x, Input.hover.y)) ? 'pointer' : '');
@@ -10155,6 +10394,7 @@ async function boot(){
   // reseat the film relays once everything (skin, props) has settled
   setTimeout(initFilmRelays, 2500);
   initMusic();
+  initDoc();
   MAP_SPRITE = makeMapSprite();
   USA_SPRITE = makeUsaSprite();
   MONS.crt = makeMonitor('crt');
