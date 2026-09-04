@@ -57,7 +57,7 @@ const BEATS = [
    d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
    /* Jim at the bench hangs on the walk-up: a full photo-width of clear wall
       between the cabinet and the frame, then the family album on the counter */
-   wall:[{img:'jim1970', w:420, dx:-825, cy:120, hero:true}],
+   wall:[{img:'jim1970', w:420, dx:-825, top:200, hero:true}],
    table:[],
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
@@ -142,9 +142,9 @@ const BEATS = [
   {x:14150, y:'1998', t:'CHAIRSIDE PERSPECTIVES', minor:true, yLift:190,
    th:'Teaching becomes a channel — reach turns into trust.',
    d:'The Chairside Perspectives newsletter begins — the seed of the Chairside magazine and Glidewell’s teaching voice.',
-   wall:[{img:'chairv1', w:230, dx:-340, cy:360, rot:-0.4, style:'white', cap:'Vol 1, Issue 1 · 2006', link:'https://glidewelldental.com/education/chairside-magazine'},
-         {img:'chairv12', w:230, dx:0, cy:360, style:'white', cap:'Vol 12 · 2017', link:'https://glidewelldental.com/education/chairside-magazine'},
-         {img:'chairv21', w:230, dx:340, cy:360, rot:0.4, style:'white', cap:'Vol 21 · 2026', link:'https://glidewelldental.com/education/chairside-magazine'}], table:[]},
+   wall:[{img:'chairv1', w:230, dx:-340, top:150, rot:-0.4, style:'white', cap:'Vol 1, Issue 1 · 2006', link:'https://glidewelldental.com/education/chairside-magazine'},
+         {img:'chairv12', w:230, dx:0, top:150, style:'white', cap:'Vol 12 · 2017', link:'https://glidewelldental.com/education/chairside-magazine'},
+         {img:'chairv21', w:230, dx:340, top:150, rot:0.4, style:'white', cap:'Vol 21 · 2026', link:'https://glidewelldental.com/education/chairside-magazine'}], table:[]},
 
   {x:14925, y:'1999', t:'IN-CERAM ZIRCONIA', minor:true, yLift:190,
    th:'The zirconia story starts quietly, long before the revolution.',
@@ -154,7 +154,7 @@ const BEATS = [
   {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true,
    th:'Own the science, so you can own the quality and the price.',
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir. Labs go digital: scanning, on-screen design, milling.',
-   wall:[{img:'rella', w:250, dx:330, cy:470, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
+   wall:[{img:'rella', w:250, dx:555, top:215, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
    table:[],
    ped:{obj:'puck', dx:0},
    props:[{kind:'crt', dx:700, lz:130, w:320, label:'CAD REVOLUTION'}]},
@@ -10135,8 +10135,11 @@ async function boot(){
   for (const pid in PEOPLE)
     if (IMGS[PEOPLE[pid].img]) PERSON_SPRITES[pid] = makePrint(PEOPLE[pid].img, {style:'white'});
   initAlbums();
-  // wall photos live in the band below the text (top 360, bottom 690) —
-  // and always on an actual wall, never over a gap or a column
+  /* Wall photos hang from a LINE, not from a centre: their tops align, which
+     is what makes a wall of frames read as hung rather than scattered. The
+     line is 360 unless a photo names its own `top` — the cy written in the
+     data was always overwritten here, so a picture could not be raised at all
+     without this. */
   for (const b of BEATS){
     const seg = segAt(b.x);
     const wallL = seg.x0 + (seg.wInsetL || 0), wallR = seg.x1 - (seg.wInsetR || 0);
@@ -10144,7 +10147,7 @@ async function boot(){
       const sp = SPRITES[it.img]; if (!sp) continue;
       let h = sp.h * (it.w / sp.inner.w);
       if (h > 330){ it.w *= 330 / h; h = 330; }
-      it.cy = 360 + h/2;
+      it.cy = (it.top != null ? it.top : 360) + h/2;
       const half = sp.w * (it.w / sp.inner.w) / 2 + 30;
       const x = b.x + it.dx;
       if (x - half < wallL) it.dx = wallL + half - b.x;
