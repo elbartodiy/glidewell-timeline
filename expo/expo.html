@@ -6695,14 +6695,19 @@ function drawPedestal(b, t, hero){
        beams became four shafts spreading across the whole room: a soft X over
        the counter, the wall and the year. Ending them just below the plinth's
        cap means they converge and stop, which is what a spotlight does. */
-    const yEnd = yTop + objH * 0.7;   // past the cap, so the die-off has room
+    /* the beam RUNS ON past the exhibit: brightest where it lands, then a long
+       slow death down the table's face — starting to fade at the counter's
+       height and gone by the middle of the front. Nothing is cut. */
+    const yEnd = py(885, kk);
     for (const s of [-1, 1]){
       const fx = sx + s * colW * 3.0;                    // the fixture, up top
       // beam direction: straight down -> through the exhibit, by lock
       const xEnd = fx + ((sx - fx) * (yEnd / Math.max(1, yObj))) * lock;
-      const tObj = Math.max(0.05, Math.min(0.92, yObj / yEnd));
-      softBeam(fx, xEnd, 0, yEnd, colW * 0.22, colW * 0.30, warmC, hero,
-               [[0, 0.14], [tObj, 1], [Math.min(1, tObj + 0.25), 0.32], [1, 0]]);
+      const tObj = Math.max(0.05, Math.min(0.85, yObj / yEnd));
+      const tTable = Math.max(tObj + 0.05, Math.min(0.96, py(700, kk) / yEnd));
+      softBeam(fx, xEnd, 0, yEnd, colW * 0.22, colW * 0.34, warmC, hero,
+               [[0, 0.12], [tObj, 1], [tTable, 0.42],
+                [tTable + (1 - tTable) * 0.5, 0.14], [1, 0]]);
       // the fixture itself
       ctx.fillStyle = 'rgba(20,20,22,0.9)';
       ctx.fillRect(fx - 9*SS, 0, 18*SS, 12*SS);
