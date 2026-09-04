@@ -57,7 +57,7 @@ const BEATS = [
    d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
    /* Jim at the bench hangs on the walk-up: a full photo-width of clear wall
       between the cabinet and the frame, then the family album on the counter */
-   wall:[{img:'jim1970', w:420, dx:-825, cy:400, hero:true}],
+   wall:[{img:'jim1970', w:420, dx:-825, cy:290, hero:true}],
    table:[],
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
@@ -76,7 +76,7 @@ const BEATS = [
   {x:4400, y:'1973', t:'SECOND LAB',
    th:'Growth by addition — before growth by system.',
    d:'Jim opens a second lab in El Toro — the one-man bench starts to multiply.',
-   wall:[{img:'rose', w:300, dx:-430, cy:360, rot:0.4}],
+   wall:[{img:'rose', w:300, dx:-560, cy:360, rot:0.4}],
    table:[], st:[{img:'lab4ext', w:250, dx:0, lz:80, cap:'El Toro — the second lab'}]},
 
   {x:5400, y:'1976', t:'DIRECT-MAIL',
@@ -235,9 +235,9 @@ const BEATS = [
   {x:26340, y:'2022', t:'FASTSCAN.IO',
    th:'The front door to the all-digital workflow.',
    d:'fastscan.io, built with Medit, folds an intraoral scanner into the ecosystem — no impressions, no remakes, data straight into design and mill.',
-   wall:[{img:'jimnow', w:250, dx:-520, cy:360, rot:0.5, cap:'Jim Glidewell', style:'white', pz:995}],
+   wall:[{img:'jimnow', w:250, dx:-760, cy:330, rot:0.5, cap:'Jim Glidewell', style:'white', pz:995}],
    table:[], pyr:{dx:520, w:460},
-   ped:{obj:'scanner', dx:0, gapHalf:400, vitrine:true}},
+   /* no pedestal: the scanner lives in the lit capsule on the panel */},
 
   {x:26900, y:'2023', t:'', tier:1, yLift:110,
    th:'',
@@ -373,6 +373,17 @@ function applyCut(){
       else if (owns.has(L2.y) && !owns.has(R2.y)) shove(R2, need);
       else if (!owns.has(L2.y) && !owns.has(R2.y)){ shove(L2, -need / 2); shove(R2, need / 2); }
       else console.warn(`rhythm: ${L2.y} and ${R2.y} are both pinned and ${gap | 0} apart`);
+    }
+  }
+  /* 1988 by hand: the rhythm pass left it farther from 1984 than 1980 is.
+     Equal breathing on both sides of 1984 — and the hanging set follows it,
+     placed relative to the year in initFilmRelays. */
+  {
+    const b80 = BEATS.find(b => b.y === '1980'), b84 = BEATS.find(b => b.y === '1984'),
+          b88 = BEATS.find(b => b.y === '1988');
+    if (b80 && b84 && b88){
+      const to = b84.x + (b84.x - b80.x);
+      if (to < b88.x) { moved.push([b88.x, to]); b88.x = to; }
     }
   }
   const rekey = obj => {
@@ -1948,7 +1959,8 @@ function initWelcomeTV(){
 function updateFilm(){
   const T = WELCOME_TV, v = T.v; if (!v) return;
   // only another VOICE stops the film — reading pages does not
-  const busy = state.clip || (state.person && state.person.playing != null);
+  const busy = state.clip || (state.person && state.person.playing != null) ||
+        (state.study && state.study.railV && !state.study.railV.paused);
   const engaged = !v.muted;                 // the tap started it — sound and all
   const wanted = engaged && !T.userPaused && !busy;
   /* the film never snaps: it bows out over a second — volume slides down,
@@ -1968,6 +1980,7 @@ function updateFilm(){
   // the master switch reaches every other voice in the hall
   if (state.clip && state.clip.v) state.clip.v.muted = SOUND.off;
   if (state.person && state.person.v) state.person.v.muted = SOUND.off;
+  if (state.study && state.study.railV) state.study.railV.muted = SOUND.off;
 }
 /* Relay stands: one every ~1.5 screens of travel, wherever a table span has
    room — never inside a recreation, a cut bay, or a beat's own composition.
@@ -1991,12 +2004,12 @@ function initFilmRelays(){
   FILM_RELAYS.push(
     {kind: 'crt70',  x: lamp != null ? lamp : bayEnd + 400, w: 250},
     {kind: 'hang',   x: SHIFT(6060),  w: 320, cy: 320, era: 0},   // after 1976, before the 1979 column
-    {kind: 'hang',   x: SHIFT(10250), w: 320, cy: 282, era: 1},   // 1988 — higher and right of the year
+    {kind: 'hang',   x: (BEATS.find(b => b.y === '1988') || {x: SHIFT(10250) - 400}).x + 400, w: 320, cy: 282, era: 1},   // 1988 — right of the year, and it moves with it
     {kind: 'crt95',  x: SHIFT(12700), lz: 70, w: 290},            // the nineties set by 1995
-    {kind: 'proj',   x: SHIFT(15330), w: 1500, cy: 432},          // 1999: thrown HUGE onto the wall
-    {kind: 'lcd05',  x: SHIFT(18150), lz: 55, w: 250},            // the office LCD between 2005 and 2007
-    {kind: 'plasma', x: SHIFT(22240), w: 560, cy: 385},           // between 2009 and the 2010s
-    {kind: 'vwall',  x: 33060, w: 900, top: 140, h: 680}          // the backdrop wall behind 2022 → 2023
+    {kind: 'proj',   x: SHIFT(15330), w: 1500, cy: 398},          // 1999: thrown HUGE onto the wall
+    {kind: 'lcd05',  x: SHIFT(18150), lz: 16, w: 235},            // the office LCD between 2005 and 2007
+    {kind: 'plasma', x: SHIFT(22240), w: 640, cy: 385},           // between 2009 and the 2010s
+    {kind: 'vwall',  x: 33060, w: 900, top: -30, h: 850}          // the backdrop wall behind 2022 → 2023, up to the soffit
   );
   if (DBG) console.log('film screens:', FILM_RELAYS.map(r => r.kind + '@' + (r.x | 0)).join(', '));
 }
@@ -2109,24 +2122,27 @@ function drawWelcomeTV(){
   if (Math.abs(T.x - cam.x) > 3600) return;
   const g = drawFilmPanel(T.x, T.w, true);
   if (!g) return;
-  const {sx, kk, footY, top} = g;
-  // the inscription rides with the panel — one poster, one depth, no drift
+  const {sx, kk, footY} = g;
+  /* the inscription is LETTERING ON THE WALL, not a label on the set: it lives
+     at the wall's own depth, so pulling back leaves it hanging on the plaster
+     where it was painted — and a size down, so the film stays the hero */
+  const kw = k(wallZAt(T.x) - 8), cxw = px(T.x, kw);
   ctx.save();
   ctx.textAlign = 'center';
   ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 3*SS;
   if (IMGS.logo2026 && state.introFade > 0.02){
     // the mark at the apex belongs to the close-up and dissolves with the zoom-out
-    const ms = 40 * kk * SS, my = top - 160 * kk * SS;
+    const ms = 42 * kw * SS, my = py(84, kw);
     ctx.save();
     ctx.globalAlpha = state.introFade;
-    ctx.beginPath(); ctx.roundRect(sx - ms/2, my - ms/2, ms, ms, 5*kk*SS); ctx.clip();
-    ctx.drawImage(IMGS.logo2026.el, sx - ms/2, my - ms/2, ms, ms);
+    ctx.beginPath(); ctx.roundRect(cxw - ms/2, my - ms/2, ms, ms, 5*kw*SS); ctx.clip();
+    ctx.drawImage(IMGS.logo2026.el, cxw - ms/2, my - ms/2, ms, ms);
     ctx.restore();
   }
   ctx.fillStyle = 'rgba(236,210,165,0.95)';
-  ctx.font = eraFont(42 * kk * SS);
-  ctx.fillText('HOW GOOD DENTISTRY', sx, top - 96 * kk * SS);
-  ctx.fillText('STOPPED BEING A LUXURY', sx, top - 48 * kk * SS);
+  ctx.font = eraFont(54 * kw * SS);
+  ctx.fillText('HOW GOOD DENTISTRY', cxw, py(178, kw));
+  ctx.fillText('STOPPED BEING A LUXURY', cxw, py(240, kw));
   ctx.restore();
   // the tour line sits under the panel, on the cabinet face — clear of the
   // marble edge, which used to cut straight through it. Hidden during the
@@ -2382,80 +2398,44 @@ function drawFilmProjector(r){
   ctx.beginPath(); ctx.arc(mx, mFoot - mh*0.55, 4.5*km*SS, 0, 7); ctx.fill();
 }
 /* the office LCD of the mid-2000s: putty plastic, a THICK bezel, a trapezoid
-   neck on an oval foot — and turned a few degrees in space, so it reads as a
-   box, not a decal: the right edge recedes (drawn shorter), a sliver of the
-   cabinet's side shows past it, and the picture is sliced into vertical
-   strips whose height follows the lean. */
-let LCD_SHEET = null;
+   neck on an oval foot. Straight-on — the turned version read thin — and
+   anchored near the front plane so it cannot ride against its island. */
 function drawFilmLCD05(r){
-  const kk = k(r.lz || 55), sx = px(r.x, kk);
+  const kk = k(r.lz != null ? r.lz : 16), sx = px(r.x, kk);
   const scw = r.w * kk * SS, sch = scw * 3/4;
   const bez = 13 * kk * SS;
   const bw = scw + bez*2, bh = sch + bez*2;
   if (sx < -bw || sx > W + bw) return;
-  const yaw = 0.12;
-  const footY = py(CFG.benchY - 2, kk);
+  const footY = py(CFG.benchY - 14, kk);
   const baseH = 7*kk*SS, neckH = 22*kk*SS;
-  const cyM = footY - baseH - neckH - bh/2;
+  const y0 = footY - baseH - neckH - bh;
   contactShadow(sx, footY, bw*0.5, 0.28);
   ctx.fillStyle = '#8f8c84';
   ctx.beginPath(); ctx.ellipse(sx, footY - baseH, 58*kk*SS, baseH, 0, 0, 7); ctx.fill();
-  const ng = ctx.createLinearGradient(0, cyM + bh/2, 0, footY);
+  const ng = ctx.createLinearGradient(0, y0 + bh, 0, footY);
   ng.addColorStop(0, '#b9b6ae'); ng.addColorStop(1, '#7e7b74');
   ctx.fillStyle = ng;
   ctx.beginPath();
-  ctx.moveTo(sx - 12*kk*SS, cyM + bh/2 - 2*SS);
-  ctx.lineTo(sx + 12*kk*SS, cyM + bh/2 - 2*SS);
+  ctx.moveTo(sx - 12*kk*SS, y0 + bh - 2*SS);
+  ctx.lineTo(sx + 12*kk*SS, y0 + bh - 2*SS);
   ctx.lineTo(sx + 20*kk*SS, footY - baseH);
   ctx.lineTo(sx - 20*kk*SS, footY - baseH);
   ctx.closePath(); ctx.fill();
-  const xL = sx - bw/2, xR = sx + bw/2 - 4*kk*SS;
-  const hL = bh/2, hR = bh/2 * (1 - yaw);
-  // the receding side of the cabinet
-  ctx.fillStyle = '#75726a';
-  ctx.beginPath();
-  ctx.moveTo(xR, cyM - hR); ctx.lineTo(xR + 9*kk*SS, cyM - hR*0.94);
-  ctx.lineTo(xR + 9*kk*SS, cyM + hR*0.94); ctx.lineTo(xR, cyM + hR);
-  ctx.closePath(); ctx.fill();
-  // the front face, leaning
-  const pg = ctx.createLinearGradient(0, cyM - hL, 0, cyM + hL);
+  const pg = ctx.createLinearGradient(0, y0, 0, y0 + bh);
   pg.addColorStop(0, '#d9d6cd'); pg.addColorStop(0.6, '#c2bfb6'); pg.addColorStop(1, '#a09d94');
   ctx.fillStyle = pg;
-  ctx.beginPath();
-  ctx.moveTo(xL, cyM - hL); ctx.lineTo(xR, cyM - hR);
-  ctx.lineTo(xR, cyM + hR); ctx.lineTo(xL, cyM + hL);
-  ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = 'rgba(70,68,62,0.5)'; ctx.lineWidth = 1*SS; ctx.stroke();
-  // the picture, sliced to follow the lean
-  if (!LCD_SHEET) LCD_SHEET = document.createElement('canvas');
-  const sc2 = LCD_SHEET, sw2 = 480, sh2 = 360;
-  if (sc2.width !== sw2){ sc2.width = sw2; sc2.height = sh2; }
-  const g2 = sc2.getContext('2d');
-  const v = WELCOME_TV.v;
-  g2.fillStyle = '#0b0d10'; g2.fillRect(0, 0, sw2, sh2);
-  if (v && v.videoWidth && v.readyState >= 2){
-    const s3 = Math.max(sw2 / v.videoWidth, sh2 / v.videoHeight);
-    try { g2.filter = 'saturate(0.9) contrast(1.02) brightness(1.06)'; } catch(e){}
-    g2.drawImage(v, sw2/2 - v.videoWidth*s3/2, sh2/2 - v.videoHeight*s3/2,
-                 v.videoWidth*s3, v.videoHeight*s3);
-    g2.filter = 'none';
-  }
-  const ixL = xL + bez, ixR = xR - bez*0.85;
-  const ihL = hL - bez, ihR = hR - bez*0.85;
-  const N = 26;
-  for (let i = 0; i < N; i++){
-    const u0 = i / N, u1 = (i + 1) / N;
-    const dx0 = ixL + (ixR - ixL) * u0, dx1 = ixL + (ixR - ixL) * u1;
-    const dh = ihL + (ihR - ihL) * (u0 + u1) / 2;
-    ctx.drawImage(sc2, u0 * sw2, 0, sw2 / N, sh2,
-                  dx0, cyM - dh, (dx1 - dx0) + 0.8, dh * 2);
-  }
-  pushHit(ixL, cyM - ihL, ixR - ixL, ihL * 2, {type: 'welcomevid'});
+  ctx.beginPath(); ctx.roundRect(sx - bw/2, y0, bw, bh, 5*kk*SS); ctx.fill();
+  ctx.strokeStyle = 'rgba(70,68,62,0.5)'; ctx.lineWidth = 1*SS;
+  ctx.beginPath(); ctx.roundRect(sx - bw/2 + 0.5*SS, y0 + 0.5*SS, bw - SS, bh - SS, 5*kk*SS); ctx.stroke();
+  ctx.fillStyle = '#111316';
+  ctx.fillRect(sx - scw/2 - 2*SS, y0 + bez - 2*SS, scw + 4*SS, sch + 4*SS);
+  filmInto(sx - scw/2, y0 + bez, scw, sch, 0.97, 'saturate(0.9) contrast(1.02) brightness(1.06)');
   ctx.fillStyle = 'rgba(120,220,140,0.95)';
-  ctx.beginPath(); ctx.arc(xR - 8*kk*SS, cyM + hR - bez*0.4, 2*kk*SS, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(sx + bw/2 - 14*kk*SS, y0 + bh - bez*0.45, 2*kk*SS, 0, 7); ctx.fill();
 }
 /* a wall-mounted plasma — no foot, thin frame, straight onto the wall */
 function drawFilmWallPlasma(r){
+  const v = WELCOME_TV.v;
   const wz = wallZAt(r.x) - 16;
   const kk = k(wz), sx = wallSX(r.x, 0, kk);
   rivet('film:plasma:' + r.x, sx, k(exhibitZ(r.x)));
@@ -2464,6 +2444,7 @@ function drawFilmWallPlasma(r){
   if (sx < -vw || sx > W + vw) return;
   const cy = py(r.cy, kk);
   const x0 = sx - vw/2 - bez, y0 = cy - vh/2 - bez;
+  drawGlow(ambiColor(v), sx, cy, vw * 1.05, 0.30);
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 16*SS; ctx.shadowOffsetY = 6*SS;
   ctx.fillStyle = '#0a0a0c';
@@ -2472,6 +2453,24 @@ function drawFilmWallPlasma(r){
   ctx.strokeStyle = 'rgba(190,205,218,0.28)'; ctx.lineWidth = 1*SS;
   ctx.beginPath(); ctx.roundRect(x0 + 0.5*SS, y0 + 0.5*SS, vw + bez*2 - SS, vh + bez*2 - SS, 5*kk*SS); ctx.stroke();
   filmInto(sx - vw/2, cy - vh/2, vw, vh);
+}
+/* the mid-2000s party trick: the wall behind the plasma glows in the
+   picture's own colour, sampled from the running tape a few times a second */
+let AMBI = {t: -1, c: '90,200,250'};
+function ambiColor(v){
+  if (state.time - AMBI.t > 0.35){
+    AMBI.t = state.time;
+    try {
+      if (!AMBI.cv){ AMBI.cv = document.createElement('canvas'); AMBI.cv.width = 4; AMBI.cv.height = 4; }
+      const g2 = AMBI.cv.getContext('2d', {willReadFrequently: true});
+      g2.drawImage(v, 0, 0, 4, 4);
+      const d = g2.getImageData(0, 0, 4, 4).data;
+      let r = 0, g = 0, b = 0;
+      for (let i = 0; i < 64; i += 4){ r += d[i]; g += d[i+1]; b += d[i+2]; }
+      AMBI.c = `${(r/16*1.25)|0},${(g/16*1.25)|0},${(b/16*1.25)|0}`;
+    } catch(e){}
+  }
+  return AMBI.c;
 }
 /* the screen wall of the white years: a full-height backdrop mounted on the
    deep wall — the 2022 column, the 2023 crossing, the years and the counter
@@ -2482,10 +2481,10 @@ function drawFilmVideoWall(){
   if (!v || v.muted || v.readyState < 2) return;
   const r = FILM_RELAYS.find(q => q.kind === 'vwall');
   if (!r || Math.abs(r.x - cam.x) > 3200) return;
-  // the rivet law: an object mounted ON the wall lives at the WALL's depth —
-  // on the text plane it slid against the lamp rail bolted right above it
-  const wz = wallZAt(r.x) - 6;
-  const kk = k(wz), sx = wallSX(r.x, 0, kk);
+  /* the same plane as the walnut soffit above it — measured against those
+     lamps, so the two can never slide apart */
+  const wz = (SEGMENTS[3].z0 || 1400) - 6;
+  const kk = k(wz), sx = px(r.x, kk);
   rivet('film:vwall:' + r.x, sx, k(exhibitZ(r.x)));
   const vw = r.w * kk * SS;
   if (sx < -vw || sx > W + vw) return;
@@ -3013,7 +3012,9 @@ function updateMusic(dt){
   // a speaking voice always wins; the attract loop plays a little lower still
   let want = (MUSIC.off || SOUND.off) ? 0 : MUSIC.vol;
   const voice = state.person && state.person.v;
-  const speaking = state.clip || (voice && !voice.paused && !voice.muted);
+  const rail = state.study && state.study.railV;
+  const speaking = state.clip || (voice && !voice.paused && !voice.muted) ||
+        (rail && !rail.paused && !rail.muted);
   if (speaking) want *= MUSIC.duck;
   if (state.mode === 'attract') want *= 0.75;
   want *= 1 - (state.attract.fade || 0);
@@ -4778,13 +4779,13 @@ function drawRec4(t){
      into the panel and rimmed with ice light — the scanner's own vitrine.
      The pedestal and the instrument stand in front of it, on their own depth. */
   {
-    /* mid-depth, not on the deep panel: at the panel's distance the capsule
-       hid behind the pedestal. It stands in the counter break, a freestanding
-       light wall right behind the instrument. */
-    const kn = k(240);
+    /* ON the panel, fixed between the columns — it does not ride anything.
+       The instrument is drawn inside it, a display graphic after the
+       reference: a white wand on its dock in a well of ice light. */
+    const kn = k(996);
     const nx = px(mid, kn);
-    const nw = 360 * kn * SS;
-    const nTop = py(90, kn), nBot = py(700, kn);
+    const nw = 400 * kn * SS;
+    const nTop = py(96, kn), nBot = py(700, kn);
     const r = nw / 2;
     const capsule = () => {
       ctx.beginPath();
@@ -4810,6 +4811,37 @@ function drawRec4(t){
     pgl.addColorStop(0, 'rgba(140,215,255,0.20)'); pgl.addColorStop(1, 'rgba(140,215,255,0)');
     ctx.fillStyle = pgl;
     ctx.fillRect(nx - nw, nBot - r - nw*0.5, nw*2, nw);
+    // the wand, to the reference: white body, two blue keys, a low dock
+    const wandH = (nBot - nTop) * 0.56, wandW = nw * 0.20;
+    const wTop = nBot - r*0.42 - wandH, wCx = nx;
+    ctx.save();
+    ctx.shadowColor = 'rgba(40,60,80,0.30)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetX = 3*SS;
+    const wg2 = ctx.createLinearGradient(wCx - wandW/2, 0, wCx + wandW/2, 0);
+    wg2.addColorStop(0, '#fbfcfd'); wg2.addColorStop(0.55, '#eef1f4'); wg2.addColorStop(1, '#c9ced4');
+    ctx.fillStyle = wg2;
+    ctx.beginPath(); ctx.roundRect(wCx - wandW/2, wTop, wandW, wandH, wandW/2); ctx.fill();
+    ctx.restore();
+    // the seam where the tip meets the body
+    ctx.strokeStyle = 'rgba(120,130,140,0.45)'; ctx.lineWidth = 1*SS;
+    ctx.beginPath();
+    ctx.moveTo(wCx - wandW/2 + 1.5*SS, wTop + wandH*0.20);
+    ctx.lineTo(wCx + wandW/2 - 1.5*SS, wTop + wandH*0.20);
+    ctx.stroke();
+    // two blue keys
+    for (const [f, rr] of [[0.46, 0.22], [0.60, 0.13]]){
+      ctx.fillStyle = '#2f62c8';
+      ctx.beginPath(); ctx.arc(wCx, wTop + wandH*f, wandW*rr, 0, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1*SS;
+      ctx.beginPath(); ctx.arc(wCx, wTop + wandH*f, wandW*rr, 0, 7); ctx.stroke();
+    }
+    // the dock it stands in
+    const dW = wandW*1.9, dH = wandH*0.10;
+    const dg = ctx.createLinearGradient(0, nBot - r*0.42 - dH, 0, nBot - r*0.42 + dH);
+    dg.addColorStop(0, '#dde1e5'); dg.addColorStop(1, '#aab0b6');
+    ctx.fillStyle = dg;
+    ctx.beginPath(); ctx.roundRect(wCx - dW/2, nBot - r*0.42 - dH*0.5, dW, dH*1.5, 3*SS); ctx.fill();
+    ctx.fillStyle = 'rgba(60,70,80,0.35)';
+    ctx.beginPath(); ctx.ellipse(wCx, nBot - r*0.42 - dH*0.4, wandW*0.62, 2.4*kn*SS, 0, 0, 7); ctx.fill();
   }
   // pilaster columns with the ice trim
   for (const wxc of [REC4_L, REC4_R]){
@@ -7378,8 +7410,12 @@ function drawFactory(t){
     const kc = k(cz2), sxc = px(cx2, kc), roof = py(408, kc);
     if (sxc < -400 || sxc > W + 400) continue;
     const halfC = 150 * kc * SS;
-    softBeam(sxc, sxc, 0, roof, halfC * 0.42, halfC, '226,240,255', 0.30,
-             [[0, 0.10], [0.55, 0.55], [1, 1]]);
+    /* the shaft used to STOP at the cabin roof — a hard edge that read as two
+       pipes. It now runs on past the roof, down to the pendant's height, and
+       dies away gradually instead of being cut. */
+    const low = py(640, kc);
+    softBeam(sxc, sxc, 0, low, halfC * 0.42, halfC * 1.15, '226,240,255', 0.30,
+             [[0, 0.10], [0.42, 0.55], [0.62, 0.30], [1, 0]]);
     drawGlow('226,240,255', sxc, roof, halfC * 1.5, 0.16);
   }
   ctx.restore();
@@ -8095,7 +8131,7 @@ function openClip(m, wx){
     v.src = m.src; v.preload = 'auto'; v.playsInline = true;
     VIDEO_EL[m.src] = v;
   }
-  try { v.currentTime = 0; v.play(); } catch(e){}
+  try { if (v.paused) v.currentTime = 0; v.play(); } catch(e){}
   state.clip = {v, name: m.name, label: m.label, wx: wx, amt: 0};
 }
 function closeClip(){
@@ -8107,16 +8143,30 @@ function openStudy(i){
   const b = BEATS[i];
   const imgs = [];   // reserved: the speaker-video carousel will live here
   state.study = {beat: i, imgs, scroll: 0, amt: 0, maxScroll: 1};
-  /* a page that carries voices starts speaking as it opens: the first clip of
-     the rail plays at once (the hall film, meanwhile, fades out and holds its
-     place — updateFilm sees state.clip and bows it out over a second) */
+  /* a page that carries voices starts speaking as it opens — but IN the rail,
+     small, right where the clip hangs; tapping it expands to the full player.
+     The hall film, meanwhile, fades out and holds its place. */
   const media = STUDY_MEDIA[b.x];
-  if (media && media.length) openClip(media[0], b.x);
+  if (media && media.length){
+    const m = media[0];
+    let v = VIDEO_EL[m.src];
+    if (!v){
+      v = document.createElement('video');
+      v.src = m.src; v.preload = 'auto'; v.playsInline = true;
+      VIDEO_EL[m.src] = v;
+    }
+    try { v.currentTime = 0; } catch(e){}
+    v.play().catch(()=>{});
+    state.study.railV = v; state.study.railSrc = m.src;
+  }
 }
 function drawStudy(){
   const S = state.study; if (!S) return;
   S.amt += ((S.closing ? 0 : 1) - S.amt) * Math.min(1, (state.dt || 0.016) * 5);
-  if (S.closing && S.amt < 0.03){ state.study = null; return; }
+  if (S.closing && S.amt < 0.03){
+    if (S.railV && (!state.clip || state.clip.v !== S.railV)) try { S.railV.pause(); } catch(e){}
+    state.study = null; return;
+  }
   const e = S.amt*S.amt*(3-2*S.amt);
   const b = BEATS[S.beat];
   const era = segIdx(b.x);
@@ -8198,7 +8248,10 @@ function drawStudy(){
   /* one page, one link a person: the first mention carries the name to their
      page, the rest stay prose */
   const seen = new Set();
-  const flow = (txt, lh) => { y = flowText(txt, left, y, textW, lh,
+  let objBot = -1, objW = 0;
+  const flow = (txt, lh) => {
+    const wNow = (objBot > 0 && y < objBot) ? textW - objW - 28*SS : textW;
+    y = flowText(txt, left, y, wNow, lh,
     {seen, top: topClip, bot: botClip, accent: `rgba(${K.accent},0.95)`, ink: ctx.fillStyle}); };
   ctx.textAlign = 'left';
   ctx.font = K.font(130);
@@ -8222,6 +8275,16 @@ function drawStudy(){
   }
   ctx.fillStyle = K.rule;
   ctx.fillRect(left, y, colW, 1.5*SS); y += 42 * SS;
+  /* the exhibit sits in the article like a picture in a magazine — the prose
+     runs narrow beside it and widens once past */
+  if (b.ped && PED_SPRITES[b.ped.obj]){
+    const os = PED_SPRITES[b.ped.obj];
+    objW = 185 * SS;
+    const objH = objW * os.h / os.w;
+    if (y + objH > topClip && y < botClip)
+      ctx.drawImage(os.c, left + textW - objW, y, objW, objH);
+    objBot = y + objH + 26*SS;
+  }
   ctx.font = K.font(27);
   ctx.fillStyle = `rgba(${K.ink},0.95)`;
   flow(b.d, 40*SS);
@@ -8253,6 +8316,13 @@ function drawStudy(){
         ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 10*SS); ctx.clip();
         ctx.fillStyle = '#14181d';
         ctx.fillRect(mx, ty, tw, th);
+        const useV = S.railV && m.src === S.railSrc && S.railV.readyState >= 2;
+        if (useV){
+          const rv = S.railV;
+          const s = Math.max(tw/rv.videoWidth, th/rv.videoHeight);
+          ctx.drawImage(rv, mx + tw/2 - rv.videoWidth*s/2, ty + th/2 - rv.videoHeight*s/2,
+                        rv.videoWidth*s, rv.videoHeight*s);
+        } else {
         const im = thumbFor(m) || IMGS[m.img];   // a real interview frame, portrait until it loads
         if (im){
           const s = Math.max(tw/im.w, th/im.h);
@@ -8260,10 +8330,12 @@ function drawStudy(){
           ctx.drawImage(im.el, mx + tw/2 - im.w*s/2, ty + th/2 - im.h*s/2, im.w*s, im.h*s);
           ctx.globalAlpha = 1;
         }
+        }
         const pg = ctx.createLinearGradient(0, ty + th*0.5, 0, ty + th);
         pg.addColorStop(0, 'rgba(8,10,14,0)'); pg.addColorStop(1, 'rgba(8,10,14,0.85)');
         ctx.fillStyle = pg; ctx.fillRect(mx, ty, tw, th);
-        // play badge
+        // play badge — not over a tape that is already speaking
+        if (!(useV && !S.railV.paused)){
         ctx.fillStyle = 'rgba(250,252,255,0.92)';
         ctx.beginPath(); ctx.arc(mx + tw/2, ty + th/2 - 8*SS, 25*SS, 0, 7); ctx.fill();
         ctx.fillStyle = '#1a2027';
@@ -8272,6 +8344,7 @@ function drawStudy(){
         ctx.lineTo(mx + tw/2 + 13*SS, ty + th/2 - 8*SS);
         ctx.lineTo(mx + tw/2 - 7*SS, ty + th/2 + 5*SS);
         ctx.closePath(); ctx.fill();
+        }
         ctx.fillStyle = 'rgba(240,244,248,0.95)';
         ctx.font = K.font(18);
         ctx.fillText(m.name, mx + 14*SS, ty + th - 34*SS);
@@ -8481,7 +8554,7 @@ function personPlay(S, i){
     VIDEO_EL[c.src] = v;
   }
   S.playing = i; S.v = v; S.scroll = 0;
-  try { v.currentTime = 0; v.play(); } catch(e){}
+  try { if (v.paused) v.currentTime = 0; v.play(); } catch(e){}
 }
 function personStop(S){
   if (S && S.v){ try { S.v.pause(); } catch(e){} }
@@ -8907,7 +8980,15 @@ function update(dt){
       } else if (aimed && aimed.type === 'focus'){
         if (state.focusBeat === aimed.beat){ state.focusBeat = -1; state.focusAnchor = null; cam.zTarget = 0; }
         else { state.focusBeat = aimed.beat; state.focusAnchor = aimed.anchor != null ? aimed.anchor : null;
-               cam.zTarget = CFG.focusCamZ; cam.vel = 0; }
+               cam.zTarget = CFG.focusCamZ; cam.vel = 0;
+               /* a pedestal that has a page behind it: the dolly runs, then the
+                  page opens with the exhibit set into the article */
+               const fb = BEATS[aimed.beat];
+               if (fb && fb.ped && (STUDY_MORE[fb.x] || STUDY_MEDIA[fb.x])){
+                 const bi = aimed.beat;
+                 setTimeout(() => { if (state.focusBeat === bi && !state.study) openStudy(bi); }, 700);
+               }
+             }
       } else if (aimed && aimed.type === 'openbox'){
         state.openBox = {amt: 0, closing: false};
         cam.vel = 0;
@@ -9159,7 +9240,13 @@ function drawShowroom(t){
   const sh = ctx.createLinearGradient(0, yB, 0, yB + 70 * kk * SS);
   sh.addColorStop(0, 'rgba(30,22,14,0.22)'); sh.addColorStop(1, 'rgba(30,22,14,0)');
   ctx.fillStyle = sh;
-  ctx.fillRect(Math.max(0, x0), yB, x1 - Math.max(0, x0), 70 * kk * SS);
+  /* the shadow stops where the wood does: past the quarter-round the beam's
+     underside lifts away, so the full-strength shadow ran on under nothing */
+  ctx.fillRect(Math.max(0, x0), yB, (x1 - turn) - Math.max(0, x0), 70 * kk * SS);
+  ctx.save();
+  ctx.globalAlpha = 0.45;
+  ctx.fillRect(x1 - turn, yB, turn * 0.5, 70 * kk * SS);
+  ctx.restore();
   // downlights set into it, and the pools they throw
   ctx.globalCompositeOperation = 'lighter';
   for (let wx = SHOW_L + 330; wx < SHOW_R; wx += 660){
@@ -9262,19 +9349,25 @@ function drawShowroomLight(t){
   const yBase = py(1032, kf2), yFloor = py(1080, kf2);
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  // under the lip of the worktop
+  /* the diode light belongs to the FURNITURE: one run per table span, so no
+     glow hangs in the air across a recreation or a counter break */
   const lip = ctx.createLinearGradient(0, yLip, 0, yLip + 46 * S);
   lip.addColorStop(0, 'rgba(255,250,238,0.30)');
   lip.addColorStop(1, 'rgba(255,248,234,0)');
-  ctx.fillStyle = lip; ctx.fillRect(x0, yLip, x1 - x0, 46 * S);
-  // the strip recessed into the plinth, and the wash it throws on the floor
-  ctx.fillStyle = 'rgba(255,252,244,0.85)';
-  ctx.fillRect(x0, yBase, x1 - x0, Math.max(1, 3.4 * S));
   const wash = ctx.createLinearGradient(0, yBase, 0, yFloor + 90 * S);
   wash.addColorStop(0, 'rgba(255,248,232,0.26)');
   wash.addColorStop(0.35, 'rgba(255,246,228,0.075)');
   wash.addColorStop(1, 'rgba(255,244,224,0)');
-  ctx.fillStyle = wash; ctx.fillRect(x0, yBase, x1 - x0, yFloor + 90 * S - yBase);
+  for (const tb of TABLES){
+    if (tb.x1 < SHOW_L || tb.x0 > SHOW_R) continue;
+    const sx0 = Math.max(x0, px(Math.max(tb.x0 + 14, SHOW_L), kf2));
+    const sx1 = Math.min(x1, px(Math.min(tb.x1 - 14, SHOW_R), kf2));
+    if (sx1 <= sx0) continue;
+    ctx.fillStyle = lip; ctx.fillRect(sx0, yLip, sx1 - sx0, 46 * S);
+    ctx.fillStyle = 'rgba(255,252,244,0.85)';
+    ctx.fillRect(sx0, yBase, sx1 - sx0, Math.max(1, 3.4 * S));
+    ctx.fillStyle = wash; ctx.fillRect(sx0, yBase, sx1 - sx0, yFloor + 90 * S - yBase);
+  }
   // the logo panels, edge-lit: the border burns, the face stays matte
   ctx.globalCompositeOperation = 'source-over';
   /* THE MARK BELONGS TO A COUNTER, not to the air. It used to be placed at
