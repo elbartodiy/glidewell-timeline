@@ -2060,7 +2060,7 @@ function initFilmRelays(){
     /* 16:9, as a plasma is — larger, and measured on the deep wall (k≈0.39) so
        its top clears the taglines (screen-wise below them) and its bottom stops
        short of the counters' line with a little air */
-    {kind: 'plasma', x: SHIFT(22240), w: 880, cy: 738},           // between 2009 and the 2010s
+    {kind: 'plasma', x: SHIFT(22240), w: 880, cy: 648},           // between 2009 and the 2010s — up off the counter
     {kind: 'vwall',  x: 33060, w: 900, top: -30, h: 850}          // the backdrop wall behind 2022 → 2023, up to the soffit
   );
   if (DBG) console.log('film screens:', FILM_RELAYS.map(r => r.kind + '@' + (r.x | 0)).join(', '));
@@ -6839,9 +6839,15 @@ function drawPedestal(b, t, hero){
     ctx.beginPath(); ctx.ellipse(sx, yTop, rx, ry, 0, 0, 7); ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1.2*SS;
     ctx.beginPath(); ctx.ellipse(sx, yTop, rx - 0.6*SS, ry - 0.6*SS, 0, Math.PI*1.05, Math.PI*1.95); ctx.stroke();
-    // contact shade where the column meets the cap
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    /* contact shade where the column meets the cap — CLIPPED to the column:
+       drawn wider, its ends hung in the air beside the shaft and read as a
+       stray line under the disc */
+    ctx.save();
+    ctx.beginPath(); ctx.rect(sx - colW/2 + 1*SS, yTop + capH, colW - 2*SS, 14*kk*SS);
+    ctx.clip();
+    ctx.fillStyle = 'rgba(0,0,0,0.16)';
     ctx.beginPath(); ctx.ellipse(sx, yTop + capH + 2*SS, colW*0.52, ry*0.7, 0, 0, Math.PI); ctx.fill();
+    ctx.restore();
   }
   // the object
   const obj = PED_SPRITES[ped.obj];
