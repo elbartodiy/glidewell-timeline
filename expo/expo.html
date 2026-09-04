@@ -3505,15 +3505,11 @@ function drawMapHero(t, h){
   for (const s of [-1, 1]){
     const fx = px(mid + s * 470, kk);
     const xEnd = fx + ((cx - fx) * (yEnd / Math.max(1, cyS))) * Math.min(1, h * 1.7);
-    const beam = ctx.createLinearGradient(0, 0, 0, yEnd);
-    beam.addColorStop(0, `rgba(255,246,220,${(0.03*h).toFixed(3)})`);
-    beam.addColorStop(Math.max(0.05, Math.min(0.9, cyS/yEnd)), `rgba(255,246,220,${(0.15*h).toFixed(3)})`);
-    beam.addColorStop(1, 'rgba(255,246,220,0)');
-    ctx.fillStyle = beam;
-    ctx.beginPath();
-    ctx.moveTo(fx - 26*SS, 0); ctx.lineTo(fx + 26*SS, 0);
-    ctx.lineTo(xEnd + 90*kk*SS, yEnd); ctx.lineTo(xEnd - 90*kk*SS, yEnd);
-    ctx.closePath(); ctx.fill();
+    // the same soft-shouldered shaft the rest of the hall uses — these two
+    // were the last hard-edged quads standing
+    const tMap = Math.max(0.05, Math.min(0.9, cyS / yEnd));
+    softBeam(fx, xEnd, 0, yEnd, 26*SS, 110*kk*SS, '255,246,220', 0.065 * h,
+             [[0, 0.2], [tMap, 1], [tMap + (1 - tMap) * 0.5, 0.4], [1, 0]]);
     ctx.fillStyle = 'rgba(20,20,22,0.9)';
     ctx.fillRect(fx - 9*SS, 0, 18*SS, 12*SS);
     ctx.fillStyle = `rgba(255,246,220,${(0.75*h).toFixed(2)})`;
