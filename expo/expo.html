@@ -4410,7 +4410,7 @@ function crownGeometry(){
   const sp = PED_SPRITES.crown2;
   const c = document.createElement('canvas'); c.width = sp.w; c.height = sp.h;
   const g = c.getContext('2d', {willReadFrequently: true});
-  g.drawImage(sp.c, 0, 0);
+  g.drawImage(sp.c, 0, 0, sp.w, sp.h);   // the sprite is authored above its layout size
   const d = g.getImageData(0, 0, sp.w, sp.h).data;
   const inside = (x, y) => d[((y|0) * sp.w + (x|0)) * 4 + 3] > 40;
   const R = rng(90210);
@@ -5038,9 +5038,14 @@ function drawRec4(t){
        keeping its own proportion — the height is the case's, the width follows
        from the picture, so it can never be squeezed to fit. */
     const sp = PROP_SPRITES.ph_scanner;
-    // the tip starts below the plate's own two lines, not through them
-    const wTop = nTop + (nBot - nTop) * 0.30, wCx = nx;
-    const wandH = dockY - wTop;
+    /* It stands on the dock, so it grows upward — and the case is the limit:
+       asked for half again as big, it takes as much of that as fits between
+       the dock and the top of its own vitrine. */
+    const GROW = 1.5;
+    const wCx = nx;
+    const wandH = Math.min(dockY - (nTop + 6*SS),
+                           (dockY - (nTop + (nBot - nTop) * 0.30)) * GROW);
+    const wTop = dockY - wandH;
     const wandW = sp ? wandH * sp.w / sp.h : nw * 0.34;
     if (sp){
       ctx.save();
@@ -6701,11 +6706,26 @@ function drawAlbum(b, i, t, dt){
 
 /* ---------------- PEDESTALS · landmarks of the revolutionary beats ---------------- */
 const PED_SPRITES = {};
+/* THESE SPRITES ARE DRAWN LARGER THAN THEY ARE USED. Each one used to be
+   authored at its layout size — 150x170 for the scanner, 190x130 for the puck
+   — and then blown up to fill the frame: at dpr 2 the still life asks for
+   nearly twice those pixels, so every edge in it was an upscale of an
+   already-finished bitmap. That is the mush. The fix is not smoothing, it is
+   resolution: the bitmap is rendered at PED_RES times the layout size and the
+   layout size is what the sprite still reports, so nothing that places or
+   measures these objects changes by a pixel. */
+const PED_RES = 3;
 function makePedObj(kind){
   const c = document.createElement('canvas'); const g = c.getContext('2d');
+  let LW = 0, LH = 0;
+  const size = (w, h) => {
+    LW = w; LH = h;
+    c.width = w * PED_RES; c.height = h * PED_RES;
+    g.setTransform(PED_RES, 0, 0, PED_RES, 0, 0);   // author in layout units
+  };
   if (kind === 'dataTooth'){
     // the case that arrived as data: a point-cloud tooth, faintly holographic
-    c.width = 190; c.height = 170;
+    size(190, 170);
     g.translate(95, 92);
     const pts = projMesh(0.6);
     g.fillStyle = 'rgba(110,215,255,0.06)';
@@ -6725,7 +6745,7 @@ function makePedObj(kind){
     return {c, w: c.width, h: c.height};
   }
   if (kind === 'crown'){
-    c.width = 170; c.height = 150;
+    size(170, 150);
     g.save(); g.translate(85, 78);
     const lg = g.createLinearGradient(-55, -60, 55, 60);
     lg.addColorStop(0, '#f4efe1'); lg.addColorStop(.55, '#ddd3bd'); lg.addColorStop(1, '#b3a78d');
@@ -6744,7 +6764,7 @@ function makePedObj(kind){
     g.beginPath(); g.ellipse(-26, -26, 9, 15, -0.5, 0, 7); g.fill();
     g.restore();
   } else if (kind === 'logo1970'){
-    c.width = 190; c.height = 180;
+    size(190, 180);
     // the real early-70s GL mark, mounted as a small display plaque
     g.save();
     g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 12; g.shadowOffsetY = 6;
@@ -6760,7 +6780,7 @@ function makePedObj(kind){
     g.strokeStyle = 'rgba(255,255,255,0.18)'; g.lineWidth = 1.5;
     g.beginPath(); g.roundRect(20.5, 12.5, 149, 149, 6); g.stroke();
   } else if (kind === 'bizcard'){
-    c.width = 220; c.height = 150;
+    size(220, 150);
     g.save();
     g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 12; g.shadowOffsetY = 6;
     g.fillStyle = '#f2f2ee';
@@ -6775,7 +6795,7 @@ function makePedObj(kind){
     g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 1.5;
     g.beginPath(); g.roundRect(15.5, 15.5, 189, 117, 5); g.stroke();
   } else if (kind === 'logoG'){
-    c.width = 170; c.height = 160;
+    size(170, 160);
     // the mark itself, monumental
     g.save();
     g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 12; g.shadowOffsetY = 6;
@@ -6788,7 +6808,7 @@ function makePedObj(kind){
     g.fillText('G', 85, 110);
     g.textAlign = 'left';
   } else if (kind === 'crown2'){
-    c.width = 170; c.height = 150;
+    size(170, 150);
     g.save(); g.translate(85, 78);
     const lg = g.createLinearGradient(-55, -60, 55, 60);
     lg.addColorStop(0, '#fbfdff'); lg.addColorStop(.55, '#e2ecf2'); lg.addColorStop(1, '#b8c8d4');
@@ -6813,7 +6833,7 @@ function makePedObj(kind){
        on the HORIZONTAL: the blank is a small puck held frontally in a steel hub
        on the right, and the bur comes in from the LEFT on a horizontal spindle
        with its polished flange behind it. Nothing here descends from above. */
-    c.width = 210; c.height = 172;
+    size(210, 172);
     const bg = g.createLinearGradient(0, 26, 0, 164);
     bg.addColorStop(0, '#f4f5f7'); bg.addColorStop(.62, '#dcdee1'); bg.addColorStop(1, '#b6b9bd');
     g.fillStyle = bg;
@@ -6861,7 +6881,7 @@ function makePedObj(kind){
     g.font = '600 9px "Helvetica Neue", Arial, sans-serif';
     g.fillText('glidewell.io', 128, 150);
   } else if (kind === 'scanner'){
-    c.width = 150; c.height = 170;
+    size(150, 170);
     /* the same instrument as the one in the 2022 vitrine, and the same
        photograph: it leans in its cradle here instead of standing, but it is
        the product, not a grey stick with a dark cap. The cradle's post is
@@ -6881,7 +6901,7 @@ function makePedObj(kind){
     g.fillStyle = '#33373b';
     g.beginPath(); g.roundRect(30, 128, 90, 16, 6); g.fill();    // the base plate
   } else {
-    c.width = 190; c.height = 130;
+    size(190, 130);
     // zirconia milling puck
     const cx = 95;
     const side = g.createLinearGradient(cx-70, 0, cx+70, 0);
@@ -6896,7 +6916,7 @@ function makePedObj(kind){
     g.fillStyle = 'rgba(255,255,255,0.5)';
     g.beginPath(); g.ellipse(cx-26, 51, 16, 5, -0.2, 0, 7); g.fill();
   }
-  return {c, w: c.width, h: c.height};
+  return {c, w: LW, h: LH};
 }
 function drawPedestal(b, t, hero){
   const ped = b.ped; if (!ped) return;
