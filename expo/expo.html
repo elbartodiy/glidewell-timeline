@@ -702,8 +702,8 @@ function makePrint(name, opts){
     const fg = g.createLinearGradient(sh, sh, sh, sh+h);
     fg.addColorStop(0, '#3a2a1a'); fg.addColorStop(.5, '#241708'); fg.addColorStop(1, '#170e05');
     g.fillStyle = fg; g.fillRect(sh, sh, w, h);
-    g.strokeStyle = 'rgba(255,220,160,0.25)'; g.lineWidth = 2;
-    g.strokeRect(sh+2, sh+2, w-4, h-4);
+    g.strokeStyle = 'rgba(255,220,160,0.13)'; g.lineWidth = 4;
+    g.strokeRect(sh+3, sh+3, w-6, h-6);
     g.strokeStyle = 'rgba(0,0,0,0.6)';
     g.strokeRect(sh+pad-3, sh+pad-3, src.w+6, src.h+6);
   } else if (style === 'metal'){
@@ -1124,6 +1124,10 @@ function resize(){
   const dpr = Math.min(window.devicePixelRatio || 1, CFG.dprCap);
   W = cv.width = Math.round(innerWidth * dpr * RQ);
   H = cv.height = Math.round(innerHeight * dpr * RQ);
+  /* high-quality minification: baked 1-2px sprite lines sampled bilinearly
+     CRAWL as the camera pans — Chrome's 'high' filter mips them steady.
+     (Resizing the canvas resets context state, so it is set here.) */
+  ctx.imageSmoothingQuality = 'high';
   SS = H / CFG.refH;
   VIG = null;
 }
