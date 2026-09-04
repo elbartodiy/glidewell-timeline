@@ -5220,9 +5220,9 @@ function drawLamp(x, t, seed){
   const r = 34*kk*SS;
   drawGlow(modern ? '248,243,228' : '255,225,155', sx, bulbY + r*0.5, r*2.2, 0.85*inten);
   // light cone — soft-shouldered, and it dies out rather than being cut
-  softBeam(sx, px(x, k(120)), bulbY, py(CFG.benchY, k(120)),
-           40*kk*SS, 330*kk*SS, modern ? '250,246,232' : '255,205,125', 0.075*inten,
-           [[0, 1], [0.7, 0.5], [1, 0]]);
+  softBeam(sx, px(x, k(120)), bulbY, py(CFG.benchY + 80, k(120)),
+           40*kk*SS, 355*kk*SS, modern ? '250,246,232' : '255,205,125', 0.075*inten,
+           [[0, 1], [0.58, 0.55], [0.85, 0.16], [1, 0]]);
   // pool on the table
   const kf = k(160);
   drawGlow(modern ? '248,242,226' : '255,205,120',
@@ -6815,7 +6815,7 @@ function drawPedestal(b, t, hero){
        beams became four shafts spreading across the whole room: a soft X over
        the counter, the wall and the year. Ending them just below the plinth's
        cap means they converge and stop, which is what a spotlight does. */
-    const yEnd = yTop + objH * 0.35;
+    const yEnd = yTop + objH * 0.7;   // past the cap, so the die-off has room
     for (const s of [-1, 1]){
       const fx = sx + s * colW * 3.0;                    // the fixture, up top
       // beam direction: straight down -> through the exhibit, by lock
@@ -7636,8 +7636,8 @@ function drawStage(t){
   const jFoot = py(950, kJ);
   pushHit(jx - jw/2, jFoot - jhh, jw, jhh, {type:'focus', beat: BEATS.length - 1, anchor: STAGE_X});
   // spotlight cone — soft shoulders, brightening toward the man it lights
-  softBeam(jx, jx, 0, jFoot, 60*kJ*SS, 260*kJ*SS, '255,246,216', 0.135,
-           [[0, 0.16], [0.8, 1], [1, 0.85]]);
+  softBeam(jx, jx, 0, jFoot + 34*kJ*SS, 60*kJ*SS, 275*kJ*SS, '255,246,216', 0.135,
+           [[0, 0.16], [0.72, 1], [1, 0]]);
   ctx.drawImage(JIM_FIG.c, jx - jw/2, jFoot - jhh, jw, jhh);
   // pool of light at his feet
   const pg = ctx.createRadialGradient(jx, jFoot, 6, jx, jFoot, 260*kJ*SS);
