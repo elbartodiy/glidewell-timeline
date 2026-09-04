@@ -1928,9 +1928,12 @@ function initWelcomeTV(){
   const v = document.createElement('video');
   v.src = WELCOME_TV.src; v.muted = true; v.loop = true; v.playsInline = true;
   v.preload = 'auto';
-  // no autoplay: the set opens on its menu screen, and ENTER starts the film.
-  // The tape is held on a face for the menu's still.
-  v.addEventListener('loadeddata', () => { try { v.currentTime = 80; } catch(e){} });
+  // the film rolls the moment the hall opens — no menu, no titles, just the
+  // picture. Sound arrives with the first tap (the browser demands a gesture).
+  v.play().catch(() => {
+    const go = () => { v.play().catch(()=>{}); window.removeEventListener('pointerdown', go); };
+    window.addEventListener('pointerdown', go);
+  });
   WELCOME_TV.v = v;
 }
 /* One film, many screens. The film is engaged once its sound is on; from then
@@ -1942,8 +1945,9 @@ function updateFilm(){
   const T = WELCOME_TV, v = T.v; if (!v) return;
   // only another VOICE stops the film — reading pages does not
   const busy = state.clip || (state.person && state.person.playing != null);
-  const engaged = !v.muted;                 // ENTER pressed = the visitor asked for it
-  const wanted = engaged && !T.userPaused && !busy;
+  const engaged = !v.muted;                 // sound on = the visitor asked for it
+  const nearWelcome = Math.abs(T.x - cam.x) < 3600;
+  const wanted = !T.userPaused && !busy && (engaged || nearWelcome);
   if (wanted && v.paused) v.play().catch(()=>{});
   else if (!wanted && !v.paused) v.pause();
 }
@@ -2002,60 +2006,6 @@ function initFilmRelays(){
   }
   if (DBG) console.log('film relays:', FILM_RELAYS.map(r => r.x | 0).join(', '));
 }
-/* The menu screen, after the museum kiosks: title, a held frame, a few lines
-   and one ENTER — no logos, no chrome. Drawn inside the panel's own clip. */
-function drawFilmMenu(vx, vy, sw, sh, v){
-  const g0 = ctx.createLinearGradient(vx, vy, vx, vy + sh);
-  g0.addColorStop(0, '#23272c'); g0.addColorStop(1, '#0b0d10');
-  ctx.fillStyle = g0; ctx.fillRect(vx, vy, sw, sh);
-  const mx = vx + sw*0.07;
-  ctx.textAlign = 'left';
-  ctx.fillStyle = 'rgba(245,247,249,0.96)';
-  ctx.font = `600 ${Math.max(8, sh*0.082) | 0}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
-  ctx.fillText('A CENTURY OF ACCESS', mx, vy + sh*0.16);
-  ctx.fillStyle = 'rgba(198,205,212,0.7)';
-  ctx.font = `500 ${Math.max(7, sh*0.04) | 0}px "Helvetica Neue", Arial, sans-serif`;
-  ctx.fillText('PREVIEW', mx, vy + sh*0.235);
-  // the held frame stands in for the poster
-  const pw = sw*0.42, ph = pw*9/16, fx = mx, fy = vy + sh*0.31;
-  ctx.fillStyle = '#000'; ctx.fillRect(fx, fy, pw, ph);
-  if (v && v.videoWidth && v.readyState >= 2){
-    ctx.save();
-    ctx.beginPath(); ctx.rect(fx, fy, pw, ph); ctx.clip();
-    const s = Math.max(pw / v.videoWidth, ph / v.videoHeight);
-    ctx.drawImage(v, fx + pw/2 - v.videoWidth*s/2, fy + ph/2 - v.videoHeight*s/2,
-                  v.videoWidth*s, v.videoHeight*s);
-    ctx.restore();
-  }
-  ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 1*SS;
-  ctx.strokeRect(fx, fy, pw, ph);
-  // the note
-  const tx = vx + sw*0.54, tw = sw*0.39;
-  const fs = Math.max(7, sh*0.046);
-  ctx.font = `${fs | 0}px "Helvetica Neue", Arial, sans-serif`;
-  ctx.fillStyle = 'rgba(226,231,236,0.88)';
-  let yy = vy + sh*0.33, line = '';
-  const note = 'In 1970 a hand technician named Jim Glidewell opened a one-man ' +
-    'ceramics lab in Orange County. This film follows the century that made ' +
-    'good dentistry affordable — the hands, the machines and the people behind it.';
-  for (const word of note.split(' ')){
-    const t2 = line ? line + ' ' + word : word;
-    if (ctx.measureText(t2).width > tw && line){ ctx.fillText(line, tx, yy); yy += fs*1.5; line = word; }
-    else line = t2;
-  }
-  if (line){ ctx.fillText(line, tx, yy); yy += fs*1.5; }
-  ctx.fillStyle = 'rgba(238,242,246,0.93)';
-  ctx.fillText('Enjoy the film!', tx, yy + fs*0.7);
-  // ENTER — the one control on the screen
-  const bw = sw*0.16, bh = sh*0.1;
-  const bx = vx + sw*0.93 - bw, by = vy + sh*0.87 - bh;
-  ctx.fillStyle = 'rgba(248,249,250,0.95)';
-  ctx.fillRect(bx, by, bw, bh);
-  ctx.fillStyle = '#15181c';
-  ctx.textAlign = 'center';
-  ctx.font = `600 ${Math.max(7, sh*0.044) | 0}px "Helvetica Neue", Arial, sans-serif`;
-  ctx.fillText('ENTER', bx + bw/2, by + bh*0.66);
-}
 function drawFilmPanel(x, wWorld, welcome){
   const T = WELCOME_TV, v = T.v;
   const kk = k(T.lz), sx = px(x, kk);
@@ -2083,17 +2033,29 @@ function drawFilmPanel(x, wWorld, welcome){
   ctx.lineTo(sx + 21*kk*SS, footY - baseH + 2*SS);
   ctx.lineTo(sx - 21*kk*SS, footY - baseH + 2*SS);
   ctx.closePath(); ctx.fill();
-  const bg2 = ctx.createLinearGradient(0, footY - baseH - 6*kk*SS, 0, footY);
-  bg2.addColorStop(0, '#43464c'); bg2.addColorStop(0.45, '#1b1d21'); bg2.addColorStop(1, '#08090b');
+  /* the base plate of the reference: a broad blade arched up to a hub under
+     the neck, thick in the middle, tapering to slim tips that sit flat on the
+     counter — one solid sweep, not a puck */
+  const bL = sx - 118*kk*SS, bR = sx + 118*kk*SS;
+  const hub = footY - baseH - 1*kk*SS;
+  const bg2 = ctx.createLinearGradient(0, hub, 0, footY);
+  bg2.addColorStop(0, '#3d4147'); bg2.addColorStop(0.4, '#191b1f'); bg2.addColorStop(1, '#060708');
   ctx.fillStyle = bg2;
   ctx.beginPath();
-  ctx.ellipse(sx, footY - baseH/2, 102*kk*SS, baseH*0.72, 0, 0, Math.PI*2);
-  ctx.fill();
-  // the gloss streak riding the base's crown
-  ctx.fillStyle = 'rgba(235,242,248,0.30)';
+  ctx.moveTo(bL, footY - 4*kk*SS);
+  ctx.quadraticCurveTo(sx - 42*kk*SS, hub, sx, hub);
+  ctx.quadraticCurveTo(sx + 42*kk*SS, hub, bR, footY - 4*kk*SS);
+  ctx.quadraticCurveTo(bR - 6*kk*SS, footY, bR - 16*kk*SS, footY);
+  ctx.quadraticCurveTo(sx, footY - 1*kk*SS, bL + 16*kk*SS, footY);
+  ctx.quadraticCurveTo(bL + 6*kk*SS, footY, bL, footY - 4*kk*SS);
+  ctx.closePath(); ctx.fill();
+  // the gloss riding the blade's top edge
+  ctx.strokeStyle = 'rgba(232,240,247,0.38)'; ctx.lineWidth = 1.6*kk*SS;
   ctx.beginPath();
-  ctx.ellipse(sx, footY - baseH*0.88, 84*kk*SS, 2.4*kk*SS, 0, 0, Math.PI*2);
-  ctx.fill();
+  ctx.moveTo(bL + 10*kk*SS, footY - 5*kk*SS);
+  ctx.quadraticCurveTo(sx - 42*kk*SS, hub + 1*kk*SS, sx, hub + 1*kk*SS);
+  ctx.quadraticCurveTo(sx + 42*kk*SS, hub + 1*kk*SS, bR - 10*kk*SS, footY - 5*kk*SS);
+  ctx.stroke();
   /* the panel: a gloss-black slab. The bezel carries a sheen falling from the
      top, and the outer edge is drawn by a cool rim light, brightest above —
      the outline of the reference set */
@@ -2120,10 +2082,7 @@ function drawFilmPanel(x, wWorld, welcome){
   ctx.beginPath(); ctx.rect(vx, vy, sw, sh); ctx.clip();
   ctx.fillStyle = '#000';
   ctx.fillRect(vx, vy, sw, sh);
-  if (v && v.muted){
-    // the set opens on its menu — a museum kiosk screen, and ENTER rolls the film
-    drawFilmMenu(vx, vy, sw, sh, v);
-  } else if (v && v.videoWidth && v.readyState >= 2){
+  if (v && v.videoWidth && v.readyState >= 2){
     const s = Math.max(sw / v.videoWidth, sh / v.videoHeight);
     ctx.drawImage(v, sx - v.videoWidth*s/2, vy + sh/2 - v.videoHeight*s/2,
                   v.videoWidth*s, v.videoHeight*s);
