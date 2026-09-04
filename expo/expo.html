@@ -1923,7 +1923,7 @@ function cacheWrap(){
    panel with a thin border on a low foot — no chrome, no cyan, the era-1 lamp
    is the only theatre it gets. Autoplay is muted (the browser demands it);
    the first tap turns the sound on, the next taps pause and resume. */
-const WELCOME_TV = {x: INTRO_X, lz: 70, w: 520, src: 'media/movie_pre.mp4'};
+const WELCOME_TV = {x: INTRO_X, lz: 70, w: 490, src: 'media/movie_pre.mp4'};
 function initWelcomeTV(){
   const v = document.createElement('video');
   v.src = WELCOME_TV.src; v.muted = true; v.loop = true; v.playsInline = true;
@@ -2008,11 +2008,15 @@ function initFilmRelays(){
 }
 function drawFilmPanel(x, wWorld, welcome){
   const T = WELCOME_TV, v = T.v;
-  const kk = k(T.lz), sx = px(x, kk);
+  /* the welcome set stands on the PHOTOGRAPHED counter, and that counter is
+     riveted to the front plane — so the set is too, or the zoom peels them
+     apart and the set slides off the edge. It also stands a step back from
+     the marble's lip. Relays on the procedural benches keep real depth. */
+  const kk = k(welcome ? 8 : T.lz), sx = px(x, kk);
   const sw = wWorld * kk * SS, sh = sw * 9/16;
   if (sx < -sw || sx > W + sw) return null;
   const bez = 13 * kk * SS, neck = 18 * kk * SS, baseH = 13 * kk * SS;
-  const footY = py(CFG.benchY - 2, kk);
+  const footY = py(CFG.benchY - (welcome ? 30 : 2), kk);
   const top = footY - baseH - neck - sh - bez*2;
   const pr = 7 * kk * SS;                       // gently rounded corners
   // contact shadow — the same recipe the standing prints use
