@@ -26,7 +26,7 @@ const CFG = {
   F: 900,                   // focal distance for perspective k = F/(F+z-camZ)
   benchY: 700,              // tabletop front edge height at z=0
   benchDepth: 340,          // tabletop extends z 0..benchDepth
-  dprCap: 1.5,
+  dprCap: 2,      // full Retina — 1.5 was stretching every glyph and cover
   friction: 2.4,            // exponential velocity decay per second
   wheelGain: 2.8,           // wheel px -> world velocity impulse
   maxVel: 3100,
@@ -9996,8 +9996,10 @@ function loop(ts){
   if (qCool > 0) qCool--;
   else if (++qFrames > 150){
     qFrames = 0;
-    if (fps < 36 && RQ > 0.55){ RQ = Math.max(0.55, RQ - 0.15); resize(); qCool = 900; }
-    else if (fps > 59 && RQ < 1){ RQ = Math.min(1, RQ + 0.15); resize(); qCool = 900; }
+    /* the floor is 0.72 — below that the hall turns to mush — and recovery
+       does not demand a perfect 60: a machine holding 52+ earns its pixels back */
+    if (fps < 34 && RQ > 0.72){ RQ = Math.max(0.72, RQ - 0.14); resize(); qCool = 900; }
+    else if (fps > 52 && RQ < 1){ RQ = Math.min(1, RQ + 0.14); resize(); qCool = 900; }
   }
   // a tab that boots hidden measures 0x0 — never draw a zero frame
   if (!W || !H){ resize(); if (!W || !H){ requestAnimationFrame(loop); return; } }
