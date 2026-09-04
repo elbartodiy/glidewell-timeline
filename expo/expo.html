@@ -2236,12 +2236,32 @@ function filmInto(vx, vy, vw, vh, dim, tone){
   if (v && v.videoWidth && v.readyState >= 2){
     const sc = Math.max(vw / v.videoWidth, vh / v.videoHeight);
     if (dim) ctx.globalAlpha = dim;
-    // the tube grades the tape: each era's set shows the film in its own colour
-    if (tone){ try { ctx.filter = tone; } catch(e){} }
     ctx.drawImage(v, vx + vw/2 - v.videoWidth*sc/2, vy + vh/2 - v.videoHeight*sc/2,
                   v.videoWidth*sc, v.videoHeight*sc);
-    if (tone) ctx.filter = 'none';
     ctx.globalAlpha = 1;
+    /* the tube grades the tape — with BLEND FILLS, not ctx.filter: a filter on
+       a video draw drops Chrome to the software rasterizer and eats the frame
+       budget; a saturation/soft-light fill rides the GPU */
+    if (tone === 'bw'){
+      ctx.globalCompositeOperation = 'saturation';
+      ctx.fillStyle = '#808080'; ctx.fillRect(vx, vy, vw, vh);
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = 'rgba(196,210,224,0.05)'; ctx.fillRect(vx, vy, vw, vh);
+    } else if (tone === 'color70'){
+      ctx.globalCompositeOperation = 'saturation';
+      ctx.fillStyle = 'rgba(255,0,0,0.42)'; ctx.fillRect(vx, vy, vw, vh);
+      ctx.globalCompositeOperation = 'soft-light';
+      ctx.fillStyle = 'rgba(212,166,108,0.45)'; ctx.fillRect(vx, vy, vw, vh);
+    } else if (tone === 'washed80'){
+      ctx.globalCompositeOperation = 'saturation';
+      ctx.fillStyle = 'rgba(150,150,150,0.55)'; ctx.fillRect(vx, vy, vw, vh);
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(vx, vy, vw, vh);
+    } else if (tone === 'soft'){
+      ctx.globalCompositeOperation = 'saturation';
+      ctx.fillStyle = 'rgba(160,160,160,0.3)'; ctx.fillRect(vx, vy, vw, vh);
+    }
+    ctx.globalCompositeOperation = 'source-over';
   }
   if (WELCOME_TV.userPaused){
     ctx.strokeStyle = 'rgba(252,250,244,0.9)'; ctx.lineWidth = 2*SS;
@@ -2292,8 +2312,7 @@ function drawFilmCRT70(r){
   ctx.beginPath(); ctx.roundRect(x0 + pad - 3*SS, y0 + pad - 3*SS, scw + 6*SS, sch + 6*SS, 14*kk*SS); ctx.fill();
   ctx.save();
   ctx.beginPath(); ctx.roundRect(x0 + pad, y0 + pad, scw, sch, 12*kk*SS); ctx.clip();
-  filmInto(x0 + pad, y0 + pad, scw, sch, 0.92,
-           'grayscale(1) contrast(1.06) brightness(1.05)');
+  filmInto(x0 + pad, y0 + pad, scw, sch, 0.92, 'bw');
   // the faint cool cast of a monochrome tube
   ctx.fillStyle = 'rgba(170,195,215,0.05)';
   ctx.fillRect(x0 + pad, y0 + pad, scw, sch);
@@ -2344,9 +2363,7 @@ function drawFilmHangTV(r){
   ctx.beginPath(); ctx.roundRect(x0 + 0.5*SS, y0 + 0.5*SS, bw - SS, bh - SS, 6*kk*SS); ctx.stroke();
   ctx.save();
   ctx.beginPath(); ctx.roundRect(x0 + pad, y0 + pad, scw, sch, 10*kk*SS); ctx.clip();
-  filmInto(x0 + pad, y0 + pad, scw, sch, 0.94,
-           r.era === 0 ? 'sepia(0.22) saturate(1.45) contrast(0.92) brightness(1.03)'
-                       : 'saturate(0.82) contrast(0.9) brightness(1.06)');
+  filmInto(x0 + pad, y0 + pad, scw, sch, 0.94, r.era === 0 ? 'color70' : 'washed80');
   ctx.restore();
 }
 /* the nineties set stands on the real (procedural) bench at real depth */
@@ -2365,7 +2382,7 @@ function drawFilmCRT95(r){
   ctx.beginPath(); ctx.roundRect(x0, y0, bw, bh, 7*kk*SS); ctx.fill();
   ctx.save();
   ctx.beginPath(); ctx.roundRect(x0 + pad, y0 + pad, scw, sch, 9*kk*SS); ctx.clip();
-  filmInto(x0 + pad, y0 + pad, scw, sch, 0.95, 'saturate(0.94) contrast(0.97)');
+  filmInto(x0 + pad, y0 + pad, scw, sch, 0.95, 'soft');
   ctx.restore();
   // the chin: a speaker grille and one power dot
   ctx.strokeStyle = 'rgba(30,28,24,0.55)'; ctx.lineWidth = 1.4*kk*SS;
@@ -2401,8 +2418,35 @@ function drawFilmProjectorWall(){
   const pw = Math.max(2, g.pw | 0), ph = Math.max(2, g.ph | 0);
   if (!PROJ_SHEET) PROJ_SHEET = document.createElement('canvas');
   const pc = PROJ_SHEET;
-  if (pc.width !== pw || pc.height !== ph){ pc.width = pw; pc.height = ph; }
+  const resized = pc.width !== pw || pc.height !== ph;
+  if (resized){ pc.width = pw; pc.height = ph; }
   const gg = pc.getContext('2d');
+  /* the feather mask and the corner vignette do not change frame to frame —
+     they are baked once per size, and each frame costs one video draw and two
+     composites instead of five gradient builds */
+  if (resized || !PROJ_SHEET.mask){
+    const mk = PROJ_SHEET.mask || (PROJ_SHEET.mask = document.createElement('canvas'));
+    mk.width = pw; mk.height = ph;
+    const gm = mk.getContext('2d');
+    gm.fillStyle = '#fff'; gm.fillRect(0, 0, pw, ph);
+    gm.globalCompositeOperation = 'destination-out';
+    const f = Math.max(8, pw * 0.06);
+    for (const [x0, y0, x1, y1, wgt, hgt] of [
+      [0, 0, f, 0, f, ph], [pw, 0, pw - f, 0, f, ph],
+      [0, 0, 0, f, pw, f], [0, ph, 0, ph - f, pw, f]]){
+      const eg = gm.createLinearGradient(x0, y0, x1, y1);
+      eg.addColorStop(0, 'rgba(0,0,0,1)'); eg.addColorStop(1, 'rgba(0,0,0,0)');
+      gm.fillStyle = eg;
+      gm.fillRect(Math.min(x0, x1), Math.min(y0, y1), wgt, hgt);
+    }
+    const vc = PROJ_SHEET.vig || (PROJ_SHEET.vig = document.createElement('canvas'));
+    vc.width = pw; vc.height = ph;
+    const gv = vc.getContext('2d');
+    const vg = gv.createRadialGradient(pw/2, ph/2, Math.min(pw, ph)*0.34,
+                                       pw/2, ph/2, Math.max(pw, ph)*0.70);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(16,18,22,0.35)');
+    gv.fillStyle = vg; gv.fillRect(0, 0, pw, ph);
+  }
   gg.clearRect(0, 0, pw, ph);
   if (v.videoWidth){
     const sc = Math.max(pw / v.videoWidth, ph / v.videoHeight);
@@ -2411,23 +2455,9 @@ function drawFilmProjectorWall(){
                  v.videoWidth*sc, v.videoHeight*sc);
     gg.globalAlpha = 1;
   }
-  // corner falloff, then the feathered border
-  const vg = gg.createRadialGradient(pw/2, ph/2, Math.min(pw, ph)*0.34,
-                                     pw/2, ph/2, Math.max(pw, ph)*0.70);
-  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(16,18,22,0.35)');
-  gg.fillStyle = vg; gg.fillRect(0, 0, pw, ph);
-  gg.globalCompositeOperation = 'destination-out';
-  const f = Math.max(8, pw * 0.06);
-  for (const [x0, y0, x1, y1, wgt, hgt] of [
-    [0, 0, f, 0, f, ph],            // left
-    [pw, 0, pw - f, 0, f, ph],      // right
-    [0, 0, 0, f, pw, f],            // top
-    [0, ph, 0, ph - f, pw, f]]){    // bottom
-    const eg = gg.createLinearGradient(x0, y0, x1, y1);
-    eg.addColorStop(0, 'rgba(0,0,0,1)'); eg.addColorStop(1, 'rgba(0,0,0,0)');
-    gg.fillStyle = eg;
-    gg.fillRect(Math.min(x0, x1) - (x0 === pw ? 0 : 0), Math.min(y0, y1), wgt, hgt);
-  }
+  gg.drawImage(PROJ_SHEET.vig, 0, 0);
+  gg.globalCompositeOperation = 'destination-in';
+  gg.drawImage(PROJ_SHEET.mask, 0, 0);
   gg.globalCompositeOperation = 'source-over';
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
@@ -2505,7 +2535,7 @@ function drawFilmLCD05(r){
   ctx.beginPath(); ctx.roundRect(sx - bw/2 + 0.5*SS, y0 + 0.5*SS, bw - SS, bh - SS, 5*kk*SS); ctx.stroke();
   ctx.fillStyle = '#111316';
   ctx.fillRect(sx - scw/2 - 2*SS, y0 + bez - 2*SS, scw + 4*SS, sch + 4*SS);
-  filmInto(sx - scw/2, y0 + bez, scw, sch, 0.97, 'saturate(0.9) contrast(1.02) brightness(1.06)');
+  filmInto(sx - scw/2, y0 + bez, scw, sch, 0.97, 'soft');
   ctx.fillStyle = 'rgba(120,220,140,0.95)';
   ctx.beginPath(); ctx.arc(sx + bw/2 - 14*kk*SS, y0 + bh - bez*0.45, 2*kk*SS, 0, 7); ctx.fill();
 }
@@ -2537,7 +2567,7 @@ function drawFilmWallPlasma(){
    picture's own colour, sampled from the running tape a few times a second */
 let AMBI = {t: -1, c: '90,200,250'};
 function ambiColor(v){
-  if (state.time - AMBI.t > 0.35){
+  if (state.time - AMBI.t > 0.7){
     AMBI.t = state.time;
     try {
       if (!AMBI.cv){ AMBI.cv = document.createElement('canvas'); AMBI.cv.width = 4; AMBI.cv.height = 4; }
