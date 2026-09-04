@@ -1950,8 +1950,17 @@ function updateFilm(){
   const busy = state.clip || (state.person && state.person.playing != null);
   const engaged = !v.muted;                 // the tap started it — sound and all
   const wanted = engaged && !T.userPaused && !busy;
-  if (wanted && v.paused) v.play().catch(()=>{});
-  else if (!wanted && !v.paused) v.pause();
+  /* the film never snaps: it bows out over a second — volume slides down,
+     THEN it pauses, holding its place — and slides back up when it returns */
+  const dt = state.dt || 0.016;
+  if (T.vol == null) T.vol = 1;
+  T.vol += ((wanted ? 1 : 0) - T.vol) * Math.min(1, dt * (wanted ? 2.5 : 3.5));
+  if (wanted){
+    if (v.paused) v.play().catch(()=>{});
+  } else if (!v.paused && T.vol < 0.06){
+    v.pause();
+  }
+  try { v.volume = Math.max(0, Math.min(1, T.vol)); } catch(e){}
 }
 /* Relay stands: one every ~1.5 screens of travel, wherever a table span has
    room — never inside a recreation, a cut bay, or a beat's own composition.
@@ -7996,6 +8005,11 @@ function openStudy(i){
   const b = BEATS[i];
   const imgs = [];   // reserved: the speaker-video carousel will live here
   state.study = {beat: i, imgs, scroll: 0, amt: 0, maxScroll: 1};
+  /* a page that carries voices starts speaking as it opens: the first clip of
+     the rail plays at once (the hall film, meanwhile, fades out and holds its
+     place — updateFilm sees state.clip and bows it out over a second) */
+  const media = STUDY_MEDIA[b.x];
+  if (media && media.length) openClip(media[0], b.x);
 }
 function drawStudy(){
   const S = state.study; if (!S) return;
