@@ -1981,14 +1981,16 @@ function cacheWrap(){
    panel with a thin border on a low foot — no chrome, no cyan, the era-1 lamp
    is the only theatre it gets. Autoplay is muted (the browser demands it);
    the first tap turns the sound on, the next taps pause and resume. */
-const WELCOME_TV = {x: INTRO_X, lz: 70, w: 490, src: 'media/movie_pre.mp4'};
+const WELCOME_TV = {x: INTRO_X, lz: 70, w: 490, src: 'media/movie_pre.mp4', posterT: 3.0};
 function initWelcomeTV(){
   const v = document.createElement('video');
   v.src = WELCOME_TV.src; v.loop = true; v.playsInline = true;
   v.preload = 'auto'; v.muted = true;   // muted = not started yet
-  /* NOTHING plays at first: the set holds the film's opening frame — the
-     instruments — as its own poster. The show starts with the first gesture:
-     a tap on the screen, or the first turn of the wheel. Either one is play. */
+  /* NOTHING plays at first: the set holds the film's instruments frame — just
+     past the black leader — as its poster. The show starts with the first
+     gesture: a tap on the screen, or the first turn of the wheel. Play itself
+     starts from the very top. */
+  v.addEventListener('loadeddata', () => { if (v.muted){ try { v.currentTime = WELCOME_TV.posterT; } catch(e){} } });
   WELCOME_TV.v = v;
 }
 function startFilm(){
@@ -2020,6 +2022,12 @@ function updateFilm(){
         (state.study && state.study.railV && !state.study.railV.paused);
   const engaged = !v.muted;                 // sound on = a real showing
   const wanted = engaged && !T.userPaused && !busy;
+  // the poster holds its frame: a not-yet-started set snaps back to the
+  // instruments if anything (a lost seek, a stray reset) knocked it off
+  if (!engaged && v.paused && v.readyState >= 2 &&
+      Math.abs(v.currentTime - (T.posterT || 0)) > 0.4){
+    try { v.currentTime = T.posterT || 0; } catch(e){}
+  }
   /* the film never snaps: it bows out over a second — volume slides down,
      THEN it pauses, holding its place — and slides back up when it returns */
   const dt = state.dt || 0.016;
@@ -2157,12 +2165,7 @@ function drawFilmPanel(x, wWorld, welcome){
   ctx.beginPath(); ctx.rect(vx, vy, sw, sh); ctx.clip();
   ctx.fillStyle = '#000';
   ctx.fillRect(vx, vy, sw, sh);
-  if (welcome && v && v.muted && PROP_SPRITES.ph_cover){
-    // before the show: the film's own cover, not a frozen frame
-    const cvr = PROP_SPRITES.ph_cover;
-    const s = Math.max(sw / cvr.w, sh / cvr.h);
-    ctx.drawImage(cvr.c, sx - cvr.w*s/2, vy + sh/2 - cvr.h*s/2, cvr.w*s, cvr.h*s);
-  } else if (v && v.videoWidth && v.readyState >= 2){
+  if (v && v.videoWidth && v.readyState >= 2){
     const s = Math.max(sw / v.videoWidth, sh / v.videoHeight);
     ctx.drawImage(v, sx - v.videoWidth*s/2, vy + sh/2 - v.videoHeight*s/2,
                   v.videoWidth*s, v.videoHeight*s);
@@ -6080,7 +6083,6 @@ async function loadPhotoSkin(){
     ph_crate: 'crate_0.png',
     ph_cabinet: 'cabinet_1907.png',
     ph_casebox: 'case_box.png',       // the mailed case, open — the real photograph
-    ph_cover: 'cover.jpg',            // the film's cover — the poster before the show
     bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
     bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
   };
