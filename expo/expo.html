@@ -2060,7 +2060,9 @@ function drawFilmPanel(x, wWorld, welcome){
   ctx.fillStyle = sg; ctx.fillRect(sx - sw*0.6, footY - sw*0.6, sw*1.2, sw*1.2);
   ctx.restore();
   /* the stand, after the reference set: a short tapered neck flaring into a
-     curved gloss base — not a flat bar */
+     curved gloss base — not a flat bar. The WELCOME set has no foot at all:
+     the tour line and its arrow live in that gap instead. */
+  if (!welcome){
   const ng = ctx.createLinearGradient(0, footY - baseH - neck, 0, footY);
   ng.addColorStop(0, '#26282c'); ng.addColorStop(0.5, '#101114'); ng.addColorStop(1, '#050607');
   ctx.fillStyle = ng;
@@ -2093,6 +2095,7 @@ function drawFilmPanel(x, wWorld, welcome){
   ctx.quadraticCurveTo(sx - 42*kk*SS, hub + 1*kk*SS, sx, hub + 1*kk*SS);
   ctx.quadraticCurveTo(sx + 42*kk*SS, hub + 1*kk*SS, bR - 10*kk*SS, footY - 5*kk*SS);
   ctx.stroke();
+  }
   /* the panel: a gloss-black slab. The bezel carries a sheen falling from the
      top, and the outer edge is drawn by a cool rim light, brightest above —
      the outline of the reference set */
@@ -2169,18 +2172,14 @@ function drawWelcomeTV(){
   ctx.fillText('HOW GOOD DENTISTRY', cxw, py(146, kw));
   ctx.fillText('STOPPED BEING A LUXURY', cxw, py(208, kw));
   ctx.restore();
-  // the tour line sits under the panel, on the cabinet face — clear of the
-  // marble edge, which used to cut straight through it. Hidden during the
-  // close-up hold, where it would land on the wheel hint.
-  const tourA = 0.65 * (1 - (state.introFade || 0));
-  if (tourA > 0.03){
-    ctx.textAlign = 'center';
-    ctx.font = eraFont(16 * kk * SS);
-    try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
-    ctx.fillStyle = `rgba(200,172,132,${tourA.toFixed(3)})`;
-    ctx.fillText('GLIDEWELL HISTORY TOUR →', sx, footY + 64*kk*SS);
-    try { ctx.letterSpacing = '0px'; } catch(e){}
-  }
+  // the tour line stands where the foot used to: between the panel and the
+  // counter, and it is there from the very first frame
+  ctx.textAlign = 'center';
+  ctx.font = eraFont(15 * kk * SS);
+  try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
+  ctx.fillStyle = 'rgba(214,186,144,0.85)';
+  ctx.fillText('GLIDEWELL HISTORY TOUR →', sx, footY - 9 * kk * SS);
+  try { ctx.letterSpacing = '0px'; } catch(e){}
 }
 /* the film, cover-cropped into any rectangle (a 4:3 rect trims the ears),
    plus the tap target and the paused mark — shared by every era screen */
