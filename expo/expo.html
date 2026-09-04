@@ -151,7 +151,7 @@ const BEATS = [
    d:'In-Ceram Zirconia material arrives — zirconia enters the lab a full decade before BruxZir.',
    wall:[], table:[]},
 
-  {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true,
+  {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true, yLift:190,   // on the line its neighbours hang from — and clear of the plinth's crossed beams
    th:'Own the science, so you can own the quality and the price.',
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir. Labs go digital: scanning, on-screen design, milling.',
    wall:[{img:'rella', w:250, dx:555, top:215, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
@@ -2712,7 +2712,7 @@ function drawFinaleTable(t){
   // the products, composed as a still life
   const GOODS = [
     {sp:'puck',    dx:-330, z:95, w:110, cap:'BruxZir\u00ae solid zirconia'},
-    {sp:'scanner', dx:-165, z:70, w:150, cap:'fastscan.io\u2122'},
+    {sp:'scanner', dx:-165, z:70, w:52,  cap:'fastscan.io\u2122'},   // a slim wand standing in its dock
     {sp:'crown2',  dx:10,   z:45, w:175, cap:'BruxZir\u00ae crown'},
     {sp:'millSt',  dx:225,  z:75, w:250, cap:'fastmill.io\u2122'},   // a wide machine, not a card
   ];
@@ -2723,7 +2723,7 @@ function drawFinaleTable(t){
     const w = gd.w * kk * SS, h = w * sp.h / sp.w;
     const yF = py(CFG.benchY - 2, kk);
     drawGlow('190,225,255', sx, yF - h*0.45, w*1.5, 0.10);
-    ctx.drawImage(sp.c, sx - w/2, yF - h, w, h);
+    ctx.drawImage(spriteMip(sp, w, h), sx - w/2, yF - h, w, h);
     pushHit(sx - w/2, yF - h, w, h,
             {type:'photo', sp: Object.assign({inner:{w:sp.w, h:sp.h}}, sp),
              wx: FIN_X + gd.dx, cy: CFG.benchY - 120, z: gd.z, w: gd.w * 2.2,
@@ -5050,18 +5050,14 @@ function drawRec4(t){
     if (sp){
       ctx.save();
       ctx.shadowColor = 'rgba(40,60,80,0.34)'; ctx.shadowBlur = 9*SS; ctx.shadowOffsetX = 3*SS;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(sp.c, wCx - wandW/2, wTop, wandW, wandH);
+      ctx.drawImage(spriteMip(sp, wandW, wandH), wCx - wandW/2, wTop, wandW, wandH);
       ctx.restore();
     }
-    // the dock it stands in
-    const dW = wandW*2.2, dH = wandH*0.07;
-    const dg = ctx.createLinearGradient(0, nBot - r*0.42 - dH, 0, nBot - r*0.42 + dH);
-    dg.addColorStop(0, '#dde1e5'); dg.addColorStop(1, '#aab0b6');
-    ctx.fillStyle = dg;
-    ctx.beginPath(); ctx.roundRect(wCx - dW/2, dockY - dH*0.5, dW, dH*1.5, 3*SS); ctx.fill();
-    ctx.fillStyle = 'rgba(60,70,80,0.35)';
-    ctx.beginPath(); ctx.ellipse(wCx, dockY - dH*0.4, wandW*0.85, 2.4*kn*SS, 0, 0, 7); ctx.fill();
+    /* the dock came with the photograph — it is the instrument's own cradle,
+       not a plate drawn under it — so all the room still owes it is the shadow
+       where it meets the floor of the case */
+    ctx.fillStyle = 'rgba(60,70,80,0.28)';
+    ctx.beginPath(); ctx.ellipse(wCx, dockY - 1.5*kn*SS, wandW*0.60, 3.0*kn*SS, 0, 0, 7); ctx.fill();
   }
   drawRec4Columns(yBase);
 }
@@ -6706,6 +6702,46 @@ function drawAlbum(b, i, t, dt){
 }
 
 /* ---------------- PEDESTALS · landmarks of the revolutionary beats ---------------- */
+/* A BIG PICTURE DRAWN SMALL BOILS. Asked to fit a 1350-pixel photograph into
+   350 pixels, the browser resamples it from scratch on every frame — and since
+   the object's screen position is a fraction that changes as the camera moves,
+   the sampler lands on different source rows each time. The contour crawls and
+   the object looks like it is being squeezed as it crosses the frame. Nothing
+   is moving but the sampling.
+
+   So the reduction happens ONCE, and by halving — the way a mipmap is built,
+   because halving averages every source pixel instead of skipping most of them
+   — and the result is kept. Sizes are bucketed to 4 px so that a zoom reuses
+   one instead of building a new one every frame, and the last few pixels of
+   fit are done by the draw itself, where a 1:1 blit is a clean shift rather
+   than a decimation. */
+const MIPS = new Map();
+let MIP_SEQ = 0;
+function spriteMip(sp, w, h){
+  const src = sp.c;
+  const srcW = src.naturalWidth || src.width, srcH = src.naturalHeight || src.height;
+  if (!srcW || !srcH) return src;
+  const tw = Math.max(1, Math.round(w / 4) * 4), th = Math.max(1, Math.round(h / 4) * 4);
+  if (tw >= srcW * 0.8) return src;              // barely a reduction — nothing to gain
+  if (!sp._mid) sp._mid = 'm' + (++MIP_SEQ);
+  const id = sp._mid + ':' + tw + 'x' + th;
+  const had = MIPS.get(id);
+  if (had) return had;
+  let cur = src, cw = srcW, ch = srcH;
+  while (cw > tw * 2 && ch > th * 2){
+    const hw = Math.max(tw, cw >> 1), hh = Math.max(th, ch >> 1);
+    const c = document.createElement('canvas'); c.width = hw; c.height = hh;
+    const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+    g.drawImage(cur, 0, 0, hw, hh);
+    cur = c; cw = hw; ch = hh;
+  }
+  const c = document.createElement('canvas'); c.width = tw; c.height = th;
+  const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+  g.drawImage(cur, 0, 0, tw, th);
+  if (MIPS.size > 48) MIPS.clear();              // a resize should not hoard them
+  MIPS.set(id, c);
+  return c;
+}
 const PED_SPRITES = {};
 /* THESE SPRITES ARE DRAWN LARGER THAN THEY ARE USED. Each one used to be
    authored at its layout size — 150x170 for the scanner, 190x130 for the puck
@@ -6829,26 +6865,6 @@ function makePedObj(kind){
     g.fillStyle = 'rgba(140,220,255,0.30)';
     g.beginPath(); g.ellipse(24, 20, 14, 22, 0.4, 0, 7); g.fill();
     g.restore();
-  } else if (kind === 'scanner'){
-    size(150, 170);
-    /* the same instrument as the one in the 2022 vitrine, and the same
-       photograph: it leans in its cradle here instead of standing, but it is
-       the product, not a grey stick with a dark cap. The cradle's post is
-       behind it and the base plate in front, so it reads as held. */
-    const sp = PROP_SPRITES.ph_scanner;
-    g.fillStyle = '#33373b';
-    g.beginPath(); g.roundRect(62, 96, 26, 36, 6); g.fill();     // the post it leans on
-    if (sp){
-      const H = 126, wdt = H * sp.w / sp.h;
-      g.save();
-      g.translate(80, 132); g.rotate(-0.42);
-      g.shadowColor = 'rgba(30,40,50,0.35)'; g.shadowBlur = 6; g.shadowOffsetX = 2;
-      g.imageSmoothingQuality = 'high';
-      g.drawImage(sp.c, -wdt/2, -H, wdt, H);
-      g.restore();
-    }
-    g.fillStyle = '#33373b';
-    g.beginPath(); g.roundRect(30, 128, 90, 16, 6); g.fill();    // the base plate
   } else {
     size(190, 130);
     // zirconia milling puck
@@ -6964,7 +6980,7 @@ function drawPedestal(b, t, hero){
   /* a wide, low machine needs more of the cap than a puck does — `wide` lets
      an exhibit ask for it, and the dome is 172 units across, so it still fits */
   const ow = 120 * (ped.wide || 1) * (ped.vitrine ? 1.25 : big) * kk * SS, oh = ow * obj.h / obj.w;
-  ctx.drawImage(obj.c, sx - ow/2, yTop - oh - 4*kk*SS, ow, oh);
+  ctx.drawImage(spriteMip(obj, ow, oh), sx - ow/2, yTop - oh - 4*kk*SS, ow, oh);
   // glass dome: one clean outline, the sheen lives on the glass itself
   // (a vitrine pedestal has the capsule for a case — no dome, no spotlight halo)
   if (!ped.vitrine){
@@ -10136,7 +10152,9 @@ async function boot(){
   PED_SPRITES.logoG = makePedObj('logoG');
   PED_SPRITES.bizcard = makePedObj('bizcard');
   PED_SPRITES.puck = makePedObj('puck');
-  PED_SPRITES.scanner = makePedObj('scanner');
+  /* the wand comes with its own dock in the photograph, so it needs no drawn
+     cradle to lean on — it stands, the way it stands in the 2022 vitrine */
+  PED_SPRITES.scanner = PROP_SPRITES.ph_scanner || makePedObj('puck');
   PED_SPRITES.dataTooth = makePedObj('dataTooth');
   PED_SPRITES.crown2 = makePedObj('crown2');
   /* fastmill.io is a photograph now, not a drawing of a machine: the same
