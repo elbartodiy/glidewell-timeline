@@ -8999,6 +8999,28 @@ const PEOPLE_MORE = {
 };
 for (const id in PEOPLE_MORE) if (!PEOPLE[id]) PEOPLE[id] = PEOPLE_MORE[id];
 /* the order the wall reads in — the production's own running order */
+/* a title in the name is what marks a clinician here — Dr, DDS, DMD, CDT,
+   Prof — and having said something on camera outranks all of it */
+function personRank(P){
+  const t = (P.name || '') + ' ' + (P.role || '');
+  const titled = /\b(Dr\.?|DDS|DMD|PhD|Prof\.?|Professor|MD|CDT)\b/i.test(t) ? 0 : 1;
+  return titled;
+}
+function peopleRoster(){
+  const ids = PEOPLE_ORDER.filter(id => PEOPLE[id]);
+  return ids
+    .map((id, i) => ({id, i, P: PEOPLE[id]}))
+    .sort((a, b) => {
+      if (a.id !== b.id && (a.id === 'jim' || b.id === 'jim')) return a.id === 'jim' ? -1 : 1;
+      const ca = (a.P.clips && a.P.clips.length) ? 0 : 1;
+      const cb = (b.P.clips && b.P.clips.length) ? 0 : 1;
+      if (ca !== cb) return ca - cb;                       // filmed first
+      const ra = personRank(a.P), rb = personRank(b.P);
+      if (ra !== rb) return ra - rb;                       // then the clinicians
+      return a.i - b.i;                                    // then as typed
+    })
+    .map(o => o.id);
+}
 const PEOPLE_ORDER = [
   'jim', 'alas', 'marie', 'june', 'ellen', 'nadia', 'bianca', 'jimlam',
   'julio', 'joan', 'labar', 'sohn', 'wali', 'venard', 'ditolla', 'ceranic',
@@ -9535,62 +9557,96 @@ function drawPeople(){
   ctx.fillText('THE VOICES', left, y); y += 30 * SS;
   ctx.font = K.font(18);
   ctx.fillStyle = `rgba(${K.dim},0.95)`;
-  const roster = PEOPLE_ORDER.filter(id => PEOPLE[id]);
+  /* WHO COMES FIRST. The roster used to be whatever order the list was typed
+     in. It is sorted now: the people we already have on camera lead it, then
+     the doctors and professors, then everyone else — and inside each band the
+     original order holds, so Jim still opens the room. */
+  const roster = peopleRoster();
   ctx.fillText(roster.length + ' PEOPLE ON CAMERA · TAP A FACE FOR THEIR PAGE', left, y);
   y += 24 * SS;
   ctx.fillStyle = `rgba(${K.red},1)`;
   ctx.fillRect(left, y, 68*SS, 3*SS); y += 40 * SS;
-  const COLS = 3, gap = 28 * SS;
+  /* CARDS, NOT ROWS. A list of names is a directory; these people are the
+     testimony this hall is built on, so each one gets a card the size of a
+     playing card: the portrait fills it, the name is struck into a plate at
+     the foot in gold — a real gradient across the letters, with the bevel a
+     stamped letter has, light above and shadow below — and the picture darkens
+     under the plate so the gold has something to sit on. */
+  const COLS = 4, gap = 22 * SS;
   const cw = (colW - gap * (COLS - 1)) / COLS;
-  const th = 104 * SS;                       // the face, square and small
-  const rowH = th + 30 * SS;
+  const th = cw * 1.40;                        // a card, not a thumbnail
+  const rowH = th + gap;
+  const GOLD = [[0, '#6d5220'], [0.28, '#d9b25e'], [0.46, '#fff2c4'], [0.62, '#d3a851'], [1, '#7a5c25']];
   for (let i = 0; i < roster.length; i++){
     const id = roster[i], P = PEOPLE[id];
     const cx = left + (i % COLS) * (cw + gap);
     const cy = y + Math.floor(i / COLS) * rowH;
     if (cy > botClip || cy + rowH < topClip) continue;
+    const hot = Input.hover && Input.hover.x > cx && Input.hover.x < cx + cw &&
+                Input.hover.y > cy && Input.hover.y < cy + th;
     ctx.save();
-    ctx.beginPath(); ctx.roundRect(cx, cy, th, th, 5*SS); ctx.clip();
+    ctx.beginPath(); ctx.roundRect(cx, cy, cw, th, 7*SS); ctx.clip();
     const im = PORTRAIT[id] || (P.img && IMGS[P.img]);
     if (im){
-      const s = Math.max(th / im.w, th / im.h);
-      ctx.drawImage(im.el, cx + th/2 - im.w*s/2, cy + th/2 - im.h*s/2, im.w*s, im.h*s);
+      const s2 = Math.max(cw / im.w, th / im.h) * (hot ? 1.04 : 1);
+      ctx.drawImage(im.el, cx + cw/2 - im.w*s2/2, cy + th*0.46 - im.h*s2/2, im.w*s2, im.h*s2);
     } else {
-      ctx.fillStyle = 'rgba(26,28,30,0.06)';
-      ctx.fillRect(cx, cy, th, th);
+      const bg2 = ctx.createLinearGradient(cx, cy, cx, cy + th);
+      bg2.addColorStop(0, '#2b2f34'); bg2.addColorStop(1, '#16191d');
+      ctx.fillStyle = bg2; ctx.fillRect(cx, cy, cw, th);
       ctx.textAlign = 'center';
-      ctx.font = K.font(th * 0.34);
-      ctx.fillStyle = `rgba(${K.dim},0.42)`;
-      ctx.fillText(personInitials(P.name), cx + th/2, cy + th/2 + th*0.12);
+      ctx.font = K.font(th * 0.22);
+      ctx.fillStyle = 'rgba(214,178,94,0.34)';
+      ctx.fillText(personInitials(P.name), cx + cw/2, cy + th*0.46);
       ctx.textAlign = 'left';
     }
+    // the plate: the picture goes down into shadow so the gold can sit on it
+    const plateH = th * 0.30, plateY = cy + th - plateH;
+    const sh2 = ctx.createLinearGradient(0, plateY - plateH*0.55, 0, cy + th);
+    sh2.addColorStop(0, 'rgba(10,9,7,0)'); sh2.addColorStop(0.45, 'rgba(10,9,7,0.72)');
+    sh2.addColorStop(1, 'rgba(8,7,5,0.94)');
+    ctx.fillStyle = sh2; ctx.fillRect(cx, plateY - plateH*0.55, cw, plateH*1.55);
+    // a hairline of gold where the plate begins
+    const hl = ctx.createLinearGradient(cx, 0, cx + cw, 0);
+    hl.addColorStop(0, 'rgba(214,178,94,0)'); hl.addColorStop(0.5, 'rgba(240,214,150,0.55)');
+    hl.addColorStop(1, 'rgba(214,178,94,0)');
+    ctx.fillStyle = hl; ctx.fillRect(cx, plateY, cw, Math.max(1, 0.9*SS));
+    // the name, stamped: shadow under, light over, gold across
+    const inx = cx + cw * 0.09, inw = cw * 0.82;
+    let nmSz = 17 * SS;
+    ctx.font = K.font(nmSz / SS);
+    let nm = P.name.replace(/,\s*(CDT|DDS|DMD|MD|PhD)$/i, '');
+    while (ctx.measureText(nm).width > inw && nmSz > 11 * SS){ nmSz -= 0.6 * SS; ctx.font = K.font(nmSz / SS); }
+    while (ctx.measureText(nm).width > inw && nm.length > 6) nm = nm.slice(0, -1);
+    const ny = plateY + plateH * 0.46;
+    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    ctx.fillText(nm, inx, ny + 1.1*SS);
+    const gg = ctx.createLinearGradient(0, ny - nmSz*0.78, 0, ny + nmSz*0.22);
+    for (const [p, c] of GOLD) gg.addColorStop(p, c);
+    ctx.fillStyle = gg;
+    ctx.fillText(nm, inx, ny);
+    ctx.fillStyle = 'rgba(255,246,214,0.30)';
+    ctx.fillText(nm, inx, ny - 0.8*SS);
+    // the role, quiet, under the gold
+    ctx.font = K.font(11.5);
+    ctx.fillStyle = 'rgba(232,226,214,0.62)';
+    let rl = roleShort(P.role);
+    while (ctx.measureText(rl).width > inw && rl.length > 4) rl = rl.slice(0, -1);
+    ctx.fillText(rl === roleShort(P.role) ? rl : rl.replace(/[ ,]+$/, '') + '…', inx, ny + 15*SS);
     ctx.restore();
-    ctx.strokeStyle = 'rgba(26,28,30,0.14)'; ctx.lineWidth = 1*SS;
-    ctx.beginPath(); ctx.roundRect(cx, cy, th, th, 5*SS); ctx.stroke();
-    // a red edge down the faces we already have on camera
+    // the card's own edge, and a gold one when the pointer is on it
+    ctx.strokeStyle = hot ? 'rgba(214,178,94,0.85)' : 'rgba(26,28,30,0.18)';
+    ctx.lineWidth = (hot ? 1.6 : 1) * SS;
+    ctx.beginPath(); ctx.roundRect(cx, cy, cw, th, 7*SS); ctx.stroke();
+    // filmed: a small gold mark in the corner, not a red bar down the face
     if (P.clips && P.clips.length){
-      ctx.fillStyle = `rgba(${K.red},1)`;
-      ctx.fillRect(cx, cy, 3.5*SS, th);
+      ctx.fillStyle = 'rgba(214,178,94,0.92)';
+      ctx.beginPath();
+      ctx.moveTo(cx + cw - 20*SS, cy + 10*SS);
+      ctx.lineTo(cx + cw - 8*SS, cy + 17*SS);
+      ctx.lineTo(cx + cw - 20*SS, cy + 24*SS);
+      ctx.closePath(); ctx.fill();
     }
-    const tx = cx + th + 16*SS, tw = cw - th - 16*SS;
-    let ty = cy + 26*SS;
-    ctx.font = K.font(18);
-    ctx.fillStyle = `rgba(${K.ink},0.95)`;
-    let nm = P.name;
-    while (ctx.measureText(nm).width > tw && nm.length > 6) nm = nm.slice(0, -1);
-    ctx.fillText(nm === P.name ? nm : nm.replace(/[ ,]+$/, '') + '…', tx, ty);
-    ty += 24 * SS;
-    ctx.font = K.font(14);
-    ctx.fillStyle = `rgba(${K.dim},0.95)`;
-    let ln = '', used = 0;
-    for (const w of roleShort(P.role).split(' ')){
-      const t = ln ? ln + ' ' + w : w;
-      if (ctx.measureText(t).width > tw && ln){
-        if (used === 2){ ln += '…'; break; }
-        ctx.fillText(ln, tx, ty); ty += 19*SS; used++; ln = w;
-      } else ln = t;
-    }
-    if (ln) ctx.fillText(ln, tx, ty);
     pushHit(cx, cy, cw, th, {type:'person', id});
   }
   y += Math.ceil(roster.length / COLS) * rowH + 24 * SS;
