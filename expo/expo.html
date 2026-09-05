@@ -8814,7 +8814,7 @@ function drawOpenBox(){
     ctx.fillText('both jaws, still in the trays they were taken in', cx, by - 14 * S2);
     ctx.font = eraFont(17 * S2, '', SEGMENTS[3].font);
     ctx.fillStyle = 'rgba(150,162,175,0.7)';
-    ctx.fillText('click anywhere to close', cx, by + ph + 40 * S2);
+    ctx.fillText('click anywhere to digitize', cx, by + ph + 40 * S2);   // and it does: the trays go to digits on the click
     ctx.restore();
     return;
   }
