@@ -2487,7 +2487,10 @@ function initFilmRelays(){
        its top clears the taglines (screen-wise below them) and its bottom stops
        short of the counters' line with a little air */
     {kind: 'plasma', x: SHIFT(22240), w: 880, cy: 648},           // between 2009 and the 2010s — up off the counter
-    {kind: 'vwall',  x: 33330, w: 900, top: -30, h: 850}          // the backdrop wall behind 2022 → 2023, up to the soffit
+    /* the LED wall hangs from the soffit's second downlight: the rig is four
+       panels wide, and its first seam sits exactly under that fitting — the
+       wall and the lights share one plane, so the two cannot slide apart */
+    {kind: 'vwall',  x: SHOW_L + 330 + 660 + 225, w: 900, top: -30, h: 850}
   );
   if (DBG) console.log('film screens:', FILM_RELAYS.map(r => r.kind + '@' + (r.x | 0)).join(', '));
 }
