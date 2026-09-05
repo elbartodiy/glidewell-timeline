@@ -3843,6 +3843,12 @@ const RULE_STYLE = [
   {thumb: '242,248,252', edge: '255,255,255', glow: '150,215,255', form: 'glass', tick: 'dot'},
 ];
 function ruleStyle(){ return RULE_STYLE[Math.max(0, Math.min(3, segIdx(cam.x)))]; }
+/* how far the rule has turned white at a point along it (0..1 of its length):
+   untouched through the first half of the hall, white by the end */
+function ruleWhite(u){
+  const t = Math.max(0, Math.min(1, (u - 0.45) / 0.55));
+  return t * t * (3 - 2 * t);
+}
 
 /* Each era holds the line with its own hardware, not merely its own colour:
    a brass clamp filed by hand, a stamped plate on rivets, a selection frame
@@ -4127,19 +4133,46 @@ function drawProgress(t){
       }
       cuts = next;
     }
-    ctx.strokeStyle = `rgba(${seg.ink},${(0.30 * A).toFixed(3)})`;
+    /* THE LINE ENDS WHITE. Eldar: the rule should arrive at the far end as a
+       white line with round points on it. Each era still starts its stretch in
+       its own ink; from the middle of the hall on, the ink drains toward white
+       and the line brightens, so it is unmistakably white under the last era. */
     ctx.lineWidth = 2 * SS;
+    const inkRGB = seg.ink.split(',').map(Number);
     for (const [c0, c1] of cuts){
-      ctx.beginPath(); ctx.moveTo(at(c0), y); ctx.lineTo(at(c1), y); ctx.stroke();
+      const sx0 = at(c0), sx1 = at(c1);
+      const gr = ctx.createLinearGradient(sx0, 0, Math.max(sx0 + 1, sx1), 0);
+      for (const [wx, stop] of [[c0, 0], [(c0 + c1) / 2, 0.5], [c1, 1]]){
+        const f = ruleWhite((wx - W0) / (W1 - W0));
+        const c = inkRGB.map(v => Math.round(v + (255 - v) * f));
+        gr.addColorStop(stop, `rgba(${c.join(',')},${((0.30 + 0.30 * f) * A).toFixed(3)})`);
+      }
+      ctx.strokeStyle = gr;
+      ctx.beginPath(); ctx.moveTo(sx0, y); ctx.lineTo(sx1, y); ctx.stroke();
     }
   }
-  // the portals: a brighter pip where the hall changes era
-  for (const [rl, rr] of RECS){
-    const cx = at((rl + rr) / 2);
-    ctx.fillStyle = `rgba(235,225,205,${(0.34 * A).toFixed(3)})`;
-    ctx.beginPath(); ctx.moveTo(cx, y - 5 * SS); ctx.lineTo(cx + 3.4 * SS, y);
-    ctx.lineTo(cx, y + 5 * SS); ctx.lineTo(cx - 3.4 * SS, y); ctx.closePath(); ctx.fill();
-  }
+  /* THE PORTALS: a pip where the hall changes era. Eldar asked for the pips to
+     turn, one by one, from the cut diamond of the first portal into the plain
+     round point of the last — the hardware of the line ages the way the hall
+     does. Each pip is a polar blend between a rhombus and a circle, its place
+     in the row deciding how far along it is; the last one IS a circle, and
+     the pips whiten and brighten with the line under them. */
+  const pips = RECS.map(([rl, rr]) => (rl + rr) / 2).sort((a, b) => a - b);
+  pips.forEach((wx, i) => {
+    const cx = at(wx), u = pips.length > 1 ? i / (pips.length - 1) : 1;
+    const rx = (3.4 + (4.3 - 3.4) * u) * SS, ry = (5 + (4.3 - 5) * u) * SS;
+    const f = ruleWhite((wx - W0) / (W1 - W0));
+    const c = [235, 225, 205].map(v => Math.round(v + (255 - v) * f));
+    ctx.fillStyle = `rgba(${c.join(',')},${((0.34 + 0.40 * u) * A).toFixed(3)})`;
+    ctx.beginPath();
+    for (let j = 0; j <= 40; j++){
+      const th = j / 40 * Math.PI * 2, cs = Math.cos(th), sn = Math.sin(th);
+      const r = (1 / (Math.abs(cs) + Math.abs(sn))) * (1 - u) + u;   // rhombus → circle
+      const xj = cx + rx * r * cs, yj = y + ry * r * sn;
+      if (j) ctx.lineTo(xj, yj); else ctx.moveTo(xj, yj);
+    }
+    ctx.closePath(); ctx.fill();
+  });
   // a tick per beat; the landmark years stand a little taller, and the white
   // era marks its years with points rather than strokes
   for (const b of BEATS){
@@ -5169,10 +5202,17 @@ function drawMapWall(t){
        tread, folds over the nosing and comes down the riser to the floor. */
     const kStep = k(520), zTread = 1040;
     const yTreadBack = py(zTread, kFar), yNose = py(zTread, kStep), yStepFoot = py(1080, kStep);
-    const inset = 40;
+    /* THE STEP RUNS TO THE COUNTERS. It used to stop just inside the pilasters,
+       so beside it — between each column and the counter's end — the dark floor
+       showed, and the columns seemed to stand over a hole ("висят в воздухе").
+       It now runs from one counter's end to the other's: the columns stand ON
+       it, and the counters, painted later, cover whatever it puts under them. */
+    const tbL = TABLES.filter(tb => tb.x1 <= mid).sort((a, b) => b.x1 - a.x1)[0];
+    const tbR = TABLES.filter(tb => tb.x0 >= mid).sort((a, b) => a.x0 - b.x0)[0];
+    const wx0 = (tbL ? tbL.x1 : REC_L) - 200, wx1 = (tbR ? tbR.x0 : REC_R) + 200;
     {
-      const bx0 = px(REC_L + inset, kFar), bx1 = px(REC_R - inset, kFar);
-      const nx0 = px(REC_L + inset, kStep), nx1 = px(REC_R - inset, kStep);
+      const bx0 = px(wx0, kFar), bx1 = px(wx1, kFar);
+      const nx0 = px(wx0, kStep), nx1 = px(wx1, kStep);
       // the tread's top: pale stone, lit from the front
       const tg = ctx.createLinearGradient(0, yTreadBack, 0, yNose);
       tg.addColorStop(0, '#c9c3b6'); tg.addColorStop(1, '#ddd7ca');
@@ -9291,7 +9331,7 @@ const PEOPLE_MORE = {
   kosinski: {name:'Tim Kosinski', role:'Implant dentist & educator', bio:['Dr. Timothy Kosinski (Bingham Farms, MI) is the workhorse-educator of implantology: 14,000+ implants placed, 200+ published articles, an adjunct professor’s temperament — and a regular teacher at Glidewell symposia, so the бренд knows him and he knows the audience.']},
   chi: {name:'Justin Chi', role:'Director of Clinical Technologies (DDS, CDT)', bio:['Justin Chi is Glidewell’s Director of Clinical Technologies and the roster’s rare three-in-one: a hands trained in the old craft (B.S.'], quote:{q:'One of the greatest benefits of in-office CAD/CAM is the ability to try in and deliver restorations in the same appointment, which I believe is best for the patient\'s health.', src:'Chairside Magazine, Vol. 13-1 (Glidewell), 2018'}},
   leeson: {name:'David Leeson', role:'EVP of Engineering, Manufacturing & R&D (factory architect)', bio:['David Leeson is Glidewell’s EVP of Engineering, Manufacturing and R&D — the architect of the BruxZir Factory and of what he calls “mass customization”: multiple automated lines coordinating thousands of restorations at once, every single one unique to its patient, each carrying its own tracking code (Chairside Vol.'], quote:{q:'Now we are creating heavily connected systems and leveraging data from the more than 10 million individual patient designs we store in the cloud.', src:'Glidewell / Machine Design, 2022'}},
-  azernikov: {name:'Sergei Azernikov, PhD', role:'VP of CAD/CAM Software · the AI lead', top:true,
+  azernikov: {name:'Sergei Azernikov, PhD', role:'VP of CAD/CAM Software · the AI lead',   // interviewed 9 Jul — second row, by order, not beside Jim
     bio:["Sergei Azernikov is Glidewell\u2019s Vice-President of CAD/CAM Software and, in practice, the company\u2019s AI lead. A PhD in computational geometry, he is the engineer who from about 2014 moved the laboratory\u2019s design pipeline into the cloud and then into machine learning \u2014 years before either was an obvious thing for a dental lab to do. The generative system his team built now designs the great majority of Glidewell\u2019s restorations, more than 95%, learning from millions of cases inside a closed quality loop. He sits on the Dental AI Council and speaks about AI in public often enough to be at ease explaining hard ideas to people who are not engineers.",
          "In 2018 his group did something nobody had done: they had a generative adversarial network design a crown, milled it, and seated it in a mouth \u2014 the first physical object anyone had made with the technique. That is the 2018 bay in this hall.",
          "From the interview, 9 July 2026. On the pipeline: \u201cA generative network now designs essentially all our crowns \u2014 in 2015\u201316 that was unheard of. The technician is the first human to see the case, and mostly just approves it.\u201d On scale: \u201cA designer went from about fifty crowns a day to about two hundred; the job shifted from designing to quality assurance.\u201d",
@@ -9322,8 +9362,6 @@ function peopleRoster(){
     .map((id, i) => ({id, i, P: PEOPLE[id]}))
     .sort((a, b) => {
       if (a.id !== b.id && (a.id === 'jim' || b.id === 'jim')) return a.id === 'jim' ? -1 : 1;
-      const ta = a.P.top ? 0 : 1, tb = b.P.top ? 0 : 1;
-      if (ta !== tb) return ta - tb;                       // Eldar's picks stand beside Jim
       const ca = (a.P.clips && a.P.clips.length) ? 0 : 1;
       const cb = (b.P.clips && b.P.clips.length) ? 0 : 1;
       if (ca !== cb) return ca - cb;                       // filmed first
@@ -9334,10 +9372,10 @@ function peopleRoster(){
     .map(o => o.id);
 }
 const PEOPLE_ORDER = [
-  'jim', 'alas', 'marie', 'june', 'ellen', 'nadia', 'bianca', 'jimlam',
+  'jim', 'alas', 'azernikov', 'marie', 'june', 'ellen', 'nadia', 'bianca', 'jimlam',
   'julio', 'joan', 'labar', 'sohn', 'wali', 'venard', 'ditolla', 'ceranic',
   'fejzagic', 'withrow', 'friebauer', 'gordon', 'rella', 'kois', 'spear', 'manalili',
-  'resnik', 'kosinski', 'chi', 'patel', 'leeson', 'azernikov', 'farran', 'feuerstein',
+  'resnik', 'kosinski', 'chi', 'patel', 'leeson', 'farran', 'feuerstein',
   'brenneise', 'ameduri', 'labao', 'park', 'dorfman', 'norton'
 ];
 /* who has a portrait in assets/people; the rest stand as their initials */
