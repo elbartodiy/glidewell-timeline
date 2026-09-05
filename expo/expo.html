@@ -3318,6 +3318,109 @@ function projMachine(p, t, lamp, mxp, myp, bw, bh, kp){
   ctx.restore();
 }
 
+/* ---------------- WHOOSHES ----------------
+   Twenty cinematic whooshes, cut out of one compilation, one per moment worth
+   marking: every recreation and every landmark year. A cue fires ONCE on
+   arrival and re-arms only after you have left again, so scrolling back and
+   forth cannot machine-gun it — and a global cooldown thins a fast run down
+   the hall instead of firing all twenty into each other. A speaking voice
+   always wins: nothing is thrown over a person talking.
+
+   THIS TABLE IS MEANT TO BE ARGUED WITH. Every line is a year, a title and a
+   file: to move a whoosh, swap the file; to drop one, delete the line. Open
+   the hall with ?ws=audition to hear all twenty in order, named in the
+   console, without walking to them. */
+const WHOOSH = {
+  dir: 'audio/whoosh/', gain: 0.55, radius: 340, rearm: 900, cool: 0.85,
+  last: -9, pool: {},
+  cues: [
+    {y:'1907', t:'LOST-WAX CASTING',    f:'ws13', g:0.70},
+    {y:'1970', t:'FOUNDED',             f:'ws07', g:1.00},   // the bench, tier 1
+    {y:'1970s', t:'PFM ERA',            f:'ws12', g:0.55},
+    {y:'1973', t:'SECOND LAB',          f:'ws06', g:0.55},
+    {y:'1976', t:'DIRECT-MAIL',         f:'ws19', g:0.60},
+    {y:'1979', t:'NINE LABS',           f:'ws09', g:0.95},   // recreation
+    {y:'1980', t:'STUDY PROGRAM',       f:'ws08', g:0.50},
+    {y:'1984', t:'CONSOLIDATION',       f:'ws14', g:0.60},
+    {y:'1988', t:'BIOTEMPS',            f:'ws10', g:0.50},
+    {y:'1989', t:'NATIONAL LEADER',     f:'ws18', g:0.95},   // recreation, tier 1
+    {y:'1993', t:'',                    f:'ws15', g:1.00},   // recreation, tier 1
+    {y:'2000', t:'R&D IS BORN',         f:'ws11', g:0.85},
+    {y:'2007', t:'FIRST DIGITAL CASE',  f:'ws01', g:0.70},
+    {rec:'DR',                          f:'ws03', g:0.95},   // the Digital Revolution portal — no year of its own
+    {y:'2009', t:'BRUXZIR',             f:'ws20', g:1.00},   // the revolution — the longest one
+    {y:'2010s', t:'SCANNERS · SCALE', f:'ws04', g:0.60},
+    {y:'2017', t:'GLIDEWELL.IO',        f:'ws05', g:0.70},
+    {y:'2018', t:'',                    f:'ws02', g:0.95},   // recreation, tier 1
+    {y:'2019', t:'BRUXZIR FACTORY',     f:'ws16', g:0.75},
+    {y:'2022', t:'FASTSCAN.IO',         f:'ws17', g:0.85},   // recreation
+    {y:'2023', t:'',                    f:'ws13', g:0.95},   // recreation, tier 1
+    {y:'2020', t:'AI · SCALE',     f:'ws09', g:0.90},
+    {y:'2026', t:'',                    f:'ws20', g:0.85},
+  ],
+};
+function initWhoosh(){
+  const RECS = {DR: [REC2_L, REC2_R], '1979': [REC_L, REC_R], '1989': [REC3_L, REC3_R],
+                '1993': [REC93_L, REC93_R], '2018': [REC18_L, REC18_R],
+                '2022': [REC4_L, REC4_R], '2023': [REC23_L, REC23_R]};
+  for (const c of WHOOSH.cues){
+    if (c.rec){                                   // a recreation with no year of its own
+      const r = RECS[c.rec];
+      if (!r){ console.warn('whoosh: no recreation', c.rec); continue; }
+      c.x = (r[0] + r[1]) / 2; c.armed = true;
+    } else {
+      const b = BEATS.find(q => q.y === c.y && (q.t || '') === (c.t || ''));
+      if (!b){ console.warn('whoosh: no beat for', c.y, c.t); continue; }
+      c.x = b.x; c.armed = true;
+    }
+    if (!WHOOSH.pool[c.f]){
+      const a = new Audio(WHOOSH.dir + c.f + '.m4a');
+      a.preload = 'auto'; a.volume = 0;
+      WHOOSH.pool[c.f] = a;
+    }
+  }
+  if (/[?&]ws=audition/.test(location.search)) setTimeout(auditionWhoosh, 600);
+}
+/* every cut in order, named, so a set of twenty can be judged in half a minute
+   instead of by walking the hall twenty times */
+function auditionWhoosh(){
+  const names = Object.keys(WHOOSH.pool).sort();
+  let i = 0;
+  const step = () => {
+    if (i >= names.length){ console.log('whoosh audition: done'); return; }
+    const f = names[i++], a = WHOOSH.pool[f];
+    const who = WHOOSH.cues.filter(c => c.f === f)
+                  .map(c => c.rec ? (c.rec + ' recreation') : (c.y + (c.t ? ' ' + c.t : ''))).join(' / ');
+    console.log('whoosh', f, '→', who);
+    try { a.currentTime = 0; } catch(e){}
+    a.volume = 0.8; a.play().catch(err => console.warn('needs a click first', err.name));
+    setTimeout(step, Math.max(1400, (a.duration || 1.5) * 1000 + 350));
+  };
+  step();
+}
+function updateWhoosh(){
+  const t = state.time;
+  // a voice always wins, and nothing fires over an open page or the title hold
+  const voice = (state.clip && state.clip.v && !state.clip.v.paused) ||
+                (state.person && state.person.v && !state.person.v.paused) ||
+                (state.study && state.study.railV && !state.study.railV.paused);
+  const quiet = SOUND.off || voice || state.introHold || state.study || state.person ||
+                state.people || state.inspect || state.docOpen;
+  for (const c of WHOOSH.cues){
+    if (c.x == null) continue;
+    const d = Math.abs(cam.x - c.x);
+    if (!c.armed){ if (d > WHOOSH.rearm) c.armed = true; continue; }
+    if (d > WHOOSH.radius) continue;
+    c.armed = false;                                  // arrived: spent either way
+    if (quiet || t - WHOOSH.last < WHOOSH.cool) continue;
+    const a = WHOOSH.pool[c.f]; if (!a) continue;
+    WHOOSH.last = t;
+    try { a.currentTime = 0; } catch(e){}
+    a.volume = Math.max(0, Math.min(1, WHOOSH.gain * (c.g != null ? c.g : 1)));
+    a.play().catch(() => {});
+  }
+}
+
 /* ---------------- MUSIC ----------------
    One track for the whole hall to begin with. Kept deliberately quiet: this is
    room tone, not a soundtrack, and it must never fight a speaking voice — so it
@@ -9493,6 +9596,7 @@ function update(dt){
   state.time += dt;
   state.dt = dt;
   updateMusic(dt);
+  updateWhoosh();
   updateFilm();
 
   if (inp.anyInput){
@@ -10449,6 +10553,7 @@ async function boot(){
   // reseat the film relays once everything (skin, props) has settled
   setTimeout(initFilmRelays, 2500);
   initMusic();
+  initWhoosh();
   initDoc();
   MAP_SPRITE = makeMapSprite();
   USA_SPRITE = makeUsaSprite();
