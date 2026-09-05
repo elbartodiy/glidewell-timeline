@@ -3242,31 +3242,79 @@ function drawProjectors(t, phase){
    picture it throws was painted before, and the bench crops it the way a real
    counter crops a projection that falls behind it */
 function projMachine(p, t, lamp, mxp, myp, bw, bh, kp){
+  const u = kp * SS;                       // one world unit at the machine's depth
   contactShadow(mxp, p.stand ? py(1080, kp) : myp, bw * 1.1, 0.34);
   ctx.save();
   if (p.stand){
     // it stands on the floor beside the whole composition, not on a worktop
     const fy = py(1080, kp);
-    const sg = ctx.createLinearGradient(mxp - 9 * kp * SS, 0, mxp + 9 * kp * SS, 0);
+    const sg = ctx.createLinearGradient(mxp - 9 * u, 0, mxp + 9 * u, 0);
     sg.addColorStop(0, '#23211e'); sg.addColorStop(0.4, '#585349'); sg.addColorStop(1, '#1c1a17');
     ctx.fillStyle = sg;
-    ctx.fillRect(mxp - 9 * kp * SS, myp, 18 * kp * SS, fy - myp);
+    ctx.fillRect(mxp - 9 * u, myp, 18 * u, fy - myp);
     ctx.fillStyle = 'rgba(26,24,21,0.9)';
-    ctx.beginPath(); ctx.ellipse(mxp, fy, 46 * kp * SS, 12 * kp * SS, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(mxp, fy, 46 * u, 12 * u, 0, 0, 7); ctx.fill();
   }
-  ctx.fillStyle = '#2b2723';
-  ctx.beginPath(); ctx.roundRect(mxp - bw / 2, myp - bh, bw, bh, 5 * kp * SS); ctx.fill();
-  ctx.fillStyle = '#43403a';
-  ctx.fillRect(mxp - bw * 0.42, myp - bh * 0.92, bw * 0.84, bh * 0.16);
-  for (const s of [-1, 1]){
-    ctx.strokeStyle = 'rgba(190,186,176,0.75)'; ctx.lineWidth = 2 * kp * SS;
-    ctx.beginPath(); ctx.arc(mxp + s * bw * 0.26, myp - bh * 1.30, bw * 0.20, 0, 7); ctx.stroke();
-    ctx.fillStyle = 'rgba(30,28,25,0.9)';
-    ctx.beginPath(); ctx.arc(mxp + s * bw * 0.26, myp - bh * 1.30, bw * 0.055, 0, 7); ctx.fill();
-  }
-  drawGlow('255,240,200', mxp, myp - bh * 0.45, 34 * kp * SS, 0.5 * lamp);
-  ctx.fillStyle = `rgba(255,246,224,${(0.85 * lamp).toFixed(2)})`;
-  ctx.beginPath(); ctx.arc(mxp, myp - bh * 0.45, 5 * kp * SS, 0, 7); ctx.fill();
+  /* NOT A FILM PROJECTOR. This used to be a dark box with two reels turning on
+     top of it, which is the wrong machine by twenty years: what it throws is an
+     architect's computer flythrough, and the year is 1993. In Focus shipped the
+     first data projector in 1991 and by 1993 the multimedia LCD projector was
+     what a room used to put a computer on a wall. So: a putty-coloured plastic
+     wedge, tall at the back and sloping down to a single lens at the front,
+     with a moulded handle, louvres and one amber lamp light. The lens sits
+     exactly where the beam's apex is computed, so the light leaves the glass. */
+  const x0 = mxp - bw / 2, xR = mxp + bw / 2;
+  const yBot = myp, yBack = myp - bh, yFront = myp - bh * 0.74;
+  const ly = myp - bh * 0.45;              // the optical axis — the beam's apex
+  const r = 4 * u;
+  const body = () => {
+    ctx.beginPath();
+    ctx.moveTo(x0 + r, yBack);
+    ctx.lineTo(xR - r, yFront);
+    ctx.quadraticCurveTo(xR, yFront, xR, yFront + r);
+    ctx.lineTo(xR, yBot - r);
+    ctx.quadraticCurveTo(xR, yBot, xR - r, yBot);
+    ctx.lineTo(x0 + r, yBot);
+    ctx.quadraticCurveTo(x0, yBot, x0, yBot - r);
+    ctx.lineTo(x0, yBack + r);
+    ctx.quadraticCurveTo(x0, yBack, x0 + r, yBack);
+    ctx.closePath();
+  };
+  const bg = ctx.createLinearGradient(0, yBack, 0, yBot);
+  bg.addColorStop(0, '#dcd7c8'); bg.addColorStop(0.42, '#c3bdad'); bg.addColorStop(1, '#8e8779');
+  ctx.fillStyle = bg; body(); ctx.fill();
+  ctx.strokeStyle = 'rgba(60,56,48,0.45)'; ctx.lineWidth = Math.max(0.6, 1.1 * u);
+  body(); ctx.stroke();
+  // the seam between the two halves of the case, and the moulded handle well
+  ctx.save(); body(); ctx.clip();
+  ctx.strokeStyle = 'rgba(70,66,57,0.35)'; ctx.lineWidth = Math.max(0.5, 0.9 * u);
+  ctx.beginPath(); ctx.moveTo(x0, yBot - bh * 0.30); ctx.lineTo(xR, yBot - bh * 0.30); ctx.stroke();
+  ctx.fillStyle = 'rgba(90,85,74,0.45)';
+  ctx.beginPath(); ctx.roundRect(x0 + bw * 0.10, yBack + bh * 0.07, bw * 0.30, bh * 0.10, 2.5 * u); ctx.fill();
+  // louvres over the lamp housing
+  ctx.fillStyle = 'rgba(76,71,62,0.40)';
+  for (let i = 0; i < 5; i++)
+    ctx.fillRect(x0 + bw * 0.13 + i * bw * 0.055, yBot - bh * 0.24, bw * 0.028, bh * 0.15);
+  ctx.restore();
+  // the lens: a barrel out of the front face, focus collar, coated glass
+  const lw = bw * 0.16, lh = bh * 0.36;
+  const lg = ctx.createLinearGradient(0, ly - lh / 2, 0, ly + lh / 2);
+  lg.addColorStop(0, '#6d6a63'); lg.addColorStop(0.5, '#3a3833'); lg.addColorStop(1, '#22211d');
+  ctx.fillStyle = lg;
+  ctx.beginPath(); ctx.roundRect(xR - lw * 0.30, ly - lh / 2, lw, lh, 2.5 * u); ctx.fill();
+  ctx.fillStyle = 'rgba(196,190,176,0.85)';                       // the focus collar
+  ctx.fillRect(xR + lw * 0.22, ly - lh / 2, lw * 0.16, lh);
+  const gl = ctx.createRadialGradient(xR + lw * 0.62, ly - lh * 0.10, lh * 0.05,
+                                      xR + lw * 0.62, ly, lh * 0.46);
+  gl.addColorStop(0, `rgba(255,248,226,${(0.95 * lamp).toFixed(2)})`);
+  gl.addColorStop(0.45, `rgba(150,170,190,${(0.55 * lamp).toFixed(2)})`);
+  gl.addColorStop(1, 'rgba(18,20,24,0.95)');
+  ctx.fillStyle = gl;
+  ctx.beginPath(); ctx.ellipse(xR + lw * 0.62, ly, lh * 0.30, lh * 0.44, 0, 0, 7); ctx.fill();
+  // the one light on the case, and the glow the lamp throws round its own glass
+  ctx.fillStyle = `rgba(255,176,86,${(0.75 + 0.2 * Math.sin(t * 2.4)).toFixed(2)})`;
+  ctx.beginPath(); ctx.arc(x0 + bw * 0.055, yBot - bh * 0.13, 1.9 * u, 0, 7); ctx.fill();   // clear of the louvres
+  drawGlow('255,240,200', xR + lw * 0.62, ly, 30 * u, 0.5 * lamp);
   ctx.restore();
 }
 
