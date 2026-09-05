@@ -2084,6 +2084,28 @@ function drawBeatText(b, focusAmt){
     const ts = (seg.tScale || 1) * (b._ys || 1);
     if (cx > -1200 && cx < W + 1200){
       ctx.save();
+      /* THE SHADOW STAYS ON THE WALL. The numeral has a drop shadow and the
+         title under it has none, so on a light wall the title barely reads. As
+         the year lifts off toward you its shadow does what a shadow does when
+         its object leaves the surface — it stays where it was cast, spreads
+         and softens — and that soft dark pool on the wall is what the title
+         and the thesis line now sit on. Eldar's idea. It grows with the lift
+         and is gone when the year is back on the wall. */
+      if (near > 0.02 && !hungBand(b.x)){
+        const kW = k(wz - 8);
+        const yA = py(60 - (b.yLift || 0), kW), yB = py(tY + 150 - (b.yLift || 0), kW);
+        const cyS = (yA + yB) / 2, ryS = (yB - yA) * 0.62 * (1 + 0.35 * near), rxS = 380 * kW * SS * (1 + 0.45 * near);
+        const light = seg.shade != null && seg.shade < 0.7;             // the white room takes less
+        const aS = (light ? 0.11 : 0.30) * Math.pow(near, 0.8);
+        const sg = ctx.createRadialGradient(cx, cyS, 0, cx, cyS, 1);
+        sg.addColorStop(0, `rgba(6,4,2,${aS.toFixed(3)})`);
+        sg.addColorStop(0.55, `rgba(6,4,2,${(aS * 0.55).toFixed(3)})`);
+        sg.addColorStop(1, 'rgba(6,4,2,0)');
+        ctx.save();
+        ctx.translate(cx, cyS); ctx.scale(rxS, ryS);
+        ctx.fillStyle = sg; ctx.fillRect(-1, -1, 2, 2);
+        ctx.restore();
+      }
       ctx.textAlign = 'center';
       let hitTopF = py(20 - (b.yLift || 0), kk);
       const bandF = hungBand(b.x);
@@ -2465,9 +2487,14 @@ function startFilm(){
    silence (or un-silence) the tape. */
 function updateFilm(){
   const T = WELCOME_TV, v = T.v; if (!v) return;
-  // only another VOICE stops the film — reading pages does not
-  const busy = state.clip || (state.person && state.person.playing != null) ||
-        (state.study && state.study.railV && !state.study.railV.paused);
+  /* ANY PAGE OVER THE HALL PAUSES THE HALL. It used to be only another voice
+     — a playing clip — that stopped the film, so a person's page could open
+     with the person already talking while the film went on underneath. Eldar's
+     rule: when a page opens, the world behind it fades down and stops, and
+     comes back at its own timecode when the page closes. The fade below is
+     the same one the film has always used; only the trigger widened. */
+  const busy = state.clip || state.person || state.study || state.people ||
+        state.inspect || state.openBox || state.docOpen;
   const engaged = !v.muted;                 // sound on = a real showing
   const wanted = engaged && !T.userPaused && !busy;
   // the poster holds its frame: a not-yet-started set snaps back to the
@@ -5117,43 +5144,56 @@ function drawMapWall(t){
        showed as a dark band — a slot the columns seemed to stand over. A low
        brass tread now fills it, running the width of the bay, and the runner
        comes up onto it: the carpet begins on the tread, not on the floor. */
-    const kStep = k(560);
-    const yStepTop = py(1040, kFar), yStepFoot = py(1080, kStep);
+    /* A STEP IS A BLOCK. Drawn as one lit band it read as a strip laid on the
+       floor. It has a top and a front now, in perspective: the tread runs from
+       the panel's foot forward to a nosing at z 520, the riser drops from the
+       nosing to the floor, and the light is a warm strip concealed under the
+       nosing — on the riser and spilling onto the floor. The runner lies on the
+       tread, folds over the nosing and comes down the riser to the floor. */
+    const kStep = k(520), zTread = 1040;
+    const yTreadBack = py(zTread, kFar), yNose = py(zTread, kStep), yStepFoot = py(1080, kStep);
+    const inset = 40;
     {
-      /* THE TREAD IS STONE, LIT FROM UNDER ITS NOSE. Painted gold it read as a
-         brass strip laid on the floor. It is the same pale stone as the slab it
-         steps down to, and the light is a warm strip concealed under the
-         nosing — the tread above stays quiet, the riser below takes the glow,
-         and the floor in front of it catches a little. */
-      const sxL = px(REC_L, kStep), sxR = px(REC_R, kStep);
-      const tg = ctx.createLinearGradient(0, yStepTop, 0, yStepFoot);
-      tg.addColorStop(0, '#cfc9bd'); tg.addColorStop(0.30, '#bdb6a9');
-      tg.addColorStop(0.62, '#8e887d'); tg.addColorStop(1, '#5f5a52');
+      const bx0 = px(REC_L + inset, kFar), bx1 = px(REC_R - inset, kFar);
+      const nx0 = px(REC_L + inset, kStep), nx1 = px(REC_R - inset, kStep);
+      // the tread's top: pale stone, lit from the front
+      const tg = ctx.createLinearGradient(0, yTreadBack, 0, yNose);
+      tg.addColorStop(0, '#c9c3b6'); tg.addColorStop(1, '#ddd7ca');
       ctx.fillStyle = tg;
-      ctx.fillRect(sxL, yStepTop, sxR - sxL, yStepFoot - yStepTop);
-      // the nose itself: a hard bright edge along the top of the tread
-      ctx.fillStyle = 'rgba(246,242,232,0.85)';
-      ctx.fillRect(sxL, yStepTop, sxR - sxL, Math.max(1, 1.4 * SS));
-      // the concealed strip: warm light on the riser, brightest just under the nose
-      const lg = ctx.createLinearGradient(0, yStepTop + 2 * SS, 0, yStepFoot);
-      lg.addColorStop(0, 'rgba(255,232,186,0.85)');
-      lg.addColorStop(0.35, 'rgba(255,225,170,0.34)');
-      lg.addColorStop(1, 'rgba(255,220,164,0.05)');
+      ctx.beginPath(); ctx.moveTo(bx0, yTreadBack); ctx.lineTo(bx1, yTreadBack); ctx.lineTo(nx1, yNose); ctx.lineTo(nx0, yNose); ctx.closePath(); ctx.fill();
+      // the riser
+      const rg = ctx.createLinearGradient(0, yNose, 0, yStepFoot);
+      rg.addColorStop(0, '#b8b2a5'); rg.addColorStop(0.5, '#8f897d'); rg.addColorStop(1, '#5f5a52');
+      ctx.fillStyle = rg;
+      ctx.fillRect(nx0, yNose, nx1 - nx0, yStepFoot - yNose);
+      // the nosing: one bright edge
+      ctx.fillStyle = 'rgba(246,242,232,0.9)';
+      ctx.fillRect(nx0, Math.round(yNose), nx1 - nx0, Math.max(1, 1.4 * SS));
+      // the concealed strip: warm on the riser, a little onto the floor
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      ctx.fillStyle = lg;
-      ctx.fillRect(sxL, yStepTop + 2 * SS, sxR - sxL, yStepFoot - yStepTop - 2 * SS);
-      // and a little of it spills onto the floor the step comes down to
+      const lg = ctx.createLinearGradient(0, yNose + 2 * SS, 0, yStepFoot);
+      lg.addColorStop(0, 'rgba(255,232,186,0.80)'); lg.addColorStop(0.4, 'rgba(255,225,170,0.30)'); lg.addColorStop(1, 'rgba(255,220,164,0.04)');
+      ctx.fillStyle = lg; ctx.fillRect(nx0, yNose + 2 * SS, nx1 - nx0, yStepFoot - yNose - 2 * SS);
       const fg2 = ctx.createLinearGradient(0, yStepFoot, 0, yStepFoot + 46 * kStep * SS);
-      fg2.addColorStop(0, 'rgba(255,226,172,0.22)');
-      fg2.addColorStop(1, 'rgba(255,226,172,0)');
-      ctx.fillStyle = fg2;
-      ctx.fillRect(sxL, yStepFoot, sxR - sxL, 46 * kStep * SS);
+      fg2.addColorStop(0, 'rgba(255,226,172,0.24)'); fg2.addColorStop(1, 'rgba(255,226,172,0)');
+      ctx.fillStyle = fg2; ctx.fillRect(nx0, yStepFoot, nx1 - nx0, 46 * kStep * SS);
       ctx.restore();
+      // the runner on the tread, and folding down the riser
+      const wT0 = 150 * kFar * SS, wT1 = 150 * kStep * SS, cT0 = px(mid, kFar), cT1 = px(mid, kStep);
+      const cg0 = ctx.createLinearGradient(0, yTreadBack, 0, yStepFoot);
+      cg0.addColorStop(0, '#5a0f18'); cg0.addColorStop(0.5, '#6e1420'); cg0.addColorStop(1, '#4e0c14');
+      ctx.fillStyle = cg0;
+      ctx.beginPath(); ctx.moveTo(cT0 - wT0, yTreadBack); ctx.lineTo(cT0 + wT0, yTreadBack); ctx.lineTo(cT1 + wT1, yNose); ctx.lineTo(cT1 - wT1, yNose); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#4a0b13';
+      ctx.fillRect(cT1 - wT1, yNose, wT1 * 2, yStepFoot - yNose);
+      ctx.fillStyle = 'rgba(255,200,180,0.28)';                         // the fold catches the light
+      ctx.fillRect(cT1 - wT1, Math.round(yNose), wT1 * 2, Math.max(1, 1.2 * SS));
     }
-    const yNear = py(1080, kNear), yFar = yStepTop;   // the runner starts ON the tread
-    const cxN = px(mid, kNear), cxF = px(mid, kFar);
-    const wN = 330 * kNear * SS, wF = 150 * kFar * SS;
+    // the floor runner begins at the foot of the riser
+    const yNear = py(1080, kNear), yFar = yStepFoot;
+    const cxN = px(mid, kNear), cxF = px(mid, kStep);
+    const wN = 330 * kNear * SS, wF = 150 * kStep * SS;
     /* THE RUNNER BELONGS TO THE BAY. It used to be laid from the map right out
        to the bottom of the frame — across ground the counter stands on — and
        the counter, painted later, cut it off down a hard vertical line. It is
@@ -6984,7 +7024,7 @@ function applyPhotoTextures(){
      apart, so a repeat lands joint on joint; nothing is blended at the edges,
      because blending them is what put one joint on top of another. */
   TEX.wall1_dark = PHOTO_TEX.wall_e1_1907 || TEX.wall1;
-  for (const [slot, key] of [['wall1','wall_e1'], ['wall2','wall_e2'], ['wall3','wall_e3'], ['wall4','wall_e4'],
+  for (const [slot, key] of [['wall1','wall_e1'], ['wall2','wall_e2'], ['wall3','wall_e3'], ['wall4','wall_e4'], ['front4','front_e4'],
                              ['bench1','bench_top_e1'], ['front1','bench_face_e1']])
     if (PHOTO_TEX[key]) TEX[slot] = PHOTO_TEX[key];
 }
@@ -7004,6 +7044,7 @@ async function loadPhotoSkin(){
     ph_scanner: 'scanner.png',        // fastscan.io, the instrument itself, not a drawing of it
     ph_mill: 'mill_io.png',           // fastmill.io, the same — cut out of its studio render
     ph_scanbay: 'scan_bay.jpg',       // the 2022 bay: the whole render, rectangle and all
+    front_e4: 'front_e4.jpg',         // the white era's counter face: one door of Eldar's render, mid-door to mid-door
     bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
     bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
   };
@@ -9800,10 +9841,12 @@ function drawPeople(){
      the foot in gold — a real gradient across the letters, with the bevel a
      stamped letter has, light above and shadow below — and the picture darkens
      under the plate so the gold has something to sit on. */
-  const COLS = 4, gap = 22 * SS;
+  /* five to a row, smaller, and room between them: at four they filled the
+     sheet edge to edge and shouted */
+  const COLS = 5, gap = 34 * SS;
   const cw = (colW - gap * (COLS - 1)) / COLS;
-  const th = cw * 1.40;                        // a card, not a thumbnail
-  const rowH = th + gap;
+  const th = cw * 1.36;                        // a card, not a thumbnail
+  const rowH = th + gap * 1.25;
   const GOLD = [[0, '#6d5220'], [0.28, '#d9b25e'], [0.46, '#fff2c4'], [0.62, '#d3a851'], [1, '#7a5c25']];
   for (let i = 0; i < roster.length; i++){
     const id = roster[i], P = PEOPLE[id];
@@ -9841,7 +9884,7 @@ function drawPeople(){
     ctx.fillStyle = hl; ctx.fillRect(cx, plateY, cw, Math.max(1, 0.9*SS));
     // the name, stamped: shadow under, light over, gold across
     const inx = cx + cw * 0.09, inw = cw * 0.82;
-    let nmSz = 17 * SS;
+    let nmSz = 14.5 * SS;
     ctx.font = K.font(nmSz / SS);
     let nm = P.name.replace(/,\s*(CDT|DDS|DMD|MD|PhD)$/i, '');
     while (ctx.measureText(nm).width > inw && nmSz > 11 * SS){ nmSz -= 0.6 * SS; ctx.font = K.font(nmSz / SS); }
@@ -9856,11 +9899,11 @@ function drawPeople(){
     ctx.fillStyle = 'rgba(255,246,214,0.30)';
     ctx.fillText(nm, inx, ny - 0.8*SS);
     // the role, quiet, under the gold
-    ctx.font = K.font(11.5);
+    ctx.font = K.font(10.5);
     ctx.fillStyle = 'rgba(232,226,214,0.62)';
     let rl = roleShort(P.role);
     while (ctx.measureText(rl).width > inw && rl.length > 4) rl = rl.slice(0, -1);
-    ctx.fillText(rl === roleShort(P.role) ? rl : rl.replace(/[ ,]+$/, '') + '…', inx, ny + 15*SS);
+    ctx.fillText(rl === roleShort(P.role) ? rl : rl.replace(/[ ,]+$/, '') + '…', inx, ny + 13*SS);
     ctx.restore();
     // the card's own edge, and a gold one when the pointer is on it
     ctx.strokeStyle = hot ? 'rgba(214,178,94,0.85)' : 'rgba(26,28,30,0.18)';
