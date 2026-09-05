@@ -268,7 +268,7 @@ const BEATS = [
   /* The plate carries the three portraits that stand under it, so moving the
      BEAT moved them too. It has its own offset now: plaqueDX shifts the plate
      alone, and the people stay where they were put. */
-  {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870, plaque:true, plaqueDX:0,
+  {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870, plaque:true, plaqueDX:-230,   // the plate alone, over the middle portrait
    th:'Reinvesting in the profession — and our channel for finding hero dentists.',
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
    wall:[],
@@ -4720,7 +4720,42 @@ function drawDesignStation(b, t){
 }
 
 
-let AI_ROBOT_X = null, PENDANT_AT = null;
+let AI_ROBOT_X = null, PENDANT_AT = null, PENDANT_X = null;
+/* THE PENDANT IS ON THE NEAR PLANE. It was drawn inside the cell, at the cell's
+   depth — inside the counters' own depth range — so as the camera moved it slid
+   out from behind the counter's end and stood in front of it: behind the table
+   from one side of the aisle, in front of it from the other. It stands at the
+   plinths' depth now and is painted after the counters, so it is in front of
+   the table wherever you look at it from, with its foot at the counter's edge. */
+function drawPendant(t){
+  if (PENDANT_X == null || Math.abs(cam.x - PENDANT_X) > 2600) return;
+  const cz = -40, kk = k(cz), S = kk * SS;
+  const X = wx => px(wx, kk), Y = wy => py(wy, kk);
+  const px2 = X(PENDANT_X);
+  if (px2 < -200 || px2 > W + 200) return;
+  const PT = 560, PB = 690;
+  PENDANT_AT = {x: PENDANT_X, y: (PT + PB) / 2 - 12, z: cz};
+  ctx.save();
+  contactShadow(px2, Y(1080), 40 * S, 0.30);
+  ctx.strokeStyle = 'rgba(168,174,180,0.9)'; ctx.lineWidth = Math.max(1, 6 * S);
+  ctx.beginPath(); ctx.moveTo(px2, Y(1080)); ctx.lineTo(px2, Y(PB)); ctx.stroke();
+  ctx.fillStyle = '#dcd8cf';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(px2 - 56 * S, Y(PT), 112 * S, (PB - PT) * S, 6 * S);
+  else ctx.rect(px2 - 56 * S, Y(PT), 112 * S, (PB - PT) * S);
+  ctx.fill();
+  ctx.fillStyle = '#1a2b34';
+  ctx.fillRect(px2 - 44 * S, Y(PT + 14), 88 * S, 62 * S);
+  ctx.fillStyle = 'rgba(120,215,255,0.55)';
+  for (let i2 = 0; i2 < 4; i2++) ctx.fillRect(px2 - 38 * S, Y(PT + 22 + i2 * 12), (54 - i2 * 9) * S, 3 * S);
+  ctx.fillStyle = 'rgba(196,46,34,0.95)';
+  ctx.beginPath(); ctx.arc(px2 - 34 * S, Y(PT + 100), 9 * S, 0, 7); ctx.fill();
+  for (let i2 = 0; i2 < 12; i2++){
+    ctx.fillStyle = 'rgba(150,156,162,0.7)';
+    ctx.fillRect(px2 - 14 * S + (i2 % 6) * 10 * S, Y(PT + 92 + Math.floor(i2 / 6) * 12), 7 * S, 7 * S);
+  }
+  ctx.restore();
+}
 /* THE DATA TRAVELS, NOT THE CROWN. A finished crown used to fly out of the
    2018 bay and into the line — an object crossing the room by itself, which is
    the one thing a crown never does. What actually leaves that bay is a file.
@@ -8363,31 +8398,8 @@ function drawCell(cx, cz, t, phase, pendant){
     drawGlow(col, tx, Y(302 + i2 * 26), 30 * S, 0.22);
     ctx.restore();
   }
-  /* THE PENDANT STANDS BETWEEN THE VITRINE AND THE LINE. It was on the far
-     side of the cell, reaching across the wall; it is on the near side now, the
-     side the 2018 crown's data comes from, with its foot on the level of the
-     counter's edge. Its screen is where that data lands — see drawAIRelay. */
   if (!pendant){ ctx.restore(); return; }
-  const px2 = X(cx - HW * 1.34);
-  const PT = 560, PB = 690;                      // the box: from here down to the counter's edge
-  PENDANT_AT = {x: cx - HW * 1.34, y: (PT + PB) / 2 - 12, z: cz};
-  ctx.strokeStyle = 'rgba(168,174,180,0.9)'; ctx.lineWidth = Math.max(1, 6 * S);
-  ctx.beginPath(); ctx.moveTo(px2, Y(1080)); ctx.lineTo(px2, Y(PB)); ctx.stroke();
-  ctx.fillStyle = '#dcd8cf';
-  ctx.beginPath();
-  if (ctx.roundRect) ctx.roundRect(px2 - 56 * S, Y(PT), 112 * S, (PB - PT) * S, 6 * S);
-  else ctx.rect(px2 - 56 * S, Y(PT), 112 * S, (PB - PT) * S);
-  ctx.fill();
-  ctx.fillStyle = '#1a2b34';
-  ctx.fillRect(px2 - 44 * S, Y(PT + 14), 88 * S, 62 * S);
-  ctx.fillStyle = 'rgba(120,215,255,0.55)';
-  for (let i2 = 0; i2 < 4; i2++) ctx.fillRect(px2 - 38 * S, Y(PT + 22 + i2 * 12), (54 - i2 * 9) * S, 3 * S);
-  ctx.fillStyle = 'rgba(196,46,34,0.95)';
-  ctx.beginPath(); ctx.arc(px2 - 34 * S, Y(PT + 100), 9 * S, 0, 7); ctx.fill();
-  for (let i2 = 0; i2 < 12; i2++){
-    ctx.fillStyle = 'rgba(150,156,162,0.7)';
-    ctx.fillRect(px2 - 14 * S + (i2 % 6) * 10 * S, Y(PT + 92 + Math.floor(i2 / 6) * 12), 7 * S, 7 * S);
-  }
+  PENDANT_X = cx - HW * 1.34;             // the pendant itself is drawn on the near plane, after the counters
   // the coiled air hose, the one bright thing on any shop floor
   ctx.strokeStyle = 'rgba(226,196,44,0.9)'; ctx.lineWidth = Math.max(1, 3.4 * S);
   ctx.beginPath();
@@ -8606,9 +8618,13 @@ function drawFactory(t){
      hand works at, and here that is the height of the counters either side of
      the cells. It stands on its own frame now — a rail, a skirt under it, and
      legs down to the floor at both ends. */
+  /* AND IT ENDS BEHIND THE COUNTERS. Its ends used to stop in the open, so
+     the crowns simply ceased to exist at a point in the air. Both ends now run
+     on past the aisle and under the counters either side — painted later, they
+     swallow the line, and the crowns go somewhere. */
   const kc = k(150);
   const cy0 = py(690, kc);
-  const c0 = px(FACT_X - 380, kc), c1 = px(FACT_X + 520, kc);
+  const c0 = px(FACT_X - 640, kc), c1 = px(FACT_X + 780, kc);
   const yFl = py(1080, kc), legW = 12 * kc * SS;
   ctx.fillStyle = '#2b2f34';
   for (const lx of [c0 + 24*kc*SS, c1 - 24*kc*SS - legW, (c0 + c1)/2 - legW/2])
@@ -8620,7 +8636,7 @@ function drawFactory(t){
   ctx.fillStyle = 'rgba(255,255,255,0.10)';
   ctx.fillRect(c0, cy0, c1 - c0, 2*kc*SS);
   for (let i = 0; i < 7; i++){
-    const wxc = FACT_X - 360 + ((i*130 + t*60) % 860);
+    const wxc = FACT_X - 620 + ((i*180 + t*60) % 1400);
     const sxc = px(wxc, kc);
     if (sxc > c0 && sxc < c1){
       ctx.fillStyle = '#eef0ed';
@@ -10614,10 +10630,13 @@ function drawShowroom(t){
   // the grain, and the shadow it drops on the wall below
   ctx.save();
   ctx.clip(beam);
+  /* the grain lines are one device pixel each and land on whole pixels: at
+     1.6 px on fractional rows they were re-sampled every frame and shimmered
+     as a stack of flickering stripes whenever the camera moved */
   for (let i = 0; i < 26; i++){
-    const yy = yT + (yB - yT) * (i / 26);
-    ctx.fillStyle = `rgba(${i % 3 ? 62 : 206},${i % 3 ? 48 : 182},${i % 3 ? 34 : 148},0.035)`;
-    ctx.fillRect(x0, yy, x1 - x0, 1.6 * SS);
+    const yy = Math.round(yT + (yB - yT) * (i / 26));
+    ctx.fillStyle = `rgba(${i % 3 ? 62 : 206},${i % 3 ? 48 : 182},${i % 3 ? 34 : 148},0.045)`;
+    ctx.fillRect(x0, yy, x1 - x0, 1);
   }
   ctx.restore();
   /* the return at the near end: end grain, then the shadow it throws on the wall
@@ -10773,6 +10792,18 @@ function drawShowroomLight(t){
    reflection is of whatever is actually standing there, and stays true by
    construction rather than by being drawn twice. */
 let SHEEN = null;
+/* the reflection's fall-off, as a mask on the copied band: full at the fold
+   (the band's bottom row), gone at the far edge, falling as (1-u)^2 */
+function sheenFade(gs, cw, ch, peak){
+  const g = gs.createLinearGradient(0, ch, 0, 0);
+  for (const u of [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1]){
+    g.addColorStop(u, `rgba(0,0,0,${(peak * (1 - u) * (1 - u)).toFixed(4)})`);
+  }
+  gs.globalCompositeOperation = 'destination-in';
+  gs.fillStyle = g;
+  gs.fillRect(0, 0, cw, ch);
+  gs.globalCompositeOperation = 'source-over';
+}
 function drawFloorSheen(){
   if (cam.x < SHOW_L - 2400 || cam.x > SHOW_R + 2400) return;
   /* A REFLECTION IS BOUNDED BY THE FLOOR IT LIES ON. This was clipped to
@@ -10848,17 +10879,14 @@ function drawFloorSheen(){
     const gs = SHEEN.getContext('2d');
     gs.clearRect(0, 0, cw, ch);
     gs.drawImage(ctx.canvas, sx0, yTop - band, cw, ch, 0, 0, cw, ch);
-    const hh = band / N;
-    for (let s = 0; s < N; s++){
-      const u = s / N, a = 0.34 * (1 - u) * (1 - u);
-      if (a < 0.004) break;
-      ctx.globalAlpha = a;
-      ctx.scale(1, -1);
-      // the same strip the old code took: (s+1) slices up from the fold
-      ctx.drawImage(SHEEN, 0, ch - (s + 1) * hh, cw, hh,
-                    sx0, -(yTop + (s + 1) * hh), cw, hh);
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-    }
+    /* ONE FADE, NOT FOURTEEN. The band used to be laid in slices, each at its
+       own alpha — and the seams between them were a stack of horizontal lines
+       that moved with the camera and flickered. The fade is a gradient mask on
+       the copy now, the same quadratic law, and the whole band is laid once. */
+    sheenFade(gs, cw, ch, 0.34);
+    ctx.scale(1, -1);
+    ctx.drawImage(SHEEN, 0, 0, cw, ch, sx0, -(yTop + ch), cw, ch);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
   }
   // the polish itself: a dark stone floor takes a sheen along the grazing angle
@@ -10880,15 +10908,10 @@ function drawFloorSheen(){
       const gs = SHEEN.getContext('2d');
       gs.clearRect(0, 0, cw2, ch2);
       gs.drawImage(ctx.canvas, x0, notch.y - band2, cw2, ch2, 0, 0, cw2, ch2);
-      const N = 10, hh = band2 / N;
-      for (let s2 = 0; s2 < N; s2++){
-        const u = s2 / N, a = 0.34 * (1 - u) * (1 - u);
-        if (a < 0.004) break;
-        ctx.globalAlpha = a;
-        ctx.scale(1, -1);
-        ctx.drawImage(SHEEN, 0, ch2 - (s2 + 1) * hh, cw2, hh, x0, -(notch.y + (s2 + 1) * hh), cw2, hh);
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-      }
+      sheenFade(gs, cw2, ch2, 0.34);
+      ctx.scale(1, -1);
+      ctx.drawImage(SHEEN, 0, 0, cw2, ch2, x0, -(notch.y + ch2), cw2, ch2);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalAlpha = 1;
       const g2 = ctx.createLinearGradient(0, notch.y, 0, yBot);
       g2.addColorStop(0, 'rgba(226,229,233,0.34)');
@@ -11072,6 +11095,7 @@ function frame(){
   drawBench();        // reflection can never be laid over the furniture
   drawShowroomLight(t);   // light coming OUT of the furniture, so after it
   drawProjectors(t, 'machine');   // it stands on the bench, so it comes after it
+  drawPendant(t);                 // and the factory's pendant stands in front of the counters
 
   // table items
   drawFinaleTable(t);
