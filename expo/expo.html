@@ -4700,48 +4700,58 @@ function drawDesignStation(b, t){
 }
 
 
-let AI_ROBOT_X = null;
-/* The crown's journey. It leaves the panel's plane and comes forward into the
-   room, growing as it comes and turning from a proposal into an object — and
-   then it goes into the line and is gone. There is no arm of mine here: the
-   BruxZir Factory already has its own robots, and adding another one put four
-   arms and a crown the size of a person in the same two metres of hall. */
+let AI_ROBOT_X = null, PENDANT_AT = null;
+/* THE DATA TRAVELS, NOT THE CROWN. A finished crown used to fly out of the
+   2018 bay and into the line — an object crossing the room by itself, which is
+   the one thing a crown never does. What actually leaves that bay is a file.
+   So the same cold points the vitrine assembled the crown from lift off it as
+   you move on, run as a stream across the aisle, and land in the screen of the
+   control pendant in front of the first cell, which brightens as they arrive.
+   Then the line makes the crown — that is what the cells are for. */
 function drawAIRelay(t){
   if (AI_ROBOT_X == null){
     const b = BEATS.find(b2 => b2.y === '2019' && b2.t === 'BRUXZIR FACTORY');
     AI_ROBOT_X = b ? b.x : REC18_R + 720;
   }
-  const mid = (REC18_L + REC18_R) / 2, rob = AI_ROBOT_X;
-  if (cam.x < mid - 2400 || cam.x > rob + 1200) return;
-  const endX = rob - 340;                       // it enters the line, it does not sit on it
-  const u = Math.max(0, Math.min(1, (cam.x - mid) / (endX - mid)));
+  const mid = (REC18_L + REC18_R) / 2;
+  const P = PENDANT_AT || {x: AI_ROBOT_X - 562, y: 613, z: 190};
+  if (cam.x < mid - 2400 || cam.x > P.x + 1400) return;
+  const u = Math.max(0, Math.min(1, (cam.x - mid) / (P.x - mid)));
   const p = u * u * (3 - 2 * u);
   const build = latchedPhase(mid, 450);
-  if (build <= 0.28) return;
-
-  /* IT LEAVES THE VITRINE, NOT A MONITOR. The making now happens inside the
-     2018 niche, so the journey begins at the big crown's own place and only
-     once the camera is actually moving on — at the centre nothing of this is
-     drawn, and there is no wireframe stage left to duplicate what the niche
-     has just shown. */
-  if (p < 0.02) return;
-  const leave = Math.min(1, (p - 0.02) / 0.16);
-  const wx = mid + (endX - mid) * p;
-  const lz = 1000 + (40 - 1000) * p;            // it comes off the panel's plane into the room
-  const wy = AI_VITRINE.crownCY - 70 * p;
-  const kkc = k(lz), sxc = px(wx, kkc), syc = py(wy, kkc);
-  const spC = PED_SPRITES.crown2;
-  const wC = 190 * kkc * SS, hC = wC * spC.h / spC.w;
-  const sol = 1;                                // whole from the first step
-  const gone = Math.max(0, Math.min(1, (p - 0.72) / 0.28));   // taken up by the line
-  const a = (1 - gone) * Math.min(1, build * 1.6) * leave * leave;
-  if (a <= 0.01) return;
-
+  if (build <= 0.28 || p < 0.02) return;
+  crownGeometry();
+  const V = AI_VITRINE, kv = k(1000);
+  const ccx = px(mid, kv), ccy = py(V.crownCY, kv);
+  const cw = V.crownW * kv * SS, ch = cw * PED_SPRITES.crown2.h / PED_SPRITES.crown2.w;
+  const kp = k(P.z), ex = px(P.x, kp), ey = py(P.y, kp);
+  const leave = Math.min(1, (p - 0.02) / 0.12);
+  const head = p * 1.45;                            // the stream is ~0.45 long; the head reaches the screen at p≈0.69
   ctx.save();
-  ctx.globalAlpha = a;
-  if (sol > 0){
-    ctx.globalAlpha = a * sol;
-    ctx.drawImage(spC.c, sxc - wC/2, syc - hC/2, wC, hC);
+  ctx.globalCompositeOperation = 'lighter';
+  const pr = Math.max(0.9, cw * 0.007);
+  let arrived = 0;
+  for (let i = 0; i < CROWN_PTS.length; i++){
+    const [ux, uy] = CROWN_PTS[i];
+    const h1 = Math.sin(i * 12.9898) * 43758.5453, h2 = Math.sin(i * 78.233) * 12345.678;
+    const r1 = h1 - Math.floor(h1), r2 = h2 - Math.floor(h2);
+    const q = head - r1 * 0.45;                     // this point's own progress along the run
+    if (q >= 1){ arrived++; continue; }
+    if (q <= 0) continue;
+    const sx0 = ccx + ux * cw, sy0 = ccy + uy * ch;
+    // an arc across the aisle: up out of the case, down into the screen
+    const lift = Math.sin(q * Math.PI) * (110 + 60 * r2) * SS;
+    const x = sx0 + (ex - sx0) * q + (r2 - 0.5) * 6 * SS;
+    const y = sy0 + (ey - sy0) * q - lift;
+    const a = leave * (0.25 + 0.75 * Math.sin(q * Math.PI)) * Math.min(1, build * 1.6);
+    ctx.fillStyle = `rgba(${V.rim},${a.toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(x, y, pr * (0.7 + 0.6 * r2), 0, 7); ctx.fill();
+  }
+  // the screen takes the data: it brightens with what has landed, and settles
+  const got = arrived / CROWN_PTS.length;
+  if (got > 0.01){
+    const settle = Math.max(0, 1 - Math.max(0, p - 0.72) / 0.28);
+    drawGlow(V.rim, ex, ey, 60 * kp * SS * (1 + got), 0.30 * got * (0.4 + 0.6 * settle));
   }
   ctx.restore();
 }
@@ -8211,25 +8221,30 @@ function drawCell(cx, cz, t, phase, pendant){
     drawGlow(col, tx, Y(302 + i2 * 26), 30 * S, 0.22);
     ctx.restore();
   }
-  // the pendant, in the aisle in front — it was reaching across the wall behind
+  /* THE PENDANT STANDS BETWEEN THE VITRINE AND THE LINE. It was on the far
+     side of the cell, reaching across the wall; it is on the near side now, the
+     side the 2018 crown's data comes from, with its foot on the level of the
+     counter's edge. Its screen is where that data lands — see drawAIRelay. */
   if (!pendant){ ctx.restore(); return; }
-  const px2 = X(cx + HW * 1.34);
+  const px2 = X(cx - HW * 1.34);
+  const PT = 560, PB = 690;                      // the box: from here down to the counter's edge
+  PENDANT_AT = {x: cx - HW * 1.34, y: (PT + PB) / 2 - 12, z: cz};
   ctx.strokeStyle = 'rgba(168,174,180,0.9)'; ctx.lineWidth = Math.max(1, 6 * S);
-  ctx.beginPath(); ctx.moveTo(px2, Y(1080)); ctx.lineTo(px2, Y(600)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px2, Y(1080)); ctx.lineTo(px2, Y(PB)); ctx.stroke();
   ctx.fillStyle = '#dcd8cf';
   ctx.beginPath();
-  if (ctx.roundRect) ctx.roundRect(px2 - 56 * S, Y(600), 112 * S, 130 * S, 6 * S);
-  else ctx.rect(px2 - 56 * S, Y(600), 112 * S, 130 * S);
+  if (ctx.roundRect) ctx.roundRect(px2 - 56 * S, Y(PT), 112 * S, (PB - PT) * S, 6 * S);
+  else ctx.rect(px2 - 56 * S, Y(PT), 112 * S, (PB - PT) * S);
   ctx.fill();
   ctx.fillStyle = '#1a2b34';
-  ctx.fillRect(px2 - 44 * S, Y(614), 88 * S, 62 * S);
+  ctx.fillRect(px2 - 44 * S, Y(PT + 14), 88 * S, 62 * S);
   ctx.fillStyle = 'rgba(120,215,255,0.55)';
-  for (let i2 = 0; i2 < 4; i2++) ctx.fillRect(px2 - 38 * S, Y(622 + i2 * 12), (54 - i2 * 9) * S, 3 * S);
+  for (let i2 = 0; i2 < 4; i2++) ctx.fillRect(px2 - 38 * S, Y(PT + 22 + i2 * 12), (54 - i2 * 9) * S, 3 * S);
   ctx.fillStyle = 'rgba(196,46,34,0.95)';
-  ctx.beginPath(); ctx.arc(px2 - 34 * S, Y(700), 9 * S, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(px2 - 34 * S, Y(PT + 100), 9 * S, 0, 7); ctx.fill();
   for (let i2 = 0; i2 < 12; i2++){
     ctx.fillStyle = 'rgba(150,156,162,0.7)';
-    ctx.fillRect(px2 - 14 * S + (i2 % 6) * 10 * S, Y(692 + Math.floor(i2 / 6) * 12), 7 * S, 7 * S);
+    ctx.fillRect(px2 - 14 * S + (i2 % 6) * 10 * S, Y(PT + 92 + Math.floor(i2 / 6) * 12), 7 * S, 7 * S);
   }
   // the coiled air hose, the one bright thing on any shop floor
   ctx.strokeStyle = 'rgba(226,196,44,0.9)'; ctx.lineWidth = Math.max(1, 3.4 * S);
@@ -8444,14 +8459,24 @@ function drawFactory(t){
       ctx.fillRect(dx0 - 40*kd*SS, py(730 + i*52, kd), 80*kd*SS, 34*kd*SS);
     }
   }
-  // conveyor with finished crowns drifting off to the right
+  /* THE LINE RUNS AT COUNTER HEIGHT. It lay on the floor, so the finished
+     crowns crawled along the skirting; a line in a plant runs at the height a
+     hand works at, and here that is the height of the counters either side of
+     the cells. It stands on its own frame now — a rail, a skirt under it, and
+     legs down to the floor at both ends. */
   const kc = k(150);
-  const cy0 = py(1005, kc);
+  const cy0 = py(690, kc);
   const c0 = px(FACT_X - 380, kc), c1 = px(FACT_X + 520, kc);
+  const yFl = py(1080, kc), legW = 12 * kc * SS;
+  ctx.fillStyle = '#2b2f34';
+  for (const lx of [c0 + 24*kc*SS, c1 - 24*kc*SS - legW, (c0 + c1)/2 - legW/2])
+    ctx.fillRect(lx, cy0 + 36*kc*SS, legW, yFl - cy0 - 36*kc*SS);
   ctx.fillStyle = '#3a3e43';
   ctx.fillRect(c0, cy0, c1 - c0, 26*kc*SS);
   ctx.fillStyle = '#23262a';
   ctx.fillRect(c0, cy0 + 26*kc*SS, c1 - c0, 10*kc*SS);
+  ctx.fillStyle = 'rgba(255,255,255,0.10)';
+  ctx.fillRect(c0, cy0, c1 - c0, 2*kc*SS);
   for (let i = 0; i < 7; i++){
     const wxc = FACT_X - 360 + ((i*130 + t*60) % 860);
     const sxc = px(wxc, kc);
