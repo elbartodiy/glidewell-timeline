@@ -122,7 +122,7 @@ const BEATS = [
    wall:[{img:'rose', w:300, dx:-560, cy:360, rot:0.4}],
    table:[], st:[{img:'lab4ext', w:250, dx:0, lz:80, cap:'El Toro — the second lab'}]},
 
-  {x:5400, y:'1976', t:'DIRECT-MAIL',
+  {x:5400, y:'1976', t:'DIRECT-MAIL', yLift:95,   // on 1973's line — Eldar: the years after 1973 hung low
    th:'Reach is the lever — the flywheel’s first turn.',
    d:'The first direct-mail campaign rewrites the model: reach dentists anywhere, not just nearby.',
    wall:[{img:'jim76', w:360, dx:-430, cy:380, rot:0.8},
@@ -130,31 +130,31 @@ const BEATS = [
    table:[]},
 
   /* ---- ERA 2 · the mail-order workshop, 1979–1989 ---- */
-  {x:6900, y:'1979', t:'NINE LABS', ink:'64,54,40',
+  {x:6900, y:'1979', t:'NINE LABS', ink:'64,54,40', yLift:95,
    th:'',
    d:'Jim owns and runs nine labs across Southern California.',
    wall:[], table:[]},
 
-  {x:7990, y:'1980', t:'STUDY PROGRAM',
+  {x:7990, y:'1980', t:'STUDY PROGRAM', yLift:130,   // era 2's type plane is deeper: 130 here is 1973's 95
    th:'Education as a bond — long before it was a marketing channel.',
    d:'An International Study Program brings dentists in from Japan and abroad to train in the US — the root of Jim’s lifelong belief in teaching and symposia.',
    wall:[{img:'joeha', w:280, dx:-240, cy:350},
          {img:'lab3ext', w:380, dx:430, cy:380}],
    table:[]},
 
-  {x:8750, y:'1984', t:'CONSOLIDATION',
+  {x:8750, y:'1984', t:'CONSOLIDATION', yLift:130,
    th:'One machine, fed nationally — the model that scales.',
    d:'Nine labs merge into one centralized plant in Orange (15,000 sq ft, 42 staff); mail now brings the majority of cases.',
    wall:[{img:'lab3ben', w:400, dx:-440, cy:380},
          {img:'lab3rec', w:380, dx:440, cy:380}],
    table:[]},
 
-  {x:9850, y:'1988', t:'BIOTEMPS',
+  {x:9850, y:'1988', t:'BIOTEMPS', yLift:130,
    th:'A second product proves the lab can build categories, not just crowns.',
    d:'BioTemps provisional restorations — lab-made PMMA temporaries that doubled as an esthetic “blueprint” the patient could approve before the final.',
    wall:[], table:[]},
 
-  {x:11150, y:'1989', t:'NATIONAL LEADER', tier:1, fly:true, ink:'56,58,64',
+  {x:11150, y:'1989', t:'NATIONAL LEADER', tier:1, fly:true, ink:'56,58,64', yLift:130,
    pinZ:728,   // the numeral is riveted to the recreation panel: it grows in place, never drifts
    th:'',
    d:'Still in Orange, California: 175 people now serve more than 3,500 dentists, and 95% of cases arrive by mail. The lab is national without having left the county.',
@@ -248,11 +248,13 @@ const BEATS = [
    wall:[], table:[]},
 
   {x:24020, y:'2017', t:'GLIDEWELL.IO',
+   pinZ:996, yLift:30,   // the year rides the hall's own plane, in the sky above the ring of light
+   thBelow:true, tOnBay:true,   // the bay is a photograph: the title is lettered on its plinth, the thesis goes to the caption
    th:'Future: the lab moves into the chair.',
-   d:'Announced November 2017, in the office from March 2018: the iTero Element scanner, the fastdesign.io design station, the fastmill.io mill — and BruxZir NOW, the only fully sintered chairside zirconia, so nothing needs firing after the cut. The lab’s own AI moves into the practice as CrownAI and MarginAI. The barrier was never the technique. It was the inconvenience.',
+   d:'Announced November 2017: scanner, fastdesign.io and the fastmill.io mill on the dentist\u2019s own counter, cutting BruxZir NOW \u2014 zirconia that needs no firing. A crown in one visit. The barrier was never the technique; it was the inconvenience.',
    wall:[],
    table:[],
-   ped:{obj:'millSt', dx:0, wide:1.28}},
+   ped:{obj:'millSt', dx:-640, wide:1.28}},   // to the left of the hovering tooth: the render's own plinth stays clear
 
   {x:24450, y:'2018', t:'', tier:1, yLift:110,
    pinZ:1000,
@@ -321,6 +323,9 @@ const CUTS = [
   // 1993: the move to Newport Beach — a model of the building, and the film the
   // company shot of it, cut inside era 2 where no two wall planes meet
   {at: 12150, w: 1500, on: true},
+  // 2017: glidewell.io — the lab moves into the chair — set in the glass hall
+  // of Eldar's render, wide enough for the vault and both wings
+  {at: 24020, w: 3000, on: true},
   // 2018: the first crown designed entirely by AI, and the arm that takes it on
   {at: 24450, w: 1500, on: true},
   // 2023: the month the digital impressions outnumbered the physical ones
@@ -357,6 +362,7 @@ function applyCut(){
   };
   if (CUTS[1].on) anchor('1970', bayStart(1) + CUTS[1].w / 2);
   anchor('1993', (REC93_L + REC93_R) / 2);
+  anchor('2017', (REC17_L + REC17_R) / 2);
   anchor('2018', (REC18_L + REC18_R) / 2);
   anchor('2023', (REC23_L + REC23_R) / 2);
   /* RHYTHM. Inside one era the years should stand at equal intervals: a
@@ -373,7 +379,7 @@ function applyCut(){
      beat tied to a fixed scene cannot be re-spaced — the scene has to move with
      it, or it has to stay put. */
   anchor('2022', (REC4_L + REC4_R) / 2);
-  const owns = new Set(['1970', '1993', '2018', '2022', '2023', '2019']);
+  const owns = new Set(['1970', '1993', '2017', '2018', '2022', '2023', '2019']);
   for (const seg of SEGMENTS){
     const mine = BEATS.filter(b => b.x > seg.x0 && b.x < seg.x1 && !b.sub && !b.under)
                       .sort((p, q) => p.x - q.x);
@@ -389,15 +395,27 @@ function applyCut(){
     const fixed = [0];
     for (let i = 1; i < mine.length - 1; i++) if (owns.has(mine[i].y)) fixed.push(i);
     fixed.push(mine.length - 1);
+    /* every shove is recorded like an anchor: the reading pages are keyed by
+       coordinate and follow the `moved` list, and a beat pushed 1,200 units by
+       the spacing pass (2015, when the 2017 hall arrived) had lost its page —
+       and been handed its neighbour's — because the pass left no trace */
     const shove = (b, d) => {
       if (Math.abs(d) < 1) return;
-      for (const s of BEATS) if (s.sub != null && Math.abs(s.sub - b.x) < 1){ s.x += d; s.sub = b.x + d; }
+      for (const s of BEATS) if (s.sub != null && Math.abs(s.sub - b.x) < 1){ moved.push([s.x, s.x + d]); s.x += d; s.sub = b.x + d; }
+      moved.push([b.x, b.x + d]);
       b.x += d;
     };
+    /* A WIDE BAY BOUNDS ITS NEIGHBOURS AT ITS EDGE. Spacing free beats up to a
+       pinned beat's CENTRE is fine when the bay is a panel's width, but the 2017
+       hall is 3,000 wide, and measured to its centre the last free beat (2015)
+       was handed a place inside it — its year printed on the glass. For that
+       bay the interval ends at the pilaster, with a little air. */
+    const edge = {'2017': [REC17_L - 260, REC17_R + 260]};
     for (let f = 0; f < fixed.length - 1; f++){
       const p = fixed[f], q = fixed[f + 1];
       if (q - p < 2) continue;                       // nothing free between them
-      const xp = mine[p].x, xq = mine[q].x;
+      const eP = edge[mine[p].y], eQ = edge[mine[q].y];
+      const xp = eP ? eP[1] : mine[p].x, xq = eQ ? eQ[0] : mine[q].x;
       if (xq <= xp){
         console.warn(`rhythm: ${mine[p].y} at ${xp | 0} is not left of ${mine[q].y} at ${xq | 0}`);
         continue;
@@ -482,10 +500,11 @@ const REC4_L = SHIFT(25940), REC4_R = SHIFT(26740);   // the 2022 fastscan recre
    plain wall on each side, the breathing room the other recreations have. */
 const REC93_L = bayStart(2) + 275, REC93_R = bayStart(2) + 1225;
 /* The 2018 bay, cut inside era 4 for the same reason: no seam to bridge. */
-const REC18_L = bayStart(3) + 300, REC18_R = bayStart(3) + 1200;
+const REC17_L = bayStart(3) + 200, REC17_R = bayStart(3) + 2800;   // the 2017 glass hall: a 2600 panel in a 3000 cut
+const REC18_L = bayStart(4) + 300, REC18_R = bayStart(4) + 1200;
 /* The 2023 bay: the crossing. Cut inside era 4, 2000 wide, panel in the middle
    900 — 710 units of clear wall after the 2022 portal, 840 before the next. */
-const REC23_L = bayStart(4) + 550, REC23_R = bayStart(4) + 1450;
+const REC23_L = bayStart(5) + 550, REC23_R = bayStart(5) + 1450;
 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
@@ -691,7 +710,7 @@ function auditStatics(){
       const x = b.x + it.dx;
       const inRec = (x > REC_L && x < REC_R) || (x > REC3_L && x < REC3_R) ||
                     (x > REC93_L && x < REC93_R) || (x > REC18_L && x < REC18_R) ||
-                    (x > REC23_L && x < REC23_R) ||
+                    (x > REC23_L && x < REC23_R) || (x > REC17_L && x < REC17_R) ||
                     (x > REC2_L && x < REC2_R) || (x > REC4_L && x < REC4_R);
       if (inRec) bad.push(`wall photo inside a recreation without pz: ${b.y} ${it.img} @${x|0} — pin it to the panel`);
     }
@@ -1045,6 +1064,7 @@ function nearestBeat(x){
 const BENCH_BREAKS = [1700, 3345, 7350, 9250, 13100, 16900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
+BENCH_BREAKS.push({x: (REC17_L + REC17_R) / 2, half: (REC17_R - REC17_L) / 2 + 60});   // the glass hall stands on open floor
 // the counter clears out from the 1989 portal all the way past the 1993 stand:
 // a model of a place should stand on the floor of a room, not on a worktop
 BENCH_BREAKS.push({x: (REC3_R + REC93_R + 65) / 2, half: (REC93_R + 65 - REC3_R) / 2});
@@ -1788,6 +1808,7 @@ const FLOOR_TONES = {
     r1993: ['#c9ccd1', '#82868d'],   // the nineties office slab
     r2018: ['#eceef0', '#a9aeb4'],   // the machine hall, lit like an operating room
     r2023: ['#e8ebee', '#a4a9af'],   // the crossing
+    r2017: ['#d4d9de', '#8e959c'],   // the glass hall: the render's own polished concrete
     rDR:   ['#dde1e6', '#989ea6'],   // digital revolution: cool light stone
     r2022: ['#e4e7ea', '#a3a9b0'],   // fastscan: the whitest slab of all
   },
@@ -1815,7 +1836,9 @@ function drawFloor(){
     [REC93_L, REC93_R, T.rec.r1993],
     [REC93_R, REC2_L, T.era[2]],
     [REC2_L, REC2_R, T.rec.rDR],
-    [REC2_R, REC18_L, T.era[3]],
+    [REC2_R, REC17_L, T.era[3]],
+    [REC17_L, REC17_R, T.rec.r2017],
+    [REC17_R, REC18_L, T.era[3]],
     [REC18_L, REC18_R, T.rec.r2018],
     [REC18_R, REC4_L, T.era[3]],
     [REC4_R, REC23_L, T.era[3]],
@@ -2126,7 +2149,8 @@ function drawBeatText(b, focusAmt){
       ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
-      if (b.tOnBay && SCANBAY_LABEL) ctx.fillText(b.t, SCANBAY_LABEL.x, SCANBAY_LABEL.y + 46 * 0.36 * kk * SS);
+      const LB = b.tOnBay && BAY_LABELS[b.y];
+      if (LB) ctx.fillText(b.t, LB.x, LB.y + 46 * 0.36 * kk * SS);
       else ctx.fillText(b.t, cx, mixN(py(tY + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th && !b.thBelow && fFade > 0.05){
@@ -2185,7 +2209,8 @@ function drawBeatText(b, focusAmt){
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
       /* a title lettered on the bay photograph's plinth: it takes the picture's
          own point every frame, so it cannot drift against the render */
-      if (b.tOnBay && SCANBAY_LABEL) ctx.fillText(b.t, SCANBAY_LABEL.x, SCANBAY_LABEL.y + 46 * sc * 0.36 * kk * SS);
+      const LB = b.tOnBay && BAY_LABELS[b.y];
+      if (LB) ctx.fillText(b.t, LB.x, LB.y + 46 * sc * 0.36 * kk * SS);
       else ctx.fillText(b.t, cx, mixN(py((b.minor ? tY + 4 : tY) + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th){
@@ -2335,7 +2360,7 @@ function drawBenchDescs(){
     // slab owns this ground
     const inRec = (b.x > REC_L && b.x < REC_R) || (b.x > REC3_L && b.x < REC3_R) ||
                   (b.x > REC93_L && b.x < REC93_R) || (b.x > REC18_L && b.x < REC18_R) ||
-                  (b.x > REC23_L && b.x < REC23_R) ||
+                  (b.x > REC23_L && b.x < REC23_R) || (b.x > REC17_L && b.x < REC17_R) ||
                   (b.x > REC2_L && b.x < REC2_R) || (b.x > REC4_L && b.x < REC4_R);
     if (!onTable && !inRec){
       // prefer the counter to the right: the tour reads left to right,
@@ -4107,7 +4132,7 @@ function drawProgress(t){
   const W0 = INTRO_X, W1 = FIN_X;
   const at = wx => x0 + span * Math.max(0, Math.min(1, (wx - W0) / (W1 - W0)));
   const RECS = [[REC_L, REC_R], [REC3_L, REC3_R], [REC93_L, REC93_R],
-                [REC2_L, REC2_R], [REC18_L, REC18_R], [REC4_L, REC4_R],
+                [REC2_L, REC2_R], [REC17_L, REC17_R], [REC18_L, REC18_R], [REC4_L, REC4_R],
                 [REC23_L, REC23_R]];
   // 1970 is a recreation too — the founding bench stands in its own cut bay, so
   // it earns the same pip as the other portals. The gap is taken at the width
@@ -4786,9 +4811,9 @@ function drawDesignStation(b, t){
 
 
 let AI_ROBOT_X = null, PENDANT_AT = null, PENDANT_X = null;
-/* where the 2022 bay photograph put its plinth face this frame — the title
-   FASTSCAN.IO is lettered on it, so it is pinned to the picture, not the air */
-let SCANBAY_LABEL = null;
+/* where a bay photograph put its plinth face this frame, by year — a title
+   flagged tOnBay is lettered on it, so it is pinned to the picture, not the air */
+const BAY_LABELS = {};
 /* THE PENDANT IS ON THE NEAR PLANE. It was drawn inside the cell, at the cell's
    depth — inside the counters' own depth range — so as the camera moved it slid
    out from behind the counter's end and stood in front of it: behind the table
@@ -5951,7 +5976,7 @@ function drawRec4(t){
                     Math.round(dw), Math.round(dh));
       /* the plinth's face in the render runs rows 1250–1510 of 1573; its middle
          is where the title sits — centred on the block, on the picture's plane */
-      SCANBAY_LABEL = {x: bx0 + bw / 2, y: bh - dh * (1 - 1380 / 1573), k: kc};
+      BAY_LABELS['2022'] = {x: bx0 + bw / 2, y: bh - dh * (1 - 1380 / 1573), k: kc};
       /* the exhibit flares as you arrive, the way the years and the lamps do */
       const near = Math.max(0, 1 - Math.abs(mid - cam.x) / 900);
       if (near > 0.02){
@@ -5967,10 +5992,11 @@ function drawRec4(t){
 /* the pilasters are drawn twice: once with the panel, and once again AFTER the
    floor sheen — a column stands ON the floor, so its body must sit over the
    reflection, not under a milky wash of it */
-function drawRec4Columns(yBase, floorOnly){
+function drawRec4Columns(yBase, floorOnly){ drawPortalColumns([REC4_L, REC4_R, REC17_L, REC17_R], yBase, floorOnly); }
+/* the same steel pilaster frames the 2017 glass hall and the 2022 portal */
+function drawPortalColumns(cols, yBase, floorOnly){
   if (yBase == null) yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
-  const mid = (REC4_L + REC4_R) / 2;
-  if (Math.abs(cam.x - mid) > 2800) return;
+  if (!cols.some(wxc => Math.abs(cam.x - wxc) < 2800)) return;
   /* THE SECOND PASS IS FOR THE FLOOR ALONE. Repainting the whole column after
      the reflection put it over everything drawn before — including the factory
      robots, which stand a thousand units in FRONT of it: walking up to 2019 the
@@ -5981,7 +6007,7 @@ function drawRec4Columns(yBase, floorOnly){
     const yFloorTop = py(1080, k((SEGMENTS[3].z0 || 1400) - 8));
     ctx.beginPath(); ctx.rect(0, yFloorTop, W, H - yFloorTop); ctx.clip();
   }
-  for (const wxc of [REC4_L, REC4_R]){
+  for (const wxc of cols){
     const kc = k(992);
     const sxc = px(wxc, kc);
     const cw = 120 * kc * SS;
@@ -5995,6 +6021,50 @@ function drawRec4Columns(yBase, floorOnly){
     ctx.fillRect(sxc + cw/2 - 4*SS, 0, 2*SS, yBase);
   }
   if (floorOnly) ctx.restore();
+}
+
+/* THE GLASS HALL. 2017 — the lab moves into the chair — is set in Eldar's
+   render of a white atrium under a glass vault, a tooth of light hovering over
+   a plinth. As with the 2022 bay the render goes in whole: one rectangle between
+   two pilasters, cover-fitted (the outer wings crop a little, the vault and the
+   tooth stay), its bottom on the hall's own floor line, on whole pixels so a
+   rigid picture crossing the frame cannot boil. The render's floor is cut just
+   past the ring of light, so the plinth keeps its foot and the ring stays, and
+   the hall's floor takes over under it. The mill stands on its plinth in front,
+   under the hovering tooth. */
+function drawRec17(t){
+  const mid = (REC17_L + REC17_R) / 2;
+  if (Math.abs(cam.x - mid) > 3800) return;
+  const kk = k(1000);
+  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const x0 = px(REC17_L, kk), x1 = px(REC17_R, kk);
+  const wg = ctx.createLinearGradient(0, 0, 0, yBase);
+  wg.addColorStop(0, '#dfe7ee'); wg.addColorStop(0.5, '#f4f8fb'); wg.addColorStop(1, '#c7ced4');
+  ctx.fillStyle = wg; ctx.fillRect(x0, 0, x1 - x0, yBase);
+  const sp = PROP_SPRITES.ph_hall17;
+  if (sp){
+    const kc = k(992);
+    const cw = 120 * kc * SS;                        // the pilasters' own width
+    const bx0 = px(REC17_L, kc) + cw / 2, bx1 = px(REC17_R, kc) - cw / 2;
+    const bw = Math.max(1, bx1 - bx0), bh = yBase;
+    const scale = Math.max(bw / sp.w, bh / sp.h);    // cover: fill it, crop the wings
+    const dw = sp.w * scale, dh = sp.h * scale;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(Math.round(bx0), 0, Math.round(bw), Math.round(bh)); ctx.clip();
+    ctx.drawImage(spriteMip(sp, Math.round(dw), Math.round(dh)),
+                  Math.round(bx0 + (bw - dw) / 2), Math.round(bh - dh),
+                  Math.round(dw), Math.round(dh));
+    // the plinth's face in the render runs rows 686–724 of 752: the title is lettered on it
+    BAY_LABELS['2017'] = {x: bx0 + bw / 2, y: bh - dh * (1 - 706 / 752), k: kc};
+    const near = Math.max(0, 1 - Math.abs(mid - cam.x) / 1100);
+    if (near > 0.02){
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = 'rgba(160,205,255,' + (0.06 * near * near).toFixed(3) + ')';
+      ctx.fillRect(bx0, 0, bw, bh);
+    }
+    ctx.restore();
+  }
+  drawPortalColumns([REC17_L, REC17_R], yBase);
 }
 
 /* the 1989 recreation: era 2 ends; a light panel carries the USA mail map;
@@ -7104,6 +7174,7 @@ async function loadPhotoSkin(){
     ph_scanner: 'scanner.png',        // fastscan.io, the instrument itself, not a drawing of it
     ph_mill: 'mill_io.png',           // fastmill.io, the same — cut out of its studio render
     ph_scanbay: 'scan_bay.jpg',       // the 2022 bay: the whole render, rectangle and all
+    ph_hall17: 'hall_2017.jpg',       // the 2017 bay: the glass hall, cut just past the ring on its floor
     front_e4: 'front_e4.jpg',         // the white era's counter face: one door of Eldar's render, mid-door to mid-door
     bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
     bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
@@ -11135,6 +11206,7 @@ function frame(){
   drawRec3(t);
   drawRec93(t);
   drawRec2(t);
+  drawRec17(t);
   drawRec18(t);
   drawRec23(t);
   drawRec4(t);
@@ -11608,7 +11680,7 @@ async function boot(){
   if (/[?&]map=1/.test(location.search)){
     const LET = ['A', 'B', 'C', 'D'];
     const REC_SPANS = [['1979', REC_L, REC_R], ['1989', REC3_L, REC3_R], ['1993', REC93_L, REC93_R],
-                       ['DR', REC2_L, REC2_R], ['2018', REC18_L, REC18_R],
+                       ['DR', REC2_L, REC2_R], ['2017', REC17_L, REC17_R], ['2018', REC18_L, REC18_R],
                        ['2022', REC4_L, REC4_R], ['2023', REC23_L, REC23_R]];
     const out = [];
     let prev = null;
@@ -11685,7 +11757,7 @@ async function boot(){
     }
     for (const [nm, a, b, z] of [['1979', REC_L, REC_R, 610], ['1989', REC3_L, REC3_R, 728],
         ['1993', REC93_L, REC93_R, 728], ['Digital Revolution', REC2_L, REC2_R, 970],
-        ['2018', REC18_L, REC18_R, 1000], ['2022', REC4_L, REC4_R, 1000],
+        ['2017', REC17_L, REC17_R, 1000], ['2018', REC18_L, REC18_R, 1000], ['2022', REC4_L, REC4_R, 1000],
         ['2023', REC23_L, REC23_R, 1000]])
       add(z, 'REC', nm + ' panel', a, b);
     add(520, 'LIGHT', 'showroom chandelier hoops', SHOW_L, SHOW_R);
