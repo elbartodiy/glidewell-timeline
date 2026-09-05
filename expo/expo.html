@@ -8931,8 +8931,11 @@ const STUDY_MORE = {"5680": "The crown that built the lab. Porcelain-fused-to-me
    right side — the same clips that hang on the year cards by topic. */
 const PEOPLE = {
   jim:    {name:'Jim Glidewell, CDT', role:'Founder and president · one bench in 1970', img:'jimnow',
-           bio:["A dental technician who started alone at a kitchen table in Orange County in January 1970 — founder and, for a while, the only employee. Before that: a Kentucky farm near the Cumberland River, a latchkey childhood, the Navy, and Orange Coast College.",
-                "The company he built is the argument this whole hall makes. He did not invent zirconia, or CAD/CAM, or the implant; he took each of them and drove the price down until an ordinary practice could say yes."],
+           bio:["A Kentucky farm near the Cumberland River, a latchkey childhood, and a Navy hitch during the Vietnam era. At twenty-one he came home and sold Prudential and New York Life insurance door to door in Las Vegas — which is where the instinct behind the 1976 direct-mail campaign comes from, long before there was a lab to mail anything for.",
+                "He finished the dental technology program at Orange Coast College in 1969 and went to work as a bench technician in a private practice in Santa Ana. On 15 January 1970 he opened his own laboratory in Tustin, serving five dentists: founder, ceramist and, for a while, the only employee.",
+                "What he was good at was the trade of the day — porcelain fused to metal, cast and layered and fired by hand. The lab grew on it: nine laboratories across Southern California by 1979, all but two consolidated into one Orange plant in 1984, 175 people serving 3,500 dentists by 1989, and mail bringing 95% of the work. National without having left the county.",
+                "Then he did the thing that defines him. Burned by depending on an outside material, and pushed by Dr. Rella Christensen's idea of a crown ordinary people could afford, he built the company's own research. In 2009 that produced BruxZir — a solid zirconia crown with no porcelain to chip — and it went on to displace the PFM the lab had been built on. He killed his own best-seller, and then let rival laboratories mill it too.",
+                "He did not invent zirconia, or CAD/CAM, or the implant. He took each of them and drove the price down until an ordinary practice could say yes. That is the argument this whole hall is making."],
            clips:[{src:'media/jim_glass.mp4', label:'in his own workshop'}]},
   rella:  {name:'Dr. Rella Christensen', role:'TRAC Research · the idea of a crown for everyone', img:'rella'},
   ditolla:{name:'Dr. Michael DiTolla', role:'Chairside Magazine · the clinical voice', img:'ditolla'},
@@ -9487,8 +9490,17 @@ function roleShort(role){
    moves about an eighth of the window. A drag keeps roughly the hand's own
    distance instead of ten times it. */
 function pageScroll(S, inp, dt){
+  /* THE SHEET HAS A TOP. Overscroll used to run to -240 because scrolling past
+     the top was how you closed a page; now that a page closes only on a click,
+     that slack was just a hand's width of empty air above the first line, and
+     it stayed there. It rubber-bands instead: you can pull about a line and a
+     half past the top and it springs back. */
   S.scroll += inp.impulse * (inp.dragging ? 0.055 : 0.43);
-  S.scroll = Math.max(-240, Math.min(S.maxScroll, S.scroll));
+  S.scroll = Math.max(-56, Math.min(S.maxScroll, S.scroll));
+  if (S.scroll < 0 && !inp.dragging){
+    S.scroll += (0 - S.scroll) * Math.min(1, (dt || 0.016) * 9);
+    if (S.scroll > -0.4) S.scroll = 0;
+  }
 }
 function drawPeople(){
   const S = state.people; if (!S) return;
@@ -9608,8 +9620,26 @@ function openPerson(id){
   if (!PEOPLE[id]) return;
   if (state.person) personStop(state.person);
   state.person = {id, scroll: 0, amt: 0, maxScroll: 1, playing: null, v: null};
-  // the voice starts as the page opens; the hall film bows out on its own
-  if (PEOPLE[id].clips && PEOPLE[id].clips.length) personPlay(state.person, 0);
+  /* THE PAGE OPENS, NOT THE PLAYER. It used to call personPlay, which is the
+     full-screen clip view — so tapping a face in the voices list landed you on
+     something that looked like YouTube instead of on the person. The voice
+     still starts by itself as the page opens; it just starts in the rail,
+     beside the words, and a tap on it expands to the player. */
+  const P = PEOPLE[id];
+  if (P.clips && P.clips.length) personPreview(state.person, 0);
+}
+/* the clip runs small, in the rail, with the page around it */
+function personPreview(S, i){
+  const P = PEOPLE[S.id], c = P.clips && P.clips[i];
+  if (!c) return;
+  let v = VIDEO_EL[c.src];
+  if (!v){
+    v = document.createElement('video');
+    v.src = c.src; v.preload = 'auto'; v.playsInline = true;
+    VIDEO_EL[c.src] = v;
+  }
+  S.v = v; S.playing = null; S.preview = i;
+  try { if (v.paused) v.currentTime = 0; v.play(); } catch(e){}
 }
 function personPlay(S, i){
   const P = PEOPLE[S.id], c = P.clips && P.clips[i];
@@ -9626,7 +9656,7 @@ function personPlay(S, i){
 }
 function personStop(S){
   if (S && S.v){ try { S.v.pause(); } catch(e){} }
-  if (S){ S.playing = null; S.v = null; }
+  if (S){ S.playing = null; S.v = null; S.preview = null; }
 }
 function drawPerson(){
   const S = state.person; if (!S) return;
@@ -9799,12 +9829,22 @@ function drawPerson(){
       const c = clips[ci];
       const tw = 300*SS, th = 170*SS, ty = my;
       const live = watching && ci === S.playing;
+      /* THE PAGE IS ALREADY SPEAKING. When the clip runs in the rail rather
+         than in the player, the tile shows the picture it is playing, not a
+         poster with a play button over it — the page opens and the person is
+         talking, which is the whole point of it. */
+      const previewing = !watching && S.preview === ci && S.v && !S.v.paused && S.v.readyState >= 2;
       if (ty + th > topClip && ty < botClip){
         ctx.save();
         ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 6*SS); ctx.clip();
         ctx.fillStyle = '#14181d';
         ctx.fillRect(mx, ty, tw, th);
-        const im = thumbFor(c) || face;
+        const im = previewing ? null : (thumbFor(c) || face);
+        if (previewing){
+          const vw2 = S.v.videoWidth || 16, vh2 = S.v.videoHeight || 9;
+          const s2 = Math.max(tw/vw2, th/vh2);
+          ctx.drawImage(S.v, mx + tw/2 - vw2*s2/2, ty + th/2 - vh2*s2/2, vw2*s2, vh2*s2);
+        }
         if (im){
           const s = Math.max(tw/im.w, th/im.h);
           ctx.globalAlpha = a * (live ? 0.55 : 0.92);
@@ -9814,7 +9854,7 @@ function drawPerson(){
         const pg = ctx.createLinearGradient(0, ty + th*0.5, 0, ty + th);
         pg.addColorStop(0, 'rgba(8,10,14,0)'); pg.addColorStop(1, 'rgba(8,10,14,0.85)');
         ctx.fillStyle = pg; ctx.fillRect(mx, ty, tw, th);
-        if (!live){
+        if (!live && !previewing){
           ctx.fillStyle = 'rgba(252,252,251,0.94)';
           ctx.beginPath(); ctx.arc(mx + tw/2, ty + th/2 - 8*SS, 25*SS, 0, 7); ctx.fill();
           ctx.fillStyle = `rgba(${K.red},1)`;
@@ -9823,7 +9863,7 @@ function drawPerson(){
           ctx.lineTo(mx + tw/2 + 13*SS, ty + th/2 - 8*SS);
           ctx.lineTo(mx + tw/2 - 7*SS, ty + th/2 + 5*SS);
           ctx.closePath(); ctx.fill();
-        } else {
+        } else if (live){   // the badge belongs to the player, not to the rail
           ctx.font = K.font(15);
           try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
           ctx.fillStyle = `rgba(${K.red},1)`;
@@ -10005,10 +10045,16 @@ function update(dt){
         else if (aimed && aimed.type === 'playpause'){
           if (S.v){ try { S.v.paused ? S.v.play() : S.v.pause(); } catch(e){} }
         }
-        else if (aimed && aimed.type === 'stopclip'){ personStop(S); S.scroll = 0; }
+        else if (aimed && aimed.type === 'stopclip'){   // out of the player, back to the page — still speaking
+          S.playing = null; S.scroll = 0;
+          if (PEOPLE[S.id].clips && PEOPLE[S.id].clips.length) personPreview(S, S.preview || 0);
+        }
         else if (aimed && aimed.type === 'person' && aimed.id !== S.id) openPerson(aimed.id);
         else if (aimed && aimed.type === 'voices'){ S.closing = true; if (!state.people) openPeople(); }
-        else if (S.playing != null){ personStop(S); S.scroll = 0; }   // out of the clip, not out of the page
+        else if (S.playing != null){   // out of the clip, not out of the page
+          S.playing = null; S.scroll = 0;
+          if (PEOPLE[S.id].clips && PEOPLE[S.id].clips.length) personPreview(S, S.preview || 0);
+        }
         else S.closing = true;
       } else if (inp.action === true) S.closing = true;   // scrolling past the top does NOT close it
       cam.vel = 0;
