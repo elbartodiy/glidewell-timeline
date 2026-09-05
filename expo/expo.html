@@ -8139,9 +8139,16 @@ let VIG = null;
 function makeVignette(){
   VIG = document.createElement('canvas'); VIG.width = Math.max(2, W>>1); VIG.height = Math.max(2, H>>1);
   const g = VIG.getContext('2d');
-  const vg = g.createRadialGradient(VIG.width/2, VIG.height*0.46, VIG.height*0.35, VIG.width/2, VIG.height*0.52, VIG.height*0.95);
+  /* It was closing too far in and going too dark: 0.62 at the corner, starting
+     to fall at a third of the way out, so the darkness reached well into the
+     picture rather than sitting in the corners of it. The clear middle is wider
+     now and the corner is a quarter lighter. The eras keep their relationship —
+     the analog century is still the dark one and the white room still carries
+     less of it — the whole thing simply weighs less. */
+  const vg = g.createRadialGradient(VIG.width/2, VIG.height*0.46, VIG.height*0.44, VIG.width/2, VIG.height*0.52, VIG.height*0.98);
   vg.addColorStop(0, 'rgba(0,0,0,0)');
-  vg.addColorStop(1, 'rgba(4,1,0,0.62)');
+  vg.addColorStop(0.55, 'rgba(4,1,0,0.13)');
+  vg.addColorStop(1, 'rgba(4,1,0,0.46)');
   g.fillStyle = vg; g.fillRect(0, 0, VIG.width, VIG.height);
 }
 function drawGrade(t){
