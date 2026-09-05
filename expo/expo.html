@@ -39,6 +39,7 @@
   <div id="docHead">
     <h1>Timeline &mdash; open items</h1>
     <span class="sub">what the hall publishes, what it does not, and where the rest belongs</span>
+    <button id="docLang">RU</button>
     <button id="docCopy">Copy all</button>
     <button id="docClose">Close</button>
   </div>
@@ -924,6 +925,7 @@ function attachMouseDriver(el){
     // centre under the cursor.
     if (musicMarkHit(pt)){ toggleMusic(); down = false; return; }
     if (soundMarkHit(pt)){ toggleSound(); down = false; return; }
+    if (voicesMarkHit(pt)){ if (!state.people) openPeople(); down = false; return; }
     if (ruleHit(pt)){
       const g = ruleGeom();
       const grabbed = Math.abs(g.at(cam.x) - pt.x) < Math.max(18 * SS, (g.at(cam.x + g.half) - g.at(cam.x - g.half)) / 2);
@@ -1169,7 +1171,141 @@ function initTables(){
    begins — the audit of what this timeline still owes. It is the one thing
    here that is NOT painted on canvas, because the point of it is that the text
    can be selected and carried out. */
-const DOC_TEXT = `ЛЕНТА — ЧТО ОПУБЛИКОВАНО, ЧЕГО НЕТ
+const DOC = {
+  en: `TIMELINE — WHAT IS PUBLISHED, WHAT IS NOT
+The canonical fact list (~90 entries) checked against what actually stands in
+BEATS and in the STUDY_MORE pages. Compiled 4 September 2026.
+Thirty-two beats on the wall today; twenty of them carry a detail page.
+
+
+1. ALREADY ON THE WALL, AND CONFIRMED BY THE LIST
+
+1907 lost-wax . 1970 founded . 1970s PFM . 1973 second lab .
+1976 direct mail . 1979 nine laboratories . 1984 consolidation
+(plus "most cases now arrive from out of town" inside the beat) . 1988 BioTemps .
+1989 (175 people / 3,500 dentists / 95% by post) . 1993 Newport, 71,000 sq ft .
+1995 operatory + PlaySafe . 1996 Silent Nite . 1998 Chairside Perspectives .
+1999 In-Ceram Zirconia . 2000 Plastic Injection . 2001 first website .
+2005 Prismatik (plus Dentalcraft 2006) . 2007 first digital impression .
+2009 BruxZir (plus the Authorized BruxZir Lab programme) . 2009-13 screw-retained
+(plus Inclusive TRS 2012, Full-Arch 2013) . 2012 IOS / FastScan (plus ITC 2011) .
+2015 Hahn . 2017 glidewell.io . 2018 the first AI crown (plus UC Berkeley) .
+2022 fastscan.io . 2023 the crossover.
+
+
+2. MISSING AND BIG ENOUGH TO PUT ON THE WALL AS A YEAR
+
+  December 2001 - BioTemps moves to Irvine, 92,000 sq ft.
+      Why the wall: the hall has a chain of moves, 1973 to 1984 to 1993, and
+      then it stops. Irvine is the campus the company sits on now, and it is
+      simply not on the timeline.
+
+  May 2023 - fastprint.io, with LuxCreo.
+      Why the wall: the ecosystem on the wall has SCAN and MILL but no PRINT.
+      The third verb is missing as a category.
+
+  May 2024 - Clear Aligners, powered by ProMonitoring.
+      Why the wall: a whole product category is absent. It is also the end of
+      the "beyond the crown" line: PlaySafe, Silent Nite, aligners.
+
+  Borderline, decide yes or no:
+  . January 2013 - Obsidian Lithium Silicate. After BruxZir, the second name
+    the profession actually knows.
+  . May 2025 - Glidewell TV. It closes the teaching line: newsletter 1998,
+    magazine 2006, Chairside Live 2012, YouTube, and now a streaming network.
+
+
+3. FOR THE DETAIL PAGES, NOT THE WALL
+
+  Page 1970 (the founding)
+  . 1966 - home from the Navy at twenty-one, selling Prudential and New York
+    Life insurance door to door in Las Vegas. A strong detail: it is also where
+    the direct-mail instinct of 1976 comes from.
+  . 1969 - technician in a private practice in Santa Ana.
+  . January 1970 - Tustin, and FIVE dentists.
+  . 1971 - a move to a larger space in Orange.
+  . 1976 - the third move, again in Orange.
+
+  Page 1998 (teaching and media)
+  . June 1998 - Dr Walter Havekorst, Director of Education.
+  . 2006 - the first issue of Chairside Magazine.
+  . March 2014 - Lab Perspectives.
+  . May 2012 - Chairside Live, the weekly web series.
+  . May 2025 - Glidewell TV. April 2026 - YouTube passes 150,000 subscribers.
+
+  Page 2000 (R&D)
+  . February 2000 - Transition Crowns & Bridges.
+  . October 2000 - Capture, its own VPS formula.
+  . November 2000 - BioPress.
+    Three of its own materials in a single year: that is the evidence R&D was
+    born. The beat currently rests only on the Artglass story and Rella
+    Christensen.
+  . November 2002 - belleGlass (Kerr). January 2003 - Wol-Ceram.
+    April 2003 - PFM production moves to Ceramco 3.
+
+  Page 2001 (the website and the voice)
+  . February 2001 - name Mike DiTolla. He is currently "the voice on camera",
+    anonymously.
+  . July 2001 - Comfort Bite Splints, which becomes Comfort3D in November 2022.
+
+  Implants (pages 2009-13 and 2015)
+  . April 2011 - Inclusive Mini Implant System.
+  . February 2012 - Inclusive Tapered Implant.
+  . September 2016 - Newport Surgical: grafting materials, membranes, instruments.
+  . November 2018 - digital treatment planning and surgical guides.
+  . July 2022 - tissue- and bone-supported full-arch guides.
+  . August 2025 - GlidePRO Stackable. August 2026 - GlidePRO Complete.
+  . 2025 - four million implant restorations.
+
+  The BruxZir family (page 2009)
+  . August 2015 - BruxZir NOW chairside milling blocks.
+  . March 2015 - BruxZir Anterior.
+  . May 2018 - BruxZir Esthetic, the first 5Y zirconia on the market indicated
+    for everything from a crown to a full-arch prosthesis.
+  . June 2020 - Esthetic NOW. June 2021 - the Shade Guide.
+  . January 2022 - NOW Bridge Block. October 2024 - Next-Day BruxZir.
+  . February 2025 - BruxZir Fusion.
+
+  Sleep and appliances (page 1996)
+  . January 2010 - aveoTSD.
+  . November 2022 - Comfort3D, the first digitally designed 3D-printed nightguard.
+  . May 2023 - the ORB Innovations acquisition: tracking inside the appliance.
+  . 25 March 2025 - ten million oral appliances delivered.
+
+  Data (page 2007)
+  . September 2010 - Clear-Lock Retainers for Life: the scan is kept for thirty
+    years. An early version of the same idea as "the case archive becomes data".
+
+  AI (page 2020)
+  . May 2021 - CrownAI, fastdesign.io 10.1.
+  . July 2021 - MarginAI, fastdesign.io 10.3.
+  . 2025 - four million restorations designed by AI.
+
+  Page 2026
+  . 85 million units of all-time production.
+  . Two million crowns milled chairside by glidewell.io users.
+
+
+4. DISCREPANCIES - THESE NEED A DECISION
+
+  1) 1970. Our text says "Orange County" and "a kitchen table". The list says
+     Tustin and five dentists. Which stands? Take "five dentists" either way:
+     it is the best number in the whole opening.
+
+  2) BruxZir NOW. Our 2017 beat presents it as part of glidewell.io. The list
+     dates the blocks to August 2015, two years earlier.
+
+  3) Three of our beats are not in the list at all: 1980 Study Program,
+     2019 BruxZir Factory, 2019 Guiding Leaders. Is the list incomplete, or do
+     the dates need checking?
+
+  4) 2000 "R&D IS BORN" is our editorial construction; no such event is in the
+     list. Keep it, but prop it up with the three materials of 2000 (section 3).
+
+  5) "July 2026 - 85 million units" sits in the list between May and August
+     2025. It looks like a typo for July 2025.
+`,
+  ru: `ЛЕНТА — ЧТО ОПУБЛИКОВАНО, ЧЕГО НЕТ
 Сверка канонического списка фактов (~90 пунктов) с тем, что реально стоит
 в BEATS и в страницах STUDY_MORE. Составлено 4 сентября 2026.
 Сейчас на стене 32 бита, у 20 из них есть страница с подробностями.
@@ -1303,10 +1439,16 @@ const DOC_TEXT = `ЛЕНТА — ЧТО ОПУБЛИКОВАНО, ЧЕГО НЕ�
 
   5) «July 2026 — 85 млн единиц» стоит в списке между маем и августом
      2025. Похоже на опечатку: вероятно, июль 2025.
-`;
+`,
+};
+let DOC_LANG = 'en';        // the hall speaks English first; RU is one tap away
+function renderDoc(){
+  document.getElementById('docBody').textContent = DOC[DOC_LANG];
+  document.getElementById('docLang').textContent = DOC_LANG === 'en' ? 'RU' : 'EN';
+}
 function openDoc(){
   const el = document.getElementById('doc');
-  document.getElementById('docBody').textContent = DOC_TEXT;
+  renderDoc();
   el.classList.add('on');
   state.docOpen = true;
 }
@@ -1317,10 +1459,14 @@ function closeDoc(){
 function initDoc(){
   const el = document.getElementById('doc');
   document.getElementById('docClose').addEventListener('click', closeDoc);
+  document.getElementById('docLang').addEventListener('click', () => {
+    DOC_LANG = DOC_LANG === 'en' ? 'ru' : 'en';
+    renderDoc();
+  });
   el.addEventListener('pointerdown', e => { if (e.target === el) closeDoc(); });
   document.getElementById('docCopy').addEventListener('click', async () => {
     const btn = document.getElementById('docCopy');
-    try { await navigator.clipboard.writeText(DOC_TEXT); }
+    try { await navigator.clipboard.writeText(DOC[DOC_LANG]); }
     catch (err){
       // no clipboard permission: fall back to selecting it for the hand
       const r = document.createRange(); r.selectNodeContents(document.getElementById('docBody'));
@@ -2956,8 +3102,7 @@ function drawFinaleTable(t){
     const w = gd.w * kk * SS, h = w * sp.h / sp.w;
     const yF = py(CFG.benchY - 2, kk);
     drawGlow('190,225,255', sx, yF - h*0.45, w*1.5, 0.10);
-    const dw = Math.round(w), dh = Math.round(h);
-    ctx.drawImage(spriteMip(sp, dw, dh), Math.round(sx - dw/2), Math.round(yF - dh), dw, dh);
+    ctx.drawImage(spriteMip(sp, w, h), sx - w/2, yF - h, w, h);   // smooth: they stand in a row together
     pushHit(sx - w/2, yF - h, w, h,
             {type:'photo', sp: Object.assign({inner:{w:sp.w, h:sp.h}}, sp),
              wx: FIN_X + gd.dx, cy: CFG.benchY - 120, z: gd.z, w: gd.w * 2.2,
@@ -3447,6 +3592,7 @@ function toggleMusic(){
    in by the slash, not by a label. */
 function musicMarkBox(){ const s = 22 * SS; return {x: 26 * SS, y: 26 * SS, w: s, h: s}; }
 function soundMarkBox(){ const s = 22 * SS; return {x: 68 * SS, y: 26 * SS, w: s, h: s}; }
+function voicesMarkBox(){ const s = 22 * SS; return {x: 110 * SS, y: 26 * SS, w: s, h: s}; }
 function markHit(b, pt){
   if (!pt) return false;
   const pad = 10 * SS;
@@ -3455,6 +3601,7 @@ function markHit(b, pt){
 }
 function musicMarkHit(pt){ return markHit(musicMarkBox(), pt); }
 function soundMarkHit(pt){ return markHit(soundMarkBox(), pt); }
+function voicesMarkHit(pt){ return markHit(voicesMarkBox(), pt); }
 function drawMusicMark(){
   const A = Math.max(0.25, state.ruleA);          // they live with the rule
   if (A < 0.03) return;
@@ -3514,6 +3661,23 @@ function drawMusicMark(){
       }
       ctx.globalAlpha = 1;
     }
+  }
+  /* THE VOICES. The people who tell this story are the closest thing the hall
+     has to testimony, and until now you could only meet them by walking into
+     the year they happen to stand in. They get a door of their own, next to the
+     two sound switches: a head and shoulders, and the list opens. */
+  {
+    const b = voicesMarkBox();
+    const hot = voicesMarkHit(Input.hover) ? 1 : 0;
+    const a = 0.34 * A + 0.30 * hot;
+    ctx.strokeStyle = `rgba(${seg.ink},${a.toFixed(3)})`;
+    ctx.fillStyle = `rgba(${seg.ink},${a.toFixed(3)})`;
+    ctx.lineWidth = 1.7 * SS;
+    const cx = b.x + b.w * 0.5, cy = b.y + b.h * 0.5, sq = b.h;
+    ctx.beginPath(); ctx.arc(cx, cy - sq * 0.20, sq * 0.19, 0, 7); ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy + sq * 0.40, sq * 0.36, Math.PI * 1.08, Math.PI * 1.92);
+    ctx.stroke();
   }
   ctx.restore();
 }
@@ -4045,7 +4209,9 @@ function drawRec23(t){
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(60,70,84,0.95)';
-  ctx.fillText('march 2023 \u00b7 the digital impressions outnumber the physical', cx, py(66, kk));
+  /* twenty units under a fifty-eight unit line is not a gap, it is a collision:
+     the sub sat inside the descenders of the title. It gets its own air now. */
+  ctx.fillText('march 2023 \u00b7 the digital impressions outnumber the physical', cx, py(96, kk));
   ctx.restore();
 
   const ph = crossPhase(mid);
@@ -7186,19 +7352,6 @@ function makePedObj(kind){
     }
     g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 1.5;
     g.beginPath(); g.roundRect(15.5, 15.5, 189, 117, 5); g.stroke();
-  } else if (kind === 'logoG'){
-    size(170, 160);
-    // the mark itself, monumental
-    g.save();
-    g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 12; g.shadowOffsetY = 6;
-    g.fillStyle = '#d0342c';
-    g.beginPath(); g.roundRect(25, 20, 120, 120, 16); g.fill();
-    g.restore();
-    g.fillStyle = '#ffffff';
-    g.textAlign = 'center';
-    g.font = '800 82px "Helvetica Neue", Arial, sans-serif';
-    g.fillText('G', 85, 110);
-    g.textAlign = 'left';
   } else if (kind === 'crown2'){
     size(170, 150);
     g.save(); g.translate(85, 78);
@@ -7335,12 +7488,13 @@ function drawPedestal(b, t, hero){
   /* a wide, low machine needs more of the cap than a puck does — `wide` lets
      an exhibit ask for it, and the dome is 172 units across, so it still fits */
   const ow = 120 * (ped.wide || 1) * (ped.vitrine ? 1.25 : big) * kk * SS, oh = ow * obj.h / obj.w;
-  // whole pixels, like the vitrine's wand: a rigid object that lands between
-  // two pixels re-smears itself every frame and its contour crawls
-  {
-    const dw = Math.round(ow), dh = Math.round(oh);
-    ctx.drawImage(spriteMip(obj, dw, dh), Math.round(sx - dw/2), Math.round(yTop - dh - 4*kk*SS), dw, dh);
-  }
+  /* NOT snapped to whole pixels. The 2022 bay is one big rectangle with
+     nothing beside it at its own scale, so rounding its position is invisible;
+     a group of objects is the opposite case — each one sits at its own
+     fractional offset and crosses its pixel boundary at its own moment, so on
+     a slow scroll they shuffle against one another like loose type. The
+     prescaled copy already removes the boiling; the position stays smooth. */
+  ctx.drawImage(spriteMip(obj, ow, oh), sx - ow/2, yTop - oh - 4*kk*SS, ow, oh);
   // glass dome: one clean outline, the sheen lives on the glass itself
   // (a vitrine pedestal has the capsule for a case — no dome, no spotlight halo)
   if (!ped.vitrine){
@@ -9646,7 +9800,7 @@ function update(dt){
         else if (aimed && aimed.type === 'voices'){ S.closing = true; if (!state.people) openPeople(); }
         else if (S.playing != null){ personStop(S); S.scroll = 0; }   // out of the clip, not out of the page
         else S.closing = true;
-      } else if (S.scroll < -200 || inp.action === true) S.closing = true;
+      } else if (inp.action === true) S.closing = true;   // scrolling past the top does NOT close it
       cam.vel = 0;
     } else if (state.people){
       const S = state.people;
@@ -9655,7 +9809,7 @@ function update(dt){
         const aimed = hitAt(inp.action.x, inp.action.y);
         if (aimed && aimed.type === 'person') openPerson(aimed.id);
         else S.closing = true;
-      } else if (S.scroll < -200 || inp.action === true) S.closing = true;
+      } else if (inp.action === true) S.closing = true;   // scrolling past the top does NOT close it
       cam.vel = 0;
     } else if (state.study){
       // the reading page: the wheel scrolls, names open their people, a click closes
@@ -9668,7 +9822,7 @@ function update(dt){
         } else if (aimed && aimed.type === 'person' && PEOPLE[aimed.id]){
           openPerson(aimed.id);     // the name in the text goes to the person, not to a portrait
         } else S.closing = true;
-      } else if (S.scroll < -200 || inp.action === true) S.closing = true;
+      } else if (inp.action === true) S.closing = true;   // a key closes it; scrolling past the top does NOT
       cam.vel = 0;
     } else {
       if (Math.abs(inp.impulse) > 24) startFilm();   // the wheel starts the show
@@ -10039,19 +10193,11 @@ function drawShowroom(t){
       ctx.beginPath(); ctx.ellipse(rx, ry + 3.5 * kC * SS, rr, rr * 0.235, 0, 0, 7); ctx.stroke();
     }
   }
-  // and the monogram, cut into the wood as a relief and lit from its edge
-  const mx = px(SHOW_L + 1780, kk), my = py(52, kk), mr = 44 * kk * SS;
-  if (mx > -mr * 4 && mx < W + mr * 4){
-    ctx.strokeStyle = 'rgba(238,226,208,0.30)';
-    ctx.lineWidth = Math.max(2, 9 * kk * SS);
-    ctx.beginPath(); ctx.arc(mx, my, mr, Math.PI * 0.18, Math.PI * 1.72); ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(mx + mr * 0.95, my); ctx.lineTo(mx + mr * 0.18, my);
-    ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,246,228,0.55)';
-    ctx.lineWidth = Math.max(1, 2.4 * kk * SS);
-    ctx.beginPath(); ctx.arc(mx, my - 1.6 * kk * SS, mr, Math.PI * 0.18, Math.PI * 1.72); ctx.stroke();
-  }
+  /* THE LONE G IS GONE. A monogram was cut into the showroom wall here — an
+     arc and a bar, which is a Glidewell G — and it hung at world y 52, high
+     enough to land on the LED wall behind it. Read as a stray white letter
+     floating on the video from 2022 onward. The wall carries its own mark on
+     the lit panel; it does not need a second one drawn over a screen. */
   ctx.restore();
 }
 
@@ -10133,10 +10279,24 @@ function drawFloorSheen(){
   const a0 = onFloorEdge(SHOW_L, yTop), a1 = onFloorEdge(SHOW_R, yTop);
   const b0 = onFloorEdge(SHOW_L, yBot), b1 = onFloorEdge(SHOW_R, yBot);
   if (Math.max(a1, b1) < 0 || Math.min(a0, b0) > W) return;
+  /* THE FLOOR BEGINS WHERE THE WALL ENDS — AND THE 2022 BAY IS NOT THE WALL.
+     The fold of this reflection is the era wall's foot, one line across the
+     frame. The portal stands four hundred units proud of that wall, so its
+     picture runs on below that line, down to where the counter cuts it — and
+     the mirrored floor was painted straight over the bottom of the picture: a
+     reflection climbing a wall, exactly as it looked. Inside the portal's span
+     the fold drops to the picture's own bottom edge, and that strip gets its
+     own mirror, of the bay's own foot. */
+  const kc = k(992), cwCol = 120 * kc * SS;
+  const nx0 = px(REC4_L, kc) - cwCol/2, nx1 = px(REC4_R, kc) + cwCol/2;
+  const yBay = Math.min(yBot, py(CFG.benchY + 240, k(CFG.benchDepth)));
+  const notch = (nx1 > 0 && nx0 < W && yBay > yTop + 2) ? {x0: nx0, x1: nx1, y: yBay} : null;
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(a0, yTop); ctx.lineTo(a1, yTop); ctx.lineTo(b1, yBot); ctx.lineTo(b0, yBot);
-  ctx.closePath(); ctx.clip();
+  ctx.closePath();
+  if (notch) ctx.rect(notch.x0, yTop, notch.x1 - notch.x0, notch.y - yTop);   // cut out of the clip
+  ctx.clip('evenodd');
   const sx0 = Math.max(0, Math.min(a0, b0)), sx1 = Math.min(W, Math.max(a1, b1));
   /* A REFLECTION DIES WITH DISTANCE FROM THE FOLD. Mirrored at one flat alpha
      the whole band comes back — a whole upside-down portrait lying on the floor
@@ -10184,6 +10344,36 @@ function drawFloorSheen(){
   ctx.fillStyle = gl;
   ctx.fillRect(sx0, yTop, sx1 - sx0, band);
   ctx.restore();
+  // the strip under the bay: its own fold, at the bay's own foot
+  if (notch && SHEEN){
+    const x0 = Math.max(0, notch.x0), x1 = Math.min(W, notch.x1);
+    const band2 = yBot - notch.y;
+    if (x1 - x0 > 2 && band2 > 2 && notch.y - band2 > 0){
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x0, notch.y, x1 - x0, band2); ctx.clip();
+      const cw2 = Math.ceil(x1 - x0), ch2 = Math.ceil(band2);
+      const gs = SHEEN.getContext('2d');
+      gs.clearRect(0, 0, cw2, ch2);
+      gs.drawImage(ctx.canvas, x0, notch.y - band2, cw2, ch2, 0, 0, cw2, ch2);
+      const N = 10, hh = band2 / N;
+      for (let s2 = 0; s2 < N; s2++){
+        const u = s2 / N, a = 0.34 * (1 - u) * (1 - u);
+        if (a < 0.004) break;
+        ctx.globalAlpha = a;
+        ctx.scale(1, -1);
+        ctx.drawImage(SHEEN, 0, ch2 - (s2 + 1) * hh, cw2, hh, x0, -(notch.y + (s2 + 1) * hh), cw2, hh);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+      }
+      ctx.globalAlpha = 1;
+      const g2 = ctx.createLinearGradient(0, notch.y, 0, yBot);
+      g2.addColorStop(0, 'rgba(226,229,233,0.34)');
+      g2.addColorStop(0.5, 'rgba(196,200,206,0.16)');
+      g2.addColorStop(1, 'rgba(150,155,163,0.30)');
+      ctx.fillStyle = g2;
+      ctx.fillRect(x0, notch.y, x1 - x0, band2);
+      ctx.restore();
+    }
+  }
 }
 
 /* CONTAINMENT. Two rules the hall is meant to keep and which no amount of
@@ -10324,6 +10514,14 @@ function frame(){
     const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
     if (!b.fly && focusAmt <= 0.01) drawBeatText(b, focusAmt);
   }
+  /* A COLUMN STANDS IN FRONT OF WHAT IS WRITTEN ON THE WALL. The portal's two
+     pilasters were painted with the recreation, long before the wall type, so
+     the GUIDING LEADERS plate and the 2017 numerals crossed over them as the
+     camera moved — a plate sliding across a column it should pass behind. They
+     are laid again here, after the wall's type and before everything that
+     stands on the floor, so the furniture, the machines and the people still
+     cover them in their turn. */
+  drawRec4Columns(null);
   drawProjectors(t, 'light');   // light lands on the WALL; the bench will crop it
 
   /* THE REFLECTION IS UNDER EVERYTHING THAT STANDS ON IT. It used to be laid
@@ -10483,7 +10681,7 @@ function frame(){
   if (Input.hover && state.mode === 'live'){
     const aimHover = (!state.inspect && hitAt(Input.hover.x, Input.hover.y)) || null;
     state.docHot = !!(aimHover && aimHover.type === 'doc');
-    document.body.style.cursor = (musicMarkHit(Input.hover) || soundMarkHit(Input.hover)) ? 'pointer'
+    document.body.style.cursor = (musicMarkHit(Input.hover) || soundMarkHit(Input.hover) || voicesMarkHit(Input.hover)) ? 'pointer'
       : ruleHit(Input.hover) ? 'ew-resize'
       : ((!state.inspect && hitAt(Input.hover.x, Input.hover.y)) ? 'pointer' : '');
   }
@@ -10582,7 +10780,6 @@ async function boot(){
   }
   PED_SPRITES.crown = makePedObj('crown');
   PED_SPRITES.logo1970 = makePedObj('logo1970');
-  PED_SPRITES.logoG = makePedObj('logoG');
   PED_SPRITES.bizcard = makePedObj('bizcard');
   PED_SPRITES.puck = makePedObj('puck');
   /* the wand comes with its own dock in the photograph, so it needs no drawn
