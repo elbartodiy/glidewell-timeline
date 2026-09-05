@@ -278,6 +278,7 @@ const BEATS = [
        {img:'bianca', w:120, dx:357, lz:30, lift:26, cap:'Dr. Bianca Clark · GL alum'}]},
 
   {x:26340, y:'2022', t:'FASTSCAN.IO', thBelow:true,   // the bay is a photograph; the italic line cannot live on it
+   tOnBay:true,   // the title is lettered on the plinth block of the render, centred on its face
    pinZ:996,   // the year stays centred over the instrument, on the bay's own plane — it does not slide behind a column
    th:'The front door to the all-digital workflow.',
    d:'fastscan.io, built with Medit, folds an intraoral scanner into the ecosystem — no impressions, no remakes, data straight into design and mill.',
@@ -2125,7 +2126,8 @@ function drawBeatText(b, focusAmt){
       ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
-      ctx.fillText(b.t, cx, mixN(py(tY + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
+      if (b.tOnBay && SCANBAY_LABEL) ctx.fillText(b.t, SCANBAY_LABEL.x, SCANBAY_LABEL.y + 46 * 0.36 * kk * SS);
+      else ctx.fillText(b.t, cx, mixN(py(tY + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th && !b.thBelow && fFade > 0.05){
         ctx.font = eraFont(30 * (seg.tScale || 1) * kk * SS, 'italic', seg.font);
@@ -2181,7 +2183,10 @@ function drawBeatText(b, focusAmt){
       ctx.font = eraFont(46 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
       try { ctx.letterSpacing = `${9*sc*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
-      ctx.fillText(b.t, cx, mixN(py((b.minor ? tY + 4 : tY) + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
+      /* a title lettered on the bay photograph's plinth: it takes the picture's
+         own point every frame, so it cannot drift against the render */
+      if (b.tOnBay && SCANBAY_LABEL) ctx.fillText(b.t, SCANBAY_LABEL.x, SCANBAY_LABEL.y + 46 * sc * 0.36 * kk * SS);
+      else ctx.fillText(b.t, cx, mixN(py((b.minor ? tY + 4 : tY) + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th){
         ctx.font = eraFont(30 * (b.minor?0.8:1) * (seg.tScale||1) * kk * SS, 'italic', seg.font);
@@ -4748,6 +4753,9 @@ function drawDesignStation(b, t){
 
 
 let AI_ROBOT_X = null, PENDANT_AT = null, PENDANT_X = null;
+/* where the 2022 bay photograph put its plinth face this frame — the title
+   FASTSCAN.IO is lettered on it, so it is pinned to the picture, not the air */
+let SCANBAY_LABEL = null;
 /* THE PENDANT IS ON THE NEAR PLANE. It was drawn inside the cell, at the cell's
    depth — inside the counters' own depth range — so as the camera moved it slid
    out from behind the counter's end and stood in front of it: behind the table
@@ -4755,12 +4763,22 @@ let AI_ROBOT_X = null, PENDANT_AT = null, PENDANT_X = null;
    plinths' depth now and is painted after the counters, so it is in front of
    the table wherever you look at it from, with its foot at the counter's edge. */
 function drawPendant(t){
-  if (PENDANT_X == null || Math.abs(cam.x - PENDANT_X) > 2600) return;
-  const cz = -40, kk = k(cz), S = kk * SS;
+  /* the counter's end is drawn flat, at its front edge's screen x for every
+     depth — so a thing at z 400 must stand well inside the span, or from the
+     right side of the aisle it shows in the gap past the end */
+  PENDANT_X = FACT_X - 950;                 // inside the left counter's run (it ends at FACT_X - 560)
+  if (Math.abs(cam.x - PENDANT_X) > 2600) return;
+  /* BEHIND THE COUNTER. It stood on the near plane for a day and Eldar sent it
+     back — "за стол": it stands on the floor BEHIND the left counter's back
+     edge (the counter runs z 0..340; the pendant is at 400), inside the
+     counter's own span, and the counter is painted after it — so the stalk
+     goes down behind the table and only the box shows above the edge, from
+     every camera position alike. */
+  const cz = 400, kk = k(cz), S = kk * SS;
   const X = wx => px(wx, kk), Y = wy => py(wy, kk);
   const px2 = X(PENDANT_X);
   if (px2 < -200 || px2 > W + 200) return;
-  const PT = 560, PB = 690;
+  const PT = 520, PB = 650;
   PENDANT_AT = {x: PENDANT_X, y: (PT + PB) / 2 - 12, z: cz};
   ctx.save();
   contactShadow(px2, Y(1080), 40 * S, 0.30);
@@ -4821,10 +4839,9 @@ function drawAIRelay(t){
     if (q >= 1){ arrived++; continue; }
     if (q <= 0) continue;
     const sx0 = ccx + ux * cw, sy0 = ccy + uy * ch;
-    // an arc across the aisle: up out of the case, down into the screen
-    const lift = Math.sin(q * Math.PI) * (110 + 60 * r2) * SS;
+    // straight across the aisle, from the crown to the screen — a beam of data, not a lob
     const x = sx0 + (ex - sx0) * q + (r2 - 0.5) * 6 * SS;
-    const y = sy0 + (ey - sy0) * q - lift;
+    const y = sy0 + (ey - sy0) * q + (r1 - 0.5) * 4 * SS;
     const a = leave * (0.25 + 0.75 * Math.sin(q * Math.PI)) * Math.min(1, build * 1.6);
     ctx.fillStyle = `rgba(${V.rim},${a.toFixed(3)})`;
     ctx.beginPath(); ctx.arc(x, y, pr * (0.7 + 0.6 * r2), 0, 7); ctx.fill();
@@ -5892,6 +5909,9 @@ function drawRec4(t){
       ctx.drawImage(spriteMip(sp, Math.round(dw), Math.round(dh)),
                     Math.round(bx0 + (bw - dw) / 2), Math.round(bh - dh),
                     Math.round(dw), Math.round(dh));
+      /* the plinth's face in the render runs rows 1250–1510 of 1573; its middle
+         is where the title sits — centred on the block, on the picture's plane */
+      SCANBAY_LABEL = {x: bx0 + bw / 2, y: bh - dh * (1 - 1380 / 1573), k: kc};
       /* the exhibit flares as you arrive, the way the years and the lamps do */
       const near = Math.max(0, 1 - Math.abs(mid - cam.x) / 900);
       if (near > 0.02){
@@ -8440,7 +8460,7 @@ function drawCell(cx, cz, t, phase, pendant){
     ctx.restore();
   }
   if (!pendant){ ctx.restore(); return; }
-  PENDANT_X = cx - HW * 1.34;             // the pendant itself is drawn on the near plane, after the counters
+  // the pendant itself stands behind the left counter — drawPendant owns its place
   // the coiled air hose, the one bright thing on any shop floor
   ctx.strokeStyle = 'rgba(226,196,44,0.9)'; ctx.lineWidth = Math.max(1, 3.4 * S);
   ctx.beginPath();
@@ -8640,7 +8660,7 @@ function drawRobotArm(bx, bz, t, phase, inside, amp){
   }
   ctx.restore();
 }
-function drawFactory(t){
+function drawFactory(t, over){
   if (Math.abs(cam.x - FACT_X) > 2500) return;
   const b = BEATS.find(bb => bb.t === 'BRUXZIR FACTORY');
   // shade dispenser tower, left
@@ -8663,12 +8683,24 @@ function drawFactory(t){
      the crowns simply ceased to exist at a point in the air. Both ends now run
      on past the aisle and under the counters either side — painted later, they
      swallow the line, and the crowns go somewhere. */
-  const kc = k(150);
-  const cy0 = py(690, kc);
-  const c0 = px(FACT_X - 640, kc), c1 = px(FACT_X + 780, kc);
+  /* IT COMES OUT OF THE FIRST CELL AND GOES BEHIND THE COUNTER. Nothing of it
+     shows to the left of the robots — it begins inside the first cabin, which
+     is painted over it — and it runs behind the counters' back edge (z 400, at
+     a height that reads as the counter's) so on the right the table swallows
+     it instead of the line crossing in front. */
+  const kc = k(400);
+  const cy0 = py(760, kc);
+  const c0 = px(FACT_X - 300, kc), c1 = px(FACT_X + 900, kc);
   const yFl = py(1080, kc), legW = 12 * kc * SS;
+  /* THE LINE SHOWS ONLY IN THE GAP. The factory is painted a second time over
+     the catharsis veil, after the counters — and that second coat laid the
+     line's far end across the right counter it is meant to vanish behind. The
+     counters' ends are flat, at their front edge's x; the line is clipped to
+     the opening between them, so no pass can put it in front of a table. */
+  ctx.save();
+  ctx.beginPath(); ctx.rect(px(FACT_X - 560, k(0)), 0, px(FACT_X + 560, k(0)) - px(FACT_X - 560, k(0)), H); ctx.clip();
   ctx.fillStyle = '#2b2f34';
-  for (const lx of [c0 + 24*kc*SS, c1 - 24*kc*SS - legW, (c0 + c1)/2 - legW/2])
+  for (const lx of [c0 + 24*kc*SS, (c0 + c1)/2 - legW/2])
     ctx.fillRect(lx, cy0 + 36*kc*SS, legW, yFl - cy0 - 36*kc*SS);
   ctx.fillStyle = '#3a3e43';
   ctx.fillRect(c0, cy0, c1 - c0, 26*kc*SS);
@@ -8677,13 +8709,14 @@ function drawFactory(t){
   ctx.fillStyle = 'rgba(255,255,255,0.10)';
   ctx.fillRect(c0, cy0, c1 - c0, 2*kc*SS);
   for (let i = 0; i < 7; i++){
-    const wxc = FACT_X - 620 + ((i*180 + t*60) % 1400);
+    const wxc = FACT_X - 300 + ((i*160 + t*60) % 1200);
     const sxc = px(wxc, kc);
     if (sxc > c0 && sxc < c1){
       ctx.fillStyle = '#eef0ed';
       ctx.beginPath(); ctx.arc(sxc, cy0 - 8*kc*SS, 10*kc*SS, Math.PI, 0); ctx.fill();
     }
   }
+  ctx.restore();
   // two arms working out of phase
   /* Two machines standing apart, each on its own plinth, with the aisle between
      them that a shop floor has. Butted together they read as one wide box with
@@ -8725,6 +8758,7 @@ function drawFactory(t){
     }
     ctx.restore();
   }
+  if (!over) drawPendant(t);       // behind the left counter — the veil pass must not paint it back in front
   drawCell(FACT_X - 300, 190, t, 0, true);
   drawCell(FACT_X + 250, 232, t, 2.4, false);
   const kk = k(190);
@@ -9257,7 +9291,14 @@ const PEOPLE_MORE = {
   kosinski: {name:'Tim Kosinski', role:'Implant dentist & educator', bio:['Dr. Timothy Kosinski (Bingham Farms, MI) is the workhorse-educator of implantology: 14,000+ implants placed, 200+ published articles, an adjunct professor’s temperament — and a regular teacher at Glidewell symposia, so the бренд knows him and he knows the audience.']},
   chi: {name:'Justin Chi', role:'Director of Clinical Technologies (DDS, CDT)', bio:['Justin Chi is Glidewell’s Director of Clinical Technologies and the roster’s rare three-in-one: a hands trained in the old craft (B.S.'], quote:{q:'One of the greatest benefits of in-office CAD/CAM is the ability to try in and deliver restorations in the same appointment, which I believe is best for the patient\'s health.', src:'Chairside Magazine, Vol. 13-1 (Glidewell), 2018'}},
   leeson: {name:'David Leeson', role:'EVP of Engineering, Manufacturing & R&D (factory architect)', bio:['David Leeson is Glidewell’s EVP of Engineering, Manufacturing and R&D — the architect of the BruxZir Factory and of what he calls “mass customization”: multiple automated lines coordinating thousands of restorations at once, every single one unique to its patient, each carrying its own tracking code (Chairside Vol.'], quote:{q:'Now we are creating heavily connected systems and leveraging data from the more than 10 million individual patient designs we store in the cloud.', src:'Glidewell / Machine Design, 2022'}},
-  azernikov: {name:'Sergei Azernikov, PhD', role:'VP of CAD/CAM Software (AI lead)', bio:['✓ Interview — what we already have (9 Jul): • AI pipeline (#5): &quot;A generative network now designs essentially all our crowns — in 2015–16 that was unheard of; the technician is the first human to see the case, just approving it.&quot; (align to our &gt;95% figure) • Scale (#5/#11): &quot;~50 → ~200 crowns a day; the designer&#39;s role shifted from designing to quality assurance.&quot; • The moat (#10): &quot;Like a self-driving car — millions of cases make it better; that&#39;s what no one can just replicate.&quot; • Transition (#13): &quot;The machine won&#39;t replace you — someone who knows how to use it will.&quot; (automation was planned around retraining/relocating people, no mass layoffs) • Handmade myth (#4): &quot;Nobody says &#39;a handmade car&#39; anymore — the machine is more accurate than the hand and the stone model.&quot; • Same-day (#3): &quot;Scan, design and place the crown in under two hours — one day instead of three visits.&quot; • Future (#12/#14): &quot;Connect the clinic&#39;s systems before you make them smarter.&quot; · &quot;Self-driving companies in 10–20 years.&quot; · &quot;People would ask for a faster horse — until someone brings the disruption.&quot; • Why he does it (#2): &quot;A crown made wrong hurts someone&#39;s quality of life — that&#39;s what drives me.&quot; Full transcript, chopped by theme (+ the Jim-film pile): Documents/07_09_Azernikov_Verbatim_by_Theme.md.'], quote:{q:'There\'s a lot of excitement around our work because, until now, real-world, tangible applications of GANs did not exist… To my knowledge, this is the first time anybody has generated a physical object with this technique.', src:'Chairside Magazine, Vol. 13-2 (Glidewell), 2018'}},
+  azernikov: {name:'Sergei Azernikov, PhD', role:'VP of CAD/CAM Software · the AI lead', top:true,
+    bio:["Sergei Azernikov is Glidewell\u2019s Vice-President of CAD/CAM Software and, in practice, the company\u2019s AI lead. A PhD in computational geometry, he is the engineer who from about 2014 moved the laboratory\u2019s design pipeline into the cloud and then into machine learning \u2014 years before either was an obvious thing for a dental lab to do. The generative system his team built now designs the great majority of Glidewell\u2019s restorations, more than 95%, learning from millions of cases inside a closed quality loop. He sits on the Dental AI Council and speaks about AI in public often enough to be at ease explaining hard ideas to people who are not engineers.",
+         "In 2018 his group did something nobody had done: they had a generative adversarial network design a crown, milled it, and seated it in a mouth \u2014 the first physical object anyone had made with the technique. That is the 2018 bay in this hall.",
+         "From the interview, 9 July 2026. On the pipeline: \u201cA generative network now designs essentially all our crowns \u2014 in 2015\u201316 that was unheard of. The technician is the first human to see the case, and mostly just approves it.\u201d On scale: \u201cA designer went from about fifty crowns a day to about two hundred; the job shifted from designing to quality assurance.\u201d",
+         "On what cannot be copied: \u201cIt\u2019s like a self-driving car \u2014 millions of cases make it better, and that is what no one can just replicate.\u201d On the people: \u201cThe machine won\u2019t replace you \u2014 someone who knows how to use it will.\u201d The automation was planned around retraining and moving people, not letting them go.",
+         "On the handmade myth: \u201cNobody says \u2018a handmade car\u2019 any more. The machine is more accurate than the hand and the stone model.\u201d On the same-day crown: \u201cScan, design and seat the crown in under two hours \u2014 one visit instead of three.\u201d",
+         "On what comes next: \u201cConnect the clinic\u2019s systems before you make them smarter.\u201d \u201cSelf-driving companies in ten to twenty years.\u201d \u201cPeople would ask for a faster horse \u2014 until someone brings the disruption.\u201d And on why he does it at all: \u201cA crown made wrong hurts someone\u2019s quality of life. That is what drives me.\u201d"],
+    quote:{q:'There\'s a lot of excitement around our work because, until now, real-world, tangible applications of GANs did not exist\u2026 To my knowledge, this is the first time anybody has generated a physical object with this technique.', src:'Chairside Magazine, Vol. 13-2 (Glidewell), 2018'}},
   farran: {name:'Howard Farran', role:'Founder, Dentaltown; host, “Dentistry Uncensored”', bio:['Dr. Howard Farran, DDS, MBA, is dentistry’s megaphone: founder of Dentaltown (the profession’s town square — 200K+ dentists) and host of “Dentistry Uncensored”, which he has run to 1,700+ episodes and still publishes EVERY WEEKDAY (episodes #1706–1709 in June 2026 alone).']},
   feuerstein: {name:'Paul Feuerstein, DMD', role:'GP (45+ yrs); Editor-in-Chief, Dentistry Today; dental-tech authority', bio:['Added 2026-07-24 (Eric\'s addition, from the planning meeting) — one of the two KOLs who, per Eric, are now free of a practice on the road and can travel to the Irvine campus for an interview — possibly alongside Jim (idea only — NOT yet agreed with Jim; don\'t promise it). Who he is.']},
   brenneise: {name:'Rob Brenneise', role:'Chief Growth Officer, Glidewell — since Dec 2023 · ex-SVP Sales, Marketing & Education · ex-VP Sales, CAD/CAM & glidewell.io · ~30 yrs in dental sales before that: DenMat 1995-2012, Experience Dental Studio, Dental Lab Holdings, VIAX', bio:['Rob Brenneise is Glidewell\'s Chief Growth Officer, in that role since December 2023.']},
@@ -9281,6 +9322,8 @@ function peopleRoster(){
     .map((id, i) => ({id, i, P: PEOPLE[id]}))
     .sort((a, b) => {
       if (a.id !== b.id && (a.id === 'jim' || b.id === 'jim')) return a.id === 'jim' ? -1 : 1;
+      const ta = a.P.top ? 0 : 1, tb = b.P.top ? 0 : 1;
+      if (ta !== tb) return ta - tb;                       // Eldar's picks stand beside Jim
       const ca = (a.P.clips && a.P.clips.length) ? 0 : 1;
       const cb = (b.P.clips && b.P.clips.length) ? 0 : 1;
       if (ca !== cb) return ca - cb;                       // filmed first
@@ -11138,7 +11181,6 @@ function frame(){
   drawBench();        // reflection can never be laid over the furniture
   drawShowroomLight(t);   // light coming OUT of the furniture, so after it
   drawProjectors(t, 'machine');   // it stands on the bench, so it comes after it
-  drawPendant(t);                 // and the factory's pendant stands in front of the counters
 
   // table items
   drawFinaleTable(t);
@@ -11228,7 +11270,7 @@ function frame(){
      exactly the way the pedestals climb back out of the dark */
   {
     const hF = Math.max(0, 1 - Math.abs(FACT_X - cam.x)/680);
-    if (hF > 0.02) drawFactory(t);
+    if (hF > 0.02) drawFactory(t, true);
   }
   drawMapHero(t, hMap);
   drawRec2Front(t);      // the milled crown belongs to the near plane, in front of its portal
