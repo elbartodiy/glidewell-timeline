@@ -253,8 +253,7 @@ const BEATS = [
    pinZ:1000,
    th:'',
    d:'1,500 pairs of scans, and the profile between opposing teeth that technicians find hardest. The paper, written with UC Berkeley, is called Learning Beyond Human Expertise.',
-   wall:[], table:[],
-   rig:{kind:'design', dx:0, lz:120, w:540}},
+   wall:[], table:[]},   // the design-station monitor is gone: the crown itself is the exhibit now
   {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true,
    th:'The analog→digital climax: robots make crowns.',
    d:'Automated, AI-designed, robotic monolithic production.',
@@ -914,18 +913,22 @@ function attachMouseDriver(el){
     const d = e.deltaMode === 1 ? e.deltaY*32 : e.deltaY;
     Input.push(d * CFG.wheelGain);
   }, {passive:false});
-  let lastX = 0, moved = 0, down = false;
+  let lastX = 0, moved = 0, down = false, markTap = false;
   el.addEventListener('pointerdown', e => {
-    down = true; moved = 0; lastX = e.clientX;
+    down = true; moved = 0; lastX = e.clientX; markTap = false;
     const pt = toBuf(e);
     // the rule takes the pointer before the hall does: dragging its thumb
     // scrubs the century instead of shoving the bench
     // arm the scrub, but do not move yet: a press is not a jump. Grabbing the
     // thumb anywhere on its body keeps that grip point, so it never snaps its
     // centre under the cursor.
-    if (musicMarkHit(pt)){ toggleMusic(); down = false; return; }
-    if (soundMarkHit(pt)){ toggleSound(); down = false; return; }
-    if (voicesMarkHit(pt)){ if (!state.people) openPeople(); down = false; return; }
+    if (musicMarkHit(pt)){ toggleMusic(); down = false; markTap = true; return; }
+    if (soundMarkHit(pt)){ toggleSound(); down = false; markTap = true; return; }
+    /* THE VOICES OPENED AND CLOSED IN ONE TAP. The press opened the page, then
+       the release of that same tap arrived as a click on nothing — and a click
+       on nothing is exactly how a page is closed. The mark now owns the release
+       too. */
+    if (voicesMarkHit(pt)){ if (!state.people) openPeople(); down = false; markTap = true; return; }
     if (ruleHit(pt)){
       const g = ruleGeom();
       const grabbed = Math.abs(g.at(cam.x) - pt.x) < Math.max(18 * SS, (g.at(cam.x + g.half) - g.at(cam.x - g.half)) / 2);
@@ -946,6 +949,7 @@ function attachMouseDriver(el){
     Input.push(-dx * 30);
   });
   el.addEventListener('pointerup', e => {
+    if (markTap){ markTap = false; down = false; Input.setDragging(false); return; }
     down = false; Input.setDragging(false);
     if (state.ruleDrag){
       const dragged = moved >= 6;
@@ -3595,7 +3599,7 @@ function toggleMusic(){
    in by the slash, not by a label. */
 function musicMarkBox(){ const s = 22 * SS; return {x: 26 * SS, y: 26 * SS, w: s, h: s}; }
 function soundMarkBox(){ const s = 22 * SS; return {x: 68 * SS, y: 26 * SS, w: s, h: s}; }
-function voicesMarkBox(){ const s = 22 * SS; return {x: 110 * SS, y: 26 * SS, w: s, h: s}; }
+function voicesMarkBox(){ return {x: 26 * SS, y: 62 * SS, w: 64 * SS, h: 44 * SS}; }   // under the pair, as wide as both
 function markHit(b, pt){
   if (!pt) return false;
   const pad = 10 * SS;
@@ -3677,10 +3681,20 @@ function drawMusicMark(){
     ctx.fillStyle = `rgba(${seg.ink},${a.toFixed(3)})`;
     ctx.lineWidth = 1.7 * SS;
     const cx = b.x + b.w * 0.5, cy = b.y + b.h * 0.5, sq = b.h;
+    ctx.lineWidth = 2.2 * SS;
     ctx.beginPath(); ctx.arc(cx, cy - sq * 0.20, sq * 0.19, 0, 7); ctx.fill();
     ctx.beginPath();
-    ctx.arc(cx, cy + sq * 0.40, sq * 0.36, Math.PI * 1.08, Math.PI * 1.92);
+    ctx.arc(cx, cy + sq * 0.42, sq * 0.38, Math.PI * 1.08, Math.PI * 1.92);
     ctx.stroke();
+    // and two more heads behind, so it reads as people, not a profile
+    ctx.globalAlpha = 0.55;
+    for (const sgn of [-1, 1]){
+      ctx.beginPath(); ctx.arc(cx + sgn * sq * 0.42, cy - sq * 0.10, sq * 0.13, 0, 7); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx + sgn * sq * 0.42, cy + sq * 0.40, sq * 0.26, Math.PI * 1.10, Math.PI * 1.90);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
   }
   ctx.restore();
 }
@@ -4395,9 +4409,10 @@ function drawRec18(t){
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(60,70,84,0.95)';
-  ctx.fillText('no hand drew it \u00b7 no tool cut it \u00b7 it was proposed', cx, py(66, kk));
+  ctx.fillText('no hand drew it \u00b7 no tool cut it \u00b7 it was proposed', cx, py(96, kk));   // air under the title, as at 2023
   ctx.restore();
 
+  drawAiCrownVitrine(mid, kk, t);
   for (const wxc of [REC18_L, REC18_R]){
     const kc = k(994), sxc = px(wxc, kc), cw = 116 * kc * SS;
     if (sxc < -cw || sxc > W + cw) continue;
@@ -4406,6 +4421,142 @@ function drawRec18(t){
     ctx.fillStyle = cg;
     ctx.fillRect(sxc - cw/2, 0, cw, yBase);
   }
+}
+
+/* THE FIRST AI CROWN, AS A THING BEING MADE. The bay used to hold a monitor
+   with a CAD picture on it — the year told as a screenshot. Now it holds a tall
+   lit niche, and in the niche the crown assembles itself out of data as you
+   arrive: cold points scatter and gather into the silhouette, contour slices
+   settle over them, and a white ceramic surface rises through the shape from
+   the bottom as a clean horizontal edge. Under it, on its own small plinth in a
+   glass cube, the first physical piece — the big one above is where it came
+   from. The whole thing runs on the camera, like every other apex here: walk
+   in and it builds, walk out and it comes apart again, and nothing restarts.
+   The points are the crown's own (sampled once from its silhouette), the
+   contours are its own rows, and the ceramic is the crown sprite the hall has
+   milled and photographed everywhere else — one object, three states. */
+function rec18Phase(mid){
+  const d = Math.abs(cam.x - mid);
+  const u = Math.max(0, Math.min(1, 1 - (d - 120) / 900));   // done within 120 of centre, begins 1020 out
+  return u * u * (3 - 2 * u);
+}
+const AI_VITRINE = {
+  w: 440, top: 128, bot: 724,        // the niche in world units on the panel's plane
+  crownW: 330, crownCY: 400,         // the big crown: ~60% of the free height, a little above centre
+  smallW: 66, cubeW: 112,            // the physical piece and its glass
+  rim: '117,216,255', rimA: 0.55,    // the one cool accent, and how hard it burns
+};
+function drawAiCrownVitrine(mid, kk, t){
+  const V = AI_VITRINE, sp = PED_SPRITES.crown2;
+  if (!sp) return;
+  crownGeometry();
+  const cx = px(mid, kk);
+  const nw = V.w * kk * SS, nx0 = cx - nw/2;
+  const nTop = py(V.top, kk), nBot = py(V.bot, kk), nh = nBot - nTop;
+  if (cx < -nw || cx > W + nw) return;
+  const ph = rec18Phase(mid);
+  const near = ph;
+  const r = 10 * kk * SS;
+  const niche = () => { ctx.beginPath(); ctx.roundRect(nx0, nTop, nw, nh, r); };
+  // the recess: a shade deeper than the panel, lit from its own edges
+  const fg = ctx.createLinearGradient(0, nTop, 0, nBot);
+  fg.addColorStop(0, '#e9edf1'); fg.addColorStop(0.5, '#f4f7f9'); fg.addColorStop(1, '#d9dfe5');
+  niche(); ctx.fillStyle = fg; ctx.fill();
+  ctx.save();
+  ctx.shadowColor = `rgba(${V.rim},0.85)`; ctx.shadowBlur = (14 + 10 * near) * SS;
+  niche(); ctx.strokeStyle = `rgba(${V.rim},${(V.rimA + 0.25 * near).toFixed(3)})`;
+  ctx.lineWidth = (1.8 + 0.8 * near) * SS; ctx.stroke();
+  ctx.restore();
+  niche(); ctx.strokeStyle = 'rgba(235,247,255,0.9)'; ctx.lineWidth = 1 * SS; ctx.stroke();
+
+  // ---- the crown, in its three states, all clipped to the niche ----
+  const cw = V.crownW * kk * SS, ch = cw * sp.h / sp.w;
+  const ccx = cx, ccy = py(V.crownCY, kk);
+  const cTop = ccy - ch/2, cBot = ccy + ch/2;
+  // the schedule the brief asked for, read off one phase
+  const seg = (a, b) => Math.max(0, Math.min(1, (ph - a) / (b - a)));
+  const gather = seg(0.00, 0.25);            // points come in from the scatter
+  const rings  = seg(0.18, 0.55);            // contour slices settle
+  const solid  = seg(0.42, 0.85);            // ceramic rises through the form
+  const done   = seg(0.85, 1.00);            // data thins out, the piece rests
+  const revealY = cBot - solid * ch * 1.04;  // the edge, bottom to top
+  const rock = done * 0.17 * Math.sin(t * 0.55);   // at most ~10°, and only once it is whole
+  ctx.save();
+  niche(); ctx.clip();
+  // the digital states live ABOVE the edge
+  if (ph > 0.01 && (1 - done) > 0.02){
+    ctx.save();
+    ctx.beginPath(); ctx.rect(nx0, nTop, nw, Math.max(0, revealY - nTop)); ctx.clip();
+    const aPts = (0.15 + 0.85 * gather) * (1 - done * 0.92);
+    const scatter = (1 - gather) * cw * 0.55;
+    ctx.fillStyle = `rgba(${V.rim},${Math.min(1, aPts).toFixed(3)})`;
+    const pr = Math.max(0.8, cw * 0.0065);
+    for (let i = 0; i < CROWN_PTS.length; i++){
+      const [ux, uy] = CROWN_PTS[i];
+      const h1 = Math.sin(i * 12.9898) * 43758.5453, h2 = Math.sin(i * 78.233) * 12345.678;
+      const jx = ((h1 - Math.floor(h1)) * 2 - 1), jy = ((h2 - Math.floor(h2)) * 2 - 1);
+      const x = ccx + ux * cw + jx * scatter, y = ccy + uy * ch + jy * scatter * 0.7;
+      ctx.beginPath(); ctx.arc(x, y, pr, 0, 7); ctx.fill();
+    }
+    if (rings > 0.01){
+      const aR = rings * (1 - done * 0.95);
+      ctx.strokeStyle = `rgba(${V.rim},${(0.55 * aR).toFixed(3)})`;
+      ctx.lineWidth = Math.max(1, cw * 0.006);
+      for (const [ax, bx, uy] of CROWN_ROWS){
+        const y = ccy + uy * ch, rx = (bx - ax) * cw / 2, mx = ccx + (ax + bx) * cw / 2;
+        ctx.beginPath(); ctx.ellipse(mx, y, rx, Math.max(1.2, ch * 0.02), 0, 0, 7); ctx.stroke();
+      }
+      // the two profiles the slices hang between — a delicate wireframe, not a rig
+      ctx.strokeStyle = `rgba(${V.rim},${(0.35 * aR).toFixed(3)})`;
+      for (const side of [0, 1]){
+        ctx.beginPath();
+        CROWN_ROWS.forEach((row, i) => { const x = ccx + row[side] * cw, y = ccy + row[2] * ch; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+  // the ceramic lives BELOW the edge
+  if (solid > 0.001){
+    ctx.save();
+    ctx.beginPath(); ctx.rect(nx0, revealY, nw, Math.max(0, nBot - revealY)); ctx.clip();
+    ctx.translate(ccx, ccy); ctx.rotate(rock);
+    ctx.shadowColor = 'rgba(40,60,80,0.22)'; ctx.shadowBlur = 10 * SS; ctx.shadowOffsetY = 4 * SS;
+    ctx.drawImage(spriteMip(sp, cw, ch), -cw/2, -ch/2, cw, ch);
+    ctx.restore();
+    // the edge of the materialisation: one thin cool line, gone when whole
+    if (solid < 0.999 && revealY >= cTop){   // the edge exists only while it is crossing the form
+      const eg = ctx.createLinearGradient(ccx - cw * 0.7, 0, ccx + cw * 0.7, 0);
+      eg.addColorStop(0, `rgba(${V.rim},0)`); eg.addColorStop(0.5, `rgba(${V.rim},0.85)`); eg.addColorStop(1, `rgba(${V.rim},0)`);
+      ctx.fillStyle = eg;
+      ctx.fillRect(ccx - cw * 0.7, revealY - 0.8 * SS, cw * 1.4, 1.6 * SS);
+    }
+  }
+  if (done > 0.01) drawGlow(V.rim, ccx, ccy, cw * 0.9, 0.10 * done);
+  // ---- the physical piece: a small crown on a low plinth, inside glass ----
+  {
+    const sw = V.smallW * kk * SS, sh = sw * sp.h / sp.w;
+    const gw = V.cubeW * kk * SS, gh = gw * 1.04;
+    const floorY = nBot - 10 * kk * SS;
+    const pw = gw * 1.15, phh = 14 * kk * SS;
+    const pg = ctx.createLinearGradient(0, floorY - phh, 0, floorY);
+    pg.addColorStop(0, '#f8fafb'); pg.addColorStop(1, '#c9d0d6');
+    ctx.fillStyle = pg; ctx.fillRect(cx - pw/2, floorY - phh, pw, phh);
+    contactShadow(cx, floorY - phh, sw * 1.2, 0.28);
+    const gx0 = cx - gw/2, gy0 = floorY - phh - gh;
+    ctx.drawImage(spriteMip(sp, sw, sh), cx - sw/2, floorY - phh - sh - 2 * kk * SS, sw, sh);
+    // glass: a faint face, thin edges, nothing that darkens what is inside it
+    ctx.fillStyle = 'rgba(235,247,255,0.10)'; ctx.fillRect(gx0, gy0, gw, gh);
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 1 * SS; ctx.strokeRect(gx0, gy0, gw, gh);
+    ctx.strokeStyle = 'rgba(120,150,170,0.35)'; ctx.lineWidth = 0.8 * SS;
+    const dp = gw * 0.16;
+    ctx.beginPath();
+    ctx.moveTo(gx0, gy0); ctx.lineTo(gx0 + dp, gy0 - dp); ctx.lineTo(gx0 + gw + dp, gy0 - dp); ctx.lineTo(gx0 + gw, gy0);
+    ctx.moveTo(gx0 + gw + dp, gy0 - dp); ctx.lineTo(gx0 + gw + dp, gy0 + gh - dp);
+    ctx.stroke();
+    drawGlow('255,255,255', cx, gy0 + gh * 0.4, gw * 1.1, 0.10);
+  }
+  ctx.restore();
 }
 
 /* THE DESIGN STATION. The first AI crown existed as a file before it existed
@@ -4529,34 +4680,26 @@ function drawAIRelay(t){
   const build = latchedPhase(mid, 450);
   if (build <= 0.28) return;
 
+  /* IT LEAVES THE VITRINE, NOT A MONITOR. The making now happens inside the
+     2018 niche, so the journey begins at the big crown's own place and only
+     once the camera is actually moving on — at the centre nothing of this is
+     drawn, and there is no wireframe stage left to duplicate what the niche
+     has just shown. */
+  if (p < 0.02) return;
+  const leave = Math.min(1, (p - 0.02) / 0.16);
   const wx = mid + (endX - mid) * p;
-  const lz = 120 + (40 - 120) * p;              // it lifts off the screen it was designed on
-  const wy = 566 - 70 * p;
+  const lz = 1000 + (40 - 1000) * p;            // it comes off the panel's plane into the room
+  const wy = AI_VITRINE.crownCY - 70 * p;
   const kkc = k(lz), sxc = px(wx, kkc), syc = py(wy, kkc);
   const spC = PED_SPRITES.crown2;
   const wC = 190 * kkc * SS, hC = wC * spC.h / spC.w;
-  const sol = Math.max(0, Math.min(1, (p - 0.45) / 0.25));
+  const sol = 1;                                // whole from the first step
   const gone = Math.max(0, Math.min(1, (p - 0.72) / 0.28));   // taken up by the line
-  const a = (1 - gone) * Math.min(1, build * 1.6);
+  const a = (1 - gone) * Math.min(1, build * 1.6) * leave * leave;
   if (a <= 0.01) return;
 
   ctx.save();
   ctx.globalAlpha = a;
-  if (sol < 1){
-    ctx.strokeStyle = `rgba(60,140,205,${(0.85 * (1 - sol)).toFixed(3)})`;
-    ctx.lineWidth = 1.6 * SS;
-    crownSilhouette(sxc, syc, wC, hC, null);
-    ctx.stroke();
-    crownGeometry();
-    ctx.strokeStyle = `rgba(60,140,205,${(0.32 * (1 - sol)).toFixed(3)})`;
-    ctx.lineWidth = 1 * SS;
-    for (const [a2, b2, uy] of CROWN_ROWS){
-      const y2 = syc + uy * hC;
-      ctx.beginPath();
-      ctx.moveTo(sxc + a2 * wC, y2); ctx.lineTo(sxc + b2 * wC, y2);
-      ctx.stroke();
-    }
-  }
   if (sol > 0){
     ctx.globalAlpha = a * sol;
     ctx.drawImage(spC.c, sxc - wC/2, syc - hC/2, wC, hC);
