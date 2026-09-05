@@ -263,7 +263,10 @@ const BEATS = [
    wall:[], table:[],
    plasma:{dx:330, cy:470, w:430, mode:'wave'}},
 
-  {x:25695, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870, plaque:true,   // centred over the three portraits on the counter below
+  /* The plate carries the three portraits that stand under it, so moving the
+     BEAT moved them too. It has its own offset now: plaqueDX shifts the plate
+     alone, and the people stay where they were put. */
+  {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870, plaque:true, plaqueDX:0,
    th:'Reinvesting in the profession — and our channel for finding hero dentists.',
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
    wall:[],
@@ -2004,7 +2007,7 @@ function drawBeatText(b, focusAmt){
     // no numeral, no lines — just a small engraved plate on the wall
     const segP = segAt(b.x);
     const kk = k(wallZAt(b.x) - 8);
-    const cx = px(b.x, kk);
+    const cx = px(b.x + (b.plaqueDX || 0), kk);
     if (cx > -600 && cx < W + 600){
       /* the plate wears its era: bronze on the craft century's boards, a pale
          museum label in the white room — and it is cut to fit its own words,
@@ -4464,14 +4467,19 @@ function drawRec18(t){
    The points are the crown's own (sampled once from its silhouette), the
    contours are its own rows, and the ceramic is the crown sprite the hall has
    milled and photographed everywhere else — one object, three states. */
+/* WHEN THE CROWN BUILDS. It used to run over the whole approach, so the whole
+   assembly happened while the bay before it was still fading down — you came
+   out of the dark and the crown was already finished, and the animation had
+   happened to nobody. It starts once you are properly inside the bay and
+   finishes at its centre: the entire thing plays in the last 420 units. */
 function rec18Phase(mid){
   const d = Math.abs(cam.x - mid);
-  const u = Math.max(0, Math.min(1, 1 - (d - 120) / 900));   // done within 120 of centre, begins 1020 out
+  const u = Math.max(0, Math.min(1, 1 - (d - 60) / 420));
   return u * u * (3 - 2 * u);
 }
 const AI_VITRINE = {
-  w: 440, top: 128, bot: 724,        // the niche in world units on the panel's plane
-  crownW: 330, crownCY: 400,         // the big crown: ~60% of the free height, a little above centre
+  w: 500, top: 112, bot: 792,        // the niche in world units on the panel's plane
+  crownW: 375, crownCY: 405,         // the big crown: ~60% of the free height, a little above centre
   smallW: 66, cubeW: 112,            // the physical piece and its glass
   rim: '117,216,255', rimA: 0.55,    // the one cool accent, and how hard it burns
 };
@@ -5045,17 +5053,36 @@ function drawMapWall(t){
     const kStep = k(560);
     const yStepTop = py(1040, kFar), yStepFoot = py(1080, kStep);
     {
+      /* THE TREAD IS STONE, LIT FROM UNDER ITS NOSE. Painted gold it read as a
+         brass strip laid on the floor. It is the same pale stone as the slab it
+         steps down to, and the light is a warm strip concealed under the
+         nosing — the tread above stays quiet, the riser below takes the glow,
+         and the floor in front of it catches a little. */
       const sxL = px(REC_L, kStep), sxR = px(REC_R, kStep);
-      const rg = ctx.createLinearGradient(0, yStepTop, 0, yStepFoot);
-      rg.addColorStop(0, '#d2b06a'); rg.addColorStop(0.18, '#a8843a');
-      rg.addColorStop(0.7, '#7a5d27'); rg.addColorStop(1, '#4e3a17');
-      ctx.fillStyle = rg;
+      const tg = ctx.createLinearGradient(0, yStepTop, 0, yStepFoot);
+      tg.addColorStop(0, '#cfc9bd'); tg.addColorStop(0.30, '#bdb6a9');
+      tg.addColorStop(0.62, '#8e887d'); tg.addColorStop(1, '#5f5a52');
+      ctx.fillStyle = tg;
       ctx.fillRect(sxL, yStepTop, sxR - sxL, yStepFoot - yStepTop);
-      // the nosing: a bright line where the tread catches the light
-      ctx.fillStyle = 'rgba(255,236,190,0.75)';
-      ctx.fillRect(sxL, yStepTop, sxR - sxL, Math.max(1, 1.6 * SS));
-      ctx.fillStyle = 'rgba(0,0,0,0.28)';
-      ctx.fillRect(sxL, yStepFoot - Math.max(1, 2 * SS), sxR - sxL, Math.max(1, 2 * SS));
+      // the nose itself: a hard bright edge along the top of the tread
+      ctx.fillStyle = 'rgba(246,242,232,0.85)';
+      ctx.fillRect(sxL, yStepTop, sxR - sxL, Math.max(1, 1.4 * SS));
+      // the concealed strip: warm light on the riser, brightest just under the nose
+      const lg = ctx.createLinearGradient(0, yStepTop + 2 * SS, 0, yStepFoot);
+      lg.addColorStop(0, 'rgba(255,232,186,0.85)');
+      lg.addColorStop(0.35, 'rgba(255,225,170,0.34)');
+      lg.addColorStop(1, 'rgba(255,220,164,0.05)');
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = lg;
+      ctx.fillRect(sxL, yStepTop + 2 * SS, sxR - sxL, yStepFoot - yStepTop - 2 * SS);
+      // and a little of it spills onto the floor the step comes down to
+      const fg2 = ctx.createLinearGradient(0, yStepFoot, 0, yStepFoot + 46 * kStep * SS);
+      fg2.addColorStop(0, 'rgba(255,226,172,0.22)');
+      fg2.addColorStop(1, 'rgba(255,226,172,0)');
+      ctx.fillStyle = fg2;
+      ctx.fillRect(sxL, yStepFoot, sxR - sxL, 46 * kStep * SS);
+      ctx.restore();
     }
     const yNear = py(1080, kNear), yFar = yStepTop;   // the runner starts ON the tread
     const cxN = px(mid, kNear), cxF = px(mid, kFar);
@@ -8456,7 +8483,13 @@ function drawFactory(t){
       const kc = k(cz2), sxc = px(cx2, kc), roof = py(408, kc);
       if (sxc < -400 || sxc > W + 400) continue;
       const halfC = 150 * kc * SS;
-      const top = py(-40, kc), low = py(640, kc);
+      /* BOTH FITTINGS ARE ON ONE CEILING. Each shaft used to start at its own
+         cell's depth, and the two cells stand at 190 and 232 — so the same
+         world height came out as two different screen heights and the lights
+         began at visibly different levels. The ceiling is one plane: both
+         fixtures are measured on it. */
+      const kCeil = k(210);
+      const top = py(-40, kCeil), low = py(640, kc);
       softBeam(sxc, sxc, top, low, halfC * 0.42, halfC * 1.15, '226,240,255', 0.30 * lit,
                [[0, 0.10], [0.42, 0.55], [0.62, 0.30], [1, 0]]);
       drawGlow('226,240,255', sxc, roof, halfC * 1.5, 0.16 * lit);
