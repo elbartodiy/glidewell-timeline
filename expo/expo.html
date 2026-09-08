@@ -523,6 +523,7 @@ const WORLD_END = SHIFT(29680);
 const SEAM_3 = SHIFT(19980);
 const REC2_L = SEAM_3 - 540, REC2_R = SEAM_3 + 540;   // the Digital Revolution recreation
 const REC_L = SHIFT(6350), REC_R = SHIFT(7450);   // era 1 ends; the 1979 recreation; era 2 begins
+const G8_W = 1400;   // the 1979 models' plinth, in world units — the counters are trimmed to it
 const REC3_L = SHIFT(10600), REC3_R = SHIFT(11700);   // the 1989 National Leader recreation
 const REC4_L = SHIFT(25940), REC4_R = SHIFT(26740);   // the 2022 fastscan recreation — the wall turns pure white beyond it
 /* The 1993 bay. Cut INSIDE era 2, not at a seam, so no two wall planes meet
@@ -1122,8 +1123,9 @@ const BENCH_BREAKS = [1700, 3345, 7350, 9250, 13100, 16900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
 BENCH_BREAKS.push({x: (REC17_L + REC17_R) / 2, half: (REC17_R - REC17_L) / 2 + 60});   // the glass hall stands on open floor
-/* 1979 keeps its counter: the row of models is cut just under its own stone
-   top and stands ON the hall's bench, so the counter is what holds it up. */
+/* 1979: the counters stop short of the models' plinth, the same distance on
+   both sides, so the block stands clear instead of being swallowed by them. */
+BENCH_BREAKS.push({x: (REC_L + REC_R) / 2, half: G8_W / 2 + 80});
 // the counter clears out from the 1989 portal all the way past the 1993 stand:
 // a model of a place should stand on the floor of a room, not on a worktop
 BENCH_BREAKS.push({x: (REC3_R + REC93_R + 65) / 2, half: (REC93_R + 65 - REC3_R) / 2});
@@ -5778,10 +5780,17 @@ function drawMapWall(t){
   {
     const gm = PROP_SPRITES.ph_gmain;
     if (gm){
+      /* the plant stands on the FLOOR on its own block — the render carries a
+         full-height plinth now, so it is not hovering — and it is as wide as
+         the bay allows between the pilasters, which puts its roof just under
+         where the map's top edge used to be. */
       const kG = k(430);
-      const wG = 680 * kG * SS, hG = wG * gm.h / gm.w;
-      const yTopG = py(300, kG), xG = px(mid, kG) - wG / 2;
-      if (xG < W + wG && xG + wG > -wG) ctx.drawImage(spriteMip(gm, wG, hG), xG, yTopG, wG, hG);
+      const wG = 1040 * kG * SS, hG = wG * gm.h / gm.w;
+      const yFootG = py(1080, kG), xG = px(mid, kG) - wG / 2;
+      if (xG < W + wG && xG + wG > -wG){
+        softFootShadow(px(mid, kG), yFootG, wG * 0.46, hG * 0.012, 0.45);
+        ctx.drawImage(spriteMip(gm, wG, hG), xG, yFootG - hG, wG, hG);
+      }
     }
     const g8 = PROP_SPRITES.ph_g8;
     if (g8){
@@ -5789,9 +5798,12 @@ function drawMapWall(t){
          render) lands on the hall's bench line and its foot on the floor, so
          the models are at the height of a table and the block holds them up.
          Its ends run past the bay and the hall's counters cover them. */
+      /* the row is set by its WIDTH — the same number the counters are trimmed
+         to, so the gap either side is a constant and not an accident — and hung
+         so its own stone top lands on the hall's bench line. */
       const kR = k(120), TOP = 0.16;
-      const yBench = py(CFG.benchY, kR), yFoot = py(1080, kR);
-      const hR = (yFoot - yBench) / (1 - TOP), wR = hR * g8.w / g8.h;
+      const wR = G8_W * kR * SS, hR = wR * g8.h / g8.w;
+      const yBench = py(CFG.benchY, kR), yFoot = yBench + hR * (1 - TOP);
       const xR = px(mid, kR) - wR / 2;
       if (xR < W + wR && xR + wR > -wR){
         softFootShadow(px(mid, kR), yFoot, wR * 0.46, (yFoot - yBench) * 0.05, 0.4);
