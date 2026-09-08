@@ -163,7 +163,12 @@ const BEATS = [
    d:'BioTemps provisional restorations — lab-made PMMA temporaries that doubled as an esthetic “blueprint” the patient could approve before the final.',
    wall:[], table:[]},
 
-  {x:11150, y:'1989', t:'NATIONAL LEADER', tier:1, fly:true, ink:'56,58,64', yLift:130,
+  {x:11150, y:'1989', t:'NATIONAL LEADER', tier:1, fly:true, ink:'236,241,247', yLift:130, flyLift:10,
+   /* the panel behind it is dark steel, so the year is LIGHT here — the era's
+      ink is for the pale wall on either side. And it flies to its own lift:
+      130 keeps it on the row with 1980\u20131988 while it rests on the wall, but at
+      the apex that puts it through the ceiling, so at full size it comes down
+      to 10 and stands with equal air above it and under the block. */
    pinZ:728,   // the numeral is riveted to the recreation panel: it grows in place, never drifts
    th:'',
    d:'Still in Orange, California: 175 people now serve more than 3,500 dentists, and 95% of cases arrive by mail. The lab is national without having left the county.',
@@ -2121,6 +2126,9 @@ function drawBeatText(b, focusAmt){
     /* a beat may name its own apex plane: 2000 flew to 265 and hit the top of
        the frame while the beams under it still had room — it stops at 480 now,
        centred in the air it actually has */
+    /* a beat may also name the lift it wants at full size: the row it keeps on
+       the wall is not always the place it belongs in when it is out in the air */
+    const lift = mixN(b.yLift || 0, b.flyLift != null ? b.flyLift : (b.yLift || 0), near);
     const apex = b.flyZ || 265;
     const zT = apex + (wz - 8 - apex) * Math.pow(1 - near, 1.7);
     const kk = k(zT);
@@ -2142,7 +2150,7 @@ function drawBeatText(b, focusAmt){
          the type's own fade, because until the year is live there is nothing
          to cast it. Eldar's idea, twice over. */
       if (near > 0.02 && !hungBand(b.x)){
-        const kW = k(wz - 8), lift = b.yLift || 0, cd0 = b._capDrop || 0;
+        const kW = k(wz - 8), cd0 = b._capDrop || 0;
         const light = seg.shade != null && seg.shade < 0.7;      // the white room takes less
         const aS = (light ? 0.13 : 0.34) * near;
         const spread = 1 + 0.05 * near;                          // it grows a little as the object leaves
@@ -2174,7 +2182,7 @@ function drawBeatText(b, focusAmt){
         ctx.restore();
       }
       ctx.textAlign = 'center';
-      let hitTopF = py(20 - (b.yLift || 0), kk);
+      let hitTopF = py(20 - lift, kk);
       const bandF = hungBand(b.x);
       if (bandF){
         const r = drawHungYear(b, seg, cx, bandF, fScale, focusAmt, near);
@@ -2183,7 +2191,7 @@ function drawBeatText(b, focusAmt){
         ctx.font = eraFont(170 * ts * fScale * kk * SS, '', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
         ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
-        ctx.fillText(b.y, cx, mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt));
+        ctx.fillText(b.y, cx, mixN(py(140 - lift, kk), H*0.16, focusAmt));
         ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
       }
       pushHit(cx - 340*kk*SS, hitTopF, 680*kk*SS, py(330, kk) - hitTopF,
@@ -2194,12 +2202,12 @@ function drawBeatText(b, focusAmt){
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
       const LB = b.tOnBay && BAY_LABELS[b.y];
       if (LB) ctx.fillText(b.t, LB.x, LB.y + 46 * 0.36 * kk * SS);
-      else ctx.fillText(b.t, cx, mixN(py(tY + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
+      else ctx.fillText(b.t, cx, mixN(py(tY + cd - lift, kk), H*0.16 + 62*SS, focusAmt));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th && !b.thBelow && fFade > 0.05){
         ctx.font = eraFont(30 * (seg.tScale || 1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${((near-0.25)/0.75 * 0.72 * fFade).toFixed(3)})`;
-        drawLines(b._th, cx, py(tY + 54 + cd - (b.yLift || 0), kk), 38 * kk * SS);
+        drawLines(b._th, cx, py(tY + 54 + cd - lift, kk), 38 * kk * SS);
       }
       ctx.restore();
     }
