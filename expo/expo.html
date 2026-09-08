@@ -1122,6 +1122,7 @@ const BENCH_BREAKS = [1700, 3345, 7350, 9250, 13100, 16900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
 BENCH_BREAKS.push({x: (REC17_L + REC17_R) / 2, half: (REC17_R - REC17_L) / 2 + 60});   // the glass hall stands on open floor
+BENCH_BREAKS.push({x: (REC_L + REC_R) / 2, half: (REC_R - REC_L) / 2 + 130});          // 1979: the models stand on the floor, so the counter opens for them
 // the counter clears out from the 1989 portal all the way past the 1993 stand:
 // a model of a place should stand on the floor of a room, not on a worktop
 BENCH_BREAKS.push({x: (REC3_R + REC93_R + 65) / 2, half: (REC93_R + 65 - REC3_R) / 2});
@@ -2653,9 +2654,12 @@ function drawBenchDescs(){
     } else {
       // a recreation beat: the line reads off the light floor slab in dark ink —
       // except 1979, where the red runner underfoot asks for light ink
-      const onCarpet = b.x > REC_L && b.x < REC_R;
-      ink = onCarpet ? '236,228,218' : '52,58,66';
-      shadow = onCarpet; slabDrop = 130*SS;
+      /* 1979 used to be a red runner underfoot, which wanted light ink; the
+         models stand there now — pale stone, dark ink, and the line drops clear
+         of the long plinth instead of lying across the little buildings. */
+      const onModels = b.x > REC_L && b.x < REC_R;
+      ink = '52,58,66';
+      shadow = false; slabDrop = onModels ? 205*SS : 130*SS;   // clear of the long plinth, and clear of the century rule under it
     }
     ctx.save();
     ctx.textAlign = 'center';
@@ -5661,7 +5665,10 @@ function drawMapWall(t){
       ctx.fillStyle = 'rgba(255,200,180,0.28)';                         // the fold catches the light
       ctx.fillRect(cT1 - wT1, Math.round(yNose), wT1 * 2, Math.max(1, 1.2 * SS));
     }
-    // the floor runner begins at the foot of the riser
+    /* THE RUNNER IS GONE. It was the one thing standing on this floor; the
+       nine labs stand there now, and a carpet under a row of building models
+       reads as a rug in a shop window. The step keeps its own runner fold. */
+    if (false){
     const yNear = py(1080, kNear), yFar = yStepFoot;
     const cxN = px(mid, kNear), cxF = px(mid, kStep);
     const wN = 330 * kNear * SS, wF = 150 * kStep * SS;
@@ -5724,7 +5731,35 @@ function drawMapWall(t){
     ctx.strokeStyle = 'rgba(235,195,120,0.4)'; ctx.lineWidth = 2.5*SS;
     ctx.beginPath(); ctx.moveTo(cxN - wN + 10*SS, yNear); ctx.lineTo(cxF - wF + 5*SS, yFar); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cxN + wN - 10*SS, yNear); ctx.lineTo(cxF + wF - 5*SS, yFar); ctx.stroke();
+    }
     ctx.restore();   // the bay clip
+  }
+  /* THE NINE LABS, AS MODELS. Eldar's renders: the plant they were all folded
+     into, on its own block in the middle of the bay, and the eight little
+     buildings on one long plinth across the front of it — the same composition
+     he laid out. Both are photographs of models, so they go in whole, standing
+     on the hall's own floor line; the counter opens across this bay for them. */
+  {
+    const gm = PROP_SPRITES.ph_gmain;
+    if (gm){
+      const kG = k(430);
+      const wG = 500 * kG * SS, hG = wG * gm.h / gm.w;
+      const xG = px(mid, kG) - wG / 2, yG = py(1080, kG) - hG;
+      if (xG < W + wG && xG + wG > -wG){
+        softFootShadow(px(mid, kG), py(1080, kG), wG * 0.46, hG * 0.012, 0.5);
+        ctx.drawImage(spriteMip(gm, wG, hG), xG, yG, wG, hG);
+      }
+    }
+    const g8 = PROP_SPRITES.ph_g8;
+    if (g8){
+      const kR = k(120);
+      const wR = (REC_R - REC_L + 380) * kR * SS, hR = wR * g8.h / g8.w;
+      const xR = px(mid, kR) - wR / 2, yR = py(1080, kR) - hR;
+      if (xR < W + wR && xR + wR > -wR){
+        softFootShadow(px(mid, kR), py(1080, kR), wR * 0.48, hR * 0.05, 0.5);
+        ctx.drawImage(spriteMip(g8, wR, hR), xR, yR, wR, hR);
+      }
+    }
   }
   // pilaster columns on both edges — same plane as the walls they join
   for (const wxc of [REC_L, REC_R]){
@@ -7568,6 +7603,8 @@ async function loadPhotoSkin(){
     ph_hall17: 'hall_2017.jpg',       // the 2017 bay: the glass hall, cut just past the ring on its floor
     ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
     ph_prj93: 'proj_1993.png',        // the 1993 LCD data projector on its stand, photographed
+    ph_g8: 'g8_1979.png',             // 1979: the nine labs, as models on one long plinth
+    ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
     front_e4: 'front_e4.jpg',         // the white era's counter face: one door of Eldar's render, mid-door to mid-door
     bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
     bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
