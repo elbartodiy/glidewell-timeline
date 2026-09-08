@@ -263,7 +263,7 @@ const BEATS = [
 
   {x:24020, y:'2017', t:'GLIDEWELL.IO',
    pinZ:996, yLift:30,   // the year rides the hall's own plane, in the sky above the ring of light
-   thBelow:true, tOnBay:true,   // the bay is a photograph: the title is lettered on its plinth, the thesis goes to the caption
+   thBelow:true, tHide:true,   // the render letters GLIDEWELL.IO on its own plinth: the wall does not print the name twice. The thesis goes to the caption
    th:'Future: the lab moves into the chair.',
    d:'Announced November 2017: scanner, fastdesign.io and the fastmill.io mill on the dentist\u2019s own counter, cutting BruxZir NOW \u2014 zirconia that needs no firing. A crown in one visit. The barrier was never the technique; it was the inconvenience.',
    wall:[],
@@ -284,7 +284,7 @@ const BEATS = [
   /* The plate carries the three portraits that stand under it, so moving the
      BEAT moved them too. It has its own offset now: plaqueDX shifts the plate
      alone, and the people stay where they were put. */
-  {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870, plaque:true, plaqueDX:-230,   // the plate alone, over the middle portrait
+  {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870, plaque:true, plaqueDX:-230, plaqueLz:6, plaqueBenchDX:206,   // the plate stands on the counter, in front of the middle portrait
    th:'Reinvesting in the profession — and our channel for finding hero dentists.',
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
    wall:[],
@@ -2084,11 +2084,52 @@ function drawLyingPrint(sp, x, lz, wWorld, rotDeg, hit){
 
 function eraFont(sz, style, fam){ return `${style||''} ${Math.round(sz)}px ${fam || SEGMENTS[0].font}`.trim(); }
 
+/* THE LABEL STANDS WITH WHAT IT NAMES. A plate for three portraits standing on
+   a counter belongs on the counter in front of them, not hung on the plaster
+   over their heads (Eldar drew the arrow). It is painted here, with the other
+   things that stand on the counter, so the counter cannot swallow it. */
+function drawBenchPlaque(b){
+  const seg = segAt(b.x);
+
+      const kk2 = k(bz(b.plaqueLz));
+      /* its own offset: plaqueDX was measured against the wall's plane, and the
+         same world step is a far bigger screen step out here on the counter */
+      const cx2 = px(b.x + (b.plaqueBenchDX != null ? b.plaqueBenchDX : (b.plaqueDX || 0)), kk2);
+      if (cx2 > -600 && cx2 < W + 600){
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.font = eraFont(26 * kk2 * SS, '', seg.font);
+        try { ctx.letterSpacing = `${5.5*kk2*SS}px`; } catch(e){}
+        const wP2 = ctx.measureText(b.t).width + 46 * kk2 * SS;
+        const hP2 = 54 * kk2 * SS;
+        const footY2 = py(CFG.benchY - 1, kk2);
+        const yP2 = footY2 - hP2;
+        contactShadow(cx2, footY2, wP2 * 0.52, 0.26);
+        const pg2 = ctx.createLinearGradient(cx2, yP2, cx2, footY2);
+        pg2.addColorStop(0, 'rgba(252,253,254,0.97)'); pg2.addColorStop(1, 'rgba(222,227,232,0.97)');
+        ctx.fillStyle = pg2;
+        ctx.beginPath(); ctx.roundRect(cx2 - wP2/2, yP2, wP2, hP2, 3 * SS); ctx.fill();
+        ctx.strokeStyle = 'rgba(120,132,144,0.5)'; ctx.lineWidth = 1.2 * SS;
+        ctx.beginPath(); ctx.roundRect(cx2 - wP2/2 + 3*kk2*SS, yP2 + 3*kk2*SS, wP2 - 6*kk2*SS, hP2 - 6*kk2*SS, 2*SS); ctx.stroke();
+        // the bevel that says it is a plate and not a card
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillRect(cx2 - wP2/2, yP2, wP2, Math.max(1, 1.2 * SS));
+        ctx.fillStyle = 'rgba(44,52,60,0.95)';
+        ctx.fillText(b.t, cx2, yP2 + hP2 * 0.66);
+        try { ctx.letterSpacing = '0px'; } catch(e){}
+        ctx.restore();
+        pushHit(cx2 - wP2/2, yP2, wP2, hP2, {type:'study', beat: BEATS.indexOf(b)});
+      }
+
+}
 function drawBeatText(b, focusAmt){
   if (b.under) return;   // this fact lives under the tabletop, on the bench face
   if (b.plaque){
     // no numeral, no lines — just a small engraved plate on the wall
     const segP = segAt(b.x);
+    /* OR ON THE COUNTER — see drawBenchPlaque, which runs with the objects
+       that stand on the counter rather than with the writing on the wall. */
+    if (b.plaqueLz != null) return;
     const kk = k(wallZAt(b.x) - 8);
     const cx = px(b.x + (b.plaqueDX || 0), kk);
     if (cx > -600 && cx < W + 600){
@@ -2212,7 +2253,7 @@ function drawBeatText(b, focusAmt){
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
       const LB = b.tOnBay && BAY_LABELS[b.y];
       if (LB) ctx.fillText(b.t, LB.x, LB.y + 46 * 0.36 * kk * SS);
-      else ctx.fillText(b.t, cx, mixN(py(tY + cd - lift, kk), H*0.16 + 62*SS, focusAmt));
+      else if (!b.tHide) ctx.fillText(b.t, cx, mixN(py(tY + cd - lift, kk), H*0.16 + 62*SS, focusAmt));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th && !b.thBelow && fFade > 0.05){
         ctx.font = eraFont(30 * (seg.tScale || 1) * kk * SS, 'italic', seg.font);
@@ -2280,8 +2321,10 @@ function drawBeatText(b, focusAmt){
       /* a title lettered on the bay photograph's plinth: it takes the picture's
          own point every frame, so it cannot drift against the render */
       const LB = b.tOnBay && BAY_LABELS[b.y];
+      /* a bay whose picture already carries the name does not get it printed on
+         the wall as well (2017: the render letters its own plinth) */
       if (LB) ctx.fillText(b.t, LB.x, LB.y + 46 * sc * 0.36 * kk * SS);
-      else ctx.fillText(b.t, cx, mixN(py((b.minor ? tY + 4 : tY) + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
+      else if (!b.tHide) ctx.fillText(b.t, cx, mixN(py((b.minor ? tY + 4 : tY) + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th){
         ctx.font = eraFont(30 * (b.minor?0.8:1) * (seg.tScale||1) * kk * SS, 'italic', seg.font);
@@ -6233,7 +6276,12 @@ function drawRec17(t){
     const kc = k(992);
     const cw = 120 * kc * SS;                        // the pilasters' own width
     const bx0 = px(REC17_L, kc) + cw / 2, bx1 = px(REC17_R, kc) - cw / 2;
-    const bw = Math.max(1, bx1 - bx0), bh = yBase;
+    /* THE PICTURE KEEPS ITS OWN FLOOR. Cut at the hall's wall line, the render
+       ended where our floor began and the bay looked short of ground. The
+       render is a whole room, marble and reflections included, so it runs the
+       full height of the frame and its floor simply IS the floor inside the
+       bay — the hall's own sheen washes over it afterwards. */
+    const bw = Math.max(1, bx1 - bx0), bh = H;
     const scale = Math.max(bw / sp.w, bh / sp.h);    // cover: fill it, crop the wings
     const dw = sp.w * scale, dh = sp.h * scale;
     ctx.save();
@@ -6241,8 +6289,8 @@ function drawRec17(t){
     ctx.drawImage(spriteMip(sp, Math.round(dw), Math.round(dh)),
                   Math.round(bx0 + (bw - dw) / 2), Math.round(bh - dh),
                   Math.round(dw), Math.round(dh));
-    // the plinth's face in the render runs rows 686–724 of 752: the title is lettered on it
-    BAY_LABELS['2017'] = {x: bx0 + bw / 2, y: bh - dh * (1 - 706 / 752), k: kc};
+    // the plinth's face in the render is around row 780 of 941: the title is lettered on it
+    BAY_LABELS['2017'] = {x: bx0 + bw / 2, y: bh - dh * (1 - 782 / 941), k: kc};
     const near = Math.max(0, 1 - Math.abs(mid - cam.x) / 1100);
     if (near > 0.02){
       ctx.globalCompositeOperation = 'lighter';
@@ -7317,7 +7365,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260901-voices';
+const ASSET_V = '20260908-hall';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* the procedural era walls (tools/make_wall.py) stand in for the drawn ones —
    same slot, same tiling, so drawWall never learns the difference */
@@ -11686,6 +11734,7 @@ function frame(){
       drawLyingPrint(sp, b.x + it.dx, it.lz, it.w, it.rot || 0,
                      {type:'photoTable', sp, wx: b.x + it.dx, lz: it.lz, w: it.w, cap: it.cap, beat: i});
     }
+    if (b.plaque && b.plaqueLz != null) drawBenchPlaque(b);
     for (const it of (b.st || [])){
       const sp = SPRITES[it.img]; if (!sp) continue;
       const hW = sp.h * (it.w / sp.inner.w);
