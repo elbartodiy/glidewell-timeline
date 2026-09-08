@@ -3733,8 +3733,7 @@ function drawProjectors(t, phase){
     ctx.restore();
 
     pushHit(sx - vw / 2, sy - vh / 2, vw, vh,
-            p.clip ? {type: 'clip', media: p.clip, wx: p.x}
-                   : {type: 'focus', beat: nearestBeat(p.x).i, anchor: p.x});
+            {type: 'study', beat: nearestBeat(p.x).i});   // the reel opens its year's page — never a player of its own
   }
 }
 /* the machine stands ON the bench, so it is painted after it — while the
@@ -10431,7 +10430,7 @@ function drawStudy(){
        frame cost more than the rest of the page together. Minifying the frame
        and blowing it back up IS a blur, and it rides the GPU. */
     try {
-      const fw = Math.max(2, W >> 4), fh = Math.max(2, H >> 4);
+      const fw = Math.max(2, W >> 6), fh = Math.max(2, H >> 6);   // a heavier blur: the hall behind is a wash, not a picture
       if (!FROST || FROST.width !== fw || FROST.height !== fh){
         FROST = document.createElement('canvas'); FROST.width = fw; FROST.height = fh;
       }
@@ -10442,10 +10441,14 @@ function drawStudy(){
       ctx.imageSmoothingEnabled = true;
       ctx.drawImage(FROST, 0, 0, W, H);
     } catch(err){}
-    ctx.fillStyle = 'rgba(238,244,250,0.18)';
+    ctx.fillStyle = 'rgba(240,246,252,0.30)';       // lighter: frosted glass is not a grey filter
     ctx.fillRect(wx0, wy0, ww, wh);
-    const gn = grains[(state.time*10|0) % grains.length];
-    ctx.globalAlpha = 0.05;
+    /* ONE GRAIN, NOT A FILM OF THEM. The matte tooth of the glass was taken
+       from the hall's own flicker set — a different grain every tenth of a
+       second — so the panel crawled with noise while you were trying to read.
+       Frost does not move: one frame of it, chosen once, at a whisper. */
+    const gn = grains[0];
+    ctx.globalAlpha = 0.03;
     ctx.fillStyle = gn.pat || (gn.pat = ctx.createPattern(gn.c, 'repeat'));
     ctx.fillRect(wx0, wy0, ww, wh);
     ctx.globalAlpha = a;
@@ -11499,7 +11502,11 @@ function update(dt){
         if (aimed && aimed.type === 'closepage'){
           S.closing = true;
         } else if (aimed && aimed.type === 'clip'){
-          openClip(aimed.media, aimed.wx);
+          /* NO SEPARATE VIDEO PAGE. A preview used to open a player over the
+             article; it plays where it hangs now, and a second tap stops it. */
+          const m4 = aimed.media;
+          if (S.railSrc === m4.src && S.railV && !S.railV.paused){ try { S.railV.pause(); } catch(e){} }
+          else { S.railV = playPageClip(m4.src); S.railSrc = m4.src; }
         } else if (aimed && aimed.type === 'person' && PEOPLE[aimed.id]){
           openPerson(aimed.id);     // the name in the text goes to the person, not to a portrait
         } else if (aimed && aimed.type === 'link'){
