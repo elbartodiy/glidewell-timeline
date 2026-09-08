@@ -4160,31 +4160,56 @@ function drawTallUnits(){
          of the wall's base and now stands 22, so it needs 15 for the request and
          28 to undo what the floor did underneath it. */
       const foot = py(1080, kk) + 44 * SS;
-      /* THE SHADOW IS AS WIDE AS THE CABINET. contactShadow throws a round pool
-         at 60 per cent of the width it is given, so at half the cabinet's width
-         it reached about two thirds of the way out and stopped well short of the
-         feet — a cabinet apparently resting on air at both ends. This one is an
-         ellipse the full width of the piece, soft, still carrying weight where
-         the edges are; and the two feet, which are what actually touch the
-         floor, get a small dark pool of their own. Measured off the file: they
-         sit at 3 and 97 per cent of its width. */
-      ctx.save();
-      const half = sw2 * 0.54, rise = Math.max(2, sh2 * 0.052);
-      ctx.translate(sx, foot); ctx.scale(1, rise / half); ctx.translate(-sx, -foot);
-      const shg = ctx.createRadialGradient(sx, foot, 0, sx, foot, half);
-      shg.addColorStop(0, 'rgba(0,0,0,0.40)');
-      shg.addColorStop(0.55, 'rgba(0,0,0,0.26)');
-      shg.addColorStop(0.86, 'rgba(0,0,0,0.13)');
-      shg.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = shg;
-      ctx.beginPath(); ctx.arc(sx, foot, half, 0, 7); ctx.fill();
-      ctx.restore();
+      /* THE SHADOW OF A CABINET IS NOT A POOL. A round pool belongs under a
+         round thing; this is a tall rectangular case on two feet, standing
+         against a wall under a lamp that hangs above and a little in front of
+         it. So what it actually casts is: a short, soft-ended RECTANGLE thrown
+         forward across the boards, widening very slightly as it comes toward
+         you and dying within a foot or so; a hard, dark contact line where the
+         case meets the floor; the dark void under the carcass, which shows
+         between the legs and is the darkest thing in the picture; and two
+         small pools where the feet actually touch. */
+      const halfW = sw2 * 0.52;
+      const throwD = sh2 * 0.105;                 // how far forward it reaches
+      const NB = 16;
+      for (let i = 0; i < NB; i++){
+        const t0 = i / NB, t1 = (i + 1) / NB;
+        const y0 = foot + throwD * t0, y1 = foot + throwD * t1;
+        const hw = halfW * (1 + 0.12 * t0);
+        const al = 0.42 * Math.pow(1 - t0, 1.8);
+        const g = ctx.createLinearGradient(sx - hw, 0, sx + hw, 0);
+        g.addColorStop(0, 'rgba(0,0,0,0)');
+        g.addColorStop(0.09, `rgba(0,0,0,${al.toFixed(3)})`);
+        g.addColorStop(0.91, `rgba(0,0,0,${al.toFixed(3)})`);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(sx - hw, y0, hw * 2, (y1 - y0) + 1);
+      }
+      // the contact line itself — thin, and the darkest part of the floor
+      {
+        const g = ctx.createLinearGradient(sx - halfW, 0, sx + halfW, 0);
+        g.addColorStop(0, 'rgba(0,0,0,0)');
+        g.addColorStop(0.07, 'rgba(0,0,0,0.55)');
+        g.addColorStop(0.93, 'rgba(0,0,0,0.55)');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(sx - halfW, foot - 1.5 * SS, halfW * 2, Math.max(1.5, 3 * SS));
+      }
+      /* the void under the case: painted BEFORE the photograph, so it shows
+         only through the gap between the legs, which is where it belongs */
+      {
+        const vh = Math.max(2, sh2 * 0.030);
+        const g = ctx.createLinearGradient(0, foot - vh, 0, foot);
+        g.addColorStop(0, 'rgba(0,0,0,0.62)'); g.addColorStop(1, 'rgba(0,0,0,0.34)');
+        ctx.fillStyle = g;
+        ctx.fillRect(sx - sw2 * 0.46, foot - vh, sw2 * 0.92, vh);
+      }
       for (const f of [-0.47, 0.47]){
-        const fx2 = sx + sw2 * f, fr = Math.max(2, sw2 * 0.085);
+        const fx2 = sx + sw2 * f, fr = Math.max(2, sw2 * 0.055);
         ctx.save();
-        ctx.translate(fx2, foot); ctx.scale(1, 0.34); ctx.translate(-fx2, -foot);
+        ctx.translate(fx2, foot); ctx.scale(1, 0.30); ctx.translate(-fx2, -foot);
         const fg = ctx.createRadialGradient(fx2, foot, 0, fx2, foot, fr);
-        fg.addColorStop(0, 'rgba(0,0,0,0.44)');
+        fg.addColorStop(0, 'rgba(0,0,0,0.52)');
         fg.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = fg;
         ctx.beginPath(); ctx.arc(fx2, foot, fr, 0, 7); ctx.fill();
