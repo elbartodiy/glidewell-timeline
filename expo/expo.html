@@ -1122,7 +1122,8 @@ const BENCH_BREAKS = [1700, 3345, 7350, 9250, 13100, 16900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
 BENCH_BREAKS.push({x: (REC17_L + REC17_R) / 2, half: (REC17_R - REC17_L) / 2 + 60});   // the glass hall stands on open floor
-BENCH_BREAKS.push({x: (REC_L + REC_R) / 2, half: (REC_R - REC_L) / 2 + 130});          // 1979: the models stand on the floor, so the counter opens for them
+/* 1979 keeps its counter: the row of models is cut just under its own stone
+   top and stands ON the hall's bench, so the counter is what holds it up. */
 // the counter clears out from the 1989 portal all the way past the 1993 stand:
 // a model of a place should stand on the floor of a room, not on a worktop
 BENCH_BREAKS.push({x: (REC3_R + REC93_R + 65) / 2, half: (REC93_R + 65 - REC3_R) / 2});
@@ -2658,8 +2659,10 @@ function drawBenchDescs(){
          models stand there now — pale stone, dark ink, and the line drops clear
          of the long plinth instead of lying across the little buildings. */
       const onModels = b.x > REC_L && b.x < REC_R;
-      ink = '52,58,66';
-      shadow = false; slabDrop = onModels ? 205*SS : 130*SS;   // clear of the long plinth, and clear of the century rule under it
+      /* 1979's line lies on the dark wood of the models' plinth, so it is set
+         light there; every other recreation reads dark on its pale slab. */
+      ink = onModels ? '236,228,218' : '52,58,66';
+      shadow = onModels; slabDrop = onModels ? 205*SS : 130*SS;
     }
     ctx.save();
     ctx.textAlign = 'center';
@@ -4577,16 +4580,32 @@ function drawSeamVideo(){
   }
 }
 
-/* after the world dims, the 1979 map gets its crossed beams — and is redrawn
-   on top so it never loses its contrast */
+/* 1979 DOES NOT GO DARK, IT COMES UP. Every other apex in the hall dims the
+   room and throws a spotlight; this bay is a model shop under gallery light,
+   and Eldar's note is plain — arriving here should LIGHT the place, not shade
+   it. So the veil is off for this one (see the hero pass) and the two fixtures
+   above it wash the whole bay warm as you come to the middle. */
 function drawMapHero(t, h){
-  if (h < 0.02 || !MAP_SPRITE) return;
+  if (h < 0.02) return;
   const mid = (REC_L + REC_R) / 2;
   const kk = k(610);
-  const sp = MAP_SPRITE;
-  const w = 440 * kk * SS, hh = w * sp.h / sp.w;
+  const w = 440 * kk * SS, hh = w * 0.633;
   const cx = px(mid, kk), cyS = py(450, kk);
-  // twin beams crossing on the map
+  /* the wash: the bay lifts, its own panel and the models with it */
+  {
+    const kc = k(604), x0b = px(REC_L, kc), x1b = px(REC_R, kc);
+    const yb = py(CFG.benchY + 260, k(CFG.benchDepth));
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const wash = ctx.createLinearGradient(0, 0, 0, yb);
+    wash.addColorStop(0, `rgba(255,246,224,${(0.10 * h).toFixed(3)})`);
+    wash.addColorStop(0.55, `rgba(255,246,224,${(0.055 * h).toFixed(3)})`);
+    wash.addColorStop(1, 'rgba(255,246,224,0)');
+    ctx.fillStyle = wash;
+    ctx.fillRect(Math.min(x0b, x1b), 0, Math.abs(x1b - x0b), yb);
+    ctx.restore();
+  }
+  // twin beams crossing over the models
   const yEnd = cyS + hh * 1.4;
   for (const s of [-1, 1]){
     const fx = px(mid + s * 470, kk);
@@ -4604,8 +4623,6 @@ function drawMapHero(t, h){
     ctx.fillStyle = `rgba(255,246,220,${(0.75*h).toFixed(2)})`;
     ctx.fillRect(fx - 5*SS, 10*SS, 10*SS, 4*SS);
   }
-  // the map itself rides above the dim and the light — crisp
-  ctx.drawImage(sp.c, cx - w/2, cyS - hh/2, w, hh);
 }
 
 /* 2023 · THE CROSSOVER. Every other apex in this hall is an invention. This
@@ -5594,13 +5611,13 @@ function drawMapWall(t){
   wg.addColorStop(1, '#5c5346');
   ctx.fillStyle = wg;
   ctx.fillRect(x0, 0, x1 - x0, yBase);
-  // the map, centered
-  const sp = MAP_SPRITE;
-  const w = 440 * kk * SS, h = w * sp.h / sp.w;
-  const cx = px(mid, kk), cyS = py(450, kk);
-  pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp, wx: mid, cy: 450, z: 610, w: 440,
-          cap: '1979 · nine labs across Southern California', beat: BEATS.findIndex(b => b.y === '1979')});
-  ctx.drawImage(sp.c, cx - w/2, cyS - h/2, w, h);
+  /* THE MAP HAS COME OFF THE WALL. Nine pins on a paper map said exactly what
+     the nine models now say standing on the counter, and the two together were
+     the same idea told twice. The panel keeps its light and its columns; the
+     models are the exhibit. */
+  const cx = px(mid, kk);
+  pushHit(cx - 300*kk*SS, py(180, kk), 600*kk*SS, py(700, kk) - py(180, kk),
+          {type:'study', beat: BEATS.findIndex(b => b.y === '1979')});
   // the red carpet running up to the map
   {
     /* A RUG, NOT A ROAD. Run out to the bottom of the frame it reached ground
@@ -5734,33 +5751,6 @@ function drawMapWall(t){
     }
     ctx.restore();   // the bay clip
   }
-  /* THE NINE LABS, AS MODELS. Eldar's renders: the plant they were all folded
-     into, on its own block in the middle of the bay, and the eight little
-     buildings on one long plinth across the front of it — the same composition
-     he laid out. Both are photographs of models, so they go in whole, standing
-     on the hall's own floor line; the counter opens across this bay for them. */
-  {
-    const gm = PROP_SPRITES.ph_gmain;
-    if (gm){
-      const kG = k(430);
-      const wG = 500 * kG * SS, hG = wG * gm.h / gm.w;
-      const xG = px(mid, kG) - wG / 2, yG = py(1080, kG) - hG;
-      if (xG < W + wG && xG + wG > -wG){
-        softFootShadow(px(mid, kG), py(1080, kG), wG * 0.46, hG * 0.012, 0.5);
-        ctx.drawImage(spriteMip(gm, wG, hG), xG, yG, wG, hG);
-      }
-    }
-    const g8 = PROP_SPRITES.ph_g8;
-    if (g8){
-      const kR = k(120);
-      const wR = (REC_R - REC_L + 380) * kR * SS, hR = wR * g8.h / g8.w;
-      const xR = px(mid, kR) - wR / 2, yR = py(1080, kR) - hR;
-      if (xR < W + wR && xR + wR > -wR){
-        softFootShadow(px(mid, kR), py(1080, kR), wR * 0.48, hR * 0.05, 0.5);
-        ctx.drawImage(spriteMip(g8, wR, hR), xR, yR, wR, hR);
-      }
-    }
-  }
   // pilaster columns on both edges — same plane as the walls they join
   for (const wxc of [REC_L, REC_R]){
     const kc = k(604);
@@ -5777,6 +5767,37 @@ function drawMapWall(t){
     ctx.fillRect(sxc + cw/2 - 4.2*SS, 0, 2.2*SS, yBase);
     ctx.fillStyle = 'rgba(255,230,180,0.12)';
     ctx.fillRect(sxc - cw/2 + 6*SS, 0, 3*SS, yBase);
+  }
+  /* THE NINE LABS, AS MODELS — painted after the pilasters, because they stand
+     in the room and the columns are on the wall behind them. The eight little
+     buildings sit at the height of a counter: the render is cut just under its
+     own stone top, and that stone lands on the hall's bench line. The plant
+     they were all folded into stands behind them, its roof reaching exactly
+     where the map on the wall used to end — the map itself is gone, because the
+     models say the same thing better. (Eldar's layout.) */
+  {
+    const gm = PROP_SPRITES.ph_gmain;
+    if (gm){
+      const kG = k(430);
+      const wG = 680 * kG * SS, hG = wG * gm.h / gm.w;
+      const yTopG = py(300, kG), xG = px(mid, kG) - wG / 2;
+      if (xG < W + wG && xG + wG > -wG) ctx.drawImage(spriteMip(gm, wG, hG), xG, yTopG, wG, hG);
+    }
+    const g8 = PROP_SPRITES.ph_g8;
+    if (g8){
+      /* the plinth is the exhibit's own counter: its stone top (16% down the
+         render) lands on the hall's bench line and its foot on the floor, so
+         the models are at the height of a table and the block holds them up.
+         Its ends run past the bay and the hall's counters cover them. */
+      const kR = k(120), TOP = 0.16;
+      const yBench = py(CFG.benchY, kR), yFoot = py(1080, kR);
+      const hR = (yFoot - yBench) / (1 - TOP), wR = hR * g8.w / g8.h;
+      const xR = px(mid, kR) - wR / 2;
+      if (xR < W + wR && xR + wR > -wR){
+        softFootShadow(px(mid, kR), yFoot, wR * 0.46, (yFoot - yBench) * 0.05, 0.4);
+        ctx.drawImage(spriteMip(g8, wR, hR), xR, yFoot - hR, wR, hR);
+      }
+    }
   }
 }
 
@@ -12440,7 +12461,8 @@ function frame(){
     const h = Math.max(0, 1 - Math.abs((REC_L + REC_R)/2 - cam.x)/680);
     return h*h*(3-2*h);
   })();
-  hero = Math.max(hero, hMap * 0.85);
+  /* 1979 is the one apex that does NOT dim the hall: it lights it. Its share of
+     the veil is gone; drawMapHero washes the bay instead. */
   state.hero = hero;
   if (hero > 0.01){
     ctx.fillStyle = `rgba(2,2,3,${(0.38*hero).toFixed(3)})`;
