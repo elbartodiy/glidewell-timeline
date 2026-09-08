@@ -27,9 +27,18 @@
               text-transform:uppercase;color:#d8cdb4;background:transparent;cursor:pointer;
               border:1px solid rgba(220,205,175,0.28);border-radius:3px;padding:7px 12px}
   #doc button:hover{background:rgba(220,205,175,0.10)}
-  #docBody{overflow:auto;padding:18px 24px 26px;margin:0;white-space:pre-wrap;
+  /* flex:1 1 auto + min-height:0 — WITHOUT the min-height a flex-column child
+     grows to its content instead of scrolling, so the long note simply ran off
+     the bottom of the panel with no bar to pull */
+  #docBody{flex:1 1 auto;min-height:0;overflow-y:scroll;overscroll-behavior:contain;
+           padding:18px 24px 26px;margin:0;white-space:pre-wrap;
            user-select:text;-webkit-user-select:text;
+           scrollbar-width:thin;scrollbar-color:rgba(220,205,175,0.45) transparent;
            font:13px/1.62 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#ddd6c8}
+  #docBody::-webkit-scrollbar{width:12px;background:rgba(255,255,255,0.04)}
+  #docBody::-webkit-scrollbar-thumb{background:rgba(220,205,175,0.55);border-radius:6px;
+           border:3px solid transparent;background-clip:padding-box}
+  #docBody::-webkit-scrollbar-thumb:hover{background:rgba(220,205,175,0.55);border:3px solid transparent;background-clip:padding-box}
   #docBody::selection{background:rgba(200,170,110,0.35)}
 </style>
 </head>
@@ -965,7 +974,7 @@ function attachMouseDriver(el){
     {
       const aimed = hitAt(pt.x, pt.y);
       if (aimed && aimed.type === 'spin'){
-        state.spinDrag = {lastX: e.clientX, moved: 0};
+        state.spinDrag = {lastX: e.clientX, lastY: e.clientY, moved: 0};
         down = false; markTap = true;
         el.setPointerCapture(e.pointerId);
         return;
@@ -981,10 +990,15 @@ function attachMouseDriver(el){
   el.addEventListener('pointermove', e => {
     Input.hover = toBuf(e);
     if (state.spinDrag){
-      const dx = e.clientX - state.spinDrag.lastX; state.spinDrag.lastX = e.clientX;
-      state.spinDrag.moved += Math.abs(dx);
-      CROWN3D.rot += dx * 0.012;
-      CROWN3D.vel = dx * 0.012 * 40;                 // it keeps a little of your speed when you let go
+      /* ANY WAY YOU LIKE. It turned about one axis only, like a record; Eldar
+         wanted to tip it over and look underneath. Horizontal movement turns it
+         about the screen's vertical, vertical movement tips it toward or away
+         from you, and the two compound — a trackball, not a turntable. */
+      const dx = e.clientX - state.spinDrag.lastX, dy = e.clientY - state.spinDrag.lastY;
+      state.spinDrag.lastX = e.clientX; state.spinDrag.lastY = e.clientY;
+      state.spinDrag.moved += Math.abs(dx) + Math.abs(dy);
+      crownTurn(dx * 0.012, -dy * 0.012);
+      CROWN3D.wy = dx * 0.012 * 40; CROWN3D.wx = -dy * 0.012 * 40;   // it keeps a little of your speed when you let go
       return;
     }
     if (!down) return;
@@ -1541,6 +1555,7 @@ cv.style.transform = 'translateZ(0)';   // pin the canvas to its own compositor 
 const ctx = cv.getContext('2d', {alpha:false});
 let W = 0, H = 0, SS = 1;  // canvas px, and scale ref->canvas
 let RQ = 1;   // adaptive render quality (drops on weak hardware)
+const RQ_PIN = /[?&]rq=1/.test(location.search);   // ?rq=1 pins full resolution — for the show machine and for screenshots
 function resize(){
   const dpr = Math.min(window.devicePixelRatio || 1, CFG.dprCap);
   W = cv.width = Math.round(innerWidth * dpr * RQ);
@@ -2115,18 +2130,37 @@ function drawBeatText(b, focusAmt){
          and softens — and that soft dark pool on the wall is what the title
          and the thesis line now sit on. Eldar's idea. It grows with the lift
          and is gone when the year is back on the wall. */
+      /* It covers what it has to carry: the pool is measured from the FLYING
+         type's own box — the numeral's top down past the thesis line — so as
+         the block grows toward you the pool grows under it, and it spreads and
+         goes softer at the edge the way a shadow does when its object leaves
+         the surface. Its darkness rises out of nothing with the type's own
+         fade, because until the year is live there is nothing to cast it. */
       if (near > 0.02 && !hungBand(b.x)){
-        const kW = k(wz - 8);
-        const yA = py(60 - (b.yLift || 0), kW), yB = py(tY + 150 - (b.yLift || 0), kW);
-        const cyS = (yA + yB) / 2, ryS = (yB - yA) * 0.62 * (1 + 0.35 * near), rxS = 380 * kW * SS * (1 + 0.45 * near);
+        /* IT IS CENTRED ON THE WORDS, not on the whole block. Measured from the
+           numeral's top down, the core of the pool sat up in the air above the
+           year and the title and the thesis — the two lines that actually need
+           it — lay out at the faint edge. The core is on the title/thesis band
+           now and the pool still reaches past the numerals. */
+        const lift = b.yLift || 0, cd0 = b._capDrop || 0;
+        const yTitle = py(tY + cd0 - lift, kk), yThesis = py(tY + 54 + cd0 - lift, kk);
+        const yTop = py(140 - lift, kk) - 170 * ts * fScale * kk * SS * 0.80;
+        const cyS = (yTitle + yThesis) / 2 + 6 * SS;
+        const spread = 1 + 0.30 * near;
+        const ryS = Math.max(cyS - yTop, 150 * SS) * 1.20 * spread, rxS = 470 * kk * SS * spread;
         const light = seg.shade != null && seg.shade < 0.7;             // the white room takes less
-        const aS = (light ? 0.11 : 0.30) * Math.pow(near, 0.8);
-        const sg = ctx.createRadialGradient(cx, cyS, 0, cx, cyS, 1);
-        sg.addColorStop(0, `rgba(6,4,2,${aS.toFixed(3)})`);
-        sg.addColorStop(0.55, `rgba(6,4,2,${(aS * 0.55).toFixed(3)})`);
-        sg.addColorStop(1, 'rgba(6,4,2,0)');
+        const aS = (light ? 0.17 : 0.44) * near;
+        /* the gradient is built in the UNIT space it is painted in. Built at
+           (cx, cyS) and then painted under a translate+scale, its centre was
+           carried off by the transform a second time and landed a screenful
+           away — which is why this shadow has never actually been visible. */
         ctx.save();
         ctx.translate(cx, cyS); ctx.scale(rxS, ryS);
+        const sg = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+        sg.addColorStop(0, `rgba(6,4,2,${aS.toFixed(3)})`);
+        sg.addColorStop(0.38, `rgba(6,4,2,${(aS * 0.86).toFixed(3)})`);
+        sg.addColorStop(0.70, `rgba(6,4,2,${(aS * 0.34).toFixed(3)})`);
+        sg.addColorStop(1, 'rgba(6,4,2,0)');
         ctx.fillStyle = sg; ctx.fillRect(-1, -1, 2, 2);
         ctx.restore();
       }
@@ -2696,6 +2730,7 @@ function drawFilmPanel(x, wWorld, welcome){
   pushHit(vx, vy, sw, sh, {type: 'welcomevid'});
   return {sx, kk, footY, top};
 }
+let LOGO26_SP = null;   // the mark is a 200px JPEG shown at ~26: it needs its mip chain
 function drawWelcomeTV(){
   const T = WELCOME_TV;
   if (Math.abs(T.x - cam.x) > 3600) return;
@@ -2717,7 +2752,8 @@ function drawWelcomeTV(){
     ctx.save();
     ctx.globalAlpha = state.introFade;
     ctx.beginPath(); ctx.roundRect(cxw - ms/2, my - ms/2, ms, ms, 5*kw*SS); ctx.clip();
-    ctx.drawImage(IMGS.logo2026.el, cxw - ms/2, my - ms/2, ms, ms);
+    if (!LOGO26_SP) LOGO26_SP = {c: IMGS.logo2026.el};
+    ctx.drawImage(spriteMip(LOGO26_SP, ms, ms), cxw - ms/2, my - ms/2, ms, ms);
     ctx.restore();
   }
   ctx.fillStyle = 'rgba(236,210,165,0.95)';
@@ -7861,7 +7897,30 @@ function makePedObj(kind){
    the rim — sorted back to front and painted as flat quads. It turns slowly on
    its own; drag it and it turns with your hand, 360 degrees, either way. No
    model file, no library: a lathe and a light. */
-const CROWN3D = {rot: 0.6, vel: 0, idle: 0.35, mesh: null};
+/* the crown's orientation is a rotation matrix, not an angle: it can be turned
+   about the screen's vertical (wy) and tipped about its horizontal (wx), and
+   the two compose. Idle, it eases back to a slow turn about the vertical. */
+const CROWN3D = {R: [Math.cos(0.6), 0, Math.sin(0.6), 0, 1, 0, -Math.sin(0.6), 0, Math.cos(0.6)], wx: 0, wy: 0.35, idle: 0.35, mesh: null};
+function mat3Mul(A, B){
+  const C = new Array(9);
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++)
+    C[i*3 + j] = A[i*3]*B[j] + A[i*3 + 1]*B[3 + j] + A[i*3 + 2]*B[6 + j];
+  return C;
+}
+const rotY3 = a => { const c = Math.cos(a), s = Math.sin(a); return [c, 0, -s, 0, 1, 0, s, 0, c]; };
+const rotX3 = a => { const c = Math.cos(a), s = Math.sin(a); return [1, 0, 0, 0, c, -s, 0, s, c]; };
+/* turn about the screen's vertical by `ay`, tip about its horizontal by `ax` —
+   both in VIEW space, so they always mean the same thing whatever way the crown
+   already faces — and keep the matrix orthonormal so a long spin cannot drift */
+function crownTurn(ay, ax){
+  let R = mat3Mul(rotX3(ax), mat3Mul(rotY3(ay), CROWN3D.R));
+  let [a, b, c, d, e, f, g, h, i] = R;
+  let n = Math.hypot(a, b, c) || 1; a/=n; b/=n; c/=n;
+  let dot = a*d + b*e + c*f; d -= dot*a; e -= dot*b; f -= dot*c;
+  n = Math.hypot(d, e, f) || 1; d/=n; e/=n; f/=n;
+  g = b*f - c*e; h = c*d - a*f; i = a*e - b*d;
+  CROWN3D.R = [a, b, c, d, e, f, g, h, i];
+}
 function crownMesh(){
   if (CROWN3D.mesh) return CROWN3D.mesh;
   // the profile: radius and height, foot to pole, smoothed through the same
@@ -7907,15 +7966,15 @@ function crownMesh(){
 }
 function drawCrown3D(cx, footY, size, alpha){
   const mesh = crownMesh(), {rings, M, P} = mesh;
-  const rot = CROWN3D.rot, ca = Math.cos(rot), sa = Math.sin(rot);
+  const R = CROWN3D.R;
   const scale = size / 122;                          // the mesh is ~118 wide at the bulge, 76 tall
   const cy = footY - 30 * scale;                     // the foot sits at footY
   const tilt = 0.30;                                 // the camera looks a little down at it
   const ct = Math.cos(tilt), st = Math.sin(tilt);
-  // rotate about Y, then tilt about X, then a mild perspective
+  // the crown's own orientation, then the camera's tilt about X, then a mild perspective
   const pts = rings.map(ring => ring.map(([x, y, z]) => {
-    const rx = x*ca - z*sa, rz = x*sa + z*ca;
-    const ty = y*ct - rz*st, tz = y*st + rz*ct;
+    const rx = R[0]*x + R[1]*y + R[2]*z, ry = R[3]*x + R[4]*y + R[5]*z, rz = R[6]*x + R[7]*y + R[8]*z;
+    const ty = ry*ct - rz*st, tz = ry*st + rz*ct;
     const f = 1 / (1 + tz / 900);
     return {x: cx + rx*f*scale, y: cy - ty*f*scale, z: tz, X: rx, Y: ty, Z: tz};
   }));
@@ -7933,7 +7992,7 @@ function drawCrown3D(cx, footY, size, alpha){
       let nx = uy*vz - uz*vy, ny = uz*vx - ux*vz, nz = ux*vy - uy*vx;
       const nl = Math.hypot(nx, ny, nz) || 1; nx/=nl; ny/=nl; nz/=nl;
       if (nz > 0.02) continue;                       // facing away
-      if (p === 0) continue;                         // the underside: a crown is open there, and never seen from above
+      if (p === 0) continue;                         // the underside: a crown is open there
       quads.push({a, b, c, d, nx, ny, nz, p, z: (a.z + b.z + c.z + d.z) / 4});
     }
   }
@@ -7965,8 +8024,10 @@ function drawCrown3D(cx, footY, size, alpha){
    and horizontal movement turns the crown instead of the room */
 function updateCrownSpin(dt){
   if (state.spinDrag) return;
-  CROWN3D.vel += (CROWN3D.idle - CROWN3D.vel) * Math.min(1, dt * 1.5);   // let go and it eases back to its slow turn
-  CROWN3D.rot += CROWN3D.vel * dt;
+  const e = Math.min(1, dt * 1.5);
+  CROWN3D.wy += (CROWN3D.idle - CROWN3D.wy) * e;   // let go and it eases back to its slow turn
+  CROWN3D.wx += (0 - CROWN3D.wx) * e;              // the tip you gave it dies away; the crown keeps the attitude you left it in
+  crownTurn(CROWN3D.wy * dt, CROWN3D.wx * dt);
 }
 function drawPedestal(b, t, hero){
   const ped = b.ped; if (!ped) return;
@@ -9674,16 +9735,16 @@ function drawStudy(){
   const SKINS = [
     {bg:'rgba(236,224,192,0.97)', edge:'rgba(120,96,58,0.55)', r:3,
      ink:'58,42,24', dim:'96,74,44', accent:'150,40,34', rule:'rgba(120,96,58,0.4)',
-     font:(s,st)=>`${st||''} ${Math.round(s*0.94)}px "American Typewriter","Courier New",monospace`.trim()},
+     font:(s,st)=>`${st||''} ${Math.round(s*0.94*SS)}px "American Typewriter","Courier New",monospace`.trim()},
     {bg:'rgba(238,238,230,0.97)', edge:'rgba(96,102,96,0.5)', r:3,
      ink:'46,52,50', dim:'96,104,100', accent:'160,52,40', rule:'rgba(96,102,96,0.35)',
-     font:(s,st)=>`${st||''} ${Math.round(s)}px "Helvetica Neue", Helvetica, Arial, sans-serif`.trim()},
+     font:(s,st)=>`${st||''} ${Math.round(s*SS)}px "Helvetica Neue", Helvetica, Arial, sans-serif`.trim()},
     {bg:'rgba(214,217,221,0.96)', edge:'rgba(58,64,72,0.6)', r:5,
      ink:'32,36,42', dim:'92,100,110', accent:'26,96,160', rule:'rgba(58,64,72,0.3)',
-     font:(s,st)=>`${st||''} ${Math.round(s)}px Verdana, Tahoma, sans-serif`.trim()},
+     font:(s,st)=>`${st||''} ${Math.round(s*SS)}px Verdana, Tahoma, sans-serif`.trim()},
     {bg:'rgba(250,252,255,0.16)', edge:'rgba(255,255,255,0.4)', r:22, glass:true,
      ink:'240,244,248', dim:'196,204,212', accent:'140,205,250', rule:'rgba(255,255,255,0.25)',
-     font:(s,st)=>`${st||''} ${Math.round(s)}px "Avenir Next","Helvetica Neue",Arial,sans-serif`.trim()},
+     font:(s,st)=>`${st||''} ${Math.round(s*SS)}px "Avenir Next","Helvetica Neue",Arial,sans-serif`.trim()},
   ];
   const K = SKINS[era];
   // the hall dims but stays present behind the window — the space breathes
@@ -10018,7 +10079,7 @@ function drawPeople(){
       bg2.addColorStop(0, '#2b2f34'); bg2.addColorStop(1, '#16191d');
       ctx.fillStyle = bg2; ctx.fillRect(cx, cy, cw, th);
       ctx.textAlign = 'center';
-      ctx.font = K.font(th * 0.22);
+      ctx.font = K.font(th * 0.22 / SS);
       ctx.fillStyle = 'rgba(214,178,94,0.34)';
       ctx.fillText(personInitials(P.name), cx + cw/2, cy + th*0.46);
       ctx.textAlign = 'left';
@@ -10091,10 +10152,17 @@ function drawPeople(){
    rail beside it goes on scrolling — pick the next one without losing this one.
    That is the shape people already know from a video site, and it is the one
    thing a page of interviews should not have to teach. */
+/* EVERY SIZE ON A PAGE IS IN REFERENCE PIXELS. The pages' type was the one
+   thing in the hall measured in raw canvas pixels while every margin, column
+   and line-height around it was multiplied by SS — so the moment the window
+   was not 1080 tall, or the screen was Retina, the type and its layout pulled
+   apart: a role line cut in half, a column too narrow for its own words,
+   paragraphs running out of the card. `font()` scales like everything else
+   now; a call site that already has a canvas-pixel size divides by SS. */
 const PSKIN = {bg:'rgba(252,252,251,0.985)', edge:'rgba(26,28,30,0.16)', r:6,
                ink:'24,26,28', dim:'118,124,130', red:'225,27,42',
                rule:'rgba(26,28,30,0.13)',
-               font:(s,st)=>`${st||''} ${Math.round(s)}px "Helvetica Neue", Helvetica, Arial, sans-serif`.trim()};
+               font:(s,st)=>`${st||''} ${Math.round(s*SS)}px "Helvetica Neue", Helvetica, Arial, sans-serif`.trim()};
 function openPerson(id){
   if (!PEOPLE[id]) return;
   if (state.person) personStop(state.person);
@@ -11457,8 +11525,17 @@ function loop(ts){
     qFrames = 0;
     /* the floor is 0.72 — below that the hall turns to mush — and recovery
        does not demand a perfect 60: a machine holding 52+ earns its pixels back */
-    if (fps < 34 && RQ > 0.72){ RQ = Math.max(0.72, RQ - 0.14); resize(); qCool = 900; }
-    else if (fps > 52 && RQ < 1){ RQ = Math.min(1, RQ + 0.14); resize(); qCool = 900; }
+    /* NOT WHILE ANYONE IS LOOKING AT SOMETHING STILL. Dropping the buffer is
+       for a hall in motion; on the title card and on an open page the frame is
+       already still, and all the drop does is turn the mark and the lettering
+       to stairsteps — which is exactly where Eldar saw it. The floor is 0.82:
+       below that the type goes to mush, and 0.72 bought a few frames nobody
+       asked for. Recovery at 46, so it climbs back after one slow stretch. */
+    const still = state.introHold || state.docOpen || state.study || state.person ||
+                  state.people || state.clip || RQ_PIN;
+    if (still){ /* hold the buffer where it is */ }
+    else if (fps < 34 && RQ > 0.82){ RQ = Math.max(0.82, RQ - 0.09); resize(); qCool = 900; }
+    else if (fps > 46 && RQ < 1){ RQ = Math.min(1, RQ + 0.09); resize(); qCool = 900; }
   }
   // a tab that boots hidden measures 0x0 — never draw a zero frame
   if (!W || !H){ resize(); if (!W || !H){ requestAnimationFrame(loop); return; } }
