@@ -288,7 +288,7 @@ const BEATS = [
   /* The plate carries the three portraits that stand under it, so moving the
      BEAT moved them too. It has its own offset now: plaqueDX shifts the plate
      alone, and the people stay where they were put. */
-  {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870, plaque:true, plaqueDX:-230, plaqueLz:6, plaqueBenchDX:206,   // the plate stands on the counter, in front of the middle portrait
+  {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870, plaque:true, plaqueDX:-230, plaqueLz:6, plaqueBenchDX:25,   // the plate stands on the counter in front of the portraits, left of the graduation cap so neither crosses the other
    th:'Reinvesting in the profession — and our channel for finding hero dentists.',
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
    wall:[],
@@ -2151,8 +2151,8 @@ function drawBenchPlaque(b){
       if (cx2 > -600 && cx2 < W + 600){
         ctx.save();
         ctx.textAlign = 'center';
-        ctx.font = eraFont(26 * kk2 * SS, '', seg.font);
-        try { ctx.letterSpacing = `${26*TRACK.plate*kk2*SS}px`; } catch(e){}
+        ctx.font = eraFont(23 * kk2 * SS, '', seg.font);   // narrow enough to stand between the cell and the cap
+        try { ctx.letterSpacing = `${23*TRACK.plate*kk2*SS}px`; } catch(e){}
         const benchTx = sentence(b.t);
         const wP2 = ctx.measureText(benchTx).width + 46 * kk2 * SS;
         const hP2 = 54 * kk2 * SS;
@@ -7664,7 +7664,7 @@ function initDecor(){
   FIGURES.push({x: SHIFT(16460), z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
   // mills receding behind the factory line
   // the graduates' mortarboard behind the alumnae portraits
-  PROPS.push({x: SHIFT(25700), z: 85, kind: 'gradcap', w: 175, late: true});
+  PROPS.push({x: SHIFT(25700), z: 4, kind: 'gradcap', w: 175, late: true});   // on the plate's own plane, a hair nearer, and to its right
 
   /* The welcome still life is gone: the film plays where the heirlooms stood.
      A flat panel on the bench (drawWelcomeTV) carries the preview movie, and
@@ -12375,7 +12375,6 @@ function frame(){
       drawLyingPrint(sp, b.x + it.dx, it.lz, it.w, it.rot || 0,
                      {type:'photoTable', sp, wx: b.x + it.dx, lz: it.lz, w: it.w, cap: it.cap, beat: i});
     }
-    if (b.plaque && b.plaqueLz != null) drawBenchPlaque(b);
     for (const it of (b.st || [])){
       const sp = SPRITES[it.img]; if (!sp) continue;
       const hW = sp.h * (it.w / sp.inner.w);
@@ -12383,6 +12382,8 @@ function frame(){
         {type:'photo', sp, wx: b.x + it.dx, cy: CFG.benchY - hW/2, z: it.lz, w: it.w, cap: it.cap, beat: i},
         it.lift);
     }
+    // the label goes on AFTER the pictures: it stands in front of them, not behind
+    if (b.plaque && b.plaqueLz != null) drawBenchPlaque(b);
     if (b.rig && RIGS[b.rig.kind]) RIGS[b.rig.kind](b, t);
     for (const p of (b.props || [])) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
