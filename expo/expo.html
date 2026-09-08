@@ -982,6 +982,14 @@ function attachMouseDriver(el){
     if (voicesMarkHit(pt)){ if (!state.people) openPeople(); down = false; markTap = true; return; }
     {
       const aimed = hitAt(pt.x, pt.y);
+      if (aimed && aimed.type === 'inseek'){
+        state.seekDrag = {x0: aimed.x0, w: aimed.w, src: aimed.src};
+        seekPageClip(pt.x);
+        down = false; markTap = true;
+        el.setPointerCapture(e.pointerId);
+        Input.setDragging(true);
+        return;
+      }
       if (aimed && aimed.type === 'spin'){
         state.spinDrag = {lastX: e.clientX, lastY: e.clientY, moved: 0};
         down = false; markTap = true;
@@ -998,6 +1006,7 @@ function attachMouseDriver(el){
   });
   el.addEventListener('pointermove', e => {
     Input.hover = toBuf(e);
+    if (state.seekDrag){ seekPageClip(toBuf(e).x); return; }
     if (state.spinDrag){
       /* ANY WAY YOU LIKE. It turned about one axis only, like a record; Eldar
          wanted to tip it over and look underneath. Horizontal movement turns it
@@ -1026,6 +1035,7 @@ function attachMouseDriver(el){
     Input.push(-dx * 30);
   });
   el.addEventListener('pointerup', e => {
+    if (state.seekDrag){ state.seekDrag = null; markTap = false; down = false; Input.setDragging(false); return; }
     if (state.spinDrag){ state.spinDrag = null; markTap = false; down = false; Input.setDragging(false); return; }
     if (markTap){ markTap = false; down = false; Input.setDragging(false); return; }
     down = false; Input.setDragging(false);
@@ -1050,6 +1060,7 @@ function attachMouseDriver(el){
 /* ---------------- CAMERA / STATE ---------------- */
 const cam = { x: INTRO_X, vel: 0, z: 430, zTarget: 430 };   // the tour opens zoomed tight on the still life
 const state = {
+  seekDrag: null,         // the hand on a clip's timeline inside a page
   albumView: null,        // the album, open in front of you, a spread at a time
   docOpen: false,         // the working note is up: the hall keeps its hands off
   docHot: false,
@@ -9993,19 +10004,27 @@ function openStudy(i){
   /* a page that carries voices starts speaking as it opens — but IN the rail,
      small, right where the clip hangs; tapping it expands to the full player.
      The hall film, meanwhile, fades out and holds its place. */
-  const media = STUDY_MEDIA[b.x];
-  if (media && media.length){
-    const m = media[0];
-    let v = VIDEO_EL[m.src];
-    if (!v){
-      v = document.createElement('video');
-      v.src = m.src; v.preload = 'auto'; v.playsInline = true;
-      VIDEO_EL[m.src] = v;
-    }
-    try { v.currentTime = 0; } catch(e){}
-    v.play().catch(()=>{});
-    state.study.railV = v; state.study.railSrc = m.src;
+  /* the rail's first clip, or — where the page carries its own, down in the
+     flow — that one. Either way it starts AT THE HEAD: a page opened a second
+     time used to pick the tape up where it had been left, mid-sentence. */
+  const inl0 = STUDY_INLINE[b.t];
+  const m = (STUDY_MEDIA[b.x] || [])[0] || (inl0 && inl0.clip);
+  if (m){
+    state.study.railV = playPageClip(m.src);
+    state.study.railSrc = m.src;
   }
+}
+function playPageClip(src){
+  let v = VIDEO_EL[src];
+  if (!v){
+    v = document.createElement('video');
+    v.src = src; v.preload = 'auto'; v.playsInline = true;
+    VIDEO_EL[src] = v;
+  }
+  v.muted = SOUND.off;
+  try { v.currentTime = 0; } catch(e){}
+  v.play().catch(()=>{});
+  return v;
 }
 let FROST = null;
 /* ONE WINDOW FOR THE CROSSOVER. The year opened a reading page and the carton
@@ -10453,16 +10472,27 @@ function drawStudy(){
         ctx.font = K.font(16, 'italic');
         ctx.fillStyle = 'rgba(206,214,222,0.9)';
         ctx.fillText(c2.label, vx + 18*SS, y + vh - 13*SS);
-        if (live && S.railV.duration){
-          ctx.fillStyle = 'rgba(255,255,255,0.22)';
-          ctx.fillRect(vx, y + vh - 3*SS, vw, 3*SS);
+        // the timeline, and it can be taken hold of: click or drag to any moment
+        {
+          const dur = live && S.railV.duration ? S.railV.duration : 0;
+          const frac = dur ? Math.max(0, Math.min(1, S.railV.currentTime / dur)) : 0;
+          const barY = y + vh - 9 * SS, barH = 5 * SS, bx3 = vx + 10 * SS, bw3 = vw - 20 * SS;
+          ctx.fillStyle = 'rgba(255,255,255,0.26)';
+          ctx.fillRect(bx3, barY, bw3, barH);
           ctx.fillStyle = `rgba(${K.accent},0.95)`;
-          ctx.fillRect(vx, y + vh - 3*SS, vw * (S.railV.currentTime / S.railV.duration), 3*SS);
+          ctx.fillRect(bx3, barY, bw3 * frac, barH);
+          if (dur){
+            ctx.fillStyle = 'rgba(255,255,255,0.95)';
+            ctx.beginPath(); ctx.arc(bx3 + bw3 * frac, barY + barH / 2, 6 * SS, 0, 7); ctx.fill();
+          }
         }
         ctx.restore();
         ctx.strokeStyle = K.edge; ctx.lineWidth = 1.2 * SS;
         ctx.beginPath(); ctx.roundRect(vx, y, vw, vh, 8 * SS); ctx.stroke();
         pushHit(vx, y, vw, vh, {type: 'inclip', clip: c2});
+        // the seek band is pushed after the picture, so the bar wins the tap
+        pushHit(vx, y + vh - 24 * SS, vw, 28 * SS,
+                {type: 'inseek', src: c2.src, x0: vx + 10 * SS, w: vw - 20 * SS});
       }
       y += vh + 34 * SS;
     }
@@ -10645,6 +10675,15 @@ function roleShort(role){
    a thousand turns to reach the bottom. A notch is a displacement, and now
    moves about an eighth of the window. A drag keeps roughly the hand's own
    distance instead of ten times it. */
+/* the hand on the clip's timeline: any point on the bar is a time in the tape */
+function seekPageClip(px2){
+  const D = state.seekDrag; if (!D) return;
+  const v = VIDEO_EL[D.src];
+  if (!v || !v.duration) return;
+  const f = Math.max(0, Math.min(1, (px2 - D.x0) / Math.max(1, D.w)));
+  try { v.currentTime = f * v.duration; } catch(e){}
+  if (v.paused) v.play().catch(()=>{});
+}
 function pageScroll(S, inp, dt){
   /* THE SHEET HAS A TOP. Overscroll used to run to -240 because scrolling past
      the top was how you closed a page; now that a page closes only on a click,
