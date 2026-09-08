@@ -262,8 +262,8 @@ const BEATS = [
    wall:[], table:[]},
 
   {x:24020, y:'2017', t:'GLIDEWELL.IO',
-   pinZ:996, yLift:30,   // the year rides the hall's own plane, in the sky above the ring of light
-   thBelow:true, tHide:true,   // the render letters GLIDEWELL.IO on its own plinth: the wall does not print the name twice. The thesis goes to the caption
+   /* the glass hall that used to stand here has moved to the end of the walk;
+      the year keeps its place on the wall, with the mill on its plinth */
    th:'Future: the lab moves into the chair.',
    d:'Announced November 2017: scanner, fastdesign.io and the fastmill.io mill on the dentist\u2019s own counter, cutting BruxZir NOW \u2014 zirconia that needs no firing. A crown in one visit. The barrier was never the technique; it was the inconvenience.',
    wall:[],
@@ -337,13 +337,16 @@ const CUTS = [
   // 1993: the move to Newport Beach — a model of the building, and the film the
   // company shot of it, cut inside era 2 where no two wall planes meet
   {at: 12150, w: 1500, on: true},
-  // 2017: glidewell.io — the lab moves into the chair — set in the glass hall
-  // of Eldar's render, wide enough for the vault and both wings
-  {at: 24020, w: 3000, on: true},
   // 2018: the first crown designed entirely by AI, and the arm that takes it on
   {at: 24450, w: 1500, on: true},
   // 2023: the month the digital impressions outnumbered the physical ones
   {at: 26900, w: 2000, on: true},
+  /* THE GLASS HALL, at the end of the walk. It was cut in beside 2017, which is
+     where the year belongs — but the room itself is the company as it stands
+     now, and it wants the last stretch: between the counter of 2020 and TODAY.
+     The turning crown stands in the middle of it, on its own plinth. The 2017
+     beat keeps its place on the wall as a marker. (Eldar, 2026-09-08.) */
+  {at: 27600, w: 3000, on: true},
 ];
 function SHIFT(x){
   let s = 0;
@@ -376,9 +379,15 @@ function applyCut(){
   };
   if (CUTS[1].on) anchor('1970', bayStart(1) + CUTS[1].w / 2);
   anchor('1993', (REC93_L + REC93_R) / 2);
-  anchor('2017', (REC17_L + REC17_R) / 2);
   anchor('2018', (REC18_L + REC18_R) / 2);
   anchor('2023', (REC23_L + REC23_R) / 2);
+  /* THE CROWN STANDS IN THE HALL. Its plinth belongs to the TODAY beat, but the
+     room it stands in is the glass hall, so its offset is measured to the bay's
+     centre once the cuts are in — not written by hand. */
+  {
+    const b26 = BEATS.find(b => b.y === '2026');
+    if (b26 && b26.ped) b26.ped.dx = (REC17_L + REC17_R) / 2 - b26.x;
+  }
   /* RHYTHM. Inside one era the years should stand at equal intervals: a
      corridor reads by its beat, and ours had a gap of 600 next to a gap of 1600
      for no reason but the order they happened to be written in. The era keeps
@@ -393,7 +402,9 @@ function applyCut(){
      beat tied to a fixed scene cannot be re-spaced — the scene has to move with
      it, or it has to stay put. */
   anchor('2022', (REC4_L + REC4_R) / 2);
-  const owns = new Set(['1970', '1993', '2017', '2018', '2022', '2023', '2019']);
+  const owns = new Set(['1970', '1993', '2018', '2022', '2023', '2019', '2020']);
+  /* 2020 is pinned too: the glass hall now opens just past it, and the even
+     spacing was pushing the beat right, into the bay's own ground. */
   for (const seg of SEGMENTS){
     const mine = BEATS.filter(b => b.x > seg.x0 && b.x < seg.x1 && !b.sub && !b.under)
                       .sort((p, q) => p.x - q.x);
@@ -424,7 +435,7 @@ function applyCut(){
        hall is 3,000 wide, and measured to its centre the last free beat (2015)
        was handed a place inside it — its year printed on the glass. For that
        bay the interval ends at the pilaster, with a little air. */
-    const edge = {'2017': [REC17_L - 260, REC17_R + 260]};
+    const edge = {};   // (the glass hall no longer sits beside a beat that spacing can move)
     for (let f = 0; f < fixed.length - 1; f++){
       const p = fixed[f], q = fixed[f + 1];
       if (q - p < 2) continue;                       // nothing free between them
@@ -516,11 +527,11 @@ const REC4_L = SHIFT(25940), REC4_R = SHIFT(26740);   // the 2022 fastscan recre
    plain wall on each side, the breathing room the other recreations have. */
 const REC93_L = bayStart(2) + 275, REC93_R = bayStart(2) + 1225;
 /* The 2018 bay, cut inside era 4 for the same reason: no seam to bridge. */
-const REC17_L = bayStart(3) + 200, REC17_R = bayStart(3) + 2800;   // the 2017 glass hall: a 2600 panel in a 3000 cut
-const REC18_L = bayStart(4) + 300, REC18_R = bayStart(4) + 1200;
+const REC18_L = bayStart(3) + 300, REC18_R = bayStart(3) + 1200;
 /* The 2023 bay: the crossing. Cut inside era 4, 2000 wide, panel in the middle
    900 — 710 units of clear wall after the 2022 portal, 840 before the next. */
-const REC23_L = bayStart(5) + 550, REC23_R = bayStart(5) + 1450;
+const REC23_L = bayStart(4) + 550, REC23_R = bayStart(4) + 1450;
+const REC17_L = bayStart(5) + 200, REC17_R = bayStart(5) + 2800;   // the glass hall: a 2600 panel in a 3000 cut, at the end of the walk
 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
@@ -8371,7 +8382,23 @@ function drawPedestal(b, t, hero){
   const warmC = era === 0 ? '255,215,140' : '225,240,255';
   // two side spotlights swing in and lock their beams exactly on the exhibit;
   // brightness peaks AT the object, then the light falls away
-  if (hero > 0.02 && !ped.vitrine){   // a vitrine glows from its own capsule — no crossed spotlights
+  /* A WHITE CROWN IN A WHITE ROOM. Standing in the glass hall the plinth gets
+     the same pair of spotlights every exhibit gets — and against a sunlit
+     render they only wash it out. Inside that bay the beams stay off and the
+     piece gets a soft shade behind it instead, so it reads as an object in the
+     room rather than a bright shape on a bright picture. */
+  const inHall = x > REC17_L && x < REC17_R;
+  if (inHall){
+    ctx.save();
+    const gH = ctx.createRadialGradient(sx, yTop - 90*kk*SS, 10*kk*SS, sx, yTop - 60*kk*SS, colW * 1.5);
+    gH.addColorStop(0, 'rgba(28,40,54,0.30)');
+    gH.addColorStop(0.55, 'rgba(28,40,54,0.13)');
+    gH.addColorStop(1, 'rgba(28,40,54,0)');
+    ctx.fillStyle = gH;
+    ctx.beginPath(); ctx.arc(sx, yTop - 70*kk*SS, colW * 1.5, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+  if (hero > 0.02 && !ped.vitrine && !inHall){   // a vitrine glows from its own capsule — no crossed spotlights
     const lock = Math.min(1, hero * 1.7);
     const objSprite = PED_SPRITES[ped.obj];
     const objH = 120 * (ped.big ? 1.3 : 1) * kk * SS * objSprite.h / objSprite.w;
@@ -12274,7 +12301,9 @@ function frame(){
     ctx.fillStyle = `rgba(2,2,3,${(0.38*hero).toFixed(3)})`;
     ctx.fillRect(0, 0, W, H);
   }
-  for (const b of BEATS) if (b.ped && Math.abs(b.x - cam.x) < 2000) drawPedestal(b, t, hero);
+  /* culled by the PLINTH's own place, not the beat's: the crown's plinth now
+     stands two thousand units from the beat that owns it, in the glass hall */
+  for (const b of BEATS) if (b.ped && Math.abs(b.x + (b.ped.dx ?? -430) - cam.x) < 2000) drawPedestal(b, t, hero);
   /* the factory is the exhibit of its own catharsis: the room dims, the line
      does NOT — it is drawn again over the veil, machines, shafts and all,
      exactly the way the pedestals climb back out of the dark */
