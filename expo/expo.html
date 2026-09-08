@@ -9682,6 +9682,7 @@ function drawInspect(){
    forwarding address. These are keyed by the beat's title instead, and are
    merged into STUDY_MORE at boot once every beat has settled where it settles. */
 const STUDY_BY_TITLE = {
+  'DIRECT-MAIL': "In 1976 Jim Glidewell put the laboratory in an envelope. He mailed dentists an offer: post us the impression, and the finished crown comes back to you the same way. The trade ran on couriers and neighbourhoods \u2014 a lab served the practices its driver could reach and back before the end of the day \u2014 so the offer read as a stunt. It is the thing that turned a local workshop into a national one.\n\n## What came before it\n\nBy the middle of the seventies Jim was running several small laboratories across Southern California, and hand-to-hand had hit its ceiling: the business could grow only as far as a van could drive, and it lived on the loyalty of the dentists on that route.\n\nHe wanted steady work for the people at the benches, and steady work means a steady flow of cases \u2014 which meant reaching past the county. The post office was already national. A dentist had to do nothing but put the impression in a box; the lab did not have to run a fleet to fetch it.\n\n## What it did to the business\n\n\u2022 Scale. Mail let the work be gathered into one plant instead of spread across nine. By 1989, 95% of it arrived at a single address by post, from more than 3,500 dentists across the country.\n\u2022 Standards. Jim\u2019s rule was that quality falls the moment you stop watching it \u2014 and volume is what makes a written procedure worth having. At that scale the lab could dose materials by machine instead of by eye, and take the guesswork out of the steps where one hand differs from another.\n\u2022 Price, worked backwards. The flow made a published price possible \u2014 the famous $99 crown. He did it in reverse: start from the number a dentist says yes to without thinking, then rebuild the inside of the company until that number pays. Volume, not the margin on a single unit, is what makes that arithmetic work.\n\n## The rules he took from it\n\n\u2022 Marketing is the tax you pay to survive. Don\u2019t advertise and you stay the best-kept secret in town. The advertising brings the cases, and the cases are what let you promise anybody a job.\n\u2022 Perception is reality. He deliberately kept out of meetings with customers: a meeting can undo a brand in a minute, while print says exactly what you decided it should say.\n\u2022 Faster, better, less expensive. Speed to market is a product in its own right \u2014 and FedEx and UPS turned out to be quicker and steadier than a van and a driver.\n\u2022 Honest self-interest. Jim never pretended people come to work for him rather than for themselves. Management, in his words, is getting people to reach the company\u2019s goals out of their own selfish interests \u2014 and the mail-order scale is what let the benches earn more on piecework than anywhere else in the trade.\n\n## What is left of it\n\nThe box became a file. The impression is a scan, the courier is a network, the crown is designed before anyone has touched it. The idea underneath is the one from 1976: take the distance between the dentist and the laboratory out of the question.",
   'SILENT NITE': "In 1996, Glidewell introduced the Silent Nite sleep appliance — a custom, dentist-delivered oral device that gently advances the lower jaw to keep the airway open during sleep, reducing snoring and mild obstructive sleep apnea. It was deliberately built to be comfortable, adjustable, and inexpensive enough for any general dentist to fit, not just sleep specialists.\n\nWhy it matters — dentistry beyond repair. Every previous Glidewell product fixed something already broken: a worn tooth, a missing tooth, a failed restoration. Silent Nite is different — it keeps a problem from starting. It is prevention, not repair. That is a quiet but real shift in what a dental lab believes it is for: not only rebuilding mouths, but protecting sleep, breathing, and health.",
   'PFM ERA': "The crown that built the lab. Porcelain-fused-to-metal was invented at the end of the 1950s by Abraham Weinstein, a New York dental technician: fire a thin porcelain veneer onto a cast metal coping and you get a tooth that is strong where gold is strong and white where a tooth is white. His patent was filed on 15 October 1959; VITA in Germany brought out VMK, the first commercial metal-ceramic system, in 1962. For the next half-century the PFM was simply what a crown was — cast by hand, layered by hand, fired by hand, one case at a time. The 1970s refined it: better oxide bonding, fewer chipped veneers, porcelains that finally matched a shade guide.\n\nThis is the world Jim Glidewell opened his door into in January 1970 — a ceramist by training, and PFM was the ceramist's trade. It was also the lab's engine. Through the 1980s and 1990s Glidewell grew into the largest dental laboratory in the world largely on the back of PFM volume: a single labour-intensive product, made by hand, in staggering quantities, at a price a general dentist could put in front of any patient. That is the thesis of this hall in its first form — the best available restoration, made affordable by doing it at scale.\n\nAnd then Jim did the thing that defines him: he killed his own best-seller. BruxZir, in 2009, was a crown with no porcelain to chip and no metal to show at the gumline, milled instead of hand-layered. Within a decade monolithic zirconia had displaced the PFM as the default, and Glidewell later stopped making the traditional feldspathic PFM altogether, moving what remained of the metal-ceramic category onto its own Obsidian lithium silicate. The lab that grew up on the PFM is the lab that ended it.",
 };
@@ -10304,10 +10305,46 @@ function drawStudy(){
   y += 36 * SS;
   const more = STUDY_MORE[b.x];
   if (more){
-    ctx.font = K.font(24);
-    ctx.fillStyle = `rgba(${K.ink},0.85)`;
+    /* AN ARTICLE IS NOT A WALL OF TEXT. Two marks are enough to give a long
+       page its structure and they cost nothing to write: a paragraph opening
+       with "## " is a subheading — set small, spaced and ruled, with air over
+       it — and a line opening with "• " is a bullet, hung on its own indent so
+       the text under it lines up. Everything else is a paragraph, as before. */
     for (const para of more.split('\n\n')){
-      for (const rawLine of para.split('\n')) flow(rawLine, 36*SS);
+      if (para.startsWith('## ')){
+        y += 26 * SS;
+        ctx.font = K.font(19, '700');
+        try { ctx.letterSpacing = `${3.2*SS}px`; } catch(err){}
+        ctx.fillStyle = `rgba(${K.ink},0.95)`;
+        if (y > topClip && y < botClip) ctx.fillText(para.slice(3).toUpperCase(), left, y);
+        try { ctx.letterSpacing = '0px'; } catch(err){}
+        y += 12 * SS;
+        ctx.fillStyle = K.rule;
+        if (y > topClip && y < botClip) ctx.fillRect(left, y, textW * 0.34, 1.2 * SS);
+        y += 36 * SS;
+        ctx.font = K.font(24);
+        ctx.fillStyle = `rgba(${K.ink},0.85)`;
+        continue;
+      }
+      ctx.font = K.font(24);
+      ctx.fillStyle = `rgba(${K.ink},0.85)`;
+      for (const rawLine of para.split('\n')){
+        if (rawLine.startsWith('\u2022 ')){
+          const bx2 = left, ty2 = y;
+          const wasW = objW;
+          if (ty2 > topClip && ty2 < botClip){
+            ctx.fillStyle = `rgba(${K.accent},0.9)`;
+            ctx.fillText('\u2022', bx2, ty2);
+            ctx.fillStyle = `rgba(${K.ink},0.85)`;
+          }
+          // the text hangs on its own indent, so a wrapped bullet stays a bullet
+          const ind = 24 * SS;
+          y = flowText(rawLine.slice(2), left + ind, y, textW - ind - (objBot > 0 && y < objBot ? objW + 28*SS : 0), 36*SS,
+            {seen, top: topClip, bot: botClip, accent: `rgba(${K.accent},0.95)`, ink: `rgba(${K.ink},0.85)`});
+          y += 6 * SS;
+          objW = wasW;
+        } else flow(rawLine, 36*SS);
+      }
       y += 24 * SS;
     }
     y += 10 * SS;
