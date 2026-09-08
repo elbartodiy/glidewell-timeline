@@ -114,7 +114,7 @@ const BEATS = [
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
      The album belongs to the walk up to 1970, not to the moment of it. */
-  album:{dx:-1245, lz:85, w:300, edgeOK:true, title:'THE FAMILY ALBUM', cover:'ph_album',   // in from the bay's edge by a quarter of its width, then a third more (Eldar)
+  album:{dx:-1145, lz:85, w:225, edgeOK:true, title:'THE FAMILY ALBUM', cover:'ph_album',   // a quarter smaller, so it sits ON the counter instead of over both its edges, and stepped in from the bay's edge again
           photos:[['father42','jim15'],['jim18','jim1970']]}},
 
   {x:3450, y:'1970s', t:'PFM ERA', plaque:true,
@@ -5620,139 +5620,11 @@ function drawMapWall(t){
   const cx = px(mid, kk);
   pushHit(cx - 300*kk*SS, py(180, kk), 600*kk*SS, py(700, kk) - py(180, kk),
           {type:'study', beat: BEATS.findIndex(b => b.y === '1979')});
-  // the red carpet running up to the map
-  {
-    /* A RUG, NOT A ROAD. Run out to the bottom of the frame it reached ground
-       the counters stand on, so from any position but dead centre it read as a
-       wedge sliced off by a cabinet. It now lies inside the bay: from the wall
-       to the mouth of the recreation, and no further. */
-    const kNear = k(40), kFar = k(590);
-    /* A STEP, NOT A HOLE. Between the panel's foot and the pale slab the floor
-       showed as a dark band — a slot the columns seemed to stand over. A low
-       brass tread now fills it, running the width of the bay, and the runner
-       comes up onto it: the carpet begins on the tread, not on the floor. */
-    /* A STEP IS A BLOCK. Drawn as one lit band it read as a strip laid on the
-       floor. It has a top and a front now, in perspective: the tread runs from
-       the panel's foot forward to a nosing at z 520, the riser drops from the
-       nosing to the floor, and the light is a warm strip concealed under the
-       nosing — on the riser and spilling onto the floor. The runner lies on the
-       tread, folds over the nosing and comes down the riser to the floor. */
-    const kStep = k(520), zTread = 1040;
-    const yTreadBack = py(zTread, kFar), yNose = py(zTread, kStep), yStepFoot = py(1080, kStep);
-    /* THE STEP RUNS TO THE COUNTERS. It used to stop just inside the pilasters,
-       so beside it — between each column and the counter's end — the dark floor
-       showed, and the columns seemed to stand over a hole ("висят в воздухе").
-       It now runs from one counter's end to the other's: the columns stand ON
-       it, and the counters, painted later, cover whatever it puts under them. */
-    const tbL = TABLES.filter(tb => tb.x1 <= mid).sort((a, b) => b.x1 - a.x1)[0];
-    const tbR = TABLES.filter(tb => tb.x0 >= mid).sort((a, b) => a.x0 - b.x0)[0];
-    const wx0 = (tbL ? tbL.x1 : REC_L) - 200, wx1 = (tbR ? tbR.x0 : REC_R) + 200;
-    {
-      const bx0 = px(wx0, kFar), bx1 = px(wx1, kFar);
-      const nx0 = px(wx0, kStep), nx1 = px(wx1, kStep);
-      // the tread's top: pale stone, lit from the front
-      const tg = ctx.createLinearGradient(0, yTreadBack, 0, yNose);
-      tg.addColorStop(0, '#c9c3b6'); tg.addColorStop(1, '#ddd7ca');
-      ctx.fillStyle = tg;
-      ctx.beginPath(); ctx.moveTo(bx0, yTreadBack); ctx.lineTo(bx1, yTreadBack); ctx.lineTo(nx1, yNose); ctx.lineTo(nx0, yNose); ctx.closePath(); ctx.fill();
-      // the riser
-      const rg = ctx.createLinearGradient(0, yNose, 0, yStepFoot);
-      rg.addColorStop(0, '#b8b2a5'); rg.addColorStop(0.5, '#8f897d'); rg.addColorStop(1, '#5f5a52');
-      ctx.fillStyle = rg;
-      ctx.fillRect(nx0, yNose, nx1 - nx0, yStepFoot - yNose);
-      // the nosing: one bright edge
-      ctx.fillStyle = 'rgba(246,242,232,0.9)';
-      ctx.fillRect(nx0, Math.round(yNose), nx1 - nx0, Math.max(1, 1.4 * SS));
-      // the concealed strip: warm on the riser, a little onto the floor
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      const lg = ctx.createLinearGradient(0, yNose + 2 * SS, 0, yStepFoot);
-      lg.addColorStop(0, 'rgba(255,232,186,0.80)'); lg.addColorStop(0.4, 'rgba(255,225,170,0.30)'); lg.addColorStop(1, 'rgba(255,220,164,0.04)');
-      ctx.fillStyle = lg; ctx.fillRect(nx0, yNose + 2 * SS, nx1 - nx0, yStepFoot - yNose - 2 * SS);
-      const fg2 = ctx.createLinearGradient(0, yStepFoot, 0, yStepFoot + 46 * kStep * SS);
-      fg2.addColorStop(0, 'rgba(255,226,172,0.24)'); fg2.addColorStop(1, 'rgba(255,226,172,0)');
-      ctx.fillStyle = fg2; ctx.fillRect(nx0, yStepFoot, nx1 - nx0, 46 * kStep * SS);
-      ctx.restore();
-      // the runner on the tread, and folding down the riser
-      const wT0 = 150 * kFar * SS, wT1 = 150 * kStep * SS, cT0 = px(mid, kFar), cT1 = px(mid, kStep);
-      const cg0 = ctx.createLinearGradient(0, yTreadBack, 0, yStepFoot);
-      cg0.addColorStop(0, '#5a0f18'); cg0.addColorStop(0.5, '#6e1420'); cg0.addColorStop(1, '#4e0c14');
-      ctx.fillStyle = cg0;
-      ctx.beginPath(); ctx.moveTo(cT0 - wT0, yTreadBack); ctx.lineTo(cT0 + wT0, yTreadBack); ctx.lineTo(cT1 + wT1, yNose); ctx.lineTo(cT1 - wT1, yNose); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#4a0b13';
-      ctx.fillRect(cT1 - wT1, yNose, wT1 * 2, yStepFoot - yNose);
-      ctx.fillStyle = 'rgba(255,200,180,0.28)';                         // the fold catches the light
-      ctx.fillRect(cT1 - wT1, Math.round(yNose), wT1 * 2, Math.max(1, 1.2 * SS));
-    }
-    /* THE RUNNER IS GONE. It was the one thing standing on this floor; the
-       nine labs stand there now, and a carpet under a row of building models
-       reads as a rug in a shop window. The step keeps its own runner fold. */
-    if (false){
-    const yNear = py(1080, kNear), yFar = yStepFoot;
-    const cxN = px(mid, kNear), cxF = px(mid, kStep);
-    const wN = 330 * kNear * SS, wF = 150 * kStep * SS;
-    /* THE RUNNER BELONGS TO THE BAY. It used to be laid from the map right out
-       to the bottom of the frame — across ground the counter stands on — and
-       the counter, painted later, cut it off down a hard vertical line. It is
-       clipped to the recreation's own opening now, the same ground its pale
-       slab covers, so it ends where the room ends and not where a cabinet
-       happens to be. */
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(px(REC_L, kFar), yFar); ctx.lineTo(px(REC_R, kFar), yFar);
-    ctx.lineTo(px(REC_R, kNear), yNear); ctx.lineTo(px(REC_L, kNear), yNear);
-    ctx.closePath(); ctx.clip();
-    const cg = ctx.createLinearGradient(0, yFar, 0, yNear);
-    cg.addColorStop(0, '#5a0f18');
-    cg.addColorStop(0.6, '#7c1622');
-    cg.addColorStop(1, '#8f1a27');
-    ctx.fillStyle = cg;
-    ctx.beginPath();
-    ctx.moveTo(cxN - wN, yNear); ctx.lineTo(cxF - wF, yFar);
-    ctx.lineTo(cxF + wF, yFar); ctx.lineTo(cxN + wN, yNear);
-    ctx.closePath(); ctx.fill();
-    // the pile of it: bands running across the weave, closing up with distance
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(cxN - wN, yNear); ctx.lineTo(cxF - wF, yFar);
-    ctx.lineTo(cxF + wF, yFar); ctx.lineTo(cxN + wN, yNear);
-    ctx.closePath(); ctx.clip();
-    for (let i = 0; i < 26; i++){
-      const u = i / 26, uu = u * u;                    // bunched toward the far end
-      const yy = yFar + (yNear - yFar) * uu;
-      const ww = wF + (wN - wF) * uu;
-      ctx.fillStyle = `rgba(255,235,215,${(0.030 * (1 - u * 0.5)).toFixed(3)})`;
-      ctx.fillRect(cxF + (cxN - cxF) * uu - ww, yy, ww * 2, Math.max(1, 2.2 * SS * (0.4 + uu)));
-    }
-    /* AND THE SHADING FOLLOWS THE WEAVE. The fall-off toward the selvedges used
-       to be ONE gradient laid across the runner's NEAR width over the whole
-       trapezoid — but the runner narrows with distance, so up at the map the
-       dark edges fell outside the carpet and its middle was left flat and
-       bright. That mismatch, sliding as the camera moved, is the noise. The
-       shading is cut in slices now, each taking the width the carpet actually
-       has at that depth. */
-    const NS = 22;
-    for (let i = 0; i < NS; i++){
-      const u0 = i / NS, u1 = (i + 1) / NS;
-      const uu0 = u0 * u0, uu1 = u1 * u1;          // same easing as the pile
-      const y0 = yFar + (yNear - yFar) * uu0, y1 = yFar + (yNear - yFar) * uu1;
-      const w0 = wF + (wN - wF) * uu0;
-      const c0 = cxF + (cxN - cxF) * uu0;
-      const eg = ctx.createLinearGradient(c0 - w0, 0, c0 + w0, 0);
-      eg.addColorStop(0, 'rgba(20,4,8,0.42)');
-      eg.addColorStop(0.28, 'rgba(20,4,8,0)');
-      eg.addColorStop(0.72, 'rgba(20,4,8,0)');
-      eg.addColorStop(1, 'rgba(20,4,8,0.46)');
-      ctx.fillStyle = eg;
-      ctx.fillRect(c0 - w0, y0, w0 * 2, (y1 - y0) + 1);
-    }
-    ctx.restore();
-    ctx.strokeStyle = 'rgba(235,195,120,0.4)'; ctx.lineWidth = 2.5*SS;
-    ctx.beginPath(); ctx.moveTo(cxN - wN + 10*SS, yNear); ctx.lineTo(cxF - wF + 5*SS, yFar); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cxN + wN - 10*SS, yNear); ctx.lineTo(cxF + wF - 5*SS, yFar); ctx.stroke();
-    }
-    ctx.restore();   // the bay clip
-  }
+  /* THE STEP AND THE RUNNER HAVE BOTH LEFT 1979. The step was built here first
+     — the models' own block fills this mouth now, and it went on to the bays
+     that still show bare floor under their panels (drawBayStep). The red runner
+     went with it: a carpet under a row of building models reads as a rug in a
+     shop window. */
   // pilaster columns on both edges — same plane as the walls they join
   for (const wxc of [REC_L, REC_R]){
     const kc = k(604);
@@ -6158,6 +6030,7 @@ function paneDrop(mid){
 function drawRec2(t){
   const mid = (REC2_L + REC2_R) / 2;
   if (Math.abs(cam.x - mid) > 2800) return;
+  drawBayStep(REC2_L, REC2_R, STEP_TONE.cool);   // the mouth of the bay gets its block, in this room's own stone
   const lock0 = Math.max(0, 1 - Math.abs(cam.x - mid) / 900);
   const ease0 = lock0 * lock0 * (3 - 2 * lock0);
   const kk = k(970);
@@ -6387,6 +6260,7 @@ function drawRec2(t){
 function drawRec4(t){
   const mid = (REC4_L + REC4_R) / 2;
   if (Math.abs(cam.x - mid) > 2800) return;
+  drawBayStep(REC4_L, REC4_R, STEP_TONE.white);   // the mouth of the bay gets its block, in this room's own stone
   const kk = k(1000);   // the portal stands proud of the deep white wall
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
   const x0 = px(REC4_L, kk), x1 = px(REC4_R, kk);
@@ -6446,6 +6320,57 @@ function drawRec4(t){
   }
   drawRec4Columns(yBase);
 }
+/* THE STEP AT THE MOUTH OF A BAY. 1979 had it first: between the panel's foot
+   and the floor slab a dark band showed, and the columns seemed to stand over a
+   hole. A low block fills it — a tread in perspective, a riser under the
+   nosing, and a concealed strip washing the riser and a little of the floor.
+   It belongs to every recreation, not to one, and each takes its own stone: the
+   craft century's is warm, the later rooms are cool and pale. */
+function drawBayStep(L, R, tone){
+  const mid = (L + R) / 2;
+  const kFar = k(590), kStep = k(520), zTread = 1040;
+  const yTreadBack = py(zTread, kFar), yNose = py(zTread, kStep), yStepFoot = py(1080, kStep);
+  /* it runs from one counter's end to the other's, so the columns stand ON it */
+  const tbL = TABLES.filter(tb => tb.x1 <= mid).sort((a, b) => b.x1 - a.x1)[0];
+  const tbR = TABLES.filter(tb => tb.x0 >= mid).sort((a, b) => a.x0 - b.x0)[0];
+  const wx0 = (tbL ? tbL.x1 : L) - 200, wx1 = (tbR ? tbR.x0 : R) + 200;
+  const bx0 = px(wx0, kFar), bx1 = px(wx1, kFar);
+  const nx0 = px(wx0, kStep), nx1 = px(wx1, kStep);
+  if (nx1 < -200 || nx0 > W + 200) return;
+  const T = tone;
+  const tg = ctx.createLinearGradient(0, yTreadBack, 0, yNose);
+  tg.addColorStop(0, T.tread[0]); tg.addColorStop(1, T.tread[1]);
+  ctx.fillStyle = tg;
+  ctx.beginPath(); ctx.moveTo(bx0, yTreadBack); ctx.lineTo(bx1, yTreadBack);
+  ctx.lineTo(nx1, yNose); ctx.lineTo(nx0, yNose); ctx.closePath(); ctx.fill();
+  const rg = ctx.createLinearGradient(0, yNose, 0, yStepFoot);
+  rg.addColorStop(0, T.riser[0]); rg.addColorStop(0.5, T.riser[1]); rg.addColorStop(1, T.riser[2]);
+  ctx.fillStyle = rg;
+  ctx.fillRect(nx0, yNose, nx1 - nx0, yStepFoot - yNose);
+  ctx.fillStyle = T.nosing;
+  ctx.fillRect(nx0, Math.round(yNose), nx1 - nx0, Math.max(1, 1.4 * SS));
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const lg = ctx.createLinearGradient(0, yNose + 2 * SS, 0, yStepFoot);
+  lg.addColorStop(0, `rgba(${T.glow},0.80)`); lg.addColorStop(0.4, `rgba(${T.glow},0.30)`);
+  lg.addColorStop(1, `rgba(${T.glow},0.04)`);
+  ctx.fillStyle = lg; ctx.fillRect(nx0, yNose + 2 * SS, nx1 - nx0, yStepFoot - yNose - 2 * SS);
+  const fg2 = ctx.createLinearGradient(0, yStepFoot, 0, yStepFoot + 46 * kStep * SS);
+  fg2.addColorStop(0, `rgba(${T.glow},0.22)`); fg2.addColorStop(1, `rgba(${T.glow},0)`);
+  ctx.fillStyle = fg2; ctx.fillRect(nx0, yStepFoot, nx1 - nx0, 46 * kStep * SS);
+  ctx.restore();
+}
+/* each room's own stone, taken from the floor slab and the wall it stands under */
+const STEP_TONE = {
+  warm:  {tread: ['#c9c3b6', '#ddd7ca'], riser: ['#b8b2a5', '#8f897d', '#5f5a52'],
+          nosing: 'rgba(246,242,232,0.9)', glow: '255,228,180'},
+  steel: {tread: ['#b9bcbb', '#d2d5d3'], riser: ['#9ea2a2', '#787c7d', '#4e5254'],
+          nosing: 'rgba(238,244,246,0.9)', glow: '214,236,246'},
+  cool:  {tread: ['#cfd4d9', '#e6eaee'], riser: ['#b3b9c0', '#8c939b', '#5f666d'],
+          nosing: 'rgba(244,249,252,0.92)', glow: '206,230,248'},
+  white: {tread: ['#dee2e6', '#f1f4f7'], riser: ['#c3c9cf', '#9aa1a8', '#6d747b'],
+          nosing: 'rgba(250,252,255,0.95)', glow: '200,226,250'},
+};
 /* the pilasters are drawn twice: once with the panel, and once again AFTER the
    floor sheen — a column stands ON the floor, so its body must sit over the
    reflection, not under a milky wash of it */
@@ -6577,6 +6502,7 @@ function makeUsaSprite(){
 function drawRec3(t){
   const mid = (REC3_L + REC3_R) / 2;
   if (Math.abs(cam.x - mid) > 2800) return;
+  drawBayStep(REC3_L, REC3_R, STEP_TONE.steel);   // the mouth of the bay gets its block, in this room's own stone
   const kk = k(728);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
   const x0 = px(REC3_L, kk), x1 = px(REC3_R, kk);
