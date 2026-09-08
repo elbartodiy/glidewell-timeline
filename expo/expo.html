@@ -9896,12 +9896,20 @@ let FROST = null;
    the company going onto the web. Keyed by the beat's title. */
 const STUDY_LINKS = {
   'WEB \u00b7 CLINICAL VOICE': [
-    {label: 'glidewelldental.com', url: 'https://glidewelldental.com/', icon: 'globe'},
-    {label: 'Glidewell Direct',    url: 'https://glidewelldirect.com/collections/tap', icon: 'shop'},
-    {label: 'Facebook',            url: 'https://www.facebook.com/glidewelldental/', icon: 'fb'},
-    {label: 'X',                   url: 'https://x.com/GlidewellDental', icon: 'x'},
-    {label: 'LinkedIn',            url: 'https://www.linkedin.com/company/glidewell/', icon: 'li'},
-    {label: 'Instagram',           url: 'https://www.instagram.com/glidewelldental/?hl=en', icon: 'ig'},
+    {head: 'THE SITES'},
+    {label: 'glidewelldental.com', url: 'https://glidewelldental.com/', icon: 'globe',
+     note: 'the company itself \u2014 products, cases, and the whole education library'},
+    {label: 'Glidewell Direct',    url: 'https://glidewelldirect.com/collections/tap', icon: 'shop',
+     note: 'the shop: materials, tools and chairside supplies, ordered online'},
+    {head: 'SOCIAL'},
+    {label: 'Facebook',   url: 'https://www.facebook.com/glidewelldental/', icon: 'fb',
+     note: 'the daily feed \u2014 lab news, events, clinical posts'},
+    {label: 'Instagram',  url: 'https://www.instagram.com/glidewelldental/?hl=en', icon: 'ig',
+     note: 'the work in pictures: the plant, the people, the restorations'},
+    {label: 'LinkedIn',   url: 'https://www.linkedin.com/company/glidewell/', icon: 'li',
+     note: 'the company as a place to work \u2014 5,000+ people in Irvine and beyond'},
+    {label: 'X',          url: 'https://x.com/GlidewellDental', icon: 'x',
+     note: 'short announcements, product news, conference dates'},
   ],
 };
 let HOVER_LINK = null;
@@ -10114,39 +10122,60 @@ function drawStudy(){
      title, so no coordinate can lose them. */
   const links = STUDY_LINKS[b.t];
   if (links){
-    // the chip under the pointer lights: a link should say it is one
+    // the button under the pointer lights: a link should say it is one
     const hv = Input.hover ? hitAt(Input.hover.x, Input.hover.y) : null;
     HOVER_LINK = (hv && hv.type === 'link') ? hv.url : null;
-    y += 6 * SS;
-    ctx.font = K.font(17, '700');
-    try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
-    ctx.fillStyle = `rgba(${K.dim},0.9)`;
-    if (y > topClip && y < botClip) ctx.fillText('WHERE IT LIVES NOW', left, y);
-    try { ctx.letterSpacing = '0px'; } catch(err){}
-    y += 30 * SS;
-    const chipH = 40 * SS, gap = 12 * SS, icoR = 11 * SS;
-    let lx = left, ly = y;
-    ctx.font = K.font(20);
+    y += 10 * SS;
+    ctx.fillStyle = K.rule;
+    ctx.fillRect(left, y, colW, 1.5 * SS);
+    y += 34 * SS;
+    const rowH = 52 * SS, icoR = 12 * SS;
+    let afterRow = false;
     for (const L of links){
-      const tw2 = ctx.measureText(L.label).width;
-      const cwid = icoR * 2 + 16 * SS + tw2 + 30 * SS;
-      if (lx + cwid > left + textW + 1){ lx = left; ly += chipH + gap; }
-      if (ly + chipH > topClip && ly < botClip){
-        const hot = HOVER_LINK === L.url;
-        ctx.beginPath(); ctx.roundRect(lx, ly, cwid, chipH, chipH / 2);
-        ctx.fillStyle = `rgba(${K.accent},${hot ? 0.16 : 0.08})`;
-        ctx.fill();
-        ctx.strokeStyle = `rgba(${K.accent},${hot ? 0.75 : 0.42})`;
-        ctx.lineWidth = 1.2 * SS; ctx.stroke();
-        drawLinkIcon(L.icon, lx + 15 * SS + icoR, ly + chipH / 2, icoR, `rgba(${K.accent},0.95)`);
-        ctx.fillStyle = `rgba(${K.ink},0.92)`;
-        ctx.font = K.font(20);
-        ctx.fillText(L.label, lx + icoR * 2 + 26 * SS, ly + chipH * 0.64);
-        pushHit(lx, ly, cwid, chipH, {type: 'link', url: L.url});
+      if (L.head){
+        if (afterRow) y += 34 * SS;          // a group heading needs air over it
+        ctx.font = K.font(16, '700');
+        try { ctx.letterSpacing = `${3.4*SS}px`; } catch(err){}
+        ctx.fillStyle = `rgba(${K.dim},0.95)`;
+        if (y > topClip && y < botClip) ctx.fillText(L.head, left, y);
+        try { ctx.letterSpacing = '0px'; } catch(err){}
+        y += 34 * SS;
+        afterRow = false;
+        continue;
       }
-      lx += cwid + gap;
+      afterRow = true;
+      const hot = HOVER_LINK === L.url;
+      ctx.font = K.font(20, '700');
+      const tw2 = ctx.measureText(L.label).width;
+      const bw = icoR * 2 + 18 * SS + tw2 + 30 * SS, bh = 38 * SS;
+      if (y + bh > topClip && y < botClip){
+        // the button: filled in the page's own accent, not an outline
+        ctx.save();
+        ctx.shadowColor = `rgba(${K.accent},${hot ? 0.45 : 0.25})`;
+        ctx.shadowBlur = (hot ? 16 : 8) * SS; ctx.shadowOffsetY = 2 * SS;
+        const bg2 = ctx.createLinearGradient(left, y, left, y + bh);
+        bg2.addColorStop(0, `rgba(${K.accent},${hot ? 1 : 0.94})`);
+        bg2.addColorStop(1, `rgba(${K.accent},${hot ? 0.88 : 0.78})`);
+        ctx.fillStyle = bg2;
+        ctx.beginPath(); ctx.roundRect(left, y, bw, bh, bh / 2); ctx.fill();
+        ctx.restore();
+        drawLinkIcon(L.icon, left + 16 * SS + icoR, y + bh / 2, icoR, 'rgba(255,255,255,0.96)');
+        ctx.fillStyle = 'rgba(255,255,255,0.98)';
+        ctx.font = K.font(20, '700');
+        ctx.fillText(L.label, left + icoR * 2 + 28 * SS, y + bh * 0.63);
+        // and what it is, beside it
+        ctx.font = K.font(18);
+        ctx.fillStyle = `rgba(${K.dim},0.95)`;
+        let note = L.note || '';
+        const room = textW - bw - 22 * SS;
+        while (note && ctx.measureText(note).width > room && note.length > 8) note = note.slice(0, -1);
+        if (note) ctx.fillText(note !== L.note ? note.replace(/[ ,\u2014]+$/, '') + '\u2026' : note,
+                               left + bw + 22 * SS, y + bh * 0.63);
+        pushHit(left, y, bw, bh, {type: 'link', url: L.url});
+      }
+      y += rowH;
     }
-    y = ly + chipH + 26 * SS;
+    y += 16 * SS;
   }
   if (media && media.length){
     // the voices ride as a rail to the right of the text
