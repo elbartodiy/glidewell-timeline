@@ -114,7 +114,7 @@ const BEATS = [
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
      The album belongs to the walk up to 1970, not to the moment of it. */
-  album:{dx:-1420, lz:85, w:300, edgeOK:true, title:'THE FAMILY ALBUM',
+  album:{dx:-1420, lz:85, w:300, edgeOK:true, title:'THE FAMILY ALBUM', cover:'ph_album',
           photos:[['father42','jim15'],['jim18','jim1970']]}},
 
   {x:3450, y:'1970s', t:'PFM ERA', plaque:true,
@@ -1050,6 +1050,7 @@ function attachMouseDriver(el){
 /* ---------------- CAMERA / STATE ---------------- */
 const cam = { x: INTRO_X, vel: 0, z: 430, zTarget: 430 };   // the tour opens zoomed tight on the still life
 const state = {
+  albumView: null,        // the album, open in front of you, a spread at a time
   docOpen: false,         // the working note is up: the hall keeps its hands off
   docHot: false,
   mode: 'attract',        // 'attract' | 'live'
@@ -2639,7 +2640,7 @@ function updateFilm(){
   /* the open case is NOT a page: the trays dissolving into digits is a thing
      happening IN the hall, and the film behind it goes on running (Eldar) */
   const busy = state.clip || state.person || state.study || state.people ||
-        state.inspect || state.docOpen;
+        state.inspect || state.docOpen || state.albumView;
   const engaged = !v.muted;                 // sound on = a real showing
   const wanted = engaged && !T.userPaused && !busy;
   // the poster holds its frame: a not-yet-started set snaps back to the
@@ -7432,6 +7433,7 @@ async function loadPhotoSkin(){
     ph_mill: 'mill_io.png',           // fastmill.io, the same — cut out of its studio render
     ph_scanbay: 'scan_bay.jpg',       // the 2022 bay: the whole render, rectangle and all
     ph_hall17: 'hall_2017.jpg',       // the 2017 bay: the glass hall, cut just past the ring on its floor
+    ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
     front_e4: 'front_e4.jpg',         // the white era's counter face: one door of Eldar's render, mid-door to mid-door
     bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
     bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
@@ -7848,9 +7850,11 @@ function makeAlbumCover(title, era){
   g.fillText(title, 210, 158);
   return {c, w: c.width, h: c.height};
 }
-function makeAlbumSpread(pair, tone){
-  const c = document.createElement('canvas'); c.width = 800; c.height = 520;
+function makeAlbumSpread(pair, tone, scale){
+  const S3 = scale || 1;
+  const c = document.createElement('canvas'); c.width = 800 * S3; c.height = 520 * S3;
   const g = c.getContext('2d');
+  g.scale(S3, S3);
   g.save();
   g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 14; g.shadowOffsetY = 7;
   g.fillStyle = '#e9e0c8'; g.fillRect(16, 16, 768, 478);
@@ -7914,17 +7918,32 @@ function drawAlbum(b, i, t, dt){
   const hw = b.album.w * (1 + 0.9*ease) * kk * SS;
   contactShadow(sx, sy, hw * 0.62, 0.34);
   pushHit(sx - hw/2, sy - hw*0.5, hw, hw*0.52, {type:'album', beat: i, edgeOK: !!b.album.edgeOK});
+  /* THE COVER IS A PHOTOGRAPH. The drawn one was a flat rectangle squashed to
+     0.42 to fake lying down; this is a real album shot at the angle it lies at,
+     so it goes in upright, in its own perspective, with nothing squashed. */
+  const photoCover = b.album.cover && PROP_SPRITES[b.album.cover];
+  /* a photographed album does not crack itself open on the counter — it stays
+     shut, the way a book on a counter does, and opens properly when you tap it */
+  if (photoCover){ albumAnim[i] = 0; }
+  const ease2 = photoCover ? 0 : ease;
+  if (photoCover){
+    const w = b.album.w * 1.12 * kk * SS;
+    const h = w * photoCover.h / photoCover.w;
+    ctx.save();
+    ctx.drawImage(spriteMip(photoCover, w, h), sx - w/2, sy - h * 0.86, w, h);
+    ctx.restore();
+  }
   ctx.save();
   ctx.translate(sx, sy);
   ctx.rotate(-4 * Math.PI/180);
   ctx.scale(1, 0.42);
-  if (ease < 0.97){                       // closed cover
+  if (!photoCover && ease < 0.97){        // closed cover, drawn
     const w = b.album.w * kk * SS * (1 - 0.12*ease);
     const h = w * A.cover.h / A.cover.w;
     ctx.globalAlpha = 1 - ease;
     ctx.drawImage(A.cover.c, -w/2, -h, w, h);
   }
-  if (ease > 0.03){                       // open spread
+  if (ease2 > 0.03){                      // open spread
     const sp = A.spreads[(t/4.5|0) % A.spreads.length];
     const w = b.album.w * 1.55 * kk * SS * (0.75 + 0.25*ease);
     const h = w * sp.h / sp.w;
@@ -10051,6 +10070,74 @@ function drawLinkIcon(kind, cx, cy, r, col){
   }
   ctx.restore();
 }
+/* THE ALBUM OPENS. On the counter it only ever cracked ajar — a thumbnail of a
+   spread you could not actually look at. A photograph album is for turning
+   pages, so a tap now opens it nearly full screen: one spread at a time, big
+   enough to read a face, with the two chevrons and the wheel to turn it. */
+function openAlbumView(i){
+  const b = BEATS[i]; if (!b || !b.album) return;
+  const A = ALBUM_SPRITES[i]; if (!A) return;
+  if (!A.big){                                  // the spreads again, at reading size
+    const tone = 'sepia(0.5) saturate(0.75) contrast(1.04)';
+    A.big = b.album.photos.map(pair => makeAlbumSpread(pair, tone, 2));
+  }
+  state.albumView = {i, page: 0, amt: 0, closing: false, turn: 0, wheel: 0};
+}
+function drawAlbumView(){
+  const V = state.albumView; if (!V) return;
+  const dt = state.dt || 0.016;
+  V.amt += ((V.closing ? 0 : 1) - V.amt) * Math.min(1, dt * 5);
+  if (V.closing && V.amt < 0.03){ state.albumView = null; return; }
+  const b = BEATS[V.i], A = ALBUM_SPRITES[V.i];
+  if (!b || !A || !A.big){ state.albumView = null; return; }
+  const e = V.amt * V.amt * (3 - 2 * V.amt);
+  ctx.save();
+  ctx.fillStyle = `rgba(8,6,4,${(0.86 * e).toFixed(3)})`;
+  ctx.fillRect(0, 0, W, H);
+  if (e < 0.25){ ctx.restore(); return; }
+  const a = (e - 0.25) / 0.75;
+  const sp = A.big[Math.max(0, Math.min(A.big.length - 1, V.page))];
+  const maxW = Math.min(W * 0.86, H * 0.86 * sp.w / sp.h);
+  const w = maxW * (0.96 + 0.04 * a), h = w * sp.h / sp.w;
+  const x0 = W/2 - w/2, y0 = H/2 - h/2 + (1 - a) * 30 * SS;
+  ctx.globalAlpha = a;
+  // the page turn: the incoming spread slides a little and settles
+  const slide = V.turn * 26 * SS;
+  V.turn += (0 - V.turn) * Math.min(1, dt * 6);
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 46 * SS; ctx.shadowOffsetY = 16 * SS;
+  ctx.drawImage(sp.c, x0 + slide, y0, w, h);
+  ctx.restore();
+  ctx.textAlign = 'center';
+  ctx.font = eraFont(20 * SS, '', SEGMENTS[0].font);
+  try { ctx.letterSpacing = `${5 * SS}px`; } catch(err){}
+  ctx.fillStyle = 'rgba(236,214,172,0.85)';
+  ctx.fillText(b.album.title, W/2, y0 - 26 * SS);
+  try { ctx.letterSpacing = '0px'; } catch(err){}
+  ctx.font = eraFont(16 * SS, '', SEGMENTS[0].font);
+  ctx.fillStyle = 'rgba(214,192,152,0.6)';
+  ctx.fillText(`${V.page + 1} / ${A.big.length}`, W/2, y0 + h + 34 * SS);
+  ctx.fillStyle = 'rgba(206,184,146,0.42)';
+  ctx.font = eraFont(14 * SS, '', SEGMENTS[0].font);
+  ctx.fillText('\u00b7 turn the pages \u00b7 tap anywhere else to close \u00b7', W/2, y0 + h + 60 * SS);
+  // the two chevrons
+  for (const s2 of [-1, 1]){
+    const at = V.page + s2;
+    if (at < 0 || at >= A.big.length) continue;
+    const cxA = W/2 + s2 * (w/2 + 54 * SS), cyA = H/2;
+    const hot = Input.hover && Math.abs(Input.hover.x - cxA) < 44 * SS && Math.abs(Input.hover.y - cyA) < 44 * SS;
+    ctx.strokeStyle = `rgba(238,220,182,${hot ? 0.95 : 0.55})`;
+    ctx.lineWidth = 3 * SS; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cxA + s2 * 9 * SS, cyA - 17 * SS);
+    ctx.lineTo(cxA - s2 * 9 * SS, cyA);
+    ctx.lineTo(cxA + s2 * 9 * SS, cyA + 17 * SS);
+    ctx.stroke();
+    pushHit(cxA - 40 * SS, cyA - 46 * SS, 80 * SS, 92 * SS, {type: 'albumpage', d: s2});
+  }
+  pushHit(x0, y0, w, h, {type: 'albumpage', d: 1});   // the spread itself turns forward
+  ctx.restore();
+}
 function drawStudy(){
   const S = state.study; if (!S) return;
   S.amt += ((S.closing ? 0 : 1) - S.amt) * Math.min(1, (state.dt || 0.016) * 5);
@@ -11064,7 +11151,7 @@ function update(dt){
        clock while the 2023 case stood open in front of you — the room walked off
        with the lid still up. With anything open the clock runs at a quarter
        speed, and when the tour does resume it closes what was open first. */
-    const reading = state.openBox || state.inspect || state.study || state.person || state.people || state.docOpen;
+    const reading = state.openBox || state.inspect || state.study || state.person || state.people || state.docOpen || state.albumView;
     state.idle += reading ? dt * 0.25 : dt;
     if (state.mode === 'live' && state.idle > CFG.idleToAttract){
       state.mode = 'attract';
@@ -11111,6 +11198,25 @@ function update(dt){
         }
         else S.closing = true;
       } else if (inp.action === true) S.closing = true;   // scrolling past the top does NOT close it
+      cam.vel = 0;
+    } else if (state.albumView){
+      const V = state.albumView;
+      const A2 = ALBUM_SPRITES[V.i];
+      const turn = d2 => {
+        const to = Math.max(0, Math.min(A2.big.length - 1, V.page + d2));
+        if (to !== V.page){ V.page = to; V.turn = d2 > 0 ? 1 : -1; }
+      };
+      // the wheel turns pages, one per shove
+      V.wheel += inp.impulse;
+      if (Math.abs(V.wheel) > 120){ turn(V.wheel > 0 ? 1 : -1); V.wheel = 0; }
+      else V.wheel *= 0.86;
+      if (inp.action && typeof inp.action === 'object'){
+        const aimed = hitAt(inp.action.x, inp.action.y);
+        if (aimed && aimed.type === 'albumpage'){
+          if (V.page + aimed.d > A2.big.length - 1 && aimed.d > 0) V.closing = true;   // past the last page the album shuts
+          else turn(aimed.d);
+        } else V.closing = true;
+      } else if (inp.action === true) V.closing = true;
       cam.vel = 0;
     } else if (state.people){
       const S = state.people;
@@ -11172,8 +11278,8 @@ function update(dt){
                          cap: aimed.cap, beat: aimed.beat, table: true, amt: 0};
         cam.vel = 0;
       } else if (aimed && aimed.type === 'album'){
-        const open = (albumAnim[aimed.beat] || 0) > 0.5;
-        state.albumLock[aimed.beat] = !open;
+        openAlbumView(aimed.beat);      // it opens properly now, not ajar on the counter
+        cam.vel = 0;
       } else if (aimed && aimed.type === 'focus'){
         if (state.focusBeat === aimed.beat){ state.focusBeat = -1; state.focusAnchor = null; cam.zTarget = 0; }
         else { state.focusBeat = aimed.beat; state.focusAnchor = aimed.anchor != null ? aimed.anchor : null;
@@ -12017,6 +12123,7 @@ function frame(){
   drawProgress(t);
   drawMusicMark();
   drawDebug();
+  drawAlbumView();   // the album, open on the table in front of you
   drawStudy();
   drawPeople();    // the wall of voices
   drawPerson();    // one voice's own page, over whatever sent you to it
