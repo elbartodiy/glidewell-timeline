@@ -21,10 +21,10 @@
   #docHead{display:flex;align-items:baseline;gap:16px;padding:18px 24px 14px;
            border-bottom:1px solid rgba(220,205,175,0.14)}
   #docHead h1{margin:0;font:500 15px/1.2 "Helvetica Neue",Arial,sans-serif;
-              letter-spacing:.16em;text-transform:uppercase;color:#d8cdb4}
+              letter-spacing:.16em;color:#d8cdb4}
   #docHead .sub{font:italic 12px/1.2 Georgia,serif;color:#8d8377;flex:1}
   #doc button{font:500 11px/1 "Helvetica Neue",Arial,sans-serif;letter-spacing:.12em;
-              text-transform:uppercase;color:#d8cdb4;background:transparent;cursor:pointer;
+              color:#d8cdb4;background:transparent;cursor:pointer;
               border:1px solid rgba(220,205,175,0.28);border-radius:3px;padding:7px 12px}
   #doc button:hover{background:rgba(220,205,175,0.10)}
   /* flex:1 1 auto + min-height:0 — WITHOUT the min-height a flex-column child
@@ -180,7 +180,8 @@ const BEATS = [
 
   /* ---- ERA 3 · the computer arrives, 1995–2007
           (1993 · Newport Beach happens inside the video splice) ---- */
-  {x:12150, y:'1993', t:'', tier:1, ink:'56,58,64', 
+  {x:12150, y:'1993', t:'', tier:1, ink:'232,238,244', ysMul:1.18,   // light on its dark bay, and a size of its own
+   
    yLift:200,   // it sits above the screen instead of landing on it, and it does not grow
    th:'',
    d:'15 April 1993: 71,000 sq ft at 4141 MacArthur Blvd — nearly five times the floor the nine labs were consolidated into, and the address the company grew up in.',
@@ -208,7 +209,7 @@ const BEATS = [
    d:'In-Ceram Zirconia material arrives — zirconia enters the lab a full decade before BruxZir.',
    wall:[], table:[]},
 
-  {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true, yLift:190, flyZ:480, flyLift:132,   // the apex keeps the wall's own baseline: it grows, it does not climb   // on the line its neighbours hang from — and clear of the plinth's crossed beams
+  {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true, yLift:190, flyLift:66,   // built exactly like 2007: same apex plane, same lift, so the same size and the same throw   // on the line its neighbours hang from — and clear of the plinth's crossed beams
    th:'Own the science, so you can own the quality and the price.',
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir. Labs go digital: scanning, on-screen design, milling.',
    wall:[{img:'rella', w:250, dx:555, top:215, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
@@ -2057,7 +2058,7 @@ function drawBench(){
       if (b.under){
         // a fact parked under the tabletop — quiet, until we find it a home
         ctx.font = `${Math.round(21*SS)}px ${seg.font}`;
-        ctx.fillText(b.t, bx, yTopF + 72*SS);
+        ctx.fillText(sentence(b.t), bx, yTopF + 72*SS);
         ctx.font = `italic ${Math.round(15*SS)}px ${seg.font}`;
         ctx.save(); ctx.globalAlpha = 0.7;
         ctx.fillText(b.th, bx, yTopF + 96*SS);
@@ -2070,7 +2071,7 @@ function drawBench(){
         ctx.beginPath(); ctx.arc(bx, yTopF - 8*SS, 5*SS, 0, 7); ctx.fill();
         ctx.font = `${Math.round(20*SS)}px ${seg.font}`;
         ctx.fillStyle = `rgba(120,215,255,${0.5 + 0.3*Math.sin(state.time*2.4)})`;
-        ctx.fillText('— WE ARE HERE —', bx, yTopF + 68*SS);
+        ctx.fillText('\u2014 we are here \u2014', bx, yTopF + 68*SS);
       }
     }
   }
@@ -2148,7 +2149,8 @@ function drawBenchPlaque(b){
         ctx.textAlign = 'center';
         ctx.font = eraFont(26 * kk2 * SS, '', seg.font);
         try { ctx.letterSpacing = `${5.5*kk2*SS}px`; } catch(e){}
-        const wP2 = ctx.measureText(b.t).width + 46 * kk2 * SS;
+        const benchTx = sentence(b.t);
+        const wP2 = ctx.measureText(benchTx).width + 46 * kk2 * SS;
         const hP2 = 54 * kk2 * SS;
         const footY2 = py(CFG.benchY - 1, kk2);
         const yP2 = footY2 - hP2;
@@ -2163,7 +2165,7 @@ function drawBenchPlaque(b){
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
         ctx.fillRect(cx2 - wP2/2, yP2, wP2, Math.max(1, 1.2 * SS));
         ctx.fillStyle = 'rgba(44,52,60,0.95)';
-        ctx.fillText(b.t, cx2, yP2 + hP2 * 0.66);
+        ctx.fillText(benchTx, cx2, yP2 + hP2 * 0.66);
         try { ctx.letterSpacing = '0px'; } catch(e){}
         ctx.restore();
         pushHit(cx2 - wP2/2, yP2, wP2, hP2, {type:'study', beat: BEATS.indexOf(b)});
@@ -2176,6 +2178,40 @@ function drawBenchPlaque(b){
    everywhere now, and a minor beat's title keeps a little more of its size
    (0.78 rather than 0.6) so a stretch of wall does not step up and down. */
 const TITLE_TRACK = 5.5;
+/* NOTHING IS SHOUTED. The hall was set in full capitals throughout — titles,
+   plates, headings, buttons — and Eldar's rule is plain: a word gets one
+   capital, at its front, and only if it deserves one. The data keeps its own
+   spelling (every lookup in the file is keyed by those titles), so the change
+   is made where the words are DRAWN: this turns an all-caps string into a
+   sentence, keeping the acronyms as acronyms and the brands as brands. A
+   string that already has lower case in it is left exactly as written. */
+const CAPS_KEEP = new Set(['AI','PFM','R&D','CAD','CAM','CAD/CAM','CDT','DDS','DMD','PHD','MD',
+  'US','USA','UK','IO','HT','GAN','SOP','LCD','UPS','TV','3D','CE','IOS','CT','CAD-CAM','II','III','IV','\u00b7']);
+const CAPS_MIXED = {BRUXZIR:'BruxZir', GLIDEWELL:'Glidewell', PRISMATIK:'Prismatik', BIOTEMPS:'BioTemps',
+  CROWNAI:'CrownAI', MARGINAI:'MarginAI', FEDEX:'FedEx', 'FASTSCAN.IO':'fastscan.io',
+  'GLIDEWELL.IO':'glidewell.io', 'FASTMILL.IO':'fastmill.io', 'FASTDESIGN.IO':'fastdesign.io',
+  NITE:'Nite', HAHN:'Hahn', MISCH:'Misch', RESNIK:'Resnik', TAGGART:'Taggart', PLAYSAFE:'PlaySafe',
+  MACARTHUR:'MacArthur', BLVD:'Blvd', ZIRCONIA:'zirconia'};
+function sentence(str){
+  if (!str) return str;
+  if (/[a-z]/.test(str)) return str;                 // already mixed: not ours to touch
+  let started = false;
+  return str.split(/(\s+|\/|\u2014|\u2013)/).map(tok => {
+    if (!/[A-Z0-9]/.test(tok)) return tok;
+    const bare = tok.replace(/^[^A-Z0-9&.]+|[^A-Z0-9&.]+$/g, '');
+    const pre = tok.slice(0, tok.indexOf(bare) < 0 ? 0 : tok.indexOf(bare));
+    const post = tok.slice(pre.length + bare.length);
+    let out;
+    if (CAPS_MIXED[bare]) out = CAPS_MIXED[bare];
+    else if (CAPS_KEEP.has(bare) || !/[A-Z]/.test(bare)) out = bare;
+    else {
+      const low = bare.toLowerCase();
+      out = started ? low : low.charAt(0).toUpperCase() + low.slice(1);
+    }
+    if (/[A-Z0-9]/.test(bare)) started = true;
+    return pre + out + post;
+  }).join('');
+}
 /* RELIEF. Everything written on a year mark is cut into the wall rather than
    printed on it, and the hall's light comes from above — so every glyph carries
    one hairline of shadow below it and a touch to the left. One pixel, hard, no
@@ -2215,7 +2251,8 @@ function drawBeatText(b, focusAmt){
       ctx.textAlign = 'center';
       ctx.font = eraFont(40 * kk * SS, '', segP.font);
       try { ctx.letterSpacing = `${8*kk*SS}px`; } catch(e){}
-      const wP = Math.max(320*kk*SS, ctx.measureText(b.t).width + 84*kk*SS);
+      const plateTx = sentence(b.t);
+      const wP = Math.max(320*kk*SS, ctx.measureText(plateTx).width + 84*kk*SS);
       const hP = 88*kk*SS, yP = py(150, kk);
       const pg = ctx.createLinearGradient(cx, yP, cx, yP + hP);
       if (white){ pg.addColorStop(0, 'rgba(250,251,252,0.96)'); pg.addColorStop(1, 'rgba(226,230,234,0.96)'); }
@@ -2226,7 +2263,7 @@ function drawBeatText(b, focusAmt){
       ctx.lineWidth = 1.5*SS;
       ctx.strokeRect(cx - wP/2 + 5*kk*SS, yP + 5*kk*SS, wP - 10*kk*SS, hP - 10*kk*SS);
       ctx.fillStyle = white ? 'rgba(44,52,60,0.95)' : `rgba(${segP.ink},0.95)`;
-      ctx.fillText(b.t, cx, yP + hP*0.66);
+      ctx.fillText(plateTx, cx, yP + hP*0.66);
       try { ctx.letterSpacing = '0px'; } catch(e){}
       ctx.restore();
       pushHit(cx - wP/2, yP, wP, hP, {type:'study', beat: BEATS.indexOf(b)});
@@ -2260,7 +2297,7 @@ function drawBeatText(b, focusAmt){
     // riveted to the wall: the numeral grows straight toward the camera,
     // it never slides left or right off its own spot
     let cx = px(b.x, k(b.pinZ || (wz - 8)));
-    const ts = (seg.tScale || 1) * (b._ys || 1);
+    const ts = (seg.tScale || 1) * (b._ys || 1) * (b.ysMul || 1);
     if (cx > -1200 && cx < W + 1200){
       ctx.save();
       /* THE SHADOW STAYS ON THE WALL — AND IT IS THE SHAPE OF THE WORDS. It
@@ -2294,9 +2331,9 @@ function drawBeatText(b, focusAmt){
           ctx.shadowOffsetY = dy;
           ctx.fillText(txt, cx - OFF, py(yWorld - lift, kW));
         };
-        const tsW = (seg.tScale || 1) * (b._ys || 1) * spread;
+        const tsW = (seg.tScale || 1) * (b._ys || 1) * (b.ysMul || 1) * spread;
         cast(b.y, eraFont(170 * tsW * kW * SS, '', seg.font), 140);
-        cast(b.t, eraFont(46 * (seg.tScale || 1) * spread * kW * SS, '', seg.font), tY + cd0);
+        cast(sentence(b.t), eraFont(46 * (seg.tScale || 1) * spread * kW * SS, '', seg.font), tY + cd0);
         if (b.th && b._th && !b.thBelow){
           ctx.font = eraFont(30 * (seg.tScale || 1) * spread * kW * SS, 'italic', seg.font);
           b._th.forEach((ln, i) => {
@@ -2328,8 +2365,8 @@ function drawBeatText(b, focusAmt){
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
       const LB = b.tOnBay && BAY_LABELS[b.y];
       letterRelief(0.55);
-      if (LB) ctx.fillText(b.t, LB.x, LB.y + 46 * 0.36 * kk * SS);
-      else if (!b.tHide) ctx.fillText(b.t, cx, mixN(py(tY + cd - lift, kk), H*0.16 + 62*SS, focusAmt));
+      if (LB) ctx.fillText(sentence(b.t), LB.x, LB.y + 46 * 0.36 * kk * SS);
+      else if (!b.tHide) ctx.fillText(sentence(b.t), cx, mixN(py(tY + cd - lift, kk), H*0.16 + 62*SS, focusAmt));
       noShadow();
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th && !b.thBelow && fFade > 0.05){
@@ -2383,7 +2420,7 @@ function drawBeatText(b, focusAmt){
           const r = drawHungYear(b, seg, cx, band, fScale, focusAmt, near);
           hitTop = r.yBase - r.cap - 18 * SS;
         } else {
-          ctx.font = eraFont(170 * (seg.tScale||1) * (b._ys||1) * fScale * kk * SS, '', seg.font);
+          ctx.font = eraFont(170 * (seg.tScale||1) * (b._ys||1) * (b.ysMul||1) * fScale * kk * SS, '', seg.font);
           ctx.fillStyle = `rgba(${seg.ink},${0.5 + 0.45*near})`;
           // a numeral can be lifted clear of whatever stands under it on the panel
           const yBase8 = mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt);
@@ -2404,8 +2441,8 @@ function drawBeatText(b, focusAmt){
       /* a bay whose picture already carries the name does not get it printed on
          the wall as well (2017: the render letters its own plinth) */
       letterRelief(0.55);
-      if (LB) ctx.fillText(b.t, LB.x, LB.y + 46 * sc * 0.36 * kk * SS);
-      else if (!b.tHide) ctx.fillText(b.t, cx, mixN(py((b.minor ? tY + 4 : tY) + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
+      if (LB) ctx.fillText(sentence(b.t), LB.x, LB.y + 46 * sc * 0.36 * kk * SS);
+      else if (!b.tHide) ctx.fillText(sentence(b.t), cx, mixN(py((b.minor ? tY + 4 : tY) + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
       noShadow();
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th){
@@ -2882,7 +2919,7 @@ function drawFilmPanel(x, wWorld, welcome){
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(236,210,165,0.35)';
     ctx.font = eraFont(15 * kk * SS);
-    ctx.fillText('THE FILM', sx, vy + sh/2 + 5*kk*SS);
+    ctx.fillText('The film', sx, vy + sh/2 + 5*kk*SS);
   }
   if (v && v.readyState >= 2 && (v.muted || T.userPaused)){
     // a thin outlined play mark, not a badge — on the poster and on a pause
@@ -2925,8 +2962,8 @@ function drawWelcomeTV(){
   }
   ctx.fillStyle = 'rgba(236,210,165,0.95)';
   ctx.font = eraFont(54 * kw * SS);
-  ctx.fillText('HOW GOOD DENTISTRY', cxw, py(146, kw));
-  ctx.fillText('STOPPED BEING A LUXURY', cxw, py(208, kw));
+  ctx.fillText('How good dentistry', cxw, py(146, kw));
+  ctx.fillText('stopped being a luxury', cxw, py(208, kw));
   ctx.restore();
   // the tour line stands where the foot used to: between the panel and the
   // counter, and it is there from the very first frame
@@ -2934,7 +2971,7 @@ function drawWelcomeTV(){
   ctx.font = eraFont(15 * kk * SS);
   try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(214,186,144,0.85)';
-  ctx.fillText('GLIDEWELL HISTORY TOUR →', sx, footY - 9 * kk * SS);
+  ctx.fillText('Glidewell history tour \u2192', sx, footY - 9 * kk * SS);
   try { ctx.letterSpacing = '0px'; } catch(e){}
 }
 /* the film, cover-cropped into any rectangle (a 4:3 rect trims the ears),
@@ -3368,8 +3405,8 @@ function drawOutro(){
   ctx.fillStyle = `rgba(${seg.ink},0.6)`;
   ctx.font = eraFont(56 * kw * SS, '', seg.font);
   try { ctx.letterSpacing = `${6*kw*SS}px`; } catch(e){}
-  ctx.fillText('THE BEST DENTISTRY \u2014', cx, py(300, kw));
-  ctx.fillText('MADE AFFORDABLE', cx, py(372, kw));
+  ctx.fillText('The best dentistry \u2014', cx, py(300, kw));
+  ctx.fillText('made affordable', cx, py(372, kw));
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.font = eraFont(24 * kw * SS, 'italic', seg.font);
   ctx.fillStyle = `rgba(${seg.ink},0.55)`;
@@ -4593,7 +4630,7 @@ function drawRec23(t){
   ctx.font = eraFont(58 * kk * SS, '700', SEGMENTS[3].font);
   try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(32,42,54,0.96)';
-  ctx.fillText('THE CROSSOVER', cx, py(46, kk));
+  ctx.fillText('The crossover', cx, py(46, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(60,70,84,0.95)';
@@ -4623,9 +4660,9 @@ function drawRec23(t){
   ctx.font = eraFont(24 * kk * SS, '700', SEGMENTS[3].font);
   ctx.textAlign = 'left';
   ctx.fillStyle = 'rgba(110,122,136,0.9)';
-  ctx.fillText('PHYSICAL', pl, pBot - pH * 0.94);
+  ctx.fillText('Physical', pl, pBot - pH * 0.94);
   ctx.fillStyle = 'rgba(40,140,210,0.9)';
-  ctx.fillText('DIGITAL', pl, pBot - pH * 0.06);
+  ctx.fillText('Digital', pl, pBot - pH * 0.06);
   ctx.textAlign = 'center';
   if (ph >= 0.5){
     const mx2 = pl + pw2 * 0.5, my2 = pBot - pH * 0.50;
@@ -4638,7 +4675,7 @@ function drawRec23(t){
     ctx.fillStyle = `rgba(30,40,52,${(0.9 * a2).toFixed(3)})`;
     ctx.beginPath(); ctx.arc(mx2, my2, 4.5 * kk * SS, 0, 7); ctx.fill();
     ctx.font = eraFont(22 * kk * SS, '700', SEGMENTS[3].font);
-    ctx.fillText('MARCH 2023', mx2, pBot + 26 * kk * SS);
+    ctx.fillText('March 2023', mx2, pBot + 26 * kk * SS);
   }
   // the instant itself, caught on the crossing of dead centre and not before
   const dxm = cam.x - mid;
@@ -4776,7 +4813,7 @@ function drawRec18(t){
   ctx.font = eraFont(58 * kk * SS, '700', SEGMENTS[3].font);
   try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(32,42,54,0.96)';
-  ctx.fillText('THE FIRST AI CROWN', cx, py(46, kk));
+  ctx.fillText('The first AI crown', cx, py(46, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(60,70,84,0.95)';
@@ -4873,10 +4910,10 @@ function drawAiCrownVitrine(mid, kk, t){
   ctx.font = eraFont(11 * kk * SS, '700', SEGMENTS[3].font);
   try { ctx.letterSpacing = `${1.6 * kk * SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(198,228,255,0.92)';
-  ctx.fillText('CROWN DESIGN \u00b7 GENERATIVE', nx0 + 26 * kk * SS, nTop + barH * 0.68);
+  ctx.fillText('Crown design \u00b7 generative', nx0 + 26 * kk * SS, nTop + barH * 0.68);
   ctx.textAlign = 'right';
   ctx.fillStyle = 'rgba(150,190,225,0.7)';
-  ctx.fillText(((ph < 0.98 ? 'PROPOSING' : 'ACCEPTED') + ' \u00b7 1,500 CASES'), nx0 + nw - 14 * kk * SS, nTop + barH * 0.68);
+  ctx.fillText(((ph < 0.98 ? 'Proposing' : 'Accepted') + ' \u00b7 1,500 cases'), nx0 + nw - 14 * kk * SS, nTop + barH * 0.68);
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.restore();
   // the live dot
@@ -4998,9 +5035,9 @@ function drawAiCrownVitrine(mid, kk, t){
       ctx.fillStyle = ok ? 'rgba(196,226,248,0.86)' : 'rgba(150,180,205,0.55)';
       ctx.fillText(lab, atX + 12 * kk * SS, ry);
     };
-    tick('MARGIN', ph > 0.35, nx0 + 22 * kk * SS);
-    tick('CONTACTS', ph > 0.60, nx0 + 108 * kk * SS);
-    tick('OCCLUSION', ph > 0.82, nx0 + 208 * kk * SS);
+    tick('Margin', ph > 0.35, nx0 + 22 * kk * SS);
+    tick('Contacts', ph > 0.60, nx0 + 108 * kk * SS);
+    tick('Occlusion', ph > 0.82, nx0 + 208 * kk * SS);
     ctx.textAlign = 'right';
     ctx.fillStyle = 'rgba(196,226,248,0.86)';
     ctx.fillText((90 + 8.4 * Math.min(1, ph * 1.1)).toFixed(1) + '%', nx0 + nw - 22 * kk * SS, ry);
@@ -5525,7 +5562,7 @@ function makeMapSprite(){
   g.textAlign = 'center';
   g.font = '600 34px Georgia, serif';
   try { g.letterSpacing = '6px'; } catch(e){}
-  g.fillText('SOUTHERN CALIFORNIA', 460, 590);
+  g.fillText('Southern California', 460, 590);
   return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
 }
 function drawMapWall(t){
@@ -5962,7 +5999,7 @@ function drawRec2Front(t){
     gs.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
     try { gs.letterSpacing = `${5*kk*SS}px`; } catch(e){}
     gs.fillStyle = `rgba(150,228,255,${(0.55 + 0.42 * lit).toFixed(3)})`;
-    gs.fillText('SCANNED \u00b7 DESIGNED \u00b7 MILLED', cx, oh2 * 0.72);
+    gs.fillText('Scanned \u00b7 designed \u00b7 milled', cx, oh2 * 0.72);
     ctx.save();
     // the recess, its edges curved by the barrel of the column
     const yTopC = stripY - sh2/2, yBotC = stripY + sh2/2, bow = 3.2 * kn * SS;
@@ -6139,7 +6176,7 @@ function drawRec2(t){
     ctx.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
     try { ctx.letterSpacing = `${5*kk*SS}px`; } catch(e){}
     ctx.fillStyle = `rgba(70,110,135,${(0.75 * ease).toFixed(3)})`;
-    ctx.fillText('SCANNED \u00b7 DESIGNED \u00b7 MILLED', cx, py(730, kk));
+    ctx.fillText('Scanned \u00b7 designed \u00b7 milled', cx, py(730, kk));
     try { ctx.letterSpacing = '0px'; } catch(e){}
     ctx.restore();
   }
@@ -6233,7 +6270,7 @@ function drawRec2(t){
   ctx.font = eraFont(58 * kk * SS, '700', SEGMENTS[3].font);
   try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(32,42,54,0.96)';
-  ctx.fillText('THE DIGITAL REVOLUTION', cx, py(8, kk));
+  ctx.fillText('The digital revolution', cx, py(8, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(60,70,84,0.95)';
@@ -6242,9 +6279,9 @@ function drawRec2(t){
   ctx.font = eraFont(24 * kk * SS, '700', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(110,120,132,0.7)';
   ctx.textAlign = 'left';
-  ctx.fillText('\u2190 THE ANALOG CENTURY', x0 + 100*kk*SS, py(800, kk));
+  ctx.fillText('\u2190 the analog century', x0 + 100*kk*SS, py(800, kk));
   ctx.textAlign = 'right';
-  ctx.fillText('THE DIGITAL AGE \u2192', x1 - 100*kk*SS, py(800, kk));
+  ctx.fillText('the digital age \u2192', x1 - 100*kk*SS, py(800, kk));
   ctx.restore();
   // pilaster columns, cool tone, same plane
   for (const wxc of [REC2_L, REC2_R]){
@@ -6454,7 +6491,7 @@ function makeUsaSprite(){
   g.textAlign = 'center';
   g.font = '600 30px "Helvetica Neue", Arial, sans-serif';
   try { g.letterSpacing = '5px'; } catch(e){}
-  g.fillText('3,500+ DENTISTS · NATIONWIDE · BY MAIL', 490, 560);
+  g.fillText('3,500+ dentists \u00b7 nationwide \u00b7 by mail', 490, 560);
   return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
 }
 function drawRec3(t){
@@ -8554,7 +8591,7 @@ function drawDocCard(b, bi){
   ctx.font = `600 ${(w*0.082).toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;
   ctx.textAlign = 'left';
   try { ctx.letterSpacing = (w*0.014).toFixed(1) + 'px'; } catch(e){}
-  ctx.fillText('OPEN ITEMS', ix, -h/2 + pad*3.6);
+  ctx.fillText('Open items', ix, -h/2 + pad*3.6);
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.fillStyle = 'rgba(120,40,30,0.75)';
   ctx.fillRect(ix, -h/2 + pad*4.5, iw * 0.42, Math.max(1, w*0.012));
@@ -8613,7 +8650,7 @@ function drawPlasmaPanel(b, t){
     ctx.fillStyle = 'rgba(140,225,255,0.8)';
     ctx.font = `${(h*0.075).toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;
     ctx.textAlign = 'left';
-    ctx.fillText('BRUXZIR FACTORY · ROBOTIC LINE · LIVE', sx - w/2 + w*0.05, sy + h/2 - h*0.09);
+    ctx.fillText('BruxZir factory \u00b7 robotic line \u00b7 live', sx - w/2 + w*0.05, sy + h/2 - h*0.09);
   } else {
     const items = ['500,000+ / mo', '5,000+ people', 'CrownAI · MarginAI', 'fastscan.io · 2022', 'single-visit crowns', '#1 lab worldwide'];
     const idx = (t/3 | 0) % items.length;
@@ -8625,7 +8662,7 @@ function drawPlasmaPanel(b, t){
     ctx.fillText(items[idx], sx, sy + h*0.07);
     ctx.fillStyle = 'rgba(140,225,255,0.55)';
     ctx.font = `${Math.max(9, h*0.09)}px "Helvetica Neue", Arial, sans-serif`;
-    ctx.fillText('GLIDEWELL · TODAY', sx, sy + h/2 - h*0.10);
+    ctx.fillText('Glidewell \u00b7 today', sx, sy + h/2 - h*0.10);
   }
   ctx.restore();
 }
@@ -8866,10 +8903,10 @@ function makeBannerVert(title, sub, cta, imgName){
 }
 function initBanners(){
   BANNERS = [
-    {x: SHIFT(21505), w: 550, sp: makeBanner('BRUXZIR®', 'The best dentistry — made affordable', 'THE #1 CROWN')},
-    {x: SHIFT(23180), w: 550, sp: makeBanner('GLIDEWELL HT™', 'Premium implant, a fraction of the price', 'PREMIUM · AFFORDABLE')},
-    {x: SHIFT(23915), w: 240, cy: 590, sp: makeBannerVert('GLIDEWELL.IO', 'The lab moves\ninto your office', 'SINGLE-VISIT', 'fastmill')},
-    {x: SHIFT(27700), w: 480, sp: makeBanner('CROWNAI', 'Designed by intelligence, milled by robots', 'AI IN EVERY CROWN', 'todayai')},
+    {x: SHIFT(21505), w: 550, sp: makeBanner('BruxZir\u00ae', 'The best dentistry \u2014 made affordable', 'The #1 crown')},
+    {x: SHIFT(23180), w: 550, sp: makeBanner('Glidewell HT\u2122', 'Premium implant, a fraction of the price', 'Premium \u00b7 affordable')},
+    {x: SHIFT(23915), w: 240, cy: 590, sp: makeBannerVert('glidewell.io', 'The lab moves\ninto your office', 'Single-visit', 'fastmill')},
+    {x: SHIFT(27700), w: 480, sp: makeBanner('CrownAI', 'Designed by intelligence, milled by robots', 'AI in every crown', 'todayai')},
   ];
 }
 function drawBanners(t){
@@ -8979,7 +9016,7 @@ function drawCell(cx, cz, t, phase, pendant){
   ctx.fillStyle = 'rgba(238,242,246,0.92)';
   ctx.font = eraFont(13 * S, '700', SEGMENTS[3].font);
   ctx.textAlign = 'left';
-  ctx.fillText('BRUXZIR CELL \u00b7 AUTOMATION', X(cx - HW * 0.52), Y(452));
+  ctx.fillText('BruxZir cell \u00b7 automation', X(cx - HW * 0.52), Y(452));
 
   // the signal tower, and the pendant on its stalk
   const tx = X(cx + HW * 0.80);
@@ -9638,7 +9675,7 @@ function drawOpenBox(){
     ctx.textAlign = 'center';
     ctx.font = eraFont(26 * S2, '700', SEGMENTS[3].font);
     ctx.fillStyle = 'rgba(232,238,244,0.92)';
-    ctx.fillText('ONE CASE, AS IT ARRIVED', cx, by - 44 * S2);
+    ctx.fillText('One case, as it arrived', cx, by - 44 * S2);
     ctx.font = eraFont(20 * S2, '', SEGMENTS[3].font);
     ctx.fillStyle = 'rgba(190,200,212,0.8)';
     ctx.fillText('both jaws, still in the trays they were taken in', cx, by - 14 * S2);
@@ -9690,7 +9727,7 @@ function drawOpenBox(){
   ctx.textAlign = 'center';
   ctx.font = eraFont(26 * S2, '700', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(232,238,244,0.92)';
-  ctx.fillText('ONE CASE, AS IT ARRIVED', cx, cy - bh2/2 - fl - 34 * S2);
+  ctx.fillText('One case, as it arrived', cx, cy - bh2/2 - fl - 34 * S2);
   ctx.font = eraFont(20 * S2, '', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(190,200,212,0.8)';
   ctx.fillText('both jaws, still in the trays they were taken in', cx, cy - bh2/2 - fl - 6 * S2);
@@ -9735,7 +9772,7 @@ function drawInspect(){
     ctx.fillStyle = `rgba(${seg.ink},${(e-0.6)/0.4 * 0.9})`;
     ctx.fillText(I.cap || (b.y + ' · ' + b.t), W/2, ty + th + 52*SS);
     if (I.link){
-      const label = 'OPEN THE CHAIRSIDE ARCHIVE  \u2192';
+      const label = 'Open the Chairside archive  \u2192';
       ctx.font = eraFont(22*SS, '', seg.font);
       try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
       const wL = ctx.measureText(label).width + 56*SS;
@@ -10120,7 +10157,7 @@ let FROST = null;
    voice that belongs to that moment sits under the carton. Keyed by title. */
 const STUDY_INLINE = {
   'THE CROSSOVER': {
-    box: {head: 'ONE CASE, AS IT ARRIVED',
+    box: {head: 'One case, as it arrived',
           sub: 'both jaws, still in the trays they were taken in',
           hint: 'click to digitize', done: 'and this is what happened to it \u2014 the case became data'},
   },
@@ -10129,12 +10166,12 @@ const STUDY_INLINE = {
    the company going onto the web. Keyed by the beat's title. */
 const STUDY_LINKS = {
   'WEB \u00b7 CLINICAL VOICE': [
-    {head: 'THE SITES'},
+    {head: 'The sites'},
     {label: 'glidewelldental.com', url: 'https://glidewelldental.com/', icon: 'globe',
      note: 'the company itself \u2014 products, cases, and the whole education library'},
     {label: 'Glidewell Direct',    url: 'https://glidewelldirect.com/collections/tap', icon: 'shop',
      note: 'the shop: materials, tools and chairside supplies, ordered online'},
-    {head: 'SOCIAL'},
+    {head: 'Social'},
     {label: 'Facebook',   url: 'https://www.facebook.com/glidewelldental/', icon: 'fb',
      note: 'the daily feed \u2014 lab news, events, clinical posts'},
     {label: 'Instagram',  url: 'https://www.instagram.com/glidewelldental/?hl=en', icon: 'ig',
@@ -10451,9 +10488,10 @@ function drawStudy(){
   let tSz = 38;
   ctx.font = K.font(tSz);
   try { ctx.letterSpacing = `${7*SS}px`; } catch(err){}
-  while (ctx.measureText(b.t).width > textW && tSz > 20){ tSz -= 1; ctx.font = K.font(tSz); }
+  const studyTitle = sentence(b.t);
+  while (ctx.measureText(studyTitle).width > textW && tSz > 20){ tSz -= 1; ctx.font = K.font(tSz); }
   ctx.fillStyle = `rgba(${K.ink},0.92)`;
-  ctx.fillText(b.t, left, y);
+  ctx.fillText(studyTitle, left, y);
   try { ctx.letterSpacing = '0px'; } catch(err){}
   y += 54 * SS;
   if (b.th){
@@ -10491,7 +10529,7 @@ function drawStudy(){
         ctx.font = K.font(19, '700');
         try { ctx.letterSpacing = `${3.2*SS}px`; } catch(err){}
         ctx.fillStyle = `rgba(${K.ink},0.95)`;
-        if (y > topClip && y < botClip) ctx.fillText(para.slice(3).toUpperCase(), left, y);
+        if (y > topClip && y < botClip) ctx.fillText(sentence(para.slice(3)), left, y);
         try { ctx.letterSpacing = '0px'; } catch(err){}
         y += 12 * SS;
         ctx.fillStyle = K.rule;
@@ -10540,7 +10578,7 @@ function drawStudy(){
     ctx.font = K.font(17, '700');
     try { ctx.letterSpacing = `${3.2*SS}px`; } catch(err){}
     ctx.fillStyle = `rgba(${K.dim},0.95)`;
-    if (y > topClip && y < botClip) ctx.fillText(media.length > 1 ? 'THE VOICES' : 'WATCH', left, y);
+    if (y > topClip && y < botClip) ctx.fillText(media.length > 1 ? 'The voices' : 'Watch', left, y);
     try { ctx.letterSpacing = '0px'; } catch(err){}
     y += 30 * SS;
     const tw4 = 300 * SS, th4 = 170 * SS, gap4 = 26 * SS;
@@ -10596,7 +10634,7 @@ function drawStudy(){
             ctx.font = K.font(19, '700');
             try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
             ctx.fillStyle = 'rgba(150,215,255,0.95)';
-            ctx.fillText('SCANNED \u00b7 ONE FILE \u00b7 NO MODEL', fx + fw / 2, y + fh * 0.30);
+            ctx.fillText('Scanned \u00b7 one file \u00b7 no model', fx + fw / 2, y + fh * 0.30);
             try { ctx.letterSpacing = '0px'; } catch(err){}
             ctx.textAlign = 'left';
             ctx.restore();
@@ -10675,7 +10713,7 @@ function drawStudy(){
     let my = wy0 + (era === 2 ? 168 : 130) * SS - S.scroll * SS;
     ctx.font = K.font(19);
     ctx.fillStyle = `rgba(${K.dim},0.9)`;
-    if (my > topClip && my < botClip) ctx.fillText('WATCH', mx, my);
+    if (my > topClip && my < botClip) ctx.fillText('Watch', mx, my);
     my += 26 * SS;
     for (let mi = 0; mi < media.length; mi++){
       studyClipTile(media[mi], mx, my, 300*SS, 170*SS, S, K, b, topClip, botClip);
@@ -10688,7 +10726,7 @@ function drawStudy(){
     ctx.fillRect(left, y, colW, 1.5*SS); y += 38 * SS;
     ctx.font = K.font(19);
     ctx.fillStyle = `rgba(${K.dim},0.9)`;
-    ctx.fillText('PEOPLE OF THIS MOMENT', left, y); y += 42 * SS;
+    ctx.fillText('People of this moment', left, y); y += 42 * SS;
     let px_ = left;
     ctx.font = K.font(24);
     for (const pid of ppl){
@@ -10807,7 +10845,7 @@ function drawPeople(){
   ctx.textAlign = 'left';
   ctx.font = K.font(52);
   ctx.fillStyle = `rgba(${K.ink},0.98)`;
-  ctx.fillText('THE VOICES', left, y); y += 30 * SS;
+  ctx.fillText('The voices', left, y); y += 30 * SS;
   ctx.font = K.font(18);
   ctx.fillStyle = `rgba(${K.dim},0.95)`;
   /* WHO COMES FIRST. The roster used to be whatever order the list was typed
@@ -10815,7 +10853,7 @@ function drawPeople(){
      the doctors and professors, then everyone else — and inside each band the
      original order holds, so Jim still opens the room. */
   const roster = peopleRoster();
-  ctx.fillText(roster.length + ' PEOPLE ON CAMERA · TAP A FACE FOR THEIR PAGE', left, y);
+  ctx.fillText(roster.length + ' people on camera \u00b7 tap a face for their page', left, y);
   y += 24 * SS;
   ctx.fillStyle = `rgba(${K.red},1)`;
   ctx.fillRect(left, y, 68*SS, 3*SS); y += 40 * SS;
@@ -11028,7 +11066,7 @@ function drawPerson(){
   ctx.font = K.font(17);
   try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
   ctx.fillStyle = `rgba(${K.red},0.92)`;
-  const backTx = '\u2190 ALL VOICES';
+  const backTx = '\u2190 All voices';
   if (y - 70*SS > topClip){
     ctx.fillText(backTx, left, y - 70*SS);
     pushHit(left - 8*SS, y - 94*SS, ctx.measureText(backTx).width + 18*SS, 34*SS, {type: 'voices'});
@@ -11045,7 +11083,7 @@ function drawPerson(){
     ctx.font = K.font(21);
     try { ctx.letterSpacing = `${4*SS}px`; } catch(err){}
     ctx.fillStyle = `rgba(${K.dim},0.95)`;
-    let roleSz = 21, roleTx = roleShort(P.role).toUpperCase();
+    let roleSz = 21, roleTx = roleShort(P.role);
     while (ctx.measureText(roleTx).width > textW && roleSz > 13){ roleSz -= 1; ctx.font = K.font(roleSz); }
     while (ctx.measureText(roleTx).width > textW && roleTx.length > 8) roleTx = roleTx.slice(0, -1);
     ctx.fillText(roleTx, left, y);
@@ -11162,7 +11200,7 @@ function drawPerson(){
       ctx.font = K.font(19);
       ctx.fillStyle = `rgba(${K.dim},0.9)`;
       if (my > topClip && my < botClip)
-        ctx.fillText(clips.length > 1 ? 'WATCH \u00b7 CHOOSE' : 'WATCH', mx, my);
+        ctx.fillText(clips.length > 1 ? 'Watch \u00b7 choose' : 'Watch', mx, my);
       my += 26 * SS;
     }
     for (let ci = 0; ci < clips.length; ci++){
@@ -11205,7 +11243,7 @@ function drawPerson(){
           try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
           ctx.fillStyle = `rgba(${K.red},1)`;
           ctx.textAlign = 'center';
-          ctx.fillText('NOW PLAYING', mx + tw/2, ty + th/2 - 2*SS);
+          ctx.fillText('Now playing', mx + tw/2, ty + th/2 - 2*SS);
           ctx.textAlign = 'left';
           try { ctx.letterSpacing = '0px'; } catch(err){}
         }
@@ -11346,7 +11384,7 @@ function drawAttractHint(t){
   // warm ink only in the craft era; translucent white once 1979 is crossed
   ctx.fillStyle = cam.x < REC_L ? `rgba(225,198,155,${a})` : `rgba(255,255,255,${(a*0.85).toFixed(3)})`;
   // the rule owns the foot of the frame; the invitation stands above it
-  ctx.fillText('TURN THE WHEEL · TRAVEL THROUGH TIME', W/2, H - 78*SS);
+  ctx.fillText('Turn the wheel \u00b7 travel through time', W/2, H - 78*SS);
   ctx.restore();
 }
 
