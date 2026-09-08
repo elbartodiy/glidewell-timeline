@@ -2529,7 +2529,7 @@ function cacheWrap(){
    panel with a thin border on a low foot — no chrome, no cyan, the era-1 lamp
    is the only theatre it gets. Autoplay is muted (the browser demands it);
    the first tap turns the sound on, the next taps pause and resume. */
-const WELCOME_TV = {x: INTRO_X, lz: 70, w: 490, src: 'media/movie_pre.mp4', posterT: 3.0};
+const WELCOME_TV = {x: INTRO_X, lz: 70, w: 490, src: 'media/movie_pre.mp4', posterT: 2.2};   // the instruments on the drape: that shot runs 0.3\u20132.5s, and 3.0 was already the dentist
 function initWelcomeTV(){
   const v = document.createElement('video');
   v.src = WELCOME_TV.src; v.loop = true; v.playsInline = true;
@@ -11642,6 +11642,28 @@ function frame(){
 /* ---------------- MAIN LOOP ---------------- */
 const DEBUG = /debug/.test(location.search);
 let last = 0, fps = 60, qFrames = 0, qCool = 0;
+const FPS_HUD = /[?&]fps=1/.test(location.search);
+let HUD_WORST = 0, HUD_LONG = 0, HUD_T = 0;
+function drawFpsHud(dt, frameMs){
+  HUD_WORST = Math.max(HUD_WORST * 0.985, frameMs);
+  if (dt > 0.024) HUD_LONG++;
+  HUD_T += dt;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.font = `${Math.round(13 * SS)}px ui-monospace, Menlo, monospace`;
+  ctx.textAlign = 'left';
+  const rows = [
+    `fps ${fps.toFixed(1)}   frame ${frameMs.toFixed(1)}ms   worst ${HUD_WORST.toFixed(1)}ms`,
+    `dropped ${HUD_LONG}  in ${HUD_T.toFixed(0)}s    RQ ${RQ.toFixed(2)}`,
+    `${W}\u00d7${H} @${(window.devicePixelRatio || 1).toFixed(1)}   SS ${SS.toFixed(2)}   vel ${cam.vel.toFixed(0)}`,
+  ];
+  const wBox = 330 * SS, hBox = 18 * SS * rows.length + 14 * SS;
+  ctx.fillStyle = 'rgba(4,6,9,0.72)';
+  ctx.fillRect(12 * SS, H - hBox - 12 * SS, wBox, hBox);
+  ctx.fillStyle = fps < 50 ? 'rgba(255,150,120,0.95)' : 'rgba(190,235,255,0.9)';
+  rows.forEach((r, i) => ctx.fillText(r, 22 * SS, H - hBox + (18 * i + 20) * SS));
+  ctx.restore();
+}
 function loop(ts){
   const dt = Math.min(0.05, (ts - last)/1000 || 0.016);
   last = ts;
@@ -11669,7 +11691,9 @@ function loop(ts){
   // a tab that boots hidden measures 0x0 — never draw a zero frame
   if (!W || !H){ resize(); if (!W || !H){ requestAnimationFrame(loop); return; } }
   update(dt);
+  const _t0 = FPS_HUD ? performance.now() : 0;
   frame();
+  if (FPS_HUD) drawFpsHud(dt, performance.now() - _t0);
   requestAnimationFrame(loop);
 }
 
