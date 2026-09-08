@@ -215,7 +215,7 @@ const BEATS = [
    wall:[{img:'rella', w:250, dx:555, top:215, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
    table:[],
    ped:{obj:'puck', dx:0},
-   props:[{kind:'crt', dx:700, lz:130, w:320, label:'CAD REVOLUTION'}]},
+   props:[{kind:'crt', dx:700, lz:130, w:320, label:'CAD revolution'}]},
 
   {x:16700, y:'2001', t:'WEB · CLINICAL VOICE', minor:true, yLift:190,
    th:'The lab learns to publish — online and on camera.',
@@ -2475,7 +2475,7 @@ function drawBeatText(b, focusAmt){
    Both the flying beats and the static ones come through here: I wrote it into
    one branch first and the finale, which flies, was left behind. */
 function drawHungYear(b, seg, cx, band, fScale, focusAmt, near){
-  const label = b.sign || b.y;      // the finale is hung as a word, not a number
+  const label = sentence(b.sign || b.y);   // the finale is hung as a word, not a number — and a word is not shouted
   ctx.save();
   ctx.textAlign = 'center';
   const track = 13;                         // cut letters are set apart
@@ -10157,6 +10157,7 @@ let FROST = null;
    voice that belongs to that moment sits under the carton. Keyed by title. */
 const STUDY_INLINE = {
   'THE CROSSOVER': {
+    boxTop: true,          // the case first, then what happened to it, then the voice
     box: {head: 'One case, as it arrived',
           sub: 'both jaws, still in the trays they were taken in',
           hint: 'click to digitize', done: 'and this is what happened to it \u2014 the case became data'},
@@ -10502,6 +10503,71 @@ function drawStudy(){
   }
   ctx.fillStyle = K.rule;
   ctx.fillRect(left, y, colW, 1.5*SS); y += 42 * SS;
+  /* the carton: an exhibit inside the article. Some pages want it at the head,
+     above the text (2023: you see the case first, then read what happened to
+     it); the rest keep it under the prose. */
+  const inl = STUDY_INLINE[b.t];
+  let boxDone = false;
+  const drawInlineBox = () => {
+    if (!inl || boxDone) return;
+    boxDone = true;
+    y += 14 * SS;
+    if (inl.box && PROP_SPRITES.ph_casebox){
+      const sp2 = PROP_SPRITES.ph_casebox;
+      const fw = Math.min(textW, 620 * SS), fh = fw * sp2.h / sp2.w;
+      const fx = left + (textW - fw) / 2;
+      S.diss = Math.max(0, Math.min(1, (S.diss || 0) + (S.dissing ? (state.dt || 0.016) * 0.7 : 0)));
+      ctx.font = K.font(17, '700');
+      try { ctx.letterSpacing = `${3.2*SS}px`; } catch(err){}
+      ctx.fillStyle = `rgba(${K.dim},0.95)`;
+      if (y > topClip && y < botClip) ctx.fillText(inl.box.head, left, y);
+      try { ctx.letterSpacing = '0px'; } catch(err){}
+      y += 24 * SS;
+      ctx.font = K.font(19, 'italic');
+      ctx.fillStyle = `rgba(${K.dim},0.9)`;
+      if (y > topClip && y < botClip) ctx.fillText(inl.box.sub, left, y);
+      y += 22 * SS;
+      if (y + fh > topClip && y < botClip){
+        ctx.save();
+        ctx.globalAlpha = a * Math.max(0, 1 - S.diss * 1.1);
+        ctx.drawImage(spriteMip(sp2, fw, fh), fx, y, fw, fh);
+        ctx.restore();
+        if (S.diss > 0){
+          /* the digits are drawn additively, and on a pale page that is the same
+             as drawing nothing — so the carton's own rectangle goes dark as it
+             dissolves, and the data lights up inside it */
+          ctx.save();
+          ctx.globalAlpha = a * Math.min(1, S.diss * 1.3);
+          ctx.fillStyle = 'rgba(9,13,19,0.94)';
+          ctx.beginPath(); ctx.roundRect(fx, y, fw, fh, 6 * SS); ctx.fill();
+          ctx.globalCompositeOperation = 'lighter';
+          drawBits(fx + fw * 0.37, y + fh * 0.55, fw * 0.30, S.diss, 20230301);
+          drawBits(fx + fw * 0.67, y + fh * 0.57, fw * 0.26, S.diss, 20230302);
+          ctx.restore();
+          if (S.diss > 0.55){
+            ctx.save();
+            ctx.globalAlpha = a * Math.min(1, (S.diss - 0.55) / 0.35);
+            ctx.textAlign = 'center';
+            ctx.font = K.font(19, '700');
+            try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
+            ctx.fillStyle = 'rgba(150,215,255,0.95)';
+            ctx.fillText('Scanned \u00b7 one file \u00b7 no model', fx + fw / 2, y + fh * 0.30);
+            try { ctx.letterSpacing = '0px'; } catch(err){}
+            ctx.textAlign = 'left';
+            ctx.restore();
+          }
+        }
+        pushHit(fx, y, fw, fh, {type: 'digitize'});
+      }
+      y += fh + 14 * SS;
+      ctx.font = K.font(18);
+      ctx.fillStyle = `rgba(${K.accent},0.9)`;
+      if (y > topClip && y < botClip)
+        ctx.fillText(S.diss > 0.6 ? inl.box.done : inl.box.hint, left, y);
+      y += 40 * SS;
+    }
+  };
+  if (inl && inl.boxTop) drawInlineBox();
   /* the exhibit sits in the article like a picture in a magazine — the prose
      runs narrow beside it and widens once past */
   if (b.ped && PED_SPRITES[b.ped.obj]){
@@ -10592,64 +10658,7 @@ function drawStudy(){
   }
   /* the carton, and the voice under it — the crossover's own two exhibits,
      inside the page instead of behind two separate doors */
-  const inl = STUDY_INLINE[b.t];
-  if (inl){
-    y += 14 * SS;
-    if (inl.box && PROP_SPRITES.ph_casebox){
-      const sp2 = PROP_SPRITES.ph_casebox;
-      const fw = Math.min(textW, 620 * SS), fh = fw * sp2.h / sp2.w;
-      const fx = left + (textW - fw) / 2;
-      S.diss = Math.max(0, Math.min(1, (S.diss || 0) + (S.dissing ? (state.dt || 0.016) * 0.7 : 0)));
-      ctx.font = K.font(17, '700');
-      try { ctx.letterSpacing = `${3.2*SS}px`; } catch(err){}
-      ctx.fillStyle = `rgba(${K.dim},0.95)`;
-      if (y > topClip && y < botClip) ctx.fillText(inl.box.head, left, y);
-      try { ctx.letterSpacing = '0px'; } catch(err){}
-      y += 24 * SS;
-      ctx.font = K.font(19, 'italic');
-      ctx.fillStyle = `rgba(${K.dim},0.9)`;
-      if (y > topClip && y < botClip) ctx.fillText(inl.box.sub, left, y);
-      y += 22 * SS;
-      if (y + fh > topClip && y < botClip){
-        ctx.save();
-        ctx.globalAlpha = a * Math.max(0, 1 - S.diss * 1.1);
-        ctx.drawImage(spriteMip(sp2, fw, fh), fx, y, fw, fh);
-        ctx.restore();
-        if (S.diss > 0){
-          /* the digits are drawn additively, and on a pale page that is the same
-             as drawing nothing — so the carton's own rectangle goes dark as it
-             dissolves, and the data lights up inside it */
-          ctx.save();
-          ctx.globalAlpha = a * Math.min(1, S.diss * 1.3);
-          ctx.fillStyle = 'rgba(9,13,19,0.94)';
-          ctx.beginPath(); ctx.roundRect(fx, y, fw, fh, 6 * SS); ctx.fill();
-          ctx.globalCompositeOperation = 'lighter';
-          drawBits(fx + fw * 0.37, y + fh * 0.55, fw * 0.30, S.diss, 20230301);
-          drawBits(fx + fw * 0.67, y + fh * 0.57, fw * 0.26, S.diss, 20230302);
-          ctx.restore();
-          if (S.diss > 0.55){
-            ctx.save();
-            ctx.globalAlpha = a * Math.min(1, (S.diss - 0.55) / 0.35);
-            ctx.textAlign = 'center';
-            ctx.font = K.font(19, '700');
-            try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
-            ctx.fillStyle = 'rgba(150,215,255,0.95)';
-            ctx.fillText('Scanned \u00b7 one file \u00b7 no model', fx + fw / 2, y + fh * 0.30);
-            try { ctx.letterSpacing = '0px'; } catch(err){}
-            ctx.textAlign = 'left';
-            ctx.restore();
-          }
-        }
-        pushHit(fx, y, fw, fh, {type: 'digitize'});
-      }
-      y += fh + 14 * SS;
-      ctx.font = K.font(18);
-      ctx.fillStyle = `rgba(${K.accent},0.9)`;
-      if (y > topClip && y < botClip)
-        ctx.fillText(S.diss > 0.6 ? inl.box.done : inl.box.hint, left, y);
-      y += 40 * SS;
-    }
-  }
+  drawInlineBox();     // pages that did not ask for it at the head get it here
   const links = STUDY_LINKS[b.t];
   if (links){
     // the button under the pointer lights: a link should say it is one
