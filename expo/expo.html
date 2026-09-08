@@ -3482,13 +3482,27 @@ function drawProjectors(t, phase){
     const mxp = px(p.x + (p.mdx != null ? p.mdx : p.wallDX), kp);
     const myp = py(CFG.benchY - 2, kp);
     const bw = 150 * kp * SS, bh = 74 * kp * SS;
+    /* THE MACHINE IS A PHOTOGRAPH. It was drawn — a putty wedge on a drawn
+       post — and Eldar sent the real thing: a nineties LCD data projector on
+       its own adjustable stand, shot against nothing. It goes in whole, foot on
+       the floor, and the beam is made to leave ITS glass: the lens sits at
+       (0.845, 0.055) of the cut-out, measured off the file. */
+    const pjs = PROP_SPRITES.ph_prj93;
+    let ph93 = null;
+    if (pjs){
+      const hW93 = 470;                                  // floor to the top of the head, in world units
+      const shp = hW93 * kp * SS, swp = shp * pjs.w / pjs.h;
+      const fy93 = py(1080, kp);
+      ph93 = {sp: pjs, x0: mxp - swp / 2, y0: fy93 - shp, w: swp, h: shp, foot: fy93,
+              lx: mxp - swp / 2 + swp * 0.845, ly: fy93 - shp + shp * 0.055};
+    }
 
-    if (phase === 'machine'){ projMachine(p, t, lamp, mxp, myp, bw, bh, kp); continue; }
+    if (phase === 'machine'){ projMachine(p, t, lamp, mxp, myp, bw, bh, kp, ph93); continue; }
     ctx.save();
     // 1 — the beam: apex at the lens, spreading to the frame on the wall
     // a beam from a lamp onto a rectangle is bounded by the two extreme corners
     // as seen FROM the lamp — true whether it stands under the picture or beside it
-    const lx = mxp, ly = myp - bh * 0.45;
+    const lx = ph93 ? ph93.lx : mxp, ly = ph93 ? ph93.ly : myp - bh * 0.45;
     const corners = [[sx - vw/2, sy - vh/2], [sx + vw/2, sy - vh/2],
                      [sx + vw/2, sy + vh/2], [sx - vw/2, sy + vh/2]];
     const ang = corners.map(c => Math.atan2(c[1] - ly, c[0] - lx));
@@ -3604,8 +3618,18 @@ function drawProjectors(t, phase){
 /* the machine stands ON the bench, so it is painted after it — while the
    picture it throws was painted before, and the bench crops it the way a real
    counter crops a projection that falls behind it */
-function projMachine(p, t, lamp, mxp, myp, bw, bh, kp){
+function projMachine(p, t, lamp, mxp, myp, bw, bh, kp, ph93){
   const u = kp * SS;                       // one world unit at the machine's depth
+  if (ph93){
+    // the photographed machine: its own stand, its own shadow, its own lamp
+    contactShadow(mxp, ph93.foot, ph93.w * 0.42, 0.36);
+    ctx.drawImage(spriteMip(ph93.sp, ph93.w, ph93.h), ph93.x0, ph93.y0, ph93.w, ph93.h);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    drawGlow('255,240,200', ph93.lx, ph93.ly, 26 * u, 0.55 * lamp);
+    ctx.restore();
+    return;
+  }
   contactShadow(mxp, p.stand ? py(1080, kp) : myp, bw * 1.1, 0.34);
   ctx.save();
   if (p.stand){
@@ -7434,6 +7458,7 @@ async function loadPhotoSkin(){
     ph_scanbay: 'scan_bay.jpg',       // the 2022 bay: the whole render, rectangle and all
     ph_hall17: 'hall_2017.jpg',       // the 2017 bay: the glass hall, cut just past the ring on its floor
     ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
+    ph_prj93: 'proj_1993.png',        // the 1993 LCD data projector on its stand, photographed
     front_e4: 'front_e4.jpg',         // the white era's counter face: one door of Eldar's render, mid-door to mid-door
     bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
     bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
