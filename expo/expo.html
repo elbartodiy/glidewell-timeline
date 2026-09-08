@@ -533,7 +533,11 @@ const SEGMENTS = [
   {x0:REC_R, x1:REC3_L, z0:680, z1:680, tz:680, wall:'wall2', bench:'bench2', front:'front2',
    font:'"Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'223,226,214', lamp:'tube', dust:false,
-   rail:'rgba(165,175,172,0.5)', railInk:'rgba(198,208,202,0.7)',
+   rail:'rgba(24,16,10,0.26)', railInk:'rgba(198,208,202,0.7)', railTop: true,
+   /* the line along the counter's edge was a pale blue-grey band sitting 6 units
+      down the front, and against this era's warm stone it read as a strip of
+      another material. It rides the arris now, and it is simply the top's own
+      colour a shade darker (Eldar, on these tables only). */
    light:{pool:'214,240,224', poolR:820, poolA:0.20},
    bgc:[10,12,11], grain:0.014},
   {x0:REC3_R, x1:REC2_L, z0:850, z1:850, tz:680, wall:'wall3', bench:'bench3', front:'front3',
@@ -1924,6 +1928,13 @@ function benchTiles(tex, kk, srcY, srcH, dy, dh, wx0, wx1){
     ctx.drawImage(tex, 0, srcY, tex.width, srcH, px(wx, kk), dy, tileW * kk * SS + 1, dh);
   }
 }
+/* the line under the counter's lip: a colour of its own six units down the
+   front, or — where the era asks for it — a darker shade right on the arris */
+function benchRail(seg, x0, yTop, w){
+  ctx.fillStyle = seg.rail;
+  if (seg.railTop) ctx.fillRect(x0, yTop, w, 2 * SS);
+  else ctx.fillRect(x0, yTop + 6 * SS, w, 3 * SS);
+}
 function drawBench(){
   ctx.save();
   const slices = 14;
@@ -1970,8 +1981,7 @@ function drawBench(){
       gr.addColorStop(1, `rgba(0,0,0,${0.75*shF})`);
       ctx.fillStyle = gr; ctx.fillRect(fx0, yTopF, fx1 - fx0, fh);
       // year rail on the table edge
-      ctx.fillStyle = seg.rail;
-      ctx.fillRect(fx0, yTopF + 6*SS, fx1 - fx0, 3*SS);
+      benchRail(seg, fx0, yTopF, fx1 - fx0);
       ctx.restore();
       // visible table ends
       for (const [ex, edge] of [[bx0, 1], [bx1, -1]]){
@@ -7100,8 +7110,7 @@ function drawEra1Bench(){
     gr.addColorStop(1, `rgba(0,0,0,${0.62 * shF})`);
     ctx.fillStyle = gr;
     ctx.fillRect(cx0, yFront, cx1 - cx0, yFloor - yFront);
-    ctx.fillStyle = seg.rail;
-    ctx.fillRect(cx0, yFront + 6 * SS, cx1 - cx0, 3 * SS);
+    benchRail(seg, cx0, yFront, cx1 - cx0);
     ctx.restore();
     for (const [ex, edge] of [[tb.x0, 1], [tb.x1, -1]]){
       const exs = px(ex, kf);
@@ -7165,8 +7174,7 @@ function drawEra2Bench(){
     gr.addColorStop(1, `rgba(0,0,0,${0.62 * shF})`);
     ctx.fillStyle = gr;
     ctx.fillRect(cx0, yFront, cx1 - cx0, yFloor - yFront);
-    ctx.fillStyle = tb.seg.rail;
-    ctx.fillRect(cx0, yFront + 6 * SS, cx1 - cx0, 3 * SS);
+    benchRail(tb.seg, cx0, yFront, cx1 - cx0);
     ctx.restore();
     for (const [ex, edge] of [[tb.x0, 1], [tb.x1, -1]]){
       const exs = px(ex, kf);
@@ -7290,8 +7298,7 @@ function drawPlateBench(t){
     gr.addColorStop(1, `rgba(0,0,0,${0.62 * shF})`);
     ctx.fillStyle = gr;
     ctx.fillRect(cx0, rowY(PL_ROW.front), cx1 - cx0, yFloor - rowY(PL_ROW.front));
-    ctx.fillStyle = seg.rail;
-    ctx.fillRect(cx0, rowY(PL_ROW.front) + 6 * SS, cx1 - cx0, 3 * SS);
+    benchRail(seg, cx0, rowY(PL_ROW.front), cx1 - cx0);
     ctx.restore();
     // the ends of the run, so it stops rather than simply ceasing
     for (const [ex, edge] of [[tb.x0, 1], [tb.x1, -1]]){
