@@ -1556,7 +1556,9 @@ function initDoc(){
 }
 
 const cv = document.getElementById('view');
-cv.style.transform = 'translateZ(0)';   // pin the canvas to its own compositor layer (anti-ghosting)
+// pin the canvas to its own compositor layer (anti-ghosting). ?noz=1 takes it
+// off again, for a machine where the compositor tears the frame into bands.
+if (!/[?&]noz=1/.test(location.search)) cv.style.transform = 'translateZ(0)';
 const ctx = cv.getContext('2d', {alpha:false});
 let W = 0, H = 0, SS = 1;  // canvas px, and scale ref->canvas
 let RQ = 1;   // adaptive render quality (drops on weak hardware)
@@ -2128,45 +2130,47 @@ function drawBeatText(b, focusAmt){
     const ts = (seg.tScale || 1) * (b._ys || 1);
     if (cx > -1200 && cx < W + 1200){
       ctx.save();
-      /* THE SHADOW STAYS ON THE WALL. The numeral has a drop shadow and the
-         title under it has none, so on a light wall the title barely reads. As
-         the year lifts off toward you its shadow does what a shadow does when
-         its object leaves the surface — it stays where it was cast, spreads
-         and softens — and that soft dark pool on the wall is what the title
-         and the thesis line now sit on. Eldar's idea. It grows with the lift
-         and is gone when the year is back on the wall. */
-      /* It covers what it has to carry: the pool is measured from the FLYING
-         type's own box — the numeral's top down past the thesis line — so as
-         the block grows toward you the pool grows under it, and it spreads and
-         goes softer at the edge the way a shadow does when its object leaves
-         the surface. Its darkness rises out of nothing with the type's own
-         fade, because until the year is live there is nothing to cast it. */
+      /* THE SHADOW STAYS ON THE WALL — AND IT IS THE SHAPE OF THE WORDS. It
+         was a soft oval pool behind the block, and an oval is what it looked
+         like: a smudge with a visible edge, sitting on top of the wall rather
+         than cast onto it. What a light above the year actually throws is the
+         silhouette of the letters. So the year, the title and the thesis are
+         painted again on the WALL's plane, in the wall-plane size they have
+         when they are resting on it, as blurred dark shapes — and as the year
+         lifts off toward you they spread and soften, exactly as a real shadow
+         does when its object leaves the surface. It rises out of nothing with
+         the type's own fade, because until the year is live there is nothing
+         to cast it. Eldar's idea, twice over. */
       if (near > 0.02 && !hungBand(b.x)){
-        /* IT IS CENTRED ON THE WORDS, not on the whole block. Measured from the
-           numeral's top down, the core of the pool sat up in the air above the
-           year and the title and the thesis — the two lines that actually need
-           it — lay out at the faint edge. The core is on the title/thesis band
-           now and the pool still reaches past the numerals. */
-        const lift = b.yLift || 0, cd0 = b._capDrop || 0;
-        const yTitle = py(tY + cd0 - lift, kk), yThesis = py(tY + 54 + cd0 - lift, kk);
-        const yTop = py(140 - lift, kk) - 170 * ts * fScale * kk * SS * 0.80;
-        const cyS = (yTitle + yThesis) / 2 + 6 * SS;
-        const spread = 1 + 0.30 * near;
-        const ryS = Math.max(cyS - yTop, 150 * SS) * 1.20 * spread, rxS = 470 * kk * SS * spread;
-        const light = seg.shade != null && seg.shade < 0.7;             // the white room takes less
-        const aS = (light ? 0.17 : 0.44) * near;
-        /* the gradient is built in the UNIT space it is painted in. Built at
-           (cx, cyS) and then painted under a translate+scale, its centre was
-           carried off by the transform a second time and landed a screenful
-           away — which is why this shadow has never actually been visible. */
+        const kW = k(wz - 8), lift = b.yLift || 0, cd0 = b._capDrop || 0;
+        const light = seg.shade != null && seg.shade < 0.7;      // the white room takes less
+        const aS = (light ? 0.13 : 0.34) * near;
+        const spread = 1 + 0.05 * near;                          // it grows a little as the object leaves
+        const blur = (7 + 26 * near) * kW * SS;
+        const dy = (5 + 16 * near) * kW * SS;                    // the lamp is above: the shadow drops
+        const OFF = 6000;                                        // paint the glyph off-frame, keep its shadow
         ctx.save();
-        ctx.translate(cx, cyS); ctx.scale(rxS, ryS);
-        const sg = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
-        sg.addColorStop(0, `rgba(6,4,2,${aS.toFixed(3)})`);
-        sg.addColorStop(0.38, `rgba(6,4,2,${(aS * 0.86).toFixed(3)})`);
-        sg.addColorStop(0.70, `rgba(6,4,2,${(aS * 0.34).toFixed(3)})`);
-        sg.addColorStop(1, 'rgba(6,4,2,0)');
-        ctx.fillStyle = sg; ctx.fillRect(-1, -1, 2, 2);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#000';
+        ctx.shadowColor = `rgba(6,4,2,${aS.toFixed(3)})`;
+        ctx.shadowBlur = blur;
+        ctx.shadowOffsetX = OFF;
+        const cast = (txt, fontStr, yWorld) => {
+          if (!txt) return;
+          ctx.font = fontStr;
+          ctx.shadowOffsetY = dy;
+          ctx.fillText(txt, cx - OFF, py(yWorld - lift, kW));
+        };
+        const tsW = (seg.tScale || 1) * (b._ys || 1) * spread;
+        cast(b.y, eraFont(170 * tsW * kW * SS, '', seg.font), 140);
+        cast(b.t, eraFont(46 * (seg.tScale || 1) * spread * kW * SS, '', seg.font), tY + cd0);
+        if (b.th && b._th && !b.thBelow){
+          ctx.font = eraFont(30 * (seg.tScale || 1) * spread * kW * SS, 'italic', seg.font);
+          b._th.forEach((ln, i) => {
+            ctx.shadowOffsetY = dy;
+            ctx.fillText(ln, cx - OFF, py(tY + 54 + cd0 - lift, kW) + i * 38 * kW * SS);
+          });
+        }
         ctx.restore();
       }
       ctx.textAlign = 'center';
@@ -8107,6 +8111,20 @@ function drawCrown3D(cx, footY, size, alpha){
     const f = 1 / (1 + tz / 900);
     return {x: cx + rx*f*scale, y: cy - ty*f*scale, z: tz, X: rx, Y: ty, Z: tz};
   }));
+  /* IT STANDS ON THE CAP, WHICHEVER WAY IT IS TURNED. The foot of the mesh was
+     put on the cap and the object rotated about its own middle — so the moment
+     you tipped it, its lowest point swung below the stone and the crown read as
+     hovering in front of the plinth. The whole set of points is dropped so that
+     the lowest one it actually has now touches the cap: turn it any way you
+     like and it still sits on something. */
+  let lowY = -1e9, wideL = 1e9, wideR = -1e9;
+  for (const ring of pts) for (const p of ring){
+    if (p.y > lowY) lowY = p.y;
+    if (p.x < wideL) wideL = p.x;
+    if (p.x > wideR) wideR = p.x;
+  }
+  const drop = footY - lowY;
+  if (isFinite(drop)) for (const ring of pts) for (const p of ring) p.y += drop;
   const L = [-0.48, 0.72, -0.50];                    // upper left, in front
   const Ln = Math.hypot(...L); L[0]/=Ln; L[1]/=Ln; L[2]/=Ln;
   const Hh = [L[0], L[1], L[2] - 1]; const Hn = Math.hypot(...Hh); Hh[0]/=Hn; Hh[1]/=Hn; Hh[2]/=Hn;
@@ -8147,7 +8165,7 @@ function drawCrown3D(cx, footY, size, alpha){
     ctx.closePath(); ctx.fill(); ctx.stroke();
   }
   ctx.restore();
-  return {top: cy - 48 * scale, w: size};
+  return {top: cy + drop - 48 * scale, w: size, footW: Math.max(1, wideR - wideL)};
 }
 /* the hand on it: a press on the crown takes the pointer away from the hall,
    and horizontal movement turns the crown instead of the room */
@@ -8163,11 +8181,11 @@ function drawPedestal(b, t, hero){
   const z = -90, kk = k(z);
   const x = b.x + (ped.dx ?? -430);
   const sx = px(x, kk);
-  const colW = 165 * (ped.big ? 1.35 : (ped.vitrine ? 0.8 : 1)) * kk * SS;
+  const colW = 165 * (ped.spin ? 1.85 : (ped.big ? 1.35 : (ped.vitrine ? 0.8 : 1))) * kk * SS;   // a piece you can turn in your hand needs a table under it, not a post
   if (sx < -colW*2 || sx > W + colW*2) return;
   const era = segIdx(b.x);
   const big = ped.big ? 1.3 : 1;
-  const yTop = py(ped.big ? 540 : (ped.low ? 668 : (ped.vitrine ? 625 : 535)), kk);
+  const yTop = py(ped.spin ? 620 : (ped.big ? 540 : (ped.low ? 668 : (ped.vitrine ? 625 : 535))), kk);   // and it stands lower, so the piece is at the height of a hand
   pushHit(sx - colW*0.7*big, yTop - 150*kk*SS*big, colW*1.4*big, H - yTop + 150*kk*SS, {type:'focus', beat: BEATS.indexOf(b), anchor: x});
   const warmC = era === 0 ? '255,215,140' : '225,240,255';
   // two side spotlights swing in and lock their beams exactly on the exhibit;
@@ -8262,8 +8280,18 @@ function drawPedestal(b, t, hero){
      a slow scroll they shuffle against one another like loose type. The
      prescaled copy already removes the boiling; the position stays smooth. */
   if (ped.spin){
-    const r3 = drawCrown3D(sx, yTop - 4*kk*SS, ow * 0.98, 1);
-    pushHit(sx - ow*0.6, r3.top, ow*1.2, (yTop - 4*kk*SS) - r3.top, {type:'spin'});
+    const footY3 = yTop - 3*kk*SS;
+    // the shade it puts on the stone, sized to the crown's own footprint
+    const preW = ow * 0.98;
+    const csh = ctx.createRadialGradient(sx, footY3, 0, sx, footY3, preW * 0.62);
+    csh.addColorStop(0, 'rgba(20,26,34,0.34)'); csh.addColorStop(0.55, 'rgba(20,26,34,0.14)');
+    csh.addColorStop(1, 'rgba(20,26,34,0)');
+    ctx.save(); ctx.translate(sx, footY3); ctx.scale(1, 0.22); ctx.translate(-sx, -footY3);
+    ctx.fillStyle = csh;
+    ctx.beginPath(); ctx.arc(sx, footY3, preW * 0.62, 0, 7); ctx.fill();
+    ctx.restore();
+    const r3 = drawCrown3D(sx, footY3, preW, 1);
+    pushHit(sx - ow*0.6, r3.top, ow*1.2, footY3 - r3.top, {type:'spin'});
   } else {
     ctx.drawImage(spriteMip(obj, ow, oh), sx - ow/2, yTop - oh - 4*kk*SS, ow, oh);
   }
@@ -11213,8 +11241,14 @@ function drawShowroom(t){
   rg.addColorStop(0.55, 'rgba(250,247,241,0.30)');
   rg.addColorStop(1, 'rgba(240,236,229,0)');
   ctx.fillStyle = rg;
-  ctx.fillRect(Math.max(0, px(SHOW_L, kC)), cyR - recH * 0.7,
-               Math.min(W, px(SHOW_R, kC)) - Math.max(0, px(SHOW_L, kC)), recH * 1.3);
+  /* THE CEILING BEGINS WITH THE BEAM. The lit coffer took its left edge from
+     SHOW_L on its own near plane (520) while the timber starts at SHOW_L + 330
+     on the wall's (1394) — two different screen x's for what should be one
+     edge, so the new era's ceiling opened to the right of the run of walnut and
+     the join showed. It starts at the beam's own end now. */
+  const recL = Math.max(0, x0);
+  ctx.fillRect(recL, cyR - recH * 0.7,
+               Math.min(W, px(SHOW_R, kC)) - recL, recH * 1.3);
   for (const [gx, cl] of [[-1180, [[0, 0, 250], [190, 62, 178]]],
                           [560,   [[0, 0, 214], [162, -46, 150], [292, 40, 112]]],
                           [2140,  [[0, 0, 268], [206, 54, 190]]]]){
