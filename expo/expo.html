@@ -114,7 +114,7 @@ const BEATS = [
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
      The album belongs to the walk up to 1970, not to the moment of it. */
-  album:{dx:-1345, lz:85, w:300, edgeOK:true, title:'THE FAMILY ALBUM', cover:'ph_album',   // a quarter of its own width in from the bay's edge
+  album:{dx:-1245, lz:85, w:300, edgeOK:true, title:'THE FAMILY ALBUM', cover:'ph_album',   // in from the bay's edge by a quarter of its width, then a third more (Eldar)
           photos:[['father42','jim15'],['jim18','jim1970']]}},
 
   {x:3450, y:'1970s', t:'PFM ERA', plaque:true,
@@ -2165,6 +2165,22 @@ function drawBenchPlaque(b){
    everywhere now, and a minor beat's title keeps a little more of its size
    (0.78 rather than 0.6) so a stretch of wall does not step up and down. */
 const TITLE_TRACK = 5.5;
+/* RELIEF. Everything written on a year mark is cut into the wall rather than
+   printed on it, and the hall's light comes from above — so every glyph carries
+   one hairline of shadow below it and a touch to the left. One pixel, hard, no
+   blur: enough to give the letter an edge, not enough to read as a drop shadow.
+   (The soft pool the flying years cast on the plaster is a different thing and
+   stays where it is.) Eldar's note. */
+function letterRelief(a){
+  ctx.shadowColor = `rgba(0,0,0,${(a == null ? 0.45 : a).toFixed(2)})`;
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = -Math.max(1, 1 * SS);
+  ctx.shadowOffsetY = Math.max(1, 1.4 * SS);
+}
+function noShadow(){
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+}
 function drawBeatText(b, focusAmt){
   if (b.under) return;   // this fact lives under the tabletop, on the bench face
   if (b.plaque){
@@ -2284,9 +2300,11 @@ function drawBeatText(b, focusAmt){
       } else {
         ctx.font = eraFont(170 * ts * fScale * kk * SS, '', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
+        const yBase9 = mixN(py(140 - lift, kk), H*0.16, focusAmt);
         ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
-        ctx.fillText(b.y, cx, mixN(py(140 - lift, kk), H*0.16, focusAmt));
-        ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+        ctx.fillText(b.y, cx, yBase9);
+        letterRelief(0.5); ctx.fillText(b.y, cx, yBase9);   // the cut edge
+        noShadow();
       }
       pushHit(cx - 340*kk*SS, hitTopF, 680*kk*SS, py(330, kk) - hitTopF,
               {type:'study', beat: BEATS.indexOf(b)});
@@ -2295,13 +2313,17 @@ function drawBeatText(b, focusAmt){
       try { ctx.letterSpacing = `${TITLE_TRACK*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
       const LB = b.tOnBay && BAY_LABELS[b.y];
+      letterRelief(0.40);
       if (LB) ctx.fillText(b.t, LB.x, LB.y + 46 * 0.36 * kk * SS);
       else if (!b.tHide) ctx.fillText(b.t, cx, mixN(py(tY + cd - lift, kk), H*0.16 + 62*SS, focusAmt));
+      noShadow();
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th && !b.thBelow && fFade > 0.05){
         ctx.font = eraFont(30 * (seg.tScale || 1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${((near-0.25)/0.75 * 0.72 * fFade).toFixed(3)})`;
+        letterRelief(0.32);
         drawLines(b._th, cx, py(tY + 54 + cd - lift, kk), 38 * kk * SS);
+        noShadow();
       }
       ctx.restore();
     }
@@ -2349,10 +2371,12 @@ function drawBeatText(b, focusAmt){
         } else {
           ctx.font = eraFont(170 * (seg.tScale||1) * (b._ys||1) * fScale * kk * SS, '', seg.font);
           ctx.fillStyle = `rgba(${seg.ink},${0.5 + 0.45*near})`;
-          ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 3*SS;
           // a numeral can be lifted clear of whatever stands under it on the panel
-          ctx.fillText(b.y, cx, mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt));
-          ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+          const yBase8 = mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt);
+          ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 3*SS;
+          ctx.fillText(b.y, cx, yBase8);
+          letterRelief(0.45); ctx.fillText(b.y, cx, yBase8);   // the cut edge
+          noShadow();
         }
       }
       pushHit(cx - 320*kk*SS, hitTop, 640*kk*SS, py(330, kk) - hitTop,
@@ -2366,13 +2390,19 @@ function drawBeatText(b, focusAmt){
       const LB = b.tOnBay && BAY_LABELS[b.y];
       /* a bay whose picture already carries the name does not get it printed on
          the wall as well (2017: the render letters its own plinth) */
+      letterRelief(0.40);
       if (LB) ctx.fillText(b.t, LB.x, LB.y + 46 * sc * 0.36 * kk * SS);
       else if (!b.tHide) ctx.fillText(b.t, cx, mixN(py((b.minor ? tY + 4 : tY) + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
+      noShadow();
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th){
         ctx.font = eraFont(30 * (b.minor?0.8:1) * (seg.tScale||1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
-        if (fFade > 0.05 && !b.thBelow) drawLines(b._th, cx, py((b.minor ? tY + 46 : tY + 54) + cd - (b.yLift || 0), kk), 38 * (b.minor?0.8:1) * kk * SS);
+        if (fFade > 0.05 && !b.thBelow){
+          letterRelief(0.32);
+          drawLines(b._th, cx, py((b.minor ? tY + 46 : tY + 54) + cd - (b.yLift || 0), kk), 38 * (b.minor?0.8:1) * kk * SS);
+          noShadow();
+        }
       }
       ctx.restore();
       ctx.globalAlpha = 1;
@@ -9718,7 +9748,8 @@ const PEOPLE = {
                 "What he was good at was the trade of the day — porcelain fused to metal, cast and layered and fired by hand. The lab grew on it: nine laboratories across Southern California by 1979, all but two consolidated into one Orange plant in 1984, 175 people serving 3,500 dentists by 1989, and mail bringing 95% of the work. National without having left the county.",
                 "Then he did the thing that defines him. Burned by depending on an outside material, and pushed by Dr. Rella Christensen's idea of a crown ordinary people could afford, he built the company's own research. In 2009 that produced BruxZir — a solid zirconia crown with no porcelain to chip — and it went on to displace the PFM the lab had been built on. He killed his own best-seller, and then let rival laboratories mill it too.",
                 "He did not invent zirconia, or CAD/CAM, or the implant. He took each of them and drove the price down until an ordinary practice could say yes. That is the argument this whole hall is making."],
-           clips:[{src:'media/jim_glass.mp4', label:'in his own workshop'}]},
+           clips:[{src:'media/jim_glass.mp4', label:'in his own workshop'},
+                  {src:'media/jim_trailer_2.mp4', label:'the trailer \u2014 a century of access'}]},
   rella:  {name:'Dr. Rella Christensen', role:'TRAC Research · the idea of a crown for everyone', img:'rella'},
   ditolla:{name:'Dr. Michael DiTolla', role:'Chairside Magazine · the clinical voice', img:'ditolla'},
   gordon: {name:'Dr. Gordon Christensen', role:'Independent clinical researcher', img:'christensen'},
@@ -10902,7 +10933,10 @@ function personPreview(S, i){
   S.v = v; S.playing = null; S.preview = i;
   try { if (v.paused) v.currentTime = 0; v.play(); } catch(e){}
 }
-function personPlay(S, i){
+/* kept as the one way in: choosing a clip is choosing what the page's player
+   shows. There is no separate player any more. */
+function personPlay(S, i){ personPreview(S, i); }
+function personPlayOld(S, i){
   const P = PEOPLE[S.id], c = P.clips && P.clips[i];
   if (!c) return;
   if (S.v){ try { S.v.pause(); } catch(e){} }
@@ -10933,8 +10967,13 @@ function drawPerson(){
   const a = (e - 0.35) / 0.65;
   const clips = P.clips || [];
   const face = PORTRAIT[S.id] || (P.img && IMGS[P.img]);
-  const watching = S.playing != null && clips[S.playing];
-  const colW = Math.min(W * (watching ? 0.72 : 0.62), (watching ? 1300 : 1100) * SS);
+  /* ONE PAGE PER SPEAKER. Tapping a preview used to open a separate, full-bleed
+     player — a YouTube page with the man's own text thrown away, and a second
+     tape left running under it when you came back. There is no second page now:
+     the rail picks WHICH clip plays, and it plays in the panel set into the
+     article itself, under the quote, at the width of the column. */
+  const cur = Math.max(0, Math.min(clips.length - 1, S.preview || 0));
+  const colW = Math.min(W * 0.62, 1100 * SS);
   const left = W/2 - colW/2;
   const railW = (clips.length || face) ? 320*SS : 0;
   const textW = colW - (railW ? railW + 40*SS : 0);
@@ -10954,71 +10993,20 @@ function drawPerson(){
   const top0 = wy0 + 158*SS;
   const topClip = wy0 - 80*SS, botClip = wy0 + wh + 80*SS;
   ctx.textAlign = 'left';
-  let y = top0 - (watching ? 0 : S.scroll * SS);
+  let y = top0 - S.scroll * SS;
 
-  // the way back — to the page when a clip is up, to the wall when it is not
+  // the way back is always the same way: to the wall of faces
   ctx.font = K.font(17);
   try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
   ctx.fillStyle = `rgba(${K.red},0.92)`;
-  const backTx = watching ? '← BACK TO THE PAGE' : '← ALL VOICES';
+  const backTx = '\u2190 ALL VOICES';
   if (y - 70*SS > topClip){
     ctx.fillText(backTx, left, y - 70*SS);
-    pushHit(left - 8*SS, y - 94*SS, ctx.measureText(backTx).width + 18*SS, 34*SS,
-            {type: watching ? 'stopclip' : 'voices'});
+    pushHit(left - 8*SS, y - 94*SS, ctx.measureText(backTx).width + 18*SS, 34*SS, {type: 'voices'});
   }
   try { ctx.letterSpacing = '0px'; } catch(err){}
 
-  if (watching){
-    /* WATCHING. The picture is held still where the reading was; nothing under
-       it moves, so the rail beside it is the only thing the wheel touches. */
-    const c = clips[S.playing], v = S.v;
-    const vw = textW, vh = vw * 9/16;
-    ctx.save();
-    ctx.beginPath(); ctx.roundRect(left, y, vw, vh, 5*SS); ctx.clip();
-    ctx.fillStyle = '#0b0d10';
-    ctx.fillRect(left, y, vw, vh);
-    if (v && v.videoWidth && v.readyState >= 2){
-      const s = Math.min(vw / v.videoWidth, vh / v.videoHeight);
-      ctx.drawImage(v, left + vw/2 - v.videoWidth*s/2, y + vh/2 - v.videoHeight*s/2,
-                    v.videoWidth*s, v.videoHeight*s);
-    } else {
-      const im = thumbFor(c);
-      if (im){
-        const s = Math.min(vw / im.w, vh / im.h);
-        ctx.globalAlpha = a * 0.6;
-        ctx.drawImage(im.el, left + vw/2 - im.w*s/2, y + vh/2 - im.h*s/2, im.w*s, im.h*s);
-        ctx.globalAlpha = a;
-      }
-    }
-    if (v && v.paused){
-      ctx.fillStyle = 'rgba(252,252,251,0.92)';
-      ctx.beginPath(); ctx.arc(left + vw/2, y + vh/2, 34*SS, 0, 7); ctx.fill();
-      ctx.fillStyle = `rgba(${K.red},1)`;
-      ctx.beginPath();
-      ctx.moveTo(left + vw/2 - 10*SS, y + vh/2 - 17*SS);
-      ctx.lineTo(left + vw/2 + 18*SS, y + vh/2);
-      ctx.lineTo(left + vw/2 - 10*SS, y + vh/2 + 17*SS);
-      ctx.closePath(); ctx.fill();
-    }
-    ctx.restore();
-    ctx.strokeStyle = 'rgba(26,28,30,0.18)'; ctx.lineWidth = 1.2*SS;
-    ctx.beginPath(); ctx.roundRect(left, y, vw, vh, 5*SS); ctx.stroke();
-    pushHit(left, y, vw, vh, {type:'playpause'});
-    // the progress line, and the red is the only colour on the page
-    ctx.fillStyle = 'rgba(26,28,30,0.12)';
-    ctx.fillRect(left, y + vh + 12*SS, vw, 3*SS);
-    if (v && v.duration){
-      ctx.fillStyle = `rgba(${K.red},0.95)`;
-      ctx.fillRect(left, y + vh + 12*SS, vw * (v.currentTime / v.duration), 3*SS);
-    }
-    let ty = y + vh + 58*SS;
-    ctx.font = K.font(30);
-    ctx.fillStyle = `rgba(${K.ink},0.96)`;
-    ctx.fillText(P.name, left, ty); ty += 32*SS;
-    ctx.font = K.font(21, 'italic');
-    ctx.fillStyle = `rgba(${K.dim},0.95)`;
-    ctx.fillText(c.label, left, ty);
-  } else {
+  {
     // the name, set to the text column: a long name gives up points, not margin
     let nameSz = 74;
     ctx.font = K.font(nameSz);
@@ -11037,13 +11025,74 @@ function drawPerson(){
     ctx.fillStyle = `rgba(${K.red},1)`;
     ctx.fillRect(left, y, 68*SS, 3*SS); y += 46 * SS;
     const seen = new Set([S.id]);   // his own name is not a link to himself
+    let playerDone = false;
+    /* THE PLAYER IS PART OF THE ARTICLE, and it sits where the reader has just
+       been told who this is: after the first two paragraphs on a long page,
+       after the quote on a short one. The rail chooses what it shows. */
+    const drawPlayer = () => {
+      if (!clips.length || playerDone) return;
+      playerDone = true;
+      const c3 = clips[cur], v3 = S.v;
+      const vw3 = textW, vh3 = vw3 * 9 / 16;
+      if (y + vh3 > topClip && y < botClip){
+        ctx.save();
+        ctx.beginPath(); ctx.roundRect(left, y, vw3, vh3, 6*SS); ctx.clip();
+        ctx.fillStyle = '#0b0d10'; ctx.fillRect(left, y, vw3, vh3);
+        if (v3 && v3.videoWidth && v3.readyState >= 2){
+          const s3 = Math.min(vw3 / v3.videoWidth, vh3 / v3.videoHeight);
+          ctx.drawImage(v3, left + vw3/2 - v3.videoWidth*s3/2, y + vh3/2 - v3.videoHeight*s3/2,
+                        v3.videoWidth*s3, v3.videoHeight*s3);
+        } else {
+          const im3 = thumbFor(c3) || face;
+          if (im3){
+            const s3 = Math.min(vw3 / im3.w, vh3 / im3.h);
+            ctx.globalAlpha = a * 0.62;
+            ctx.drawImage(im3.el, left + vw3/2 - im3.w*s3/2, y + vh3/2 - im3.h*s3/2, im3.w*s3, im3.h*s3);
+            ctx.globalAlpha = a;
+          }
+        }
+        if (!v3 || v3.paused){
+          ctx.fillStyle = 'rgba(252,252,251,0.92)';
+          ctx.beginPath(); ctx.arc(left + vw3/2, y + vh3/2, 34*SS, 0, 7); ctx.fill();
+          ctx.fillStyle = `rgba(${K.red},1)`;
+          ctx.beginPath();
+          ctx.moveTo(left + vw3/2 - 10*SS, y + vh3/2 - 17*SS);
+          ctx.lineTo(left + vw3/2 + 18*SS, y + vh3/2);
+          ctx.lineTo(left + vw3/2 - 10*SS, y + vh3/2 + 17*SS);
+          ctx.closePath(); ctx.fill();
+        }
+        ctx.restore();
+        ctx.strokeStyle = 'rgba(26,28,30,0.18)'; ctx.lineWidth = 1.2*SS;
+        ctx.beginPath(); ctx.roundRect(left, y, vw3, vh3, 6*SS); ctx.stroke();
+        pushHit(left, y, vw3, vh3, {type:'playpause'});
+        // the timeline: a handle, not a report
+        const barY3 = y + vh3 + 12*SS, barH3 = 5*SS;
+        const frac3 = (v3 && v3.duration) ? Math.max(0, Math.min(1, v3.currentTime / v3.duration)) : 0;
+        ctx.fillStyle = 'rgba(26,28,30,0.14)';
+        ctx.fillRect(left, barY3, vw3, barH3);
+        ctx.fillStyle = `rgba(${K.red},0.95)`;
+        ctx.fillRect(left, barY3, vw3 * frac3, barH3);
+        if (v3 && v3.duration){
+          ctx.fillStyle = `rgba(${K.red},1)`;
+          ctx.beginPath(); ctx.arc(left + vw3 * frac3, barY3 + barH3/2, 6.5*SS, 0, 7); ctx.fill();
+          pushHit(left - 8*SS, barY3 - 13*SS, vw3 + 16*SS, 30*SS,
+                  {type:'inseek', src: c3.src, x0: left, w: vw3});
+        }
+        ctx.font = K.font(19, 'italic');
+        ctx.fillStyle = `rgba(${K.dim},0.95)`;
+        ctx.fillText(c3.label, left, barY3 + 34*SS);
+      }
+      y += vh3 + 66 * SS;
+    };
     if (P.bio){
-      ctx.font = K.font(25);
-      ctx.fillStyle = `rgba(${K.ink},0.9)`;
-      for (const para of P.bio){
-        y = flowText(para, left, y, textW, 38*SS,
+      for (let pi = 0; pi < P.bio.length; pi++){
+        ctx.font = K.font(25);
+        ctx.fillStyle = `rgba(${K.ink},0.9)`;
+        y = flowText(P.bio[pi], left, y, textW, 38*SS,
           {seen, top: topClip, bot: botClip, accent: `rgba(${K.red},0.95)`, ink: `rgba(${K.ink},0.9)`});
         y += 22 * SS;
+        // a long page shows the man speaking as soon as it has said who he is
+        if (pi === 1 && P.bio.length > 2){ y += 14 * SS; drawPlayer(); }
       }
       y += 8 * SS;
     }
@@ -11060,14 +11109,14 @@ function drawPerson(){
       if (y > topClip && y < botClip) ctx.fillText(P.quote.src, left + 26*SS, y + 6*SS);
       y += 52 * SS;
     }
+    drawPlayer();          // short pages: it lands under the quote, as before
   }
 
-  // THE RAIL. It scrolls in both modes — in watching mode it is the only thing
-  // that does, which is what makes picking the next clip painless.
+  // THE RAIL. It scrolls with the page, and it chooses what the player shows.
   let my = top0 - S.scroll * SS;
   if (clips.length || face){
     const mx = left + textW + 40*SS;
-    if (face && !watching){
+    if (face){
       const fw = 300*SS, fh = fw * 1.22;
       if (my + fh > topClip && my < botClip){
         ctx.save();
@@ -11084,18 +11133,15 @@ function drawPerson(){
       ctx.font = K.font(19);
       ctx.fillStyle = `rgba(${K.dim},0.9)`;
       if (my > topClip && my < botClip)
-        ctx.fillText(watching ? 'UP NEXT' : 'WATCH', mx, my);
+        ctx.fillText(clips.length > 1 ? 'WATCH \u00b7 CHOOSE' : 'WATCH', mx, my);
       my += 26 * SS;
     }
     for (let ci = 0; ci < clips.length; ci++){
       const c = clips[ci];
       const tw = 300*SS, th = 170*SS, ty = my;
-      const live = watching && ci === S.playing;
-      /* THE PAGE IS ALREADY SPEAKING. When the clip runs in the rail rather
-         than in the player, the tile shows the picture it is playing, not a
-         poster with a play button over it — the page opens and the person is
-         talking, which is the whole point of it. */
-      const previewing = !watching && S.preview === ci && S.v && !S.v.paused && S.v.readyState >= 2;
+      // the one the player is showing wears the mark; the rest are posters
+      const live = ci === cur;
+      const previewing = false;
       if (ty + th > topClip && ty < botClip){
         ctx.save();
         ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 6*SS); ctx.clip();
@@ -11151,9 +11197,7 @@ function drawPerson(){
   ctx.font = K.font(18);
   ctx.textAlign = 'center';
   ctx.fillStyle = `rgba(${K.dim},0.75)`;
-  if (!watching){
-    ctx.fillText('· scroll to read · tap to go back ·', W/2, Math.max(y, my) + 28*SS);
-  }
+  ctx.fillText('\u00b7 scroll to read \u00b7 tap to go back \u00b7', W/2, Math.max(y, my) + 28*SS);
   ctx.restore();
   drawCloseX(wx0 + ww - 34 * SS, wy0 + 34 * SS, 11 * SS, a);
   state.cardRect = {x: wx0, y: wy0, w: ww, h: wh, r: K.r*SS};
@@ -11330,20 +11374,13 @@ function update(dt){
       if (inp.action && typeof inp.action === 'object'){
         const aimed = hitAt(inp.action.x, inp.action.y);
         if (aimed && aimed.type === 'closepage') S.closing = true;
-        else if (aimed && aimed.type === 'playclip') personPlay(S, aimed.i);
+        // the rail chooses: the clip loads into the page's own player, from its head
+        else if (aimed && aimed.type === 'playclip') personPreview(S, aimed.i);
         else if (aimed && aimed.type === 'playpause'){
           if (S.v){ try { S.v.paused ? S.v.play() : S.v.pause(); } catch(e){} }
         }
-        else if (aimed && aimed.type === 'stopclip'){   // out of the player, back to the page — still speaking
-          S.playing = null; S.scroll = 0;
-          if (PEOPLE[S.id].clips && PEOPLE[S.id].clips.length) personPreview(S, S.preview || 0);
-        }
         else if (aimed && aimed.type === 'person' && aimed.id !== S.id) openPerson(aimed.id);
         else if (aimed && aimed.type === 'voices'){ S.closing = true; if (!state.people) openPeople(); }
-        else if (S.playing != null){   // out of the clip, not out of the page
-          S.playing = null; S.scroll = 0;
-          if (PEOPLE[S.id].clips && PEOPLE[S.id].clips.length) personPreview(S, S.preview || 0);
-        }
         else S.closing = true;
       } else if (inp.action === true) S.closing = true;   // scrolling past the top does NOT close it
       cam.vel = 0;
