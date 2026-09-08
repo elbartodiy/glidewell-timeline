@@ -208,7 +208,7 @@ const BEATS = [
    d:'In-Ceram Zirconia material arrives — zirconia enters the lab a full decade before BruxZir.',
    wall:[], table:[]},
 
-  {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true, yLift:190, flyZ:480,   // on the line its neighbours hang from — and clear of the plinth's crossed beams
+  {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true, yLift:190, flyZ:480, flyLift:132,   // the apex keeps the wall's own baseline: it grows, it does not climb   // on the line its neighbours hang from — and clear of the plinth's crossed beams
    th:'Own the science, so you can own the quality and the price.',
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir. Labs go digital: scanning, on-screen design, milling.',
    wall:[{img:'rella', w:250, dx:555, top:215, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
@@ -231,7 +231,7 @@ const BEATS = [
    d:'January 2005: a full line of leucite-reinforced pressed ceramics under Glidewell’s own Prismatik brand — the esthetic front tooth made in-house rather than bought in. A year later Prismatik Dentalcraft becomes a manufacturing division of its own.',
    wall:[], table:[]},
 
-  {x:18700, y:'2007', t:'FIRST DIGITAL CASE', fly:true, yLift:190,
+  {x:18700, y:'2007', t:'FIRST DIGITAL CASE', fly:true, yLift:190, flyLift:66,   // the same line as 2001 and 2005, at every distance
    th:'Nobody called it AI training data yet — but that is what it was.',
    d:'The lab accepts its first intraoral scan instead of a physical impression — the moment the case archive starts becoming data.',
    wall:[], table:[],
@@ -302,7 +302,7 @@ const BEATS = [
    table:[], pyr:{dx:520, w:460},
    /* no pedestal: the scanner lives in the lit capsule on the panel */},
 
-  {x:26900, y:'2023', t:'THE CROSSOVER', tHide:true, tier:1, yLift:110,   // the panel letters the title itself; the beat carries it so its page and its inline pieces can be keyed by it
+  {x:26900, y:'2023', t:'THE CROSSOVER', tHide:true, tier:1, yLift:110, railBelow:true,   // its voice hangs in a strip under the article, not down the side   // the panel letters the title itself; the beat carries it so its page and its inline pieces can be keyed by it
    pinZ:1000,   // the year rides the panel's own plane, so it stays centred on the white strip
    th:'',
    d:'March 2023: for the first time, more digital impressions arrive at Glidewell in a month than physical ones. Nothing announces it — it is simply the month the two lines cross, sixteen years after the first digital case came in.',
@@ -499,6 +499,8 @@ function applyCut(){
   // and the articles that are keyed by name go to wherever their beat now stands
   if (typeof STUDY_BY_TITLE === 'object')
     for (const b of BEATS) if (b.t && STUDY_BY_TITLE[b.t]) STUDY_MORE[b.x] = STUDY_BY_TITLE[b.t];
+  if (typeof STUDY_MEDIA_BY_TITLE === 'object')
+    for (const b of BEATS) if (b.t && STUDY_MEDIA_BY_TITLE[b.t]) STUDY_MEDIA[b.x] = STUDY_MEDIA_BY_TITLE[b.t];
   for (const it of FG_ITEMS) it.x = SHIFT(it.x);
 }
 const INTRO_X = -650;
@@ -1542,6 +1544,7 @@ function renderDoc(){
   document.getElementById('docLang').textContent = DOC_LANG === 'en' ? 'RU' : 'EN';
 }
 function openDoc(){
+  hushClips();
   const el = document.getElementById('doc');
   renderDoc();
   el.classList.add('on');
@@ -2156,6 +2159,12 @@ function drawBenchPlaque(b){
       }
 
 }
+/* ONE TRACKING FOR EVERY TITLE. The line under a year was set at 9 units of
+   letter-spacing on a 46-unit face — a fifth of an em, which on a long title
+   like FIRST DIGITAL CASE reads as a row of separate letters. It is 5.5
+   everywhere now, and a minor beat's title keeps a little more of its size
+   (0.78 rather than 0.6) so a stretch of wall does not step up and down. */
+const TITLE_TRACK = 5.5;
 function drawBeatText(b, focusAmt){
   if (b.under) return;   // this fact lives under the tabletop, on the bench face
   if (b.plaque){
@@ -2197,7 +2206,7 @@ function drawBeatText(b, focusAmt){
   const wz = seg.tz || wallZAt(b.x);   // one shared text plane per era group — equal type everywhere
   const dxW = b.x - cam.x;
   const near = Math.max(0, 1 - Math.abs(dxW)/1300);
-  const sc = b.minor ? 0.6 : 1;
+  const sc = b.minor ? 0.78 : 1;
   const tY = segIdx(b.x) === 0 ? 232 : 208;   // the serif era breathes wider under its numerals
   // during a pedestal dolly the headline recomposes: it steps down into the
   // zoomed frame and yields size, so the exhibit stays the hero
@@ -2283,7 +2292,7 @@ function drawBeatText(b, focusAmt){
               {type:'study', beat: BEATS.indexOf(b)});
       const cd = b._capDrop || 0;
       ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
-      try { ctx.letterSpacing = `${9*kk*SS}px`; } catch(e){}
+      try { ctx.letterSpacing = `${TITLE_TRACK*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
       const LB = b.tOnBay && BAY_LABELS[b.y];
       if (LB) ctx.fillText(b.t, LB.x, LB.y + 46 * 0.36 * kk * SS);
@@ -2350,7 +2359,7 @@ function drawBeatText(b, focusAmt){
               {type:'study', beat: BEATS.indexOf(b)});
       const cd = b._capDrop || 0;
       ctx.font = eraFont(46 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
-      try { ctx.letterSpacing = `${9*sc*kk*SS}px`; } catch(e){}
+      try { ctx.letterSpacing = `${TITLE_TRACK*sc*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
       /* a title lettered on the bay photograph's plinth: it takes the picture's
          own point every frame, so it cannot drift against the render */
@@ -9960,6 +9969,12 @@ let PERSON_SPRITES = {};
    window opens — pieces of the interviews we are filming */
 /* A year carries only footage shot FOR that year. The `_01` interviews are a
    person's own record — they live on the person's page and nowhere else. */
+/* media keyed by the beat's title — the coordinate map is rekeyed at boot and
+   a beat moved by the rhythm pass loses its clips; a title cannot drift. */
+const STUDY_MEDIA_BY_TITLE = {
+  'THE CROSSOVER': [{name:'Dr. Randolph Resnik', img:'resnik', pid:'resnik',
+                     src:'media/resnik_02.mp4', label:'on the scan replacing the impression'}],
+};
 const STUDY_MEDIA = {
   18700: [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2007_patel.mp4', label:'on the digital revolution'}],
   22550: [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2010s_patel.mp4', label:'on scanners in every office'}],
@@ -9982,15 +9997,26 @@ function thumbFor(m){
   }, {once: true});
   return null;
 }
+/* ONE VOICE AT A TIME. Every page keeps its clip in VIDEO_EL, and a page can
+   open another page — a name in the prose, a face in the rail — so two tapes
+   could end up talking over each other. Anything that opens hushes whatever was
+   speaking first, and keeps only the one it is about to start. */
+function hushClips(keep){
+  for (const k in VIDEO_EL){
+    const v = VIDEO_EL[k];
+    if (v && v !== keep && !v.paused){ try { v.pause(); } catch(e){} }
+  }
+}
 function openClip(m, wx){
   let v = VIDEO_EL[m.src];
+  hushClips(v);
   if (!v){
     v = document.createElement('video');
     v.src = m.src; v.preload = 'auto'; v.playsInline = true;
     VIDEO_EL[m.src] = v;
   }
   try { if (v.paused) v.currentTime = 0; v.play(); } catch(e){}
-  state.clip = {v, name: m.name, label: m.label, wx: wx, amt: 0};
+  state.clip = {v, src: m.src, name: m.name, label: m.label, wx: wx, amt: 0};
 }
 function closeClip(){
   const C = state.clip;
@@ -9998,6 +10024,7 @@ function closeClip(){
   state.clip = null;
 }
 function openStudy(i){
+  hushClips();
   const b = BEATS[i];
   const imgs = [];   // reserved: the speaker-video carousel will live here
   state.study = {beat: i, imgs, scroll: 0, amt: 0, maxScroll: 1};
@@ -10036,8 +10063,6 @@ const STUDY_INLINE = {
     box: {head: 'ONE CASE, AS IT ARRIVED',
           sub: 'both jaws, still in the trays they were taken in',
           hint: 'click to digitize', done: 'and this is what happened to it \u2014 the case became data'},
-    clip: {name: 'Dr. Randolph Resnik', pid: 'resnik', src: 'media/resnik_02.mp4',
-           label: 'on the scan replacing the impression'},
   },
 };
 /* the addresses the company keeps today, hung on the page whose subject is
@@ -10118,6 +10143,7 @@ function drawLinkIcon(kind, cx, cy, r, col){
    enough to read a face, with the two chevrons and the wheel to turn it. */
 function openAlbumView(i){
   const b = BEATS[i]; if (!b || !b.album) return;
+  hushClips();
   const A = ALBUM_SPRITES[i]; if (!A) return;
   if (!A.big){                                  // the spreads again, at reading size
     const tone = 'sepia(0.5) saturate(0.75) contrast(1.04)';
@@ -10155,6 +10181,19 @@ function drawAlbumView(){
   try { ctx.letterSpacing = `${5 * SS}px`; } catch(err){}
   ctx.fillStyle = 'rgba(236,214,172,0.85)';
   ctx.fillText(b.album.title, W/2, y0 - 26 * SS);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(238,220,182,0.75)'; ctx.lineWidth = Math.max(1.4, 2 * SS); ctx.lineCap = 'round';
+  {
+    const cxX = x0 + w - 4 * SS, cyX = y0 - 30 * SS, rX = 11 * SS;
+    const hotX = Input.hover && Math.hypot(Input.hover.x - cxX, Input.hover.y - cyX) < rX * 1.6;
+    ctx.strokeStyle = hotX ? 'rgba(255,236,200,0.98)' : 'rgba(226,206,168,0.7)';
+    ctx.beginPath();
+    ctx.moveTo(cxX - rX * 0.6, cyX - rX * 0.6); ctx.lineTo(cxX + rX * 0.6, cyX + rX * 0.6);
+    ctx.moveTo(cxX + rX * 0.6, cyX - rX * 0.6); ctx.lineTo(cxX - rX * 0.6, cyX + rX * 0.6);
+    ctx.stroke();
+    pushHit(cxX - rX * 1.7, cyX - rX * 1.7, rX * 3.4, rX * 3.4, {type: 'closepage'});
+  }
+  ctx.restore();
   try { ctx.letterSpacing = '0px'; } catch(err){}
   ctx.font = eraFont(16 * SS, '', SEGMENTS[0].font);
   ctx.fillStyle = 'rgba(214,192,152,0.6)';
@@ -10179,6 +10218,63 @@ function drawAlbumView(){
   }
   pushHit(x0, y0, w, h, {type: 'albumpage', d: 1});   // the spread itself turns forward
   ctx.restore();
+}
+/* ONE TILE, TWO RAILS. The clip previews are the same small cards wherever
+   they hang: down the right-hand side of a page, or in a strip under the
+   article. Only the layout differs, so only the layout is written twice. */
+function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
+  if (!(ty + th > topClip && ty < botClip)) return;
+        {
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 10*SS); ctx.clip();
+    ctx.fillStyle = '#14181d';
+    ctx.fillRect(mx, ty, tw, th);
+    const useV = S.railV && m.src === S.railSrc && S.railV.readyState >= 2;
+    if (useV){
+      const rv = S.railV;
+      const s = Math.max(tw/rv.videoWidth, th/rv.videoHeight);
+      ctx.drawImage(rv, mx + tw/2 - rv.videoWidth*s/2, ty + th/2 - rv.videoHeight*s/2,
+        rv.videoWidth*s, rv.videoHeight*s);
+    } else {
+    const im = thumbFor(m) || IMGS[m.img];   // a real interview frame, portrait until it loads
+    if (im){
+      const s = Math.max(tw/im.w, th/im.h);
+      ctx.globalAlpha = 0.9;
+      ctx.drawImage(im.el, mx + tw/2 - im.w*s/2, ty + th/2 - im.h*s/2, im.w*s, im.h*s);
+      ctx.globalAlpha = 1;
+    }
+    }
+    const pg = ctx.createLinearGradient(0, ty + th*0.5, 0, ty + th);
+    pg.addColorStop(0, 'rgba(8,10,14,0)'); pg.addColorStop(1, 'rgba(8,10,14,0.85)');
+    ctx.fillStyle = pg; ctx.fillRect(mx, ty, tw, th);
+    // play badge — not over a tape that is already speaking
+    if (!(useV && !S.railV.paused)){
+    ctx.fillStyle = 'rgba(250,252,255,0.92)';
+    ctx.beginPath(); ctx.arc(mx + tw/2, ty + th/2 - 8*SS, 25*SS, 0, 7); ctx.fill();
+    ctx.fillStyle = '#1a2027';
+    ctx.beginPath();
+    ctx.moveTo(mx + tw/2 - 7*SS, ty + th/2 - 21*SS);
+    ctx.lineTo(mx + tw/2 + 13*SS, ty + th/2 - 8*SS);
+    ctx.lineTo(mx + tw/2 - 7*SS, ty + th/2 + 5*SS);
+    ctx.closePath(); ctx.fill();
+    }
+    ctx.fillStyle = 'rgba(240,244,248,0.95)';
+    ctx.font = K.font(18);
+    ctx.fillText(m.name, mx + 14*SS, ty + th - 34*SS);
+    ctx.font = K.font(15, 'italic');
+    ctx.fillStyle = 'rgba(200,206,214,0.85)';
+    ctx.fillText(m.label, mx + 14*SS, ty + th - 12*SS);
+    ctx.restore();
+    ctx.strokeStyle = K.edge; ctx.lineWidth = 1.2*SS;
+    ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 10*SS); ctx.stroke();
+    pushHit(mx, ty, tw, th, {type:'clip', media: m, wx: b.x});
+    if (m.pid && PEOPLE[m.pid]){
+      // the name on the card goes where the name in the text goes
+      ctx.font = K.font(18);
+      pushHit(mx + 10*SS, ty + th - 52*SS, ctx.measureText(m.name).width + 12*SS, 28*SS,
+      {type:'person', id: m.pid});
+    }
+  }
 }
 function drawStudy(){
   const S = state.study; if (!S) return;
@@ -10372,6 +10468,30 @@ function drawStudy(){
      so the page ends with the addresses it has today — drawn as chips with
      their own marks, and each one opens in a new tab. Keyed by the beat's
      title, so no coordinate can lose them. */
+  /* THE OTHER RAIL. Some pages hang their voices down the right-hand side;
+     some carry them in a strip under the article, left to right, wrapping when
+     they run out of room. Same tiles, same tap, different place — a page says
+     which it wants with `railBelow`. */
+  if (media && media.length && b.railBelow){
+    y += 14 * SS;
+    ctx.fillStyle = K.rule;
+    ctx.fillRect(left, y, colW, 1.5 * SS);
+    y += 34 * SS;
+    ctx.font = K.font(17, '700');
+    try { ctx.letterSpacing = `${3.2*SS}px`; } catch(err){}
+    ctx.fillStyle = `rgba(${K.dim},0.95)`;
+    if (y > topClip && y < botClip) ctx.fillText(media.length > 1 ? 'THE VOICES' : 'WATCH', left, y);
+    try { ctx.letterSpacing = '0px'; } catch(err){}
+    y += 30 * SS;
+    const tw4 = 300 * SS, th4 = 170 * SS, gap4 = 26 * SS;
+    let rx4 = left;
+    for (let mi = 0; mi < media.length; mi++){
+      if (rx4 + tw4 > left + textW + 1){ rx4 = left; y += th4 + gap4 + 34 * SS; }
+      studyClipTile(media[mi], rx4, y, tw4, th4, S, K, b, topClip, botClip);
+      rx4 += tw4 + gap4;
+    }
+    y += th4 + 40 * SS;
+  }
   /* the carton, and the voice under it — the crossover's own two exhibits,
      inside the page instead of behind two separate doors */
   const inl = STUDY_INLINE[b.t];
@@ -10431,71 +10551,6 @@ function drawStudy(){
         ctx.fillText(S.diss > 0.6 ? inl.box.done : inl.box.hint, left, y);
       y += 40 * SS;
     }
-    if (inl.clip){
-      const c2 = inl.clip;
-      const vw = Math.min(textW, 620 * SS), vh = vw * 9 / 16;
-      const vx = left + (textW - vw) / 2;
-      const live = S.railSrc === c2.src && S.railV && S.railV.readyState >= 2;
-      if (y + vh > topClip && y < botClip){
-        ctx.save();
-        ctx.beginPath(); ctx.roundRect(vx, y, vw, vh, 8 * SS); ctx.clip();
-        ctx.fillStyle = '#12161b'; ctx.fillRect(vx, y, vw, vh);
-        if (live){
-          const rv = S.railV, s3 = Math.max(vw / rv.videoWidth, vh / rv.videoHeight);
-          ctx.drawImage(rv, vx + vw/2 - rv.videoWidth*s3/2, y + vh/2 - rv.videoHeight*s3/2,
-                        rv.videoWidth*s3, rv.videoHeight*s3);
-        } else {
-          const im2 = thumbFor(c2) || IMGS[c2.pid] || PORTRAIT[c2.pid];
-          if (im2){
-            const s3 = Math.max(vw / im2.w, vh / im2.h);
-            ctx.globalAlpha = a * 0.92;
-            ctx.drawImage(im2.el, vx + vw/2 - im2.w*s3/2, y + vh/2 - im2.h*s3/2, im2.w*s3, im2.h*s3);
-            ctx.globalAlpha = a;
-          }
-        }
-        if (!live || S.railV.paused){
-          ctx.fillStyle = 'rgba(250,252,255,0.94)';
-          ctx.beginPath(); ctx.arc(vx + vw/2, y + vh/2, 30 * SS, 0, 7); ctx.fill();
-          ctx.fillStyle = `rgba(${K.accent},1)`;
-          ctx.beginPath();
-          ctx.moveTo(vx + vw/2 - 9*SS, y + vh/2 - 15*SS);
-          ctx.lineTo(vx + vw/2 + 16*SS, y + vh/2);
-          ctx.lineTo(vx + vw/2 - 9*SS, y + vh/2 + 15*SS);
-          ctx.closePath(); ctx.fill();
-        }
-        const pg3 = ctx.createLinearGradient(0, y + vh * 0.55, 0, y + vh);
-        pg3.addColorStop(0, 'rgba(8,10,14,0)'); pg3.addColorStop(1, 'rgba(8,10,14,0.85)');
-        ctx.fillStyle = pg3; ctx.fillRect(vx, y, vw, vh);
-        ctx.fillStyle = 'rgba(244,247,250,0.96)';
-        ctx.font = K.font(19, '700');
-        ctx.fillText(c2.name, vx + 18*SS, y + vh - 34*SS);
-        ctx.font = K.font(16, 'italic');
-        ctx.fillStyle = 'rgba(206,214,222,0.9)';
-        ctx.fillText(c2.label, vx + 18*SS, y + vh - 13*SS);
-        // the timeline, and it can be taken hold of: click or drag to any moment
-        {
-          const dur = live && S.railV.duration ? S.railV.duration : 0;
-          const frac = dur ? Math.max(0, Math.min(1, S.railV.currentTime / dur)) : 0;
-          const barY = y + vh - 9 * SS, barH = 5 * SS, bx3 = vx + 10 * SS, bw3 = vw - 20 * SS;
-          ctx.fillStyle = 'rgba(255,255,255,0.26)';
-          ctx.fillRect(bx3, barY, bw3, barH);
-          ctx.fillStyle = `rgba(${K.accent},0.95)`;
-          ctx.fillRect(bx3, barY, bw3 * frac, barH);
-          if (dur){
-            ctx.fillStyle = 'rgba(255,255,255,0.95)';
-            ctx.beginPath(); ctx.arc(bx3 + bw3 * frac, barY + barH / 2, 6 * SS, 0, 7); ctx.fill();
-          }
-        }
-        ctx.restore();
-        ctx.strokeStyle = K.edge; ctx.lineWidth = 1.2 * SS;
-        ctx.beginPath(); ctx.roundRect(vx, y, vw, vh, 8 * SS); ctx.stroke();
-        pushHit(vx, y, vw, vh, {type: 'inclip', clip: c2});
-        // the seek band is pushed after the picture, so the bar wins the tap
-        pushHit(vx, y + vh - 24 * SS, vw, 28 * SS,
-                {type: 'inseek', src: c2.src, x0: vx + 10 * SS, w: vw - 20 * SS});
-      }
-      y += vh + 34 * SS;
-    }
   }
   const links = STUDY_LINKS[b.t];
   if (links){
@@ -10554,7 +10609,7 @@ function drawStudy(){
     }
     y += 16 * SS;
   }
-  if (media && media.length){
+  if (media && media.length && !b.railBelow){
     // the voices ride as a rail to the right of the text
     const mx = left + textW + 40*SS;
     let my = wy0 + (era === 2 ? 168 : 130) * SS - S.scroll * SS;
@@ -10563,61 +10618,8 @@ function drawStudy(){
     if (my > topClip && my < botClip) ctx.fillText('WATCH', mx, my);
     my += 26 * SS;
     for (let mi = 0; mi < media.length; mi++){
-      const m = media[mi];
-      const tw = 300*SS, th = 170*SS;
-      const ty = my;
-      if (ty + th > topClip && ty < botClip){
-        ctx.save();
-        ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 10*SS); ctx.clip();
-        ctx.fillStyle = '#14181d';
-        ctx.fillRect(mx, ty, tw, th);
-        const useV = S.railV && m.src === S.railSrc && S.railV.readyState >= 2;
-        if (useV){
-          const rv = S.railV;
-          const s = Math.max(tw/rv.videoWidth, th/rv.videoHeight);
-          ctx.drawImage(rv, mx + tw/2 - rv.videoWidth*s/2, ty + th/2 - rv.videoHeight*s/2,
-                        rv.videoWidth*s, rv.videoHeight*s);
-        } else {
-        const im = thumbFor(m) || IMGS[m.img];   // a real interview frame, portrait until it loads
-        if (im){
-          const s = Math.max(tw/im.w, th/im.h);
-          ctx.globalAlpha = 0.9;
-          ctx.drawImage(im.el, mx + tw/2 - im.w*s/2, ty + th/2 - im.h*s/2, im.w*s, im.h*s);
-          ctx.globalAlpha = 1;
-        }
-        }
-        const pg = ctx.createLinearGradient(0, ty + th*0.5, 0, ty + th);
-        pg.addColorStop(0, 'rgba(8,10,14,0)'); pg.addColorStop(1, 'rgba(8,10,14,0.85)');
-        ctx.fillStyle = pg; ctx.fillRect(mx, ty, tw, th);
-        // play badge — not over a tape that is already speaking
-        if (!(useV && !S.railV.paused)){
-        ctx.fillStyle = 'rgba(250,252,255,0.92)';
-        ctx.beginPath(); ctx.arc(mx + tw/2, ty + th/2 - 8*SS, 25*SS, 0, 7); ctx.fill();
-        ctx.fillStyle = '#1a2027';
-        ctx.beginPath();
-        ctx.moveTo(mx + tw/2 - 7*SS, ty + th/2 - 21*SS);
-        ctx.lineTo(mx + tw/2 + 13*SS, ty + th/2 - 8*SS);
-        ctx.lineTo(mx + tw/2 - 7*SS, ty + th/2 + 5*SS);
-        ctx.closePath(); ctx.fill();
-        }
-        ctx.fillStyle = 'rgba(240,244,248,0.95)';
-        ctx.font = K.font(18);
-        ctx.fillText(m.name, mx + 14*SS, ty + th - 34*SS);
-        ctx.font = K.font(15, 'italic');
-        ctx.fillStyle = 'rgba(200,206,214,0.85)';
-        ctx.fillText(m.label, mx + 14*SS, ty + th - 12*SS);
-        ctx.restore();
-        ctx.strokeStyle = K.edge; ctx.lineWidth = 1.2*SS;
-        ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 10*SS); ctx.stroke();
-        pushHit(mx, ty, tw, th, {type:'clip', media: m, wx: b.x});
-        if (m.pid && PEOPLE[m.pid]){
-          // the name on the card goes where the name in the text goes
-          ctx.font = K.font(18);
-          pushHit(mx + 10*SS, ty + th - 52*SS, ctx.measureText(m.name).width + 12*SS, 28*SS,
-                  {type:'person', id: m.pid});
-        }
-      }
-      my += th + 46*SS;
+      studyClipTile(media[mi], mx, my, 300*SS, 170*SS, S, K, b, topClip, botClip);
+      my += 170*SS + 46*SS;
     }
   }
   const ppl = BEAT_PEOPLE[b.y + '|' + (b.t || '')];
@@ -10650,6 +10652,7 @@ function drawStudy(){
   ctx.fillStyle = `rgba(${K.dim},0.7)`;
   ctx.fillText('· scroll to explore · tap to return ·', W/2, y + 28*SS);
   ctx.restore();
+  drawCloseX(wx0 + ww - 34 * SS, wy0 + 34 * SS, 11 * SS, a);
   state.cardRect = {x: wx0, y: wy0, w: ww, h: wh, r: K.r*SS};
   S.maxScroll = Math.max(1, (y + 170*SS + S.scroll * SS - (wy0 + wh)) / SS);
 }
@@ -10658,7 +10661,7 @@ function drawStudy(){
    way the working timeline shapes them: a small square face, the name beside
    it, and the line that says who they are — three to a row. Tapping a face
    opens that person's page over the wall, so going back lands you here. */
-function openPeople(){ state.people = {scroll: 0, amt: 0, maxScroll: 1}; }
+function openPeople(){ hushClips(); state.people = {scroll: 0, amt: 0, maxScroll: 1}; }
 function personInitials(nm){
   return (nm || '').replace(/^(Dr\.|Mr\.|Ms\.|Mrs\.)\s+/, '')
     .split(/\s+/).filter(w => /^[A-Za-z]/.test(w)).slice(0, 2)
@@ -10683,6 +10686,23 @@ function seekPageClip(px2){
   const f = Math.max(0, Math.min(1, (px2 - D.x0) / Math.max(1, D.w)));
   try { v.currentTime = f * v.duration; } catch(e){}
   if (v.paused) v.play().catch(()=>{});
+}
+/* THE CROSS. Every page shuts on a tap outside it, but a page with no visible
+   way out is a page people sit in. One cross, top right, on all of them. */
+function drawCloseX(cx, cy, r, alpha){
+  const hot = Input.hover && Math.hypot(Input.hover.x - cx, Input.hover.y - cy) < r * 1.5;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = hot ? 'rgba(0,0,0,0.16)' : 'rgba(0,0,0,0.07)';
+  ctx.beginPath(); ctx.arc(cx, cy, r * 1.45, 0, 7); ctx.fill();
+  ctx.strokeStyle = hot ? 'rgba(225,27,42,0.95)' : 'rgba(90,96,104,0.75)';
+  ctx.lineWidth = Math.max(1.4, 2 * SS); ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx - r * 0.62, cy - r * 0.62); ctx.lineTo(cx + r * 0.62, cy + r * 0.62);
+  ctx.moveTo(cx + r * 0.62, cy - r * 0.62); ctx.lineTo(cx - r * 0.62, cy + r * 0.62);
+  ctx.stroke();
+  ctx.restore();
+  pushHit(cx - r * 1.6, cy - r * 1.6, r * 3.2, r * 3.2, {type: 'closepage'});
 }
 function pageScroll(S, inp, dt){
   /* THE SHEET HAS A TOP. Overscroll used to run to -240 because scrolling past
@@ -10830,6 +10850,7 @@ function drawPeople(){
   ctx.fillStyle = `rgba(${K.dim},0.75)`;
   ctx.fillText('· scroll · tap a face · tap the margin to return ·', W/2, y);
   ctx.restore();
+  drawCloseX(wx0 + ww - 34 * SS, wy0 + 34 * SS, 11 * SS, a);
   state.cardRect = {x: wx0, y: wy0, w: ww, h: wh, r: K.r*SS};
   S.maxScroll = Math.max(1, (y + 120*SS + S.scroll * SS - (wy0 + wh)) / SS);
 }
@@ -10856,6 +10877,7 @@ const PSKIN = {bg:'rgba(252,252,251,0.985)', edge:'rgba(26,28,30,0.16)', r:6,
                font:(s,st)=>`${st||''} ${Math.round(s*SS)}px "Helvetica Neue", Helvetica, Arial, sans-serif`.trim()};
 function openPerson(id){
   if (!PEOPLE[id]) return;
+  hushClips();
   if (state.person) personStop(state.person);
   state.person = {id, scroll: 0, amt: 0, maxScroll: 1, playing: null, v: null};
   /* THE PAGE OPENS, NOT THE PLAYER. It used to call personPlay, which is the
@@ -10871,6 +10893,7 @@ function personPreview(S, i){
   const P = PEOPLE[S.id], c = P.clips && P.clips[i];
   if (!c) return;
   let v = VIDEO_EL[c.src];
+  hushClips(v);
   if (!v){
     v = document.createElement('video');
     v.src = c.src; v.preload = 'auto'; v.playsInline = true;
@@ -10884,6 +10907,7 @@ function personPlay(S, i){
   if (!c) return;
   if (S.v){ try { S.v.pause(); } catch(e){} }
   let v = VIDEO_EL[c.src];
+  hushClips(v);
   if (!v){
     v = document.createElement('video');
     v.src = c.src; v.preload = 'auto'; v.playsInline = true;
@@ -11131,6 +11155,7 @@ function drawPerson(){
     ctx.fillText('· scroll to read · tap to go back ·', W/2, Math.max(y, my) + 28*SS);
   }
   ctx.restore();
+  drawCloseX(wx0 + ww - 34 * SS, wy0 + 34 * SS, 11 * SS, a);
   state.cardRect = {x: wx0, y: wy0, w: ww, h: wh, r: K.r*SS};
   S.maxScroll = Math.max(1, (Math.max(y, my) + 170*SS + S.scroll * SS - (wy0 + wh)) / SS);
 }
@@ -11192,11 +11217,22 @@ function drawClip(){
   ctx.restore();
   ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 1.2*SS;
   ctx.beginPath(); ctx.roundRect(x0, y0, vw, vh, 6*SS); ctx.stroke();
-  if (v && v.duration){
+  /* THE TIMELINE IS A HANDLE. A bar that only reports is no use to anyone
+     watching an interview: this one is thick enough to hit, carries a knob, and
+     takes a click or a drag anywhere along it. */
+  {
+    const barY = y0 + vh + 16*SS, barH = 5*SS;
+    const frac = (v && v.duration) ? Math.max(0, Math.min(1, v.currentTime / v.duration)) : 0;
     ctx.fillStyle = 'rgba(236,240,245,0.20)';
-    ctx.fillRect(x0, y0 + vh + 16*SS, vw, 2.5*SS);
+    ctx.fillRect(x0, barY, vw, barH);
     ctx.fillStyle = 'rgba(225,27,42,0.95)';
-    ctx.fillRect(x0, y0 + vh + 16*SS, vw * (v.currentTime / v.duration), 2.5*SS);
+    ctx.fillRect(x0, barY, vw * frac, barH);
+    if (v && v.duration){
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.beginPath(); ctx.arc(x0 + vw * frac, barY + barH/2, 6.5*SS, 0, 7); ctx.fill();
+      pushHit(x0 - 8*SS, barY - 13*SS, vw + 16*SS, 30*SS,
+              {type:'inseek', src: C.src, x0: x0, w: vw});
+    }
   }
   ctx.textAlign = 'left';
   ctx.font = `${Math.round(21*SS)}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
@@ -11211,6 +11247,19 @@ function drawClip(){
   ctx.font = `${Math.round(17*SS)}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
   ctx.fillStyle = 'rgba(170,178,188,0.7)';
   ctx.fillText('· tap to close ·', x0 + vw, y0 + vh + 54*SS);
+  {
+    const cxX = x0 + vw - 20 * SS, cyX = y0 + 20 * SS, rX = 11 * SS;
+    const hotX = Input.hover && Math.hypot(Input.hover.x - cxX, Input.hover.y - cyX) < rX * 1.6;
+    ctx.fillStyle = hotX ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.32)';
+    ctx.beginPath(); ctx.arc(cxX, cyX, rX * 1.45, 0, 7); ctx.fill();
+    ctx.strokeStyle = hotX ? 'rgba(255,120,110,0.98)' : 'rgba(236,240,245,0.8)';
+    ctx.lineWidth = Math.max(1.4, 2 * SS); ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cxX - rX * 0.6, cyX - rX * 0.6); ctx.lineTo(cxX + rX * 0.6, cyX + rX * 0.6);
+    ctx.moveTo(cxX + rX * 0.6, cyX - rX * 0.6); ctx.lineTo(cxX - rX * 0.6, cyX + rX * 0.6);
+    ctx.stroke();
+    pushHit(cxX - rX * 1.7, cyX - rX * 1.7, rX * 3.4, rX * 3.4, {type: 'closepage'});
+  }
   ctx.restore();
 }
 
@@ -11272,7 +11321,7 @@ function update(dt){
       } else if (inp.action === true || Math.abs(inp.impulse) > 260) state.inspect.closing = true;
       cam.vel = 0;
     } else if (state.clip){
-      // the speaker window: any click or a strong scroll puts it back
+      // the speaker window: the cross, any click, or a strong scroll puts it back
       if (inp.action || Math.abs(inp.impulse) > 260) state.clip.closing = true;
       cam.vel = 0;
     } else if (state.person){
@@ -11280,7 +11329,8 @@ function update(dt){
       pageScroll(S, inp, dt);
       if (inp.action && typeof inp.action === 'object'){
         const aimed = hitAt(inp.action.x, inp.action.y);
-        if (aimed && aimed.type === 'playclip') personPlay(S, aimed.i);
+        if (aimed && aimed.type === 'closepage') S.closing = true;
+        else if (aimed && aimed.type === 'playclip') personPlay(S, aimed.i);
         else if (aimed && aimed.type === 'playpause'){
           if (S.v){ try { S.v.paused ? S.v.play() : S.v.pause(); } catch(e){} }
         }
@@ -11310,7 +11360,8 @@ function update(dt){
       else V.wheel *= 0.86;
       if (inp.action && typeof inp.action === 'object'){
         const aimed = hitAt(inp.action.x, inp.action.y);
-        if (aimed && aimed.type === 'albumpage'){
+        if (aimed && aimed.type === 'closepage'){ V.closing = true; }
+        else if (aimed && aimed.type === 'albumpage'){
           if (V.page + aimed.d > A2.big.length - 1 && aimed.d > 0) V.closing = true;   // past the last page the album shuts
           else turn(aimed.d);
         } else V.closing = true;
@@ -11321,7 +11372,8 @@ function update(dt){
       pageScroll(S, inp, dt);
       if (inp.action && typeof inp.action === 'object'){
         const aimed = hitAt(inp.action.x, inp.action.y);
-        if (aimed && aimed.type === 'person') openPerson(aimed.id);
+        if (aimed && aimed.type === 'closepage') S.closing = true;
+        else if (aimed && aimed.type === 'person') openPerson(aimed.id);
         else S.closing = true;
       } else if (inp.action === true) S.closing = true;   // scrolling past the top does NOT close it
       cam.vel = 0;
@@ -11331,7 +11383,9 @@ function update(dt){
       pageScroll(S, inp, dt);
       if (inp.action && typeof inp.action === 'object'){
         const aimed = hitAt(inp.action.x, inp.action.y);
-        if (aimed && aimed.type === 'clip'){
+        if (aimed && aimed.type === 'closepage'){
+          S.closing = true;
+        } else if (aimed && aimed.type === 'clip'){
           openClip(aimed.media, aimed.wx);
         } else if (aimed && aimed.type === 'person' && PEOPLE[aimed.id]){
           openPerson(aimed.id);     // the name in the text goes to the person, not to a portrait
