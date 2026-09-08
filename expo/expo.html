@@ -180,7 +180,10 @@ const BEATS = [
 
   /* ---- ERA 3 · the computer arrives, 1995–2007
           (1993 · Newport Beach happens inside the video splice) ---- */
-  {x:12150, y:'1993', t:'', tier:1, ink:'232,238,244', ysMul:1.18,   // light on its dark bay, and a size of its own
+  {x:12150, y:'1993', t:'', tier:1, ink:'103,108,115', ysMul:1.18,
+   /* the numerals take the colour of the floor under them — the nineties
+      office slab, #82868d at its near edge, a shade deeper so they read as
+      cut into the panel rather than painted on it. Dark, never black. */
    
    yLift:200,   // it sits above the screen instead of landing on it, and it does not grow
    th:'',
@@ -2148,7 +2151,7 @@ function drawBenchPlaque(b){
         ctx.save();
         ctx.textAlign = 'center';
         ctx.font = eraFont(26 * kk2 * SS, '', seg.font);
-        try { ctx.letterSpacing = `${5.5*kk2*SS}px`; } catch(e){}
+        try { ctx.letterSpacing = `${26*TRACK.plate*kk2*SS}px`; } catch(e){}
         const benchTx = sentence(b.t);
         const wP2 = ctx.measureText(benchTx).width + 46 * kk2 * SS;
         const hP2 = 54 * kk2 * SS;
@@ -2177,7 +2180,17 @@ function drawBenchPlaque(b){
    like FIRST DIGITAL CASE reads as a row of separate letters. It is 5.5
    everywhere now, and a minor beat's title keeps a little more of its size
    (0.78 rather than 0.6) so a stretch of wall does not step up and down. */
-const TITLE_TRACK = 5.5;
+/* TRACKING, AS A FRACTION OF THE TYPE'S OWN SIZE. Everything in the hall was
+   tracked in world units — 5.5 here, 8 there — which is not a typographic
+   measure at all: the same 8 is generous on a 40pt plate and grotesque on a
+   15pt line. Letter-spacing belongs in ems, and the accepted ranges are
+   narrow: display type sits slightly TIGHT (-0.02em), text sits at 0, small
+   labels take +0.02em, and only all-caps genuinely needs +0.05..0.1em, because
+   capitals were drawn to stand inside lower-case words and crowd each other
+   when set alone. Now that nothing in the hall is shouted, almost nothing
+   needs the wide end of that range. */
+const TRACK = {display: -0.015, title: 0.02, label: 0.03, caps: 0.07, plate: 0.05};
+const TITLE_TRACK = TRACK.title;
 /* NOTHING IS SHOUTED. The hall was set in full capitals throughout — titles,
    plates, headings, buttons — and Eldar's rule is plain: a word gets one
    capital, at its front, and only if it deserves one. The data keeps its own
@@ -2250,7 +2263,7 @@ function drawBeatText(b, focusAmt){
       ctx.save();
       ctx.textAlign = 'center';
       ctx.font = eraFont(40 * kk * SS, '', segP.font);
-      try { ctx.letterSpacing = `${8*kk*SS}px`; } catch(e){}
+      try { ctx.letterSpacing = `${40*TRACK.plate*kk*SS}px`; } catch(e){}
       const plateTx = sentence(b.t);
       const wP = Math.max(320*kk*SS, ctx.measureText(plateTx).width + 84*kk*SS);
       const hP = 88*kk*SS, yP = py(150, kk);
@@ -2361,7 +2374,7 @@ function drawBeatText(b, focusAmt){
               {type:'study', beat: BEATS.indexOf(b)});
       const cd = b._capDrop || 0;
       ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
-      try { ctx.letterSpacing = `${TITLE_TRACK*kk*SS}px`; } catch(e){}
+      try { ctx.letterSpacing = `${46*(seg.tScale||1)*TITLE_TRACK*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
       const LB = b.tOnBay && BAY_LABELS[b.y];
       letterRelief(0.55);
@@ -2433,7 +2446,7 @@ function drawBeatText(b, focusAmt){
               {type:'study', beat: BEATS.indexOf(b)});
       const cd = b._capDrop || 0;
       ctx.font = eraFont(46 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
-      try { ctx.letterSpacing = `${TITLE_TRACK*sc*kk*SS}px`; } catch(e){}
+      try { ctx.letterSpacing = `${46*sc*(seg.tScale||1)*TITLE_TRACK*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
       /* a title lettered on the bay photograph's plinth: it takes the picture's
          own point every frame, so it cannot drift against the render */
@@ -2478,7 +2491,7 @@ function drawHungYear(b, seg, cx, band, fScale, focusAmt, near){
   const label = sentence(b.sign || b.y);   // the finale is hung as a word, not a number — and a word is not shouted
   ctx.save();
   ctx.textAlign = 'center';
-  const track = 13;                         // cut letters are set apart
+  const track = 100 * TRACK.plate;          // cut letters are set apart, but only by a plate's worth
   ctx.font = eraFont(100, '', seg.font);
   try { ctx.letterSpacing = `${track}px`; } catch(e){}
   const c0 = ctx.measureText(label).actualBoundingBoxAscent || 72;
@@ -2969,7 +2982,7 @@ function drawWelcomeTV(){
   // counter, and it is there from the very first frame
   ctx.textAlign = 'center';
   ctx.font = eraFont(15 * kk * SS);
-  try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
+  try { ctx.letterSpacing = `${15*TRACK.label*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(214,186,144,0.85)';
   ctx.fillText('Glidewell history tour \u2192', sx, footY - 9 * kk * SS);
   try { ctx.letterSpacing = '0px'; } catch(e){}
@@ -3404,7 +3417,7 @@ function drawOutro(){
      letter stuck on a beam. The closing line carries the ending by itself. */
   ctx.fillStyle = `rgba(${seg.ink},0.6)`;
   ctx.font = eraFont(56 * kw * SS, '', seg.font);
-  try { ctx.letterSpacing = `${6*kw*SS}px`; } catch(e){}
+  try { ctx.letterSpacing = `${56*TRACK.title*kw*SS}px`; } catch(e){}
   ctx.fillText('The best dentistry \u2014', cx, py(300, kw));
   ctx.fillText('made affordable', cx, py(372, kw));
   try { ctx.letterSpacing = '0px'; } catch(e){}
@@ -4627,7 +4640,7 @@ function drawRec23(t){
   ctx.save();
   ctx.textAlign = 'center';
   ctx.font = eraFont(58 * kk * SS, '700', SEGMENTS[3].font);
-  try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
+  try { ctx.letterSpacing = `${58*TRACK.title*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(32,42,54,0.96)';
   ctx.fillText('The crossover', cx, py(46, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
@@ -4810,7 +4823,7 @@ function drawRec18(t){
   ctx.save();
   ctx.textAlign = 'center';
   ctx.font = eraFont(58 * kk * SS, '700', SEGMENTS[3].font);
-  try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
+  try { ctx.letterSpacing = `${58*TRACK.title*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(32,42,54,0.96)';
   ctx.fillText('The first AI crown', cx, py(46, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
@@ -4907,7 +4920,7 @@ function drawAiCrownVitrine(mid, kk, t){
   ctx.save();
   ctx.textAlign = 'left';
   ctx.font = eraFont(11 * kk * SS, '700', SEGMENTS[3].font);
-  try { ctx.letterSpacing = `${1.6 * kk * SS}px`; } catch(e){}
+  try { ctx.letterSpacing = `${11*TRACK.label*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(198,228,255,0.92)';
   ctx.fillText('Crown design \u00b7 generative', nx0 + 26 * kk * SS, nTop + barH * 0.68);
   ctx.textAlign = 'right';
@@ -5026,7 +5039,7 @@ function drawAiCrownVitrine(mid, kk, t){
     const ry = shelfTop - 30 * kk * SS;
     ctx.save();
     ctx.font = eraFont(10 * kk * SS, '700', SEGMENTS[3].font);
-    try { ctx.letterSpacing = `${1.2 * kk * SS}px`; } catch(e){}
+    try { ctx.letterSpacing = `${10*TRACK.label*kk*SS}px`; } catch(e){}
     ctx.textAlign = 'left';
     const tick = (lab, ok, atX) => {
       ctx.fillStyle = ok ? 'rgba(120,235,160,0.92)' : `rgba(${V.rim},0.5)`;
@@ -5996,7 +6009,7 @@ function drawRec2Front(t){
     gs.clearRect(0, 0, ow2, oh2);
     gs.textAlign = 'center';
     gs.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
-    try { gs.letterSpacing = `${5*kk*SS}px`; } catch(e){}
+    try { gs.letterSpacing = `${20*TRACK.label*kk*SS}px`; } catch(e){}
     gs.fillStyle = `rgba(150,228,255,${(0.55 + 0.42 * lit).toFixed(3)})`;
     gs.fillText('Scanned \u00b7 designed \u00b7 milled', cx, oh2 * 0.72);
     ctx.save();
@@ -6173,7 +6186,7 @@ function drawRec2(t){
     ctx.save();
     ctx.textAlign = 'center';
     ctx.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
-    try { ctx.letterSpacing = `${5*kk*SS}px`; } catch(e){}
+    try { ctx.letterSpacing = `${20*TRACK.label*kk*SS}px`; } catch(e){}
     ctx.fillStyle = `rgba(70,110,135,${(0.75 * ease).toFixed(3)})`;
     ctx.fillText('Scanned \u00b7 designed \u00b7 milled', cx, py(730, kk));
     try { ctx.letterSpacing = '0px'; } catch(e){}
@@ -6267,7 +6280,7 @@ function drawRec2(t){
   // A revolution does not whisper. Seventy per cent bigger, bold, and dark
   // enough to hold its own against a wall of year numerals.
   ctx.font = eraFont(58 * kk * SS, '700', SEGMENTS[3].font);
-  try { ctx.letterSpacing = `${3.5*kk*SS}px`; } catch(e){}
+  try { ctx.letterSpacing = `${58*TRACK.title*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(32,42,54,0.96)';
   ctx.fillText('The digital revolution', cx, py(8, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
@@ -6846,7 +6859,7 @@ function drawMonitor(p, x, z, wWorld, t){
     ctx.save();
     ctx.textAlign = 'center';
     ctx.font = `600 ${Math.round(17*kk*SS)}px ${segL.font}`;
-    try { ctx.letterSpacing = `${4*kk*SS}px`; } catch(e){}
+    try { ctx.letterSpacing = `${17*TRACK.label*kk*SS}px`; } catch(e){}
     ctx.fillStyle = `rgba(${segL.ink},0.6)`;
     ctx.fillText(p.label, sx, syFoot + 34*kk*SS);
     try { ctx.letterSpacing = '0px'; } catch(e){}
@@ -9773,7 +9786,7 @@ function drawInspect(){
     if (I.link){
       const label = 'Open the Chairside archive  \u2192';
       ctx.font = eraFont(22*SS, '', seg.font);
-      try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
+      try { ctx.letterSpacing = `${22*TRACK.label*SS}px`; } catch(err){}
       const wL = ctx.measureText(label).width + 56*SS;
       const yL = ty + th + 86*SS;
       const aL = (e-0.6)/0.4;
@@ -10275,7 +10288,7 @@ function drawAlbumView(){
   ctx.restore();
   ctx.textAlign = 'center';
   ctx.font = eraFont(20 * SS, '', SEGMENTS[0].font);
-  try { ctx.letterSpacing = `${5 * SS}px`; } catch(err){}
+  try { ctx.letterSpacing = `${20*TRACK.plate*SS}px`; } catch(err){}
   ctx.fillStyle = 'rgba(236,214,172,0.85)';
   ctx.fillText(b.album.title, W/2, y0 - 26 * SS);
   ctx.save();
@@ -10491,7 +10504,7 @@ function drawStudy(){
      carries a video rail the title used to run straight under the previews */
   let tSz = 38;
   ctx.font = K.font(tSz);
-  try { ctx.letterSpacing = `${7*SS}px`; } catch(err){}
+  try { ctx.letterSpacing = `${tSz*TRACK.title*SS}px`; } catch(err){}
   const studyTitle = sentence(b.t);
   while (ctx.measureText(studyTitle).width > textW && tSz > 20){ tSz -= 1; ctx.font = K.font(tSz); }
   ctx.fillStyle = `rgba(${K.ink},0.92)`;
@@ -10521,7 +10534,7 @@ function drawStudy(){
       const fx = left + (textW - fw) / 2;
       S.diss = Math.max(0, Math.min(1, (S.diss || 0) + (S.dissing ? (state.dt || 0.016) * 0.7 : 0)));
       ctx.font = K.font(17, '700');
-      try { ctx.letterSpacing = `${3.2*SS}px`; } catch(err){}
+      try { ctx.letterSpacing = `${17*TRACK.label*SS}px`; } catch(err){}
       ctx.fillStyle = `rgba(${K.dim},0.95)`;
       if (y > topClip && y < botClip) ctx.fillText(inl.box.head, left, y);
       try { ctx.letterSpacing = '0px'; } catch(err){}
@@ -10552,7 +10565,7 @@ function drawStudy(){
             ctx.globalAlpha = a * Math.min(1, (S.diss - 0.55) / 0.35);
             ctx.textAlign = 'center';
             ctx.font = K.font(19, '700');
-            try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
+            try { ctx.letterSpacing = `${19*TRACK.label*SS}px`; } catch(err){}
             ctx.fillStyle = 'rgba(150,215,255,0.95)';
             ctx.fillText('Scanned \u00b7 one file \u00b7 no model', fx + fw / 2, y + fh * 0.30);
             try { ctx.letterSpacing = '0px'; } catch(err){}
@@ -10596,7 +10609,7 @@ function drawStudy(){
       if (para.startsWith('## ')){
         y += 26 * SS;
         ctx.font = K.font(19, '700');
-        try { ctx.letterSpacing = `${3.2*SS}px`; } catch(err){}
+        try { ctx.letterSpacing = `${19*TRACK.label*SS}px`; } catch(err){}
         ctx.fillStyle = `rgba(${K.ink},0.95)`;
         if (y > topClip && y < botClip) ctx.fillText(sentence(para.slice(3)), left, y);
         try { ctx.letterSpacing = '0px'; } catch(err){}
@@ -10645,7 +10658,7 @@ function drawStudy(){
     ctx.fillRect(left, y, colW, 1.5 * SS);
     y += 34 * SS;
     ctx.font = K.font(17, '700');
-    try { ctx.letterSpacing = `${3.2*SS}px`; } catch(err){}
+    try { ctx.letterSpacing = `${17*TRACK.label*SS}px`; } catch(err){}
     ctx.fillStyle = `rgba(${K.dim},0.95)`;
     if (y > topClip && y < botClip) ctx.fillText(media.length > 1 ? 'The voices' : 'Watch', left, y);
     try { ctx.letterSpacing = '0px'; } catch(err){}
@@ -10677,7 +10690,7 @@ function drawStudy(){
       if (L.head){
         if (afterRow) y += 34 * SS;          // a group heading needs air over it
         ctx.font = K.font(16, '700');
-        try { ctx.letterSpacing = `${3.4*SS}px`; } catch(err){}
+        try { ctx.letterSpacing = `${16*TRACK.label*SS}px`; } catch(err){}
         ctx.fillStyle = `rgba(${K.dim},0.95)`;
         if (y > topClip && y < botClip) ctx.fillText(L.head, left, y);
         try { ctx.letterSpacing = '0px'; } catch(err){}
@@ -11076,7 +11089,7 @@ function drawPerson(){
 
   // the way back is always the same way: to the wall of faces
   ctx.font = K.font(17);
-  try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
+  try { ctx.letterSpacing = `${17*TRACK.label*SS}px`; } catch(err){}
   ctx.fillStyle = `rgba(${K.red},0.92)`;
   const backTx = '\u2190 All voices';
   if (y - 70*SS > topClip){
@@ -11093,7 +11106,7 @@ function drawPerson(){
     ctx.fillStyle = `rgba(${K.ink},0.98)`;
     ctx.fillText(P.name, left, y); y += 40 * SS;
     ctx.font = K.font(21);
-    try { ctx.letterSpacing = `${4*SS}px`; } catch(err){}
+    try { ctx.letterSpacing = `${21*TRACK.label*SS}px`; } catch(err){}
     ctx.fillStyle = `rgba(${K.dim},0.95)`;
     let roleSz = 21, roleTx = roleShort(P.role);
     while (ctx.measureText(roleTx).width > textW && roleSz > 13){ roleSz -= 1; ctx.font = K.font(roleSz); }
@@ -11252,7 +11265,7 @@ function drawPerson(){
           ctx.closePath(); ctx.fill();
         } else if (live){   // the badge belongs to the player, not to the rail
           ctx.font = K.font(15);
-          try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
+          try { ctx.letterSpacing = `${15*TRACK.label*SS}px`; } catch(err){}
           ctx.fillStyle = `rgba(${K.red},1)`;
           ctx.textAlign = 'center';
           ctx.fillText('Now playing', mx + tw/2, ty + th/2 - 2*SS);
@@ -11360,7 +11373,7 @@ function drawClip(){
   ctx.textAlign = 'left';
   ctx.font = `${Math.round(21*SS)}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
   ctx.fillStyle = 'rgba(238,242,246,0.95)';
-  try { ctx.letterSpacing = `${2*SS}px`; } catch(err){}
+  try { ctx.letterSpacing = `${21*TRACK.label*SS}px`; } catch(err){}
   ctx.fillText(C.name, x0, y0 + vh + 54*SS);
   try { ctx.letterSpacing = '0px'; } catch(err){}
   ctx.font = `italic ${Math.round(18*SS)}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
@@ -11392,7 +11405,7 @@ function drawAttractHint(t){
   ctx.save();
   ctx.textAlign = 'center';
   ctx.font = eraFont(24*SS);
-  try { ctx.letterSpacing = `${5*SS}px`; } catch(e){}
+  try { ctx.letterSpacing = `${24*TRACK.label*SS}px`; } catch(e){}
   // warm ink only in the craft era; translucent white once 1979 is crossed
   ctx.fillStyle = cam.x < REC_L ? `rgba(225,198,155,${a})` : `rgba(255,255,255,${(a*0.85).toFixed(3)})`;
   // the rule owns the foot of the frame; the invitation stands above it
