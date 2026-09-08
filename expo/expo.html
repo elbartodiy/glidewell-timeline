@@ -114,7 +114,7 @@ const BEATS = [
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
      The album belongs to the walk up to 1970, not to the moment of it. */
-  album:{dx:-1420, lz:85, w:300, edgeOK:true, title:'THE FAMILY ALBUM', cover:'ph_album',
+  album:{dx:-1345, lz:85, w:300, edgeOK:true, title:'THE FAMILY ALBUM', cover:'ph_album',   // a quarter of its own width in from the bay's edge
           photos:[['father42','jim15'],['jim18','jim1970']]}},
 
   {x:3450, y:'1970s', t:'PFM ERA', plaque:true,
@@ -1603,6 +1603,28 @@ function glowSprite(col){
 /* THE JOIN. An object without a shadow is not on a surface, it is in front of
    one, and no amount of detail in the object itself will fix that. One
    implementation, used by everything that stands on something. */
+/* THE SHADOW OF A THING THAT STANDS ON THE FLOOR. Two earlier tries were wrong
+   in the same way: a shape with EDGES. First a round pool under a wide cabinet,
+   then a banded rectangle with a hard contact bar — both read as a mat painted
+   on the boards, because an edge is the one thing a shadow under diffuse light
+   does not have. What the ceiling actually puts down is a soft, very flat
+   smear: darkest right under the mass, fading in every direction with no
+   border anywhere. Built as a stack of stadium shapes — no corners, each larger
+   and fainter than the last — which is a blur done in nine fills. Everything
+   standing on the floor uses this. */
+function softFootShadow(cx, cy, halfW, halfH, alpha){
+  const L = 9;
+  for (let i = L - 1; i >= 0; i--){
+    const t = i / (L - 1);
+    const hw = halfW * (1 + 0.55 * t), hh = Math.max(0.8, halfH * (1 + 1.15 * t));
+    const al = alpha * Math.pow(1 - t * 0.92, 2.0) * 0.30;
+    ctx.fillStyle = `rgba(6,4,2,${al.toFixed(4)})`;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(cx - hw, cy - hh, hw * 2, hh * 2, Math.min(hw, hh));
+    else ctx.ellipse(cx, cy, hw, hh, 0, 0, 7);
+    ctx.fill();
+  }
+}
 function contactShadow(sx, syFoot, wide, strength){
   const r = Math.max(2, wide * 0.60);
   ctx.save();
@@ -2204,10 +2226,10 @@ function drawBeatText(b, focusAmt){
       if (near > 0.02 && !hungBand(b.x)){
         const kW = k(wz - 8), cd0 = b._capDrop || 0;
         const light = seg.shade != null && seg.shade < 0.7;      // the white room takes less
-        const aS = (light ? 0.13 : 0.34) * near;
+        const aS = (light ? 0.16 : 0.42) * near;
         const spread = 1 + 0.05 * near;                          // it grows a little as the object leaves
         const blur = (7 + 26 * near) * kW * SS;
-        const dy = (5 + 16 * near) * kW * SS;                    // the lamp is above: the shadow drops
+        const dy = (2 + 6 * near) * kW * SS;                     // the lamp is nearly overhead: the shadow sits close under the letters
         const OFF = 6000;                                        // paint the glyph off-frame, keep its shadow
         ctx.save();
         ctx.textAlign = 'center';
@@ -3622,7 +3644,12 @@ function projMachine(p, t, lamp, mxp, myp, bw, bh, kp, ph93){
   const u = kp * SS;                       // one world unit at the machine's depth
   if (ph93){
     // the photographed machine: its own stand, its own shadow, its own lamp
-    contactShadow(mxp, ph93.foot, ph93.w * 0.42, 0.36);
+    /* a steel base plate on four feet: the same soft smear, at the plate's own
+       width, with the near feet showing where it really touches */
+    softFootShadow(mxp, ph93.foot + ph93.h * 0.005, ph93.w * 0.38, ph93.h * 0.008, 0.72);
+    softFootShadow(mxp, ph93.foot, ph93.w * 0.26, ph93.h * 0.004, 0.62);
+    for (const f of [-0.30, 0.30])
+      softFootShadow(mxp + ph93.w * f, ph93.foot, ph93.w * 0.032, ph93.h * 0.0025, 0.5);
     ctx.drawImage(spriteMip(ph93.sp, ph93.w, ph93.h), ph93.x0, ph93.y0, ph93.w, ph93.h);
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -4194,32 +4221,11 @@ function drawTallUnits(){
          case meets the floor; the dark void under the carcass, which shows
          between the legs and is the darkest thing in the picture; and two
          small pools where the feet actually touch. */
-      const halfW = sw2 * 0.52;
-      const throwD = sh2 * 0.105;                 // how far forward it reaches
-      const NB = 16;
-      for (let i = 0; i < NB; i++){
-        const t0 = i / NB, t1 = (i + 1) / NB;
-        const y0 = foot + throwD * t0, y1 = foot + throwD * t1;
-        const hw = halfW * (1 + 0.12 * t0);
-        const al = 0.42 * Math.pow(1 - t0, 1.8);
-        const g = ctx.createLinearGradient(sx - hw, 0, sx + hw, 0);
-        g.addColorStop(0, 'rgba(0,0,0,0)');
-        g.addColorStop(0.09, `rgba(0,0,0,${al.toFixed(3)})`);
-        g.addColorStop(0.91, `rgba(0,0,0,${al.toFixed(3)})`);
-        g.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(sx - hw, y0, hw * 2, (y1 - y0) + 1);
-      }
-      // the contact line itself — thin, and the darkest part of the floor
-      {
-        const g = ctx.createLinearGradient(sx - halfW, 0, sx + halfW, 0);
-        g.addColorStop(0, 'rgba(0,0,0,0)');
-        g.addColorStop(0.07, 'rgba(0,0,0,0.55)');
-        g.addColorStop(0.93, 'rgba(0,0,0,0.55)');
-        g.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(sx - halfW, foot - 1.5 * SS, halfW * 2, Math.max(1.5, 3 * SS));
-      }
+      /* the case is in the air on four little feet, so the floor gets a wide
+         soft smear under the whole piece and a tighter, darker one under the
+         carcass, where no light reaches at all */
+      softFootShadow(sx, foot + sh2 * 0.014, sw2 * 0.44, sh2 * 0.012, 0.55);
+      softFootShadow(sx, foot + sh2 * 0.004, sw2 * 0.33, sh2 * 0.007, 0.60);
       /* the void under the case: painted BEFORE the photograph, so it shows
          only through the gap between the legs, which is where it belongs */
       {
@@ -4229,17 +4235,8 @@ function drawTallUnits(){
         ctx.fillStyle = g;
         ctx.fillRect(sx - sw2 * 0.46, foot - vh, sw2 * 0.92, vh);
       }
-      for (const f of [-0.47, 0.47]){
-        const fx2 = sx + sw2 * f, fr = Math.max(2, sw2 * 0.055);
-        ctx.save();
-        ctx.translate(fx2, foot); ctx.scale(1, 0.30); ctx.translate(-fx2, -foot);
-        const fg = ctx.createRadialGradient(fx2, foot, 0, fx2, foot, fr);
-        fg.addColorStop(0, 'rgba(0,0,0,0.52)');
-        fg.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = fg;
-        ctx.beginPath(); ctx.arc(fx2, foot, fr, 0, 7); ctx.fill();
-        ctx.restore();
-      }
+      for (const f of [-0.47, 0.47])
+        softFootShadow(sx + sw2 * f, foot, sw2 * 0.028, sh2 * 0.005, 0.60);
       ctx.drawImage(im, sx - sw2 / 2, foot - sh2, sw2, sh2);
       continue;
     }
