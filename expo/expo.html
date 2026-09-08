@@ -997,8 +997,13 @@ function attachMouseDriver(el){
       const dx = e.clientX - state.spinDrag.lastX, dy = e.clientY - state.spinDrag.lastY;
       state.spinDrag.lastX = e.clientX; state.spinDrag.lastY = e.clientY;
       state.spinDrag.moved += Math.abs(dx) + Math.abs(dy);
-      crownTurn(dx * 0.012, -dy * 0.012);
-      CROWN3D.wy = dx * 0.012 * 40; CROWN3D.wx = -dy * 0.012 * 40;   // it keeps a little of your speed when you let go
+      /* MIRRORED, both axes. Turning it the way the hand moves reads as pushing
+         the FRONT face of the crown around; what the hand expects is a ball it
+         has taken hold of at the near side — drag left and the near surface
+         goes left, so the object turns the other way. Eldar: "не так как
+         нативно хочется". */
+      crownTurn(-dx * 0.012, dy * 0.012);
+      CROWN3D.wy = -dx * 0.012 * 40; CROWN3D.wx = dy * 0.012 * 40;   // it keeps a little of your speed when you let go
       return;
     }
     if (!down) return;
@@ -2204,8 +2209,17 @@ function drawBeatText(b, focusAmt){
     }
     if (state.focusBeat >= 0 && BEATS[state.focusBeat] !== b)
       flyDim = Math.min(flyDim, 0.3);   // a focused exhibit owns the frame
+    /* A YEAR ON A BAY LIVES ON THE BAY'S PLANE. pinZ was read in the flying
+       branch only, so 2017, 2022 and 2023 — none of which fly — were drawn on
+       the era's shared type plane at z 672 while their picture and its columns
+       stand at 992: a hundred and twenty units of parallax, and the numeral
+       slid out from between its own columns as you passed, left from one side
+       and right from the other. On the bay's plane it cannot move against the
+       picture at all. Only the x is taken from that plane, exactly as the
+       flying years do it: the type keeps the era's own size and height, it just
+       stops sliding sideways against the picture it belongs to. */
     const kk = k(wz - 8);
-    const cx = px(b.x, kk);
+    const cx = px(b.x, k(b.pinZ || (wz - 8)));
     if (cx > -900 && cx < W + 900){
       ctx.globalAlpha = flyDim;
       ctx.save();
@@ -2557,8 +2571,10 @@ function updateFilm(){
      rule: when a page opens, the world behind it fades down and stops, and
      comes back at its own timecode when the page closes. The fade below is
      the same one the film has always used; only the trigger widened. */
+  /* the open case is NOT a page: the trays dissolving into digits is a thing
+     happening IN the hall, and the film behind it goes on running (Eldar) */
   const busy = state.clip || state.person || state.study || state.people ||
-        state.inspect || state.openBox || state.docOpen;
+        state.inspect || state.docOpen;
   const engaged = !v.muted;                 // sound on = a real showing
   const wanted = engaged && !T.userPaused && !busy;
   // the poster holds its frame: a not-yet-started set snaps back to the
@@ -4643,13 +4659,60 @@ function drawAiCrownVitrine(mid, kk, t){
   const near = ph;
   const r = 10 * kk * SS;
   const niche = () => { ctx.beginPath(); ctx.roundRect(nx0, nTop, nw, nh, r); };
-  // the recess: a shade deeper than the panel, lit from its own edges
+  /* IT IS A SCREEN. This was a white lit niche with a pale crown assembling in
+     it — and against a white wall, in a white room, it read as nothing at all:
+     Eldar could not tell what he was looking at. What 2018 actually was is a
+     piece of software proposing a crown, so the niche now holds a DISPLAY: a
+     dark viewport with a title bar, a CAD grid, corner reticles, a scan line
+     and a readout, and the crown is built inside it in the machine's own cold
+     blue. The physical piece keeps its lit shelf under the screen. */
+  const shelfTop = py(V.bot - 168, kk);
+  const scrH = shelfTop - nTop;
+  const screenPath = () => { ctx.beginPath(); ctx.roundRect(nx0, nTop, nw, scrH, r); };
+  // the recess behind it all — the shelf shows below the screen
   const fg = ctx.createLinearGradient(0, nTop, 0, nBot);
   fg.addColorStop(0, '#e9edf1'); fg.addColorStop(0.5, '#f4f7f9'); fg.addColorStop(1, '#d9dfe5');
   niche(); ctx.fillStyle = fg; ctx.fill();
   ctx.save();
+  screenPath(); ctx.clip();
+  const bg = ctx.createLinearGradient(0, nTop, 0, shelfTop);
+  bg.addColorStop(0, '#0a1119'); bg.addColorStop(0.55, '#0d1822'); bg.addColorStop(1, '#070c12');
+  ctx.fillStyle = bg; ctx.fillRect(nx0, nTop, nw, scrH);
+  // the CAD grid it works over
+  ctx.strokeStyle = `rgba(${V.rim},0.075)`; ctx.lineWidth = Math.max(0.6, 0.9 * kk * SS);
+  const gStep = 34 * kk * SS;
+  for (let gx = nx0 + gStep; gx < nx0 + nw; gx += gStep){
+    ctx.beginPath(); ctx.moveTo(gx, nTop); ctx.lineTo(gx, shelfTop); ctx.stroke();
+  }
+  for (let gy = nTop + gStep; gy < shelfTop; gy += gStep){
+    ctx.beginPath(); ctx.moveTo(nx0, gy); ctx.lineTo(nx0 + nw, gy); ctx.stroke();
+  }
+  // the title bar
+  const barH = 26 * kk * SS;
+  ctx.fillStyle = 'rgba(140,200,255,0.09)';
+  ctx.fillRect(nx0, nTop, nw, barH);
+  ctx.fillStyle = `rgba(${V.rim},0.30)`;
+  ctx.fillRect(nx0, nTop + barH, nw, Math.max(0.7, 1 * kk * SS));
+  ctx.save();
+  ctx.textAlign = 'left';
+  ctx.font = eraFont(11 * kk * SS, '700', SEGMENTS[3].font);
+  try { ctx.letterSpacing = `${1.6 * kk * SS}px`; } catch(e){}
+  ctx.fillStyle = 'rgba(198,228,255,0.92)';
+  ctx.fillText('CROWN DESIGN \u00b7 GENERATIVE', nx0 + 26 * kk * SS, nTop + barH * 0.68);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(150,190,225,0.7)';
+  ctx.fillText(((ph < 0.98 ? 'PROPOSING' : 'ACCEPTED') + ' \u00b7 1,500 CASES'), nx0 + nw - 14 * kk * SS, nTop + barH * 0.68);
+  try { ctx.letterSpacing = '0px'; } catch(e){}
+  ctx.restore();
+  // the live dot
+  const pulse = 0.45 + 0.45 * Math.sin(t * 3.1);
+  ctx.fillStyle = ph < 0.98 ? `rgba(255,110,90,${pulse.toFixed(2)})` : `rgba(120,235,160,${pulse.toFixed(2)})`;
+  ctx.beginPath(); ctx.arc(nx0 + 15 * kk * SS, nTop + barH * 0.5, 3.4 * kk * SS, 0, 7); ctx.fill();
+  ctx.restore();
+  // the bezel: a machined frame with the one cool line inside it
+  ctx.save();
   ctx.shadowColor = `rgba(${V.rim},0.85)`; ctx.shadowBlur = (14 + 10 * near) * SS;
-  niche(); ctx.strokeStyle = `rgba(${V.rim},${(V.rimA + 0.25 * near).toFixed(3)})`;
+  screenPath(); ctx.strokeStyle = `rgba(${V.rim},${(V.rimA + 0.25 * near).toFixed(3)})`;
   ctx.lineWidth = (1.8 + 0.8 * near) * SS; ctx.stroke();
   ctx.restore();
   niche(); ctx.strokeStyle = 'rgba(235,247,255,0.9)'; ctx.lineWidth = 1 * SS; ctx.stroke();
@@ -4667,7 +4730,7 @@ function drawAiCrownVitrine(mid, kk, t){
   const revealY = cBot - solid * ch * 1.04;  // the edge, bottom to top
   const rock = done * 0.17 * Math.sin(t * 0.55);   // at most ~10°, and only once it is whole
   ctx.save();
-  niche(); ctx.clip();
+  screenPath(); ctx.clip();
   // the digital states live ABOVE the edge
   if (ph > 0.01 && (1 - done) > 0.02){
     ctx.save();
@@ -4717,7 +4780,73 @@ function drawAiCrownVitrine(mid, kk, t){
       ctx.fillRect(ccx - cw * 0.7, revealY - 0.8 * SS, cw * 1.4, 1.6 * SS);
     }
   }
-  if (done > 0.01) drawGlow(V.rim, ccx, ccy, cw * 0.9, 0.10 * done);
+  if (done > 0.01) drawGlow(V.rim, ccx, ccy, cw * 0.9, 0.14 * done);
+  /* ---- the instrument reading of it: reticle, scan line, readout ---- */
+  {
+    // corner brackets around the case
+    const bx0 = ccx - cw * 0.68, bx1 = ccx + cw * 0.68;
+    const by0 = ccy - ch * 0.72, by1 = ccy + ch * 0.72;
+    const L = 16 * kk * SS;
+    ctx.strokeStyle = `rgba(${V.rim},${(0.30 + 0.35 * ph).toFixed(2)})`;
+    ctx.lineWidth = Math.max(1, 1.4 * kk * SS);
+    for (const [qx, qy, sx2, sy2] of [[bx0, by0, 1, 1], [bx1, by0, -1, 1], [bx0, by1, 1, -1], [bx1, by1, -1, -1]]){
+      ctx.beginPath();
+      ctx.moveTo(qx, qy + sy2 * L); ctx.lineTo(qx, qy); ctx.lineTo(qx + sx2 * L, qy);
+      ctx.stroke();
+    }
+    // the scan: one line crossing the case while the design is being made
+    if (ph > 0.02 && ph < 0.99){
+      const u = (t * 0.34) % 1;
+      const sy3 = nTop + barH + u * (shelfTop - nTop - barH);
+      const sg2 = ctx.createLinearGradient(nx0, 0, nx0 + nw, 0);
+      sg2.addColorStop(0, `rgba(${V.rim},0)`);
+      sg2.addColorStop(0.5, `rgba(${V.rim},${(0.55 * (1 - done)).toFixed(2)})`);
+      sg2.addColorStop(1, `rgba(${V.rim},0)`);
+      ctx.fillStyle = sg2;
+      ctx.fillRect(nx0, sy3 - 0.8 * SS, nw, Math.max(1.2, 1.6 * kk * SS));
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const gg2 = ctx.createLinearGradient(0, sy3 - 16 * kk * SS, 0, sy3 + 16 * kk * SS);
+      gg2.addColorStop(0, `rgba(${V.rim},0)`); gg2.addColorStop(0.5, `rgba(${V.rim},0.10)`); gg2.addColorStop(1, `rgba(${V.rim},0)`);
+      ctx.fillStyle = gg2; ctx.fillRect(nx0, sy3 - 16 * kk * SS, nw, 32 * kk * SS);
+      ctx.restore();
+    }
+    // the readout along the foot of the screen
+    const ry = shelfTop - 30 * kk * SS;
+    ctx.save();
+    ctx.font = eraFont(10 * kk * SS, '700', SEGMENTS[3].font);
+    try { ctx.letterSpacing = `${1.2 * kk * SS}px`; } catch(e){}
+    ctx.textAlign = 'left';
+    const tick = (lab, ok, atX) => {
+      ctx.fillStyle = ok ? 'rgba(120,235,160,0.92)' : `rgba(${V.rim},0.5)`;
+      ctx.fillText(ok ? '\u2713' : '\u00b7', atX, ry);
+      ctx.fillStyle = ok ? 'rgba(196,226,248,0.86)' : 'rgba(150,180,205,0.55)';
+      ctx.fillText(lab, atX + 12 * kk * SS, ry);
+    };
+    tick('MARGIN', ph > 0.35, nx0 + 22 * kk * SS);
+    tick('CONTACTS', ph > 0.60, nx0 + 108 * kk * SS);
+    tick('OCCLUSION', ph > 0.82, nx0 + 208 * kk * SS);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(196,226,248,0.86)';
+    ctx.fillText((90 + 8.4 * Math.min(1, ph * 1.1)).toFixed(1) + '%', nx0 + nw - 22 * kk * SS, ry);
+    try { ctx.letterSpacing = '0px'; } catch(e){}
+    ctx.restore();
+    // the bar it fills as it decides
+    const pbW = nw - 44 * kk * SS, pbY = ry + 10 * kk * SS;
+    ctx.fillStyle = 'rgba(140,200,255,0.14)';
+    ctx.fillRect(nx0 + 22 * kk * SS, pbY, pbW, Math.max(1.4, 2.4 * kk * SS));
+    ctx.fillStyle = `rgba(${V.rim},0.85)`;
+    ctx.fillRect(nx0 + 22 * kk * SS, pbY, pbW * Math.min(1, ph), Math.max(1.4, 2.4 * kk * SS));
+    // the glass of the screen: one diagonal sheen, nothing more
+    const sheen = ctx.createLinearGradient(nx0, nTop, nx0 + nw * 0.8, shelfTop);
+    sheen.addColorStop(0, 'rgba(255,255,255,0.06)');
+    sheen.addColorStop(0.35, 'rgba(255,255,255,0.015)');
+    sheen.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = sheen; ctx.fillRect(nx0, nTop, nw, scrH);
+  }
+  ctx.restore();          // the screen's clip
+  ctx.save();
+  niche(); ctx.clip();
   // ---- the physical piece: a small crown on a low plinth, inside glass ----
   {
     const sw = V.smallW * kk * SS, sh = sw * sp.h / sp.w;
@@ -4860,7 +4989,7 @@ function drawPendant(t){
   /* the counter's end is drawn flat, at its front edge's screen x for every
      depth — so a thing at z 400 must stand well inside the span, or from the
      right side of the aisle it shows in the gap past the end */
-  PENDANT_X = FACT_X - 950;                 // inside the left counter's run (it ends at FACT_X - 560)
+  PENDANT_X = FACT_X - 625;                 // half way from the 2018 screen to the first cell (Eldar), still inside the left counter's run
   if (Math.abs(cam.x - PENDANT_X) > 2600) return;
   /* BEHIND THE COUNTER. It stood on the near plane for a day and Eldar sent it
      back — "за стол": it stands on the floor BEHIND the left counter's back
@@ -7937,14 +8066,14 @@ function crownMesh(){
   const prof = [];
   for (let i = 0; i < P0.length - 1; i++){
     const a = P0[Math.max(0, i-1)], b = P0[i], c = P0[i+1], d = P0[Math.min(P0.length-1, i+2)];
-    const steps = i === 0 ? 2 : 3;
+    const steps = i === 0 ? 3 : 5;   // a denser profile: flat shading reads smooth when its steps are small
     for (let sIdx = 0; sIdx < steps; sIdx++){
       const t = sIdx / steps;
       prof.push([Math.max(0, cr(a[0], b[0], c[0], d[0], t)), cr(a[1], b[1], c[1], d[1], t)]);
     }
   }
   prof.push([0, 38]);
-  const M = 72, rings = [];
+  const M = 96, rings = [];
   for (let m = 0; m < M; m++){
     const a = m / M * Math.PI * 2;
     const sq = 1 / Math.pow(Math.pow(Math.abs(Math.cos(a)), 3) + Math.pow(Math.abs(Math.sin(a)), 3), 1/3);
