@@ -125,13 +125,13 @@ const BEATS = [
    album:{dx:-160, lz:85, w:310, title:'THE PFM CRAFT',
           photos:[['porc','artic'],['dietrim','wax']]}},
 
-  {x:4400, y:'1973', t:'SECOND LAB', yLift:95,
+  {x:4400, y:'1973', t:'SECOND LAB', yLift:95, fly:true, flyZ:380, flyLift:52,   // the seventies all come forward, the way 1970 does
    th:'Growth by addition — before growth by system.',
    d:'Jim opens a second lab in El Toro — the one-man bench starts to multiply.',
    wall:[{img:'rose', w:300, dx:-560, cy:360, rot:0.4}],
    table:[], st:[{img:'lab4ext', w:250, dx:0, lz:80, cap:'El Toro — the second lab'}]},
 
-  {x:5400, y:'1976', t:'DIRECT-MAIL', yLift:95,   // on 1973's line — Eldar: the years after 1973 hung low
+  {x:5400, y:'1976', t:'DIRECT-MAIL', yLift:95, fly:true, flyZ:380, flyLift:52,   // on 1973's line — Eldar: the years after 1973 hung low
    th:'Reach is the lever — the flywheel’s first turn.',
    d:'The first direct-mail campaign rewrites the model: reach dentists anywhere, not just nearby.',
    wall:[{img:'jim76', w:360, dx:-430, cy:380, rot:0.8},
@@ -139,7 +139,7 @@ const BEATS = [
    table:[]},
 
   /* ---- ERA 2 · the mail-order workshop, 1979–1989 ---- */
-  {x:6900, y:'1979', t:'NINE LABS', ink:'64,54,40', yLift:95,
+  {x:6900, y:'1979', t:'NINE LABS', ink:'64,54,40', yLift:95, fly:true, flyZ:420, flyLift:52,
    th:'',
    d:'Jim owns and runs nine labs across Southern California.',
    wall:[], table:[]},
@@ -2172,10 +2172,14 @@ const TITLE_TRACK = 5.5;
    (The soft pool the flying years cast on the plaster is a different thing and
    stays where it is.) Eldar's note. */
 function letterRelief(a){
+  /* ONE PIXEL. Not one reference pixel scaled by SS, not a blur of one pixel —
+     one device pixel of hard shadow, down and a hair to the left, so the letter
+     has an edge and nothing more. Anything wider reads as a drop shadow and
+     anything blurred reads as a second, rounder letter behind the first. */
   ctx.shadowColor = `rgba(0,0,0,${(a == null ? 0.45 : a).toFixed(2)})`;
   ctx.shadowBlur = 0;
-  ctx.shadowOffsetX = -Math.max(1, 1 * SS);
-  ctx.shadowOffsetY = Math.max(1, 1.4 * SS);
+  ctx.shadowOffsetX = -1;
+  ctx.shadowOffsetY = 1;
 }
 function noShadow(){
   ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
@@ -2262,9 +2266,9 @@ function drawBeatText(b, focusAmt){
       if (near > 0.02 && !hungBand(b.x)){
         const kW = k(wz - 8), cd0 = b._capDrop || 0;
         const light = seg.shade != null && seg.shade < 0.7;      // the white room takes less
-        const aS = (light ? 0.16 : 0.42) * near;
+        const aS = (light ? 0.20 : 0.50) * near;
         const spread = 1 + 0.05 * near;                          // it grows a little as the object leaves
-        const blur = (7 + 26 * near) * kW * SS;
+        const blur = (20 + 52 * near) * kW * SS;   // a shadow this far from its object has no legible edge left
         const dy = (2 + 6 * near) * kW * SS;                     // the lamp is nearly overhead: the shadow sits close under the letters
         const OFF = 6000;                                        // paint the glyph off-frame, keep its shadow
         ctx.save();
@@ -2301,9 +2305,8 @@ function drawBeatText(b, focusAmt){
         ctx.font = eraFont(170 * ts * fScale * kk * SS, '', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
         const yBase9 = mixN(py(140 - lift, kk), H*0.16, focusAmt);
-        ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 4*SS;
+        letterRelief(0.55);                 // the cut edge, and nothing else on the glyph
         ctx.fillText(b.y, cx, yBase9);
-        letterRelief(0.5); ctx.fillText(b.y, cx, yBase9);   // the cut edge
         noShadow();
       }
       pushHit(cx - 340*kk*SS, hitTopF, 680*kk*SS, py(330, kk) - hitTopF,
@@ -2313,7 +2316,7 @@ function drawBeatText(b, focusAmt){
       try { ctx.letterSpacing = `${TITLE_TRACK*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
       const LB = b.tOnBay && BAY_LABELS[b.y];
-      letterRelief(0.40);
+      letterRelief(0.55);
       if (LB) ctx.fillText(b.t, LB.x, LB.y + 46 * 0.36 * kk * SS);
       else if (!b.tHide) ctx.fillText(b.t, cx, mixN(py(tY + cd - lift, kk), H*0.16 + 62*SS, focusAmt));
       noShadow();
@@ -2321,7 +2324,7 @@ function drawBeatText(b, focusAmt){
       if (near > 0.25 && b.th && !b.thBelow && fFade > 0.05){
         ctx.font = eraFont(30 * (seg.tScale || 1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${((near-0.25)/0.75 * 0.72 * fFade).toFixed(3)})`;
-        letterRelief(0.32);
+        letterRelief(0.50);
         drawLines(b._th, cx, py(tY + 54 + cd - lift, kk), 38 * kk * SS);
         noShadow();
       }
@@ -2373,9 +2376,8 @@ function drawBeatText(b, focusAmt){
           ctx.fillStyle = `rgba(${seg.ink},${0.5 + 0.45*near})`;
           // a numeral can be lifted clear of whatever stands under it on the panel
           const yBase8 = mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt);
-          ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 3*SS;
+          letterRelief(0.5);                // the cut edge, and nothing else on the glyph
           ctx.fillText(b.y, cx, yBase8);
-          letterRelief(0.45); ctx.fillText(b.y, cx, yBase8);   // the cut edge
           noShadow();
         }
       }
@@ -2390,7 +2392,7 @@ function drawBeatText(b, focusAmt){
       const LB = b.tOnBay && BAY_LABELS[b.y];
       /* a bay whose picture already carries the name does not get it printed on
          the wall as well (2017: the render letters its own plinth) */
-      letterRelief(0.40);
+      letterRelief(0.55);
       if (LB) ctx.fillText(b.t, LB.x, LB.y + 46 * sc * 0.36 * kk * SS);
       else if (!b.tHide) ctx.fillText(b.t, cx, mixN(py((b.minor ? tY + 4 : tY) + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
       noShadow();
@@ -2399,7 +2401,7 @@ function drawBeatText(b, focusAmt){
         ctx.font = eraFont(30 * (b.minor?0.8:1) * (seg.tScale||1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
         if (fFade > 0.05 && !b.thBelow){
-          letterRelief(0.32);
+          letterRelief(0.50);
           drawLines(b._th, cx, py((b.minor ? tY + 46 : tY + 54) + cd - (b.yLift || 0), kk), 38 * (b.minor?0.8:1) * kk * SS);
           noShadow();
         }
