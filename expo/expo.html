@@ -9849,6 +9849,70 @@ function openStudy(i){
   }
 }
 let FROST = null;
+/* the addresses the company keeps today, hung on the page whose subject is
+   the company going onto the web. Keyed by the beat's title. */
+const STUDY_LINKS = {
+  'WEB \u00b7 CLINICAL VOICE': [
+    {label: 'glidewelldental.com', url: 'https://glidewelldental.com/', icon: 'globe'},
+    {label: 'Glidewell Direct',    url: 'https://glidewelldirect.com/collections/tap', icon: 'shop'},
+    {label: 'Facebook',            url: 'https://www.facebook.com/glidewelldental/', icon: 'fb'},
+    {label: 'X',                   url: 'https://x.com/GlidewellDental', icon: 'x'},
+    {label: 'LinkedIn',            url: 'https://www.linkedin.com/company/glidewell/', icon: 'li'},
+    {label: 'Instagram',           url: 'https://www.instagram.com/glidewelldental/?hl=en', icon: 'ig'},
+  ],
+};
+let HOVER_LINK = null;
+/* the marks, drawn rather than fetched: a logo file per network is six more
+   requests and six more things to go stale */
+function drawLinkIcon(kind, cx, cy, r, col){
+  ctx.save();
+  ctx.strokeStyle = col; ctx.fillStyle = col;
+  ctx.lineWidth = Math.max(1, r * 0.14);
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  const sq = () => { ctx.beginPath(); ctx.roundRect(cx - r, cy - r, r * 2, r * 2, r * 0.42); };
+  if (kind === 'globe'){
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx, cy, r * 0.44, r, 0, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - r * 0.86, cy - r * 0.5); ctx.lineTo(cx + r * 0.86, cy - r * 0.5);
+    ctx.moveTo(cx - r * 0.86, cy + r * 0.5); ctx.lineTo(cx + r * 0.86, cy + r * 0.5); ctx.stroke();
+  } else if (kind === 'shop'){
+    ctx.beginPath();
+    ctx.roundRect(cx - r * 0.86, cy - r * 0.5, r * 1.72, r * 1.5, r * 0.22); ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx, cy - r * 0.5, r * 0.52, Math.PI, 0); ctx.stroke();
+  } else if (kind === 'fb'){
+    sq(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx + r * 0.30, cy - r * 0.52);
+    ctx.lineTo(cx + r * 0.02, cy - r * 0.52);
+    ctx.quadraticCurveTo(cx - r * 0.24, cy - r * 0.52, cx - r * 0.24, cy - r * 0.22);
+    ctx.lineTo(cx - r * 0.24, cy + r * 0.62);
+    ctx.moveTo(cx - r * 0.52, cy - r * 0.02); ctx.lineTo(cx + r * 0.16, cy - r * 0.02);
+    ctx.stroke();
+  } else if (kind === 'x'){
+    sq(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - r * 0.44, cy - r * 0.46); ctx.lineTo(cx + r * 0.44, cy + r * 0.46);
+    ctx.moveTo(cx + r * 0.44, cy - r * 0.46); ctx.lineTo(cx - r * 0.44, cy + r * 0.46);
+    ctx.stroke();
+  } else if (kind === 'li'){
+    sq(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - r * 0.46, cy - r * 0.02); ctx.lineTo(cx - r * 0.46, cy + r * 0.56);
+    ctx.moveTo(cx - r * 0.06, cy + r * 0.56); ctx.lineTo(cx - r * 0.06, cy - r * 0.02);
+    ctx.moveTo(cx - r * 0.06, cy + r * 0.18);
+    ctx.quadraticCurveTo(cx - r * 0.06, cy - r * 0.10, cx + r * 0.22, cy - r * 0.02);
+    ctx.quadraticCurveTo(cx + r * 0.46, cy + r * 0.06, cx + r * 0.46, cy + r * 0.56);
+    ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx - r * 0.46, cy - r * 0.42, r * 0.12, 0, 7); ctx.fill();
+  } else if (kind === 'ig'){
+    sq(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, r * 0.40, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx + r * 0.48, cy - r * 0.48, r * 0.11, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+}
 function drawStudy(){
   const S = state.study; if (!S) return;
   S.amt += ((S.closing ? 0 : 1) - S.amt) * Math.min(1, (state.dt || 0.016) * 5);
@@ -10000,6 +10064,46 @@ function drawStudy(){
       y += 24 * SS;
     }
     y += 10 * SS;
+  }
+  /* WHERE IT LIVES NOW. The 2001 page is about the company going onto the web,
+     so the page ends with the addresses it has today — drawn as chips with
+     their own marks, and each one opens in a new tab. Keyed by the beat's
+     title, so no coordinate can lose them. */
+  const links = STUDY_LINKS[b.t];
+  if (links){
+    // the chip under the pointer lights: a link should say it is one
+    const hv = Input.hover ? hitAt(Input.hover.x, Input.hover.y) : null;
+    HOVER_LINK = (hv && hv.type === 'link') ? hv.url : null;
+    y += 6 * SS;
+    ctx.font = K.font(17, '700');
+    try { ctx.letterSpacing = `${3*SS}px`; } catch(err){}
+    ctx.fillStyle = `rgba(${K.dim},0.9)`;
+    if (y > topClip && y < botClip) ctx.fillText('WHERE IT LIVES NOW', left, y);
+    try { ctx.letterSpacing = '0px'; } catch(err){}
+    y += 30 * SS;
+    const chipH = 40 * SS, gap = 12 * SS, icoR = 11 * SS;
+    let lx = left, ly = y;
+    ctx.font = K.font(20);
+    for (const L of links){
+      const tw2 = ctx.measureText(L.label).width;
+      const cwid = icoR * 2 + 16 * SS + tw2 + 30 * SS;
+      if (lx + cwid > left + textW + 1){ lx = left; ly += chipH + gap; }
+      if (ly + chipH > topClip && ly < botClip){
+        const hot = HOVER_LINK === L.url;
+        ctx.beginPath(); ctx.roundRect(lx, ly, cwid, chipH, chipH / 2);
+        ctx.fillStyle = `rgba(${K.accent},${hot ? 0.16 : 0.08})`;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(${K.accent},${hot ? 0.75 : 0.42})`;
+        ctx.lineWidth = 1.2 * SS; ctx.stroke();
+        drawLinkIcon(L.icon, lx + 15 * SS + icoR, ly + chipH / 2, icoR, `rgba(${K.accent},0.95)`);
+        ctx.fillStyle = `rgba(${K.ink},0.92)`;
+        ctx.font = K.font(20);
+        ctx.fillText(L.label, lx + icoR * 2 + 26 * SS, ly + chipH * 0.64);
+        pushHit(lx, ly, cwid, chipH, {type: 'link', url: L.url});
+      }
+      lx += cwid + gap;
+    }
+    y = ly + chipH + 26 * SS;
   }
   if (media && media.length){
     // the voices ride as a rail to the right of the text
@@ -10754,6 +10858,8 @@ function update(dt){
           openClip(aimed.media, aimed.wx);
         } else if (aimed && aimed.type === 'person' && PEOPLE[aimed.id]){
           openPerson(aimed.id);     // the name in the text goes to the person, not to a portrait
+        } else if (aimed && aimed.type === 'link'){
+          try { window.open(aimed.url, '_blank', 'noopener'); } catch(e){}   // the page stays open behind it
         } else S.closing = true;
       } else if (inp.action === true) S.closing = true;   // a key closes it; scrolling past the top does NOT
       cam.vel = 0;
