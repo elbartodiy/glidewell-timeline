@@ -312,7 +312,7 @@ const BEATS = [
    d:'March 2023: for the first time, more digital impressions arrive at Glidewell in a month than physical ones. Nothing announces it — it is simply the month the two lines cross, sixteen years after the first digital case came in.',
    wall:[], table:[],
    rig:{kind:'boxes', dx:0, lz:150, w:560}},
-  {x:27190, y:'2020', t:'AI · SCALE', tier:1,
+  {x:27190, y:'2020s', t:'AI · SCALE', tier:1,   // it stands after the March 2023 crossover because that is where its content sits: CrownAI, MarginAI, half a million units a month. Labelled by the decade, like 1970s and 2010s, so the wall does not read 2020 after 2023.
    th:'The flywheel: cheaper to make → wider access → reinvest.',
    d:'CrownAI / MarginAI; ~500K units a month, 5,000+ staff — the largest dental lab in the world.',
    wall:[],
@@ -406,7 +406,7 @@ function applyCut(){
      beat tied to a fixed scene cannot be re-spaced — the scene has to move with
      it, or it has to stay put. */
   anchor('2022', (REC4_L + REC4_R) / 2);
-  const owns = new Set(['1970', '1993', '2018', '2022', '2023', '2019', '2020']);
+  const owns = new Set(['1970', '1993', '2018', '2022', '2023', '2019', '2020s']);
   /* 2020 is pinned too: the glass hall now opens just past it, and the even
      spacing was pushing the beat right, into the bay's own ground. */
   for (const seg of SEGMENTS){
@@ -3884,7 +3884,7 @@ const WHOOSH = {
     {y:'2018',  t:'',                   f:'ws02', g:0.95, keep:true},   // ELDAR: the soft first part
     {y:'2022',  t:'FASTSCAN.IO',        f:'ws05', g:0.85},              // recreation
     {y:'2023',  t:'THE CROSSOVER',      f:'ws01', g:0.90},              // recreation, tier 1
-    {y:'2020',  t:'AI · SCALE',         f:'ws03', g:0.90},
+    {y:'2020s', t:'AI · SCALE',         f:'ws03', g:0.90},
     {y:'2026',  t:'',                   f:'ws18', g:0.85},
   ],
 };
@@ -8380,8 +8380,37 @@ function drawCrown3D(cx, footY, size, alpha){
       let nx = uy*vz - uz*vy, ny = uz*vx - ux*vz, nz = ux*vy - uy*vx;
       const nl = Math.hypot(nx, ny, nz) || 1; nx/=nl; ny/=nl; nz/=nl;
       if (nz > 0.02) continue;                       // facing away
-      if (p === 0) continue;                         // the underside: a crown is open there
       quads.push({a, b, c, d, nx, ny, nz, p, z: (a.z + b.z + c.z + d.z) / 4});
+    }
+  }
+  /* AND IT IS CLOSED AT THE FOOT. The bottom ring was skipped — a crown IS open
+     underneath — and with the inside culled away, tipping the piece toward the
+     room showed the far wall's outside through the opening: a stack of
+     concentric rings with a hole in the middle, which is what "falling apart"
+     was. The mouth is capped now, in the matte, unglazed tone of the fitting
+     surface, so what you see when you turn it over is the underside of a crown
+     rather than the inside of a shell. */
+  {
+    const ring = [];
+    for (let m = 0; m < M; m++) ring.push(pts[m][0]);
+    let nx = 0, ny = 0, nz = 0;
+    for (let i = 0; i < M; i++){
+      const p1 = ring[i], p2 = ring[(i + 1) % M];
+      nx += (p1.Y - p2.Y) * (p1.Z + p2.Z);
+      ny += (p1.Z - p2.Z) * (p1.X + p2.X);
+      nz += (p1.X - p2.X) * (p1.Y + p2.Y);
+    }
+    const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+    /* the profile starts ON the axis, so this ring is a single point and the
+       foot is already closed by the first band — cap only a real opening */
+    let cx0 = 0, cy0 = 0;
+    for (const p of ring){ cx0 += p.x; cy0 += p.y; }
+    cx0 /= M; cy0 /= M;
+    let rad = 0;
+    for (const p of ring) rad = Math.max(rad, Math.hypot(p.x - cx0, p.y - cy0));
+    if (nz <= 0.02 && rad > 2 * SS){
+      let zs = 0; for (const p of ring) zs += p.z;
+      quads.push({cap: ring, nx, ny, nz, p: 0, z: zs / M});
     }
   }
   quads.sort((q1, q2) => q2.z - q1.z);               // far first
@@ -8389,6 +8418,17 @@ function drawCrown3D(cx, footY, size, alpha){
   ctx.globalAlpha = alpha;
   ctx.lineJoin = 'round';
   for (const q of quads){
+    if (q.cap){
+      // the fitting surface: matte, unglazed, and darker than the glaze around it
+      const lamC = Math.max(0, q.nx*L[0] + q.ny*L[1] + q.nz*L[2]);
+      const sc2 = 0.34 + 0.34 * lamC;
+      ctx.fillStyle = `rgb(${(214*sc2)|0},${(203*sc2)|0},${(191*sc2)|0})`;
+      ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 0.9;
+      ctx.beginPath();
+      q.cap.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      continue;
+    }
     const lam = Math.max(0, q.nx*L[0] + q.ny*L[1] + q.nz*L[2]);
     const spec = Math.pow(Math.max(0, q.nx*Hh[0] + q.ny*Hh[1] + q.nz*Hh[2]), 34);
     const rim = Math.pow(1 - Math.abs(q.nz), 2.2);
