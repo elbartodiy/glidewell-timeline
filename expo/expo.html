@@ -97,7 +97,7 @@ const BEATS = [
    doc:{dx:-2955, w:250, cy:520, rot:0.9},   // cy = the prints' hanging line 360 plus half its own height
    table:[], st:[{img:'invest', w:280, dx:-390, lz:12, lift:32},
                  /* the wax-up came over from the PFM bay: the craft it names starts here */
-                 {img:'wax', w:280, dx:215, lz:60, cap:'Wax, carved by hand \u2014 where every restoration began'}]},
+                 {img:'wax', w:280, dx:105, lz:12, lift:32, cap:'Wax, carved by hand \u2014 where every restoration began'}]},
 
   {x:2450, y:'1970', t:'FOUNDED', tier:1, fly:true, yLift:96, flyZ:380,   // clear of the bench lamp; the apex stops short of the pendant above
    th:'One man, one bench — betting that affordable was a business model.',
@@ -128,7 +128,9 @@ const BEATS = [
       one — impression, stone model, wax coping, metal coping, porcelain
       build-up, finished crown — standing on the counter small enough to read as
       objects, and opening to fill the screen when you tap them. */
-   pfmRow:{dx:-120, lz:88, w:980}},
+   /* set between the seventies film console (which ends at 5225) and the
+      counter's own right end (6300), with the same air on both sides */
+   pfmRow:{dx:83, lz:88, w:855}},
 
   {x:4400, y:'1973', t:'SECOND LAB', yLift:95, fly:true, flyZ:380, flyLift:52,   // the seventies all come forward, the way 1970 does
    th:'Growth by addition — before growth by system.',
@@ -2274,6 +2276,7 @@ function drawBeatText(b, focusAmt){
     /* OR ON THE COUNTER — see drawBenchPlaque, which runs with the objects
        that stand on the counter rather than with the writing on the wall. */
     if (b.plaqueLz != null) return;
+    if (state.pfmView && BEATS[state.pfmView.beat] === b && state.pfmView.amt > 0.15) return;
     const kk = k(wallZAt(b.x) - 8);
     const cx = px(b.x + (b.plaqueDX || 0), kk);
     if (cx > -600 && cx < W + 600){
@@ -2800,8 +2803,10 @@ function updateFilm(){
      the same one the film has always used; only the trigger widened. */
   /* the open case is NOT a page: the trays dissolving into digits is a thing
      happening IN the hall, and the film behind it goes on running (Eldar) */
-  const busy = state.clip || state.person || state.study || state.people ||
-        state.inspect || state.docOpen || state.albumView;
+  /* nor is an album opening on the counter, nor an object flying up to be
+     looked at: both are things happening IN the hall, and the film behind them
+     goes on running with its sound (Eldar again). Only a PAGE stops it. */
+  const busy = state.clip || state.person || state.study || state.people || state.docOpen;
   const engaged = !v.muted;                 // sound on = a real showing
   const wanted = engaged && !T.userPaused && !busy;
   // the poster holds its frame: a not-yet-started set snaps back to the
@@ -5785,6 +5790,35 @@ function drawMapWall(t){
         softFootShadow(px(mid, kG), yFootG, wG * 0.46, hG * 0.012, 0.45);
         ctx.drawImage(spriteMip(gm, wG, hG), xG, yFootG - hG, wG, hG);
       }
+      /* 1979 ARRIVES BY MAIL VAN, AND THE SCROLL IS WHAT DRIVES IT. The
+         platform's front ledge is a road: the van is at the plinth's left end
+         as the bay comes in from the right, dead centre of the building at the
+         moment 1979 is centred, and parked at the right end by the time the
+         bay has gone past. One mapping, no timers — where the van is says
+         exactly where you are. */
+      const car = PROP_SPRITES.ph_car79;
+      if (car){
+        const D = 550 + (W / 2) / (kG * SS);   // the camera stands here when the bay is at the screen's edge
+        const u = Math.max(0, Math.min(1, (cam.x - (mid - D)) / (2 * D)));
+        /* AND IT STOPS AT THE DOOR. A van whose position is a straight function
+           of the scroll is a slider with a picture on it; this one keeps a
+           quarter of each half-run standing still at the entrance, so the walk
+           goes on past it for a moment before it pulls away again. */
+        const DW = 0.26, d2 = (u - 0.5) * 2, a2 = Math.abs(d2);
+        let m2 = a2 <= DW ? 0 : (a2 - DW) / (1 - DW);
+        m2 = m2 * m2 * (3 - 2 * m2);
+        const v2 = 0.5 * (d2 < 0 ? -m2 : m2);
+        const cw = wG * 0.135, ch = cw * car.h / car.w;
+        const run = Math.max(0, 520 * kG * SS - cw / 2);
+        const cxCar = px(mid, kG) + v2 * 2 * run;
+        /* the lip: 292 of the render's 846 rows down, where the ledge the van
+           drives on turns into the face of the plinth */
+        const yLip = yFootG - hG * 0.6548;
+        if (cxCar > -cw && cxCar < W + cw){
+          contactShadow(cxCar, yLip, cw * 0.86, 0.34);
+          ctx.drawImage(spriteMip(car, cw, ch), cxCar - cw / 2, yLip - ch, cw, ch);
+        }
+      }
     }
     const g8 = PROP_SPRITES.ph_g8;
     if (g8){
@@ -7705,6 +7739,7 @@ async function loadPhotoSkin(){
     ph_prj93: 'proj_1993.png',        // the 1993 LCD data projector on its stand, photographed
     ph_g8: 'g8_1979.png',             // 1979: the nine labs, as models on one long plinth
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
+    ph_car79: 'car_1979.png',         // and the mail van that drives its platform as you scroll
     front_e4: 'front_e4.jpg',         // the white era's counter face: one door of Eldar's render, mid-door to mid-door
     bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
     bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
@@ -7733,7 +7768,7 @@ function initDecor(){
     const a = Math.max(700, bx0 + 250), b = Math.min(WORLD_END - 300, bx1 - 250);
     for (let x = a; x < b; x += 260 + R()*260){
       if (!eraProps[si].length) break;
-      if (BEATS.some(bt => Math.abs(bt.x - x) < 430)) continue;
+      if (BEATS.some(bt => Math.abs(bt.x - x) < 520)) continue;   // 430 left a jar standing at 1976's elbow, reading as a black bottle
       // and clear of a book pile, which is furniture in its own right
       if (BEATS.some(bt => bt.pyr && Math.abs(bt.x + bt.pyr.dx - x) < (bt.pyr.w || 460)/2 + 220)) continue;
       // nor across the PFM line, which is six objects wide and holds its whole bay
@@ -8125,12 +8160,12 @@ const PFM_STAGES = [
   {kind:'ph_pfm5', cx:0.7449, w:0.1654, h:0.0962},
   {kind:'ph_pfm6', cx:0.9205, w:0.1619, h:0.1061},
 ];
-const PFM_CAP = 'The PFM, stage by stage — impression, stone model, wax coping, metal coping, porcelain build-up, and the finished crown';
+const PFM_CAP = 'Impression · stone model · wax coping · metal coping · porcelain build-up · the finished crown';
 function drawPfmRow(b, i){
   const R = b.pfmRow;
   /* while the line is up on the screen, the small copy of it underneath is
      just clutter showing through the veil */
-  if (state.inspect && state.inspect.cap === PFM_CAP && state.inspect.amt > 0.15) return;
+  if (state.pfmView && state.pfmView.amt > 0.15) return;
   const kk = k(bz(R.lz));
   const cxW = b.x + R.dx;
   const sxC = px(cxW, kk);
@@ -8151,10 +8186,7 @@ function drawPfmRow(b, i){
   }
   const rowSp = PROP_SPRITES.ph_pfmrow;
   if (rowSp){
-    const hW = R.w * rowSp.h / rowSp.w;   // the line's own height, in world units
-    pushHit(left, foot - tallest, wRow, tallest, {type:'photo',
-      sp: Object.assign({inner:{w: rowSp.w, h: rowSp.h}}, rowSp),
-      wx: cxW, cy: CFG.benchY - hW / 2, z: bz(R.lz), w: R.w, cap: PFM_CAP, beat: i});
+    pushHit(left, foot - tallest, wRow, tallest, {type:'pfmview', beat: i});
   }
 }
 /* ---------------- ALBUMS · books that open when you stop ---------------- */
@@ -9976,6 +10008,74 @@ function drawOpenBox(){
   ctx.restore();
 }
 
+/* -------- THE PFM LINE, OPENED -------- 
+   Not a photograph flying up: the six stands GROW, out of their own places on
+   the counter, until they are standing at the size of the room — and they land
+   on the counter's own top line, so they are still on a table when they get
+   there. The bay's plate comes with them, stretched to the same width, and the
+   hall behind goes darker than an inspection does, because this one is meant
+   to be read. The film keeps playing throughout: nothing here is a page. */
+function drawPfmView(){
+  const V = state.pfmView; if (!V) return;
+  V.amt += ((V.closing ? 0 : 1) - V.amt) * Math.min(1, (state.dt || 0.016) * 5);
+  if (V.closing && V.amt < 0.03){ state.pfmView = null; return; }
+  const e = V.amt * V.amt * (3 - 2 * V.amt);
+  const b = BEATS[V.beat]; if (!b || !b.pfmRow) { state.pfmView = null; return; }
+  const R = b.pfmRow, rowSp = PROP_SPRITES.ph_pfmrow;
+  if (!rowSp) return;
+  const asp = rowSp.w / rowSp.h;
+  // where it stands now
+  const kk = k(bz(R.lz));
+  const w0 = R.w * kk * SS, cx0 = px(b.x + R.dx, kk), y0 = py(CFG.benchY - 2, kk);
+  // where it is going: on the counter's own top line, as wide as the room allows
+  const yLine = py(CFG.benchY - 2, k(bz(0)));
+  const topP = H * 0.055, hP1 = H * 0.086, gap = H * 0.035;
+  const w1 = Math.min(W * 0.90, Math.max(200, (yLine - topP - hP1 - gap)) * asp);
+  const cx1 = W / 2, y1 = yLine;
+  const wN = mixN(w0, w1, e), cxN = mixN(cx0, cx1, e), yN = mixN(y0, y1, e);
+  const hN = wN / asp;
+  ctx.fillStyle = `rgba(2,3,5,${(0.88 * e).toFixed(3)})`;
+  ctx.fillRect(0, 0, W, H);
+  /* THE BAY'S PLATE COMES UP WITH IT, and ends where the line ends. */
+  {
+    const seg = segAt(b.x), kp = k(wallZAt(b.x) - 8);
+    const tx = sentence(b.t);
+    ctx.save();
+    ctx.textAlign = 'center';
+    const f0 = 40 * kp * SS;
+    ctx.font = eraFont(f0, '', seg.font);
+    const wP0 = Math.max(320 * kp * SS, ctx.measureText(tx).width + 84 * kp * SS);
+    const hP0 = 88 * kp * SS, yP0 = py(150, kp), cxP0 = px(b.x + (b.plaqueDX || 0), kp);
+    const wP = mixN(wP0, w1, e), hP = mixN(hP0, hP1, e);
+    const yP = mixN(yP0, topP, e), cxP = mixN(cxP0, W / 2, e);
+    const fP = mixN(f0, hP1 * 0.44, e);
+    const pg = ctx.createLinearGradient(cxP, yP, cxP, yP + hP);
+    pg.addColorStop(0, 'rgba(70,58,40,0.92)'); pg.addColorStop(1, 'rgba(44,36,24,0.92)');
+    ctx.fillStyle = pg;
+    ctx.beginPath(); ctx.roundRect(cxP - wP / 2, yP, wP, hP, 6 * SS); ctx.fill();
+    ctx.strokeStyle = `rgba(${seg.ink},0.4)`; ctx.lineWidth = 1.5 * SS;
+    ctx.strokeRect(cxP - wP / 2 + 5 * SS, yP + 5 * SS, wP - 10 * SS, hP - 10 * SS);
+    ctx.font = eraFont(fP, '', seg.font);
+    try { ctx.letterSpacing = `${fP * TRACK.plate}px`; } catch(err){}
+    ctx.fillStyle = `rgba(${seg.ink},0.95)`;
+    ctx.fillText(tx, cxP, yP + hP * 0.66);
+    try { ctx.letterSpacing = '0px'; } catch(err){}
+    ctx.restore();
+  }
+  ctx.drawImage(spriteMip(rowSp, wN, hN), cxN - wN / 2, yN - hN, wN, hN);
+  if (e > 0.55){
+    const a = (e - 0.55) / 0.45;
+    const seg = segAt(b.x);
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = eraFont(25 * SS, '', seg.font);
+    ctx.fillStyle = `rgba(228,222,210,${(a * 0.8).toFixed(2)})`;
+    wrapCalc(PFM_CAP, Math.min(W * 0.7, 1200 * SS))
+      .forEach((ln, li) => ctx.fillText(ln, W / 2, yLine + (46 + li * 34) * SS));
+    drawCloseX(W - 46 * SS, 46 * SS, 13 * SS, a);
+    ctx.restore();
+  }
+}
 function drawInspect(){
   const I = state.inspect; if (!I) return;
   I.amt += ((I.closing ? 0 : 1) - I.amt) * Math.min(1, (state.dt || 0.016) * 5);
@@ -11668,11 +11768,12 @@ function update(dt){
        clock while the 2023 case stood open in front of you — the room walked off
        with the lid still up. With anything open the clock runs at a quarter
        speed, and when the tour does resume it closes what was open first. */
-    const reading = state.openBox || state.inspect || state.study || state.person || state.people || state.docOpen || state.albumView;
+    const reading = state.openBox || state.inspect || state.study || state.person || state.people || state.docOpen || state.albumView || state.pfmView;
     state.idle += reading ? dt * 0.25 : dt;
     if (state.mode === 'live' && state.idle > CFG.idleToAttract){
       state.mode = 'attract';
       state.study = null; state.person = null; state.people = null; state.inspect = null;
+      state.pfmView = null;
       if (state.openBox) state.openBox = null;
       closeClip();
       state.attract.phase = 'cruise';
@@ -11782,7 +11883,9 @@ function update(dt){
       if (Math.abs(inp.impulse) > 24) startFilm();   // the wheel starts the show
       cam.vel += inp.impulse;
     }
-    if (inp.action && state.openBox && !state.openBox.closing){
+    if (inp.action && state.pfmView && !state.pfmView.closing){
+      state.pfmView.closing = true;
+    } else if (inp.action && state.openBox && !state.openBox.closing){
       state.openBox.closing = true;
     } else if (inp.action && !state.inspect && !state.study && !state.person && !state.people && !state.openBox){
       const aimed = (typeof inp.action === 'object') ? hitAt(inp.action.x, inp.action.y) : null;
@@ -11795,6 +11898,9 @@ function update(dt){
       } else if (aimed && aimed.type === 'photoTable'){
         state.inspect = {sp: aimed.sp, wx: aimed.wx, lz: aimed.lz, w: aimed.w,
                          cap: aimed.cap, beat: aimed.beat, table: true, amt: 0};
+        cam.vel = 0;
+      } else if (aimed && aimed.type === 'pfmview'){
+        state.pfmView = {beat: aimed.beat, amt: 0, closing: false};
         cam.vel = 0;
       } else if (aimed && aimed.type === 'album'){
         openAlbumView(aimed.beat);      // it opens properly now, not ajar on the counter
@@ -12653,6 +12759,7 @@ function frame(){
   drawPeople();    // the wall of voices
   drawPerson();    // one voice's own page, over whatever sent you to it
   drawClip();      // the speaker's voice — a video window above the page
+  drawPfmView();   // the PFM line grows out of the counter it stands on
   drawInspect();   // a person card opens above the reading page
   drawOpenBox();   // one carton off the pile, opened
   drawAttractHint(t);
