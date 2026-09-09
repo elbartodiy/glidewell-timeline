@@ -549,15 +549,18 @@ function applyCut(){
   if (typeof STUDY_MEDIA === 'object') snap(STUDY_MEDIA, 'STUDY_MEDIA');
   // and the articles that are keyed by name go to wherever their beat now stands
   if (typeof STUDY_BY_TITLE === 'object')
-    for (const b of BEATS) if (b.t && STUDY_BY_TITLE[b.t]) STUDY_MORE[b.x] = STUDY_BY_TITLE[b.t];
+    for (const b of BEATS){ const key = b.t || b.y; if (STUDY_BY_TITLE[key]) STUDY_MORE[b.x] = STUDY_BY_TITLE[key]; }
   if (typeof STUDY_MEDIA_BY_TITLE === 'object')
-    for (const b of BEATS) if (b.t && STUDY_MEDIA_BY_TITLE[b.t]) STUDY_MEDIA[b.x] = STUDY_MEDIA_BY_TITLE[b.t];
+    for (const b of BEATS){ const key = b.t || b.y; if (STUDY_MEDIA_BY_TITLE[key]) STUDY_MEDIA[b.x] = STUDY_MEDIA_BY_TITLE[key]; }
   for (const it of FG_ITEMS) it.x = SHIFT(it.x);
 }
 const INTRO_X = -650;
 const WORLD_END = SHIFT(29680);
 const SEAM_3 = SHIFT(19980);
 const REC2_L = SEAM_3 - 540, REC2_R = SEAM_3 + 540;   // the Digital Revolution recreation
+/* how far from the camera a bay (a recreation, a film screen, the finale) or a
+   beat's table objects are still drawn — one number each, not eleven copies */
+const CULL_BAY = 4100, CULL_BEAT = 4900;
 const REC_L = SHIFT(6350), REC_R = SHIFT(7450);   // era 1 ends; the 1979 recreation; era 2 begins
 const G8_W = 1400;   // the 1979 models' plinth, in world units — the counters are trimmed to it
 /* the eight signs on that plinth, as fractions of the render's width, nudged a
@@ -3482,7 +3485,7 @@ function drawFilmWallPlasma(){
   const v = WELCOME_TV.v;
   if (!v || v.muted || v.readyState < 2) return;
   const r = FILM_RELAYS.find(q => q.kind === 'plasma');
-  if (!r || Math.abs(r.x - cam.x) > 4100) return;
+  if (!r || Math.abs(r.x - cam.x) > CULL_BAY) return;
   const wz = wallZAt(r.x) - 16;
   const kk = k(wz), sx = wallSX(r.x, 0, kk);
   rivet('film:plasma:' + r.x, sx, k(exhibitZ(r.x)));
@@ -3565,7 +3568,7 @@ function drawFilmRelays(){
   // the era screens light up only for the engaged film: no sound, no furniture
   if (!v || v.muted || v.readyState < 2) return;
   for (const r of FILM_RELAYS){
-    if (Math.abs(r.x - cam.x) > 4100) continue;
+    if (Math.abs(r.x - cam.x) > CULL_BAY) continue;
     if (r.kind === 'crt70') drawFilmCRT70(r);
     else if (r.kind === 'hang') drawFilmHangTV(r);
     else if (r.kind === 'crt95') drawFilmCRT95(r);
@@ -3579,7 +3582,7 @@ const FIN_X = SHIFT(29750);
 function drawOutro(){
   // the finale is the mirror of the welcome: the mark under the ceiling,
   // the closing line, and a lit still life of today's products below
-  if (Math.abs(cam.x - FIN_X) > 4100) return;
+  if (Math.abs(cam.x - FIN_X) > CULL_BAY) return;
   const seg = SEGMENTS[3];
   const kw = k((seg.tz || 680) - 8);
   const cx = px(FIN_X, kw);
@@ -4181,6 +4184,8 @@ function pingOnce(file, gain, cutMs){
 function toggleSound(){
   SOUND.off = !SOUND.off;
   try { localStorage.setItem('glidewell.sound', SOUND.off ? 'off' : 'on'); } catch(e){}
+  // a one-shot already in flight — an aeroplane's swell, the scan's ping — stops with it
+  if (SOUND.off) for (const k in PINGS){ try { PINGS[k].pause(); } catch(e){} }
 }
 function toggleMusic(){
   MUSIC.off = !MUSIC.off;
@@ -4871,7 +4876,7 @@ function digShare(u){
 }
 function drawRec23(t){
   const mid = (REC23_L + REC23_R) / 2;
-  if (Math.abs(cam.x - mid) > 4100) return;
+  if (Math.abs(cam.x - mid) > CULL_BAY) return;
   ctx.save();   // after the cull, for the same reason
   const kk = k(1000);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
@@ -5055,7 +5060,7 @@ const AI_WARP = c => (i, side) =>
 
 function drawRec18(t){
   const mid = (REC18_L + REC18_R) / 2;
-  if (Math.abs(cam.x - mid) > 4100) return;
+  if (Math.abs(cam.x - mid) > CULL_BAY) return;
   const kk = k(1000);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
   const x0 = px(REC18_L, kk), x1 = px(REC18_R, kk);
@@ -5704,7 +5709,7 @@ function drawAIRelay(t){
    massing model that flythrough was made from. */
 function drawRec93(t){
   const mid = (REC93_L + REC93_R) / 2;
-  if (Math.abs(cam.x - mid) > 4100) return;
+  if (Math.abs(cam.x - mid) > CULL_BAY) return;
   const kk = k(728);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
   const x0 = px(REC93_L, kk), x1 = px(REC93_R, kk);
@@ -6040,59 +6045,9 @@ function drawRec93Front(t){
   drawModel93(mid, 240, 330, CFG.benchY + 20);
 }
 
-/* the 1979 panel: a light wall between two columns, carrying the map of
-   Southern California with the nine labs on it */
-let MAP_SPRITE = null, MAPWALL_TEX = null;
-function makeMapSprite(){
-  const c = document.createElement('canvas'); c.width = 920; c.height = 660;
-  const g = c.getContext('2d');
-  g.save();
-  g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 20; g.shadowOffsetY = 9;
-  g.fillStyle = '#2e1f10'; g.fillRect(16, 16, 888, 628);
-  g.restore();
-  g.fillStyle = '#e9e0c8'; g.fillRect(40, 40, 840, 580);
-  g.fillStyle = 'rgba(150,120,70,0.08)';
-  for (let i = 0; i < 5; i++) g.fillRect(40, 40 + i*116, 840, 58);
-  // the coast of Southern California
-  g.strokeStyle = 'rgba(70,90,110,0.85)'; g.lineWidth = 5; g.lineJoin = 'round';
-  g.beginPath();
-  g.moveTo(70, 150);
-  g.lineTo(210, 190); g.lineTo(300, 250); g.lineTo(360, 310);
-  g.lineTo(430, 350); g.lineTo(520, 420); g.lineTo(560, 490); g.lineTo(600, 560);
-  g.stroke();
-  g.fillStyle = 'rgba(120,160,190,0.20)';
-  g.beginPath();
-  g.moveTo(70, 150); g.lineTo(210, 190); g.lineTo(300, 250); g.lineTo(360, 310);
-  g.lineTo(430, 350); g.lineTo(520, 420); g.lineTo(560, 490); g.lineTo(600, 560);
-  g.lineTo(40, 560); g.lineTo(40, 150); g.closePath(); g.fill();
-  // faint inland grid
-  g.strokeStyle = 'rgba(90,70,40,0.15)'; g.lineWidth = 1.5;
-  for (let i = 1; i < 8; i++){
-    g.beginPath(); g.moveTo(40 + i*105, 40); g.lineTo(40 + i*105, 620); g.stroke();
-    if (i < 6){ g.beginPath(); g.moveTo(40, 40 + i*97); g.lineTo(880, 40 + i*97); g.stroke(); }
-  }
-  // the nine labs
-  const dots = [[470,330],[520,300],[560,350],[500,390],[590,300],[620,380],[545,255],[660,330],[610,430]];
-  g.strokeStyle = 'rgba(190,60,45,0.35)'; g.lineWidth = 2;
-  for (let i = 1; i < dots.length; i++){
-    g.beginPath(); g.moveTo(dots[0][0], dots[0][1]); g.lineTo(dots[i][0], dots[i][1]); g.stroke();
-  }
-  for (const [dx, dy] of dots){
-    g.fillStyle = 'rgba(190,60,45,0.25)';
-    g.beginPath(); g.arc(dx, dy, 16, 0, 7); g.fill();
-    g.fillStyle = '#c23a2c';
-    g.beginPath(); g.arc(dx, dy, 7, 0, 7); g.fill();
-  }
-  g.fillStyle = 'rgba(80,60,35,0.9)';
-  g.textAlign = 'center';
-  g.font = '600 34px Georgia, serif';
-  try { g.letterSpacing = '6px'; } catch(e){}
-  g.fillText('Southern California', 460, 590);
-  return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
-}
 function drawMapWall(t){
   const mid = (REC_L + REC_R) / 2;
-  if (Math.abs(cam.x - mid) > 4100) return;
+  if (Math.abs(cam.x - mid) > CULL_BAY) return;
   const kk = k(610);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
   const x0 = px(REC_L, kk), x1 = px(REC_R, kk);
@@ -6420,7 +6375,7 @@ function drawScanBeam(cx, cy, w, h, ph, a){
    exhibits rather than inside the portal that frames it */
 function drawRec2Front(t){
   const mid = (REC2_L + REC2_R) / 2;
-  if (Math.abs(cam.x - mid) > 4100) return;
+  if (Math.abs(cam.x - mid) > CULL_BAY) return;
   const kk = k(970), cx = px(mid, kk);
   const lock = Math.max(0, 1 - Math.abs(cam.x - mid) / 900);
   const ease = lock * lock * (3 - 2 * lock);
@@ -6598,7 +6553,7 @@ function paneDrop(mid){
 let DR_SCAN_RUNG = false;
 function drawRec2(t){
   const mid = (REC2_L + REC2_R) / 2;
-  if (Math.abs(cam.x - mid) > 4100) return;
+  if (Math.abs(cam.x - mid) > CULL_BAY) return;
   drawBayStep(REC2_L, REC2_R, STEP_TONE.cool);   // the mouth of the bay gets its block, in this room's own stone
   const lock0 = Math.max(0, 1 - Math.abs(cam.x - mid) / 900);
   const ease0 = lock0 * lock0 * (3 - 2 * lock0);
@@ -6841,7 +6796,7 @@ function drawRec2(t){
    pure futurist white begins on the far side */
 function drawRec4(t){
   const mid = (REC4_L + REC4_R) / 2;
-  if (Math.abs(cam.x - mid) > 4100) return;
+  if (Math.abs(cam.x - mid) > CULL_BAY) return;
   drawBayStep(REC4_L, REC4_R, STEP_TONE.white);   // the mouth of the bay gets its block, in this room's own stone
   const kk = k(1000);   // the portal stands proud of the deep white wall
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
@@ -7086,7 +7041,7 @@ function makeUsaSprite(){
 }
 function drawRec3(t){
   const mid = (REC3_L + REC3_R) / 2;
-  if (Math.abs(cam.x - mid) > 4100) return;
+  if (Math.abs(cam.x - mid) > CULL_BAY) return;
   drawBayStep(REC3_L, REC3_R, STEP_TONE.steel);   // the mouth of the bay gets its block, in this room's own stone
   const kk = k(728);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
@@ -8736,7 +8691,7 @@ function initAlbums(){
   BEATS.forEach((b, i) => {
     if (!b.album) return;
     ALBUM_SPRITES[i] = {
-      cover: makeAlbumCover(b.album.title, segIdx(b.x)),
+      cover: makeAlbumCover(sentence(b.album.title), segIdx(b.x)),
       spreads: b.album.photos.map(pair => makeAlbumSpread(pair, tone)),
     };
     albumAnim[i] = 0;
@@ -9760,7 +9715,7 @@ function drawBanners(t){
   // banners hang just off the wall, below the text band — wall furniture:
   // they share the wall's depth, never cross the floating text, never blink
   for (const bn of BANNERS){
-    if (Math.abs(bn.x - cam.x) > 4900) continue;
+    if (Math.abs(bn.x - cam.x) > CULL_BEAT) continue;
     const zB = (segAt(bn.x).tz || wallZAt(bn.x)) - 25;
     const kk = k(zB);
     const sx = wallSX(bn.x);
@@ -10242,8 +10197,11 @@ function drawStage(t){
 
 /* foreground occluders — soft dark shapes passing close to camera:
    mostly potted plants and people, the odd structural post */
-const FG_ITEMS = [4900, 8250]
-  .map((x, i) => ({x, kind: ['plant','person'][i % 2], seed: i}));
+/* The two silhouettes that used to be listed here (at 4900 and 8250) stood
+   inside a guarded bay and were removed by the audit on every single load —
+   the hall has never shown a foreground item. The list is empty rather than
+   wrong; the machinery stays for the day one is placed where it can stand. */
+const FG_ITEMS = [];
 const FG_SPRITES = {};
 function makeFgSprite(kind, seed){
   const R = rng(seed*31337 + 5);
@@ -10756,8 +10714,32 @@ const STUDY_BY_TITLE = {
   'DIRECT-MAIL': "In 1976 Jim Glidewell put the laboratory in an envelope. He mailed dentists an offer: post us the impression, and the finished crown comes back to you the same way. The trade ran on couriers and neighbourhoods \u2014 a lab served the practices its driver could reach and back before the end of the day \u2014 so the offer read as a stunt. It is the thing that turned a local workshop into a national one.\n\n## What came before it\n\nBy the middle of the seventies Jim was running several small laboratories across Southern California, and hand-to-hand had hit its ceiling: the business could grow only as far as a van could drive, and it lived on the loyalty of the dentists on that route.\n\nHe wanted steady work for the people at the benches, and steady work means a steady flow of cases \u2014 which meant reaching past the county. The post office was already national. A dentist had to do nothing but put the impression in a box; the lab did not have to run a fleet to fetch it.\n\n## What it did to the business\n\n\u2022 Scale. Mail let the work be gathered into one plant instead of spread across nine. By 1989, 95% of it arrived at a single address by post, from more than 3,500 dentists across the country.\n\u2022 Standards. Jim\u2019s rule was that quality falls the moment you stop watching it \u2014 and volume is what makes a written procedure worth having. At that scale the lab could dose materials by machine instead of by eye, and take the guesswork out of the steps where one hand differs from another.\n\u2022 Price, worked backwards. The flow made a published price possible \u2014 the famous $99 crown. He did it in reverse: start from the number a dentist says yes to without thinking, then rebuild the inside of the company until that number pays. Volume, not the margin on a single unit, is what makes that arithmetic work.\n\n## The rules he took from it\n\n\u2022 Marketing is the tax you pay to survive. Don\u2019t advertise and you stay the best-kept secret in town. The advertising brings the cases, and the cases are what let you promise anybody a job.\n\u2022 Perception is reality. He deliberately kept out of meetings with customers: a meeting can undo a brand in a minute, while print says exactly what you decided it should say.\n\u2022 Faster, better, less expensive. Speed to market is a product in its own right \u2014 and FedEx and UPS turned out to be quicker and steadier than a van and a driver.\n\u2022 Honest self-interest. Jim never pretended people come to work for him rather than for themselves. Management, in his words, is getting people to reach the company\u2019s goals out of their own selfish interests \u2014 and the mail-order scale is what let the benches earn more on piecework than anywhere else in the trade.\n\n## What is left of it\n\nThe box became a file. The impression is a scan, the courier is a network, the crown is designed before anyone has touched it. The idea underneath is the one from 1976: take the distance between the dentist and the laboratory out of the question.",
   'SILENT NITE': "In 1996, Glidewell introduced the Silent Nite sleep appliance — a custom, dentist-delivered oral device that gently advances the lower jaw to keep the airway open during sleep, reducing snoring and mild obstructive sleep apnea. It was deliberately built to be comfortable, adjustable, and inexpensive enough for any general dentist to fit, not just sleep specialists.\n\nWhy it matters — dentistry beyond repair. Every previous Glidewell product fixed something already broken: a worn tooth, a missing tooth, a failed restoration. Silent Nite is different — it keeps a problem from starting. It is prevention, not repair. That is a quiet but real shift in what a dental lab believes it is for: not only rebuilding mouths, but protecting sleep, breathing, and health.",
   'PFM ERA': "The crown that built the lab. Porcelain-fused-to-metal was invented at the end of the 1950s by Abraham Weinstein, a New York dental technician: fire a thin porcelain veneer onto a cast metal coping and you get a tooth that is strong where gold is strong and white where a tooth is white. His patent was filed on 15 October 1959; VITA in Germany brought out VMK, the first commercial metal-ceramic system, in 1962. For the next half-century the PFM was simply what a crown was — cast by hand, layered by hand, fired by hand, one case at a time. The 1970s refined it: better oxide bonding, fewer chipped veneers, porcelains that finally matched a shade guide.\n\nThis is the world Jim Glidewell opened his door into in January 1970 — a ceramist by training, and PFM was the ceramist's trade. It was also the lab's engine. Through the 1980s and 1990s Glidewell grew into the largest dental laboratory in the world largely on the back of PFM volume: a single labour-intensive product, made by hand, in staggering quantities, at a price a general dentist could put in front of any patient. That is the thesis of this hall in its first form — the best available restoration, made affordable by doing it at scale.\n\nAnd then Jim did the thing that defines him: he killed his own best-seller. BruxZir, in 2009, was a crown with no porcelain to chip and no metal to show at the gumline, milled instead of hand-layered. Within a decade monolithic zirconia had displaced the PFM as the default, and Glidewell later stopped making the traditional feldspathic PFM altogether, moving what remained of the metal-ceramic category onto its own Obsidian lithium silicate. The lab that grew up on the PFM is the lab that ended it.",
+  "FOUNDED": "In January 1970, Jim Glidewell opened a one-man dental ceramics lab in Orange County, California, working off a kitchen table — at once the founder and the sole employee. He had finished studying dental technology at Orange Coast College in 1969 and started as a bench technician who knew the craft with his hands. Before any of this came the hard road: a Kentucky farm upbringing near the Cumberland River, a latchkey childhood, and a Navy hitch during the Vietnam era.",
+  "NINE LABS": "By 1979 the one-man ceramics lab Jim opened in 1970 had multiplied into nine separate labs spread across Southern California. It was real scale — but scale by addition: nine locations, nine sets of overhead, nine places to manage, rather than one machine. \n\nWhy it matters — scattered scale. This is the company a half-step before its defining idea. The first direct-mail campaign had already broken the “only serve dentists nearby” rule — cases were now arriving by post from far beyond any single lab’s neighborhood. So the nine-lab sprawl and the mail-order reach pull in opposite directions: demand is becoming national while production is still local and fragmented. That tension is the whole point of the beat — it is the problem that forces the next move. \n\nThe pivot it sets up. It leads straight to 1984: the nine labs merge into a single centralized plant in Orange (15,000 sq ft, 42 staff), fed nationally by mail. That is the birth of the model that actually scales — one machine, one standard, cost driven down by volume. Tell 1979 as the “before,” and 1984 lands as the turn.",
+  "STUDY PROGRAM": "In 1980 Glidewell began flying dentists in from Japan and other countries to train in the US — the International Study Program. It was a bold move for a lab that was only just beginning to scale nationally, and it became one of the foundational milestones that shaped the company's philosophy for decades.\n\nEducation as a bond. Jim used teaching long before it became a standard marketing tool. For him it was a way to build bridges and exchange know-how with the profession — a connection, not an add-on to the product. That instinct later grew into a full media and education wing (the Chairside and Lab Perspectives magazines among them). His conviction is blunt: in business it is critical that people like and trust you — “people don't buy from people they don't like.” Teaching, and hosting guests in his own home, became the tools for building that almost family-like bond.",
+  "BIOTEMPS": "What it is. BioTemps are lab-fabricated provisional (temporary) crowns and bridges in tooth-colored PMMA acrylic — roughly a 6-month wear life, ~3-day lab turnaround. (There's also a chairside version, “BioTemps NOW,” milled in-office from PMMA blocks.)\n\nWhy it's more than a temporary. The real value is as an esthetic blueprint: the provisional's design is stored and reused for the final restoration (later a BruxZir or e.max crown), so the patient can see, wear and approve the look, bite and speech before committing — “no surprises on the final visit.” It also shapes gum tissue and restores collapsed bite height. A clean early example of the Glidewell pattern: own the whole workflow in-house and take the risk out for the dentist.\n\nBy around 2002 the BioTemps business had grown into its own dedicated fixed-ceramics lab. BioTemps showed the vertical, in-house, materials-driven model Glidewell would later scale dramatically with BruxZir zirconia.",
+  "OPERATORY · PLAYSAFE": "In 1995 Glidewell opened a small in-house dental operatory — a working clinic inside the lab — so the company could test materials and restorations on real patients rather than only on bench models. The same year it launched PlaySafe, a line of custom-fitted athletic mouthguards\n\nWhy it matters (the realism move). Two small things start here. First, R&D realism: a crown that survives a lab jig is not the same as one that survives a human bite, saliva, and a hurried dentist — putting chairs in the building meant Glidewell could see failure where it actually happens. Second, it is the company's first clear step beyond the crown, into prevention and sport. Modest in scale, but it shows the instinct that later defines the firm: control more of the chain, and don't stop at the restoration.",
+  "CHAIRSIDE PERSPECTIVES": "In August 1998 Glidewell began mailing a modest clinical newsletter to its dentist customers — “Chairside Perspectives” It was short, practical, and unglamorous: proven tips and techniques shared by the lab's own on-staff clinicians, the dentists who practiced inside what was becoming the nation's largest dental laboratory. It ran in this newsletter form for roughly eight years before outgrowing the format.\n\nWhy it matters. This is a connective beat, not a headline event. A few mailed pages did not move the industry in 1998. What matters is what it seeded — the founding instinct that Glidewell should not only make restorations but teach the dentist how to use them. That instinct is the through-line from the 1980 “education as a bond” beat to everything that follows. Reach, even small reach, was being converted into trust.\n\nThe newsletter outgrew its own format and became Chairside magazine, which is edited today by Neil Park — a dentist who ran his own practice for twelve years, then spent nineteen at Nobel Biocare building the courses that teach dentists a new technique. The job the 1998 mailing invented is still the job.",
+  "R&D IS BORN": "Around the turn of the 2000s Glidewell stopped relying on outside vendors for its key materials and began building its own Research & Development. Two moments pushed Jim there. First, a bad experience betting on an outside material — Artglass, a lab veneering composite — taught him that if you don't own the material, you don't own your quality or your future. Second, a conversation with independent researcher Dr. Rella Christensen about a “Volkscrown” — a people's crown, affordable to everyone, that performed like cast gold. Together they pointed at one conclusion: to make the best dentistry affordable and dependable, Glidewell needed its own science.\n\nWhy it matters — the engine room. This belongs early in the story, before BruxZir, not after. Every later breakthrough — the CAD build-out (~2000), BruxZir (2009), the automated factory (2019), AI-driven design — grows out of this one decision to build in-house R&D. It is the structural reason the company can keep making the best affordable: it controls the materials and the process end to end. By ~2000 Glidewell had already developed dozens of materials and lab services and was expanding the R&D team that today numbers 150+ people, including a dozen-plus PhDs.\n\nThrough the late 1990s and early 2000s the dental laboratory went digital. Instead of building a crown's substructure (coping) by hand, technicians began scanning the model, designing the coping on a computer, and milling it from a block. CAD/CAM moved from a niche into the mainstream of the lab.\n\nWho actually pioneered it. Not Glidewell. Nobel Biocare's Procera (mid-1990s) was the first CAD/CAM ceramic substructure; around 2001–2002 milled-zirconia frameworks arrived from others — 3M ESPE's Lava, Dentsply's Cercon, Nobel's Procera Forte. Those outside systems opened the door.\n\nWhat Glidewell did. As one of the largest labs, Glidewell adopted digital manufacturing early (working with the Cercon and Wol-Ceram systems around 2002), then built its own. Around 2004 it hired engineer Mervyn Rudgley (from 3D Systems) to lead digital manufacturing, with one explicit goal: make a zirconia substructure at a PFM price. In 2006 that became Prismatik CZ — Glidewell's own milling-plus-software system, paired with a 3Shape scanner. A clever trick (milling thin copings from a softer, bisque-fired block and sintering afterward) let them skip costly diamond tooling and push cost down.\n\nThis is the hinge between the analog craft of Part 1 and the monolithic-zirconia revolution of 2009. It is the moment the machine first enters Glidewell's bench — and, true to the thesis, the angle from day one was not 'newest technology' but 'best technology at an affordable price.' Without this quiet early-2000s digital build-out, BruxZir (2009) and the automated factory (2019) would not have been possible.",
+  "FIRST DIGITAL CASE": "In 2007 Glidewell took in its first digital optical impression — an intraoral scan sent straight from a practice — instead of a silicone impression or a poured stone model. Most of the industry was still pouring impressions at the time. The company dates the start of its digital case database to that moment.",
+  "BRUXZIR": "In late 2009 Glidewell launched BruxZir — a full-contour, monolithic solid-zirconia crown milled as one solid piece, with no porcelain veneering layer to chip. Worth knowing: zirconia and CAD/CAM were already in dentistry (In-Ceram Zirconia ~1999; Lava, Cercon, Procera ~2001–02). Glidewell did not invent zirconia. What it did was take monolithic full-contour zirconia, drive it through its own high-volume lab, and offer it at a price and turnaround ordinary dentists could actually say yes to — then make it the default. The first pitch was blunt: “more brawn than beauty” — a tough, near-unbreakable crown for grinders, implant cases and tight-bite molars where metal-backed crowns (PFMs) or gold used to be the only safe answer.\n\nWhy it matters — the revolution. A monolithic crown has no veneer to fracture, mills fast, and undercuts the PFM on price. The narrative nugget is the tell: the revolution went mainstream not through advertising but when dentists started phoning their own local labs and asking for “that BruxZir thing.” Demand pulled it in. Today BruxZir reportedly makes up the majority of Glidewell's fixed-crown volume and the brand counts tens of millions of units placed since 2009. This is where “affordable access” stops being a slogan and becomes a crown in a real patient's mouth.\n\nWho actually made it. Three roles, not one — the “Jim vs Carden” question dissolves once you separate them. Founder vision & funding — Jim Glidewell: no source, not even Glidewell's own, says he invented it at the bench; his own words credit “our R&D teams.” His real, substantial credit is the bet — investing in in-house milling and materials research so it could exist. The technical creator — Robin (Robert) A. Carden, VP of R&D: he led development and holds the process patent (US 9,434,651 B2, granted 2016) for the binder-free colloidal / slip-cast zirconia-blank method, and is the subject of the 2013 “I Made BruxZir” interview. Clinical champion — Dr. Mike DiTolla: drove dentist adoption (Chairside magazine, the on-camera “hammer test”) — an evangelist, not a materials inventor. In one line: “Developed by Glidewell's R&D team, led by Robin Carden, on founder Jim Glidewell's bet — launched 2009.”",
+  "SCREW-RETAINED": "For decades dentists stayed with cement-retained crowns even though screw-retained ones are easier to retrieve and avoid cement left under the gum. The reason was rarely clinical — it was cost and complexity. Titanium bases, UCLA abutments and clinical screws were sold by the implant OEMs (Nobel, Straumann and others) at prices that could roughly double the lab cost of a case.\n\nWhat Glidewell did — two moves.\n1) Made the parts itself. Through its own precision-machining operation, Prismatik Dentalcraft, the company began producing the Inclusive® Prosthetic Components line — titanium bases, esthetic and multi-unit abutments, analogs, screws, temporary and UCLA abutments, transfer copings — compatible with the major implant systems. That broke the OEM parts bottleneck and let Glidewell quote a flat lab fee for a screw-retained crown. Screw retention stopped being a premium option and became something an ordinary practice could afford.\n2) Solved the material problem. Screw retention stresses the crown around the screw channel, and porcelain-fused-to-metal chipped there. BruxZir monolithic zirconia (2009) could take it. The lab began bonding the BruxZir crown to the titanium base before shipping, so the dentist received one finished unit: seat it, torque the screw, done. No cement in the patient's mouth at all.\n\nWhy it belongs on this line. It is the same mechanism as every other beat here, applied to a technique instead of a product: the best option existed already, and Glidewell removed the price and the complexity that kept ordinary dentists away. It is also the clearest case of vertical integration paying off clinically — owning the machining is what made the flat fee possible.",
+  "SCANNERS · SCALE": "Through the 2010s intraoral scanners went from novelty to near-universal — by the mid-2020s roughly 70% of dentists had switched from goopy physical impressions to digital scans. The old way was slow and error-prone: trays, silicone, gagging patients, remakes when a margin didn't read. Scanning became the on-ramp to everything downstream — AI crown design, the automated BruxZir factory, chairside milling — and in these years Glidewell grew into the largest dental laboratory in the world, fed by that digital stream.",
+  "HAHN TAPERED IMPLANT": "Chronology. • 1997 — Dr. Jack Hahn (creator of the NobelReplace implant) designs the original tapered implant; his own pre-history, not Glidewell's. • 2000s–early 2010s — Glidewell enters implants from the side, not with its own implant: the Inclusive line of FDA-cleared prosthetic components (abutments, screws, copings) compatible with most third-party systems, made in-house by Prismatik Dentalcraft. The point is vertical integration — cut the OEM markup, offer flat, predictable lab fees. • 2014 — Hahn begins working with Glidewell's engineers and Jim Glidewell to design a new implant. • 2015 — LAUNCH of the Hahn Tapered Implant System. It becomes one of the fastest-growing implant systems in the US, adopted by thousands of dentists. Stated goal: a high-quality implant at a fraction of the price, finished with a BruxZir crown, under a lifetime warranty from implant to restoration. • 2019 — the Inclusive component line expands to 22 major implant systems; clinical studies (2-year, then 6-year) show a 99.2% success rate and under 0.2 mm bone loss. • 2020 — medical-grade titanium scan bodies bring implant restorations into the digital workflow. • ~2023–24 — Hahn Tapered is renamed the Glidewell HT Implant System. • 2024–25 — the Glidewell Tooth Replacement Solution (full digital bundle) and major 2025 upgrades (a 6.0 mm implant, new guided-surgery kits).\n\nWhat it is today. As a private company Glidewell publishes no product-level revenue split, so an exact share can't be cited. Qualitatively: it is one of Glidewell's core product lines and one of the fastest-growing implant systems in the US; Glidewell has restored hundreds of thousands of implant cases and makes both the implant and its components in-house through Prismatik Dentalcraft (ISO-certified, FDA-cleared), positioning implant dentistry as a standard of care across the economic spectrum.\n\nThe connections (why implants link to so much on the timeline). • BruxZir / restorative — the implant is finished with the same BruxZir crown; one warranty from implant to restoration. • Vertical integration — Prismatik makes the parts in-house, kills the markup, enables flat pricing; the same move as the 2000 plastic-injection beat. • Digital / glidewell.io — scan bodies, guided surgery, digital treatment planning. • CE / education — world-class education and symposia, the Misch lineage through Resnik, teaching GPs to place implants. • Jim personally — Hahn and Jim Glidewell co-devised the system. • Accessibility — the throughline: a fraction of the price, across the economic spectrum.",
+  "GLIDEWELL.IO": "In November 2017, at its first Glidewell Dental Symposium in Dallas, Glidewell unveiled glidewell.io — a complete in-office ecosystem that put the lab's whole workflow on the dentist's own counter. Three pieces: an intraoral scanner (the iTero Element, through a partnership with Align), fastdesign.io software that uses machine-learning to propose the crown design, and the fastmill.io in-office mill. The breakthrough material was BruxZir NOW — a fully-sintered zirconia block that comes out of the mill finished, with no firing oven required. The promise: scan, design, mill and seat a single crown in roughly one visit — about an hour — instead of sending an impression to a lab and bringing the patient back in two weeks.\n\nWhy it matters — the lab moves into the chair. For decades the lab was a separate place: you took an impression, mailed it, waited, called back the patient. glidewell.io collapses that distance — the lab's capability now lives inside the operatory. Access, again: fewer visits for the patient, less travel, faster care.\n\nWho it reaches is the test of it. Paresh Patel works the cheap end of the same argument — five thousand implants placed, three and a half thousand of them mini implants, which exist for the patient who cannot afford the conventional case or cannot take the surgery. The mill on the counter and the small implant are one idea in two pieces of hardware.",
+  "BRUXZIR FACTORY": "In 2019 Glidewell crossed the line from digital-assisted to digital-native production: the launch of fully automated, AI-designed, robotic monolithic-zirconia manufacturing — what the company frames as Glidewell Intelligent Manufacturing. Crown designs are proposed automatically by generative AI (reportedly generative-adversarial networks), then routed to production lines where robotic arms feed BruxZir zirconia blocks into banks of interconnected mills; each restoration is verified by automated metrology before it ships. No hand-waxing, no manual CAD nudging — the machine designs the tooth and the machine makes it.\n\nWhy it matters — the climax of the analog→digital arc. Set it directly against the 1907 / PFM hand-craft baseline: a technician at a bench, wax, casting, a fired porcelain layer, hours of human judgment per unit. Now: software draws the crown, a robot arm cuts it, a sensor checks it. Same goal — a tooth that fits and looks right — but the labor, the variability, and the cost structure are transformed. That transformation is the thesis made physical: automation is how the best dentistry gets made affordable and brought to scale, not by cutting corners but by removing variability and human bottlenecks.",
+  "GUIDING LEADERS": "In 2019, Glidewell launched Guiding Leaders — a free leadership and practice-development program built and run by Bobbie Norton, held at the Irvine campus. It was created as the profession was tipping toward a new majority: women now make up more than half of graduating dentists, yet clinical school never teaches the business, communication, and leadership skills a practice owner actually needs. Guiding Leaders fills that gap at no cost to the dentist. Today it has roughly 100 alumni, with each cohort earning up to about 80 CE units across the run from spring to the fall graduation.\n\nWhy it matters (the thesis made human). This is the access thesis turned outward. It is reinvestment, not marketing: Glidewell gives away the playbook and asks nothing clinical in return. That reframes the company from a lab that sells crowns into one that grows the people who place them.",
+  "FASTSCAN.IO": "In 2022 fastscan.io, built with Medit, folded an intraoral scanner into the Glidewell ecosystem — the front door to the all-digital workflow. Capturing the mouth digitally is the cheapest possible front of the flywheel: no physical impressions, no remakes, data straight into the box that designs and mills the crown. With fastdesign and fastmill already in the operatory, the scanner completed the set — from the first look at the tooth to the finished restoration, the case never leaves the digital chain.",
+  "2026": "This is the present — 2026. Automated monolithic milling, the same-visit zirconia crown Glidewell helped push to scale, is no longer remarkable; it is simply how chairside dentistry runs. The frontier has moved to three converging fronts: AI that reads scans and drafts restoration designs, robotics that guide the hand in surgery, and the single-visit promise extended from the crown to the whole treatment. By late 2025, AI-assisted CAD tools were reported to cut design time by 30–45 minutes per case and reduce remakes by roughly 18 percent, while Neocis cleared its next-generation Yomi S implant robot with FDA, its planning AI auto-segmenting anatomy from CBCT scans — a system now reachable by general dentists, not just specialists.\n\nWhy it matters — access, today. The 2026 frontier is that same throughline, now carried by software and machines. AI design and chairside automation compress chair time, labor, and remakes — and cost follows time. The honest claim here is not that anyone “invented” single-visit or robotic dentistry; it is that the tools are being made the default and brought within reach of the everyday practice, which is exactly where access lives or dies.",
+  "LOST-WAX CASTING": "In 1907 William H. Taggart demonstrated a practical lost-wax casting method for dental restorations — molten gold cast into a mold formed around a hand-carved wax pattern. The technique made precisely fitting cast crowns and inlays reproducible, and it defined the craft for the rest of the century: every restoration began as wax shaped by hand, one case at a time, days or weeks per mouth. This is the analog baseline the whole tour measures itself against — the world Glidewell was born into, and the one it would spend fifty years making faster, cheaper and more precise.",
 };
-const STUDY_MORE = {"2450": "In January 1970, Jim Glidewell opened a one-man dental ceramics lab in Orange County, California, working off a kitchen table — at once the founder and the sole employee. He had finished studying dental technology at Orange Coast College in 1969 and started as a bench technician who knew the craft with his hands. Before any of this came the hard road: a Kentucky farm upbringing near the Cumberland River, a latchkey childhood, and a Navy hitch during the Vietnam era.", "6900": "By 1979 the one-man ceramics lab Jim opened in 1970 had multiplied into nine separate labs spread across Southern California. It was real scale — but scale by addition: nine locations, nine sets of overhead, nine places to manage, rather than one machine. \n\nWhy it matters — scattered scale. This is the company a half-step before its defining idea. The first direct-mail campaign had already broken the “only serve dentists nearby” rule — cases were now arriving by post from far beyond any single lab’s neighborhood. So the nine-lab sprawl and the mail-order reach pull in opposite directions: demand is becoming national while production is still local and fragmented. That tension is the whole point of the beat — it is the problem that forces the next move. \n\nThe pivot it sets up. It leads straight to 1984: the nine labs merge into a single centralized plant in Orange (15,000 sq ft, 42 staff), fed nationally by mail. That is the birth of the model that actually scales — one machine, one standard, cost driven down by volume. Tell 1979 as the “before,” and 1984 lands as the turn.", "7750": "In 1980 Glidewell began flying dentists in from Japan and other countries to train in the US — the International Study Program. It was a bold move for a lab that was only just beginning to scale nationally, and it became one of the foundational milestones that shaped the company's philosophy for decades.\n\nEducation as a bond. Jim used teaching long before it became a standard marketing tool. For him it was a way to build bridges and exchange know-how with the profession — a connection, not an add-on to the product. That instinct later grew into a full media and education wing (the Chairside and Lab Perspectives magazines among them). His conviction is blunt: in business it is critical that people like and trust you — “people don't buy from people they don't like.” Teaching, and hosting guests in his own home, became the tools for building that almost family-like bond.", "9850": "What it is. BioTemps are lab-fabricated provisional (temporary) crowns and bridges in tooth-colored PMMA acrylic — roughly a 6-month wear life, ~3-day lab turnaround. (There's also a chairside version, “BioTemps NOW,” milled in-office from PMMA blocks.)\n\nWhy it's more than a temporary. The real value is as an esthetic blueprint: the provisional's design is stored and reused for the final restoration (later a BruxZir or e.max crown), so the patient can see, wear and approve the look, bite and speech before committing — “no surprises on the final visit.” It also shapes gum tissue and restores collapsed bite height. A clean early example of the Glidewell pattern: own the whole workflow in-house and take the risk out for the dentist.\n\nBy around 2002 the BioTemps business had grown into its own dedicated fixed-ceramics lab. BioTemps showed the vertical, in-house, materials-driven model Glidewell would later scale dramatically with BruxZir zirconia.", "12450": "In 1995 Glidewell opened a small in-house dental operatory — a working clinic inside the lab — so the company could test materials and restorations on real patients rather than only on bench models. The same year it launched PlaySafe, a line of custom-fitted athletic mouthguards\n\nWhy it matters (the realism move). Two small things start here. First, R&D realism: a crown that survives a lab jig is not the same as one that survives a human bite, saliva, and a hurried dentist — putting chairs in the building meant Glidewell could see failure where it actually happens. Second, it is the company's first clear step beyond the crown, into prevention and sport. Modest in scale, but it shows the instinct that later defines the firm: control more of the chain, and don't stop at the restoration.", "14260": "In August 1998 Glidewell began mailing a modest clinical newsletter to its dentist customers — “Chairside Perspectives” It was short, practical, and unglamorous: proven tips and techniques shared by the lab's own on-staff clinicians, the dentists who practiced inside what was becoming the nation's largest dental laboratory. It ran in this newsletter form for roughly eight years before outgrowing the format.\n\nWhy it matters. This is a connective beat, not a headline event. A few mailed pages did not move the industry in 1998. What matters is what it seeded — the founding instinct that Glidewell should not only make restorations but teach the dentist how to use them. That instinct is the through-line from the 1980 “education as a bond” beat to everything that follows. Reach, even small reach, was being converted into trust.\n\nThe newsletter outgrew its own format and became Chairside magazine, which is edited today by Neil Park — a dentist who ran his own practice for twelve years, then spent nineteen at Nobel Biocare building the courses that teach dentists a new technique. The job the 1998 mailing invented is still the job.", "15700": "Around the turn of the 2000s Glidewell stopped relying on outside vendors for its key materials and began building its own Research & Development. Two moments pushed Jim there. First, a bad experience betting on an outside material — Artglass, a lab veneering composite — taught him that if you don't own the material, you don't own your quality or your future. Second, a conversation with independent researcher Dr. Rella Christensen about a “Volkscrown” — a people's crown, affordable to everyone, that performed like cast gold. Together they pointed at one conclusion: to make the best dentistry affordable and dependable, Glidewell needed its own science.\n\nWhy it matters — the engine room. This belongs early in the story, before BruxZir, not after. Every later breakthrough — the CAD build-out (~2000), BruxZir (2009), the automated factory (2019), AI-driven design — grows out of this one decision to build in-house R&D. It is the structural reason the company can keep making the best affordable: it controls the materials and the process end to end. By ~2000 Glidewell had already developed dozens of materials and lab services and was expanding the R&D team that today numbers 150+ people, including a dozen-plus PhDs.\n\nThrough the late 1990s and early 2000s the dental laboratory went digital. Instead of building a crown's substructure (coping) by hand, technicians began scanning the model, designing the coping on a computer, and milling it from a block. CAD/CAM moved from a niche into the mainstream of the lab.\n\nWho actually pioneered it. Not Glidewell. Nobel Biocare's Procera (mid-1990s) was the first CAD/CAM ceramic substructure; around 2001–2002 milled-zirconia frameworks arrived from others — 3M ESPE's Lava, Dentsply's Cercon, Nobel's Procera Forte. Those outside systems opened the door.\n\nWhat Glidewell did. As one of the largest labs, Glidewell adopted digital manufacturing early (working with the Cercon and Wol-Ceram systems around 2002), then built its own. Around 2004 it hired engineer Mervyn Rudgley (from 3D Systems) to lead digital manufacturing, with one explicit goal: make a zirconia substructure at a PFM price. In 2006 that became Prismatik CZ — Glidewell's own milling-plus-software system, paired with a 3Shape scanner. A clever trick (milling thin copings from a softer, bisque-fired block and sintering afterward) let them skip costly diamond tooling and push cost down.\n\nThis is the hinge between the analog craft of Part 1 and the monolithic-zirconia revolution of 2009. It is the moment the machine first enters Glidewell's bench — and, true to the thesis, the angle from day one was not 'newest technology' but 'best technology at an affordable price.' Without this quiet early-2000s digital build-out, BruxZir (2009) and the automated factory (2019) would not have been possible.", "18700": "In 2007 Glidewell took in its first digital optical impression — an intraoral scan sent straight from a practice — instead of a silicone impression or a poured stone model. Most of the industry was still pouring impressions at the time. The company dates the start of its digital case database to that moment.", "21080": "In late 2009 Glidewell launched BruxZir — a full-contour, monolithic solid-zirconia crown milled as one solid piece, with no porcelain veneering layer to chip. Worth knowing: zirconia and CAD/CAM were already in dentistry (In-Ceram Zirconia ~1999; Lava, Cercon, Procera ~2001–02). Glidewell did not invent zirconia. What it did was take monolithic full-contour zirconia, drive it through its own high-volume lab, and offer it at a price and turnaround ordinary dentists could actually say yes to — then make it the default. The first pitch was blunt: “more brawn than beauty” — a tough, near-unbreakable crown for grinders, implant cases and tight-bite molars where metal-backed crowns (PFMs) or gold used to be the only safe answer.\n\nWhy it matters — the revolution. A monolithic crown has no veneer to fracture, mills fast, and undercuts the PFM on price. The narrative nugget is the tell: the revolution went mainstream not through advertising but when dentists started phoning their own local labs and asking for “that BruxZir thing.” Demand pulled it in. Today BruxZir reportedly makes up the majority of Glidewell's fixed-crown volume and the brand counts tens of millions of units placed since 2009. This is where “affordable access” stops being a slogan and becomes a crown in a real patient's mouth.\n\nWho actually made it. Three roles, not one — the “Jim vs Carden” question dissolves once you separate them. Founder vision & funding — Jim Glidewell: no source, not even Glidewell's own, says he invented it at the bench; his own words credit “our R&D teams.” His real, substantial credit is the bet — investing in in-house milling and materials research so it could exist. The technical creator — Robin (Robert) A. Carden, VP of R&D: he led development and holds the process patent (US 9,434,651 B2, granted 2016) for the binder-free colloidal / slip-cast zirconia-blank method, and is the subject of the 2013 “I Made BruxZir” interview. Clinical champion — Dr. Mike DiTolla: drove dentist adoption (Chairside magazine, the on-camera “hammer test”) — an evangelist, not a materials inventor. In one line: “Developed by Glidewell's R&D team, led by Robin Carden, on founder Jim Glidewell's bet — launched 2009.”", "21930": "For decades dentists stayed with cement-retained crowns even though screw-retained ones are easier to retrieve and avoid cement left under the gum. The reason was rarely clinical — it was cost and complexity. Titanium bases, UCLA abutments and clinical screws were sold by the implant OEMs (Nobel, Straumann and others) at prices that could roughly double the lab cost of a case.\n\nWhat Glidewell did — two moves.\n1) Made the parts itself. Through its own precision-machining operation, Prismatik Dentalcraft, the company began producing the Inclusive® Prosthetic Components line — titanium bases, esthetic and multi-unit abutments, analogs, screws, temporary and UCLA abutments, transfer copings — compatible with the major implant systems. That broke the OEM parts bottleneck and let Glidewell quote a flat lab fee for a screw-retained crown. Screw retention stopped being a premium option and became something an ordinary practice could afford.\n2) Solved the material problem. Screw retention stresses the crown around the screw channel, and porcelain-fused-to-metal chipped there. BruxZir monolithic zirconia (2009) could take it. The lab began bonding the BruxZir crown to the titanium base before shipping, so the dentist received one finished unit: seat it, torque the screw, done. No cement in the patient's mouth at all.\n\nWhy it belongs on this line. It is the same mechanism as every other beat here, applied to a technique instead of a product: the best option existed already, and Glidewell removed the price and the complexity that kept ordinary dentists away. It is also the clearest case of vertical integration paying off clinically — owning the machining is what made the flat fee possible.", "22550": "Through the 2010s intraoral scanners went from novelty to near-universal — by the mid-2020s roughly 70% of dentists had switched from goopy physical impressions to digital scans. The old way was slow and error-prone: trays, silicone, gagging patients, remakes when a margin didn't read. Scanning became the on-ramp to everything downstream — AI crown design, the automated BruxZir factory, chairside milling — and in these years Glidewell grew into the largest dental laboratory in the world, fed by that digital stream.", "23170": "Chronology. • 1997 — Dr. Jack Hahn (creator of the NobelReplace implant) designs the original tapered implant; his own pre-history, not Glidewell's. • 2000s–early 2010s — Glidewell enters implants from the side, not with its own implant: the Inclusive line of FDA-cleared prosthetic components (abutments, screws, copings) compatible with most third-party systems, made in-house by Prismatik Dentalcraft. The point is vertical integration — cut the OEM markup, offer flat, predictable lab fees. • 2014 — Hahn begins working with Glidewell's engineers and Jim Glidewell to design a new implant. • 2015 — LAUNCH of the Hahn Tapered Implant System. It becomes one of the fastest-growing implant systems in the US, adopted by thousands of dentists. Stated goal: a high-quality implant at a fraction of the price, finished with a BruxZir crown, under a lifetime warranty from implant to restoration. • 2019 — the Inclusive component line expands to 22 major implant systems; clinical studies (2-year, then 6-year) show a 99.2% success rate and under 0.2 mm bone loss. • 2020 — medical-grade titanium scan bodies bring implant restorations into the digital workflow. • ~2023–24 — Hahn Tapered is renamed the Glidewell HT Implant System. • 2024–25 — the Glidewell Tooth Replacement Solution (full digital bundle) and major 2025 upgrades (a 6.0 mm implant, new guided-surgery kits).\n\nWhat it is today. As a private company Glidewell publishes no product-level revenue split, so an exact share can't be cited. Qualitatively: it is one of Glidewell's core product lines and one of the fastest-growing implant systems in the US; Glidewell has restored hundreds of thousands of implant cases and makes both the implant and its components in-house through Prismatik Dentalcraft (ISO-certified, FDA-cleared), positioning implant dentistry as a standard of care across the economic spectrum.\n\nThe connections (why implants link to so much on the timeline). • BruxZir / restorative — the implant is finished with the same BruxZir crown; one warranty from implant to restoration. • Vertical integration — Prismatik makes the parts in-house, kills the markup, enables flat pricing; the same move as the 2000 plastic-injection beat. • Digital / glidewell.io — scan bodies, guided surgery, digital treatment planning. • CE / education — world-class education and symposia, the Misch lineage through Resnik, teaching GPs to place implants. • Jim personally — Hahn and Jim Glidewell co-devised the system. • Accessibility — the throughline: a fraction of the price, across the economic spectrum.", "24020": "In November 2017, at its first Glidewell Dental Symposium in Dallas, Glidewell unveiled glidewell.io — a complete in-office ecosystem that put the lab's whole workflow on the dentist's own counter. Three pieces: an intraoral scanner (the iTero Element, through a partnership with Align), fastdesign.io software that uses machine-learning to propose the crown design, and the fastmill.io in-office mill. The breakthrough material was BruxZir NOW — a fully-sintered zirconia block that comes out of the mill finished, with no firing oven required. The promise: scan, design, mill and seat a single crown in roughly one visit — about an hour — instead of sending an impression to a lab and bringing the patient back in two weeks.\n\nWhy it matters — the lab moves into the chair. For decades the lab was a separate place: you took an impression, mailed it, waited, called back the patient. glidewell.io collapses that distance — the lab's capability now lives inside the operatory. Access, again: fewer visits for the patient, less travel, faster care.\n\nWho it reaches is the test of it. Paresh Patel works the cheap end of the same argument — five thousand implants placed, three and a half thousand of them mini implants, which exist for the patient who cannot afford the conventional case or cannot take the surgery. The mill on the counter and the small implant are one idea in two pieces of hardware.", "24870": "In 2019 Glidewell crossed the line from digital-assisted to digital-native production: the launch of fully automated, AI-designed, robotic monolithic-zirconia manufacturing — what the company frames as Glidewell Intelligent Manufacturing. Crown designs are proposed automatically by generative AI (reportedly generative-adversarial networks), then routed to production lines where robotic arms feed BruxZir zirconia blocks into banks of interconnected mills; each restoration is verified by automated metrology before it ships. No hand-waxing, no manual CAD nudging — the machine designs the tooth and the machine makes it.\n\nWhy it matters — the climax of the analog→digital arc. Set it directly against the 1907 / PFM hand-craft baseline: a technician at a bench, wax, casting, a fired porcelain layer, hours of human judgment per unit. Now: software draws the crown, a robot arm cuts it, a sensor checks it. Same goal — a tooth that fits and looks right — but the labor, the variability, and the cost structure are transformed. That transformation is the thesis made physical: automation is how the best dentistry gets made affordable and brought to scale, not by cutting corners but by removing variability and human bottlenecks.", "25490": "In 2019, Glidewell launched Guiding Leaders — a free leadership and practice-development program built and run by Bobbie Norton, held at the Irvine campus. It was created as the profession was tipping toward a new majority: women now make up more than half of graduating dentists, yet clinical school never teaches the business, communication, and leadership skills a practice owner actually needs. Guiding Leaders fills that gap at no cost to the dentist. Today it has roughly 100 alumni, with each cohort earning up to about 80 CE units across the run from spring to the fall graduation.\n\nWhy it matters (the thesis made human). This is the access thesis turned outward. It is reinvestment, not marketing: Glidewell gives away the playbook and asks nothing clinical in return. That reframes the company from a lab that sells crowns into one that grows the people who place them.", "26340": "In 2022 fastscan.io, built with Medit, folded an intraoral scanner into the Glidewell ecosystem — the front door to the all-digital workflow. Capturing the mouth digitally is the cheapest possible front of the flywheel: no physical impressions, no remakes, data straight into the box that designs and mills the crown. With fastdesign and fastmill already in the operatory, the scanner completed the set — from the first look at the tooth to the finished restoration, the case never leaves the digital chain.", "28180": "This is the present — 2026. Automated monolithic milling, the same-visit zirconia crown Glidewell helped push to scale, is no longer remarkable; it is simply how chairside dentistry runs. The frontier has moved to three converging fronts: AI that reads scans and drafts restoration designs, robotics that guide the hand in surgery, and the single-visit promise extended from the crown to the whole treatment. By late 2025, AI-assisted CAD tools were reported to cut design time by 30–45 minutes per case and reduce remakes by roughly 18 percent, while Neocis cleared its next-generation Yomi S implant robot with FDA, its planning AI auto-segmenting anatomy from CBCT scans — a system now reachable by general dentists, not just specialists.\n\nWhy it matters — access, today. The 2026 frontier is that same throughline, now carried by software and machines. AI design and chairside automation compress chair time, labor, and remakes — and cost follows time. The honest claim here is not that anyone “invented” single-visit or robotic dentistry; it is that the tools are being made the default and brought within reach of the everyday practice, which is exactly where access lives or dies.", "1400": "In 1907 William H. Taggart demonstrated a practical lost-wax casting method for dental restorations — molten gold cast into a mold formed around a hand-carved wax pattern. The technique made precisely fitting cast crowns and inlays reproducible, and it defined the craft for the rest of the century: every restoration began as wax shaped by hand, one case at a time, days or weeks per mouth. This is the analog baseline the whole tour measures itself against — the world Glidewell was born into, and the one it would spend fifty years making faster, cheaper and more precise."};
+/* ARTICLES ARE KEYED BY WHAT THEY ARE ABOUT, NOT BY WHERE IT STANDS. This map
+   used to hold them by world coordinate, and every cut or shove in the timeline
+   moved the beat and left the article behind — five had come loose and were
+   being found again at boot by proximity, with a warning each time. It is
+   filled from STUDY_BY_TITLE now (a beat with no title is found by its year),
+   so an article follows its beat wherever the hall puts it. */
+const STUDY_MORE = {};
 /* THE PEOPLE. Each one has a page of their own, reached by their name in the
    running text of any year, recreation or artefact card. `bio` is what that
    page says about them; `clips` is the rail of interview previews down its
@@ -11024,13 +11006,12 @@ let PERSON_SPRITES = {};
 /* media keyed by the beat's title — the coordinate map is rekeyed at boot and
    a beat moved by the rhythm pass loses its clips; a title cannot drift. */
 const STUDY_MEDIA_BY_TITLE = {
+  'FIRST DIGITAL CASE': [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2007_patel.mp4', label:'on the digital revolution'}],
+  'SCANNERS \u00b7 SCALE': [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2010s_patel.mp4', label:'on scanners in every office'}],
   'THE CROSSOVER': [{name:'Dr. Randolph Resnik', img:'resnik', pid:'resnik',
                      src:'media/resnik_02.mp4', label:'on the scan replacing the impression'}],
 };
-const STUDY_MEDIA = {
-  18700: [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2007_patel.mp4', label:'on the digital revolution'}],
-  22550: [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2010s_patel.mp4', label:'on scanners in every office'}],
-};
+const STUDY_MEDIA = {};   // filled at boot from STUDY_MEDIA_BY_TITLE
 const VIDEO_EL = {};
 // preview thumbs are real frames from the clips, grabbed at runtime
 const THUMBS = {};
@@ -11058,17 +11039,6 @@ function hushClips(keep){
     const v = VIDEO_EL[k];
     if (v && v !== keep && !v.paused){ try { v.pause(); } catch(e){} }
   }
-}
-function openClip(m, wx){
-  let v = VIDEO_EL[m.src];
-  hushClips(v);
-  if (!v){
-    v = document.createElement('video');
-    v.src = m.src; v.preload = 'auto'; v.playsInline = true;
-    VIDEO_EL[m.src] = v;
-  }
-  try { if (v.paused) v.currentTime = 0; v.play(); } catch(e){}
-  state.clip = {v, src: m.src, name: m.name, label: m.label, wx: wx, amt: 0};
 }
 function closeClip(){
   const C = state.clip;
@@ -11233,7 +11203,7 @@ function drawAlbumView(){
   ctx.font = eraFont(20 * SS, '', SEGMENTS[0].font);
   try { ctx.letterSpacing = `${20*TRACK.plate*SS}px`; } catch(err){}
   ctx.fillStyle = 'rgba(236,214,172,0.85)';
-  ctx.fillText(b.album.title, W/2, y0 - 26 * SS);
+  ctx.fillText(sentence(b.album.title), W/2, y0 - 26 * SS);
   ctx.save();
   ctx.strokeStyle = 'rgba(238,220,182,0.75)'; ctx.lineWidth = Math.max(1.4, 2 * SS); ctx.lineCap = 'round';
   {
@@ -12015,20 +11985,6 @@ function personPreview(S, i){
 /* kept as the one way in: choosing a clip is choosing what the page's player
    shows. There is no separate player any more. */
 function personPlay(S, i){ personPreview(S, i); }
-function personPlayOld(S, i){
-  const P = PEOPLE[S.id], c = P.clips && P.clips[i];
-  if (!c) return;
-  if (S.v){ try { S.v.pause(); } catch(e){} }
-  let v = VIDEO_EL[c.src];
-  hushClips(v);
-  if (!v){
-    v = document.createElement('video');
-    v.src = c.src; v.preload = 'auto'; v.playsInline = true;
-    VIDEO_EL[c.src] = v;
-  }
-  S.playing = i; S.v = v; S.scroll = 0;
-  try { if (v.paused) v.currentTime = 0; v.play(); } catch(e){}
-}
 function personStop(S){
   if (S && S.v){ try { S.v.pause(); } catch(e){} }
   if (S){ S.playing = null; S.v = null; S.preview = null; }
@@ -13215,7 +13171,7 @@ function frame(){
   // wall layer: photos and panels sit deepest
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    if (Math.abs(b.x - cam.x) > 4900) continue;
+    if (Math.abs(b.x - cam.x) > CULL_BEAT) continue;
     if (b.doc) drawDocCard(b, i);
     for (const it of b.wall){
       const sp = SPRITES[it.img]; if (!sp) continue;
@@ -13248,7 +13204,7 @@ function frame(){
      the late pass — they travel toward the camera and must ride above. */
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    if (Math.abs(b.x - cam.x) > 4900) continue;
+    if (Math.abs(b.x - cam.x) > CULL_BEAT) continue;
     const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
     if (!b.fly && focusAmt <= 0.01) drawBeatText(b, focusAmt);
   }
@@ -13294,7 +13250,7 @@ function frame(){
   drawFilmRelays();   // and its relays pick it up down the rail
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    if (Math.abs(b.x - cam.x) > 4900) continue;
+    if (Math.abs(b.x - cam.x) > CULL_BEAT) continue;
     for (const it of b.table){
       const sp = SPRITES[it.img]; if (!sp) continue;
       drawLyingPrint(sp, b.x + it.dx, it.lz, it.w, it.rot || 0,
@@ -13345,7 +13301,7 @@ function frame(){
   // the floating text reads above everything — walls, tables, even the lamps
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    if (Math.abs(b.x - cam.x) > 4900) continue;
+    if (Math.abs(b.x - cam.x) > CULL_BEAT) continue;
     const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
     if (b.fly || focusAmt > 0.01) drawBeatText(b, focusAmt);
   }
@@ -13538,7 +13494,6 @@ async function boot(){
   initMusic();
   initWhoosh();
   initDoc();
-  MAP_SPRITE = makeMapSprite();
   USA_SPRITE = makeUsaSprite();
   MONS.crt = makeMonitor('crt');
   MONS.lcd = makeMonitor('lcd');
@@ -13644,13 +13599,13 @@ async function boot(){
     const p = PROPS[i], half = (p.w || 120) * 0.5 + 16;
     // over a gap
     if (!TABLES.some(tb => p.x - half >= tb.x0 + 12 && p.x + half <= tb.x1 - 12)){
-      console.log('prop dropped over a gap: ' + p.kind + ' @' + (p.x | 0));
+      if (DBG) console.log('prop dropped over a gap: ' + p.kind + ' @' + (p.x | 0));
       PROPS.splice(i, 1); continue;
     }
     // and the run of counter between the cabinet and the centrepiece stays bare:
     // it is the approach to the still-life, and a stray jar on it reads as litter
     if (p.x > cabR - 40 && p.x < plateL){
-      console.log('prop cleared from the approach: ' + p.kind + ' @' + (p.x | 0));
+      if (DBG) console.log('prop cleared from the approach: ' + p.kind + ' @' + (p.x | 0));
       PROPS.splice(i, 1);
     }
   }
