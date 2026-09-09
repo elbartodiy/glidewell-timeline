@@ -547,6 +547,30 @@ const G8_W = 1400;   // the 1979 models' plinth, in world units — the counters
    touch right so the van pulls up at the building rather than at its logo */
 const G8_DOORS = [0.062, 0.180, 0.295, 0.417, 0.554, 0.660, 0.776, 0.901].map(v => v + 0.030);
 const VAN8 = {seen: false, run: null};
+/* THE VAN IS ALWAYS THERE; WHERE IT STARTS IS WHAT CHANGES. It is parked at
+   one of the labs — the second to the eighth, drawn fresh each time the bay
+   comes back — waits a moment, and then drives left down the street, pulling
+   up at the first lab and staying there. It never runs past that one, so it
+   cannot drive off the end of the plinth.
+
+   This runs in the update, not in drawMapWall: the bay's own draw is culled at
+   4100, and the arming used to sit inside it. A camera that crossed the 2600
+   to 4100 band in a single step — a jump, or simply a brisk scroll — never
+   spent a frame there, so the visit was never re-armed and the street stayed
+   empty for the rest of the session. */
+function updateVan8(dt){
+  const d = Math.abs(cam.x - (REC_L + REC_R) / 2);
+  if (d > 3000){ VAN8.seen = false; VAN8.run = null; return; }
+  if (!VAN8.seen && d < 2400){
+    VAN8.seen = true;
+    const from = 1 + ((Math.random() * (G8_DOORS.length - 1)) | 0);
+    VAN8.run = {u: G8_DOORS[from], wait: 0.6 + Math.random() * 2.4, stop: G8_DOORS[0]};
+  }
+  const R = VAN8.run; if (!R) return;
+  if (R.wait > 0){ R.wait -= dt; return; }
+  const gap = R.u - R.stop;
+  if (gap > 0.0005) R.u -= Math.min(gap, dt * 0.145 * Math.min(1, 0.13 + gap * 7));
+}
 const REC3_L = SHIFT(10600), REC3_R = SHIFT(11700);   // the 1989 National Leader recreation
 const REC4_L = SHIFT(25940), REC4_R = SHIFT(26740);   // the 2022 fastscan recreation — the wall turns pure white beyond it
 /* The 1993 bay. Cut INSIDE era 2, not at a seam, so no two wall planes meet
@@ -5875,18 +5899,8 @@ function drawMapWall(t){
          approach never plays twice. This one runs on its own clock, not on the
          scroll: it is already driving when the row comes into view. */
       const van = PROP_SPRITES.ph_car79;
-      if (van){
-        const dt2 = Math.min(0.05, state.dt || 0.016);
-        if (Math.abs(cam.x - mid) > 2600){ VAN8.seen = false; VAN8.run = null; }
-        else if (!VAN8.seen){
-          VAN8.seen = true;
-          VAN8.run = Math.random() < 0.58
-            ? {u: 1.10, stop: G8_DOORS[(Math.random() * G8_DOORS.length) | 0]}
-            : null;
-        }
-        if (VAN8.run){
-          const gap = VAN8.run.u - VAN8.run.stop;
-          if (gap > 0.0005) VAN8.run.u -= Math.min(gap, dt2 * 0.145 * Math.min(1, 0.13 + gap * 7));
+      if (van && VAN8.run){
+        {
           const vh = hR * 0.052, vw = vh * van.w / van.h;
           const vx = xR + VAN8.run.u * wR;
           const vy = (yFoot - hR) + hR * 0.152;   // the front lip of the plinth's own top, where the forecourts end
@@ -12140,6 +12154,8 @@ function update(dt){
     if (state.restBeat === nb.i) state.restTime += dt;
     else { state.restBeat = nb.i; state.restTime = 0; }
   } else { state.restBeat = -1; state.restTime = 0; }
+
+  updateVan8(dt);   // the eight-lab street's own traffic, on its own clock
 
   /* THE LINE STAYS UP LONG ENOUGH TO READ IT. The caption used to be tied
      straight to the rest state, so the first turn of the wheel took it off the
