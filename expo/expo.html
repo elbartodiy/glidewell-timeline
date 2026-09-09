@@ -7709,15 +7709,17 @@ async function loadPlates(){
   for (const p of PLATES)
     for (const L of (p.layers || [{img: p.img, z: p.z}]))
       jobs.push(new Promise(res => {
+        let fallback = false;
         const tryLoad = (bust) => {
           const im = new Image();
-          im.onload = () => { L.sp = im; res(); };
+          im.onload = () => { L.sp = im; if (im.decode) im.decode().catch(() => {}); res(); };
           im.onerror = () => {
             if (!bust) return tryLoad(true);          // a cached miss deserves one retry
+            if (!fallback){ fallback = true; return tryLoad(false); }   // no webp? take the original
             console.error('plate layer missing:', L.img, '— the bench will not appear');
             L.sp = null; res();
           };
-          im.src = vurl('assets/photo/' + L.img) + (bust ? '&r=' + Date.now() : '');
+          im.src = (fallback ? vurl('assets/photo/' + L.img) : photoURL(L.img)) + (bust ? '&r=' + Date.now() : '');
         };
         tryLoad(false);
       }));
@@ -8105,6 +8107,15 @@ const PHOTO_TEX = {};
    carries the build stamp and a new cut is fetched the moment it exists */
 const ASSET_V = '20260909-movie2';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
+/* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
+   because that is what the file in the studio is; on the wire it is the webp
+   beside it. Re-encoded at quality 94 (lossless for the one where the chroma
+   showed), the eighteen megabytes of cut-outs and wall textures the hall pulls
+   at boot come down to under five, with a mean error on visible pixels of two
+   or three levels out of two hundred and fifty-five — and the alpha channel
+   bit-for-bit identical, which is what a cut-out actually depends on. */
+const WEBP_OK = !/[?&]src=orig/.test(location.search);
+const photoURL = f => vurl('assets/photo/' + (WEBP_OK ? f.replace(/\.(png|jpe?g)$/i, '.webp') : f));
 /* the procedural era walls (tools/make_wall.py) stand in for the drawn ones —
    same slot, same tiling, so drawWall never learns the difference */
 /* the wall changes material inside era 1: dark boards for the analog century,
@@ -8166,10 +8177,23 @@ async function loadPhotoSkin(){
     im.onload = () => {
       PHOTO_TEX[key] = im;
       PROP_SPRITES[key] = {c: im, w: im.naturalWidth, h: im.naturalHeight};
+      /* DECODED NOW, NOT ON THE FRAME IT IS FIRST DRAWN. A browser holds the
+         compressed bytes and unpacks them the first time something paints
+         them, which puts the decode of a two-megapixel wall texture inside a
+         frame in the middle of the walk. webp costs more to unpack than the
+         png it replaces, and that showed up as one extra dropped frame; asking
+         for the decode here spends it while the hall is still loading. */
+      if (im.decode) im.decode().catch(() => {});
       res();
     };
-    im.onerror = () => { console.error('photo skin: missing asset', file); res(); };
-    im.src = vurl('assets/photo/' + file);
+    /* and a browser too old for webp still gets its hall: the original file
+       is sitting next to it, and one failed load is all it costs to find out */
+    let tried = false;
+    im.onerror = () => {
+      if (!tried){ tried = true; im.src = vurl('assets/photo/' + file); return; }
+      console.error('photo skin: missing asset', file); res();
+    };
+    im.src = photoURL(file);
   })));
 }
 function initDecor(){
@@ -10288,6 +10312,26 @@ function drawForeground(){
   }
 }
 
+/* ONE TEXTURE, NOT A TILED FILL. The grain was a repeating pattern painted
+   over the whole frame, and that one call measured ten to twenty-five
+   milliseconds in the hall against 0.8 in a bench loop — a tiled fill at eight
+   and a half megapixels does not batch with anything, so it stands at the end
+   of the frame waiting for the queue to drain and then does its own work a
+   texel lookup at a time. The same noise, tiled ONCE into a sheet at half the
+   buffer's size and then laid down as a single stretched image, is a plain
+   quad: it costs what the vignette costs, which is nothing. Half resolution is
+   invisible on noise, and the sheet is rebuilt only when the buffer changes. */
+function grainSheet(g){
+  const sw = Math.max(2, W >> 1), sh = Math.max(2, H >> 1);
+  if (g.sheet && g.sheet.width === sw && g.sheet.height === sh) return g.sheet;
+  const c = document.createElement('canvas');
+  c.width = sw; c.height = sh;
+  const q = c.getContext('2d');
+  q.fillStyle = q.createPattern(g.c, 'repeat');
+  q.fillRect(0, 0, sw, sh);
+  g.sheet = c;
+  return c;
+}
 let VIG = null;
 function makeVignette(){
   VIG = document.createElement('canvas'); VIG.width = Math.max(2, W>>1); VIG.height = Math.max(2, H>>1);
@@ -10331,10 +10375,11 @@ function drawGrade(t){
   let gr = ambient(cam.x).grain;
   if (segIdx(cam.x) === 0 && cam.x > SHIFT(2200))
     gr *= 1 - 0.35 * Math.min(1, (cam.x - SHIFT(2200)) / Math.max(1, REC_L - SHIFT(2200)));
-  ctx.globalAlpha = gr;
-  ctx.fillStyle = g.pat || (g.pat = ctx.createPattern(g.c, 'repeat'));
-  ctx.fillRect(0, 0, W, H);
-  ctx.globalAlpha = 1;
+  if (gr > 0.004){
+    ctx.globalAlpha = gr;
+    ctx.drawImage(grainSheet(g), 0, 0, W, H);
+    ctx.globalAlpha = 1;
+  }
 }
 
 /* One case, taken off the pile and opened. What was inside every one of those
@@ -13810,6 +13855,32 @@ async function boot(){
                 ' · benchY ' + CFG.benchY);
   }
   requestAnimationFrame(loop);
+  /* AND NOTHING HEAVY IS LEFT TO BE BUILT ON ARRIVAL. Several of the bays put
+     their sprite, mesh or mask together the first time they are drawn, which
+     means the cost lands on the frame you walk up to them — the worst possible
+     moment, and exactly what the profile showed: 16ms in the 2018 vitrine's
+     first frame, 13 in the digital revolution's, 9 at the 1989 plinth. They are
+     built here instead, one per frame after the first, so the hitch is spent
+     while nobody is anywhere near them and never shows up as a jolt in the
+     walk. Everything below is idempotent — each one returns its cache. */
+  {
+    const jobs = [
+      () => makeVignette(),
+      () => crownGeometry(),
+      () => crownMesh(),
+      () => crownMask(),
+      () => boxPile(),
+      () => discSlots(),
+    ];
+    let ji = 0;
+    const warm = () => {
+      if (ji >= jobs.length) return;
+      const j = jobs[ji++];
+      try { j(); } catch(e){ if (DBG) console.warn('prewarm', e); }
+      requestAnimationFrame(warm);
+    };
+    setTimeout(() => requestAnimationFrame(warm), 400);
+  }
 }
 window.addEventListener('load', boot);   // assets block sits below — wait for it
 </script>
