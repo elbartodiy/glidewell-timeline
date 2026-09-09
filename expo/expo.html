@@ -1138,7 +1138,6 @@ const state = {
   inspect: null,          // a photo lifted to the camera
   study: null,            // the era reading page {beat, imgs, scroll, amt}
   restBeat: -1, restTime: 0,
-  capBeat: -1, capAmt: 0, capHold: 0,   // the bench caption outlives the rest that raised it
   introHold: true,        // holding the opening close-up until the first move,
   introFade: 1,           // darkness over the hall until the tour begins
   ruleA: 0,               // the century rule fades in once the tour is under way
@@ -2612,10 +2611,23 @@ function drawBenchDescs(){
   const kf = k(0);
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    if (b.under || Math.abs(b.x - cam.x) > 3500) continue;
+    if (b.under || Math.abs(b.x - cam.x) > 3500){ b._capA = 0; continue; }
     const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
-    let dAmt = Math.max(focusAmt, state.capBeat === i ? state.capAmt : 0);
+    /* THE LINE BELONGS TO THE MIDDLE THIRD OF THE FRAME, and to nothing else.
+       Tying it to a rest timer made it unreadable in two different ways at
+       once: it vanished on the first turn of the wheel, and then, once it was
+       given a hold, it hung about after its beat had gone. It is a function of
+       where the beat IS now — full while the beat stands in the middle third,
+       fading out over the rest of the half-frame, gone by the time the beat
+       touches the edge of the screen. Nothing to catch: it is simply there
+       while you are looking at what it names. */
+    const dxS = Math.abs(px(b.x, kf) - W / 2);
+    const capWant = dxS <= W / 6 ? 1 : Math.max(0, 1 - (dxS - W / 6) / (W / 3));
+    b._capA = (b._capA || 0) + (capWant - (b._capA || 0)) * Math.min(1, (state.dt || 0.016) * 7);
+    let dAmt = Math.max(focusAmt, b._capA);
     if (b.album) dAmt *= 1 - (albumAnim[i] || 0);
+    // and the PFM line's own page carries its own words: the bench line bows out
+    if (state.pfmView && state.pfmView.beat === i) dAmt *= 1 - state.pfmView.amt;
     if (dAmt < 0.02) continue;
     const seg = segAt(b.x);
     if (b.descWall){
@@ -8240,15 +8252,20 @@ function drawProps(midPass){
    at the left and the flat finished crown at the right, exactly as they were
    photographed. Small enough to read as things laid out rather than as a
    picture — a tap flies the whole line up to fill the screen. */
+/* Each stand carries what HAPPENS at it, under its own brass label and no
+   wider than its own plinth. Repeating the six names the labels already carry
+   was saying the same thing twice; this is the thing the labels cannot say. */
 const PFM_STAGES = [
-  {kind:'ph_pfm1', cx:0.0720, w:0.1470, h:0.1674},
-  {kind:'ph_pfm2', cx:0.2461, w:0.1704, h:0.1350},
-  {kind:'ph_pfm3', cx:0.4170, w:0.1405, h:0.1350},
-  {kind:'ph_pfm4', cx:0.5757, w:0.1470, h:0.1475},
-  {kind:'ph_pfm5', cx:0.7449, w:0.1654, h:0.0962},
-  {kind:'ph_pfm6', cx:0.9205, w:0.1619, h:0.1061},
+  {kind:'ph_pfm1', cx:0.0720, w:0.1470, h:0.1674, cap:'Taken in the patient\u2019s mouth and posted to the lab.'},
+  {kind:'ph_pfm2', cx:0.2461, w:0.1704, h:0.1350, cap:'Poured in stone \u2014 the mouth itself, on the bench.'},
+  {kind:'ph_pfm3', cx:0.4170, w:0.1405, h:0.1350, cap:'The crown is carved in wax by hand, one case at a time.'},
+  {kind:'ph_pfm4', cx:0.5757, w:0.1470, h:0.1475, cap:'The wax is burned out and the shell cast in metal.'},
+  {kind:'ph_pfm5', cx:0.7449, w:0.1654, h:0.0962, cap:'Porcelain is layered onto the metal and fired, coat after coat.'},
+  {kind:'ph_pfm6', cx:0.9205, w:0.1619, h:0.1061, cap:'Shaped, glazed and fitted. Days of work, for one tooth.'},
 ];
-const PFM_CAP = 'Impression · stone model · wax coping · metal coping · porcelain build-up · the finished crown';
+/* the plate over the line grows to the width of the first two stands, not to
+   the width of all six — a title, not a banner */
+const PFM_PLATE_SPAN = 0.333;
 function drawPfmRow(b, i){
   const R = b.pfmRow;
   /* while the line is up on the screen, the small copy of it underneath is
@@ -8258,6 +8275,14 @@ function drawPfmRow(b, i){
   const cxW = b.x + R.dx;
   const sxC = px(cxW, kk);
   const wRow = R.w * kk * SS;
+  /* THE MIPS ARE BUILT BEFORE THE LINE ARRIVES. Six downscale chains in the
+     one frame the row comes on screen is a hitch you can feel; they are built
+     while the bay is still a screen away and cost nothing after that. */
+  if (sxC < -wRow * 3 || sxC > W + wRow * 3) return;
+  for (const st of PFM_STAGES){
+    const sp = PROP_SPRITES[st.kind];
+    if (sp) spriteMip(sp, st.w * wRow, st.h * wRow);
+  }
   if (sxC < -wRow || sxC > W + wRow) return;
   const foot = py(CFG.benchY - 2, kk);
   const left = sxC - wRow / 2;
@@ -10111,38 +10136,44 @@ function drawPfmView(){
   const b = BEATS[V.beat]; if (!b || !b.pfmRow) { state.pfmView = null; return; }
   const R = b.pfmRow, rowSp = PROP_SPRITES.ph_pfmrow;
   if (!rowSp) return;
-  const asp = rowSp.w / rowSp.h;
+  const asp = rowSp.w / rowSp.h, seg = segAt(b.x);
   // where it stands now
   const kk = k(bz(R.lz));
   const w0 = R.w * kk * SS, cx0 = px(b.x + R.dx, kk), y0 = py(CFG.benchY - 2, kk);
+  // the plate, at its own size on the wall, and the proportion it keeps
+  const kp = k(wallZAt(b.x) - 8);
+  const tx = sentence(b.t);
+  ctx.save();
+  ctx.font = eraFont(40 * kp * SS, '', seg.font);
+  const wP0 = Math.max(320 * kp * SS, ctx.measureText(tx).width + 84 * kp * SS);
+  ctx.restore();
+  const hP0 = 88 * kp * SS, yP0 = py(150, kp), cxP0 = px(b.x + (b.plaqueDX || 0), kp);
   // where it is going: on the counter's own top line, as wide as the room allows
   const yLine = py(CFG.benchY - 2, k(bz(0)));
-  const topP = H * 0.055, hP1 = H * 0.086, gap = H * 0.035;
-  const w1 = Math.min(W * 0.90, Math.max(200, (yLine - topP - hP1 - gap)) * asp);
-  const cx1 = W / 2, y1 = yLine;
-  const wN = mixN(w0, w1, e), cxN = mixN(cx0, cx1, e), yN = mixN(y0, y1, e);
+  const topP = H * 0.055, gap = H * 0.038;
+  const cH = (hP0 / wP0) * PFM_PLATE_SPAN;   // the plate's height, as a fraction of the line's width
+  const w1 = Math.min(W * 0.90, Math.max(240, (yLine - topP - gap)) * asp / (1 + cH * asp));
+  const wP1 = PFM_PLATE_SPAN * w1, hP1 = cH * w1;
+  const wN = mixN(w0, w1, e), cxN = mixN(cx0, W / 2, e), yN = mixN(y0, yLine, e);
   const hN = wN / asp;
   ctx.fillStyle = `rgba(2,3,5,${(0.88 * e).toFixed(3)})`;
   ctx.fillRect(0, 0, W, H);
-  /* THE BAY'S PLATE COMES UP WITH IT, and ends where the line ends. */
+  /* THE PLATE GROWS, IT DOES NOT STRETCH: width, height and letters all take
+     the same factor, so it is the same plate seen closer. */
   {
-    const seg = segAt(b.x), kp = k(wallZAt(b.x) - 8);
-    const tx = sentence(b.t);
+    const wP = mixN(wP0, wP1, e), hP = mixN(hP0, hP1, e);
+    const yP = mixN(yP0, topP, e), cxP = mixN(cxP0, W / 2, e);
+    const sc = wP / wP0;
     ctx.save();
     ctx.textAlign = 'center';
-    const f0 = 40 * kp * SS;
-    ctx.font = eraFont(f0, '', seg.font);
-    const wP0 = Math.max(320 * kp * SS, ctx.measureText(tx).width + 84 * kp * SS);
-    const hP0 = 88 * kp * SS, yP0 = py(150, kp), cxP0 = px(b.x + (b.plaqueDX || 0), kp);
-    const wP = mixN(wP0, w1, e), hP = mixN(hP0, hP1, e);
-    const yP = mixN(yP0, topP, e), cxP = mixN(cxP0, W / 2, e);
-    const fP = mixN(f0, hP1 * 0.44, e);
     const pg = ctx.createLinearGradient(cxP, yP, cxP, yP + hP);
     pg.addColorStop(0, 'rgba(70,58,40,0.92)'); pg.addColorStop(1, 'rgba(44,36,24,0.92)');
     ctx.fillStyle = pg;
-    ctx.beginPath(); ctx.roundRect(cxP - wP / 2, yP, wP, hP, 6 * SS); ctx.fill();
-    ctx.strokeStyle = `rgba(${seg.ink},0.4)`; ctx.lineWidth = 1.5 * SS;
-    ctx.strokeRect(cxP - wP / 2 + 5 * SS, yP + 5 * SS, wP - 10 * SS, hP - 10 * SS);
+    ctx.beginPath(); ctx.roundRect(cxP - wP / 2, yP, wP, hP, 6 * SS * sc); ctx.fill();
+    ctx.strokeStyle = `rgba(${seg.ink},0.4)`; ctx.lineWidth = 1.5 * SS * sc;
+    ctx.strokeRect(cxP - wP / 2 + 5 * kp * SS * sc, yP + 5 * kp * SS * sc,
+                   wP - 10 * kp * SS * sc, hP - 10 * kp * SS * sc);
+    const fP = 40 * kp * SS * sc;
     ctx.font = eraFont(fP, '', seg.font);
     try { ctx.letterSpacing = `${fP * TRACK.plate}px`; } catch(err){}
     ctx.fillStyle = `rgba(${seg.ink},0.95)`;
@@ -10151,15 +10182,19 @@ function drawPfmView(){
     ctx.restore();
   }
   ctx.drawImage(spriteMip(rowSp, wN, hN), cxN - wN / 2, yN - hN, wN, hN);
+  /* what happens at each stand, under that stand and no wider than it */
   if (e > 0.55){
     const a = (e - 0.55) / 0.45;
-    const seg = segAt(b.x);
+    const left = W / 2 - w1 / 2;
     ctx.save();
     ctx.textAlign = 'center';
-    ctx.font = eraFont(25 * SS, '', seg.font);
-    ctx.fillStyle = `rgba(228,222,210,${(a * 0.8).toFixed(2)})`;
-    wrapCalc(PFM_CAP, Math.min(W * 0.7, 1200 * SS))
-      .forEach((ln, li) => ctx.fillText(ln, W / 2, yLine + (46 + li * 34) * SS));
+    ctx.font = eraFont(17 * SS, '', seg.font);
+    ctx.fillStyle = `rgba(214,206,192,${(a * 0.82).toFixed(2)})`;
+    for (const st of PFM_STAGES){
+      const cxS = left + st.cx * w1;
+      wrapCalc(st.cap, st.w * w1 * 1.06)
+        .forEach((ln, li) => ctx.fillText(ln, cxS, yLine + (36 + li * 23) * SS));
+    }
     drawCloseX(W - 46 * SS, 46 * SS, 13 * SS, a);
     ctx.restore();
   }
@@ -12157,17 +12192,6 @@ function update(dt){
 
   updateVan8(dt);   // the eight-lab street's own traffic, on its own clock
 
-  /* THE LINE STAYS UP LONG ENOUGH TO READ IT. The caption used to be tied
-     straight to the rest state, so the first turn of the wheel took it off the
-     screen — Eldar could not catch it. It holds for three seconds after the
-     walk starts again and then fades over one, so it is still there while you
-     are moving off the beat. */
-  const capRise = state.restBeat >= 0 ? Math.min(1, Math.max(0, (state.restTime - 0.45) / 0.7)) : 0;
-  if (capRise > 0.01){ state.capBeat = state.restBeat; state.capAmt = capRise; state.capHold = 3.0; }
-  else if (state.capBeat >= 0){
-    if (state.capHold > 0) state.capHold -= dt;
-    else { state.capAmt -= dt / 1.0; if (state.capAmt <= 0){ state.capAmt = 0; state.capBeat = -1; } }
-  }
 
   // the opening close-up releases on the first real movement
   if (state.introHold && (Math.abs(cam.vel) > 60 || Math.abs(cam.x - INTRO_X) > 350)){
