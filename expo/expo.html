@@ -4949,40 +4949,47 @@ function drawAiDataField(x0, y0, w, h, t, ph){
   ctx.save();
   ctx.beginPath(); ctx.roundRect(x0, y0, w, h, 4 * SS); ctx.clip();
   ctx.fillStyle = '#05090f'; ctx.fillRect(x0, y0, w, h);
-  const cell = Math.max(2, h / 30);
+  const cell = Math.max(2, h / 40);   // finer, so a crown eight cells across still reads as one
   const cols = Math.max(10, Math.floor(w / cell)), rows = Math.max(8, Math.floor(h / cell));
   const ox = x0 + (w - cols * cell) / 2, oy = y0 + (h - rows * cell) / 2;
-  /* the loop, quicker than it was: nine seconds for the whole story */
-  const CYC = 9, u = (t % CYC) / CYC;
+  /* the loop, quicker again: six and a half seconds for the whole story */
+  const CYC = 6.5, u = (t % CYC) / CYC;
   const band = (a, b, fi, fo) => Math.max(0, Math.min(1, (u - a) / fi)) * Math.max(0, Math.min(1, (b - u) / fo));
-  const many  = band(0.10, 0.40, 0.06, 0.05);     // thirty of them
+  const many  = band(0.10, 0.40, 0.06, 0.05);     // a field of them, tiled and drifting
   const four  = band(0.42, 0.66, 0.05, 0.05);     // then four
   const one   = band(0.68, 0.94, 0.05, 0.05);     // then the one
   /* is cell (cx, cy) inside a crown of `size` cells drawn at (bx, by)? the mask
      is sampled by its own tooth bounding box, so the shape fills its square */
-  const inCrown = (cxx, cyy, bx, by, size) => {
-    if (!mask) return false;
-    const gx = cxx - bx, gy = cyy - by;
-    if (gx < 0 || gy < 0 || gx >= size || gy >= size) return false;
+  const maskAt = (gx, gy, size) => {
+    if (!mask || gx < 0 || gy < 0 || gx >= size || gy >= size) return false;
     const mx = mask.lft + ((gx + 0.5) / size) * mask.w;
     const my = mask.top + ((gy + 0.5) / size) * mask.h;
     return !!mask.m[(my | 0) * mask.M + (mx | 0)];
   };
+  const inCrown = (cxx, cyy, bx, by, size) => maskAt(cxx - bx, cyy - by, size);
   const glyphRow = (t * 7) | 0;
-  ctx.font = `${Math.max(5, cell * 0.95) | 0}px ui-monospace, Menlo, monospace`;
+  /* the digits are SCATTERED, not latticed. Picking them with (31x + 17y) % 13
+     lays them on a diagonal of their own, and once the cells were small enough
+     that a 5px glyph spilled past its cell, that diagonal read as stripes
+     ruled across every crown. They are chosen by the cell's own noise now, and
+     only while a cell is big enough to hold a character. */
+  const useGlyph = cell >= 5;
+  ctx.font = `${Math.max(4, cell * 0.95) | 0}px ui-monospace, Menlo, monospace`;
   ctx.textAlign = 'left'; ctx.textBaseline = 'top';
   // the three layouts, each centred in the field with equal air above and below
   const sizeOne = rows - 2, oneX = ((cols - sizeOne) / 2) | 0, oneY = 1;
   const sizeFour = Math.min(rows - 2, (cols / 4.6) | 0), fourY = ((rows - sizeFour) / 2) | 0;
   const fourStep = cols / 4, fourX = i => ((i + 0.5) * fourStep - sizeFour / 2) | 0;
-  /* two rows, not three, and each crown a little smaller than its own cell of
-     the grid: at three rows they touched top to bottom and the field read as a
-     row of columns rather than as crowns. */
-  const MC = 8, MR = 2;
-  const sizeMany = Math.min(((rows / MR) * 0.74) | 0, ((cols / MC) * 0.74) | 0);
-  const manyStepX = cols / MC, manyStepY = rows / MR;
-  const manyX = i => ((i + 0.5) * manyStepX - sizeMany / 2) | 0;
-  const manyY = j => ((j + 0.5) * manyStepY - sizeMany / 2) | 0;
+  /* THE FIRST ACT IS WALLPAPER. Not a fixed grid of them but a tiled lattice —
+     four rows, every other row shifted half a step so the crowns run in
+     diagonals, and the whole pattern drifting sideways and wrapping, so there
+     is no edge to it and no end: many crowns, endlessly. */
+  const MR = 4;
+  const manyStepY = Math.max(4, (rows / MR) | 0);
+  const sizeMany = Math.max(4, (manyStepY * 0.80) | 0);
+  const manyStepX = sizeMany + Math.max(3, (sizeMany * 0.5) | 0);
+  const manyTop = ((rows - MR * manyStepY) / 2) | 0;
+  const manyDrift = t * manyStepX * 0.55;   // a little over half a crown a second
   for (let cy2 = 0; cy2 < rows; cy2++){
     for (let cx2 = 0; cx2 < cols; cx2++){
       const seed = cx2 * 374761393 + cy2 * 668265263 + ((t * 8) | 0) * 2654435761;
@@ -4998,19 +5005,23 @@ function drawAiDataField(x0, y0, w, h, t, ph){
             on = true; bright = 0.7 + 0.3 * rnd; break;
           }
       }
-      if (many > 0.01){
-        for (let j = 0; j < MR && !on; j++)
-          for (let i = 0; i < MC; i++){
-            // every one of them is its own case: a hair of jitter each
-            const jx = ((i * 7 + j * 13) % 3) - 1;
-            if (inCrown(cx2, cy2, manyX(i) + jx, manyY(j), sizeMany) && rnd < 0.30 + 0.70 * many){
-              on = true; bright = 0.6 + 0.4 * rnd; break;
+      if (many > 0.01 && !on){
+        const gy = cy2 - manyTop;
+        if (gy >= 0 && gy < MR * manyStepY){
+          const j = (gy / manyStepY) | 0, ly = gy - j * manyStepY;
+          if (ly < sizeMany){
+            const shift = (j % 2) * manyStepX * 0.5 + manyDrift;
+            let lx = (cx2 - shift) % manyStepX;
+            if (lx < 0) lx += manyStepX;
+            if (maskAt(lx, ly, sizeMany) && rnd < 0.30 + 0.70 * many){
+              on = true; bright = 0.6 + 0.4 * rnd;
             }
           }
+        }
       }
       if (!on) continue;
       const px2 = ox + cx2 * cell, py2 = oy + cy2 * cell;
-      if (((cx2 * 31 + cy2 * 17 + glyphRow) % 13) === 0){
+      if (useGlyph && rnd > 0.945){
         ctx.fillStyle = `rgba(150,220,255,${(bright * 0.9).toFixed(2)})`;
         ctx.fillText(((cx2 + cy2 + glyphRow) & 1) ? '1' : '0', px2, py2);
       } else {
