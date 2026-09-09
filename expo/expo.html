@@ -134,7 +134,9 @@ const BEATS = [
       them back into the middle of its depth */
    /* the line ranges on the leftmost stand: half a column right of the beat
       puts its left edge exactly under the row */
-   pfmRow:{dx:83, lz:88, w:450, lift:17}, capDX:167},   // 1.9x smaller on the counter — they are objects laid out, not an exhibit; the tap is what makes them big
+   /* re-centred: the photographed television is wider than the box it
+      replaced, so the air either side is measured again */
+   pfmRow:{dx:118, lz:88, w:450, lift:17}, capDX:202},   // 1.9x smaller on the counter — they are objects laid out, not an exhibit; the tap is what makes them big
 
   {x:4400, y:'1973', t:'SECOND LAB', yLift:95, fly:true, flyZ:380, flyLift:52,   // the seventies all come forward, the way 1970 does
    th:'Growth by addition — before growth by system.',
@@ -3211,8 +3213,42 @@ function filmInto(vx, vy, vw, vh, dim, tone){
 /* the seventies console: a wooden cabinet on the photographed counter — so it
    is riveted to the front plane like the counter itself, standing a long step
    back from the lip (smaller and higher IS further, on a painted surface) */
+/* the seventies set, measured off the cut-out: where the hole for the tube sits
+   in the sprite, as fractions of its own width and height */
+const TV70 = {l: 0.0908, r: 0.7232, t: 0.3465, b: 0.9020};
 function drawFilmCRT70(r){
+  const sp = PROP_SPRITES.ph_tv70;
   const kk = k(8), sx = px(r.x, kk);
+  /* THE SET IS A PHOTOGRAPH NOW. It used to be a drawn box — a wooden
+     rectangle, a rounded rectangle for the tube, two circles and five lines for
+     the controls — which is a diagram of a television rather than one. Eldar's
+     cut-out has its tube knocked clean through, so the film is laid into the
+     hole and the set goes on top of it: the bezel, the dial, the grille and the
+     antennae are the photograph's, and nothing has to be drawn twice. */
+  if (sp){
+    const scw = r.w * kk * SS;                    // r.w stays the SCREEN's width
+    const tw = scw / (TV70.r - TV70.l), th = tw * sp.h / sp.w;
+    if (sx < -tw || sx > W + tw) return;
+    const footY = py(CFG.benchY - 2, kk);
+    const x0 = sx - tw / 2, y0 = footY - th;
+    const gx0 = x0 + TV70.l * tw, gx1 = x0 + TV70.r * tw;
+    const gy0 = y0 + TV70.t * th, gy1 = y0 + TV70.b * th;
+    const gw = gx1 - gx0, gh = gy1 - gy0;
+    softFootShadow(sx, footY, tw * 0.36, th * 0.012, 0.5);
+    // the film, laid into the hole before the set is laid over it
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect(gx0, gy0, gw, gh, 26 * kk * SS); ctx.clip();
+    ctx.fillStyle = '#0a0908'; ctx.fillRect(gx0, gy0, gw, gh);
+    filmInto(gx0, gy0, gw, gh, 0.92, 'bw');
+    ctx.fillStyle = 'rgba(170,195,215,0.05)';    // the cool cast of a monochrome tube
+    ctx.fillRect(gx0, gy0, gw, gh);
+    const gl = ctx.createLinearGradient(gx0, gy0, gx0 + gw * 0.5, gy1);
+    gl.addColorStop(0, 'rgba(255,255,255,0.10)'); gl.addColorStop(0.35, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gl; ctx.fillRect(gx0, gy0, gw, gh);
+    ctx.restore();
+    ctx.drawImage(spriteMip(sp, tw, th), x0, y0, tw, th);
+    return;
+  }
   const scw = r.w * kk * SS, sch = scw * 3/4;
   const pad = 12 * kk * SS, strip = 42 * kk * SS;
   const cabW = scw + strip + pad*3, cabH = sch + pad*2;
@@ -3220,53 +3256,10 @@ function drawFilmCRT70(r){
   const footY = py(CFG.benchY - 22, kk), legH = 12 * kk * SS;
   const x0 = sx - cabW/2, y0 = footY - legH - cabH;
   contactShadow(sx, footY, cabW * 0.55, 0.3);
-  // splayed pegs
-  ctx.strokeStyle = '#1c1208'; ctx.lineWidth = 4*kk*SS; ctx.lineCap = 'round';
-  for (const sgn of [-1, 1]){
-    ctx.beginPath();
-    ctx.moveTo(sx + sgn*(cabW/2 - 16*kk*SS), footY - legH);
-    ctx.lineTo(sx + sgn*(cabW/2 - 6*kk*SS), footY);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(sx + sgn*(cabW/2 - 60*kk*SS), footY - legH);
-    ctx.lineTo(sx + sgn*(cabW/2 - 66*kk*SS), footY);
-    ctx.stroke();
-  }
-  ctx.lineCap = 'butt';
-  // the wooden box
-  const wg = ctx.createLinearGradient(0, y0, 0, y0 + cabH);
-  wg.addColorStop(0, '#54402a'); wg.addColorStop(0.5, '#3c2c1a'); wg.addColorStop(1, '#241708');
-  ctx.fillStyle = wg;
-  ctx.beginPath(); ctx.roundRect(x0, y0, cabW, cabH, 5*kk*SS); ctx.fill();
-  ctx.strokeStyle = 'rgba(230,200,150,0.20)'; ctx.lineWidth = 1*SS;
-  ctx.beginPath(); ctx.roundRect(x0 + 0.5*SS, y0 + 0.5*SS, cabW - SS, cabH - SS, 5*kk*SS); ctx.stroke();
-  // the tube: rounded like glass, film inside
-  ctx.fillStyle = '#0a0908';
-  ctx.beginPath(); ctx.roundRect(x0 + pad - 3*SS, y0 + pad - 3*SS, scw + 6*SS, sch + 6*SS, 14*kk*SS); ctx.fill();
   ctx.save();
   ctx.beginPath(); ctx.roundRect(x0 + pad, y0 + pad, scw, sch, 12*kk*SS); ctx.clip();
   filmInto(x0 + pad, y0 + pad, scw, sch, 0.92, 'bw');
-  // the faint cool cast of a monochrome tube
-  ctx.fillStyle = 'rgba(170,195,215,0.05)';
-  ctx.fillRect(x0 + pad, y0 + pad, scw, sch);
-  // glass sheen across the tube's corner
-  const gl = ctx.createLinearGradient(x0 + pad, y0 + pad, x0 + pad + scw*0.5, y0 + pad + sch);
-  gl.addColorStop(0, 'rgba(255,255,255,0.10)'); gl.addColorStop(0.35, 'rgba(255,255,255,0)');
-  ctx.fillStyle = gl; ctx.fillRect(x0 + pad, y0 + pad, scw, sch);
   ctx.restore();
-  // the control strip: two knobs and a slotted grille
-  const cxk = x0 + pad*2 + scw + strip/2;
-  for (const [ky, kr] of [[0.22, 9], [0.42, 7]]){
-    ctx.fillStyle = '#171006';
-    ctx.beginPath(); ctx.arc(cxk, y0 + cabH*ky, kr*kk*SS, 0, 7); ctx.fill();
-    ctx.strokeStyle = 'rgba(226,198,150,0.5)'; ctx.lineWidth = 1.2*SS;
-    ctx.beginPath(); ctx.arc(cxk, y0 + cabH*ky, kr*kk*SS, 0, 7); ctx.stroke();
-  }
-  ctx.strokeStyle = 'rgba(20,12,4,0.8)'; ctx.lineWidth = 1.6*kk*SS;
-  for (let i = 0; i < 5; i++){
-    const gy = y0 + cabH*0.62 + i*5.5*kk*SS;
-    ctx.beginPath(); ctx.moveTo(cxk - strip*0.32, gy); ctx.lineTo(cxk + strip*0.32, gy); ctx.stroke();
-  }
 }
 /* a hanging tube set — public-hall television on two rods from the ceiling.
    era 0: the seventies-brown housing; era 1: the eighties grey plastic */
@@ -8144,6 +8137,7 @@ async function loadPhotoSkin(){
     ph_postbox: 'postbox.png',       // 1984: the mailed case, open, on its own plinth
     ph_plane: 'plane_1993.png',       // and the freighter that carries it, landing at 1993
     ph_plastic: 'plastic_2000.png',   // 2000: the tooth-shaped crown boxes the injection division made
+    ph_tv70: 'tv_1970.png',           // the seventies set, cut out with its tube knocked through
     ph_prj93: 'proj_1993.png',        // the 1993 LCD data projector on its stand, photographed
     ph_g8: 'g8_1979.png',             // 1979: the nine labs, as models on one long plinth
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
