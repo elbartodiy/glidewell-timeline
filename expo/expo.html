@@ -187,7 +187,11 @@ const BEATS = [
       the 1988 hanging set needed that stretch of wall */
    wall:[],
    table:[], st:[{img:'lab5move', w:250, dx:-750, lz:12, lift:34}],
-   ped:{obj:'bizcard', dx:0, low:true}},
+   /* THE EXHIBIT IS THE PHOTOGRAPH, PLINTH AND ALL. A business card said
+      nothing about a lab that lives by post; this is the case itself — the
+      carton, the postmark, the impressions in their bubble wrap — and it comes
+      with the stone cap it was photographed on. */
+   ped:{photo:'ph_postbox', dx:0, low:true}},
 
   /* ---- ERA 3 · the computer arrives, 1995–2007
           (1993 · Newport Beach happens inside the video splice) ---- */
@@ -2625,17 +2629,18 @@ function drawBenchDescs(){
     const b = BEATS[i];
     if (b.under || Math.abs(b.x - cam.x) > 3500){ b._capA = 0; continue; }
     const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
-    /* THE LINE BELONGS TO THE MIDDLE THIRD OF THE FRAME, and to nothing else.
-       Tying it to a rest timer made it unreadable in two different ways at
-       once: it vanished on the first turn of the wheel, and then, once it was
-       given a hold, it hung about after its beat had gone. It is a function of
-       where the beat IS now — full while the beat stands in the middle third,
-       fading out over the rest of the half-frame, gone by the time the beat
-       touches the edge of the screen. Nothing to catch: it is simply there
-       while you are looking at what it names. */
-    const dxS = Math.abs(px(b.x, kf) - W / 2);
-    const capWant = dxS <= W / 6 ? 1 : Math.max(0, 1 - (dxS - W / 6) / (W / 3));
-    b._capA = (b._capA || 0) + (capWant - (b._capA || 0)) * Math.min(1, (state.dt || 0.016) * 7);
+    /* THE LINE ARRIVES; IT DOES NOT SLIDE IN. It used to be pinned to the
+       screen's edge while its beat was still off it, so it came on at the
+       right-hand margin, rode leftward across the whole frame, and only then
+       caught up with its own year and travelled with it. It has no business
+       being visible before it can stand in its own place: it fades up out of
+       nothing at the moment its right-hand edge clears the frame, holds while
+       the whole block is inside, and is already gone by the time its left edge
+       touches the other side. Nothing slides, nothing sticks to a margin. */
+    const cwP = px(b.x, kf), halfC = CAP_COLW() / 2, fadeC = 130 * SS;
+    const capWant = Math.max(0, Math.min(1,
+      Math.min((W - (cwP + halfC)) / fadeC, (cwP - halfC) / fadeC)));
+    b._capA = (b._capA || 0) + (capWant - (b._capA || 0)) * Math.min(1, (state.dt || 0.016) * 10);
     let dAmt = Math.max(focusAmt, b._capA);
     if (b.album) dAmt *= 1 - (albumAnim[i] || 0);
     // and the PFM line's own page carries its own words: the bench line bows out
@@ -2713,7 +2718,7 @@ function drawBenchDescs(){
       if (b.ped){
         const kp = k(-90);
         const pedSx = px(b.x + (b.ped.dx ?? -430), kp);
-        const pedHalf = 165 * (b.ped.big ? 1.35 : 1) * kp * SS * 0.62;
+        const pedHalf = 165 * (b.ped.photo ? 1.55 : (b.ped.big ? 1.35 : 1)) * kp * SS * 0.62;
         const need = pedHalf + half + 18*SS;
         if (Math.abs(cw - pedSx) < need){
           const right = pedSx + need, left = pedSx - need;
@@ -2725,8 +2730,8 @@ function drawBenchDescs(){
           }
         }
       }
-      // whatever the counters allow, the line must live on the screen
-      cw = Math.max(385*SS, Math.min(W - 385*SS, cw));
+      /* NO EDGE CLAMP. Holding the line on the screen is what made it ride in
+         from the margin: it is transparent by then anyway. */
     } else {
       // a recreation beat: the line reads off the light floor slab in dark ink —
       // except 1979, where the red runner underfoot asks for light ink
@@ -2738,6 +2743,17 @@ function drawBenchDescs(){
          light there; every other recreation reads dark on its pale slab. */
       ink = onModels ? '236,228,218' : '52,58,66';
       shadow = onModels; slabDrop = onModels ? 205*SS : 130*SS;
+      /* a plinth standing on the slab: the line steps aside rather than
+         running behind it — the shaft goes all the way to the frame's foot,
+         so there is no dropping it clear, only moving it off */
+      if (b.ped){
+        const kp2 = k(-90);
+        const pedSx2 = px(b.x + (b.ped.dx ?? -430), kp2);
+        const pedHalf2 = 165 * (b.ped.photo ? 1.55 : (b.ped.big ? 1.35 : 1)) * kp2 * SS * 0.62;
+        const need2 = pedHalf2 + CAP_COLW() / 2 + 26 * SS;
+        if (Math.abs(cw - pedSx2) < need2) cw = pedSx2 - need2;
+        cw = Math.max(CAP_COLW() / 2 + 30 * SS, Math.min(W - CAP_COLW() / 2 - 30 * SS, cw));
+      }
     }
     ctx.save();
     ctx.textAlign = 'center';
@@ -5901,7 +5917,9 @@ function drawMapWall(t){
            of the scroll is a slider with a picture on it; this one keeps a
            quarter of each half-run standing still at the entrance, so the walk
            goes on past it for a moment before it pulls away again. */
-        const DW = 0.26, d2 = (u - 0.5) * 2, a2 = Math.abs(d2);
+        /* 0.26 of each half-run was a thousand units of scroll spent watching a
+           parked van: long enough to lose interest before it moved again. */
+        const DW = 0.11, d2 = (u - 0.5) * 2, a2 = Math.abs(d2);
         let m2 = a2 <= DW ? 0 : (a2 - DW) / (1 - DW);
         m2 = m2 * m2 * (3 - 2 * m2);
         const v2 = 0.5 * (d2 < 0 ? -m2 : m2);
@@ -7862,6 +7880,7 @@ async function loadPhotoSkin(){
     ph_pfm1: 'pfm_1.png', ph_pfm2: 'pfm_2.png', ph_pfm3: 'pfm_3.png',   // the six PFM stages, cut apart
     ph_pfm4: 'pfm_4.png', ph_pfm5: 'pfm_5.png', ph_pfm6: 'pfm_6.png',
     ph_pfmrow: 'pfm_row.png',         // and the whole line, for the screen-filling look
+    ph_postbox: 'postbox.png',       // 1984: the mailed case, open, on its own plinth
     ph_prj93: 'proj_1993.png',        // the 1993 LCD data projector on its stand, photographed
     ph_g8: 'g8_1979.png',             // 1979: the nine labs, as models on one long plinth
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
@@ -8833,6 +8852,9 @@ function updateCrownSpin(dt){
   CROWN3D.wx += (0 - CROWN3D.wx) * e;              // the tip you gave it dies away; the crown keeps the attitude you left it in
   crownTurn(CROWN3D.wy * dt, CROWN3D.wx * dt);
 }
+/* the postbox render, measured once: how much of its width is the cylinder,
+   how far down its stone cap sits, and where the plain shaft begins */
+const PP_CYLW = 579 / 617, PP_CAPTOP = 438 / 950, PP_SPLIT = 626 / 950;
 function drawPedestal(b, t, hero){
   const ped = b.ped; if (!ped) return;
   const z = -90, kk = k(z);
@@ -8842,6 +8864,7 @@ function drawPedestal(b, t, hero){
   if (sx < -colW*2 || sx > W + colW*2) return;
   const era = segIdx(b.x);
   const big = ped.big ? 1.3 : 1;
+  const PHOTO_PED = ped.photo ? PROP_SPRITES[ped.photo] : null;
   const yTop = py(ped.spin ? 620 : (ped.big ? 540 : (ped.low ? 668 : (ped.vitrine ? 625 : 535))), kk);   // and it stands lower, so the piece is at the height of a hand
   pushHit(sx - colW*0.7*big, yTop - 150*kk*SS*big, colW*1.4*big, H - yTop + 150*kk*SS, {type:'focus', beat: BEATS.indexOf(b), anchor: x});
   const warmC = era === 0 ? '255,215,140' : '225,240,255';
@@ -8855,8 +8878,12 @@ function drawPedestal(b, t, hero){
   const inHall = x > REC17_L && x < REC17_R;
   if (hero > 0.02 && !ped.vitrine && !inHall){   // a vitrine glows from its own capsule — no crossed spotlights
     const lock = Math.min(1, hero * 1.7);
-    const objSprite = PED_SPRITES[ped.obj];
-    const objH = 120 * (ped.big ? 1.3 : 1) * kk * SS * objSprite.h / objSprite.w;
+    const objSprite = PHOTO_PED || PED_SPRITES[ped.obj];
+    /* the beams cross ON the exhibit: for a photographed plinth that is the
+       part of the render ABOVE its own stone cap, not the whole render */
+    const objH = PHOTO_PED
+      ? (PHOTO_PED.h * (colW * 1.5 / PP_CYLW) / PHOTO_PED.w) * PP_CAPTOP / 0.6
+      : 120 * (ped.big ? 1.3 : 1) * kk * SS * objSprite.h / objSprite.w;
     const yObj = yTop - objH * 0.6;
     /* A BEAM DIES ON WHAT IT LIGHTS. Two fixtures cross their beams on the
        exhibit, which is right — but the beams ran on to halfway down the screen
@@ -8888,6 +8915,28 @@ function drawPedestal(b, t, hero){
     }
     // the hot spot where both beams meet the exhibit
     drawGlow(warmC, sx, yObj, objH * 1.6, 0.22 * lock * hero);
+  }
+  /* A PHOTOGRAPHED PLINTH DRAWS ITSELF. The render carries its own cylinder
+     and its own stone cap; all the hall has to do is stand it on the floor.
+     The cylinder runs off the bottom of the render, so the last strip of it is
+     stretched down to the floor line — a plain shaft, so the seam is invisible
+     — and the drawn column, cap and glass dome all stand down. */
+  if (PHOTO_PED){
+    const wP = colW * 1.5 / PP_CYLW;              // the whole render, sized by its own cylinder
+    const sc = wP / PHOTO_PED.w;
+    const hP = PHOTO_PED.h * sc;
+    const yImg = yTop - PP_CAPTOP * hP;           // its stone cap lands where ours would have
+    const yFloorP = py(1080, kk);
+    const splitPx = PP_SPLIT * PHOTO_PED.h;       // in source rows
+    softFootShadow(sx, yFloorP, wP * 0.44, hP * 0.012, 0.42);
+    ctx.drawImage(PHOTO_PED.c, 0, 0, PHOTO_PED.w, splitPx,
+                  sx - wP/2, yImg, wP, splitPx * sc);
+    const yBody = yImg + splitPx * sc;
+    if (yFloorP > yBody){
+      ctx.drawImage(PHOTO_PED.c, 0, splitPx - 24, PHOTO_PED.w, 24,
+                    sx - wP/2, yBody - 1, wP, yFloorP - yBody + 1);
+    }
+    return;
   }
   // column
   const cg = ctx.createLinearGradient(sx - colW/2, 0, sx + colW/2, 0);
