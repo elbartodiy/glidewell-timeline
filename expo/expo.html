@@ -132,7 +132,9 @@ const BEATS = [
       counter's own right end (6300), with the same air on both sides */
    /* lift: they were standing on the very front lip of the counter; this sets
       them back into the middle of its depth */
-   pfmRow:{dx:83, lz:88, w:450, lift:17}},   // 1.9x smaller on the counter — they are objects laid out, not an exhibit; the tap is what makes them big
+   /* the line ranges on the leftmost stand: half a column right of the beat
+      puts its left edge exactly under the row */
+   pfmRow:{dx:83, lz:88, w:450, lift:17}, capDX:167},   // 1.9x smaller on the counter — they are objects laid out, not an exhibit; the tap is what makes them big
 
   {x:4400, y:'1973', t:'SECOND LAB', yLift:95, fly:true, flyZ:380, flyLift:52,   // the seventies all come forward, the way 1970 does
    th:'Growth by addition — before growth by system.',
@@ -193,7 +195,8 @@ const BEATS = [
       nothing about a lab that lives by post; this is the case itself — the
       carton, the postmark, the impressions in their bubble wrap — and it comes
       with the stone cap it was photographed on. */
-   ped:{photo:'ph_postbox', dx:0, low:true}},
+   ped:{photo:'ph_postbox', dx:0, low:true},
+   capDX:-430},   // the line stands clear of the plinth, on the left of the slab
 
   /* ---- ERA 3 · the computer arrives, 1995–2007
           (1993 · Newport Beach happens inside the video splice) ---- */
@@ -234,10 +237,10 @@ const BEATS = [
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir. Labs go digital: scanning, on-screen design, milling.',
    wall:[{img:'rella', w:250, dx:555, top:215, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
    table:[],
-   ped:{obj:'puck', dx:0},
+   ped:{obj:'puck', dx:0}, capDX:-540,
    props:[{kind:'crt', dx:700, lz:130, w:320, label:'CAD revolution'}]},
 
-  {x:16520, y:'2001',   // 180 back, clear of the plastic-injection block under the counter
+  {x:16520, y:'2001', capDX:-430,   // its line steps left of the plastic-injection block written on the bench face
    t:'WEB · CLINICAL VOICE', minor:true, yLift:190,
    th:'The lab learns to publish — online and on camera.',
    d:'The first Glidewell Laboratories website goes live; the brand gains its clinical-education voice on camera.',
@@ -264,7 +267,7 @@ const BEATS = [
    wall:[], table:[],
    /* the CAD screen gave its island to the film: an office LCD of the mid
       2000s stands there now (kind lcd05 in the film relays) */
-   ped:{obj:'dataTooth', dx:0}},
+   ped:{obj:'dataTooth', dx:0, points:true}, capDX:-540},
 
   /* ---- ERA 4 · the white room, 2009–2026 ---- */
   {x:21080, y:'2009', t:'BRUXZIR', tier:1, fly:true,
@@ -322,7 +325,7 @@ const BEATS = [
        {img:'nadia', w:120, dx:206, lz:30, lift:26, cap:'Dr. Nadia Rodriguez · GL alum'},
        {img:'bianca', w:120, dx:357, lz:30, lift:26, cap:'Dr. Bianca Clark · GL alum'}]},
 
-  {x:26340, y:'2022', t:'FASTSCAN.IO', thBelow:true,   // the bay is a photograph; the italic line cannot live on it
+  {x:26340, y:'2022', t:'FASTSCAN.IO', thBelow:true, capDX:-36,   // the bay is a photograph; the italic line cannot live on it, and the column is a shade wider than the panel
    tOnBay:true,   // the title is lettered on the plinth block of the render, centred on its face
    pinZ:996,   // the year stays centred over the instrument, on the bay's own plane — it does not slide behind a column
    th:'The front door to the all-digital workflow.',
@@ -2649,6 +2652,38 @@ function descInk(seg){
   return c.map(v => Math.round(Math.min(255, 40 + v * g))).join(',');
 }
 
+/* WHERE THE BENCH LINE STANDS — one pure function of the camera and the beat,
+   used both to place the words and to decide when they fade. Those two used to
+   be worked out separately, in screen space, by a chain of nudges: step aside
+   from a plinth, step aside from a block under the counter, then clamp to the
+   frame. That is how a line ended up appearing on one schedule and standing
+   somewhere else, sliding along the margin, and going out at the wrong moment.
+
+   A beat that wants its line off its own centre says so with capDX, in world
+   units, so the line travels with the room like everything else. Inside a
+   recreation the column takes the recreation's own centre, so it cannot run off
+   the end of the bay's panel. */
+function capRec(x){
+  for (const [a, b2] of [[REC_L, REC_R], [REC3_L, REC3_R], [REC93_L, REC93_R],
+                         [REC18_L, REC18_R], [REC23_L, REC23_R], [REC17_L, REC17_R],
+                         [REC2_L, REC2_R], [REC4_L, REC4_R]])
+    if (x > a && x < b2) return (a + b2) / 2;
+  return null;
+}
+function capX(b, kf){
+  const rm = capRec(b.x);
+  let cw = px((rm != null ? rm : b.x) + (b.capDX || 0), kf);
+  if (rm == null){
+    const tt = TABLES.find(t => b.x >= t.x0 && b.x <= t.x1);
+    if (tt){
+      // pinned to the beat's own table span — the line never crosses a gap
+      const half = 350 * SS;
+      const lo = px(tt.x0, kf) + half, hi = px(tt.x1, kf) - half;
+      if (lo < hi) cw = Math.max(lo, Math.min(hi, cw));
+    }
+  }
+  return cw;
+}
 let CAP_RECT = null;                 // where the caption actually landed, last frame
 function drawBenchDescs(){
   CAP_RECT = null;
@@ -2669,7 +2704,7 @@ function drawBenchDescs(){
        finally lands. Keying it to the drawn position deadlocked: the line is
        only drawn while it is visible, so once it went out it never got a fresh
        position and could never come back — 1989's simply stopped appearing. */
-    const cwP = px(b.x, kf), halfC = CAP_COLW() / 2, fadeC = 130 * SS;
+    const cwP = capX(b, kf), halfC = CAP_COLW() / 2, fadeC = 130 * SS;
     const capWant = Math.max(0, Math.min(1,
       Math.min((W - (cwP + halfC)) / fadeC, (cwP - halfC) / fadeC)));
     b._capA = (b._capA || 0) + (capWant - (b._capA || 0)) * Math.min(1, (state.dt || 0.016) * 10);
@@ -2716,7 +2751,7 @@ function drawBenchDescs(){
       ctx.restore();
       continue;
     }
-    let cw = px(b.x, kf);
+    let cw = cwP;
     let onTable = TABLES.find(t => b.x >= t.x0 && b.x <= t.x1);
     // a pedestal break may leave the beat without a table right under it —
     // the label then steps onto the nearest counter, unless a recreation
@@ -2741,41 +2776,8 @@ function drawBenchDescs(){
     // has already sunk the scene, where light ink glows over the dark
     if (segIdx(b.x) === 3 && (state.hero || 0) < 0.25){ ink = '55,61,69'; shadow = false; }
     if (onTable){
-      // pinned to the beat's own table span — the line never crosses a gap
-      const half = 350*SS;
-      const lo = px(onTable.x0, kf) + half, hi = px(onTable.x1, kf) - half;
-      if (lo < hi) cw = Math.max(lo, Math.min(hi, cw));
-      // a light pedestal column would swallow light ink — the label steps
-      // aside like a museum plate beside its sculpture
-      if (b.ped){
-        const kp = k(-90);
-        const pedSx = px(b.x + (b.ped.dx ?? -430), kp);
-        const pedHalf = 165 * (b.ped.photo ? 1.55 : (b.ped.big ? 1.35 : 1)) * kp * SS * 0.62;
-        const need = pedHalf + half + 18*SS;
-        if (Math.abs(cw - pedSx) < need){
-          const right = pedSx + need, left = pedSx - need;
-          if (lo < hi){
-            // to the right by preference — the tour reads left to right,
-            // the label leads the eye onward; and never off the screen
-            if (right <= hi && right + 350*SS < W - 30*SS) cw = right;
-            else if (left >= lo && left - 350*SS > 30*SS) cw = left;
-          }
-        }
-      }
-      /* AND IT KEEPS OFF THE BLOCKS PARKED UNDER THE COUNTER. A beat with
-         `under` writes its name and its thesis on the bench face, in the same
-         band this line uses; 2001's line was landing straight on top of the
-         plastic-injection block. It steps to the side its own year is on, so
-         the two read as two things rather than one smudge. */
-      for (const ub of BEATS){
-        if (!ub.under || ub === b) continue;
-        const ux = px(ub.x, kf);
-        if (Math.abs(ux - cw) > 1200 * SS) continue;
-        const needU = 210 * SS + CAP_COLW() / 2;
-        if (Math.abs(cw - ux) < needU) cw = (px(b.x, kf) <= ux) ? ux - needU : ux + needU;
-      }
-      /* NO EDGE CLAMP. Holding the line on the screen is what made it ride in
-         from the margin: it is transparent by then anyway. */
+      /* the placement is settled in capX, above — one function, so the fade and
+         the words agree about where the line is */
     } else {
       // a recreation beat: the line reads off the light floor slab in dark ink —
       // except 1979, where the red runner underfoot asks for light ink
@@ -2793,24 +2795,7 @@ function drawBenchDescs(){
       /* 205 put 1979's line most of the way down the counter's face, reading
          as something lying on the floor. It belongs just under the top of that
          face, where the brown begins. */
-      shadow = onModels; slabDrop = onModels ? 42*SS : 130*SS;
-      /* a plinth standing on the slab: the line steps aside rather than
-         running behind it — the shaft goes all the way to the frame's foot,
-         so there is no dropping it clear, only moving it off */
-      if (b.ped){
-        const kp2 = k(-90);
-        const pedSx2 = px(b.x + (b.ped.dx ?? -430), kp2);
-        const pedHalf2 = 165 * (b.ped.photo ? 1.55 : (b.ped.big ? 1.35 : 1)) * kp2 * SS * 0.62;
-        const need2 = pedHalf2 + CAP_COLW() / 2 + 26 * SS;
-        if (Math.abs(cw - pedSx2) < need2) cw = pedSx2 - need2;
-        /* a narrow window has no room for a 570-unit column beside a plinth
-           standing in the middle of it, so the block is held inside the frame.
-           This is safe now only because the fade is keyed to the YEAR's
-           position rather than to this one: a clamp on the drawn position is
-           what used to pin the line to the margin and walk it along, half lit,
-           for the rest of the hall. */
-        cw = Math.max(CAP_COLW() / 2 + 24 * SS, Math.min(W - CAP_COLW() / 2 - 24 * SS, cw));
-      }
+      shadow = onModels; slabDrop = onModels ? -22*SS : 130*SS;   // two rows higher again: on the counter's own lip
     }
     ctx.save();
     ctx.textAlign = 'center';
@@ -3725,7 +3710,7 @@ const PROJECTORS = [
    /* the stand moved to the RIGHT of the composition and the machine is
       mirrored with it, so it throws across from that side — the left of the
       slab is where the 727 puts down */
-   src: 'media/timeline5.mp4', throwZ: 240, mdx: 430, mirror: true, stand: true, ground: true,
+   src: 'media/timeline5.mp4', throwZ: 240, mdx: 340, mirror: true, stand: true, ground: true,
    in: 12.6, out: 23.4,
    clip: {name: '4141 MacArthur Blvd', label: 'the building, before it was built',
           src: 'media/timeline5.mp4'}},
@@ -3822,7 +3807,15 @@ function drawProjectors(t, phase){
               lx: mxp - swp / 2 + swp * lensU, ly: fy93 - shp + shp * 0.055};
     }
 
-    if (phase === 'machine'){ projMachine(p, t, lamp, mxp, myp, bw, bh, kp, ph93); continue; }
+    /* A MACHINE ON THE FLOOR IS BEHIND THE FURNITURE. The projectors used to
+       be painted in one pass after the counters, which is right for the ones
+       standing ON a counter and wrong for the one standing on the floor beside
+       it — 1993's was walking in front of the era's own bench. The two go in
+       separate passes now, and the floor-standing one goes first. */
+    if (phase === 'machine' || phase === 'machineGround'){
+      if ((phase === 'machineGround') !== !!p.ground) continue;
+      projMachine(p, t, lamp, mxp, myp, bw, bh, kp, ph93); continue;
+    }
     ctx.save();
     // 1 — the beam: apex at the lens, spreading to the frame on the wall
     // a beam from a lamp onto a rectangle is bounded by the two extreme corners
@@ -5961,7 +5954,11 @@ function drawPlane93(){
      the model's own scale. Everything below is in the model's units, so the
      perspective is the model's too, and it is painted before the model, which
      is why it parks out of sight behind the building. */
-  const XPARK = 66, ZL = 8, XFAR = -760, LIFT = 96;   // a shallow approach: already on finals
+  const XPARK = 66, ZL = 8, LIFT = 96;               // a shallow approach: already on finals
+  const wPx0 = 74 * P.s;
+  /* far enough out to be off the frame, whatever the window: it used to stop at
+     a fixed point on the site and simply cease to exist in mid-air */
+  const XFAR = Math.min(-760, ((-wPx0 * 2.2 - P.p.ox) / P.p.s) + ZL * 0.5);
   let mx, lift, back = false;
   if (PLANE93.phase === 'in'){
     const u = Math.max(0, Math.min(1, (state.time - PLANE93.t0) / P93_IN));
@@ -5977,7 +5974,7 @@ function drawPlane93(){
     lift = LIFT * Math.pow(Math.min(1, u / 0.8), 1.3);
     back = true;
   }
-  const wPx = 74 * P.s, hPx = wPx * sp.h / sp.w;      // the site is 132 across
+  const wPx = wPx0, hPx = wPx * sp.h / sp.w;          // the site is 132 across
   const pt = m93(P.p, mx, lift, ZL);
   const gpt = m93(P.p, mx, 0, ZL);
   if (pt[0] < -wPx * 2 || pt[0] > W + wPx * 2) return;
@@ -9134,6 +9131,46 @@ function updateCrownSpin(dt){
 /* the postbox render, measured once: how much of its width is the cylinder,
    how far down its stone cap sits, and where the plain shaft begins */
 const PP_CYLW = 579 / 617, PP_CAPTOP = 438 / 950, PP_SPLIT = 626 / 950;
+/* -------- AN EXHIBIT MADE OF POINTS --------
+   The crown's own lathe mesh, its vertices turned about the vertical axis and
+   drawn as dots rather than faces: the same tooth, read as data. Additive, so
+   the far side of the cloud shows through the near side, and dimmer with depth
+   so the turn is legible. It carries its own light: a soft glow at the centre
+   and a wash on the stone under it. */
+function drawPointCloud(cx, footY, size, t, hero){
+  const mesh = crownMesh(), {rings, M, P} = mesh;
+  const scale = size / 122;
+  const cy = footY - 34 * scale;
+  const tilt = 0.30, ct = Math.cos(tilt), st = Math.sin(tilt);
+  const a = t * 0.55;                       // one turn every eleven seconds
+  const ca = Math.cos(a), sa = Math.sin(a);
+  const grow = 1 + 0.06 * Math.sin(t * 0.9);
+  const bright = 0.55 + 0.45 * Math.min(1, hero * 1.6);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  drawGlow('140,210,255', cx, cy - 6 * scale, size * 1.15, 0.14 * bright);
+  const dot = Math.max(0.9, 1.5 * SS);
+  for (let m = 0; m < M; m += 2){
+    const ring = rings[m];
+    for (let pI = 0; pI < P; pI += 2){
+      const v = ring[pI];
+      const x = v[0] * grow, y = v[1] * grow, z = v[2] * grow;
+      const xr = x * ca + z * sa, zr = -x * sa + z * ca;
+      const yv = y * ct - zr * st, dz = y * st + zr * ct;
+      const near = 0.5 + 0.5 * (dz / 62);        // -1..1 folded to 0..1
+      const sxp = cx + xr * scale, syp = cy - yv * scale;
+      const r = dot * (0.62 + 0.75 * near);
+      ctx.fillStyle = `rgba(${170 + 60 * near | 0},${215 + 30 * near | 0},255,${(bright * (0.16 + 0.5 * near)).toFixed(3)})`;
+      ctx.fillRect(sxp - r / 2, syp - r / 2, r, r);
+    }
+  }
+  ctx.restore();
+  // the wash it throws down on its own stone
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  drawGlow('120,190,255', cx, footY + 2, size * 0.9, 0.10 * bright);
+  ctx.restore();
+}
 function drawPedestal(b, t, hero){
   const ped = b.ped; if (!ped) return;
   const z = -90, kk = k(z);
@@ -9155,7 +9192,7 @@ function drawPedestal(b, t, hero){
      shade of any kind: the room is already lit, and Eldar's rule for it is that
      arriving must never darken anything. */
   const inHall = x > REC17_L && x < REC17_R;
-  if (hero > 0.02 && !ped.vitrine && !inHall){   // a vitrine glows from its own capsule — no crossed spotlights
+  if (hero > 0.02 && !ped.vitrine && !inHall && !ped.points){   // a vitrine glows from its own capsule, and a cloud of points is its own light source
     const lock = Math.min(1, hero * 1.7);
     const objSprite = PHOTO_PED || PED_SPRITES[ped.obj];
     /* the beams cross ON the exhibit: for a photographed plinth that is the
@@ -9270,7 +9307,14 @@ function drawPedestal(b, t, hero){
      fractional offset and crosses its pixel boundary at its own moment, so on
      a slow scroll they shuffle against one another like loose type. The
      prescaled copy already removes the boiling; the position stays smooth. */
-  if (ped.spin){
+  if (ped.points){
+    /* THE CASE BECAME DATA, so at 2007 the exhibit is not an object under
+       glass — it is the object as a cloud of points, turning on its own axis
+       and lighting the plinth from inside itself. The mesh is the crown's own
+       lathe: its vertices, rotated, projected, and drawn as dots. No spotlights
+       on it and no dome over it; nothing to look through. */
+    drawPointCloud(sx, yTop - 6 * kk * SS, ow * 1.35, t, hero);
+  } else if (ped.spin){
     const footY3 = yTop - 3*kk*SS;
     // the shade it puts on the stone, sized to the crown's own footprint
     const preW = ow * 0.98;
@@ -9287,8 +9331,9 @@ function drawPedestal(b, t, hero){
     ctx.drawImage(spriteMip(obj, ow, oh), sx - ow/2, yTop - oh - 4*kk*SS, ow, oh);
   }
   // glass dome: one clean outline, the sheen lives on the glass itself
-  // (a vitrine pedestal has the capsule for a case — no dome, no spotlight halo)
-  if (!ped.vitrine){
+  // (a vitrine pedestal has the capsule for a case — no dome, no spotlight halo;
+  //  and a cloud of points is not a thing you put under glass)
+  if (!ped.vitrine && !ped.points){
     ctx.strokeStyle = 'rgba(235,245,255,0.30)';
     ctx.lineWidth = 1.6*SS;
     ctx.beginPath();
@@ -13180,6 +13225,7 @@ function frame(){
   drawEra2Bench();    // era 2, 1980 to the 1989 recreation
   drawPlateBench(t);  // and the founding bay, cut from its centrepiece
   drawRec4Columns(null, true);  // the portal's columns stand ON that floor — over its sheen
+  drawProjectors(t, 'machineGround');   // a machine standing on the floor goes behind the counters
   drawBench();        // reflection can never be laid over the furniture
   drawShowroomLight(t);   // light coming OUT of the furniture, so after it
   drawProjectors(t, 'machine');   // it stands on the bench, so it comes after it
