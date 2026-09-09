@@ -543,6 +543,10 @@ const SEAM_3 = SHIFT(19980);
 const REC2_L = SEAM_3 - 540, REC2_R = SEAM_3 + 540;   // the Digital Revolution recreation
 const REC_L = SHIFT(6350), REC_R = SHIFT(7450);   // era 1 ends; the 1979 recreation; era 2 begins
 const G8_W = 1400;   // the 1979 models' plinth, in world units — the counters are trimmed to it
+/* the eight signs on that plinth, as fractions of the render's width, nudged a
+   touch right so the van pulls up at the building rather than at its logo */
+const G8_DOORS = [0.062, 0.180, 0.295, 0.417, 0.554, 0.660, 0.776, 0.901].map(v => v + 0.030);
+const VAN8 = {seen: false, run: null};
 const REC3_L = SHIFT(10600), REC3_R = SHIFT(11700);   // the 1989 National Leader recreation
 const REC4_L = SHIFT(25940), REC4_R = SHIFT(26740);   // the 2022 fastscan recreation — the wall turns pure white beyond it
 /* The 1993 bay. Cut INSIDE era 2, not at a seam, so no two wall planes meet
@@ -1110,6 +1114,7 @@ const state = {
   inspect: null,          // a photo lifted to the camera
   study: null,            // the era reading page {beat, imgs, scroll, amt}
   restBeat: -1, restTime: 0,
+  capBeat: -1, capAmt: 0, capHold: 0,   // the bench caption outlives the rest that raised it
   introHold: true,        // holding the opening close-up until the first move,
   introFade: 1,           // darkness over the hall until the tour begins
   ruleA: 0,               // the century rule fades in once the tour is under way
@@ -2080,7 +2085,7 @@ function drawBench(){
       ctx.font = `${Math.round(26*SS)}px ${seg.font}`;
       ctx.fillStyle = seg.railInk;
       ctx.fillRect(bx - 1, yTopF + 2*SS, 2, 14*SS);
-      if ((!b.sub || b.under) && !b.plaque) ctx.fillText(b.y, bx, yTopF + 25*SS);
+      if ((!b.sub || b.under) && !b.plaque) ctx.fillText(b.y, bx, yTopF + 51*SS);   // one row down: at 25 it sat astride the counter's own edge
       if (b.under){
         // a fact parked under the tabletop — quiet, until we find it a home
         ctx.font = `${Math.round(21*SS)}px ${seg.font}`;
@@ -2585,7 +2590,7 @@ function drawBenchDescs(){
     const b = BEATS[i];
     if (b.under || Math.abs(b.x - cam.x) > 3500) continue;
     const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
-    let dAmt = Math.max(focusAmt, state.restBeat === i ? Math.min(1, Math.max(0, (state.restTime - 0.45)/0.7)) : 0);
+    let dAmt = Math.max(focusAmt, state.capBeat === i ? state.capAmt : 0);
     if (b.album) dAmt *= 1 - (albumAnim[i] || 0);
     if (dAmt < 0.02) continue;
     const seg = segAt(b.x);
@@ -2614,13 +2619,13 @@ function drawBenchDescs(){
           ctx.textAlign = 'center';
           ctx.font = eraFont(22 * SS, 'italic', seg.font);
           ctx.fillStyle = `rgba(${descInk(seg)},${(dAmt * 0.66).toFixed(3)})`;
-          ctx.fillText(b.th, W * 0.5, top - 46 * SS);
+          drawCapLines([b.th], W * 0.5, top - 46 * SS, 0);
           ctx.restore();
         }
         let wide = 0;
         for (const ln of b._d) wide = Math.max(wide, ctx.measureText(ln).width);
-        drawLines(b._d, W * 0.5, top, 32 * SS);
-        CAP_RECT = {x0: W/2 - wide/2 - 14 * SS, x1: W/2 + wide/2 + 14 * SS,
+        drawCapLines(b._d, W * 0.5, top, 32 * SS);
+        CAP_RECT = {x0: W/2 - CAP_COLW()/2 - 14 * SS, x1: W/2 - CAP_COLW()/2 + wide + 14 * SS,
                     y0: top - 30 * SS, y1: H * 0.905 + 12 * SS};
       }
       ctx.restore();
@@ -2699,13 +2704,13 @@ function drawBenchDescs(){
       ctx.save();
       ctx.font = eraFont(22 * SS, 'italic', seg.font);
       ctx.fillStyle = `rgba(${ink},${(dAmt * 0.70).toFixed(3)})`;
-      ctx.fillText(b.th, cw, capTop - 44 * SS);
+      drawCapLines([b.th], cw, capTop - 44 * SS, 0);
       ctx.restore();
     }
     let capW = 0;
     for (const ln of b._d) capW = Math.max(capW, ctx.measureText(ln).width);
-    drawLines(b._d, cw, capTop, 32 * SS);
-    CAP_RECT = {x0: cw - capW/2 - 14 * SS, x1: cw + capW/2 + 14 * SS,
+    drawCapLines(b._d, cw, capTop, 32 * SS);
+    CAP_RECT = {x0: cw - CAP_COLW()/2 - 14 * SS, x1: cw - CAP_COLW()/2 + capW + 14 * SS,
                 y0: capTop - 30 * SS, y1: capTop + b._d.length * 32 * SS};
     ctx.restore();
   }
@@ -2724,6 +2729,19 @@ function wrapCalc(text, maxW){
 }
 function drawLines(lines, cx, y, lh){
   for (let i = 0; i < lines.length; i++) ctx.fillText(lines[i], cx, y + i*lh);
+}
+/* THE CAPTION IS RANGED LEFT. Centring every line of a two- or three-line
+   caption gives a shape with no edge to come back to — the eye has to hunt for
+   the start of each line. The block keeps the place it always had (its column
+   is still centred under the beat) but the words hang off one invisible left
+   line, the one the first line already started on. */
+const CAP_COLW = () => 23 * SS * 700 / 26;   // the width b._d was wrapped to
+function drawCapLines(lines, cx, y, lh){
+  const x = cx - CAP_COLW() / 2;
+  const prev = ctx.textAlign;
+  ctx.textAlign = 'left';
+  for (let i = 0; i < lines.length; i++) ctx.fillText(lines[i], x, y + i * lh);
+  ctx.textAlign = prev;
 }
 /* line breaks are computed once at a reference size — they never re-flow */
 function cacheWrap(){
@@ -5849,6 +5867,43 @@ function drawMapWall(t){
          a little above the ground and the whole block reads as hovering. The
          render carries its own dark base; that is what sits it down. */
       if (xR < W + wR && xR + wR > -wR) ctx.drawImage(spriteMip(g8, wR, hR), xR, yFoot - hR, wR, hR);
+      /* THE SECOND VAN, AND YOU NEVER KNOW. The long plinth is a street eight
+         labs deep, and a van the size of one of their doorways runs it right to
+         left — but only sometimes. Each time the bay goes out of sight the
+         visit is re-rolled: a little over half the time there is a van, and
+         which of the eight it pulls up at is drawn then too, so the same
+         approach never plays twice. This one runs on its own clock, not on the
+         scroll: it is already driving when the row comes into view. */
+      const van = PROP_SPRITES.ph_car79;
+      if (van){
+        const dt2 = Math.min(0.05, state.dt || 0.016);
+        if (Math.abs(cam.x - mid) > 2600){ VAN8.seen = false; VAN8.run = null; }
+        else if (!VAN8.seen){
+          VAN8.seen = true;
+          VAN8.run = Math.random() < 0.58
+            ? {u: 1.10, stop: G8_DOORS[(Math.random() * G8_DOORS.length) | 0]}
+            : null;
+        }
+        if (VAN8.run){
+          const gap = VAN8.run.u - VAN8.run.stop;
+          if (gap > 0.0005) VAN8.run.u -= Math.min(gap, dt2 * 0.145 * Math.min(1, 0.13 + gap * 7));
+          const vh = hR * 0.052, vw = vh * van.w / van.h;
+          const vx = xR + VAN8.run.u * wR;
+          const vy = (yFoot - hR) + hR * 0.152;   // the front lip of the plinth's own top, where the forecourts end
+          if (vx > -vw && vx < W + vw){
+            ctx.save();
+            ctx.globalAlpha = 0.35;
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.ellipse(vx, vy, vw * 0.46, Math.max(0.8, vh * 0.13), 0, 0, 7);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.translate(vx, 0); ctx.scale(-1, 1); ctx.translate(-vx, 0);   // it drives the other way
+            ctx.drawImage(spriteMip(van, vw, vh), vx - vw / 2, vy - vh, vw, vh);
+            ctx.restore();
+          }
+        }
+      }
     }
   }
 }
@@ -7769,7 +7824,10 @@ async function loadPhotoSkin(){
 function initDecor(){
   for (const kind of ['jar','plaster','toolbox','mailtray','box','papers','crtOff','mill','palmNear','jaw1','jaw2','gradcap'])
     PROP_SPRITES[kind] = makeProp(kind);
-  const eraProps = [['jar','jaw1','toolbox','plaster','jaw1'], ['mailtray','jaw1','box','plaster'], ['papers','jaw2','crtOff','jaw2'], ['jaw2','papers']];
+  /* the craft era loses the jar and the plaster arch: the jar renders as a
+     tall black bottle against that pale counter, and the arch as three teeth
+     lying loose on the table — Eldar asked for both gone. */
+  const eraProps = [['toolbox','jaw1','papers','toolbox'], ['mailtray','jaw1','box','plaster'], ['papers','jaw2','crtOff','jaw2'], ['jaw2','papers']];
   const R = rng(20260819);
   // bench props between beats
   for (let si = 0; si < SEGMENTS.length; si++){
@@ -7780,6 +7838,11 @@ function initDecor(){
     for (let x = a; x < b; x += 260 + R()*260){
       if (!eraProps[si].length) break;
       if (BEATS.some(bt => Math.abs(bt.x - x) < 520)) continue;   // 430 left a jar standing at 1976's elbow, reading as a black bottle
+      /* NOTHING LOOSE ON THE OPENING COUNTER. Up to the cabinet the counter is
+         a photograph, and an object at depth on a painted surface has to be
+         lifted 26 units just to stop reading as sunk into it — which is what
+         put a plaster arch of teeth on the table at 1907. */
+      if (x < PLATE_FROM) continue;
       // and clear of a book pile, which is furniture in its own right
       if (BEATS.some(bt => bt.pyr && Math.abs(bt.x + bt.pyr.dx - x) < (bt.pyr.w || 460)/2 + 220)) continue;
       // nor across the PFM line, which is six objects wide and holds its whole bay
@@ -12077,6 +12140,18 @@ function update(dt){
     if (state.restBeat === nb.i) state.restTime += dt;
     else { state.restBeat = nb.i; state.restTime = 0; }
   } else { state.restBeat = -1; state.restTime = 0; }
+
+  /* THE LINE STAYS UP LONG ENOUGH TO READ IT. The caption used to be tied
+     straight to the rest state, so the first turn of the wheel took it off the
+     screen — Eldar could not catch it. It holds for three seconds after the
+     walk starts again and then fades over one, so it is still there while you
+     are moving off the beat. */
+  const capRise = state.restBeat >= 0 ? Math.min(1, Math.max(0, (state.restTime - 0.45) / 0.7)) : 0;
+  if (capRise > 0.01){ state.capBeat = state.restBeat; state.capAmt = capRise; state.capHold = 3.0; }
+  else if (state.capBeat >= 0){
+    if (state.capHold > 0) state.capHold -= dt;
+    else { state.capAmt -= dt / 1.0; if (state.capAmt <= 0){ state.capAmt = 0; state.capBeat = -1; } }
+  }
 
   // the opening close-up releases on the first real movement
   if (state.introHold && (Math.abs(cam.vel) > 60 || Math.abs(cam.x - INTRO_X) > 350)){
