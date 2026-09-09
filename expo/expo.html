@@ -130,7 +130,9 @@ const BEATS = [
       objects, and opening to fill the screen when you tap them. */
    /* set between the seventies film console (which ends at 5225) and the
       counter's own right end (6300), with the same air on both sides */
-   pfmRow:{dx:83, lz:88, w:450}},   // 1.9x smaller on the counter — they are objects laid out, not an exhibit; the tap is what makes them big
+   /* lift: they were standing on the very front lip of the counter; this sets
+      them back into the middle of its depth */
+   pfmRow:{dx:83, lz:88, w:450, lift:17}},   // 1.9x smaller on the counter — they are objects laid out, not an exhibit; the tap is what makes them big
 
   {x:4400, y:'1973', t:'SECOND LAB', yLift:95, fly:true, flyZ:380, flyLift:52,   // the seventies all come forward, the way 1970 does
    th:'Growth by addition — before growth by system.',
@@ -2784,7 +2786,10 @@ function drawBenchDescs(){
       /* 1979's line lies on the dark wood of the models' plinth, so it is set
          light there; every other recreation reads dark on its pale slab. */
       ink = onModels ? '236,228,218' : '34,41,50';
-      shadow = onModels; slabDrop = onModels ? 205*SS : 130*SS;
+      /* 205 put 1979's line most of the way down the counter's face, reading
+         as something lying on the floor. It belongs just under the top of that
+         face, where the brown begins. */
+      shadow = onModels; slabDrop = onModels ? 42*SS : 130*SS;
       /* a plinth standing on the slab: the line steps aside rather than
          running behind it — the shaft goes all the way to the frame's foot,
          so there is no dropping it clear, only moving it off */
@@ -8596,7 +8601,7 @@ function drawPfmRow(b, i){
     if (sp) spriteMip(sp, st.w * wRow, st.h * wRow);
   }
   if (sxC < -wRow || sxC > W + wRow) return;
-  const foot = py(CFG.benchY - 2, kk);
+  const foot = py(CFG.benchY - 2 - (R.lift || 0), kk);
   const left = sxC - wRow / 2;
   let tallest = 0;
   for (const st of PFM_STAGES){
@@ -10502,7 +10507,7 @@ function drawPfmView(){
   const asp = rowSp.w / rowSp.h, seg = segAt(b.x);
   // where it stands now
   const kk = k(bz(R.lz));
-  const w0 = R.w * kk * SS, cx0 = px(b.x + R.dx, kk), y0 = py(CFG.benchY - 2, kk);
+  const w0 = R.w * kk * SS, cx0 = px(b.x + R.dx, kk), y0 = py(CFG.benchY - 2 - (R.lift || 0), kk);
   // the plate, at its own size on the wall, and the proportion it keeps
   const kp = k(wallZAt(b.x) - 8);
   const tx = sentence(b.t);
