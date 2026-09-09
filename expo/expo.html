@@ -4970,8 +4970,11 @@ function drawAiDataField(x0, y0, w, h, t, ph){
   const sizeOne = rows - 2, oneX = ((cols - sizeOne) / 2) | 0, oneY = 1;
   const sizeFour = Math.min(rows - 2, (cols / 4.6) | 0), fourY = ((rows - sizeFour) / 2) | 0;
   const fourStep = cols / 4, fourX = i => ((i + 0.5) * fourStep - sizeFour / 2) | 0;
-  const MC = 10, MR = 3;
-  const sizeMany = Math.min(((rows - 1) / MR) | 0, ((cols - 1) / MC) | 0);
+  /* two rows, not three, and each crown a little smaller than its own cell of
+     the grid: at three rows they touched top to bottom and the field read as a
+     row of columns rather than as crowns. */
+  const MC = 8, MR = 2;
+  const sizeMany = Math.min(((rows / MR) * 0.74) | 0, ((cols / MC) * 0.74) | 0);
   const manyStepX = cols / MC, manyStepY = rows / MR;
   const manyX = i => ((i + 0.5) * manyStepX - sizeMany / 2) | 0;
   const manyY = j => ((j + 0.5) * manyStepY - sizeMany / 2) | 0;
@@ -4993,7 +4996,7 @@ function drawAiDataField(x0, y0, w, h, t, ph){
       if (many > 0.01){
         for (let j = 0; j < MR && !on; j++)
           for (let i = 0; i < MC; i++){
-            // every one of the thirty is its own case: a hair of jitter each
+            // every one of them is its own case: a hair of jitter each
             const jx = ((i * 7 + j * 13) % 3) - 1;
             if (inCrown(cx2, cy2, manyX(i) + jx, manyY(j), sizeMany) && rnd < 0.30 + 0.70 * many){
               on = true; bright = 0.6 + 0.4 * rnd; break;
