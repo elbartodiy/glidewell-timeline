@@ -2299,8 +2299,7 @@ function drawBenchPlaque(b){
    capitals were drawn to stand inside lower-case words and crowd each other
    when set alone. Now that nothing in the hall is shouted, almost nothing
    needs the wide end of that range. */
-const TRACK = {display: -0.015, title: 0.02, label: 0.03, caps: 0.07, plate: 0.05};
-const TITLE_TRACK = TRACK.title;
+const TRACK = {title: 0.02, label: 0.03, plate: 0.05};   // display and caps went unused once the hall stopped setting anything in capitals
 /* NOTHING IS SHOUTED. The hall was set in full capitals throughout — titles,
    plates, headings, buttons — and Eldar's rule is plain: a word gets one
    capital, at its front, and only if it deserves one. The data keeps its own
@@ -2486,7 +2485,7 @@ function drawBeatText(b, focusAmt){
               {type:'study', beat: BEATS.indexOf(b)});
       const cd = b._capDrop || 0;
       ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
-      try { ctx.letterSpacing = `${46*(seg.tScale||1)*TITLE_TRACK*kk*SS}px`; } catch(e){}
+      try { ctx.letterSpacing = `${46*(seg.tScale||1)*TRACK.title*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
       const LB = b.tOnBay && BAY_LABELS[b.y];
       letterRelief(0.55);
@@ -2558,7 +2557,7 @@ function drawBeatText(b, focusAmt){
               {type:'study', beat: BEATS.indexOf(b)});
       const cd = b._capDrop || 0;
       ctx.font = eraFont(46 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
-      try { ctx.letterSpacing = `${46*sc*(seg.tScale||1)*TITLE_TRACK*kk*SS}px`; } catch(e){}
+      try { ctx.letterSpacing = `${46*sc*(seg.tScale||1)*TRACK.title*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
       /* a title lettered on the bay photograph's plinth: it takes the picture's
          own point every frame, so it cannot drift against the render */
@@ -10138,8 +10137,9 @@ function drawFactory(t, over){
   drawCell(FACT_X - 300, 190, t, 0, true);
   drawCell(FACT_X + 250, 232, t, 2.4, false);
   const kk = k(190);
-  pushHit(px(FACT_X - 480, kk), py(560, kk), (960)*kk*SS, py(1080,kk)-py(560,kk),
-          {type:'focus', beat: BEATS.indexOf(b), anchor: FACT_X});
+  // the factory is painted twice, under and over the counter; its target is claimed once
+  if (!over) pushHit(px(FACT_X - 480, kk), py(560, kk), (960)*kk*SS, py(1080,kk)-py(560,kk),
+                     {type:'focus', beat: BEATS.indexOf(b), anchor: FACT_X});
 }
 const STAGE_X = SHIFT(28830);
 let JIM_FIG = null;
