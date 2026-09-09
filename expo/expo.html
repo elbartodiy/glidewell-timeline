@@ -2010,7 +2010,11 @@ function drawFloor(){
     [REC93_R, REC2_L, T.era[2]],
     [REC2_L, REC2_R, T.rec.rDR],
     [REC2_R, REC17_L, T.era[3]],
-    [REC17_L, REC17_R, T.rec.r2017],
+    /* NO FLOOR IN THE GLASS HALL. That bay is a photograph of a room, and the
+       room in it has a marble floor of its own running to the bottom of the
+       frame; the hall's painted floor laid over it read as a white haze across
+       the lower half of the render. The gap is not a gap: the photograph fills
+       it. */
     [REC17_R, REC18_L, T.era[3]],
     [REC18_L, REC18_R, T.rec.r2018],
     [REC18_R, REC4_L, T.era[3]],
@@ -11436,12 +11440,33 @@ function drawStudy(){
         pushHit(fx, y, fw, fh, {type: 'digitize'});
       }
       y += fh + 14 * SS;
-      if (S.diss > 0.6){
-        ctx.font = K.font(18);
-        ctx.fillStyle = `rgba(${K.accent},0.9)`;
-        if (y > topClip && y < botClip) ctx.fillText(inl.box.done, left, y);
-        y += 40 * SS;
-      } else y += 12 * SS;
+      /* AND YOU CAN DO IT AGAIN. The blue line that used to sit here read as a
+         label crammed against the panel and said nothing you could not see. In
+         its place, two seconds after the case has finished becoming data, an
+         invitation to run it again — and the carton comes back. */
+      if (S.diss >= 1){
+        S.doneAt = S.doneAt || state.time;
+        const wait = state.time - S.doneAt;
+        if (wait > 2){
+          const aa = Math.min(1, (wait - 2) / 0.5);
+          const label = 'Digitize another one?';
+          ctx.save();
+          ctx.globalAlpha = a * aa;
+          ctx.font = K.font(20, '700');
+          const tw3 = ctx.measureText(label).width;
+          const bx3 = left + (textW - tw3) / 2, by3 = y + 46 * SS;   // air over it and under it: it is not a caption
+          const hot3 = Input.hover && Input.hover.x > bx3 - 18 * SS && Input.hover.x < bx3 + tw3 + 18 * SS &&
+                       Input.hover.y > by3 - 26 * SS && Input.hover.y < by3 + 12 * SS;
+          ctx.fillStyle = `rgba(${K.accent},${hot3 ? 0.95 : 0.8})`;
+          if (by3 > topClip && by3 < botClip){
+            ctx.fillText(label, bx3, by3);
+            ctx.fillRect(bx3, by3 + 7 * SS, tw3, Math.max(1, 1.4 * SS));
+            pushHit(bx3 - 18 * SS, by3 - 26 * SS, tw3 + 36 * SS, 40 * SS, {type: 'redigitize'});
+          }
+          ctx.restore();
+          y += 86 * SS;
+        } else y += 12 * SS;
+      } else { S.doneAt = 0; y += 12 * SS; }
     }
   };
   if (inl && inl.boxTop) drawInlineBox();
@@ -12386,6 +12411,8 @@ function update(dt){
           openPerson(aimed.id);     // the name in the text goes to the person, not to a portrait
         } else if (aimed && aimed.type === 'link'){
           try { window.open(aimed.url, '_blank', 'noopener'); } catch(e){}   // the page stays open behind it
+        } else if (aimed && aimed.type === 'redigitize'){
+          S.dissing = false; S.diss = 0; S.doneAt = 0;   // the carton comes back, whole
         } else if (aimed && aimed.type === 'digitize'){
           S.dissing = true;         // the trays go to digits, in the page, where the carton is
         } else if (aimed && aimed.type === 'inclip'){
