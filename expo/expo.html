@@ -564,12 +564,24 @@ function updateVan8(dt){
   if (!VAN8.seen && d < 2400){
     VAN8.seen = true;
     const from = 1 + ((Math.random() * (G8_DOORS.length - 1)) | 0);
-    VAN8.run = {u: G8_DOORS[from], wait: 0.6 + Math.random() * 2.4, stop: G8_DOORS[0]};
+    VAN8.run = {u: G8_DOORS[from], wait: 0.6 + Math.random() * 2.4, dir: -1};
   }
   const R = VAN8.run; if (!R) return;
   if (R.wait > 0){ R.wait -= dt; return; }
-  const gap = R.u - R.stop;
-  if (gap > 0.0005) R.u -= Math.min(gap, dt * 0.145 * Math.min(1, 0.13 + gap * 7));
+  /* it drives to the end of the street it is pointed at and parks there —
+     never past the outermost lab, so it cannot run off the plinth */
+  const stop = R.dir < 0 ? G8_DOORS[0] : G8_DOORS[G8_DOORS.length - 1];
+  const gap = Math.abs(R.u - stop);
+  if (gap > 0.0005){
+    const step = Math.min(gap, dt * 0.145 * Math.min(1, 0.13 + gap * 7));
+    R.u += R.dir < 0 ? -step : step;
+  }
+}
+/* AND YOU CAN TURN IT ROUND. Tap the van and it takes a beat, swings about and
+   drives back the way it came, to the far end of the same street. */
+function turnVan8(){
+  const R = VAN8.run; if (!R) return;
+  R.dir = -R.dir; R.wait = 0.32;
 }
 const REC3_L = SHIFT(10600), REC3_R = SHIFT(11700);   // the 1989 National Leader recreation
 const REC4_L = SHIFT(25940), REC4_R = SHIFT(26740);   // the 2022 fastscan recreation — the wall turns pure white beyond it
@@ -4603,6 +4615,7 @@ function drawProgress(t){
    480x270, and it is what makes the hall stop looking vector. `?nobloom` off. */
 const BLOOM_ON = !/[?&]nobloom/.test(location.search);
 let BLOOM = null, BLOOM_S = null;
+let BLOOM_TICK = 0, BLOOM_WARM = false;
 function drawBloom(){
   if (!BLOOM_ON || !W || !H) return;
   const bw = Math.max(2, W >> 2), bh = Math.max(2, H >> 2);
@@ -4610,26 +4623,45 @@ function drawBloom(){
     BLOOM = document.createElement('canvas');
     BLOOM.width = bw; BLOOM.height = bh;
   }
-  const g = BLOOM.getContext('2d');
-  g.clearRect(0, 0, bw, bh);
-  /* brightness 0.47 + contrast 8 puts the knee at ~0.93: only what is already
-     near white spills, so a lit wall stays a wall and does not become a lamp.
-     The BLUR is no longer a filter — a canvas blur() runs on the software
-     rasterizer and cost more than everything else in the frame put together.
-     The spill is downscaled once more instead: bilinear minification IS a
-     blur, and it rides the GPU. */
-  g.filter = 'brightness(0.47) contrast(8)';
-  g.drawImage(ctx.canvas, 0, 0, bw, bh);
-  g.filter = 'none';
   const sw2 = Math.max(2, bw >> 2), sh2 = Math.max(2, bh >> 2);
   if (!BLOOM_S || BLOOM_S.width !== sw2 || BLOOM_S.height !== sh2){
     BLOOM_S = document.createElement('canvas');
     BLOOM_S.width = sw2; BLOOM_S.height = sh2;
   }
-  const g2 = BLOOM_S.getContext('2d');
-  g2.clearRect(0, 0, sw2, sh2);
-  g2.imageSmoothingEnabled = true;
-  g2.drawImage(BLOOM, 0, 0, sw2, sh2);
+  /* THE FILTER IS APPLIED TO THE SMALL COPY, NOT TO THE WHOLE FRAME — and only
+     on every other frame.
+
+     A canvas2d `filter` drops that one draw onto the software rasterizer, so
+     `filter = brightness/contrast` on `drawImage(ctx.canvas, …)` was reading
+     the ENTIRE frame back off the GPU and shading it on the CPU: eight and a
+     half megapixels on a wide retina screen, 5.6ms in the median and 22 in the
+     tail — on its own more than a 60Hz frame's whole budget, and the judder
+     Eldar could feel through the scroll. Downscaling first is a plain GPU
+     blit; the knee is then put on a quarter-size image, one sixteenth of the
+     pixels. And the spill is a soft glow at eleven percent: it does not need a
+     new one every frame, so it is rebuilt on alternate frames and the last one
+     is laid down in between.
+
+     brightness 0.47 + contrast 8 still puts the knee at ~0.93: only what is
+     already near white spills, so a lit wall stays a wall. The BLUR is not a
+     filter either — bilinear minification IS a blur, and it rides the GPU. */
+  /* and it gives ground when the frame is tight: the rebuild is every other
+     frame at speed, every fourth once the rate sags, and the glow that is
+     already there carries the frames in between */
+  BLOOM_TICK++;
+  const every = fps < 50 ? 4 : 2;
+  if ((BLOOM_TICK % every) === 0 || !BLOOM_WARM){
+    const g = BLOOM.getContext('2d');
+    g.clearRect(0, 0, bw, bh);
+    g.drawImage(ctx.canvas, 0, 0, bw, bh);        // GPU blit, no filter
+    const g2 = BLOOM_S.getContext('2d');
+    g2.clearRect(0, 0, sw2, sh2);
+    g2.imageSmoothingEnabled = true;
+    g2.filter = 'brightness(0.47) contrast(8)';   // the knee, on a sixteenth of the pixels
+    g2.drawImage(BLOOM, 0, 0, sw2, sh2);
+    g2.filter = 'none';
+    BLOOM_WARM = true;
+  }
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   ctx.globalAlpha = 0.11;
@@ -5912,22 +5944,24 @@ function drawMapWall(t){
          scroll: it is already driving when the row comes into view. */
       const van = PROP_SPRITES.ph_car79;
       if (van && VAN8.run){
-        {
-          const vh = hR * 0.052, vw = vh * van.w / van.h;
-          const vx = xR + VAN8.run.u * wR;
-          const vy = (yFoot - hR) + hR * 0.152;   // the front lip of the plinth's own top, where the forecourts end
-          if (vx > -vw && vx < W + vw){
-            ctx.save();
-            ctx.globalAlpha = 0.35;
-            ctx.fillStyle = '#000';
-            ctx.beginPath();
-            ctx.ellipse(vx, vy, vw * 0.46, Math.max(0.8, vh * 0.13), 0, 0, 7);
-            ctx.fill();
-            ctx.globalAlpha = 1;
-            ctx.translate(vx, 0); ctx.scale(-1, 1); ctx.translate(-vx, 0);   // it drives the other way
-            ctx.drawImage(spriteMip(van, vw, vh), vx - vw / 2, vy - vh, vw, vh);
-            ctx.restore();
-          }
+        const vh = hR * 0.052, vw = vh * van.w / van.h;
+        const vx = xR + VAN8.run.u * wR;
+        const vy = (yFoot - hR) + hR * 0.152;   // the front lip of the plinth's own top, where the forecourts end
+        if (vx > -vw && vx < W + vw){
+          ctx.save();
+          ctx.globalAlpha = 0.35;
+          ctx.fillStyle = '#000';
+          ctx.beginPath();
+          ctx.ellipse(vx, vy, vw * 0.46, Math.max(0.8, vh * 0.13), 0, 0, 7);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          // the render faces right; it is flipped only when it is heading left
+          if (VAN8.run.dir < 0){ ctx.translate(vx, 0); ctx.scale(-1, 1); ctx.translate(-vx, 0); }
+          ctx.drawImage(spriteMip(van, vw, vh), vx - vw / 2, vy - vh, vw, vh);
+          ctx.restore();
+          // a hand-sized target around a thumbnail-sized van
+          const hw = Math.max(vw, 26 * SS), hh = Math.max(vh * 2.2, 30 * SS);
+          pushHit(vx - hw / 2, vy - hh, hw, hh, {type: 'van8'});
         }
       }
     }
@@ -12022,6 +12056,8 @@ function update(dt){
         state.inspect = {sp: aimed.sp, wx: aimed.wx, lz: aimed.lz, w: aimed.w,
                          cap: aimed.cap, beat: aimed.beat, table: true, amt: 0};
         cam.vel = 0;
+      } else if (aimed && aimed.type === 'van8'){
+        turnVan8();
       } else if (aimed && aimed.type === 'pfmview'){
         state.pfmView = {beat: aimed.beat, amt: 0, closing: false};
         cam.vel = 0;
