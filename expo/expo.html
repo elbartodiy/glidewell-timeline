@@ -5707,8 +5707,13 @@ function drawMapWall(t){
     const sxc = px(wxc, kc);
     const cw = 120 * kc * SS;
     if (sxc < -cw || sxc > W + cw) continue;
+    /* PALE, NOT BLACK. These two were bronze-dark from the days of the map
+       panel, and against the light walls either side they read as a shadow
+       laid over the wall rather than as a pilaster — Eldar circled both. They
+       are the room's own stone now, a shade deeper than the panel between them,
+       with the brass trim doing the work the darkness used to do. */
     const cg = ctx.createLinearGradient(sxc - cw/2, 0, sxc + cw/2, 0);
-    cg.addColorStop(0, '#2a2118'); cg.addColorStop(0.45, '#5a4c38'); cg.addColorStop(1, '#1d1710');
+    cg.addColorStop(0, '#6f6959'); cg.addColorStop(0.42, '#a79f8c'); cg.addColorStop(1, '#645e50');
     ctx.fillStyle = cg;
     ctx.fillRect(sxc - cw/2, 0, cw, yBase);
     // brass trim on both faces of the pilaster
