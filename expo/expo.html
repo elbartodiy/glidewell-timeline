@@ -5749,10 +5749,11 @@ function drawMapWall(t){
       const wR = G8_W * kR * SS, hR = wR * g8.h / g8.w;
       const yBench = py(CFG.benchY, kR), yFoot = yBench + hR * (1 - TOP);
       const xR = px(mid, kR) - wR / 2;
-      if (xR < W + wR && xR + wR > -wR){
-        softFootShadow(px(mid, kR), yFoot, wR * 0.46, (yFoot - yBench) * 0.05, 0.4);
-        ctx.drawImage(spriteMip(g8, wR, hR), xR, yFoot - hR, wR, hR);
-      }
+      /* NO SHADOW UNDER THIS ONE. Its foot is set by the render's own
+         proportions rather than by the floor line, so a smear drawn there lands
+         a little above the ground and the whole block reads as hovering. The
+         render carries its own dark base; that is what sits it down. */
+      if (xR < W + wR && xR + wR > -wR) ctx.drawImage(spriteMip(g8, wR, hR), xR, yFoot - hR, wR, hR);
     }
   }
 }
