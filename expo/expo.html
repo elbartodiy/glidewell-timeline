@@ -582,7 +582,7 @@ function updateVan8(dt){
     VAN8.seen = true;
     const from = 1 + ((Math.random() * (G8_DOORS.length - 1)) | 0);
     VAN8.run = {u: G8_DOORS[from], wait: 0.6 + Math.random() * 2.4, dir: -1,
-                stop: pickDoor(G8_DOORS[from], -1)};
+                stop: pickDoor(G8_DOORS[from], -1), idle: 0};
   }
   const R = VAN8.run; if (!R) return;
   if (R.wait > 0){ R.wait -= dt; return; }
@@ -593,7 +593,14 @@ function updateVan8(dt){
   if (gap > 0.0005){
     const step = Math.min(gap, dt * 0.145 * Math.min(1, 0.13 + gap * 7));
     R.u += R.dir < 0 ? -step : step;
+    R.idle = 0;
+    return;
   }
+  /* IT NEVER STANDS FOR LONG. Three seconds at a lab and it turns itself round
+     and sets off for another one, exactly as if you had tapped it — so the
+     street is always doing something whether or not anybody touches it. */
+  R.idle = (R.idle || 0) + dt;
+  if (R.idle > 3){ turnVan8(); R.idle = 0; }
 }
 /* WHICH LAB IT IS GOING TO is drawn each time it sets off — one of the ones
    actually ahead of it, so it always has somewhere to go and never overshoots
@@ -610,6 +617,7 @@ function pickDoor(from, dir){
    it back down the row. */
 function turnVan8(){
   const R = VAN8.run; if (!R) return;
+  R.idle = 0;
   let dir = -R.dir;
   let stop = pickDoor(R.u, dir);
   if (stop === R.u){ dir = -dir; stop = pickDoor(R.u, dir); }   // nothing that way: go back
