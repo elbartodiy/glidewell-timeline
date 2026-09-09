@@ -235,7 +235,8 @@ const BEATS = [
    ped:{obj:'puck', dx:0},
    props:[{kind:'crt', dx:700, lz:130, w:320, label:'CAD revolution'}]},
 
-  {x:16700, y:'2001', t:'WEB · CLINICAL VOICE', minor:true, yLift:190,
+  {x:16520, y:'2001',   // 180 back, clear of the plastic-injection block under the counter
+   t:'WEB · CLINICAL VOICE', minor:true, yLift:190,
    th:'The lab learns to publish — online and on camera.',
    d:'The first Glidewell Laboratories website goes live; the brand gains its clinical-education voice on camera.',
    wall:[], table:[]},
@@ -245,7 +246,8 @@ const BEATS = [
    d:'An in-house plastic-injection division starts making boxes, articulators and supplies — the vertical-integration playbook.',
    wall:[], table:[]},
 
-  {x:17700, y:'2005', t:'PRISMATIK', minor:true, yLift:190,
+  {x:18060, y:'2005',   // and 360 forward: 2001's line was running into this one
+   t:'PRISMATIK', minor:true, yLift:190,
    th:'The front tooth, made rather than bought.',
    d:'January 2005: a full line of leucite-reinforced pressed ceramics under Glidewell’s own Prismatik brand — the esthetic front tooth made in-house rather than bought in. A year later Prismatik Dentalcraft becomes a manufacturing division of its own.',
    wall:[], table:[]},
@@ -2124,7 +2126,7 @@ function drawBench(){
       ctx.font = `${Math.round(26*SS)}px ${seg.font}`;
       ctx.fillStyle = seg.railInk;
       ctx.fillRect(bx - 1, yTopF + 2*SS, 2, 14*SS);
-      if ((!b.sub || b.under) && !b.plaque) ctx.fillText(b.y, bx, yTopF + 51*SS);   // one row down: at 25 it sat astride the counter's own edge
+      if ((!b.sub || b.under) && !b.plaque) ctx.fillText(b.y, bx, yTopF + 46*SS);   // one row down (at 25 it sat astride the counter's own edge), and far enough above the line under it to keep the caption's own leading
       if (b.under){
         // a fact parked under the tabletop — quiet, until we find it a home
         ctx.font = `${Math.round(21*SS)}px ${seg.font}`;
@@ -2266,7 +2268,8 @@ const TITLE_TRACK = TRACK.title;
    sentence, keeping the acronyms as acronyms and the brands as brands. A
    string that already has lower case in it is left exactly as written. */
 const CAPS_KEEP = new Set(['AI','PFM','R&D','CAD','CAM','CAD/CAM','CDT','DDS','DMD','PHD','MD',
-  'US','USA','UK','IO','HT','GAN','SOP','LCD','UPS','TV','3D','CE','IOS','CT','CAD-CAM','II','III','IV','\u00b7']);
+  'US','USA','UK','IO','HT','GAN','SOP','LCD','UPS','TV','3D','CE','IOS','CT','CAD-CAM','II','III','IV','\u00b7',
+  'TODAY']);   // the one word at the end of the walk, and Eldar wants it shouted
 const CAPS_MIXED = {BRUXZIR:'BruxZir', GLIDEWELL:'Glidewell', PRISMATIK:'Prismatik', BIOTEMPS:'BioTemps',
   CROWNAI:'CrownAI', MARGINAI:'MarginAI', FEDEX:'FedEx', 'FASTSCAN.IO':'fastscan.io',
   'GLIDEWELL.IO':'glidewell.io', 'FASTMILL.IO':'fastmill.io', 'FASTDESIGN.IO':'fastdesign.io',
@@ -2637,7 +2640,7 @@ function drawBenchDescs(){
        nothing at the moment its right-hand edge clears the frame, holds while
        the whole block is inside, and is already gone by the time its left edge
        touches the other side. Nothing slides, nothing sticks to a margin. */
-    const cwP = px(b.x, kf), halfC = CAP_COLW() / 2, fadeC = 130 * SS;
+    const cwP = (b._capX != null ? b._capX : px(b.x, kf)), halfC = CAP_COLW() / 2, fadeC = 130 * SS;
     const capWant = Math.max(0, Math.min(1,
       Math.min((W - (cwP + halfC)) / fadeC, (cwP - halfC) / fadeC)));
     b._capA = (b._capA || 0) + (capWant - (b._capA || 0)) * Math.min(1, (state.dt || 0.016) * 10);
@@ -2730,6 +2733,18 @@ function drawBenchDescs(){
           }
         }
       }
+      /* AND IT KEEPS OFF THE BLOCKS PARKED UNDER THE COUNTER. A beat with
+         `under` writes its name and its thesis on the bench face, in the same
+         band this line uses; 2001's line was landing straight on top of the
+         plastic-injection block. It steps to the side its own year is on, so
+         the two read as two things rather than one smudge. */
+      for (const ub of BEATS){
+        if (!ub.under || ub === b) continue;
+        const ux = px(ub.x, kf);
+        if (Math.abs(ux - cw) > 1200 * SS) continue;
+        const needU = 210 * SS + CAP_COLW() / 2;
+        if (Math.abs(cw - ux) < needU) cw = (px(b.x, kf) <= ux) ? ux - needU : ux + needU;
+      }
       /* NO EDGE CLAMP. Holding the line on the screen is what made it ride in
          from the margin: it is transparent by then anyway. */
     } else {
@@ -2738,10 +2753,14 @@ function drawBenchDescs(){
       /* 1979 used to be a red runner underfoot, which wanted light ink; the
          models stand there now — pale stone, dark ink, and the line drops clear
          of the long plinth instead of lying across the little buildings. */
-      const onModels = b.x > REC_L && b.x < REC_R;
+      /* 1979's plinth is dark wood and 1989's recreation floor is a dark
+         grey: both want light ink with a shadow under it. The pale slabs — the
+         digital revolution, 2018, 2022, the glass hall — want dark ink with a
+         white halo. Dark-on-dark was why the 1989 line could not be read. */
+      const onModels = (b.x > REC_L && b.x < REC_R) || (b.x > REC3_L && b.x < REC3_R);
       /* 1979's line lies on the dark wood of the models' plinth, so it is set
          light there; every other recreation reads dark on its pale slab. */
-      ink = onModels ? '236,228,218' : '52,58,66';
+      ink = onModels ? '236,228,218' : '34,41,50';
       shadow = onModels; slabDrop = onModels ? 205*SS : 130*SS;
       /* a plinth standing on the slab: the line steps aside rather than
          running behind it — the shaft goes all the way to the frame's foot,
@@ -2760,6 +2779,11 @@ function drawBenchDescs(){
     ctx.font = eraFont(23 * SS, '', seg.font);
     ctx.fillStyle = `rgba(${ink},${(dAmt * 0.9).toFixed(3)})`;
     if (shadow){ ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6*SS; ctx.shadowOffsetY = 2*SS; }
+    /* DARK INK ON A LIT RENDER NEEDS SOMETHING BEHIND IT. On the pale slabs the
+       line was grey on near-white with a spotlight washing across it; a soft
+       white halo separates the words from whatever the render is doing under
+       them, without putting a card down on the floor. */
+    else if (inRec){ ctx.shadowColor = 'rgba(255,255,255,0.92)'; ctx.shadowBlur = 10*SS; ctx.shadowOffsetY = 0; }
     const capTop = py(CFG.benchY, kf) + 78*SS + slabDrop;
     /* Some beats cannot carry their thesis under the title: at 2022 the whole
        bay is a photograph and an italic line laid over it is unreadable. Those
@@ -2771,6 +2795,10 @@ function drawBenchDescs(){
       drawCapLines([b.th], cw, capTop - 44 * SS, 0);
       ctx.restore();
     }
+    /* the fade is measured where the line ACTUALLY lands, not where its year
+       is: a beat whose line steps aside for a plinth was appearing and going
+       out on the year's timing while the words were half a frame away */
+    b._capX = cw;
     let capW = 0;
     for (const ln of b._d) capW = Math.max(capW, ctx.measureText(ln).width);
     drawCapLines(b._d, cw, capTop, 32 * SS);
@@ -3650,7 +3678,10 @@ let SEAM_VIDEO = null;
    rather than to the era wall standing behind it. */
 const PROJECTORS = [
   {x: (REC93_L + REC93_R) / 2, wallDX: 0, w: 1020, cy: 385, pz: 728,
-   src: 'media/timeline5.mp4', throwZ: 240, mdx: -420, stand: true, ground: true,
+   /* the stand moved to the RIGHT of the composition and the machine is
+      mirrored with it, so it throws across from that side — the left of the
+      slab is where the 727 puts down */
+   src: 'media/timeline5.mp4', throwZ: 240, mdx: 430, mirror: true, stand: true, ground: true,
    in: 12.6, out: 23.4,
    clip: {name: '4141 MacArthur Blvd', label: 'the building, before it was built',
           src: 'media/timeline5.mp4'}},
@@ -3741,8 +3772,10 @@ function drawProjectors(t, phase){
       const hW93 = 470;                                  // floor to the top of the head, in world units
       const shp = hW93 * kp * SS, swp = shp * pjs.w / pjs.h;
       const fy93 = py(1080, kp);
+      const lensU = p.mirror ? 0.155 : 0.845;   // the lens crosses with the machine
       ph93 = {sp: pjs, x0: mxp - swp / 2, y0: fy93 - shp, w: swp, h: shp, foot: fy93,
-              lx: mxp - swp / 2 + swp * 0.845, ly: fy93 - shp + shp * 0.055};
+              flip: !!p.mirror,
+              lx: mxp - swp / 2 + swp * lensU, ly: fy93 - shp + shp * 0.055};
     }
 
     if (phase === 'machine'){ projMachine(p, t, lamp, mxp, myp, bw, bh, kp, ph93); continue; }
@@ -3875,7 +3908,10 @@ function projMachine(p, t, lamp, mxp, myp, bw, bh, kp, ph93){
     softFootShadow(mxp, ph93.foot, ph93.w * 0.26, ph93.h * 0.004, 0.62);
     for (const f of [-0.30, 0.30])
       softFootShadow(mxp + ph93.w * f, ph93.foot, ph93.w * 0.032, ph93.h * 0.0025, 0.5);
+    ctx.save();
+    if (ph93.flip){ ctx.translate(mxp, 0); ctx.scale(-1, 1); ctx.translate(-mxp, 0); }
     ctx.drawImage(spriteMip(ph93.sp, ph93.w, ph93.h), ph93.x0, ph93.y0, ph93.w, ph93.h);
+    ctx.restore();
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     drawGlow('255,240,200', ph93.lx, ph93.ly, 26 * u, 0.55 * lamp);
@@ -4088,6 +4124,20 @@ const MUSIC = {src: 'audio/mus_hall.m4a', vol: 0.30, duck: 0.18, cur: 0, el: nul
                off: localStorage.getItem('glidewell.music') !== 'on'};   // silent by default: the film is the soundtrack now
 /* the master switch: kills ALL sound — film, clips, music — with one tap */
 const SOUND = {off: localStorage.getItem('glidewell.sound') === 'off'};
+/* ONE-SHOT PINGS. Not a whoosh cue — those are placed on the rail and timed to
+   peak on arrival. This is a sound tied to a thing that happens in the room:
+   it takes its own copy of a file, plays the head of it and cuts. */
+const PINGS = {};
+function pingOnce(file, gain, cutMs){
+  if (SOUND.off) return;
+  let a = PINGS[file];
+  if (!a){ a = PINGS[file] = new Audio('audio/whoosh/' + file + '.m4a'); a.preload = 'auto'; }
+  try {
+    a.pause(); a.currentTime = 0; a.volume = Math.max(0, Math.min(1, gain));
+    a.play().catch(() => {});
+    setTimeout(() => { try { a.pause(); } catch(e){} }, cutMs || 600);
+  } catch(e){}
+}
 function toggleSound(){
   SOUND.off = !SOUND.off;
   try { localStorage.setItem('glidewell.sound', SOUND.off ? 'off' : 'on'); } catch(e){}
@@ -5045,7 +5095,7 @@ function crownMask(){
    → the one crown the machine settled on → noise again. Everything is drawn in
    cells, because what is being shown is not an object but a machine thinking
    about one: pixels and ones and zeros, flickering. */
-function drawAiDataField(x0, y0, w, h, t, ph){
+function drawAiDataField(x0, y0, w, h, t, ph, walked){
   if (w < 20 || h < 10) return;
   const mask = crownMask();
   ctx.save();
@@ -5079,7 +5129,17 @@ function drawAiDataField(x0, y0, w, h, t, ph){
   ctx.font = `${Math.max(4, cell * 0.95) | 0}px ui-monospace, Menlo, monospace`;
   ctx.textAlign = 'left'; ctx.textBaseline = 'top';
   // the three layouts, each centred in the field with equal air above and below
-  const sizeOne = rows - 2, oneX = ((cols - sizeOne) / 2) | 0, oneY = 1;
+  /* THE LAST ACT IS A PAIR, AND THEY TRAVEL WITH YOU. One crown standing in
+     the middle of the panel is a picture of a crown; two of them running the
+     length of the screen, at twice the speed the bay itself moves past, is the
+     stream the machine is drawing out of. The second is the same tooth from a
+     different case — the mask flipped and pulled in a little, so it reads as
+     another crown rather than a copy of the first. */
+  const sizeOne = rows - 2, oneY = 1;
+  const onePitch = sizeOne * 2.15;                      // the gap between them a little wider than the tooth itself
+  const oneSlide = -((walked || 0) * 2) / cell;         // twice the walk, in cells
+  const oneX = (((cols - sizeOne) / 2) + oneSlide) | 0;
+  const twoX = (oneX + onePitch) | 0;
   const sizeFour = Math.min(rows - 2, (cols / 4.6) | 0), fourY = ((rows - sizeFour) / 2) | 0;
   const fourStep = cols / 4, fourX = i => ((i + 0.5) * fourStep - sizeFour / 2) | 0;
   /* THE FIRST ACT IS WALLPAPER. Not a fixed grid of them but a tiled lattice —
@@ -5098,8 +5158,15 @@ function drawAiDataField(x0, y0, w, h, t, ph){
       let r = (seed ^ (seed >>> 13)) >>> 0; r = (r * 1274126177) >>> 0;
       const rnd = (r >>> 8) / 16777216;
       let on = rnd < 0.14, bright = 0.3 + 0.35 * rnd;
-      if (one > 0.01 && inCrown(cx2, cy2, oneX, oneY, sizeOne) && rnd < 0.25 + 0.75 * one){
-        on = true; bright = 0.8 + 0.2 * rnd;
+      if (one > 0.01 && rnd < 0.25 + 0.75 * one){
+        if (inCrown(cx2, cy2, oneX, oneY, sizeOne)){ on = true; bright = 0.8 + 0.2 * rnd; }
+        else {
+          // the second case: the same mask read backwards and a shade narrower
+          const gx2 = (twoX + sizeOne - 1) - cx2, gy2 = cy2 - oneY;
+          if (gx2 >= 0 && gx2 < sizeOne && maskAt(gx2 * 1.06 - sizeOne * 0.03, gy2, sizeOne)){
+            on = true; bright = 0.8 + 0.2 * rnd;
+          }
+        }
       }
       if (four > 0.01){
         for (let i = 0; i < 4; i++)
@@ -5351,7 +5418,8 @@ function drawAiCrownVitrine(mid, kk, t){
      into noise, and comes up again as thirty different crowns at once —
      millions of cases, the reason the machine can design at all. */
   drawAiDataField(nx0, py(V.bot - 158, kk), nw,
-                  py(V.bot - 10, kk) - py(V.bot - 158, kk), t, ph);
+                  py(V.bot - 10, kk) - py(V.bot - 158, kk), t, ph,
+                  (cam.x - mid) * kk * SS);   // how far the walk has carried past this bay, in screen pixels
   ctx.restore();
 }
 
@@ -5778,6 +5846,85 @@ function drawModel93(wx, lz, wWorld, topWorldY){
 
   pushHit(sx - XM * s * 0.5, foot - 46 * s, XM * s, 46 * s,
           {type: 'focus', beat: nearestBeat(wx).i, anchor: wx});
+}
+/* -------- THE FREIGHTER · 1989 to 1993, and back --------
+   The case in the carton went somewhere. The moment the 1989 plinth clears the
+   left edge of the frame a 727 comes in low behind it, overtakes the walk,
+   settles onto the floor beside the 1993 building and waits there. Push on past
+   the middle of 1993 and it turns about and climbs out the way it came. Every
+   bit of it is a function of the scroll — there is no clock in it, so it is in
+   the same place whenever you come back to it. */
+const PLANE93 = {b89: null, rung: false};
+function drawPlane93(){
+  const sp = PROP_SPRITES.ph_plane; if (!sp) return;
+  const mid = (REC93_L + REC93_R) / 2;
+  if (Math.abs(cam.x - mid) > 5200){ PLANE93.rung = false; return; }
+  if (!PLANE93.b89) PLANE93.b89 = BEATS.find(b => b.y === '1989');
+  const b89 = PLANE93.b89; if (!b89) return;
+  const z = 300, kk = k(z);
+  const landX = REC93_L + 430;                 // the left half of the slab: the projector has the right
+  /* the carton is gone from the frame when its plinth's screen x is past the
+     left edge — measured at the plinth's own depth, not at the wall's */
+  const kPed = k(-90);
+  const A = b89.x + (W / 2) / Math.max(0.001, kPed * SS) + 260;
+  const B = mid, DWELL = 430, RUN = 2700, LIFT = 540, OUT = 1500;
+  let wx, lift, back = false;
+  if (cam.x <= A){ PLANE93.rung = false; return; }
+  if (cam.x < B){
+    const u = Math.max(0, Math.min(1, (cam.x - A) / Math.max(1, B - A)));
+    const eo = 1 - (1 - u) * (1 - u);          // it comes in fast and settles
+    wx = landX - RUN * (1 - eo);
+    lift = LIFT * Math.pow(1 - eo, 1.5);
+    if (u > 0.04 && !PLANE93.rung){ PLANE93.rung = true; pingOnce(PLANE_SND, 0.42, 2600); }
+  } else if (cam.x < B + DWELL){
+    wx = landX; lift = 0;
+  } else {
+    const v = Math.max(0, Math.min(1, (cam.x - B - DWELL) / OUT));
+    const ei = v * v;
+    wx = landX - RUN * ei;
+    lift = LIFT * Math.pow(ei, 1.4);
+    back = true;
+    if (v > 0.03 && PLANE93.rung){ PLANE93.rung = false; pingOnce(PLANE_SND, 0.42, 2600); }
+  }
+  const wW = 620 * kk * SS, hW = wW * sp.h / sp.w;
+  const sx = px(wx, kk);
+  if (sx < -wW || sx > W + wW) return;
+  const foot = py(1080, kk) - lift * kk * SS;
+  if (lift < LIFT * 0.5){
+    const g = 1 - lift / (LIFT * 0.5);         // the shadow shrinks away as it climbs
+    softFootShadow(px(wx, kk), py(1080, kk), wW * 0.34 * g, hW * 0.02, 0.42 * g);
+  }
+  ctx.save();
+  if (back){ ctx.translate(sx, 0); ctx.scale(-1, 1); ctx.translate(-sx, 0); }
+  ctx.drawImage(spriteMip(sp, wW, hW), sx - wW / 2, foot - hW, wW, hW);
+  ctx.restore();
+}
+/* -------- AND TWO PASSES THAT DO NOT LAND --------
+   High over the counters, under the year and its line: left to right at 1998,
+   and back again at 2005. Both are functions of the scroll, so the crossing
+   happens at the pace you walk it. */
+const PLANE_SND = 'ws13';                      // the longest swell in the set, and used by nothing else
+const FLYBYS = [{y: '1998', dir: 1}, {y: '2005', dir: -1}];
+const FLY_STATE = {};
+function drawFlybys(){
+  const sp = PROP_SPRITES.ph_plane; if (!sp) return;
+  const z = 640, kk = k(z);
+  for (const f of FLYBYS){
+    if (!f._b) f._b = BEATS.find(b => b.y === f.y);
+    const b = f._b; if (!b) continue;
+    const span = 1500;
+    const u = (cam.x - (b.x - span)) / (2 * span);
+    if (u <= 0 || u >= 1){ FLY_STATE[f.y] = false; continue; }
+    const wW = 390 * kk * SS, hW = wW * sp.h / sp.w;
+    const sx = f.dir > 0 ? mixN(-wW, W + wW, u) : mixN(W + wW, -wW, u);
+    const cy = py(210, kk);                    // in the band under the year and its line
+    if (!FLY_STATE[f.y] && u > 0.04){ FLY_STATE[f.y] = true; pingOnce(PLANE_SND, 0.34, 2600); }
+    ctx.save();
+    ctx.globalAlpha = 0.96;
+    if (f.dir < 0){ ctx.translate(sx, 0); ctx.scale(-1, 1); ctx.translate(-sx, 0); }
+    ctx.drawImage(spriteMip(sp, wW, hW), sx - wW / 2, cy - hW / 2, wW, hW);
+    ctx.restore();
+  }
 }
 function drawRec93Front(t){
   const mid = (REC93_L + REC93_R) / 2;
@@ -6340,6 +6487,7 @@ function paneDrop(mid){
   return u * u;
 }
 
+let DR_SCAN_RUNG = false;
 function drawRec2(t){
   const mid = (REC2_L + REC2_R) / 2;
   if (Math.abs(cam.x - mid) > 4100) return;
@@ -6523,7 +6671,13 @@ function drawRec2(t){
     // and now the mesh, on its face
     ctx.save();
     ctx.beginPath(); ctx.rect(gx, gy, gw, gh); ctx.clip();
-    drawCrownFile(fx, fy, fw, 0.25 + 0.75 * drop, scanPhase(mid));
+    /* the beam reaching the foot of the crown is an event, and it gets a
+       sound: the head of one bright whoosh, cut short. It re-arms once the bay
+       is well behind you, so walking back and forth rings it again. */
+    const sph = scanPhase(mid);
+    if (sph > 0.985){ if (!DR_SCAN_RUNG){ DR_SCAN_RUNG = true; pingOnce('ws08', 0.5, 620); } }
+    else if (sph < 0.5) DR_SCAN_RUNG = false;
+    drawCrownFile(fx, fy, fw, 0.25 + 0.75 * drop, sph);
     ctx.restore();
   }
 
@@ -6536,11 +6690,18 @@ function drawRec2(t){
   ctx.font = eraFont(58 * kk * SS, '700', SEGMENTS[3].font);
   try { ctx.letterSpacing = `${58*TRACK.title*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(32,42,54,0.96)';
-  ctx.fillText('The digital revolution', cx, py(8, kk));
+  /* THREE LINES, NOT TWO CLAUSES ON ONE. The pair of statements ran as a
+     single 90-character line under the title with a mid-dot between them —
+     wider than the title itself, which is upside down: the title should be the
+     widest thing on the panel. They are two facts, so they take a line each,
+     centred under the title on the same axis, and the whole block lifts by two
+     lines to leave the air it needs above the exhibits. */
+  ctx.fillText('The digital revolution', cx, py(-62, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(60,70,84,0.95)';
-  ctx.fillText('the impression becomes a scan \u00b7 the crown becomes a file', cx, py(66, kk));
+  ctx.fillText('the impression becomes a scan', cx, py(2, kk));
+  ctx.fillText('the crown becomes a file', cx, py(44, kk));
   // era markers on the panel shoulders: inside the panel, clear of the columns
   ctx.font = eraFont(24 * kk * SS, '700', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(110,120,132,0.7)';
@@ -7881,6 +8042,7 @@ async function loadPhotoSkin(){
     ph_pfm4: 'pfm_4.png', ph_pfm5: 'pfm_5.png', ph_pfm6: 'pfm_6.png',
     ph_pfmrow: 'pfm_row.png',         // and the whole line, for the screen-filling look
     ph_postbox: 'postbox.png',       // 1984: the mailed case, open, on its own plinth
+    ph_plane: 'plane_1993.png',       // and the freighter that carries it, landing at 1993
     ph_prj93: 'proj_1993.png',        // the 1993 LCD data projector on its stand, photographed
     ph_g8: 'g8_1979.png',             // 1979: the nine labs, as models on one long plinth
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
@@ -10271,12 +10433,14 @@ function drawPfmView(){
     const left = W / 2 - w1 / 2;
     ctx.save();
     ctx.textAlign = 'center';
-    ctx.font = eraFont(17 * SS, '', seg.font);
-    ctx.fillStyle = `rgba(214,206,192,${(a * 0.82).toFixed(2)})`;
+    ctx.textAlign = 'left';
+    ctx.font = eraFont(19 * SS, '', seg.font);
+    ctx.fillStyle = `rgba(216,209,196,${(a * 0.85).toFixed(2)})`;
     for (const st of PFM_STAGES){
-      const cxS = left + st.cx * w1;
-      wrapCalc(st.cap, st.w * w1 * 1.06)
-        .forEach((ln, li) => ctx.fillText(ln, cxS, yLine + (36 + li * 23) * SS));
+      const colW2 = st.w * w1 * 1.06;
+      const lx = left + (st.cx - st.w / 2) * w1 - (colW2 - st.w * w1) / 2;
+      wrapCalc(st.cap, colW2)
+        .forEach((ln, li) => ctx.fillText(ln, lx, yLine + (38 + li * 25) * SS));
     }
     drawCloseX(W - 46 * SS, 46 * SS, 13 * SS, a);
     ctx.restore();
@@ -12866,6 +13030,8 @@ function frame(){
   }
   drawProps('late');   // things meant to lie in front of a beat's own objects
   drawRec93Front(t);   // the model stands on its own plinth, on the floor
+  drawPlane93();       // and the freighter puts down beside it
+  drawFlybys();        // the two passes that never touch down
   drawAIRelay(t);      // the one object that belongs to two beats at once
 
 
