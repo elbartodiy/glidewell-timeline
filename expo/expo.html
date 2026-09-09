@@ -328,6 +328,11 @@ const BEATS = [
    wall:[], table:[],
    ped:{obj:'crown2', dx:0, big:true, spin:true}},   // the one crown you can turn in your hand
 ];
+/* THE CULLS ARE FOR A WIDE SCREEN. Every "is it near enough to draw" radius in
+   this file was measured on a 16:9 frame; on Eldar's window — half as wide
+   again — the hall sees a good 40% further to each side, and objects appeared
+   out of nothing at the edges (the finale's angled table was the worst of
+   them). Every one of those radii is 45% larger now. */
 /* THE CUTS — the timeline can be sliced in several places; everything
    downstream of each cut slides right by its width, opening an empty bay.
    Written in ORIGINAL coordinates and applied in order, so adding a cut never
@@ -353,7 +358,11 @@ const CUTS = [
      now, and it wants the last stretch: between the counter of 2020 and TODAY.
      The turning crown stands in the middle of it, on its own plinth. The 2017
      beat keeps its place on the wall as a marker. (Eldar, 2026-09-08.) */
-  {at: 27600, w: 3000, on: true},
+  /* MOVED LEFT AND WIDENED. On a wide screen the stretch between the crossover
+     and this room read as a corridor of empty counter, and the picture itself
+     did not reach the edges of the frame. The cut starts 550 earlier and is 600
+     wider, and the panel takes almost the whole of it. */
+  {at: 27050, w: 3600, on: true},
 ];
 function SHIFT(x){
   let s = 0;
@@ -537,7 +546,7 @@ const REC18_L = bayStart(3) + 300, REC18_R = bayStart(3) + 1200;
 /* The 2023 bay: the crossing. Cut inside era 4, 2000 wide, panel in the middle
    900 — 710 units of clear wall after the 2022 portal, 840 before the next. */
 const REC23_L = bayStart(4) + 550, REC23_R = bayStart(4) + 1450;
-const REC17_L = bayStart(5) + 200, REC17_R = bayStart(5) + 2800;   // the glass hall: a 2600 panel in a 3000 cut, at the end of the walk
+const REC17_L = bayStart(5) + 60, REC17_R = bayStart(5) + 3540;   // the glass hall: a 3480 panel in a 3600 cut, at the end of the walk
 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
@@ -2564,7 +2573,7 @@ function drawBenchDescs(){
   const kf = k(0);
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    if (b.under || Math.abs(b.x - cam.x) > 2400) continue;
+    if (b.under || Math.abs(b.x - cam.x) > 3500) continue;
     const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
     let dAmt = Math.max(focusAmt, state.restBeat === i ? Math.min(1, Math.max(0, (state.restTime - 0.45)/0.7)) : 0);
     if (b.album) dAmt *= 1 - (albumAnim[i] || 0);
@@ -2960,7 +2969,7 @@ function drawFilmPanel(x, wWorld, welcome){
 let LOGO26_SP = null;   // the mark is a 200px JPEG shown at ~26: it needs its mip chain
 function drawWelcomeTV(){
   const T = WELCOME_TV;
-  if (Math.abs(T.x - cam.x) > 3600) return;
+  if (Math.abs(T.x - cam.x) > 5200) return;
   /* the panel and the lettering cull SEPARATELY: the set is nearer and leaves
      the frame first — the words on the wall stay until THEY reach the edge */
   drawFilmPanel(T.x, T.w, true);
@@ -3180,7 +3189,7 @@ function drawFilmProjectorWall(){
   const v = WELCOME_TV.v;
   if (!v || v.muted || v.readyState < 2) return;
   const r = FILM_RELAYS.find(q => q.kind === 'proj');
-  if (!r || Math.abs(r.x - cam.x) > 3200) return;
+  if (!r || Math.abs(r.x - cam.x) > 4600) return;
   const g = filmProjGeom(r);
   if (g.sx < -g.pw && g.sx > W + g.pw) return;
   rivet('film:proj:' + r.x, g.sx, k(exhibitZ(r.x)));
@@ -3319,7 +3328,7 @@ function drawFilmWallPlasma(){
   const v = WELCOME_TV.v;
   if (!v || v.muted || v.readyState < 2) return;
   const r = FILM_RELAYS.find(q => q.kind === 'plasma');
-  if (!r || Math.abs(r.x - cam.x) > 2800) return;
+  if (!r || Math.abs(r.x - cam.x) > 4100) return;
   const wz = wallZAt(r.x) - 16;
   const kk = k(wz), sx = wallSX(r.x, 0, kk);
   rivet('film:plasma:' + r.x, sx, k(exhibitZ(r.x)));
@@ -3368,7 +3377,7 @@ function drawFilmVideoWall(){
   const v = WELCOME_TV.v;
   if (!v || v.muted || v.readyState < 2) return;
   const r = FILM_RELAYS.find(q => q.kind === 'vwall');
-  if (!r || Math.abs(r.x - cam.x) > 3200) return;
+  if (!r || Math.abs(r.x - cam.x) > 4600) return;
   /* the same plane as the walnut soffit above it — measured against those
      lamps, so the two can never slide apart */
   const wz = (SEGMENTS[3].z0 || 1400) - 6;
@@ -3402,7 +3411,7 @@ function drawFilmRelays(){
   // the era screens light up only for the engaged film: no sound, no furniture
   if (!v || v.muted || v.readyState < 2) return;
   for (const r of FILM_RELAYS){
-    if (Math.abs(r.x - cam.x) > 2800) continue;
+    if (Math.abs(r.x - cam.x) > 4100) continue;
     if (r.kind === 'crt70') drawFilmCRT70(r);
     else if (r.kind === 'hang') drawFilmHangTV(r);
     else if (r.kind === 'crt95') drawFilmCRT95(r);
@@ -3416,7 +3425,7 @@ const FIN_X = SHIFT(29750);
 function drawOutro(){
   // the finale is the mirror of the welcome: the mark under the ceiling,
   // the closing line, and a lit still life of today's products below
-  if (Math.abs(cam.x - FIN_X) > 2800) return;
+  if (Math.abs(cam.x - FIN_X) > 4100) return;
   const seg = SEGMENTS[3];
   const kw = k((seg.tz || 680) - 8);
   const cx = px(FIN_X, kw);
@@ -3437,7 +3446,7 @@ function drawOutro(){
   ctx.restore();
 }
 function drawFinaleTable(t){
-  if (Math.abs(cam.x - FIN_X) > 2600) return;
+  if (Math.abs(cam.x - FIN_X) > 3800) return;
   // the modern lit table
   drawYawedTable(FIN_X, 150, 0, 900, 240, 700, 380,
     {side0:'#eef1f4', side1:'#c6ccd2', top:'#f7f9fb', edge:'rgba(120,130,140,0.5)'});
@@ -4651,7 +4660,7 @@ function digShare(u){
 }
 function drawRec23(t){
   const mid = (REC23_L + REC23_R) / 2;
-  if (Math.abs(cam.x - mid) > 2800) return;
+  if (Math.abs(cam.x - mid) > 4100) return;
   ctx.save();   // after the cull, for the same reason
   const kk = k(1000);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
@@ -4835,7 +4844,7 @@ const AI_WARP = c => (i, side) =>
 
 function drawRec18(t){
   const mid = (REC18_L + REC18_R) / 2;
-  if (Math.abs(cam.x - mid) > 2800) return;
+  if (Math.abs(cam.x - mid) > 4100) return;
   const kk = k(1000);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
   const x0 = px(REC18_L, kk), x1 = px(REC18_R, kk);
@@ -5313,7 +5322,7 @@ function drawPendant(t){
      depth — so a thing at z 400 must stand well inside the span, or from the
      right side of the aisle it shows in the gap past the end */
   PENDANT_X = FACT_X - 625;                 // half way from the 2018 screen to the first cell (Eldar), still inside the left counter's run
-  if (Math.abs(cam.x - PENDANT_X) > 2600) return;
+  if (Math.abs(cam.x - PENDANT_X) > 3800) return;
   /* BEHIND THE COUNTER. It stood on the near plane for a day and Eldar sent it
      back — "за стол": it stands on the floor BEHIND the left counter's back
      edge (the counter runs z 0..340; the pendant is at 400), inside the
@@ -5408,7 +5417,7 @@ function drawAIRelay(t){
    massing model that flythrough was made from. */
 function drawRec93(t){
   const mid = (REC93_L + REC93_R) / 2;
-  if (Math.abs(cam.x - mid) > 2800) return;
+  if (Math.abs(cam.x - mid) > 4100) return;
   const kk = k(728);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
   const x0 = px(REC93_L, kk), x1 = px(REC93_R, kk);
@@ -5622,7 +5631,7 @@ function drawModel93(wx, lz, wWorld, topWorldY){
 }
 function drawRec93Front(t){
   const mid = (REC93_L + REC93_R) / 2;
-  if (Math.abs(cam.x - mid) > 2600) return;
+  if (Math.abs(cam.x - mid) > 3800) return;
   drawModel93(mid, 240, 330, CFG.benchY + 20);
 }
 
@@ -5678,7 +5687,7 @@ function makeMapSprite(){
 }
 function drawMapWall(t){
   const mid = (REC_L + REC_R) / 2;
-  if (Math.abs(cam.x - mid) > 2800) return;
+  if (Math.abs(cam.x - mid) > 4100) return;
   const kk = k(610);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
   const x0 = px(REC_L, kk), x1 = px(REC_R, kk);
@@ -5946,7 +5955,7 @@ function drawScanBeam(cx, cy, w, h, ph, a){
    exhibits rather than inside the portal that frames it */
 function drawRec2Front(t){
   const mid = (REC2_L + REC2_R) / 2;
-  if (Math.abs(cam.x - mid) > 2800) return;
+  if (Math.abs(cam.x - mid) > 4100) return;
   const kk = k(970), cx = px(mid, kk);
   const lock = Math.max(0, 1 - Math.abs(cam.x - mid) / 900);
   const ease = lock * lock * (3 - 2 * lock);
@@ -6111,7 +6120,7 @@ function paneDrop(mid){
 
 function drawRec2(t){
   const mid = (REC2_L + REC2_R) / 2;
-  if (Math.abs(cam.x - mid) > 2800) return;
+  if (Math.abs(cam.x - mid) > 4100) return;
   drawBayStep(REC2_L, REC2_R, STEP_TONE.cool);   // the mouth of the bay gets its block, in this room's own stone
   const lock0 = Math.max(0, 1 - Math.abs(cam.x - mid) / 900);
   const ease0 = lock0 * lock0 * (3 - 2 * lock0);
@@ -6341,7 +6350,7 @@ function drawRec2(t){
    pure futurist white begins on the far side */
 function drawRec4(t){
   const mid = (REC4_L + REC4_R) / 2;
-  if (Math.abs(cam.x - mid) > 2800) return;
+  if (Math.abs(cam.x - mid) > 4100) return;
   drawBayStep(REC4_L, REC4_R, STEP_TONE.white);   // the mouth of the bay gets its block, in this room's own stone
   const kk = k(1000);   // the portal stands proud of the deep white wall
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
@@ -6460,7 +6469,7 @@ function drawRec4Columns(yBase, floorOnly){ drawPortalColumns([REC4_L, REC4_R, R
 /* the same steel pilaster frames the 2017 glass hall and the 2022 portal */
 function drawPortalColumns(cols, yBase, floorOnly){
   if (yBase == null) yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
-  if (!cols.some(wxc => Math.abs(cam.x - wxc) < 2800)) return;
+  if (!cols.some(wxc => Math.abs(cam.x - wxc) < 4100)) return;
   /* THE SECOND PASS IS FOR THE FLOOR ALONE. Repainting the whole column after
      the reflection put it over everything drawn before — including the factory
      robots, which stand a thousand units in FRONT of it: walking up to 2019 the
@@ -6498,7 +6507,7 @@ function drawPortalColumns(cols, yBase, floorOnly){
    under the hovering tooth. */
 function drawRec17(t){
   const mid = (REC17_L + REC17_R) / 2;
-  if (Math.abs(cam.x - mid) > 3800) return;
+  if (Math.abs(cam.x - mid) > 5500) return;
   const kk = k(1000);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
   const x0 = px(REC17_L, kk), x1 = px(REC17_R, kk);
@@ -6583,7 +6592,7 @@ function makeUsaSprite(){
 }
 function drawRec3(t){
   const mid = (REC3_L + REC3_R) / 2;
-  if (Math.abs(cam.x - mid) > 2800) return;
+  if (Math.abs(cam.x - mid) > 4100) return;
   drawBayStep(REC3_L, REC3_R, STEP_TONE.steel);   // the mouth of the bay gets its block, in this room's own stone
   const kk = k(728);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
@@ -7974,7 +7983,7 @@ function auditPlacements(){
 }
 function drawSheets(){
   for (const sh of SHEETS){
-    if (Math.abs(sh.x - cam.x) > 3200) continue;
+    if (Math.abs(sh.x - cam.x) > 4600) continue;
     const kk = k(wallZAt(sh.x) - 10);
     const sx = px(sh.x, kk);
     if (sx < -300 || sx > W + 300) continue;
@@ -7990,7 +7999,7 @@ function drawSheets(){
 }
 function drawFigures(){
   for (const f of FIGURES){
-    if (Math.abs(f.x - cam.x) > 2200) continue;
+    if (Math.abs(f.x - cam.x) > 3200) continue;
     const kk = k(f.z);
     const sx = px(f.x, kk);
     if (sx < -260 || sx > W + 260) continue;
@@ -8013,7 +8022,7 @@ function drawProps(midPass){
     if (p._lifted == null){ p._lifted = (p.x < PLATE_FROM) ? 26 : 0; }
     if (midPass === 'late'){ if (!p.late) continue; }
     else if ((!!p.mid) !== !!midPass || p.late) continue;
-    if (Math.abs(p.x - cam.x) > 2200) continue;
+    if (Math.abs(p.x - cam.x) > 3200) continue;
     const sp = PROP_SPRITES[p.kind];
     const kk = k(p.mid ? p.z : bz(p.z));
     const sx = px(p.x, kk);
@@ -9033,7 +9042,7 @@ function drawBanners(t){
   // banners hang just off the wall, below the text band — wall furniture:
   // they share the wall's depth, never cross the floating text, never blink
   for (const bn of BANNERS){
-    if (Math.abs(bn.x - cam.x) > 3400) continue;
+    if (Math.abs(bn.x - cam.x) > 4900) continue;
     const zB = (segAt(bn.x).tz || wallZAt(bn.x)) - 25;
     const kk = k(zB);
     const sx = wallSX(bn.x);
@@ -9355,7 +9364,7 @@ function drawRobotArm(bx, bz, t, phase, inside, amp){
   ctx.restore();
 }
 function drawFactory(t, over){
-  if (Math.abs(cam.x - FACT_X) > 2500) return;
+  if (Math.abs(cam.x - FACT_X) > 3600) return;
   const b = BEATS.find(bb => bb.t === 'BRUXZIR FACTORY');
   // shade dispenser tower, left
   const kd = k(210);
@@ -9462,7 +9471,7 @@ function drawFactory(t, over){
 const STAGE_X = SHIFT(28830);
 let JIM_FIG = null;
 function drawStage(t){
-  if (Math.abs(cam.x - STAGE_X) > 2700) return;
+  if (Math.abs(cam.x - STAGE_X) > 3900) return;
   // platform
   const kT = k(530), kF = k(430);
   const halfW = 460;
@@ -12323,7 +12332,7 @@ function frame(){
   // wall layer: photos and panels sit deepest
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    if (Math.abs(b.x - cam.x) > 3400) continue;
+    if (Math.abs(b.x - cam.x) > 4900) continue;
     if (b.doc) drawDocCard(b, i);
     for (const it of b.wall){
       const sp = SPRITES[it.img]; if (!sp) continue;
@@ -12356,7 +12365,7 @@ function frame(){
      the late pass — they travel toward the camera and must ride above. */
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    if (Math.abs(b.x - cam.x) > 3400) continue;
+    if (Math.abs(b.x - cam.x) > 4900) continue;
     const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
     if (!b.fly && focusAmt <= 0.01) drawBeatText(b, focusAmt);
   }
@@ -12401,7 +12410,7 @@ function frame(){
   drawFilmRelays();   // and its relays pick it up down the rail
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    if (Math.abs(b.x - cam.x) > 3400) continue;
+    if (Math.abs(b.x - cam.x) > 4900) continue;
     for (const it of b.table){
       const sp = SPRITES[it.img]; if (!sp) continue;
       drawLyingPrint(sp, b.x + it.dx, it.lz, it.w, it.rot || 0,
@@ -12449,7 +12458,7 @@ function frame(){
   // the floating text reads above everything — walls, tables, even the lamps
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    if (Math.abs(b.x - cam.x) > 3400) continue;
+    if (Math.abs(b.x - cam.x) > 4900) continue;
     const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
     if (b.fly || focusAmt > 0.01) drawBeatText(b, focusAmt);
   }
