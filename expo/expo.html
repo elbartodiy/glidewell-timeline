@@ -95,7 +95,9 @@ const BEATS = [
    /* pinned at the end of the row of old prints, before the hall proper
       begins: the working note, and the only thing here you can copy out */
    doc:{dx:-2955, w:250, cy:520, rot:0.9},   // cy = the prints' hanging line 360 plus half its own height
-   table:[], st:[{img:'invest', w:280, dx:-390, lz:12, lift:32}]},
+   table:[], st:[{img:'invest', w:280, dx:-390, lz:12, lift:32},
+                 /* the wax-up came over from the PFM bay: the craft it names starts here */
+                 {img:'wax', w:280, dx:215, lz:60, cap:'Wax, carved by hand \u2014 where every restoration began'}]},
 
   {x:2450, y:'1970', t:'FOUNDED', tier:1, fly:true, yLift:96, flyZ:380,   // clear of the bench lamp; the apex stops short of the pendant above
    th:'One man, one bench — betting that affordable was a business model.',
@@ -114,16 +116,19 @@ const BEATS = [
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
      The album belongs to the walk up to 1970, not to the moment of it. */
-  album:{dx:-1145, lz:85, w:225, edgeOK:true, title:'THE FAMILY ALBUM', cover:'ph_album',   // a quarter smaller, so it sits ON the counter instead of over both its edges, and stepped in from the bay's edge again
+  album:{dx:-1070, lz:85, w:225, edgeOK:true, title:'THE FAMILY ALBUM', cover:'ph_album',   // a quarter smaller, so it sits ON the counter instead of over both its edges, and stepped in from the bay's edge again
           photos:[['father42','jim15'],['jim18','jim1970']]}},
 
   {x:3450, y:'1970s', t:'PFM ERA', plaque:true,
    th:'The craft baseline every later machine is measured against.',
    d:'Cast metal hand-layered with porcelain — the hand-craft world Jim will spend his life automating.',
    wall:[],
-   table:[], st:[{img:'wax', w:280, dx:330, lz:75}],
-   album:{dx:-160, lz:85, w:310, title:'THE PFM CRAFT',
-          photos:[['porc','artic'],['dietrim','wax']]}},
+   table:[], st:[],
+   /* THE CRAFT ITSELF, LAID OUT. Not a book about the PFM but the six stages of
+      one — impression, stone model, wax coping, metal coping, porcelain
+      build-up, finished crown — standing on the counter small enough to read as
+      objects, and opening to fill the screen when you tap them. */
+   pfmRow:{dx:-120, lz:88, w:980}},
 
   {x:4400, y:'1973', t:'SECOND LAB', yLift:95, fly:true, flyZ:380, flyLift:52,   // the seventies all come forward, the way 1970 does
    th:'Growth by addition — before growth by system.',
@@ -294,7 +299,7 @@ const BEATS = [
   /* The plate carries the three portraits that stand under it, so moving the
      BEAT moved them too. It has its own offset now: plaqueDX shifts the plate
      alone, and the people stay where they were put. */
-  {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870, plaque:true, plaqueDX:-230, plaqueLz:6, plaqueBenchDX:25,   // the plate stands on the counter in front of the portraits, left of the graduation cap so neither crosses the other
+  {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870, plaque:true, plaqueDX:-230, plaqueLz:6, plaqueBenchDX:125,   // the plate stands on the counter in front of the portraits, left of the graduation cap so neither crosses the other
    th:'Reinvesting in the profession — and our channel for finding hero dentists.',
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
    wall:[],
@@ -4905,86 +4910,108 @@ const AI_VITRINE = {
   smallW: 66, cubeW: 112,            // the physical piece and its glass
   rim: '117,216,255', rimA: 0.55,    // the one cool accent, and how hard it burns
 };
-/* the crown as a stencil, once: a small alpha mask the pixel field can ask
-   "is this cell inside a crown?" without touching an image every frame */
+/* the crown as a stencil, once: an alpha mask fine enough that even a crown
+   drawn eight cells wide still reads as a tooth */
 let CROWN_MASK = null;
 function crownMask(){
   if (CROWN_MASK) return CROWN_MASK;
   const sp = PED_SPRITES.crown2; if (!sp) return null;
-  const M = 22;
+  const M = 40;
   const c = document.createElement('canvas'); c.width = c.height = M;
   const g = c.getContext('2d', {willReadFrequently: true});
   g.drawImage(sp.c, 0, 0, M, M);
   const d = g.getImageData(0, 0, M, M).data;
   const m = new Uint8Array(M * M);
-  for (let i = 0; i < M * M; i++) m[i] = d[i * 4 + 3] > 70 ? 1 : 0;
-  return (CROWN_MASK = {m, M});
+  let top = M, bot = 0, lft = M, rgt = 0;
+  for (let y = 0; y < M; y++) for (let x = 0; x < M; x++){
+    if (d[(y * M + x) * 4 + 3] > 70){
+      m[y * M + x] = 1;
+      if (y < top) top = y; if (y > bot) bot = y;
+      if (x < lft) lft = x; if (x > rgt) rgt = x;
+    }
+  }
+  // the sprite has air around it; the field wants the tooth itself
+  return (CROWN_MASK = {m, M, top, bot, lft, rgt, w: rgt - lft + 1, h: bot - top + 1});
 }
-/* THE FIELD OF DATA. Black glass, cyan pixels, and a story that loops: noise →
-   one crown assembles out of the noise → it dissolves → thirty little crowns
-   come up at once, all different → back to noise. Everything flickers, because
-   what is being drawn is not an object but a machine thinking about one. */
+/* THE FIELD OF DATA, under the design screen. Its story, in order: noise →
+   thirty crowns at once, all different → they thin out → four → they thin out
+   → the one crown the machine settled on → noise again. Everything is drawn in
+   cells, because what is being shown is not an object but a machine thinking
+   about one: pixels and ones and zeros, flickering. */
 function drawAiDataField(x0, y0, w, h, t, ph){
   if (w < 20 || h < 10) return;
   const mask = crownMask();
   ctx.save();
   ctx.beginPath(); ctx.roundRect(x0, y0, w, h, 4 * SS); ctx.clip();
   ctx.fillStyle = '#05090f'; ctx.fillRect(x0, y0, w, h);
-  const cell = Math.max(3, Math.round(h / 26));
-  const cols = Math.max(8, Math.floor(w / cell)), rows = Math.max(6, Math.floor(h / cell));
+  const cell = Math.max(2, h / 30);
+  const cols = Math.max(10, Math.floor(w / cell)), rows = Math.max(8, Math.floor(h / cell));
   const ox = x0 + (w - cols * cell) / 2, oy = y0 + (h - rows * cell) / 2;
-  const CYC = 13, u = ((t % CYC) / CYC);
-  /* one crown in the middle third of the loop, thirty of them in the last */
-  const one = Math.max(0, Math.min(1, (u - 0.10) / 0.12)) * Math.max(0, Math.min(1, (0.44 - u) / 0.10));
-  const many = Math.max(0, Math.min(1, (u - 0.54) / 0.12)) * Math.max(0, Math.min(1, (0.94 - u) / 0.10));
-  const glyphRow = (t * 6) | 0;
+  /* the loop, quicker than it was: nine seconds for the whole story */
+  const CYC = 9, u = (t % CYC) / CYC;
+  const band = (a, b, fi, fo) => Math.max(0, Math.min(1, (u - a) / fi)) * Math.max(0, Math.min(1, (b - u) / fo));
+  const many  = band(0.10, 0.40, 0.06, 0.05);     // thirty of them
+  const four  = band(0.42, 0.66, 0.05, 0.05);     // then four
+  const one   = band(0.68, 0.94, 0.05, 0.05);     // then the one
+  /* is cell (cx, cy) inside a crown of `size` cells drawn at (bx, by)? the mask
+     is sampled by its own tooth bounding box, so the shape fills its square */
+  const inCrown = (cxx, cyy, bx, by, size) => {
+    if (!mask) return false;
+    const gx = cxx - bx, gy = cyy - by;
+    if (gx < 0 || gy < 0 || gx >= size || gy >= size) return false;
+    const mx = mask.lft + ((gx + 0.5) / size) * mask.w;
+    const my = mask.top + ((gy + 0.5) / size) * mask.h;
+    return !!mask.m[(my | 0) * mask.M + (mx | 0)];
+  };
+  const glyphRow = (t * 7) | 0;
   ctx.font = `${Math.max(5, cell * 0.95) | 0}px ui-monospace, Menlo, monospace`;
   ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  // the three layouts, each centred in the field with equal air above and below
+  const sizeOne = rows - 2, oneX = ((cols - sizeOne) / 2) | 0, oneY = 1;
+  const sizeFour = Math.min(rows - 2, (cols / 4.6) | 0), fourY = ((rows - sizeFour) / 2) | 0;
+  const fourStep = cols / 4, fourX = i => ((i + 0.5) * fourStep - sizeFour / 2) | 0;
+  const MC = 10, MR = 3;
+  const sizeMany = Math.min(((rows - 1) / MR) | 0, ((cols - 1) / MC) | 0);
+  const manyStepX = cols / MC, manyStepY = rows / MR;
+  const manyX = i => ((i + 0.5) * manyStepX - sizeMany / 2) | 0;
+  const manyY = j => ((j + 0.5) * manyStepY - sizeMany / 2) | 0;
   for (let cy2 = 0; cy2 < rows; cy2++){
     for (let cx2 = 0; cx2 < cols; cx2++){
-      // the cell's own dice, steady in place and rolling in time
-      const seed = cx2 * 374761393 + cy2 * 668265263 + ((t * 7) | 0) * 2654435761;
+      const seed = cx2 * 374761393 + cy2 * 668265263 + ((t * 8) | 0) * 2654435761;
       let r = (seed ^ (seed >>> 13)) >>> 0; r = (r * 1274126177) >>> 0;
       const rnd = (r >>> 8) / 16777216;
-      let on = rnd < 0.16, bright = 0.35 + 0.4 * rnd;
-      if (mask && one > 0.01){
-        // one crown, centred, as tall as the field
-        const size = rows - 2;
-        const gx = cx2 - ((cols - size) >> 1), gy = cy2 - 1;
-        if (gx >= 0 && gy >= 0 && gx < size && gy < size){
-          const mi = ((gy * mask.M / size) | 0) * mask.M + ((gx * mask.M / size) | 0);
-          if (mask.m[mi] && rnd < 0.30 + 0.7 * one){ on = true; bright = 0.75 + 0.25 * rnd; }
-        }
+      let on = rnd < 0.14, bright = 0.3 + 0.35 * rnd;
+      if (one > 0.01 && inCrown(cx2, cy2, oneX, oneY, sizeOne) && rnd < 0.25 + 0.75 * one){
+        on = true; bright = 0.8 + 0.2 * rnd;
       }
-      if (mask && many > 0.01){
-        // thirty of them, in a grid, each with its own dice so none is the same
-        const CW = 10, CH = 3;                       // 30 little crowns
-        const bw = cols / CW, bh = rows / CH;
-        const bxi = (cx2 / bw) | 0, byi = (cy2 / bh) | 0;
-        const lx = cx2 - bxi * bw, ly = cy2 - byi * bh;
-        const size = Math.min(bw, bh) - 0.5;
-        const jitter = ((bxi * 7 + byi * 13) % 5) - 2;
-        const gx = lx - (bw - size) / 2, gy = ly - (bh - size) / 2 + jitter * 0.12;
-        if (gx >= 0 && gy >= 0 && gx < size && gy < size){
-          const mi = (((gy / size) * mask.M) | 0) * mask.M + (((gx / size) * mask.M) | 0);
-          const live = ((bxi + byi * CW) % 30) / 30 < many * 1.2;
-          if (mask.m[mi] && live && rnd < 0.35 + 0.65 * many){ on = true; bright = 0.6 + 0.4 * rnd; }
-        }
+      if (four > 0.01){
+        for (let i = 0; i < 4; i++)
+          if (inCrown(cx2, cy2, fourX(i), fourY, sizeFour) && rnd < 0.25 + 0.75 * four){
+            on = true; bright = 0.7 + 0.3 * rnd; break;
+          }
+      }
+      if (many > 0.01){
+        for (let j = 0; j < MR && !on; j++)
+          for (let i = 0; i < MC; i++){
+            // every one of the thirty is its own case: a hair of jitter each
+            const jx = ((i * 7 + j * 13) % 3) - 1;
+            if (inCrown(cx2, cy2, manyX(i) + jx, manyY(j), sizeMany) && rnd < 0.30 + 0.70 * many){
+              on = true; bright = 0.6 + 0.4 * rnd; break;
+            }
+          }
       }
       if (!on) continue;
       const px2 = ox + cx2 * cell, py2 = oy + cy2 * cell;
-      // a tenth of the live cells are a 0 or a 1 rather than a block
-      if (((cx2 * 31 + cy2 * 17 + glyphRow) % 11) === 0){
+      if (((cx2 * 31 + cy2 * 17 + glyphRow) % 13) === 0){
         ctx.fillStyle = `rgba(150,220,255,${(bright * 0.9).toFixed(2)})`;
         ctx.fillText(((cx2 + cy2 + glyphRow) & 1) ? '1' : '0', px2, py2);
       } else {
         ctx.fillStyle = `rgba(117,216,255,${bright.toFixed(2)})`;
-        ctx.fillRect(px2, py2, cell - 1, cell - 1);
+        ctx.fillRect(px2, py2, Math.max(1, cell - 1), Math.max(1, cell - 1));
       }
     }
   }
   ctx.textBaseline = 'alphabetic';
-  // the glass over it, and the scan of the field's own refresh
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   const sw2 = ctx.createLinearGradient(0, y0, 0, y0 + h);
@@ -5202,8 +5229,8 @@ function drawAiCrownVitrine(mid, kk, t){
      and ones and zeros, out of which a crown flickers into being, falls back
      into noise, and comes up again as thirty different crowns at once —
      millions of cases, the reason the machine can design at all. */
-  drawAiDataField(nx0 + 14 * kk * SS, py(V.bot - 150, kk),
-                  nw - 28 * kk * SS, py(V.bot - 16, kk) - py(V.bot - 150, kk), t, ph);
+  drawAiDataField(nx0, py(V.bot - 158, kk), nw,
+                  py(V.bot - 10, kk) - py(V.bot - 158, kk), t, ph);
   ctx.restore();
 }
 
@@ -7669,6 +7696,9 @@ async function loadPhotoSkin(){
     ph_scanbay: 'scan_bay.jpg',       // the 2022 bay: the whole render, rectangle and all
     ph_hall17: 'hall_2017.jpg',       // the 2017 bay: the glass hall, cut just past the ring on its floor
     ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
+    ph_pfm1: 'pfm_1.png', ph_pfm2: 'pfm_2.png', ph_pfm3: 'pfm_3.png',   // the six PFM stages, cut apart
+    ph_pfm4: 'pfm_4.png', ph_pfm5: 'pfm_5.png', ph_pfm6: 'pfm_6.png',
+    ph_pfmrow: 'pfm_row.png',         // and the whole line, for the screen-filling look
     ph_prj93: 'proj_1993.png',        // the 1993 LCD data projector on its stand, photographed
     ph_g8: 'g8_1979.png',             // 1979: the nine labs, as models on one long plinth
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
@@ -7703,6 +7733,8 @@ function initDecor(){
       if (BEATS.some(bt => Math.abs(bt.x - x) < 430)) continue;
       // and clear of a book pile, which is furniture in its own right
       if (BEATS.some(bt => bt.pyr && Math.abs(bt.x + bt.pyr.dx - x) < (bt.pyr.w || 460)/2 + 220)) continue;
+      // nor across the PFM line, which is six objects wide and holds its whole bay
+      if (BEATS.some(bt => bt.pfmRow && Math.abs(bt.x + bt.pfmRow.dx - x) < bt.pfmRow.w/2 + 170)) continue;
       if (BENCH_BREAKS.some(v => Math.abs(v.x - x) < v.half + 130)) continue;
       /* not on a PAINTED counter: an object at depth slides against a flat
          photograph — the founding plate and era 2's photographed run */
@@ -8076,6 +8108,52 @@ function drawProps(midPass){
   }
 }
 
+/* -------- THE PFM LINE · six stages standing on the 1970s counter --------
+   Cut from one photograph, so they keep their own relative widths and their
+   shared ground line: the plinths all sit on the counter, the tall impression
+   at the left and the flat finished crown at the right, exactly as they were
+   photographed. Small enough to read as things laid out rather than as a
+   picture — a tap flies the whole line up to fill the screen. */
+const PFM_STAGES = [
+  {kind:'ph_pfm1', cx:0.0720, w:0.1470, h:0.1674},
+  {kind:'ph_pfm2', cx:0.2461, w:0.1704, h:0.1350},
+  {kind:'ph_pfm3', cx:0.4170, w:0.1405, h:0.1350},
+  {kind:'ph_pfm4', cx:0.5757, w:0.1470, h:0.1475},
+  {kind:'ph_pfm5', cx:0.7449, w:0.1654, h:0.0962},
+  {kind:'ph_pfm6', cx:0.9205, w:0.1619, h:0.1061},
+];
+const PFM_CAP = 'The PFM, stage by stage — impression, stone model, wax coping, metal coping, porcelain build-up, and the finished crown';
+function drawPfmRow(b, i){
+  const R = b.pfmRow;
+  /* while the line is up on the screen, the small copy of it underneath is
+     just clutter showing through the veil */
+  if (state.inspect && state.inspect.cap === PFM_CAP && state.inspect.amt > 0.15) return;
+  const kk = k(bz(R.lz));
+  const cxW = b.x + R.dx;
+  const sxC = px(cxW, kk);
+  const wRow = R.w * kk * SS;
+  if (sxC < -wRow || sxC > W + wRow) return;
+  const foot = py(CFG.benchY - 2, kk);
+  const left = sxC - wRow / 2;
+  let tallest = 0;
+  for (const st of PFM_STAGES){
+    const sp = PROP_SPRITES[st.kind]; if (!sp) continue;
+    const pw = st.w * wRow, ph2 = st.h * wRow;
+    if (ph2 > tallest) tallest = ph2;
+    const cx = left + st.cx * wRow;
+    contactShadow(cx, foot, pw * 0.92, 0.34);
+    ctx.fillStyle = 'rgba(0,0,0,0.20)';
+    ctx.fillRect(cx - pw * 0.30, foot - 1.2 * SS, pw * 0.60, 2.0 * SS);
+    ctx.drawImage(spriteMip(sp, pw, ph2), cx - pw / 2, foot - ph2, pw, ph2);
+  }
+  const rowSp = PROP_SPRITES.ph_pfmrow;
+  if (rowSp){
+    const hW = R.w * rowSp.h / rowSp.w;   // the line's own height, in world units
+    pushHit(left, foot - tallest, wRow, tallest, {type:'photo',
+      sp: Object.assign({inner:{w: rowSp.w, h: rowSp.h}}, rowSp),
+      wx: cxW, cy: CFG.benchY - hW / 2, z: bz(R.lz), w: R.w, cap: PFM_CAP, beat: i});
+  }
+}
 /* ---------------- ALBUMS · books that open when you stop ---------------- */
 const ALBUM_SPRITES = {};   // beat index -> {cover, spreads:[canvas]}
 const albumAnim = {};       // beat index -> 0..1 open amount
@@ -12463,6 +12541,7 @@ function frame(){
     if (b.rig && RIGS[b.rig.kind]) RIGS[b.rig.kind](b, t);
     for (const p of (b.props || [])) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
+    if (b.pfmRow) drawPfmRow(b, i);
     if (b.pyr) drawBookPyramid(b, t);
   }
   drawProps('late');   // things meant to lie in front of a beat's own objects
