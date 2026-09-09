@@ -130,7 +130,7 @@ const BEATS = [
       objects, and opening to fill the screen when you tap them. */
    /* set between the seventies film console (which ends at 5225) and the
       counter's own right end (6300), with the same air on both sides */
-   pfmRow:{dx:83, lz:88, w:855}},
+   pfmRow:{dx:83, lz:88, w:450}},   // 1.9x smaller on the counter — they are objects laid out, not an exhibit; the tap is what makes them big
 
   {x:4400, y:'1973', t:'SECOND LAB', yLift:95, fly:true, flyZ:380, flyLift:52,   // the seventies all come forward, the way 1970 does
    th:'Growth by addition — before growth by system.',
@@ -241,7 +241,11 @@ const BEATS = [
    d:'The first Glidewell Laboratories website goes live; the brand gains its clinical-education voice on camera.',
    wall:[], table:[]},
 
-  {x:17160, y:'2000', t:'PLASTIC INJECTION', minor:true, sub:15700, under:true,
+  /* THE OBJECT SAYS IT. Its name and thesis used to be written on the bench
+     face, in the same band the lines under the counter use, and 2001's line
+     landed on top of them. What the division actually made stands on the
+     counter instead: the tooth-shaped boxes a crown is posted in. */
+  {x:17160, y:'2000', t:'PLASTIC INJECTION', minor:true, sub:15700, under:true, underHide:true,
    th:'Own the supply chain so you can own the price.',
    d:'An in-house plastic-injection division starts making boxes, articulators and supplies — the vertical-integration playbook.',
    wall:[], table:[]},
@@ -2142,7 +2146,7 @@ function drawBench(){
       ctx.fillStyle = seg.railInk;
       ctx.fillRect(bx - 1, yTopF + 2*SS, 2, 14*SS);
       if ((!b.sub || b.under) && !b.plaque) ctx.fillText(b.y, bx, yTopF + 46*SS);   // one row down (at 25 it sat astride the counter's own edge), and far enough above the line under it to keep the caption's own leading
-      if (b.under){
+      if (b.under && !b.underHide){
         // a fact parked under the tabletop — quiet, until we find it a home
         ctx.font = `${Math.round(21*SS)}px ${seg.font}`;
         ctx.fillText(sentence(b.t), bx, yTopF + 72*SS);
@@ -2655,7 +2659,11 @@ function drawBenchDescs(){
        nothing at the moment its right-hand edge clears the frame, holds while
        the whole block is inside, and is already gone by the time its left edge
        touches the other side. Nothing slides, nothing sticks to a margin. */
-    const cwP = (b._capX != null ? b._capX : px(b.x, kf)), halfC = CAP_COLW() / 2, fadeC = 130 * SS;
+    /* measured on the YEAR's own screen position, not on where the line
+       finally lands. Keying it to the drawn position deadlocked: the line is
+       only drawn while it is visible, so once it went out it never got a fresh
+       position and could never come back — 1989's simply stopped appearing. */
+    const cwP = px(b.x, kf), halfC = CAP_COLW() / 2, fadeC = 130 * SS;
     const capWant = Math.max(0, Math.min(1,
       Math.min((W - (cwP + halfC)) / fadeC, (cwP - halfC) / fadeC)));
     b._capA = (b._capA || 0) + (capWant - (b._capA || 0)) * Math.min(1, (state.dt || 0.016) * 10);
@@ -2786,7 +2794,13 @@ function drawBenchDescs(){
         const pedHalf2 = 165 * (b.ped.photo ? 1.55 : (b.ped.big ? 1.35 : 1)) * kp2 * SS * 0.62;
         const need2 = pedHalf2 + CAP_COLW() / 2 + 26 * SS;
         if (Math.abs(cw - pedSx2) < need2) cw = pedSx2 - need2;
-        cw = Math.max(CAP_COLW() / 2 + 30 * SS, Math.min(W - CAP_COLW() / 2 - 30 * SS, cw));
+        /* a narrow window has no room for a 570-unit column beside a plinth
+           standing in the middle of it, so the block is held inside the frame.
+           This is safe now only because the fade is keyed to the YEAR's
+           position rather than to this one: a clamp on the drawn position is
+           what used to pin the line to the margin and walk it along, half lit,
+           for the rest of the hall. */
+        cw = Math.max(CAP_COLW() / 2 + 24 * SS, Math.min(W - CAP_COLW() / 2 - 24 * SS, cw));
       }
     }
     ctx.save();
@@ -2799,7 +2813,17 @@ function drawBenchDescs(){
        white halo separates the words from whatever the render is doing under
        them, without putting a card down on the floor. */
     else if (inRec){ ctx.shadowColor = 'rgba(255,255,255,0.92)'; ctx.shadowBlur = 10*SS; ctx.shadowOffsetY = 0; }
-    const capTop = py(CFG.benchY, kf) + 78*SS + slabDrop;
+    /* AND IT KEEPS OFF THE RAIL. The drop below the bench line is a fixed
+       number of units, which is right on a wide frame and wrong on a tall one:
+       at Eldar's window the last line of a three-line caption was running
+       through the timeline itself. It is lifted by however much it overhangs,
+       never above the bench line's own margin. */
+    let capTop = py(CFG.benchY, kf) + 78*SS + slabDrop;
+    {
+      const foot = capTop + (b._d.length - 1) * 32 * SS;
+      const limit = H - 96 * SS;
+      if (foot > limit) capTop = Math.max(py(CFG.benchY, kf) + 46 * SS, capTop - (foot - limit));
+    }
     /* Some beats cannot carry their thesis under the title: at 2022 the whole
        bay is a photograph and an italic line laid over it is unreadable. Those
        ask for it here instead, one line above the caption, where it is quiet. */
@@ -2810,10 +2834,6 @@ function drawBenchDescs(){
       drawCapLines([b.th], cw, capTop - 44 * SS, 0);
       ctx.restore();
     }
-    /* the fade is measured where the line ACTUALLY lands, not where its year
-       is: a beat whose line steps aside for a plinth was appearing and going
-       out on the year's timing while the words were half a frame away */
-    b._capX = cw;
     let capW = 0;
     for (const ln of b._d) capW = Math.max(capW, ctx.measureText(ln).width);
     drawCapLines(b._d, cw, capTop, 32 * SS);
@@ -5122,9 +5142,15 @@ function drawAiDataField(x0, y0, w, h, t, ph, walked){
   /* the loop, quicker again: six and a half seconds for the whole story */
   const CYC = 6.5, u = (t % CYC) / CYC;
   const band = (a, b, fi, fo) => Math.max(0, Math.min(1, (u - a) / fi)) * Math.max(0, Math.min(1, (b - u) / fo));
-  const many  = band(0.10, 0.40, 0.06, 0.05);     // a field of them, tiled and drifting
-  const four  = band(0.42, 0.66, 0.05, 0.05);     // then four
-  const one   = band(0.68, 0.94, 0.05, 0.05);     // then the one
+  /* THE ACTS TOUCH. They used to be islands with dark water between them —
+     nearly a fifth of the loop where the screen had almost nothing on it, and
+     coming out of that darkness took longer than any of the acts. They overlap
+     at the joins now, so each dissolves into the next THROUGH the noise, and
+     the last act — the pair running the length of the panel — gets the longest
+     stretch of the three. */
+  const many  = band(0.02, 0.36, 0.07, 0.06);     // a field of them, tiled and drifting
+  const four  = band(0.33, 0.64, 0.06, 0.06);     // then four
+  const one   = band(0.61, 0.99, 0.06, 0.05);     // then the pair, for as long as the other two together
   /* is cell (cx, cy) inside a crown of `size` cells drawn at (bx, by)? the mask
      is sampled by its own tooth bounding box, so the shape fills its square */
   const maskAt = (gx, gy, size) => {
@@ -5134,6 +5160,12 @@ function drawAiDataField(x0, y0, w, h, t, ph, walked){
     return !!mask.m[(my | 0) * mask.M + (mx | 0)];
   };
   const inCrown = (cxx, cyy, bx, by, size) => maskAt(cxx - bx, cyy - by, size);
+  const noiseP = 0.13 + 0.13 * (1 - Math.max(many, Math.max(four, one)));
+  /* EVERY ACT RUNS WITH THE WALK, at twice the speed the bay itself goes past:
+     the wallpaper, the four, the pair. That is the whole point of the panel —
+     it is a stream going by, and it only reads as one if it moves when you do.
+     A slow clock underneath keeps it alive while you stand still. */
+  const slide = -((walked || 0) * 2) / cell;
   const glyphRow = (t * 7) | 0;
   /* the digits are SCATTERED, not latticed. Picking them with (31x + 17y) % 13
      lays them on a diagonal of their own, and once the cells were small enough
@@ -5152,11 +5184,10 @@ function drawAiDataField(x0, y0, w, h, t, ph, walked){
      another crown rather than a copy of the first. */
   const sizeOne = rows - 2, oneY = 1;
   const onePitch = sizeOne * 2.15;                      // the gap between them a little wider than the tooth itself
-  const oneSlide = -((walked || 0) * 2) / cell;         // twice the walk, in cells
-  const oneX = (((cols - sizeOne) / 2) + oneSlide) | 0;
+  const oneX = (((cols - sizeOne) / 2) + slide) | 0;
   const twoX = (oneX + onePitch) | 0;
   const sizeFour = Math.min(rows - 2, (cols / 4.6) | 0), fourY = ((rows - sizeFour) / 2) | 0;
-  const fourStep = cols / 4, fourX = i => ((i + 0.5) * fourStep - sizeFour / 2) | 0;
+  const fourStep = cols / 4, fourX = i => ((i + 0.5) * fourStep - sizeFour / 2 + slide) | 0;
   /* THE FIRST ACT IS WALLPAPER. Not a fixed grid of them but a tiled lattice —
      four rows, every other row shifted half a step so the crowns run in
      diagonals, and the whole pattern drifting sideways and wrapping, so there
@@ -5166,13 +5197,15 @@ function drawAiDataField(x0, y0, w, h, t, ph, walked){
   const sizeMany = Math.max(4, (manyStepY * 0.80) | 0);
   const manyStepX = sizeMany + Math.max(3, (sizeMany * 0.5) | 0);
   const manyTop = ((rows - MR * manyStepY) / 2) | 0;
-  const manyDrift = t * manyStepX * 0.55;   // a little over half a crown a second
+  const manyDrift = slide + t * manyStepX * 0.10;
   for (let cy2 = 0; cy2 < rows; cy2++){
     for (let cx2 = 0; cx2 < cols; cx2++){
       const seed = cx2 * 374761393 + cy2 * 668265263 + ((t * 8) | 0) * 2654435761;
       let r = (seed ^ (seed >>> 13)) >>> 0; r = (r * 1274126177) >>> 0;
       const rnd = (r >>> 8) / 16777216;
-      let on = rnd < 0.14, bright = 0.3 + 0.35 * rnd;
+      /* the noise comes UP between the acts, so the crossfade is through
+         static rather than through a hole */
+      let on = rnd < noiseP, bright = 0.3 + 0.35 * rnd;
       if (one > 0.01 && rnd < 0.25 + 0.75 * one){
         if (inCrown(cx2, cy2, oneX, oneY, sizeOne)){ on = true; bright = 0.8 + 0.2 * rnd; }
         else {
@@ -5931,7 +5964,7 @@ function drawPlane93(){
 const PLANE_SND = 'ws13';                      // the longest swell in the set, and used by nothing else
 const FLYBYS = [{y: '1998', dir: 1, cy: 178}, {y: '2005', dir: -1, cy: 292}];
 const FLY_STATE = {};
-const FLY_DUR = 5.4;
+const FLY_DUR = 3.4;   // a jet crossing the frame, not drifting over it
 function drawFlybys(){
   const sp = PROP_SPRITES.ph_plane; if (!sp) return;
   const z = 640, kk = k(z);
@@ -8075,6 +8108,7 @@ async function loadPhotoSkin(){
     ph_pfmrow: 'pfm_row.png',         // and the whole line, for the screen-filling look
     ph_postbox: 'postbox.png',       // 1984: the mailed case, open, on its own plinth
     ph_plane: 'plane_1993.png',       // and the freighter that carries it, landing at 1993
+    ph_plastic: 'plastic_2000.png',   // 2000: the tooth-shaped crown boxes the injection division made
     ph_prj93: 'proj_1993.png',        // the 1993 LCD data projector on its stand, photographed
     ph_g8: 'g8_1979.png',             // 1979: the nine labs, as models on one long plinth
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
@@ -8160,6 +8194,10 @@ function initDecor(){
     /* LEFT of the numerals, not right: the 2018 bay opens 74 units past this
        year, and clearPlateBays sweeps anything standing inside a cut's bay. */
     if (b17) PROPS.push({x: b17.x - 175, z: 70, kind: 'ph_mill', w: 230});
+    /* the plastic-injection division's own product, on the counter at its own
+       tick — right of the CAD screen, which it must not cover */
+    const bpl = BEATS.find(b => b.t === 'PLASTIC INJECTION');
+    if (bpl) PROPS.push({x: bpl.x, z: 52, kind: 'ph_plastic', w: 165});
   }
 
   /* The welcome still life is gone: the film plays where the heirlooms stood.
