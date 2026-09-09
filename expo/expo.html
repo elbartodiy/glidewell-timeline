@@ -570,24 +570,39 @@ function updateVan8(dt){
   if (!VAN8.seen && d < 2400){
     VAN8.seen = true;
     const from = 1 + ((Math.random() * (G8_DOORS.length - 1)) | 0);
-    VAN8.run = {u: G8_DOORS[from], wait: 0.6 + Math.random() * 2.4, dir: -1};
+    VAN8.run = {u: G8_DOORS[from], wait: 0.6 + Math.random() * 2.4, dir: -1,
+                stop: pickDoor(G8_DOORS[from], -1)};
   }
   const R = VAN8.run; if (!R) return;
   if (R.wait > 0){ R.wait -= dt; return; }
-  /* it drives to the end of the street it is pointed at and parks there —
-     never past the outermost lab, so it cannot run off the plinth */
-  const stop = R.dir < 0 ? G8_DOORS[0] : G8_DOORS[G8_DOORS.length - 1];
+  /* it drives to the lab it was sent to and parks there. Every destination is
+     one of the eight, so it can never run off the end of the plinth. */
+  const stop = R.stop;
   const gap = Math.abs(R.u - stop);
   if (gap > 0.0005){
     const step = Math.min(gap, dt * 0.145 * Math.min(1, 0.13 + gap * 7));
     R.u += R.dir < 0 ? -step : step;
   }
 }
-/* AND YOU CAN TURN IT ROUND. Tap the van and it takes a beat, swings about and
-   drives back the way it came, to the far end of the same street. */
+/* WHICH LAB IT IS GOING TO is drawn each time it sets off — one of the ones
+   actually ahead of it, so it always has somewhere to go and never overshoots
+   the row. */
+function pickDoor(from, dir){
+  const ahead = G8_DOORS.filter(v => dir < 0 ? v < from - 0.012 : v > from + 0.012);
+  if (!ahead.length) return from;
+  return ahead[(Math.random() * ahead.length) | 0];
+}
+/* AND YOU CAN TURN IT ROUND. Tap the van: it takes a beat, swings about and
+   drives off to another of the eight, chosen then and there. Tap it again at
+   its new stop and it turns and picks another — it will run the street all day
+   like this. At the far end there is nothing ahead of it, so a tap there sends
+   it back down the row. */
 function turnVan8(){
   const R = VAN8.run; if (!R) return;
-  R.dir = -R.dir; R.wait = 0.32;
+  let dir = -R.dir;
+  let stop = pickDoor(R.u, dir);
+  if (stop === R.u){ dir = -dir; stop = pickDoor(R.u, dir); }   // nothing that way: go back
+  R.dir = dir; R.stop = stop; R.wait = 0.32;
 }
 const REC3_L = SHIFT(10600), REC3_R = SHIFT(11700);   // the 1989 National Leader recreation
 const REC4_L = SHIFT(25940), REC4_R = SHIFT(26740);   // the 2022 fastscan recreation — the wall turns pure white beyond it
