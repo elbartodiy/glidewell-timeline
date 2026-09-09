@@ -11243,8 +11243,11 @@ function drawStudy(){
   const colW = Math.min(W * 0.62, 1100 * SS);
   const left = W/2 - colW/2;
   const media = STUDY_MEDIA[b.x];
-  const railW = media && media.length ? 320*SS : 0;
-  const textW = colW - (railW ? railW + 40*SS : 0);
+  /* NO RESERVED RAIL. A column's width was being held back on the right for a
+     media rail that has not lived there since the previews moved under the
+     article — three hundred and twenty units of nothing beside every line, and
+     the carton floating in the middle of it. The page is one full column. */
+  const textW = colW;
   const padX = 76 * SS;
   const wx0 = left - padX, ww = colW + padX*2;
   const wy0 = H * 0.075 + (1 - a) * 36 * SS, wh = H * 0.85;
@@ -11352,18 +11355,20 @@ function drawStudy(){
     y += 14 * SS;
     if (inl.box && PROP_SPRITES.ph_casebox){
       const sp2 = PROP_SPRITES.ph_casebox;
-      const fw = Math.min(textW, 620 * SS), fh = fw * sp2.h / sp2.w;
+      const fw = Math.min(textW * 0.86, 720 * SS), fh = fw * sp2.h / sp2.w;
       const fx = left + (textW - fw) / 2;
       S.diss = Math.max(0, Math.min(1, (S.diss || 0) + (S.dissing ? (state.dt || 0.016) * 0.7 : 0)));
       ctx.font = K.font(17, '700');
       try { ctx.letterSpacing = `${17*TRACK.label*SS}px`; } catch(err){}
       ctx.fillStyle = `rgba(${K.dim},0.95)`;
-      if (y > topClip && y < botClip) ctx.fillText(inl.box.head, left, y);
+      ctx.textAlign = 'center';
+      if (y > topClip && y < botClip) ctx.fillText(inl.box.head, fx + fw / 2, y);
       try { ctx.letterSpacing = '0px'; } catch(err){}
       y += 24 * SS;
       ctx.font = K.font(19, 'italic');
       ctx.fillStyle = `rgba(${K.dim},0.9)`;
-      if (y > topClip && y < botClip) ctx.fillText(inl.box.sub, left, y);
+      if (y > topClip && y < botClip) ctx.fillText(inl.box.sub, fx + fw / 2, y);
+      ctx.textAlign = 'left';
       y += 22 * SS;
       if (y + fh > topClip && y < botClip){
         ctx.save();
@@ -11395,14 +11400,32 @@ function drawStudy(){
             ctx.restore();
           }
         }
+        /* THE INVITATION GOES ON THE THING IT INVITES YOU TO TOUCH. It used to
+           sit under the photograph in the page's accent blue, reading as a
+           caption; it belongs on the carton's own front flap, in white, where
+           you are actually going to click. */
+        if (S.diss < 0.6){
+          ctx.save();
+          ctx.globalAlpha = a * Math.max(0, 1 - S.diss * 1.6);
+          ctx.textAlign = 'center';
+          ctx.font = K.font(19, '700');
+          try { ctx.letterSpacing = `${19*TRACK.label*SS}px`; } catch(err){}
+          ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 6 * SS;
+          ctx.fillStyle = 'rgba(255,255,255,0.96)';
+          ctx.fillText(inl.box.hint, fx + fw / 2, y + fh * 0.932);
+          try { ctx.letterSpacing = '0px'; } catch(err){}
+          ctx.textAlign = 'left';
+          ctx.restore();
+        }
         pushHit(fx, y, fw, fh, {type: 'digitize'});
       }
       y += fh + 14 * SS;
-      ctx.font = K.font(18);
-      ctx.fillStyle = `rgba(${K.accent},0.9)`;
-      if (y > topClip && y < botClip)
-        ctx.fillText(S.diss > 0.6 ? inl.box.done : inl.box.hint, left, y);
-      y += 40 * SS;
+      if (S.diss > 0.6){
+        ctx.font = K.font(18);
+        ctx.fillStyle = `rgba(${K.accent},0.9)`;
+        if (y > topClip && y < botClip) ctx.fillText(inl.box.done, left, y);
+        y += 40 * SS;
+      } else y += 12 * SS;
     }
   };
   if (inl && inl.boxTop) drawInlineBox();
