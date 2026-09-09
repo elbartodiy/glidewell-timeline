@@ -2901,7 +2901,9 @@ function cacheWrap(){
 const WELCOME_TV = {x: INTRO_X, lz: 70, w: 490, src: 'media/movie_pre.mp4', posterT: 2.2};   // the instruments on the drape: that shot runs 0.3\u20132.5s, and 3.0 was already the dentist
 function initWelcomeTV(){
   const v = document.createElement('video');
-  v.src = WELCOME_TV.src; v.loop = true; v.playsInline = true;
+  /* versioned: the film is re-graded from time to time and the browser will
+     happily keep serving the copy it already has */
+  v.src = vurl(WELCOME_TV.src); v.loop = true; v.playsInline = true;
   v.preload = 'auto'; v.muted = true;   // muted = not started yet
   /* NOTHING plays at first: the set holds the film's instruments frame — just
      past the black leader — as its poster. The show starts with the first
@@ -8093,7 +8095,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260908-hall4';
+const ASSET_V = '20260909-movie2';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* the procedural era walls (tools/make_wall.py) stand in for the drawn ones —
    same slot, same tiling, so drawWall never learns the difference */
