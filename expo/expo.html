@@ -4722,52 +4722,59 @@ function drawProgress(t){
 const BLOOM_ON = !/[?&]nobloom/.test(location.search);
 let BLOOM = null, BLOOM_S = null;
 let BLOOM_TICK = 0, BLOOM_WARM = false;
-function drawBloom(){
+/* THE SPILL IS TAKEN OFF THE FRAME BEFORE THIS ONE.
+
+   Reading the canvas you are in the middle of drawing into is not a copy, it is
+   a barrier: the driver has to finish everything already queued for this frame
+   before it can hand the pixels back. That is why the same copy measures a
+   third of a millisecond in a tight loop and five to fifteen in the hall — the
+   time is not the copy, it is the wait. Profiled across the whole walk, EVERY
+   frame over 22ms had this at the top of it, eighty-four of them.
+
+   So it is taken at the very top of the frame instead, before anything has been
+   drawn over it. At that moment the canvas still holds the last frame, which
+   the GPU finished and put on the glass long ago, so there is nothing to wait
+   for. The glow is one frame stale: it is a soft wash at eleven per cent
+   behind everything else, and a frame of it has never been seen by anybody.
+
+   brightness 0.47 + contrast 8 puts the knee at ~0.93, so only what is already
+   near white spills and a lit wall stays a wall. The knee goes on the
+   quarter-size copy — a canvas2d `filter` drops that draw onto the software
+   rasterizer, so it is worth a sixteenth of the pixels. The BLUR is not a
+   filter either: bilinear minification IS a blur, and it rides the GPU. */
+function bloomCapture(){
   if (!BLOOM_ON || !W || !H) return;
   const bw = Math.max(2, W >> 2), bh = Math.max(2, H >> 2);
   if (!BLOOM || BLOOM.width !== bw || BLOOM.height !== bh){
     BLOOM = document.createElement('canvas');
     BLOOM.width = bw; BLOOM.height = bh;
+    BLOOM_WARM = false;
   }
   const sw2 = Math.max(2, bw >> 2), sh2 = Math.max(2, bh >> 2);
   if (!BLOOM_S || BLOOM_S.width !== sw2 || BLOOM_S.height !== sh2){
     BLOOM_S = document.createElement('canvas');
     BLOOM_S.width = sw2; BLOOM_S.height = sh2;
+    BLOOM_WARM = false;
   }
-  /* THE FILTER IS APPLIED TO THE SMALL COPY, NOT TO THE WHOLE FRAME — and only
-     on every other frame.
-
-     A canvas2d `filter` drops that one draw onto the software rasterizer, so
-     `filter = brightness/contrast` on `drawImage(ctx.canvas, …)` was reading
-     the ENTIRE frame back off the GPU and shading it on the CPU: eight and a
-     half megapixels on a wide retina screen, 5.6ms in the median and 22 in the
-     tail — on its own more than a 60Hz frame's whole budget, and the judder
-     Eldar could feel through the scroll. Downscaling first is a plain GPU
-     blit; the knee is then put on a quarter-size image, one sixteenth of the
-     pixels. And the spill is a soft glow at eleven percent: it does not need a
-     new one every frame, so it is rebuilt on alternate frames and the last one
-     is laid down in between.
-
-     brightness 0.47 + contrast 8 still puts the knee at ~0.93: only what is
-     already near white spills, so a lit wall stays a wall. The BLUR is not a
-     filter either — bilinear minification IS a blur, and it rides the GPU. */
-  /* and it gives ground when the frame is tight: the rebuild is every other
-     frame at speed, every fourth once the rate sags, and the glow that is
-     already there carries the frames in between */
+  /* and it gives ground when the frame is tight: rebuilt every other frame at
+     speed, every fourth once the rate sags, with the one already there
+     carrying the frames between */
   BLOOM_TICK++;
-  const every = fps < 50 ? 4 : 2;
-  if ((BLOOM_TICK % every) === 0 || !BLOOM_WARM){
-    const g = BLOOM.getContext('2d');
-    g.clearRect(0, 0, bw, bh);
-    g.drawImage(ctx.canvas, 0, 0, bw, bh);        // GPU blit, no filter
-    const g2 = BLOOM_S.getContext('2d');
-    g2.clearRect(0, 0, sw2, sh2);
-    g2.imageSmoothingEnabled = true;
-    g2.filter = 'brightness(0.47) contrast(8)';   // the knee, on a sixteenth of the pixels
-    g2.drawImage(BLOOM, 0, 0, sw2, sh2);
-    g2.filter = 'none';
-    BLOOM_WARM = true;
-  }
+  const every = (typeof fps !== 'undefined' && fps < 50) ? 4 : 2;
+  if ((BLOOM_TICK % every) !== 0 && BLOOM_WARM) return;
+  const g = BLOOM.getContext('2d');
+  g.clearRect(0, 0, bw, bh);
+  g.drawImage(ctx.canvas, 0, 0, bw, bh);        // last frame, already on the glass
+  const g2 = BLOOM_S.getContext('2d');
+  g2.clearRect(0, 0, sw2, sh2);
+  g2.imageSmoothingEnabled = true;
+  g2.filter = 'brightness(0.47) contrast(8)';
+  g2.drawImage(BLOOM, 0, 0, sw2, sh2);
+  g2.filter = 'none';
+  BLOOM_WARM = true;
+}
+function drawBloom(){
+  if (!BLOOM_ON || !BLOOM_WARM || !BLOOM_S) return;
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   ctx.globalAlpha = 0.11;
@@ -13114,6 +13121,7 @@ function auditFrames(){
 function frame(){
   const t = state.time;
   HITS = [];
+  bloomCapture();   // the spill, taken off the frame that is still on the glass
   /* THE CLEAN SLATE. Canvas state survives from one frame to the next, so a
      property set anywhere in seven thousand lines and not put back does not
      corrupt one drawing — it corrupts every drawing made after it, for the rest
