@@ -276,7 +276,9 @@ const BEATS = [
    d:'Announced November 2017: scanner, fastdesign.io and the fastmill.io mill on the dentist\u2019s own counter, cutting BruxZir NOW \u2014 zirconia that needs no firing. A crown in one visit. The barrier was never the technique; it was the inconvenience.',
    wall:[],
    table:[],
-   ped:{obj:'millSt', dx:-640, wide:1.28}},   // to the left of the hovering tooth: the render's own plinth stays clear
+   /* the mill is not on a plinth any more: it stands on this year's own
+      counter, half again as large — see the prop pushed in initDecor. */
+   wall2:[]},
 
   {x:24450, y:'2018', t:'', tier:1, yLift:110,
    pinZ:1000,
@@ -6042,7 +6044,19 @@ function drawRec2Front(t){
     gs.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
     try { gs.letterSpacing = `${20*TRACK.label*kk*SS}px`; } catch(e){}
     gs.fillStyle = `rgba(150,228,255,${(0.55 + 0.42 * lit).toFixed(3)})`;
-    gs.fillText('Scanned \u00b7 designed \u00b7 milled', cx, oh2 * 0.72);
+    /* A MONITOR RUNS WHETHER OR NOT YOU ARE LOOKING AT IT. The line used to be
+       written once, centred, and only while the recreation was near; it is a
+       screen, so it is set in capitals and it scrolls — the same three words,
+       over and over, drawn twice end to end so the loop has no seam. It runs on
+       the hall's own clock, which is what keeps it in step with the line on the
+       wall above it. */
+    const SCAN_TX = 'SCAN \u00b7 DESIGN \u00b7 MILL \u00b7 ';
+    const twSc = gs.measureText(SCAN_TX).width;
+    gs.textAlign = 'left';
+    const shift = (state.time * 46 * SS) % twSc;
+    for (let sx2 = -shift - twSc; sx2 < ow2 + twSc; sx2 += twSc)
+      gs.fillText(SCAN_TX, sx2, oh2 * 0.72);
+    gs.textAlign = 'center';
     ctx.save();
     // the recess, its edges curved by the barrel of the column
     const yTopC = stripY - sh2/2, yBotC = stripY + sh2/2, bow = 3.2 * kn * SS;
@@ -6220,7 +6234,7 @@ function drawRec2(t){
     ctx.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
     try { ctx.letterSpacing = `${20*TRACK.label*kk*SS}px`; } catch(e){}
     ctx.fillStyle = `rgba(70,110,135,${(0.75 * ease).toFixed(3)})`;
-    ctx.fillText('Scanned \u00b7 designed \u00b7 milled', cx, py(730, kk));
+    ctx.fillText('SCAN \u00b7 DESIGN \u00b7 MILL', cx, py(730, kk));
     try { ctx.letterSpacing = '0px'; } catch(e){}
     ctx.restore();
   }
@@ -6421,10 +6435,13 @@ function drawBayStep(L, R, tone){
   const mid = (L + R) / 2;
   const kFar = k(590), kStep = k(520), zTread = 1040;
   const yTreadBack = py(zTread, kFar), yNose = py(zTread, kStep), yStepFoot = py(1080, kStep);
-  /* it runs from one counter's end to the other's, so the columns stand ON it */
-  const tbL = TABLES.filter(tb => tb.x1 <= mid).sort((a, b) => b.x1 - a.x1)[0];
-  const tbR = TABLES.filter(tb => tb.x0 >= mid).sort((a, b) => a.x0 - b.x0)[0];
-  const wx0 = (tbL ? tbL.x1 : L) - 200, wx1 = (tbR ? tbR.x0 : R) + 200;
+  /* BOLTED TO THE BAY. Its ends were taken from wherever the counters happened
+     to stop, which is a different plane and a different pair of numbers on each
+     side — so the block slid against its own panel as the camera moved and came
+     out far too long at 2022. It runs from pilaster to pilaster now, half a
+     column past each, in the bay's own world coordinates: it cannot drift
+     against the wall it belongs to. */
+  const wx0 = L - 60, wx1 = R + 60;
   const bx0 = px(wx0, kFar), bx1 = px(wx1, kFar);
   const nx0 = px(wx0, kStep), nx1 = px(wx1, kStep);
   if (nx1 < -200 || nx0 > W + 200) return;
@@ -7715,6 +7732,18 @@ function initDecor(){
   // mills receding behind the factory line
   // the graduates' mortarboard behind the alumnae portraits
   PROPS.push({x: SHIFT(25700), z: 4, kind: 'gradcap', w: 175, late: true});   // on the plate's own plane, a hair nearer, and to its right
+  /* THE MILL STANDS ON 2017'S COUNTER. It used to be an exhibit on a plinth,
+     640 units left of its own year — which put it under 2015, a beat about
+     implants. It belongs to the year it was announced in (November 2017, with
+     the scanner and fastdesign), so it is a machine on the bench now, half
+     again as big as it was, set right of the numerals so the vertical io
+     banner on the wall behind stays clear of it. */
+  {
+    const b17 = BEATS.find(b => b.y === '2017');
+    /* LEFT of the numerals, not right: the 2018 bay opens 74 units past this
+       year, and clearPlateBays sweeps anything standing inside a cut's bay. */
+    if (b17) PROPS.push({x: b17.x - 175, z: 70, kind: 'ph_mill', w: 230});
+  }
 
   /* The welcome still life is gone: the film plays where the heirlooms stood.
      A flat panel on the bench (drawWelcomeTV) carries the preview movie, and
@@ -9034,7 +9063,7 @@ function initBanners(){
   BANNERS = [
     {x: SHIFT(21505), w: 550, sp: makeBanner('BruxZir\u00ae', 'The best dentistry \u2014 made affordable', 'The #1 crown')},
     {x: SHIFT(23180), w: 550, sp: makeBanner('Glidewell HT\u2122', 'Premium implant, a fraction of the price', 'Premium \u00b7 affordable')},
-    {x: SHIFT(23915), w: 240, cy: 590, sp: makeBannerVert('glidewell.io', 'The lab moves\ninto your office', 'Single-visit', 'fastmill')},
+    {x: SHIFT(23915), w: 240, cy: 455, sp: makeBannerVert('glidewell.io', 'The lab moves\ninto your office', 'Single-visit', 'fastmill')},
     {x: SHIFT(27700), w: 480, sp: makeBanner('CrownAI', 'Designed by intelligence, milled by robots', 'AI in every crown', 'todayai')},
   ];
 }
@@ -9899,13 +9928,19 @@ function drawInspect(){
     ctx.textAlign = 'center';
     ctx.font = eraFont(30*SS, '', seg.font);
     ctx.fillStyle = `rgba(${seg.ink},${(e-0.6)/0.4 * 0.9})`;
-    ctx.fillText(I.cap || (b.y + ' · ' + b.t), W/2, ty + th + 52*SS);
+    /* IT WRAPS. The caption was one fillText with no width, so a long line —
+       the book's "free to take", say — ran off the panel and the last letter
+       was sliced in half by the edge of the frame. */
+    const capTx = I.cap || (b.y + ' \u00b7 ' + b.t);
+    const capLines = wrapCalc(capTx, Math.min(W * 0.78, 1150 * SS));
+    capLines.forEach((ln, li) => ctx.fillText(ln, W/2, ty + th + (52 + li * 38) * SS));
+    const capDrop2 = (capLines.length - 1) * 38 * SS;
     if (I.link){
       const label = 'Open the Chairside archive  \u2192';
       ctx.font = eraFont(22*SS, '', seg.font);
       try { ctx.letterSpacing = `${22*TRACK.label*SS}px`; } catch(err){}
       const wL = ctx.measureText(label).width + 56*SS;
-      const yL = ty + th + 86*SS;
+      const yL = ty + th + 86*SS + capDrop2;
       const aL = (e-0.6)/0.4;
       ctx.fillStyle = `rgba(140,205,250,${(0.14*aL).toFixed(3)})`;
       ctx.beginPath(); ctx.roundRect(W/2 - wL/2, yL, wL, 52*SS, 26*SS); ctx.fill();
