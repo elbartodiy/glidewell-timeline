@@ -2244,7 +2244,12 @@ function drawLyingPrint(sp, x, lz, wWorld, rotDeg, hit){
   ctx.restore();
 }
 
-function eraFont(sz, style, fam){ return `${style||''} ${Math.round(sz)}px ${fam || SEGMENTS[0].font}`.trim(); }
+/* THE TYPE GROWS, IT DOES NOT STEP. A flying year's size is a continuous
+   function of the camera; rounding it to whole pixels turned that into a
+   staircase — the numeral held, jumped a pixel, held again — and every jump
+   re-rasterised the glyphs so the letters seemed to tremble. Canvas takes a
+   fractional size, so the size stays what the camera says it is. */
+function eraFont(sz, style, fam){ return `${style||''} ${(+sz.toFixed(2))}px ${fam || SEGMENTS[0].font}`.trim(); }
 
 /* THE LABEL STANDS WITH WHAT IT NAMES. A plate for three portraits standing on
    a counter belongs on the counter in front of them, not hung on the plaster
