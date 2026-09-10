@@ -3709,21 +3709,26 @@ let SEAM_VIDEO = null;
    does in a room — the beam hangs in the air with dust turning in it, the
    lamp breathes, the gate weaves a hair, and the throw is keystoned because
    the machine sits below the centre of its own picture. */
-/* The reel belongs to 1993, not 1995: the film IS about this building. It runs
-   a window out of the middle of the tape — 12.6s to 23.4s — which is the
-   architect's computer flythrough handing over, in a single cut and from the
-   same angle, to the finished building. After 23.4 the tape goes to the harbour
-   and we round it back. `pz` pins the picture to the recreation's own panel
-   rather than to the era wall standing behind it. */
+/* The reel belongs to 1993, not 1995: the film IS about this building. It is
+   the window out of the middle of the tape — 12.6s to 23.4s of Timeline 5 —
+   which is the architect's computer flythrough handing over, in a single cut
+   and from the same angle, to the finished building. THE WINDOW IS CUT INTO
+   THE FILE, not seeked to: the reel used to be the whole 26-second tape with
+   `currentTime` pushed back to 12.6 every loop, and a server that does not
+   answer byte-range requests (a plain `python3 -m http.server`, a kiosk that
+   serves from disk) cannot seek at all — the tape sat on its first frame, a
+   white slate, and the wall showed a blank lit rectangle. Now it loops
+   natively, no seek, no dip in readyState at the join, and the file is half
+   the weight. `pz` pins the picture to the recreation's own panel rather than
+   to the era wall standing behind it. */
 const PROJECTORS = [
   {x: (REC93_L + REC93_R) / 2, wallDX: 0, w: 1020, cy: 385, pz: 728,
    /* the stand moved to the RIGHT of the composition and the machine is
       mirrored with it, so it throws across from that side — the left of the
       slab is where the 727 puts down */
-   src: 'media/timeline5.mp4', throwZ: 240, mdx: 340, mirror: true, stand: true, ground: true,
-   in: 12.6, out: 23.4,
+   src: 'media/reel_1993.mp4', throwZ: 240, mdx: 340, mirror: true, stand: true, ground: true,
    clip: {name: '4141 MacArthur Blvd', label: 'the building, before it was built',
-          src: 'media/timeline5.mp4'}},
+          src: 'media/reel_1993.mp4'}},
 ];
 function initProjectors(){
   for (const p of PROJECTORS){
