@@ -6954,53 +6954,62 @@ function drawPortalColumns(cols, yBase, floorOnly){
   if (floorOnly) ctx.restore();
 }
 
-/* THE GLASS HALL. 2017 — the lab moves into the chair — is set in Eldar's
-   render of a white atrium under a glass vault, a tooth of light hovering over
-   a plinth. As with the 2022 bay the render goes in whole: one rectangle between
-   two pilasters, cover-fitted (the outer wings crop a little, the vault and the
-   tooth stay), its bottom on the hall's own floor line, on whole pixels so a
-   rigid picture crossing the frame cannot boil. The render's floor is cut just
-   past the ring of light, so the plinth keeps its foot and the ring stays, and
-   the hall's floor takes over under it. The mill stands on its plinth in front,
-   under the hovering tooth. */
+/* THE HALL STAYS IN THE TIMELINE. Architecture is a provisional render;
+   the actual reference is still required. Clean derivative removes the baked
+   crown and pedestal without claiming historical geometry. The room
+   moves on a deeper plane than its portal and the real draggable exhibit.
+   No extra camera mode, roof flight, or change to the historical rail. */
+const HALL_ORIGINAL = /[?&]hall=off(?:&|$)/.test(location.search);
+function hallReady(){ return !HALL_ORIGINAL && PHOTO_TEX.ph_hall_clean && PHOTO_TEX.ph_hall_plinth; }
 function drawRec17(t){
   const mid = (REC17_L + REC17_R) / 2;
   if (Math.abs(cam.x - mid) > 5500) return;
-  const kk = k(1000);
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
-  const x0 = px(REC17_L, kk), x1 = px(REC17_R, kk);
-  const wg = ctx.createLinearGradient(0, 0, 0, yBase);
-  wg.addColorStop(0, '#dfe7ee'); wg.addColorStop(0.5, '#f4f8fb'); wg.addColorStop(1, '#c7ced4');
-  ctx.fillStyle = wg; ctx.fillRect(x0, 0, x1 - x0, yBase);
-  const sp = PROP_SPRITES.ph_hall17;
+  const kc = k(992), cw = 120 * kc * SS;
+  const bx0 = px(REC17_L, kc) + cw / 2, bx1 = px(REC17_R, kc) - cw / 2;
+  const bw = Math.max(1, bx1 - bx0), bh = H;
+  const upgraded = hallReady();
+  const sp = upgraded ? PROP_SPRITES.ph_hall_clean : PROP_SPRITES.ph_hall17;
   if (sp){
-    const kc = k(992);
-    const cw = 120 * kc * SS;                        // the pilasters' own width
-    const bx0 = px(REC17_L, kc) + cw / 2, bx1 = px(REC17_R, kc) - cw / 2;
-    /* THE PICTURE KEEPS ITS OWN FLOOR. Cut at the hall's wall line, the render
-       ended where our floor began and the bay looked short of ground. The
-       render is a whole room, marble and reflections included, so it runs the
-       full height of the frame and its floor simply IS the floor inside the
-       bay — the hall's own sheen washes over it afterwards. */
-    const bw = Math.max(1, bx1 - bx0), bh = H;
-    const scale = Math.max(bw / sp.w, bh / sp.h);    // cover: fill it, crop the wings
+    // A small overscan gives the deeper room travel behind the fixed opening.
+    // Constrain that travel to the covered area: never reveal a blank edge.
+    const scale = Math.max(bw / sp.w, bh / sp.h) * (upgraded ? 1.035 : 1);
     const dw = sp.w * scale, dh = sp.h * scale;
+    const rawShift = upgraded ? px(mid, k(1270)) - px(mid, kc) : 0;
+    const shift = Math.max(-(dw-bw)/2, Math.min((dw-bw)/2, rawShift));
     ctx.save();
-    ctx.beginPath(); ctx.rect(Math.round(bx0), 0, Math.round(bw), Math.round(bh)); ctx.clip();
+    ctx.beginPath(); ctx.rect(Math.round(bx0), 0, Math.round(bw), H); ctx.clip();
     ctx.drawImage(spriteMip(sp, Math.round(dw), Math.round(dh)),
-                  Math.round(bx0 + (bw - dw) / 2), Math.round(bh - dh),
-                  Math.round(dw), Math.round(dh));
-    // the plinth's face in the render is around row 780 of 941: the title is lettered on it
-    BAY_LABELS['2017'] = {x: bx0 + bw / 2, y: bh - dh * (1 - 782 / 941), k: kc};
-    const near = Math.max(0, 1 - Math.abs(mid - cam.x) / 1100);
-    if (near > 0.02){
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.fillStyle = 'rgba(160,205,255,' + (0.06 * near * near).toFixed(3) + ')';
-      ctx.fillRect(bx0, 0, bw, bh);
-    }
+                  Math.round(bx0 + (bw-dw)/2 + shift), Math.round(H-dh), Math.round(dw), Math.round(dh));
+    BAY_LABELS['2017'] = {x: bx0 + bw/2, y: H-dh*(1-782/941), k:kc};
     ctx.restore();
   }
-  drawPortalColumns([REC17_L, REC17_R], yBase);
+  drawPortalColumns([REC17_L, REC17_R], py(CFG.benchY + 240, k(CFG.benchDepth)));
+}
+
+/* A low stone object leaves the glass vault and floor visible. Image crop
+   excludes transparent generation padding; crown and hit target share the
+   same projected support surface. Original lathe interaction is preserved. */
+function drawHallCrown(b){
+  if (!hallReady() || !b.ped || !b.ped.spin) return false;
+  const x = b.x + (b.ped.dx ?? -430);
+  if (x <= REC17_L || x >= REC17_R) return false;
+  const im = PHOTO_TEX.ph_hall_plinth, kk = k(260);
+  const sx = px(x, kk), width = 600*kk*SS, height = width*(540/1595);
+  const foot = py(1020, kk), top = foot-height;
+  // The floor owns only this soft contact shadow, never a full-room veil.
+  ctx.save();
+  ctx.translate(sx,foot-5*kk*SS);ctx.scale(1,.08);
+  const shadow = ctx.createRadialGradient(0,0,0,0,0,width*.54);
+  shadow.addColorStop(0,'rgba(35,42,48,0.32)'); shadow.addColorStop(.65,'rgba(35,42,48,0.18)'); shadow.addColorStop(1,'rgba(35,42,48,0)');
+  ctx.fillStyle=shadow;
+  ctx.beginPath();ctx.arc(0,0,width*.55,0,Math.PI*2);ctx.fill();ctx.restore();
+  ctx.drawImage(im,90,210,1595,540,sx-width/2,top,width,height);
+  const crownFoot=top+height*.215, crownWidth=width*.54;
+  ctx.save();ctx.fillStyle='rgba(45,55,65,.14)';
+  ctx.beginPath();ctx.ellipse(sx,crownFoot+2*kk*SS,crownWidth*.40,crownWidth*.035,0,0,Math.PI*2);ctx.fill();ctx.restore();
+  const r=drawCrown3D(sx,crownFoot,crownWidth,1);
+  pushHit(sx-crownWidth*.6,r.top,crownWidth*1.2,crownFoot-r.top,{type:'spin'});
+  return true;
 }
 
 /* the 1989 recreation: era 2 ends; a light panel carries the USA mail map;
@@ -8119,6 +8128,8 @@ async function loadPhotoSkin(){
     ph_scanner: 'scanner.png',        // fastscan.io, the instrument itself, not a drawing of it
     ph_mill: 'mill_io.png',           // fastmill.io, the same — cut out of its studio render
     ph_scanbay: 'scan_bay.jpg',       // the 2022 bay: the whole render, rectangle and all
+    ph_hall_clean: '../hall/hall-reference-v1.png',
+    ph_hall_plinth: '../hall/plinth.png',
     ph_hall17: 'hall_2017.jpg',       // the 2017 bay: the glass hall, cut just past the ring on its floor
     ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
     ph_pfm1: 'pfm_1.png', ph_pfm2: 'pfm_2.png', ph_pfm3: 'pfm_3.png',   // the six PFM stages, cut apart
@@ -9171,6 +9182,7 @@ function drawPointCloud(cx, footY, size, t, hero){
   ctx.restore();
 }
 function drawPedestal(b, t, hero){
+  if (drawHallCrown(b)) return;
   const ped = b.ped; if (!ped) return;
   const z = -90, kk = k(z);
   const x = b.x + (ped.dx ?? -430);
@@ -10280,25 +10292,21 @@ function drawForeground(){
   }
 }
 
-/* ONE TEXTURE, NOT A TILED FILL. The grain was a repeating pattern painted
+/* THE GRAIN IS LAID AT ONE TEXEL PER PIXEL. It was a repeating pattern painted
    over the whole frame, and that one call measured ten to twenty-five
-   milliseconds in the hall against 0.8 in a bench loop — a tiled fill at eight
-   and a half megapixels does not batch with anything, so it stands at the end
-   of the frame waiting for the queue to drain and then does its own work a
-   texel lookup at a time. The same noise, tiled ONCE into a sheet at half the
-   buffer's size and then laid down as a single stretched image, is a plain
-   quad: it costs what the vignette costs, which is nothing. Half resolution is
-   invisible on noise, and the sheet is rebuilt only when the buffer changes. */
-function grainSheet(g){
-  const sw = Math.max(2, W >> 1), sh = Math.max(2, H >> 1);
-  if (g.sheet && g.sheet.width === sw && g.sheet.height === sh) return g.sheet;
-  const c = document.createElement('canvas');
-  c.width = sw; c.height = sh;
-  const q = c.getContext('2d');
-  q.fillStyle = q.createPattern(g.c, 'repeat');
-  q.fillRect(0, 0, sw, sh);
-  g.sheet = c;
-  return c;
+   milliseconds in the hall: a tiled fill at eight and a half megapixels does
+   not batch with anything, it stands at the end of the frame and does its own
+   work a texel lookup at a time. The first cure was a half-size sheet stretched
+   over the frame — fast, but Eldar saw it at once: the grain came out twice as
+   coarse and soft, most of all in the craft era where there is most of it.
+   So the tile is now laid down by hand, 256 device pixels at a time, unscaled:
+   a hundred-odd draws of one small texture batch into a single pass, the noise
+   is exactly the noise it was, and the buffer can change size under it without
+   anything being rebuilt. */
+function layGrain(tile){
+  const s = tile.width;
+  for (let y = 0; y < H; y += s)
+    for (let x = 0; x < W; x += s) ctx.drawImage(tile, x, y);
 }
 let VIG = null;
 function makeVignette(){
@@ -10345,7 +10353,7 @@ function drawGrade(t){
     gr *= 1 - 0.35 * Math.min(1, (cam.x - SHIFT(2200)) / Math.max(1, REC_L - SHIFT(2200)));
   if (gr > 0.004){
     ctx.globalAlpha = gr;
-    ctx.drawImage(grainSheet(g), 0, 0, W, H);
+    layGrain(g.c);
     ctx.globalAlpha = 1;
   }
 }
@@ -13019,6 +13027,13 @@ function drawFloorSheen(){
   ctx.moveTo(a0, yTop); ctx.lineTo(a1, yTop); ctx.lineTo(b1, yBot); ctx.lineTo(b0, yBot);
   ctx.closePath();
   if (notch) ctx.rect(notch.x0, yTop, notch.x1 - notch.x0, notch.y - yTop);   // cut out of the clip
+  // Hall's source already contains its marble reflections. Never mirror the
+  // wall over this photograph: that made a translucent band across the room.
+  if (hallReady()){
+    const hx0=px(REC17_L,kc)+cwCol/2, hx1=px(REC17_R,kc)-cwCol/2;
+    const cutL=Math.max(hx0,a0,b0), cutR=Math.min(hx1,a1,b1);
+    if(cutR>cutL)ctx.rect(cutL,yTop,cutR-cutL,band);
+  }
   ctx.clip('evenodd');
   const sx0 = Math.max(0, Math.min(a0, b0)), sx1 = Math.min(W, Math.max(a1, b1));
   /* A REFLECTION DIES WITH DISTANCE FROM THE FOLD. Mirrored at one flat alpha
