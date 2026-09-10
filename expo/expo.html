@@ -6954,27 +6954,29 @@ function drawPortalColumns(cols, yBase, floorOnly){
   if (floorOnly) ctx.restore();
 }
 
-/* THE HALL STAYS IN THE TIMELINE. Architecture is a provisional render;
-   the actual reference is still required. Clean derivative removes the baked
-   crown and pedestal without claiming historical geometry. The room
-   moves on a deeper plane than its portal and the real draggable exhibit.
-   No extra camera mode, roof flight, or change to the historical rail. */
+/* THE HALL STAYS IN THE TIMELINE. Its complete room plate — architecture,
+   polished floor and reflections — is one rigid layer behind the white-era
+   wall. The wall is z=1400, so the room must be deeper than that; the old 1270
+   value made it move faster than the wall and therefore look closer. The
+   silver uprights stay on the nearer portal plane and reveal the depth. */
 const HALL_ORIGINAL = /[?&]hall=off(?:&|$)/.test(location.search);
+const HALL_PORTAL_Z = 992;
+const HALL_ROOM_Z = 1850;
 function hallReady(){ return !HALL_ORIGINAL && PHOTO_TEX.ph_hall_clean && PHOTO_TEX.ph_hall_plinth; }
 function drawRec17(t){
   const mid = (REC17_L + REC17_R) / 2;
   if (Math.abs(cam.x - mid) > 5500) return;
-  const kc = k(992), cw = 120 * kc * SS;
+  const kc = k(HALL_PORTAL_Z), cw = 120 * kc * SS;
   const bx0 = px(REC17_L, kc) + cw / 2, bx1 = px(REC17_R, kc) - cw / 2;
   const bw = Math.max(1, bx1 - bx0), bh = H;
   const upgraded = hallReady();
   const sp = upgraded ? PROP_SPRITES.ph_hall_clean : PROP_SPRITES.ph_hall17;
   if (sp){
-    // A small overscan gives the deeper room travel behind the fixed opening.
-    // Constrain that travel to the covered area: never reveal a blank edge.
-    const scale = Math.max(bw / sp.w, bh / sp.h) * (upgraded ? 1.035 : 1);
+    // Overscan gives the deeper room enough travel behind the fixed opening.
+    // The whole plate moves together, including its own floor and reflections.
+    const scale = Math.max(bw / sp.w, bh / sp.h) * (upgraded ? 1.18 : 1);
     const dw = sp.w * scale, dh = sp.h * scale;
-    const rawShift = upgraded ? px(mid, k(1270)) - px(mid, kc) : 0;
+    const rawShift = upgraded ? px(mid, k(HALL_ROOM_Z)) - px(mid, kc) : 0;
     const shift = Math.max(-(dw-bw)/2, Math.min((dw-bw)/2, rawShift));
     ctx.save();
     ctx.beginPath(); ctx.rect(Math.round(bx0), 0, Math.round(bw), H); ctx.clip();
@@ -6986,27 +6988,28 @@ function drawRec17(t){
   drawPortalColumns([REC17_L, REC17_R], py(CFG.benchY + 240, k(CFG.benchDepth)));
 }
 
-/* A low stone object leaves the glass vault and floor visible. Image crop
-   excludes transparent generation padding; crown and hit target share the
-   same projected support surface. Original lathe interaction is preserved. */
+/* The exhibit is horizontally riveted to the room plate, so it cannot skate
+   across the Hall floor. Its vertical scale remains foreground-sized: this is
+   the readable interactive object, while its x motion obeys the room's depth. */
 function drawHallCrown(b){
   if (!hallReady() || !b.ped || !b.ped.spin) return false;
   const x = b.x + (b.ped.dx ?? -430);
   if (x <= REC17_L || x >= REC17_R) return false;
-  const im = PHOTO_TEX.ph_hall_plinth, kk = k(260);
-  const sx = px(x, kk), width = 600*kk*SS, height = width*(540/1595);
-  const foot = py(1020, kk), top = foot-height;
-  // The floor owns only this soft contact shadow, never a full-room veil.
+  const im = PHOTO_TEX.ph_hall_plinth;
+  const kx = k(HALL_ROOM_Z), ko = k(260);
+  const sx = px(x, kx), width = 320*ko*SS, height = width*(im.height/im.width);
+  const foot = py(1035, ko), top = foot-height;
+  // One short contact shadow: the plinth is planted, not floating.
   ctx.save();
-  ctx.translate(sx,foot-5*kk*SS);ctx.scale(1,.08);
+  ctx.translate(sx,foot-3*ko*SS);ctx.scale(1,.075);
   const shadow = ctx.createRadialGradient(0,0,0,0,0,width*.54);
-  shadow.addColorStop(0,'rgba(35,42,48,0.32)'); shadow.addColorStop(.65,'rgba(35,42,48,0.18)'); shadow.addColorStop(1,'rgba(35,42,48,0)');
+  shadow.addColorStop(0,'rgba(35,42,48,0.28)'); shadow.addColorStop(.65,'rgba(35,42,48,0.14)'); shadow.addColorStop(1,'rgba(35,42,48,0)');
   ctx.fillStyle=shadow;
   ctx.beginPath();ctx.arc(0,0,width*.55,0,Math.PI*2);ctx.fill();ctx.restore();
-  ctx.drawImage(im,90,210,1595,540,sx-width/2,top,width,height);
-  const crownFoot=top+height*.215, crownWidth=width*.54;
+  ctx.drawImage(im,sx-width/2,top,width,height);
+  const crownFoot=top+height*.16, crownWidth=width*.30;
   ctx.save();ctx.fillStyle='rgba(45,55,65,.14)';
-  ctx.beginPath();ctx.ellipse(sx,crownFoot+2*kk*SS,crownWidth*.40,crownWidth*.035,0,0,Math.PI*2);ctx.fill();ctx.restore();
+  ctx.beginPath();ctx.ellipse(sx,crownFoot+2*ko*SS,crownWidth*.40,crownWidth*.035,0,0,Math.PI*2);ctx.fill();ctx.restore();
   const r=drawCrown3D(sx,crownFoot,crownWidth,1);
   pushHit(sx-crownWidth*.6,r.top,crownWidth*1.2,crownFoot-r.top,{type:'spin'});
   return true;
@@ -8078,7 +8081,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260909-movie2';
+const ASSET_V = '20260910-hall1';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -8128,8 +8131,8 @@ async function loadPhotoSkin(){
     ph_scanner: 'scanner.png',        // fastscan.io, the instrument itself, not a drawing of it
     ph_mill: 'mill_io.png',           // fastmill.io, the same — cut out of its studio render
     ph_scanbay: 'scan_bay.jpg',       // the 2022 bay: the whole render, rectangle and all
-    ph_hall_clean: '../hall/hall-reference-v1.png',
-    ph_hall_plinth: '../hall/plinth.png',
+    ph_hall_clean: '../hall/hall-elevation-floor-v1.png',
+    ph_hall_plinth: '../hall/plinth-low-v1.png',
     ph_hall17: 'hall_2017.jpg',       // the 2017 bay: the glass hall, cut just past the ring on its floor
     ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
     ph_pfm1: 'pfm_1.png', ph_pfm2: 'pfm_2.png', ph_pfm3: 'pfm_3.png',   // the six PFM stages, cut apart
