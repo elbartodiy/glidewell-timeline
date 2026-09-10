@@ -10764,7 +10764,11 @@ const PEOPLE = {
                 "His subject is not the crown but the sentence about the crown. Thirty years of taking something new out of the laboratory and saying it plainly enough that an ordinary practice will actually use it."],
            quote:{q:'What we do here at Glidewell is present high-quality, affordable education in a very approachable way.',
                   src:'Chairside Magazine, Vol. 21-1'},
-           clips:[{src:'media/park_01.mp4', label:'on teaching as the product'}]},
+           clips:[{src:'media/park_01.mp4', label:'on teaching as the product'},
+                  {src:'media/park_06.mp4', label:'on Chairside'},
+                  {src:'media/park_07.mp4', label:'on vertical integration'},
+                  {src:'media/park_08.mp4', label:'on education'},
+                  {src:'media/park_09.mp4', label:'on the Symposium'}]},
   patel:  {name:'Dr. Paresh Patel', role:'Implant and digital educator · North Carolina', img:'patel',
            bio:["Two practices in North Carolina, UNC Chapel Hill, an ICOI diplomate, more than five thousand implants placed — and, the part that matters here, three and a half thousand of them mini implants. He co-founded the American Academy of Small Diameter Implants.",
                 "Mini implants are the access argument in physical form: they exist for the patient who cannot afford the conventional case or cannot take the surgery. He teaches the live courses on freehand and guided placement."],
@@ -10813,7 +10817,7 @@ const PEOPLE_MORE = {
          "On the handmade myth: \u201cNobody says \u2018a handmade car\u2019 any more. The machine is more accurate than the hand and the stone model.\u201d On the same-day crown: \u201cScan, design and seat the crown in under two hours \u2014 one visit instead of three.\u201d",
          "On what comes next: \u201cConnect the clinic\u2019s systems before you make them smarter.\u201d \u201cSelf-driving companies in ten to twenty years.\u201d \u201cPeople would ask for a faster horse \u2014 until someone brings the disruption.\u201d And on why he does it at all: \u201cA crown made wrong hurts someone\u2019s quality of life. That is what drives me.\u201d"],
     quote:{q:'There\'s a lot of excitement around our work because, until now, real-world, tangible applications of GANs did not exist\u2026 To my knowledge, this is the first time anybody has generated a physical object with this technique.', src:'Chairside Magazine, Vol. 13-2 (Glidewell), 2018'},
-    clips:[{src:'media/azernikov_01.mp4', label:'on himself'}]},
+    clips:[{src:'media/azernikov_01.mp4', label:''}]},   // Eldar: no caption on this one
   farran: {name:'Howard Farran', role:'Founder, Dentaltown; host, “Dentistry Uncensored”', bio:['Dr. Howard Farran, DDS, MBA, is dentistry’s megaphone: founder of Dentaltown (the profession’s town square — 200K+ dentists) and host of “Dentistry Uncensored”, which he has run to 1,700+ episodes and still publishes EVERY WEEKDAY (episodes #1706–1709 in June 2026 alone).']},
   feuerstein: {name:'Paul Feuerstein, DMD', role:'GP (45+ yrs); Editor-in-Chief, Dentistry Today; dental-tech authority', bio:['Added 2026-07-24 (Eric\'s addition, from the planning meeting) — one of the two KOLs who, per Eric, are now free of a practice on the road and can travel to the Irvine campus for an interview — possibly alongside Jim (idea only — NOT yet agreed with Jim; don\'t promise it). Who he is.']},
   brenneise: {name:'Rob Brenneise', role:'Chief Growth Officer, Glidewell — since Dec 2023 · ex-SVP Sales, Marketing & Education · ex-VP Sales, CAD/CAM & glidewell.io · ~30 yrs in dental sales before that: DenMat 1995-2012, Experience Dental Studio, Dental Lab Holdings, VIAX', bio:['Rob Brenneise is Glidewell\'s Chief Growth Officer, in that role since December 2023.']},
@@ -12218,9 +12222,9 @@ function drawPerson(){
         }
         ctx.fillStyle = 'rgba(244,246,248,0.96)';
         ctx.font = K.font(17, 'italic');
-        let lab = c.label;
+        let lab = c.label || '';
         while (ctx.measureText(lab + '…').width > tw - 28*SS && lab.length > 4) lab = lab.slice(0, -1);
-        ctx.fillText(lab === c.label ? lab : lab.replace(/[ ,]+$/, '') + '…', mx + 14*SS, ty + th - 16*SS);
+        if (lab) ctx.fillText(lab === c.label ? lab : lab.replace(/[ ,]+$/, '') + '…', mx + 14*SS, ty + th - 16*SS);
         ctx.restore();
         ctx.strokeStyle = live ? `rgba(${K.red},0.9)` : K.edge;
         ctx.lineWidth = (live ? 2.4 : 1.2)*SS;
