@@ -12342,17 +12342,25 @@ function drawClip(){
   ctx.restore();
 }
 
+/* THE INVITATION BELONGS TO THE PROLOGUE. It is read once, before the company
+   exists; past the founding the visitor is already travelling and the line
+   would only nag. It fades out over the last stretch before 1970 and is never
+   drawn beyond it — so its ink is the craft era's warm ink, and nothing else.
+   The attract tour itself runs the whole hall as before. */
+let FOUND_X = null;
 function drawAttractHint(t){
   if (state.mode !== 'attract') return;
-  const a = 0.35 + 0.2*Math.sin(t*1.8);
+  if (FOUND_X == null){ const fb = BEATS.find(b => b.t === 'FOUNDED'); FOUND_X = fb ? fb.x : Infinity; }
+  const near = Math.max(0, Math.min(1, (FOUND_X - cam.x) / 400));
+  if (near <= 0) return;
+  const a = (0.35 + 0.2*Math.sin(t*1.8)) * near;
   ctx.save();
   ctx.textAlign = 'center';
   ctx.font = eraFont(24*SS);
   try { ctx.letterSpacing = `${24*TRACK.label*SS}px`; } catch(e){}
-  // warm ink only in the craft era; translucent white once 1979 is crossed
-  ctx.fillStyle = cam.x < REC_L ? `rgba(225,198,155,${a})` : `rgba(255,255,255,${(a*0.85).toFixed(3)})`;
+  ctx.fillStyle = `rgba(225,198,155,${a.toFixed(3)})`;
   // the rule owns the foot of the frame; the invitation stands above it
-  ctx.fillText('Turn the wheel \u00b7 travel through time', W/2, H - 78*SS);
+  ctx.fillText('Turn the wheel · travel through time', W/2, H - 78*SS);
   ctx.restore();
 }
 
