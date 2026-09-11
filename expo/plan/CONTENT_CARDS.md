@@ -104,3 +104,6 @@
 **Вариант 3, уже сейчас, без книги.** Перенести 20 текстов из базы в зал и повесить неиспользуемые фото и голоса. Это закрывает 🟡 и делает 🟢 богаче, но 🔴 остаются.
 
 Предлагаю сделать вариант 3 сразу, а книгу класть параллельно, и потом одним проходом добить 🔴.
+
+## 2026-09-11 — the pass is done
+All 32 cards now carry an article in `STUDY_BY_TITLE` (memoir + research base, ~12,800 words, Jim's quotes marked), archive photographs in the side column (`STUDY_PHOTOS_BY_TITLE`) and the recorded voices spread across the pages (`STUDY_MEDIA_BY_TITLE`). Open questions of fact are listed in the chat, not decided here.
