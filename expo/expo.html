@@ -2899,6 +2899,7 @@ function drawBenchDescs(){
          face, where the brown begins. */
       shadow = onModels; slabDrop = onModels ? -22*SS : 130*SS;   // two rows higher again: on the counter's own lip
     }
+    if (b.y === '1973'){ ink = '58,46,30'; shadow = false; }   // its line lies across the two pale stones: dark ink, as on the pale slabs
     ctx.save();
     ctx.textAlign = 'center';
     ctx.font = eraFont(23 * SS, '', seg.font);
@@ -7336,20 +7337,50 @@ function drawLabs73(){
   if (xR > W + wR || xR + wR < -wR) return;
   /* the render's stones are cut short of the hall's floor: the bench line to
      the floor is 380 units here, and the render gives 40% of its height. So
-     each stone's last rows are run on down to the floor line — same marble,
-     same width, and the joint is invisible because it is the stone's own
-     bottom edge repeated. */
+     each stone is built on down to the floor out of COPIES of its own face —
+     a band of the marble laid under the last one, each overlapping the one
+     above with a feathered edge, so the joins are soft and nothing is
+     stretched. (Eldar: "не растягивать — копировать, с нахлёстом".) */
   const yFloor = py(1080, kR);
   const im = spriteMip(sp, wR, hR), iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
   const SPANS = [[51, 843], [1102, 1875]];    // the two stones, in the render's 1894 columns
-  if (yFloor > yFoot - 1){
+  if (yFloor > yFoot + 1){
     for (const [a, b] of SPANS){
-      const sx0 = a / 1894 * iw, sw = (b - a) / 1894 * iw;
       const dx0 = xR + a / 1894 * wR, dw = (b - a) / 1894 * wR;
-      ctx.drawImage(im, sx0, ih - Math.max(2, ih * 0.03), sw, Math.max(2, ih * 0.03), dx0, yFoot - 1, dw, yFloor - yFoot + 1);
+      const shaft = stoneShaft(im, a / 1894 * iw, (b - a) / 1894 * iw, ih, dw, yFloor - yFoot + 2);
+      ctx.drawImage(shaft, dx0, yFoot - 1);
     }
   }
   ctx.drawImage(im, xR, yFoot - hR, wR, hR);
+}
+/* A SHAFT OF STONE MADE OF ITS OWN BANDS. Takes the marble face of one stone
+   (the render's lower third, below the top lip) and lays copies of it down an
+   offscreen canvas until the wanted height is filled; every copy after the
+   first overlaps the one above by a quarter of its height with a feathered
+   top, so the repeat reads as one continuous face. Built once per size. */
+const SHAFTS = new Map();
+function stoneShaft(im, sx, sw, ih, dw, dh){
+  const W2 = Math.max(2, Math.round(dw)), H2 = Math.max(2, Math.round(dh));
+  const key = `${sx|0}:${sw|0}:${W2}x${H2}`;
+  const had = SHAFTS.get(key); if (had) return had;
+  const c = document.createElement('canvas'); c.width = W2; c.height = H2;
+  const g = c.getContext('2d');
+  const sy = ih * 0.66, sh = ih - sy;                 // the marble face, below the lip
+  const bh = Math.max(4, Math.round(sh * (dw / sw)));  // its height at the drawn width — unscaled proportions
+  const ov = Math.round(bh * 0.25);
+  // the band with a feathered top, prepared once
+  const band = document.createElement('canvas'); band.width = W2; band.height = bh;
+  const gb = band.getContext('2d');
+  gb.drawImage(im, sx, sy, sw, sh, 0, 0, W2, bh);
+  gb.globalCompositeOperation = 'destination-out';
+  const fg = gb.createLinearGradient(0, 0, 0, ov);
+  fg.addColorStop(0, 'rgba(0,0,0,1)'); fg.addColorStop(1, 'rgba(0,0,0,0)');
+  gb.fillStyle = fg; gb.fillRect(0, 0, W2, ov);
+  // the first course is laid whole (its top meets the stone's real bottom edge)
+  g.drawImage(im, sx, sy, sw, sh, 0, 0, W2, bh);
+  for (let y = bh - ov; y < H2; y += bh - ov) g.drawImage(band, 0, y);
+  SHAFTS.set(key, c);
+  return c;
 }
 function drawRec3(t){
   const mid = (REC3_L + REC3_R) / 2;
