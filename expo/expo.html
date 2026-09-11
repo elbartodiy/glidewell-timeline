@@ -434,6 +434,21 @@ function applyCut(){
        point — the lettering goes there, the beat and its counter stay put */
     if (b26) b26.signDX = (SHOW_L + 330 + SHOW_R) / 2 - b26.x;
   }
+  /* THE EIGHTIES BLOCK IS A COMPOSITION OF THREE. Between the 1979 bay's right
+     pilaster and the 1989 bay's left one stand 1980, 1984 and 1988, and Eldar
+     wants them set out as one block: the same air between the years as between
+     each end year and its pilaster — four equal intervals. Set here, before the
+     rhythm pass, which keeps a run's two ends where it finds them. */
+  {
+    const L = REC_R, R = REC3_L;
+    const run = BEATS.filter(b => b.x > L && b.x < R && !b.sub && !b.under).sort((p, q) => p.x - q.x);
+    run.forEach((b, i) => {
+      const to = L + (R - L) * (i + 1) / (run.length + 1), d = to - b.x;
+      if (Math.abs(d) < 1) return;
+      for (const s2 of BEATS) if (s2.sub != null && Math.abs(s2.sub - b.x) < 1){ moved.push([s2.x, s2.x + d]); s2.x += d; s2.sub = to; }
+      moved.push([b.x, to]); b.x = to;
+    });
+  }
   /* RHYTHM. Inside one era the years should stand at equal intervals: a
      corridor reads by its beat, and ours had a gap of 600 next to a gap of 1600
      for no reason but the order they happened to be written in. The era keeps
@@ -680,6 +695,10 @@ const SEGMENTS = [
    bgc:[10,12,11], grain:0.014},
   {x0:REC3_R, x1:REC2_L, z0:850, z1:850, tz:680, wall:'wall3', bench:'bench3', front:'front3',
    font:'Verdana, Tahoma, "DejaVu Sans", sans-serif',
+   /* the YEARS of this stretch are set in a wide, heavy grotesk (Eldar: "очень
+      широкий, тяжёлый, как Helvetica, но широкий — девяностые"); the titles and
+      theses under them keep the era's face */
+   fontYear:'"Archivo Expanded","Arial Black",Impact,sans-serif',
    ink:'226,232,238', lamp:'tube', dust:false,
    rail:'rgba(185,196,202,0.5)', railInk:'rgba(212,222,228,0.75)',
    light:{pool:'218,232,252', poolR:1250, poolA:0.13},
@@ -2486,7 +2505,7 @@ function drawBeatText(b, focusAmt){
           ctx.fillText(txt, cx - OFF, py(yWorld - lift, kW));
         };
         const tsW = (seg.tScale || 1) * (b._ys || 1) * (b.ysMul || 1) * spread;
-        cast(b.y, eraFont(170 * tsW * kW * SS, '', seg.font), 140);
+        cast(b.y, eraFont(170 * tsW * kW * SS, '', seg.fontYear || seg.font), 140);
         cast(sentence(b.t), eraFont(46 * (seg.tScale || 1) * spread * kW * SS, '', seg.font), tY + cd0);
         if (b.th && b._th && !b.thBelow){
           ctx.font = eraFont(30 * (seg.tScale || 1) * spread * kW * SS, 'italic', seg.font);
@@ -2504,7 +2523,7 @@ function drawBeatText(b, focusAmt){
         const r = drawHungYear(b, seg, cx, bandF, fScale, focusAmt, near);
         hitTopF = r.yBase - r.cap - 18 * SS;
       } else {
-        ctx.font = eraFont(170 * ts * fScale * kk * SS, '', seg.font);
+        ctx.font = eraFont(170 * ts * fScale * kk * SS, '', seg.fontYear || seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
         const yBase9 = mixN(py(140 - lift, kk), H*0.16, focusAmt);
         letterRelief(0.55);                 // the cut edge, and nothing else on the glyph
@@ -2574,7 +2593,7 @@ function drawBeatText(b, focusAmt){
           const r = drawHungYear(b, seg, cx, band, fScale, focusAmt, near);
           hitTop = r.yBase - r.cap - 18 * SS;
         } else {
-          ctx.font = eraFont(170 * (seg.tScale||1) * (b._ys||1) * (b.ysMul||1) * fScale * kk * SS, '', seg.font);
+          ctx.font = eraFont(170 * (seg.tScale||1) * (b._ys||1) * (b.ysMul||1) * fScale * kk * SS, '', seg.fontYear || seg.font);
           ctx.fillStyle = `rgba(${seg.ink},${0.5 + 0.45*near})`;
           // a numeral can be lifted clear of whatever stands under it on the panel
           const yBase8 = mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt);
@@ -3037,9 +3056,14 @@ function initFilmRelays(){
   const lamp = LIGHT_GRID.map(L => L.x).filter(x => x > bayEnd && x < SHIFT(3450) - 320)
                          .sort((a, b) => a - b)[0];
   FILM_RELAYS.push(
-    {kind: 'crt70',  x: lamp != null ? lamp : bayEnd + 400, w: 250},
+    /* under the lamp, then a step right: the same air on both sides of the
+       set — from Jim's things on the left to the PFM stages on the right
+       (Eldar, 2026-09-10) */
+    {kind: 'crt70',  x: (lamp != null ? lamp : bayEnd + 400) + 95, w: 250},
     {kind: 'hang',   x: SHIFT(6060),  w: 320, cy: 320, era: 0},   // after 1976, before the 1979 column
-    {kind: 'hang',   x: (BEATS.find(b => b.y === '1988') || {x: SHIFT(10250) - 520}).x + 520, w: 320, cy: 282, era: 1},   // 1988 — right of the year, and it moves with it
+    /* 1988's hanging set: centred in the air between the year's last digit and
+       the 1989 bay's pilaster, so it touches neither (Eldar) */
+    {kind: 'hang',   x: ((BEATS.find(b => b.y === '1988') || {x: REC3_L - 700}).x + 215 + (REC3_L - 60)) / 2, w: 320, cy: 282, era: 1},
     {kind: 'crt95',  x: SHIFT(12700), lz: 70, w: 290},            // the nineties set by 1995
     {kind: 'proj',   x: SHIFT(15330), w: 1260, cy: 318},          // 1999: high on the wall, air under it
     {kind: 'lcd05',  x: SHIFT(17620), lz: 16, w: 235},            // the office LCD on the counter before 2005 — moved right, it was standing on the plastic boxes
@@ -5814,9 +5838,13 @@ function drawModel93(wx, lz, wWorld, topWorldY){
   const foot = py(topWorldY, kk);
   const XM = 132, ZM = 76;
   const s = wWorld * kk * SS / (XM + ZM * 0.50);
-  if (sx < -500 || sx > W + 500) return;
   const p = {s, ox: sx - (XM - ZM * 0.50) * s / 2, oy: foot - ZM * 0.34 * s};
+  /* the site is stashed BEFORE the cull: the aeroplane now starts its approach
+     while the building is still off the frame to the right, and it needs the
+     site's coordinates to fly towards — a stale stash from the last time the
+     model was on screen put its parking place in the wrong spot */
   MODEL93 = {p, s, XM, ZM, sx, kk};   // the plane parks on this site, in these units
+  if (sx < -500 || sx > W + 500) return;
 
   // the plinth: the ground plane of the model, oversailed and extruded down
   /* One surface. The site used to be a separate slab laid on top of a separate
@@ -5977,24 +6005,28 @@ function drawPlane93(){
      the middle sends it away again. In between it is parked, hidden behind the
      building — so what you see is an aeroplane arriving and leaving, not a
      drawing being dragged along by a scrollbar. */
-  const kk93 = k(240);
-  const seen = px(REC93_L, kk93) < W - 40;     // the recreation has come in from the right
+  /* THE CUES ARE TWO CENTRES (Eldar, 2026-09-10). The approach begins the
+     moment the 1989 pedestal — the mailed case on its column — stands in the
+     middle of the frame: the aeroplane comes in from the left edge and flies
+     right, to park behind a building that is still off the frame. It leaves
+     when 1993 itself stands in the middle. */
+  const x89 = (REC3_L + REC3_R) / 2;
   switch (PLANE93.phase){
     case 'idle':
-      if (seen && d < 0){ PLANE93.phase = 'in'; PLANE93.t0 = state.time; pingOnce(PLANE_SND, 0.42, 3200); }
+      if (cam.x >= x89 - 10 && d < 0){ PLANE93.phase = 'in'; PLANE93.t0 = state.time; pingOnce(PLANE_SND, 0.42, 3200); }
       break;
     case 'in':
       if (state.time - PLANE93.t0 >= P93_IN) PLANE93.phase = 'parked';
-      if (d < -2600) PLANE93.phase = 'idle';   // turned back before it got here
+      if (cam.x < x89 - 400) PLANE93.phase = 'idle';   // turned back before it got here
       break;
     case 'parked':
-      if (d > 260){ PLANE93.phase = 'out'; PLANE93.t0 = state.time; pingOnce(PLANE_SND, 0.40, 2600); }
+      if (d > -30){ PLANE93.phase = 'out'; PLANE93.t0 = state.time; pingOnce(PLANE_SND, 0.40, 2600); }
       break;
     case 'out':
       if (state.time - PLANE93.t0 >= P93_OUT) PLANE93.phase = 'gone';
       break;
     case 'gone':
-      if (d < -1200) PLANE93.phase = 'idle';   // walked all the way back: it can come again
+      if (cam.x < x89 - 400) PLANE93.phase = 'idle';   // walked all the way back past 1989: it can come again
       break;
   }
   if (PLANE93.phase === 'idle' || PLANE93.phase === 'gone') return;
@@ -12056,6 +12088,8 @@ const PAGE_FONTS = [
   ['IBM Plex Sans', 'ibm_plex_sans_400.woff2', {}], ['IBM Plex Sans', 'ibm_plex_sans_600.woff2', {weight: '600'}], ['IBM Plex Sans', 'ibm_plex_sans_400i.woff2', {style: 'italic'}],
   ['Source Sans 3', 'source_sans_3_400.woff2', {}], ['Source Sans 3', 'source_sans_3_600.woff2', {weight: '600'}], ['Source Sans 3', 'source_sans_3_400i.woff2', {style: 'italic'}],
   ['Inter', 'inter_400.woff2', {}], ['Inter', 'inter_600.woff2', {weight: '600'}], ['Inter', 'inter_400i.woff2', {style: 'italic'}],
+  // the nineties' numerals on the wall: Archivo at its widest and heaviest — the extended black grotesk of that decade's posters
+  ['Archivo Expanded', 'archivo_expanded_800.woff2', {weight: '800'}],
 ];
 function loadPageFonts(){
   if (!('FontFace' in window)) return;
