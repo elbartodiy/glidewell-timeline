@@ -639,6 +639,11 @@ const REC18_L = bayStart(3) + 300, REC18_R = bayStart(3) + 1200;
    900 — 710 units of clear wall after the 2022 portal, 840 before the next. */
 const REC23_L = bayStart(4) + 550, REC23_R = bayStart(4) + 1450;
 const REC17_L = bayStart(5) + 60, REC17_R = bayStart(5) + 3540;   // the glass hall: a 3480 panel in a 3600 cut, at the end of the walk
+/* The cut keeps its pacing width, while the visible Hall opening is shorter
+   and leaves a proper piece of the late wall on each side. Every physical
+   boundary — image, counter break and metal frame — uses these same anchors. */
+const HALL_FRAME_L = REC17_L + 240;
+const HALL_FRAME_R = REC17_R - 240;
 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
@@ -1224,7 +1229,7 @@ function nearestBeat(x){
 const BENCH_BREAKS = [1700, 3345, 7350, 9250, 13100, 16900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
-BENCH_BREAKS.push({x: (REC17_L + REC17_R) / 2, half: (REC17_R - REC17_L) / 2 + 60});   // the glass hall stands on open floor
+BENCH_BREAKS.push({x: (HALL_FRAME_L + HALL_FRAME_R) / 2, half: (HALL_FRAME_R - HALL_FRAME_L) / 2 + 60});   // the counter meets the Hall's metal frame
 /* 1979: the counters stop short of the models' plinth, the same distance on
    both sides, so the block stands clear instead of being swallowed by them. */
 BENCH_BREAKS.push({x: (REC_L + REC_R) / 2, half: G8_W / 2 + 80});
@@ -2037,7 +2042,10 @@ function drawFloor(){
     [REC4_R, REC23_L, T.era[3]],
     [REC23_L, REC23_R, T.rec.r2023],
     [REC4_L, REC4_R, T.rec.r2022],
-    [REC23_R, SEGMENTS[3].x1 + 900, T.era[3]],
+    /* From the crossover onward the approach, Hall and TODAY share one pale
+       polished floor. The Hall is no longer a full-frame photograph laid over
+       it, so its reflections can continue through the neighbouring bays. */
+    [REC23_R, SEGMENTS[3].x1 + 900, T.rec.r2017],
   ];
   for (const [a, b, tone] of spans){
     const segF = segAt((a + b) / 2);
@@ -6923,7 +6931,7 @@ const STEP_TONE = {
 /* the pilasters are drawn twice: once with the panel, and once again AFTER the
    floor sheen — a column stands ON the floor, so its body must sit over the
    reflection, not under a milky wash of it */
-function drawRec4Columns(yBase, floorOnly){ drawPortalColumns([REC4_L, REC4_R, REC17_L, REC17_R], yBase, floorOnly); }
+function drawRec4Columns(yBase, floorOnly){ drawPortalColumns([REC4_L, REC4_R], yBase, floorOnly); }
 /* the same steel pilaster frames the 2017 glass hall and the 2022 portal */
 function drawPortalColumns(cols, yBase, floorOnly){
   if (yBase == null) yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
@@ -6962,30 +6970,80 @@ function drawPortalColumns(cols, yBase, floorOnly){
 const HALL_ORIGINAL = /[?&]hall=off(?:&|$)/.test(location.search);
 const HALL_PORTAL_Z = 992;
 const HALL_ROOM_Z = 1850;
-function hallReady(){ return !HALL_ORIGINAL && PHOTO_TEX.ph_hall_clean && PHOTO_TEX.ph_hall_plinth; }
+function hallReady(){ return !HALL_ORIGINAL && PHOTO_TEX.ph_hall_clean && PHOTO_TEX.ph_hall_floor && PHOTO_TEX.ph_hall_plinth; }
 function drawRec17(t){
   const mid = (REC17_L + REC17_R) / 2;
   if (Math.abs(cam.x - mid) > 5500) return;
   const kc = k(HALL_PORTAL_Z), cw = 120 * kc * SS;
-  const bx0 = px(REC17_L, kc) + cw / 2, bx1 = px(REC17_R, kc) - cw / 2;
-  const bw = Math.max(1, bx1 - bx0), bh = H;
+  const bx0 = px(HALL_FRAME_L, kc) + cw / 2, bx1 = px(HALL_FRAME_R, kc) - cw / 2;
+  const bw = Math.max(1, bx1 - bx0);
+  const bh = py(1080, k(SEGMENTS[3].z0));
   const upgraded = hallReady();
   const sp = upgraded ? PROP_SPRITES.ph_hall_clean : PROP_SPRITES.ph_hall17;
   if (sp){
-    // Overscan gives the deeper room enough travel behind the fixed opening.
-    // The whole plate moves together, including its own floor and reflections.
-    const scale = Math.max(bw / sp.w, bh / sp.h) * (upgraded ? 1.18 : 1);
+    /* The approved study has one reflective floor running under the Hall and
+       the neighbouring late bays. Paint that floor as its own deep layer
+       before the wall plate; counters and exhibits are drawn later and sit on
+       top of it. This removes the vertical photo edge at the portal. */
+    if (upgraded){
+      const fl = PHOTO_TEX.ph_hall_floor, srcY = Math.round(fl.naturalHeight * 0.73);
+      const srcH = fl.naturalHeight - srcY, floorH = H - bh;
+      const fs = floorH / srcH, fw = fl.naturalWidth * fs;
+      const roomCX = px(mid, k(HALL_ROOM_Z));
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, bh-1, W, floorH+2); ctx.clip();
+      ctx.drawImage(fl, 0, srcY, fl.naturalWidth, srcH,
+                    Math.round(roomCX-fw/2), Math.round(bh), Math.round(fw), Math.ceil(floorH));
+      ctx.restore();
+    }
+    // Fit the room to the reference-height of the timeline. The source is a
+    // little wider than the opening, and that horizontal excess — not a zoom
+    // of the whole room — is the reserve used by the deeper parallax layer.
+    // Zooming by 18% made tall browser windows crop the rings and columns and
+    // no longer match the approved full-bay study.
+    const scale = upgraded ? bh / sp.h : Math.max(bw / sp.w, H / sp.h);
     const dw = sp.w * scale, dh = sp.h * scale;
     const rawShift = upgraded ? px(mid, k(HALL_ROOM_Z)) - px(mid, kc) : 0;
     const shift = Math.max(-(dw-bw)/2, Math.min((dw-bw)/2, rawShift));
     ctx.save();
-    ctx.beginPath(); ctx.rect(Math.round(bx0), 0, Math.round(bw), H); ctx.clip();
+    ctx.beginPath(); ctx.rect(Math.round(bx0), 0, Math.round(bw), Math.ceil(bh)); ctx.clip();
     ctx.drawImage(spriteMip(sp, Math.round(dw), Math.round(dh)),
-                  Math.round(bx0 + (bw-dw)/2 + shift), Math.round(H-dh), Math.round(dw), Math.round(dh));
-    BAY_LABELS['2017'] = {x: bx0 + bw/2, y: H-dh*(1-782/941), k:kc};
+                  Math.round(bx0 + (bw-dw)/2 + shift), 0, Math.round(dw), Math.round(dh));
+    BAY_LABELS['2017'] = {x: bx0 + bw/2, y: bh - 26*SS, k:kc};
     ctx.restore();
   }
-  drawPortalColumns([REC17_L, REC17_R], py(CFG.benchY + 240, k(CFG.benchDepth)));
+  drawHallPortalColumns(false);
+}
+
+/* The Hall frame ends exactly on the shared rear floor line. A slightly wider
+   metal shoe crosses that line and gives each upright a visible load-bearing
+   foot; the old column ran below one floor horizon and stopped above the other,
+   which made it look suspended. */
+function drawHallPortalColumns(floorOnly){
+  const kc = k(HALL_PORTAL_Z), yBase = py(1080, k(SEGMENTS[3].z0));
+  const cw = 120 * kc * SS, shoeH = 18 * SS;
+  if (![HALL_FRAME_L, HALL_FRAME_R].some(x => Math.abs(cam.x-x) < 4100)) return;
+  if (floorOnly){
+    ctx.save(); ctx.beginPath(); ctx.rect(0, yBase-shoeH, W, shoeH+8*SS); ctx.clip();
+  }
+  for (const wx of [HALL_FRAME_L, HALL_FRAME_R]){
+    const sx = px(wx, kc);
+    if (sx < -cw || sx > W+cw) continue;
+    const g = ctx.createLinearGradient(sx-cw/2,0,sx+cw/2,0);
+    g.addColorStop(0,'#858c93'); g.addColorStop(.18,'#cbd1d6');
+    g.addColorStop(.55,'#eef1f3'); g.addColorStop(1,'#7b8289');
+    ctx.fillStyle=g; ctx.fillRect(sx-cw/2,0,cw,yBase);
+    ctx.fillStyle='rgba(145,210,248,.55)';
+    ctx.fillRect(sx-cw/2+2*SS,0,2*SS,yBase);
+    const shoe=ctx.createLinearGradient(sx-cw*.64,0,sx+cw*.64,0);
+    shoe.addColorStop(0,'#737a81'); shoe.addColorStop(.22,'#c6ccd1');
+    shoe.addColorStop(.58,'#eef1f3'); shoe.addColorStop(1,'#6e757c');
+    ctx.fillStyle=shoe;
+    ctx.fillRect(sx-cw*.64,yBase-shoeH,cw*1.28,shoeH+5*SS);
+    ctx.fillStyle='rgba(255,255,255,.65)';
+    ctx.fillRect(sx-cw*.64,yBase-shoeH,cw*1.28,1.5*SS);
+  }
+  if (floorOnly) ctx.restore();
 }
 
 /* The exhibit is horizontally riveted to the room plate, so it cannot skate
@@ -6994,7 +7052,7 @@ function drawRec17(t){
 function drawHallCrown(b){
   if (!hallReady() || !b.ped || !b.ped.spin) return false;
   const x = b.x + (b.ped.dx ?? -430);
-  if (x <= REC17_L || x >= REC17_R) return false;
+  if (x <= HALL_FRAME_L || x >= HALL_FRAME_R) return false;
   const im = PHOTO_TEX.ph_hall_plinth;
   const kx = k(HALL_ROOM_Z), ko = k(260);
   const sx = px(x, kx), width = 320*ko*SS, height = width*(im.height/im.width);
@@ -8081,7 +8139,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260910-hall1';
+const ASSET_V = '20260910-hall3';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -8131,7 +8189,8 @@ async function loadPhotoSkin(){
     ph_scanner: 'scanner.png',        // fastscan.io, the instrument itself, not a drawing of it
     ph_mill: 'mill_io.png',           // fastmill.io, the same — cut out of its studio render
     ph_scanbay: 'scan_bay.jpg',       // the 2022 bay: the whole render, rectangle and all
-    ph_hall_clean: '../hall/hall-elevation-floor-v1.png',
+    ph_hall_clean: '../hall/hall-elevation-wall-v2.png',
+    ph_hall_floor: '../hall/hall-elevation-floor-v1.png',
     ph_hall_plinth: '../hall/plinth-low-v1.png',
     ph_hall17: 'hall_2017.jpg',       // the 2017 bay: the glass hall, cut just past the ring on its floor
     ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
@@ -12984,6 +13043,10 @@ function sheenFade(gs, cw, ch, peak){
 }
 function drawFloorSheen(){
   if (cam.x < SHOW_L - 2400 || cam.x > SHOW_R + 2400) return;
+  /* Near the Hall its photographed floor already carries the approved long
+     reflections across the whole lower plane. Folding the wall over it again
+     produced a pale horizontal fog band and doubled the columns. */
+  if (hallReady() && Math.abs(cam.x - (REC17_L + REC17_R)/2) < 5500) return;
   /* A REFLECTION IS BOUNDED BY THE FLOOR IT LIES ON. This was clipped to
      "everything below the wall's foot", which on screen means the counter as
      well — so a whole upside-down portrait ended up on the front of a cabinet,
@@ -13030,13 +13093,6 @@ function drawFloorSheen(){
   ctx.moveTo(a0, yTop); ctx.lineTo(a1, yTop); ctx.lineTo(b1, yBot); ctx.lineTo(b0, yBot);
   ctx.closePath();
   if (notch) ctx.rect(notch.x0, yTop, notch.x1 - notch.x0, notch.y - yTop);   // cut out of the clip
-  // Hall's source already contains its marble reflections. Never mirror the
-  // wall over this photograph: that made a translucent band across the room.
-  if (hallReady()){
-    const hx0=px(REC17_L,kc)+cwCol/2, hx1=px(REC17_R,kc)-cwCol/2;
-    const cutL=Math.max(hx0,a0,b0), cutR=Math.min(hx1,a1,b1);
-    if(cutR>cutL)ctx.rect(cutL,yTop,cutR-cutL,band);
-  }
   ctx.clip('evenodd');
   const sx0 = Math.max(0, Math.min(a0, b0)), sx1 = Math.min(W, Math.max(a1, b1));
   /* A REFLECTION DIES WITH DISTANCE FROM THE FOLD. Mirrored at one flat alpha
@@ -13257,6 +13313,7 @@ function frame(){
      stands on the floor, so the furniture, the machines and the people still
      cover them in their turn. */
   drawRec4Columns(null);
+  drawHallPortalColumns(false);
   drawProjectors(t, 'light');   // light lands on the WALL; the bench will crop it
 
   /* THE REFLECTION IS UNDER EVERYTHING THAT STANDS ON IT. It used to be laid
@@ -13265,6 +13322,7 @@ function frame(){
      than a shine beneath them. It reflects the wall band, which is already
      drawn, and everything standing on the floor now covers it in turn. */
   drawFloorSheen();
+  drawHallPortalColumns(true);  // its metal shoe stays above the reflected floor
 
   // mid-ground: people and machines stand in front of the wall...
   drawStage(t);
