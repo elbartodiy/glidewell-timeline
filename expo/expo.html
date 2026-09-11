@@ -330,6 +330,7 @@ const BEATS = [
   {x:26340, y:'2022', t:'FASTSCAN.IO', thBelow:true, capDX:-36,   // the bay is a photograph; the italic line cannot live on it, and the column is a shade wider than the panel
    tOnBay:true,   // the title is lettered on the plinth block of the render, centred on its face
    pinZ:996,   // the year stays centred over the instrument, on the bay's own plane — it does not slide behind a column
+   yLift:300,  // and high: it hung from the walnut once; with the wood gone it sits in the air between the capsule's top and the frame's edge (Eldar)
    th:'The front door to the all-digital workflow.',
    d:'fastscan.io, built with Medit, folds an intraoral scanner into the ecosystem — no impressions, no remakes, data straight into design and mill.',
    wall:[],
@@ -1262,7 +1263,13 @@ function nearestBeat(x){
 const BENCH_BREAKS = [1700, 3345, 7350, 9250, 13100, 16900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
-BENCH_BREAKS.push({x: (HALL_FRAME_L + HALL_FRAME_R) / 2, half: (HALL_FRAME_R - HALL_FRAME_L) / 2 + 60 + 240});   // the counters stop two columns clear of the doorway's frame (Eldar)
+/* the counters stop two column-widths clear of the doorway's pilasters — on
+   screen, with the hall centred. The pilasters stand at z 992 and the counter
+   at 340, so the same screen distance is fewer world units at the counter:
+   the break is the doorway's half-width plus two and a half columns, all
+   scaled by the ratio of the two depths. (Eldar drew it, 2026-09-10.) */
+BENCH_BREAKS.push({x: (HALL_FRAME_L + HALL_FRAME_R) / 2,
+                   half: ((HALL_FRAME_R - HALL_FRAME_L) / 2 + 2.5 * 120) * k(992) / k(CFG.benchDepth)});
 /* 1979: the counters stop short of the models' plinth, the same distance on
    both sides, so the block stands clear instead of being swallowed by them. */
 BENCH_BREAKS.push({x: (REC_L + REC_R) / 2, half: G8_W / 2 + 80});
@@ -1935,7 +1942,13 @@ function drawWall(){
     ctx.fillRect(sx0, 0, sx1 - sx0, yFoot);
     const worldLeft = cam.x - (W/2) / (k(seg.z0) * SS);
     let wx = wx0 + Math.floor((Math.min(worldLeft, ex0) - wx0) / tileW) * tileW;
-    const PURE_X = HALL_FRAME_L - 60;   // the panelled white wall of 2019 runs on to the doorway's column; the plain white is the showroom's, after the hall
+    /* the panelled white wall of 2019 runs on to the doorway's column — to the
+       column as you SEE it. The column stands 400 units nearer than the wall,
+       so from the left it projects to the right of the wall point under it,
+       and a fixed world coordinate left a strip of plain white showing between
+       the last panel and the pilaster. The switch is made at the wall point
+       that lies under the column's edge this frame. */
+    const PURE_X = cam.x + (px(HALL_FRAME_L - 60, k(HALL_PORTAL_Z)) - W / 2) / (kw * SS) + 6;
     const swx = (PHOTO_SKIN && seg === SEGMENTS[0] && TEX.wall1_dark) ? wallSwitchX() : -1e9;
     /* A WALL IS A PLANE, NOT A CURTAIN. It used to be drawn from the top of the
        frame down to a line computed at the COUNTER's depth — so its foot
@@ -7222,7 +7235,7 @@ function drawHallCrown(b){
   /* THE CROWN LEVITATES. Nearly as wide as the cap it hovers over, and lifted
      off it by about its own height (Eldar, 2026-09-10) — the exhibit, not an
      ornament on a stand. Its shadow stays on the stone, soft and wide. */
-  const capTop = top + height * .16, crownWidth = width * .88;
+  const capTop = top + height * .16, crownWidth = width * .72;   // a little under the cap's width (Eldar: "чуть поменьше")
   const crownFoot = capTop - crownWidth * .62;
   ctx.save();ctx.fillStyle='rgba(45,55,65,.16)';
   ctx.beginPath();ctx.ellipse(sx,capTop+2*ko*SS,crownWidth*.42,crownWidth*.05,0,0,Math.PI*2);ctx.fill();ctx.restore();
@@ -9424,8 +9437,18 @@ function drawPointCloud(cx, footY, size, t, hero){
   drawGlow('120,190,255', cx, footY + 2, size * 0.9, 0.10 * bright);
   ctx.restore();
 }
+/* the hall's crown is not painted with the other pedestals: it stands in the
+   room behind the counters, so it is laid before them (see drawHallExhibit) */
+function hallOwns(b){
+  if (!hallReady() || !b.ped || !b.ped.spin) return false;
+  const x = b.x + (b.ped.dx ?? -430);
+  return x > HALL_FRAME_L && x < HALL_FRAME_R;
+}
+function drawHallExhibit(){
+  for (const b of BEATS) if (b.ped && b.ped.spin && Math.abs(b.x + (b.ped.dx ?? -430) - cam.x) < 2600) drawHallCrown(b);
+}
 function drawPedestal(b, t, hero){
-  if (drawHallCrown(b)) return;
+  if (hallOwns(b)) return;
   const ped = b.ped; if (!ped) return;
   const z = -90, kk = k(z);
   const x = b.x + (ped.dx ?? -430);
@@ -13634,6 +13657,7 @@ function frame(){
   drawPlateBench(t);  // and the founding bay, cut from its centrepiece
   drawRec4Columns(null, true);  // the portal's columns stand ON that floor — over its sheen
   drawProjectors(t, 'machineGround');   // a machine standing on the floor goes behind the counters
+  drawHallExhibit();  // the pedestal and its crown stand in the room, behind the counters (Eldar)
   drawBench();        // reflection can never be laid over the furniture
   drawShowroomLight(t);   // light coming OUT of the furniture, so after it
   drawProjectors(t, 'machine');   // it stands on the bench, so it comes after it
