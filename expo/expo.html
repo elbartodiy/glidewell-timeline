@@ -1945,6 +1945,10 @@ function drawWall(){
        well above the frame at the top, the floor at the bottom. It moves the way
        the room it belongs to moves, and its texture no longer breathes. */
     const yTopW = py(-520, kw), hW = yFoot - yTopW;
+    /* each tile is drawn from a pre-scaled copy near its screen size: a 2048-px
+       texture thrown straight onto a thousand pixels re-samples its one-pixel
+       seam lines every frame, and they shimmered as the camera moved */
+    const tile = (im, w, h) => spriteMip(im._sp || (im._sp = {c: im, w: im.width, h: im.height}), w, h);
     for (; px(wx, kw) < sx1 + 2; wx += tileW){
       const kk = kw;   // the SEGMENT's depth — never wallZAt(), which reads the
                        // world position and in the extension returns the era next door
@@ -1954,22 +1958,31 @@ function drawWall(){
         const xA = px(Math.max(wx, PURE_X), kk);
         ctx.fillStyle = '#e6e7e9';
         ctx.fillRect(xA, yTopW, px(wx + tileW, kk) - xA + 1, hW);
-        if (wx < PURE_X)
-          ctx.drawImage(texT, px(wx, kk), yTopW, (PURE_X - wx) * kk * SS * 1.03, hW);
+        /* the part-tile before the plain white shows only its own part of the
+           texture: it used to squeeze the WHOLE texture into the remainder, and
+           the panels came out as a run of narrow stripes just before the door */
+        if (wx < PURE_X){
+          const frac = Math.max(0, Math.min(1, (PURE_X - wx) / tileW));
+          const dw = (PURE_X - wx) * kk * SS * 1.03;
+          const im = tile(texT, tileW * kk * SS * 1.03, hW);
+          const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
+          ctx.drawImage(im, 0, 0, Math.max(1, iw * frac), ih, px(wx, kk), yTopW, dw, hW);
+        }
       } else if (straddles){
         // the material changes mid-tile: draw the tile twice, each half clipped
         // to its own side of the line, so the joint is a butt joint
         const xs = px(swx, kk), tw = tileW * kk * SS * 1.03, tx = px(wx, kk);
         ctx.save();
         ctx.beginPath(); ctx.rect(tx - 2, yTopW, Math.max(0, xs - tx) + 2, hW); ctx.clip();
-        ctx.drawImage(TEX.wall1_dark, tx, yTopW, tw, hW);
+        ctx.drawImage(tile(TEX.wall1_dark, tw, hW), tx, yTopW, tw, hW);
         ctx.restore();
         ctx.save();
         ctx.beginPath(); ctx.rect(xs, yTopW, Math.max(0, tx + tw - xs) + 2, hW); ctx.clip();
-        ctx.drawImage(tex, tx, yTopW, tw, hW);
+        ctx.drawImage(tile(tex, tw, hW), tx, yTopW, tw, hW);
         ctx.restore();
       } else {
-        ctx.drawImage(texT, px(wx, kk), yTopW, tileW * kk * SS * 1.03, hW);
+        const tw2 = tileW * kk * SS * 1.03;
+        ctx.drawImage(tile(texT, tw2, hW), px(wx, kk), yTopW, tw2, hW);
       }
     }
     if (seg.floor){
@@ -3282,7 +3295,8 @@ function filmInto(vx, vy, vw, vh, dim, tone){
 const TV70 = {l: 0.0908, r: 0.7232, t: 0.3465, b: 0.9020};
 function drawFilmCRT70(r){
   const sp = PROP_SPRITES.ph_tv70;
-  const kk = k(8), sx = px(r.x, kk);
+  // set back on the counter top, not on its lip — it stood at z 8 and looked about to fall (Eldar)
+  const kk = k(70), sx = px(r.x, kk);
   /* THE SET IS A PHOTOGRAPH NOW. It used to be a drawn box — a wooden
      rectangle, a rounded rectangle for the tube, two circles and five lines for
      the controls — which is a diagram of a television rather than one. Eldar's
@@ -7149,9 +7163,13 @@ function drawHallCrown(b){
   ctx.fillStyle = fg;
   ctx.fillRect(sx - shaftW/2, foot - 40 * ko * SS, shaftW, 40 * ko * SS);
   ctx.drawImage(im,sx-width/2,top,width,height);
-  const crownFoot=top+height*.16, crownWidth=width*.30;
-  ctx.save();ctx.fillStyle='rgba(45,55,65,.14)';
-  ctx.beginPath();ctx.ellipse(sx,crownFoot+2*ko*SS,crownWidth*.40,crownWidth*.035,0,0,Math.PI*2);ctx.fill();ctx.restore();
+  /* THE CROWN LEVITATES. Nearly as wide as the cap it hovers over, and lifted
+     off it by about its own height (Eldar, 2026-09-10) — the exhibit, not an
+     ornament on a stand. Its shadow stays on the stone, soft and wide. */
+  const capTop = top + height * .16, crownWidth = width * .88;
+  const crownFoot = capTop - crownWidth * .62;
+  ctx.save();ctx.fillStyle='rgba(45,55,65,.16)';
+  ctx.beginPath();ctx.ellipse(sx,capTop+2*ko*SS,crownWidth*.42,crownWidth*.05,0,0,Math.PI*2);ctx.fill();ctx.restore();
   const r=drawCrown3D(sx,crownFoot,crownWidth,1);
   pushHit(sx-crownWidth*.6,r.top,crownWidth*1.2,crownFoot-r.top,{type:'spin'});
   return true;
@@ -13037,7 +13055,10 @@ function drawShowroom(t){
      The first light recessed into it is the landmark: the timber may reach that
      fitting and no further. Both are at the beam's own depth, so the cut cannot
      drift away from the lamp it is measured against. */
-  const x0 = px(SHOW_L + 330, kk) - 12 * SS;
+  /* the run begins AT the doorway's far column now (SHOW_L is that column):
+     the column covers its end, so there is nothing hanging in the air, and the
+     wood and its downlights read as one ceiling from the door onward (Eldar) */
+  const x0 = px(SHOW_L, kk) - 12 * SS;
   const x1 = px(SHOW_R, kk);
   if (x1 < -200 || x0 > W + 200) return;
   ctx.save();
