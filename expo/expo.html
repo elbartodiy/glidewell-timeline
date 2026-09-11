@@ -141,8 +141,12 @@ const BEATS = [
   {x:4400, y:'1973', t:'SECOND LAB', yLift:95, fly:true, flyZ:380, flyLift:52,   // the seventies all come forward, the way 1970 does
    th:'Growth by addition — before growth by system.',
    d:'Jim opens a second lab in El Toro — the one-man bench starts to multiply.',
-   wall:[{img:'rose', w:300, dx:-560, cy:360, rot:0.4}],
-   table:[], st:[{img:'lab4ext', w:250, dx:0, lz:80, cap:'El Toro — the second lab'}]},
+   /* the two labs stand as models on their own stones where the counter used
+      to run (drawLabs73); the photograph of the second lab hangs on the wall
+      beside the year, and the line goes on the counter that follows */
+   wall:[{img:'rose', w:300, dx:-560, cy:360, rot:0.4},
+         {img:'lab4ext', w:260, dx:600, cy:350, cap:'El Toro — the second lab'}],
+   table:[], st:[]},
 
   {x:5400, y:'1976', t:'DIRECT-MAIL', yLift:95, fly:true, flyZ:380, flyLift:52,   // on 1973's line — Eldar: the years after 1973 hung low
    th:'Reach is the lever — the flywheel’s first turn.',
@@ -573,6 +577,10 @@ function applyCut(){
   if (typeof STUDY_MEDIA_BY_TITLE === 'object')
     for (const b of BEATS){ const key = b.t || b.y; if (STUDY_MEDIA_BY_TITLE[key]) STUDY_MEDIA[b.x] = STUDY_MEDIA_BY_TITLE[key]; }
   for (const it of FG_ITEMS) it.x = SHIFT(it.x);
+  /* the 1973 stones stand where the 1973 beat finally stands — the rhythm pass
+     moves the seventies, and the counters must part around the stones, not
+     around the raw coordinate */
+  { const br = BENCH_BREAKS.find(v => v.l73), b73 = BEATS.find(b => b.y === '1973'); if (br && b73) br.x = b73.x; }
 }
 const INTRO_X = -650;
 const WORLD_END = SHIFT(29680);
@@ -1260,8 +1268,13 @@ function nearestBeat(x){
 /* 17900 landed 470 units from the 2007 plinth and left a 405-wide scrap of
    counter marooned between the two gaps — the little island. Moved back to
    16900, where it divides a long run instead of stranding a piece of one. */
-const BENCH_BREAKS = [1700, 3345, 7350, 9250, 13100, 16900, 22280]
+const BENCH_BREAKS = [1700, 7350, 9250, 13100, 16900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
+/* 1973: no counter — the two labs stand on their own stones, the way the nine
+   do at 1979, and the counters stop short of them on both sides (Eldar,
+   2026-09-11). The small joint that used to sit here (3345) is gone with it. */
+const L73_W = 760;   // the pair of plinths, in world units
+BENCH_BREAKS.push({x: SHIFT(4400), half: L73_W / 2 + 80, l73: true});   // re-centred on the beat once applyCut has spaced it
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
 /* the counters stop two column-widths clear of the doorway's pilasters — on
    screen, with the hall centred. The pilasters stand at z 992 and the counter
@@ -2878,7 +2891,8 @@ function drawBenchDescs(){
          white halo. Dark-on-dark was why the 1989 line could not be read. */
       const onModels = (b.x > REC_L && b.x < REC_R) || (b.x > REC3_L && b.x < REC3_R);
       /* 1979's line lies on the dark wood of the models' plinth, so it is set
-         light there; every other recreation reads dark on its pale slab. */
+         light there; every other recreation reads dark on its pale slab — and
+         so does 1973's, lying across the two pale stones of its labs. */
       ink = onModels ? '236,228,218' : '34,41,50';
       /* 205 put 1979's line most of the way down the counter's face, reading
          as something lying on the floor. It belongs just under the top of that
@@ -7304,6 +7318,39 @@ function makeUsaSprite(){
   g.fillText('3,500+ dentists \u00b7 nationwide \u00b7 by mail', 490, 560);
   return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
 }
+/* 1973 · THE SECOND LAB. Eldar's render: the two buildings as models, each on
+   its own marble stone, cut out together. Set exactly like the nine labs of
+   1979 — the stones' tops on the hall's bench line, their feet on the floor,
+   the width the counters are trimmed to — so the pair reads as the exhibit's
+   own counter, not as a thing put on one. */
+let X73 = null;
+function drawLabs73(){
+  const sp = PROP_SPRITES.ph_labs73;
+  if (!sp) return;
+  if (X73 == null){ const b = BEATS.find(b2 => b2.y === '1973'); X73 = b ? b.x : SHIFT(4400); }
+  if (Math.abs(cam.x - X73) > CULL_BAY) return;
+  const kR = k(120), TOP = 0.60;                  // the stones' top, as a fraction of the render's height
+  const wR = L73_W * kR * SS, hR = wR * sp.h / sp.w;
+  const yBench = py(CFG.benchY, kR), yFoot = yBench + hR * (1 - TOP);
+  const xR = px(X73, kR) - wR / 2;
+  if (xR > W + wR || xR + wR < -wR) return;
+  /* the render's stones are cut short of the hall's floor: the bench line to
+     the floor is 380 units here, and the render gives 40% of its height. So
+     each stone's last rows are run on down to the floor line — same marble,
+     same width, and the joint is invisible because it is the stone's own
+     bottom edge repeated. */
+  const yFloor = py(1080, kR);
+  const im = spriteMip(sp, wR, hR), iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
+  const SPANS = [[51, 843], [1102, 1875]];    // the two stones, in the render's 1894 columns
+  if (yFloor > yFoot - 1){
+    for (const [a, b] of SPANS){
+      const sx0 = a / 1894 * iw, sw = (b - a) / 1894 * iw;
+      const dx0 = xR + a / 1894 * wR, dw = (b - a) / 1894 * wR;
+      ctx.drawImage(im, sx0, ih - Math.max(2, ih * 0.03), sw, Math.max(2, ih * 0.03), dx0, yFoot - 1, dw, yFloor - yFoot + 1);
+    }
+  }
+  ctx.drawImage(im, xR, yFoot - hR, wR, hR);
+}
 function drawRec3(t){
   const mid = (REC3_L + REC3_R) / 2;
   if (Math.abs(cam.x - mid) > CULL_BAY) return;
@@ -8412,6 +8459,7 @@ async function loadPhotoSkin(){
     ph_tv70: 'tv_1970.png',           // the seventies set, cut out with its tube knocked through
     ph_prj93: 'proj_1993.png',        // the 1993 LCD data projector on its stand, photographed
     ph_g8: 'g8_1979.png',             // 1979: the nine labs, as models on one long plinth
+    ph_labs73: 'labs_1973.png',       // 1973: the first two labs, each on its own stone — the counter gives way to them
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
     ph_car79: 'car_1979.png',         // and the mail van that drives its platform as you scroll
     front_e4: 'front_e4.jpg',         // the white era's counter face: one door of Eldar's render, mid-door to mid-door
@@ -13587,6 +13635,7 @@ function frame(){
   drawShowroom(t);   // the room the last stretch is actually set in
   // recreations stand proud of the deeper era walls — they paint on top
   drawMapWall(t);
+  drawLabs73();
   drawRec3(t);
   drawRec93(t);
   drawRec2(t);
