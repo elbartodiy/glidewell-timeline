@@ -7130,7 +7130,14 @@ function drawPortalColumns(cols, yBase, floorOnly){
    silver uprights stay on the nearer portal plane and reveal the depth. */
 const HALL_PORTAL_Z = 992;
 const HALL_ROOM_Z = 1850;
-const HALL_PED_H = 300;      // the crown's pedestal, floor to the underside of its cap, in world units
+const HALL_PED_H = 340;      // the crown's pedestal, floor to the underside of its cap, in world units
+/* ONE DEPTH FOR THE PEDESTAL. It used to slide with the room plate (z 1850)
+   while being sized and seated like a near object — so it read as glued to the
+   floor picture and moved wrongly against everything else. It is an object in
+   the room now: it stands just behind the counters (z 420, like the 2019
+   pendant), its x, its size and its foot on the floor all taken at that one
+   depth, so it parallaxes as a thing standing there would. (Eldar, 2026-09-11.) */
+const HALL_PED_Z = 420;
 /* the three plates arrive together or the room is not drawn at all — there is
    no second version of this bay to fall back on */
 function hallReady(){ return PHOTO_TEX.ph_hall_wall && PHOTO_TEX.ph_hall_floor && PHOTO_TEX.ph_hall_plinth; }
@@ -7203,22 +7210,22 @@ function drawHallPortalColumns(floorOnly){
   if (floorOnly) ctx.restore();
 }
 
-/* The exhibit is horizontally riveted to the room plate, so it cannot skate
-   across the Hall floor. Its vertical scale remains foreground-sized: this is
-   the readable interactive object, while its x motion obeys the room's depth. */
+/* The exhibit stands in the room at its own depth (HALL_PED_Z): x, size and
+   foot all from one k, so it moves the way an object standing just behind the
+   counters moves — not with the room plate, not with the near plane. */
 function drawHallCrown(b){
   if (!hallReady() || !b.ped || !b.ped.spin) return false;
   const x = b.x + (b.ped.dx ?? -430);
   if (x <= HALL_FRAME_L || x >= HALL_FRAME_R) return false;
   const im = PHOTO_TEX.ph_hall_plinth;
-  const kx = k(HALL_ROOM_Z), ko = k(260);
-  const sx = px(x, kx), width = 320*ko*SS, height = width*(im.height/im.width);
+  const ko = k(HALL_PED_Z);
+  const sx = px(x, ko), width = 360*ko*SS, height = width*(im.height/im.width);
   /* A PEDESTAL, NOT A PAVING SLAB. The low stone put the crown at your shins;
      Eldar wants it up at the height of the door handles in the room behind.
      The slab stays as the cap, and stands on a shaft of the same stone that
      rises HALL_PED_H units off the floor. */
   const shaftH = HALL_PED_H * ko * SS, shaftW = width * 0.84;
-  const foot = py(1035, ko), top = foot - shaftH - height;
+  const foot = py(1080, ko), top = foot - shaftH - height;   // on the floor, at its own depth
   // One short contact shadow: the pedestal is planted, not floating.
   ctx.save();
   ctx.translate(sx,foot-3*ko*SS);ctx.scale(1,.075);
