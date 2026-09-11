@@ -13,6 +13,10 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 class RangeHandler(SimpleHTTPRequestHandler):
     def send_head(self):
+        # the repo root is the old research tool; the exhibition is what we verify
+        if self.path in ('/', '/index.html'):
+            self.send_response(302); self.send_header('Location', '/expo/expo.html')
+            self.end_headers(); return None
         path = self.translate_path(self.path)
         if os.path.isdir(path) or 'Range' not in self.headers:
             return super().send_head()
