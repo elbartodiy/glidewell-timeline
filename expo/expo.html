@@ -698,8 +698,8 @@ const SEGMENTS = [
    /* the YEARS of this stretch are set in a wide, heavy grotesk (Eldar: "очень
       широкий, тяжёлый, как Helvetica, но широкий — девяностые"); the titles and
       theses under them keep the era's face */
-   fontYear:'"Archivo Expanded","Arial Black",Impact,sans-serif',
-   yearScale: 1.22,   // the wide face sits lower than Verdana's figures did; it is set larger so the digits stand at the same height (Eldar: "не приплюснутые")
+   fontYear:'"Nineties Wide","Arial Black",Impact,sans-serif',
+   yearScale: 1.16,   // set a little larger than the other eras' figures so the wide digits stand at full height (Eldar: "не приплюснутые")
    ink:'226,232,238', lamp:'tube', dust:false,
    rail:'rgba(185,196,202,0.5)', railInk:'rgba(212,222,228,0.75)',
    light:{pool:'218,232,252', poolR:1250, poolA:0.13},
@@ -5742,8 +5742,10 @@ function drawDataRelay07(t){
   const sp = PED_SPRITES.crown2, kk2 = k(970);
   const cx2 = px(mid2, kk2), cy2 = py(400, kk2);
   const ws = 499 * kk2 * SS, hs = ws * sp.h / sp.w;
-  // where they leave: the cloud's own box
-  const sw0 = PC07.size, sh0 = PC07.size * 0.62, scy = PC07.footY - 34 * (PC07.size / 122) ;
+  /* where they leave: the cloud's whole width — the silhouette the points are
+     sampled from fills about four fifths of its box, so the box is opened out a
+     little for the points to leave from the cloud's very edges, not its middle */
+  const sw0 = PC07.size * 1.25, sh0 = PC07.size * 0.66, scy = PC07.footY - 34 * (PC07.size / 122) ;
   const head = p * 1.45;
   const leave = Math.min(1, p / 0.10);
   ctx.save();
@@ -5765,9 +5767,9 @@ function drawDataRelay07(t){
       continue;
     }
     const sx0 = PC07.cx + ux * sw0, sy0 = scy + uy * sh0;
-    // a shallow arc across the aisle: up a little, then down onto the screen
+    // straight across the aisle, like the 2018 relay: a beam of data, not a lob (Eldar)
     const x = sx0 + (ex - sx0) * q + (r2 - 0.5) * 6 * SS;
-    const y = sy0 + (ey - sy0) * q - Math.sin(q * Math.PI) * 60 * SS * (0.5 + r1) + (r1 - 0.5) * 4 * SS;
+    const y = sy0 + (ey - sy0) * q + (r1 - 0.5) * 4 * SS;
     const a = leave * (0.25 + 0.75 * Math.sin(q * Math.PI));
     ctx.fillStyle = `rgba(170,220,255,${a.toFixed(3)})`;
     ctx.beginPath(); ctx.arc(x, y, pr * (0.7 + 0.6 * r2), 0, 7); ctx.fill();
@@ -12162,8 +12164,9 @@ const PAGE_FONTS = [
   ['IBM Plex Sans', 'ibm_plex_sans_400.woff2', {}], ['IBM Plex Sans', 'ibm_plex_sans_600.woff2', {weight: '600'}], ['IBM Plex Sans', 'ibm_plex_sans_400i.woff2', {style: 'italic'}],
   ['Source Sans 3', 'source_sans_3_400.woff2', {}], ['Source Sans 3', 'source_sans_3_600.woff2', {weight: '600'}], ['Source Sans 3', 'source_sans_3_400i.woff2', {style: 'italic'}],
   ['Inter', 'inter_400.woff2', {}], ['Inter', 'inter_600.woff2', {weight: '600'}], ['Inter', 'inter_400i.woff2', {style: 'italic'}],
-  // the nineties' numerals on the wall: Archivo at its widest and heaviest — the extended black grotesk of that decade's posters
-  ['Archivo Expanded', 'archivo_expanded_800.woff2', {weight: '800'}],
+  // the nineties' numerals on the wall: Roboto Flex at its widest and heaviest — a Helvetica-like grotesk
+  // pulled out wide, with a plain '1' (Archivo's had a foot; Eldar sent it back)
+  ['Nineties Wide', 'roboto_flex_wide135.woff2', {weight: '900'}],
 ];
 function loadPageFonts(){
   if (!('FontFace' in window)) return;
