@@ -5842,11 +5842,11 @@ function drawAIRelay(t){
     ctx.fillStyle = `rgba(${V.rim},${a.toFixed(3)})`;
     ctx.beginPath(); ctx.arc(x, y, pr * (0.7 + 0.6 * r2), 0, 7); ctx.fill();
   }
-  // the screen takes the data: it brightens with what has landed, and settles
+  // the pendant takes the data behind its back: a halo around it, brightening with what has arrived, then settling
   const got = arrived / CROWN_PTS.length;
   if (got > 0.01){
     const settle = Math.max(0, 1 - Math.max(0, p - 0.72) / 0.28);
-    drawGlow(V.rim, ex, ey, 60 * kp * SS * (1 + got), 0.30 * got * (0.4 + 0.6 * settle));
+    drawGlow(V.rim, ex, ey, 110 * kp * SS * (1 + got), 0.22 * got * (0.4 + 0.6 * settle));
   }
   ctx.restore();
 }
@@ -13661,6 +13661,10 @@ function frame(){
   /* the factory is floor machinery standing BEHIND the counter line: drawn
      here, in the mid-ground, so the 2018 bay's own table can occlude it as it
      enters the frame — it used to ride in the table pass, over that table */
+  /* the 2018 data is laid BEFORE the factory: the stream flies in behind the
+     control pendant and disappears into it, rather than landing on its glass
+     (Eldar, 2026-09-11: "позади него, а не в экран") */
+  drawAIRelay(t);      // the one object that belongs to two beats at once
   drawFactory(t);
 
   drawEra1Bench();    // era 1, up to the cabinet: its own photographed counter
@@ -13705,8 +13709,7 @@ function frame(){
   drawPlane93();       // the freighter puts down on the model's own site — behind the building
   drawRec93Front(t);   // the model stands on its own plinth, on the floor
   drawFlybys();        // the two passes that never touch down
-  drawAIRelay(t);      // the one object that belongs to two beats at once
-  drawDataRelay07(t);  // and the first file, leaving 2007 for the digital revolution's screen
+  drawDataRelay07(t);  // the first file, leaving 2007 for the digital revolution's screen
 
 
   // lamps + dust + foreground — evenly spaced fixtures per era
