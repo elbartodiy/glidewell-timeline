@@ -6885,10 +6885,15 @@ function drawRec4(t){
    nosing, and a concealed strip washing the riser and a little of the floor.
    It belongs to every recreation, not to one, and each takes its own stone: the
    craft century's is warm, the later rooms are cool and pale. */
-function drawBayStep(L, R, tone){
-  const mid = (L + R) / 2;
-  const kFar = k(590), kStep = k(520), zTread = 1040;
+function drawBayStep(L, R, tone, zBack){
+  /* Where the block stands in depth. By default its back edge lands on the
+     line the bay's panel was cut at; a bay may instead set it on its own
+     pilasters' plane (zBack), so the block's back corners are riveted to the
+     columns' feet and the two cannot slide apart as the camera moves. */
+  const zB = zBack != null ? zBack : 590, zF = zBack != null ? zBack - 82 : 520;
+  const kFar = k(zB), kStep = k(zF), zTread = 1040;
   const yTreadBack = py(zTread, kFar), yNose = py(zTread, kStep), yStepFoot = py(1080, kStep);
+  const yBackFoot = py(1080, kFar);
   /* BOLTED TO THE BAY. Its ends were taken from wherever the counters happened
      to stop, which is a different plane and a different pair of numbers on each
      side — so the block slid against its own panel as the camera moved and came
@@ -6911,6 +6916,22 @@ function drawBayStep(L, R, tone){
   ctx.fillRect(nx0, yNose, nx1 - nx0, yStepFoot - yNose);
   ctx.fillStyle = T.nosing;
   ctx.fillRect(nx0, Math.round(yNose), nx1 - nx0, Math.max(1, 1.4 * SS));
+  /* THE BLOCK HAS ENDS. It was a tread and a riser and nothing else, so the
+     moment the bay stood off-centre and perspective opened one of its ends,
+     you looked into a hole where the side of the stone should be. Each end is
+     a quad from the back edge to the nose, in the riser's stone a shade darker
+     — the light strip does not turn the corner, so the end face is unlit. */
+  const eg = ctx.createLinearGradient(0, yTreadBack, 0, yStepFoot);
+  eg.addColorStop(0, T.riser[1]); eg.addColorStop(1, T.riser[2]);
+  const endFace = (xb, xn) => {
+    if (Math.abs(xn - xb) < 0.5) return;
+    ctx.fillStyle = eg;
+    ctx.beginPath(); ctx.moveTo(xb, yTreadBack); ctx.lineTo(xn, yNose);
+    ctx.lineTo(xn, yStepFoot); ctx.lineTo(xb, yBackFoot); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fill();
+  };
+  if (nx1 < bx1) endFace(bx1, nx1);   // the right end opens when the bay is left of centre
+  if (nx0 > bx0) endFace(bx0, nx0);   // the left end, when it is right of centre
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   const lg = ctx.createLinearGradient(0, yNose + 2 * SS, 0, yStepFoot);
@@ -7121,9 +7142,17 @@ function makeUsaSprite(){
 function drawRec3(t){
   const mid = (REC3_L + REC3_R) / 2;
   if (Math.abs(cam.x - mid) > CULL_BAY) return;
-  drawBayStep(REC3_L, REC3_R, STEP_TONE.steel);   // the mouth of the bay gets its block, in this room's own stone
+  /* THE PANEL AND ITS PILASTERS STAND ON THEIR OWN FLOOR. Their foot used to be
+     a screen line taken at the COUNTER's depth, which is why the block at the
+     mouth had to be placed where it was — to cover the gap that line opened —
+     and why block and columns slid against each other: they stood on
+     different planes. Now each reaches the floor at its own depth, and the
+     block is drawn LAST, on the pilasters' plane, so the columns stand on it
+     like pilasters on a plinth and its back corners cannot drift from their
+     feet. (Eldar, 2026-09-10: the columns cut into the floor; the block ran
+     out past them and showed an open end.) */
   const kk = k(728);
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const yBase = py(1080, kk);
   const x0 = px(REC3_L, kk), x1 = px(REC3_R, kk);
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#7d8894');
@@ -7141,18 +7170,21 @@ function drawRec3(t){
     const kc = k(722);
     const sxc = px(wxc, kc);
     const cw = 120 * kc * SS;
+    const yFootC = py(1080, kc);
     if (sxc < -cw || sxc > W + cw) continue;
     const cg = ctx.createLinearGradient(sxc - cw/2, 0, sxc + cw/2, 0);
     cg.addColorStop(0, '#23262b'); cg.addColorStop(0.45, '#5c636b'); cg.addColorStop(1, '#1b1e22');
     ctx.fillStyle = cg;
-    ctx.fillRect(sxc - cw/2, 0, cw, yBase);
+    ctx.fillRect(sxc - cw/2, 0, cw, yFootC);
     // brushed-steel trim
     ctx.fillStyle = 'rgba(198,210,220,0.5)';
-    ctx.fillRect(sxc - cw/2 + 2*SS, 0, 2.2*SS, yBase);
-    ctx.fillRect(sxc + cw/2 - 4.2*SS, 0, 2.2*SS, yBase);
+    ctx.fillRect(sxc - cw/2 + 2*SS, 0, 2.2*SS, yFootC);
+    ctx.fillRect(sxc + cw/2 - 4.2*SS, 0, 2.2*SS, yFootC);
     ctx.fillStyle = 'rgba(210,235,255,0.14)';
-    ctx.fillRect(sxc - cw/2 + 6*SS, 0, 3*SS, yBase);
+    ctx.fillRect(sxc - cw/2 + 6*SS, 0, 3*SS, yFootC);
   }
+  // the block at the mouth, on the pilasters' plane and under their feet
+  drawBayStep(REC3_L, REC3_R, STEP_TONE.steel, 722);
   /* (The seam render also has a white column beside the dark one. Eldar tried
      it here and took it out — the bay's two steel pilasters are the columns
      he wants; the white era begins on the wall, 2026-09-10.) */
