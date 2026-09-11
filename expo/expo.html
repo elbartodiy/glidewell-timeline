@@ -428,7 +428,11 @@ function applyCut(){
      centre once the cuts are in — not written by hand. */
   {
     const b26 = BEATS.find(b => b.y === '2026');
-    if (b26 && b26.ped) b26.ped.dx = (REC17_L + REC17_R) / 2 - b26.x;
+    if (b26 && b26.ped) b26.ped.dx = HALL_MID - b26.x;
+    /* and its sign hangs at the middle of the walnut run: the run begins 330
+       past the showroom's start and ends at SHOW_R, so its centre is a known
+       point — the lettering goes there, the beat and its counter stay put */
+    if (b26) b26.signDX = (SHOW_L + 330 + SHOW_R) / 2 - b26.x;
   }
   /* RHYTHM. Inside one era the years should stand at equal intervals: a
      corridor reads by its beat, and ours had a gap of 600 next to a gap of 1600
@@ -644,9 +648,15 @@ const REC17_L = bayStart(5) + 60, REC17_R = bayStart(5) + 3540;   // the glass h
    takes it from these two anchors. It was 3000 wide; Eldar halved it
    (2026-09-10): a doorway into the room, with the late wall standing on both
    sides of it, not a room replacing the wall. */
-const HALL_MID = (REC17_L + REC17_R) / 2;
-const HALL_FRAME_L = HALL_MID - 750;
-const HALL_FRAME_R = HALL_MID + 750;
+/* ONE RHYTHM: 2022 portal — air — 2023 panel — the same air — the doorway.
+   The doorway used to be centred in its cut, which left it twice as far from
+   the crossover as the crossover is from the portal; it now stands the same
+   distance past the 2023 panel as that panel stands past the 2022 portal.
+   (Eldar, 2026-09-10.) The doorway is 1500 wide. */
+const HALL_GAP = REC23_L - REC4_R;
+const HALL_FRAME_L = REC23_R + HALL_GAP;
+const HALL_FRAME_R = HALL_FRAME_L + 1500;
+const HALL_MID = (HALL_FRAME_L + HALL_FRAME_R) / 2;
 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
@@ -1232,7 +1242,7 @@ function nearestBeat(x){
 const BENCH_BREAKS = [1700, 3345, 7350, 9250, 13100, 16900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
-BENCH_BREAKS.push({x: (HALL_FRAME_L + HALL_FRAME_R) / 2, half: (HALL_FRAME_R - HALL_FRAME_L) / 2 + 60});   // the counter meets the Hall's metal frame
+BENCH_BREAKS.push({x: (HALL_FRAME_L + HALL_FRAME_R) / 2, half: (HALL_FRAME_R - HALL_FRAME_L) / 2 + 60 + 240});   // the counters stop two columns clear of the doorway's frame (Eldar)
 /* 1979: the counters stop short of the models' plinth, the same distance on
    both sides, so the block stands clear instead of being swallowed by them. */
 BENCH_BREAKS.push({x: (REC_L + REC_R) / 2, half: G8_W / 2 + 80});
@@ -1905,7 +1915,7 @@ function drawWall(){
     ctx.fillRect(sx0, 0, sx1 - sx0, yFoot);
     const worldLeft = cam.x - (W/2) / (k(seg.z0) * SS);
     let wx = wx0 + Math.floor((Math.min(worldLeft, ex0) - wx0) / tileW) * tileW;
-    const PURE_X = REC4_R;   // beyond the 2022 recreation: clean futurist white, no panels
+    const PURE_X = HALL_FRAME_L - 60;   // the panelled white wall of 2019 runs on to the doorway's column; the plain white is the showroom's, after the hall
     const swx = (PHOTO_SKIN && seg === SEGMENTS[0] && TEX.wall1_dark) ? wallSwitchX() : -1e9;
     /* A WALL IS A PLANE, NOT A CURTAIN. It used to be drawn from the top of the
        frame down to a line computed at the COUNTER's depth — so its foot
@@ -2050,7 +2060,8 @@ function drawFloor(){
     /* From the crossover onward the approach, Hall and TODAY share one pale
        polished floor. The Hall is no longer a full-frame photograph laid over
        it, so its reflections can continue through the neighbouring bays. */
-    [REC23_R, SEGMENTS[3].x1 + 900, T.rec.r2017],
+    [REC23_R, HALL_FRAME_L - 60, T.era[3]],
+    [HALL_FRAME_L - 60, SEGMENTS[3].x1 + 900, T.rec.r2017],
   ];
   for (const [a, b, tone] of spans){
     const segF = segAt((a + b) / 2);
@@ -2439,6 +2450,7 @@ function drawBeatText(b, focusAmt){
     // riveted to the wall: the numeral grows straight toward the camera,
     // it never slides left or right off its own spot
     let cx = px(b.x, k(b.pinZ || (wz - 8)));
+    if (b.signDX && hungBand(b.x)) cx += b.signDX * k(b.pinZ || (wz - 8)) * SS;   // the finale's word hangs mid-run
     const ts = (seg.tScale || 1) * (b._ys || 1) * (b.ysMul || 1);
     if (cx > -1200 && cx < W + 1200){
       ctx.save();
@@ -3038,7 +3050,7 @@ function initFilmRelays(){
     /* the LED wall hangs from the soffit's second downlight: the rig is four
        panels wide, and its first seam sits exactly under that fitting — the
        wall and the lights share one plane, so the two cannot slide apart */
-    {kind: 'vwall',  x: SHOW_L + 330 + 660 + 225, w: 900, top: -30, h: 850}
+    {kind: 'vwall',  x: REC4_L + 330 + 660 + 225, w: 900, top: -30, h: 850}   // between 2022 and 2023, where it always stood
   );
   if (DBG) console.log('film screens:', FILM_RELAYS.map(r => r.kind + '@' + (r.x | 0)).join(', '));
 }
@@ -6995,6 +7007,7 @@ function drawPortalColumns(cols, yBase, floorOnly){
    silver uprights stay on the nearer portal plane and reveal the depth. */
 const HALL_PORTAL_Z = 992;
 const HALL_ROOM_Z = 1850;
+const HALL_PED_H = 300;      // the crown's pedestal, floor to the underside of its cap, in world units
 /* the three plates arrive together or the room is not drawn at all — there is
    no second version of this bay to fall back on */
 function hallReady(){ return PHOTO_TEX.ph_hall_wall && PHOTO_TEX.ph_hall_floor && PHOTO_TEX.ph_hall_plinth; }
@@ -7077,14 +7090,32 @@ function drawHallCrown(b){
   const im = PHOTO_TEX.ph_hall_plinth;
   const kx = k(HALL_ROOM_Z), ko = k(260);
   const sx = px(x, kx), width = 320*ko*SS, height = width*(im.height/im.width);
-  const foot = py(1035, ko), top = foot-height;
-  // One short contact shadow: the plinth is planted, not floating.
+  /* A PEDESTAL, NOT A PAVING SLAB. The low stone put the crown at your shins;
+     Eldar wants it up at the height of the door handles in the room behind.
+     The slab stays as the cap, and stands on a shaft of the same stone that
+     rises HALL_PED_H units off the floor. */
+  const shaftH = HALL_PED_H * ko * SS, shaftW = width * 0.84;
+  const foot = py(1035, ko), top = foot - shaftH - height;
+  // One short contact shadow: the pedestal is planted, not floating.
   ctx.save();
   ctx.translate(sx,foot-3*ko*SS);ctx.scale(1,.075);
   const shadow = ctx.createRadialGradient(0,0,0,0,0,width*.54);
   shadow.addColorStop(0,'rgba(35,42,48,0.28)'); shadow.addColorStop(.65,'rgba(35,42,48,0.14)'); shadow.addColorStop(1,'rgba(35,42,48,0)');
   ctx.fillStyle=shadow;
   ctx.beginPath();ctx.arc(0,0,width*.55,0,Math.PI*2);ctx.fill();ctx.restore();
+  // the shaft: pale stone, lit from the left like the room, a shade darker under the cap
+  const sg = ctx.createLinearGradient(sx - shaftW/2, 0, sx + shaftW/2, 0);
+  sg.addColorStop(0, '#d9dbdc'); sg.addColorStop(0.35, '#eceeef'); sg.addColorStop(0.8, '#dcdedf'); sg.addColorStop(1, '#c4c7c9');
+  ctx.fillStyle = sg;
+  ctx.fillRect(sx - shaftW/2, foot - shaftH, shaftW, shaftH + 1);
+  const ug = ctx.createLinearGradient(0, foot - shaftH, 0, foot - shaftH + 26 * ko * SS);
+  ug.addColorStop(0, 'rgba(40,46,52,0.22)'); ug.addColorStop(1, 'rgba(40,46,52,0)');
+  ctx.fillStyle = ug;
+  ctx.fillRect(sx - shaftW/2, foot - shaftH, shaftW, 26 * ko * SS);
+  const fg = ctx.createLinearGradient(0, foot - 40 * ko * SS, 0, foot);
+  fg.addColorStop(0, 'rgba(40,46,52,0)'); fg.addColorStop(1, 'rgba(40,46,52,0.14)');
+  ctx.fillStyle = fg;
+  ctx.fillRect(sx - shaftW/2, foot - 40 * ko * SS, shaftW, 40 * ko * SS);
   ctx.drawImage(im,sx-width/2,top,width,height);
   const crownFoot=top+height*.16, crownWidth=width*.30;
   ctx.save();ctx.fillStyle='rgba(45,55,65,.14)';
@@ -12949,7 +12980,11 @@ function update(dt){
    stretch — the scanner on its plinth and the panel behind it — standing outside
    the room it opens, and put the change of language at an arbitrary coordinate
    860 units past the doorway instead of on it. */
-const SHOW_L = REC4_L, SHOW_R = WORLD_END + 300;
+/* THE SHOWROOM BEGINS AFTER THE HALL. It started at the 2022 portal, so the
+   walnut soffit ran over the crossover and the doorway too. Eldar (2026-09-10):
+   the wall of 2019 continues to the doorway's column and the wood is the
+   finale's alone — from the doorway's far column to the end. */
+const SHOW_L = HALL_FRAME_R + 60, SHOW_R = WORLD_END + 300;
 /* THE TIMBER BAND'S SCREEN EXTENT. The horizontal walnut strip that runs the
    length of the showroom — the years in this stretch are hung on it rather than
    merely set in front of it, so they need its actual screen coordinates. One
