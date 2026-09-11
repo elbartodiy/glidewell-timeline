@@ -257,7 +257,7 @@ const BEATS = [
    d:'An in-house plastic-injection division starts making boxes, articulators and supplies — the vertical-integration playbook.',
    wall:[], table:[]},
 
-  {x:18060, y:'2005',   // and 360 forward: 2001's line was running into this one
+  {x:18060, y:'2005',   // and 360 forward: 2001's line was running into this one,   capDX:-300
    t:'PRISMATIK', minor:true, yLift:190,
    th:'The front tooth, made rather than bought.',
    d:'January 2005: a full line of leucite-reinforced pressed ceramics under Glidewell’s own Prismatik brand — the esthetic front tooth made in-house rather than bought in. A year later Prismatik Dentalcraft becomes a manufacturing division of its own.',
@@ -699,6 +699,7 @@ const SEGMENTS = [
       широкий, тяжёлый, как Helvetica, но широкий — девяностые"); the titles and
       theses under them keep the era's face */
    fontYear:'"Archivo Expanded","Arial Black",Impact,sans-serif',
+   yearScale: 1.22,   // the wide face sits lower than Verdana's figures did; it is set larger so the digits stand at the same height (Eldar: "не приплюснутые")
    ink:'226,232,238', lamp:'tube', dust:false,
    rail:'rgba(185,196,202,0.5)', railInk:'rgba(212,222,228,0.75)',
    light:{pool:'218,232,252', poolR:1250, poolA:0.13},
@@ -2518,7 +2519,7 @@ function drawBeatText(b, focusAmt){
           ctx.fillText(txt, cx - OFF, py(yWorld - lift, kW));
         };
         const tsW = (seg.tScale || 1) * (b._ys || 1) * (b.ysMul || 1) * spread;
-        cast(b.y, eraFont(170 * tsW * kW * SS, '', seg.fontYear || seg.font), 140);
+        cast(b.y, eraFont(170 * (seg.yearScale || 1) * tsW * kW * SS, '', seg.fontYear || seg.font), 140);
         cast(sentence(b.t), eraFont(46 * (seg.tScale || 1) * spread * kW * SS, '', seg.font), tY + cd0);
         if (b.th && b._th && !b.thBelow){
           ctx.font = eraFont(30 * (seg.tScale || 1) * spread * kW * SS, 'italic', seg.font);
@@ -2536,7 +2537,7 @@ function drawBeatText(b, focusAmt){
         const r = drawHungYear(b, seg, cx, bandF, fScale, focusAmt, near);
         hitTopF = r.yBase - r.cap - 18 * SS;
       } else {
-        ctx.font = eraFont(170 * ts * fScale * kk * SS, '', seg.fontYear || seg.font);
+        ctx.font = eraFont(170 * (seg.yearScale || 1) * ts * fScale * kk * SS, '', seg.fontYear || seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
         const yBase9 = mixN(py(140 - lift, kk), H*0.16, focusAmt);
         letterRelief(0.55);                 // the cut edge, and nothing else on the glyph
@@ -2606,7 +2607,7 @@ function drawBeatText(b, focusAmt){
           const r = drawHungYear(b, seg, cx, band, fScale, focusAmt, near);
           hitTop = r.yBase - r.cap - 18 * SS;
         } else {
-          ctx.font = eraFont(170 * (seg.tScale||1) * (b._ys||1) * (b.ysMul||1) * fScale * kk * SS, '', seg.fontYear || seg.font);
+          ctx.font = eraFont(170 * (seg.yearScale || 1) * (seg.tScale||1) * (b._ys||1) * (b.ysMul||1) * fScale * kk * SS, '', seg.fontYear || seg.font);
           ctx.fillStyle = `rgba(${seg.ink},${0.5 + 0.45*near})`;
           // a numeral can be lifted clear of whatever stands under it on the panel
           const yBase8 = mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt);
@@ -5717,6 +5718,59 @@ function drawPendant(t){
   for (let i2 = 0; i2 < 12; i2++){
     ctx.fillStyle = 'rgba(150,156,162,0.7)';
     ctx.fillRect(px2 - 14 * S + (i2 % 6) * 10 * S, Y(PT + 92 + Math.floor(i2 / 6) * 12), 7 * S, 7 * S);
+  }
+  ctx.restore();
+}
+/* THE FIRST FILE TRAVELS TOO. Walk on from 2007 and the points of the case
+   that became data lift off the cloud on its pedestal — the cloud itself stays,
+   turning — and stream ahead of you into the browser window of the digital
+   revolution, landing on the scan that window is showing, each one flashing
+   as it arrives. Same idea as the 2018→2019 relay below: what crosses the room
+   is the file, never the object. (Eldar, 2026-09-10.) */
+let PC07 = null;
+function drawDataRelay07(t){
+  const b07 = BEATS.find(b => b.y === '2007' && b.ped && b.ped.points);
+  if (!b07 || !PC07) return;
+  const x07 = b07.x + (b07.ped.dx ?? -430), mid2 = (REC2_L + REC2_R) / 2;
+  if (cam.x <= x07 + 40 || cam.x > mid2 + 700) return;
+  const u = Math.max(0, Math.min(1, (cam.x - x07 - 40) / (mid2 - x07 - 40)));
+  const p = u * u * (3 - 2 * u);
+  if (p < 0.01) return;
+  crownGeometry();
+  if (!CROWN_PTS) return;
+  // where they land: the scan drawn in the window's dark screen
+  const sp = PED_SPRITES.crown2, kk2 = k(970);
+  const cx2 = px(mid2, kk2), cy2 = py(400, kk2);
+  const ws = 499 * kk2 * SS, hs = ws * sp.h / sp.w;
+  // where they leave: the cloud's own box
+  const sw0 = PC07.size, sh0 = PC07.size * 0.62, scy = PC07.footY - 34 * (PC07.size / 122) ;
+  const head = p * 1.45;
+  const leave = Math.min(1, p / 0.10);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const pr = Math.max(0.9, 1.4 * SS);
+  for (let i = 0; i < CROWN_PTS.length; i++){
+    const [ux, uy] = CROWN_PTS[i];
+    const h1 = Math.sin(i * 12.9898) * 43758.5453, h2 = Math.sin(i * 78.233) * 12345.678;
+    const r1 = h1 - Math.floor(h1), r2 = h2 - Math.floor(h2);
+    const q = head - r1 * 0.45;
+    if (q <= 0) continue;
+    const ex = cx2 + ux * ws, ey = cy2 + uy * hs;
+    if (q >= 1){
+      // arrived: it sits on the scan and flickers, small, until the walk has carried past
+      const settle = Math.max(0, 1 - Math.max(0, p - 0.8) / 0.2);
+      const fl = 0.35 + 0.65 * Math.abs(Math.sin(t * (7 + 5 * r2) + i));
+      ctx.fillStyle = `rgba(200,236,255,${(0.55 * fl * settle).toFixed(3)})`;
+      ctx.fillRect(ex - pr * 0.8, ey - pr * 0.8, pr * 1.6, pr * 1.6);
+      continue;
+    }
+    const sx0 = PC07.cx + ux * sw0, sy0 = scy + uy * sh0;
+    // a shallow arc across the aisle: up a little, then down onto the screen
+    const x = sx0 + (ex - sx0) * q + (r2 - 0.5) * 6 * SS;
+    const y = sy0 + (ey - sy0) * q - Math.sin(q * Math.PI) * 60 * SS * (0.5 + r1) + (r1 - 0.5) * 4 * SS;
+    const a = leave * (0.25 + 0.75 * Math.sin(q * Math.PI));
+    ctx.fillStyle = `rgba(170,220,255,${a.toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(x, y, pr * (0.7 + 0.6 * r2), 0, 7); ctx.fill();
   }
   ctx.restore();
 }
@@ -9511,7 +9565,9 @@ function drawPedestal(b, t, hero){
        and lighting the plinth from inside itself. The mesh is the crown's own
        lathe: its vertices, rotated, projected, and drawn as dots. No spotlights
        on it and no dome over it; nothing to look through. */
-    drawPointCloud(sx, yTop - 6 * kk * SS, ow * 1.35, t, hero);
+    const cloudFoot = yTop - 30 * kk * SS;          // lifted clear of the cap (Eldar: "чуть повыше")
+    drawPointCloud(sx, cloudFoot, ow * 1.35, t, hero);
+    PC07 = {cx: sx, footY: cloudFoot, size: ow * 1.35};   // the data relay leaves from here
   } else if (ped.spin){
     const footY3 = yTop - 3*kk*SS;
     // the shade it puts on the stone, sized to the crown's own footprint
@@ -13612,6 +13668,7 @@ function frame(){
   drawRec93Front(t);   // the model stands on its own plinth, on the floor
   drawFlybys();        // the two passes that never touch down
   drawAIRelay(t);      // the one object that belongs to two beats at once
+  drawDataRelay07(t);  // and the first file, leaving 2007 for the digital revolution's screen
 
 
   // lamps + dust + foreground — evenly spaced fixtures per era
