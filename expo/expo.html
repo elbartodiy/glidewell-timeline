@@ -7153,18 +7153,9 @@ function drawRec3(t){
     ctx.fillStyle = 'rgba(210,235,255,0.14)';
     ctx.fillRect(sxc - cw/2 + 6*SS, 0, 3*SS, yBase);
   }
-  /* THE THRESHOLD OF THE NINETIES. Eldar's render of this seam: the blue
-     panelled wall ends at a dark column, and a white one stands right beside
-     it with a slit of light between — the white era begins on that column,
-     not on a change of paint. The dark one is the bay's own pilaster; the white
-     one is cut out of the render and stands shoulder to shoulder with it. */
-  const cwh = PROP_SPRITES.ph_col_white;
-  if (cwh){
-    const kc = k(722), cw = 120 * kc * SS;
-    const sx = px(REC3_R, kc) + cw / 2;      // flush against the dark column's right edge
-    const ww = cw * 82 / 60;                 // the render's white column is a shade wider than its dark neighbour
-    if (sx + ww > 0 && sx < W) ctx.drawImage(spriteMip(cwh, ww, yBase), sx, 0, ww, yBase);
-  }
+  /* (The seam render also has a white column beside the dark one. Eldar tried
+     it here and took it out — the bay's two steel pilasters are the columns
+     he wants; the white era begins on the wall, 2026-09-10.) */
 }
 
 /* doorways between eras — near-camera portals you pass through */
@@ -8223,7 +8214,6 @@ async function loadPhotoSkin(){
     ph_plastic: 'plastic_2000.png',   // 2000: the tooth-shaped crown boxes the injection division made
     ph_tv70: 'tv_1970.png',           // the seventies set, cut out with its tube knocked through
     ph_prj93: 'proj_1993.png',        // the 1993 LCD data projector on its stand, photographed
-    ph_col_white: 'column_white.png', // the white column that opens the nineties, cut from the seam render
     ph_g8: 'g8_1979.png',             // 1979: the nine labs, as models on one long plinth
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
     ph_car79: 'car_1979.png',         // and the mail van that drives its platform as you scroll
