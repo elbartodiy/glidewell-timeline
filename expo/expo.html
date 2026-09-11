@@ -5740,7 +5740,7 @@ function drawPendant(t){
    revolution, landing on the scan that window is showing, each one flashing
    as it arrives. Same idea as the 2018→2019 relay below: what crosses the room
    is the file, never the object. (Eldar, 2026-09-10.) */
-let PC07 = null;
+let PC07 = null, CLOUD_BOX = null, PTS_BOX = null;
 function drawDataRelay07(t){
   const b07 = BEATS.find(b => b.y === '2007' && b.ped && b.ped.points);
   if (!b07 || !PC07) return;
@@ -5755,10 +5755,18 @@ function drawDataRelay07(t){
   const sp = PED_SPRITES.crown2, kk2 = k(970);
   const cx2 = px(mid2, kk2), cy2 = py(400, kk2);
   const ws = 499 * kk2 * SS, hs = ws * sp.h / sp.w;
-  /* where they leave: the cloud's whole width — the silhouette the points are
-     sampled from fills about four fifths of its box, so the box is opened out a
-     little for the points to leave from the cloud's very edges, not its middle */
-  const sw0 = PC07.size * 1.25, sh0 = PC07.size * 0.66, scy = PC07.footY - 34 * (PC07.size / 122) ;
+  /* where they leave: the cloud's ACTUAL box on screen, as the cloud itself
+     reported it this frame — full width and full height, so the stream is as
+     tall as the cloud and leaves from its edges (Eldar drew the gap). The
+     sampled silhouette is normalised to its own bounds first, so it fills
+     that box rather than four fifths of it. */
+  if (!PTS_BOX){
+    let a = 1e9, b = -1e9, c = 1e9, d = -1e9;
+    for (const [ux, uy] of CROWN_PTS){ if (ux < a) a = ux; if (ux > b) b = ux; if (uy < c) c = uy; if (uy > d) d = uy; }
+    PTS_BOX = {cx: (a + b) / 2, cy: (c + d) / 2, w: Math.max(1e-3, b - a), h: Math.max(1e-3, d - c)};
+  }
+  const CB = CLOUD_BOX || {x0: PC07.cx - PC07.size / 2, x1: PC07.cx + PC07.size / 2, y0: PC07.footY - PC07.size * 0.6, y1: PC07.footY};
+  const sw0 = (CB.x1 - CB.x0), sh0 = (CB.y1 - CB.y0), scx = (CB.x0 + CB.x1) / 2, scy = (CB.y0 + CB.y1) / 2;
   const head = p * 1.45;
   const leave = Math.min(1, p / 0.10);
   ctx.save();
@@ -5779,7 +5787,7 @@ function drawDataRelay07(t){
       ctx.fillRect(ex - pr * 0.8, ey - pr * 0.8, pr * 1.6, pr * 1.6);
       continue;
     }
-    const sx0 = PC07.cx + ux * sw0, sy0 = scy + uy * sh0;
+    const sx0 = scx + (ux - PTS_BOX.cx) / PTS_BOX.w * sw0, sy0 = scy + (uy - PTS_BOX.cy) / PTS_BOX.h * sh0;
     // straight across the aisle, like the 2018 relay: a beam of data, not a lob (Eldar)
     const x = sx0 + (ex - sx0) * q + (r2 - 0.5) * 6 * SS;
     const y = sy0 + (ey - sy0) * q + (r1 - 0.5) * 4 * SS;
@@ -9416,6 +9424,7 @@ function drawPointCloud(cx, footY, size, t, hero){
   ctx.globalCompositeOperation = 'lighter';
   drawGlow('140,210,255', cx, cy - 6 * scale, size * 1.15, 0.14 * bright);
   const dot = Math.max(0.9, 1.5 * SS);
+  let bx0 = 1e9, bx1 = -1e9, by0 = 1e9, by1 = -1e9;   // the cloud's own screen box, for the relay that leaves it
   for (let m = 0; m < M; m += 2){
     const ring = rings[m];
     for (let pI = 0; pI < P; pI += 2){
@@ -9425,11 +9434,13 @@ function drawPointCloud(cx, footY, size, t, hero){
       const yv = y * ct - zr * st, dz = y * st + zr * ct;
       const near = 0.5 + 0.5 * (dz / 62);        // -1..1 folded to 0..1
       const sxp = cx + xr * scale, syp = cy - yv * scale;
+      if (sxp < bx0) bx0 = sxp; if (sxp > bx1) bx1 = sxp; if (syp < by0) by0 = syp; if (syp > by1) by1 = syp;
       const r = dot * (0.62 + 0.75 * near);
       ctx.fillStyle = `rgba(${170 + 60 * near | 0},${215 + 30 * near | 0},255,${(bright * (0.16 + 0.5 * near)).toFixed(3)})`;
       ctx.fillRect(sxp - r / 2, syp - r / 2, r, r);
     }
   }
+  CLOUD_BOX = {x0: bx0, x1: bx1, y0: by0, y1: by1};
   ctx.restore();
   // the wash it throws down on its own stone
   ctx.save();
