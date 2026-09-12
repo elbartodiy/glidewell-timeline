@@ -6307,9 +6307,9 @@ function drawMapWall(t){
         const cw = wG * 0.135, ch = cw * car.h / car.w;
         const run = Math.max(0, 520 * kG * SS - cw / 2);
         const cxCar = px(mid, kG) + v2 * 2 * run;
-        /* the lip: 292 of the render's 846 rows down, where the ledge the van
-           drives on turns into the face of the plinth */
-        const yLip = yFootG - hG * 0.6548;
+        /* the lip: 289 of the render's 847 rows down, where the ledge the van
+           drives on turns into the face of the plinth (Mainbuilding.png, 2026-09-11) */
+        const yLip = yFootG - hG * 0.6588;
         if (cxCar > -cw && cxCar < W + cw){
           contactShadow(cxCar, yLip, cw * 0.86, 0.34);
           ctx.drawImage(spriteMip(car, cw, ch), cxCar - cw / 2, yLip - ch, cw, ch);
@@ -8416,7 +8416,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260910-seam1';
+const ASSET_V = '20260911-gmain';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
