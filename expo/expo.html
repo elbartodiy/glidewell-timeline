@@ -7176,6 +7176,32 @@ function drawRec17(t){
     ctx.beginPath(); ctx.rect(0, bh-1, W, floorH+2); ctx.clip();
     ctx.drawImage(fl, 0, srcY, fl.naturalWidth, srcH,
                   Math.round(roomCX-fw/2), Math.round(bh), Math.round(fw), Math.ceil(floorH));
+    /* NO SECOND WALL UNDER THE FLOOR LINE. The render's floor mirrors the room
+       sharply for the first rows under the skirting — a band of pilaster bases
+       upside down — and that band runs under the whole late stretch, because
+       the floor does. Beside the doorway there is no room above it, so it read
+       as columns showing through a slit between wall and floor; inside the
+       doorway it read as a strip of wall repeated below the real one (Eldar,
+       2026-09-14). The band is washed in the floor's own tone: fully where the
+       white wall stands over it, by half under the room, fading to nothing a
+       little way down so the sheen and the reflections keep the rest. */
+    {
+      const washH = srcH * 0.30 * fs;
+      const wash = ctx.createLinearGradient(0, bh, 0, bh + washH);
+      wash.addColorStop(0, 'rgba(214,208,207,1)'); wash.addColorStop(0.45, 'rgba(214,208,207,0.55)'); wash.addColorStop(1, 'rgba(214,208,207,0)');
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(-1, bh - 1, Math.max(0, bx0) + 1, washH + 2);
+      ctx.rect(Math.min(W, bx1), bh - 1, W - Math.min(W, bx1) + 1, washH + 2);
+      ctx.clip();
+      ctx.fillStyle = wash; ctx.fillRect(0, bh - 1, W, washH + 2);
+      ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath(); ctx.rect(Math.round(bx0), bh - 1, Math.round(bw), washH + 2); ctx.clip();
+      ctx.fillStyle = wash; ctx.fillRect(0, bh - 1, W, washH + 2);
+      ctx.restore();
+    }
     ctx.restore();
   }
   /* The room is fitted to the wall's height, never zoomed: its horizontal
