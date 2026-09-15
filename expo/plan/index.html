@@ -133,6 +133,7 @@
         <tr><td class="n">STUDY_PHOTOS_BY_TITLE · STUDY_MEDIA_BY_TITLE · BEAT_PEOPLE</td><td class="w"><b>Правая колонка</b>: экспонат, фотографии альбома, голоса, люди момента</td><td class="n">drawStudy · studyClipTile</td><td class="n">лист</td></tr>
         <tr><td class="n">STUDY_LINKS · STUDY_INLINE</td><td class="w"><b>Ссылки</b> наружу и <b>встроенные</b> объекты (коробка 2023, которая рассыпается)</td><td class="n">drawStudy</td><td class="n">лист</td></tr>
         <tr><td class="n">relays</td><td class="w"><b>Эстафеты</b> между заливами: самолёт 1989→1993, точки 2007→экран, точки 2018→подвес 2019</td><td class="n">PLANE93 · drawDataRelay07 · drawAIRelay</td><td class="n">по воздуху</td></tr>
+        <tr><td class="n">FLYBYS[{y, dir, cy}]</td><td class="w"><b>Самолёты через кадр</b>: реактивный пролёт у года 1998 (слева направо) и 2005 (справа налево), один раз за визит, со звуком</td><td class="n">drawFlybys</td><td class="n">640</td></tr>
       </tbody></table></div>
     <h2 style="margin-top:22px">Наполнение страниц · по данным</h2>
     <p class="sub">Что лежит за каждым годом сегодня. Тонкая статья — меньше 300 слов; пусто — 0.</p>
@@ -296,6 +297,9 @@ const RELAYS=(()=>{
     {nm:'точки 2018→подвес 2019', from:b('2018').x, to:P.world.factX},
   ];
 })();
+/* the two jets cross the whole frame at their year — a pass, not a relay:
+   drawn as an arrow the width of a screen around the beat, in its direction */
+const FLYBYS=(P.flybys||[]).filter(f=>f.x!=null).map(f=>({nm:'пролёт '+f.y+(f.dir>0?' →':' ←'),from:f.x-(f.dir>0?1300:-1300),to:f.x+(f.dir>0?1300:-1300),fly:true}));
 const hall=P.hall;
 
 /* ── the lanes, far to near ───────────────────────────────────────── */
@@ -339,6 +343,7 @@ const LANES=[
   {key:'proj', name:'Проектор', code:'PROJECTORS', col:'var(--rec)', pts:()=>P.projectors.map(p=>({x:p.x,z:p.throwZ,nm:'на панель z '+p.pz,box:true,w:900}))},
   {key:'figs', name:'Люди', code:'FIGURES', col:'var(--floor)', pts:()=>P.figures.map(f=>({x:f.x,z:f.z,ring:true}))},
   {key:'relay', name:'Эстафеты между заливами', code:'PLANE93 · drawDataRelay07 · drawAIRelay', col:'var(--rec)', arrows:()=>RELAYS},
+  {key:'fly', name:'Самолёты через кадр', code:'FLYBYS · drawFlybys · z 640', col:'var(--brass)', arrows:()=>FLYBYS},
 
   {group:'БЕЗ ГЛУБИНЫ · экранные слои',
    key:'ui', name:'Линейка века, подсказка, подписи, страницы', code:'drawProgress · drawBenchDescs · drawStudy', col:'var(--dim)', full:true},
@@ -359,6 +364,8 @@ function band(){
   mk('hRef','var(--glow)',.7);
   const mkr=el('marker',{id:'arr',viewBox:'0 0 8 8',refX:7,refY:4,markerWidth:6,markerHeight:6,orient:'auto'});
   mkr.appendChild(el('path',{d:'M0 0 L8 4 L0 8 z',fill:'var(--rec)'})); defs.appendChild(mkr);
+  const mkrB=el('marker',{id:'arrB',viewBox:'0 0 8 8',refX:7,refY:4,markerWidth:6,markerHeight:6,orient:'auto'});
+  mkrB.appendChild(el('path',{d:'M0 0 L8 4 L0 8 z',fill:'var(--brass)'})); defs.appendChild(mkrB);
   svg.appendChild(defs);
 
   for(const s of SECTORS){
@@ -429,12 +436,12 @@ function band(){
     }
     if(L.arrows){
       for(const r of L.arrows()){
-        const a=sx(r.from),c=sx(r.to),cy=top+h/2;
-        svg.appendChild(el('line',{x1:a,y1:cy,x2:c-6,y2:cy,stroke:L.col,'stroke-width':1.4,'marker-end':'url(#arr)'}));
+        const a=sx(r.from),c=sx(r.to),cy=top+h/2, dir=c>a?1:-1;
+        svg.appendChild(el('line',{x1:a,y1:cy,x2:c-6*dir,y2:cy,stroke:L.col,'stroke-width':1.4,'marker-end':L.key==='fly'?'url(#arrB)':'url(#arr)'}));
         svg.appendChild(el('circle',{cx:a,cy,r:2.6,fill:L.col}));
         svg.appendChild(txt({x:(a+c)/2,y:cy-5,'text-anchor':'middle',fill:L.col,style:MONO('500 8px')},r.nm));
       }
-      svg.appendChild(txt({x:VW-PADR+8,y:top+h/2+3.5,fill:'var(--dim-2)',style:MONO('400 8.5px')},'по воздуху'));
+      svg.appendChild(txt({x:VW-PADR+8,y:top+h/2+3.5,fill:'var(--dim-2)',style:MONO('400 8.5px')},L.key==='fly'?'640':'по воздуху'));
       continue;
     }
     if(L.bars) for(const b of L.bars()){
@@ -581,7 +588,7 @@ document.getElementById('legend').innerHTML=LANES.map(L=>{
   if(L.tall){ zl=[...new Set(L.bars().map(b=>b.z))].sort((a,b)=>a-b); ext='вся длина · стена, восемь панелей, комната зала'; }
   else if(L.cells){ zl=[0,K.benchDepth]; ext=CELLS.filter(c=>c.val).length+' прогонов, '+CELLS.filter(c=>!c.val).length+' разрывов'; }
   else if(L.full){ zl=null; ext='вся длина, экранный слой'; }
-  else if(L.arrows){ zl=null; ext=L.arrows().length+' эстафеты'; }
+  else if(L.arrows){ zl=L.key==='fly'?[640]:null; ext=L.arrows().length+(L.key==='fly'?' пролёта, по одному на визит':' эстафеты'); }
   else { const bs=L.bars?L.bars():[], ps=L.pts?L.pts():[];
     zl=[...new Set([...bs.map(b=>b.z),...ps.map(p=>p.z)])].sort((a,b)=>a-b);
     if(bs.length){ const total=bs.reduce((a,b)=>a+(b.x1-b.x0),0); ext=bs.length+' '+(bs.length===1?'участок':'участка')+' · '+fmt(total)+' единиц'; }
