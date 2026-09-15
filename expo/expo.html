@@ -14483,6 +14483,12 @@ async function boot(){
     { const b73 = BEATS.find(b => b.y === '1973'); if (b73) add(120, 'PLINTH', '1973 — the two labs on their stones', b73.x - L73_W/2, b73.x + L73_W/2); }
     add(120, 'PLINTH', '1979 — eight labs on one plinth', (REC_L + REC_R)/2 - G8_W/2, (REC_L + REC_R)/2 + G8_W/2);
     add(430, 'PLINTH', '1979 — the plant on its block, behind the eight', (REC_L + REC_R)/2 - 520, (REC_L + REC_R)/2 + 520);
+    if (typeof FLYBYS === 'object') for (const f of FLYBYS){
+      const b = BEATS.find(bt => bt.y === f.y);
+      if (b) add(640, 'AIR', 'jet flyby at ' + f.y + (f.dir > 0 ? ' — left to right' : ' — right to left') + ', once per visit', b.x - 1900, b.x + 1900);
+    }
+    { const b89 = BEATS.find(b => b.y === '1989'), b93 = BEATS.find(b => b.y === '1993');
+      if (b89 && b93) add(240, 'AIR', '1993 aeroplane — in from the left at 1989, away at 1993 (PLANE93)', b89.x, b93.x); }
     const pz = new Set(), fz = new Set();
     for (const b of BEATS)
       for (const it of [...(b.st||[]), ...(b.table||[]), ...(b.props||[]),
@@ -14575,6 +14581,13 @@ async function boot(){
         figures: FIGURES.map(f => ({x: f.x|0, z: f.z})),
         machines: [{name: 'near cell', x: (FACT_X - 300)|0, z: 190}, {name: 'far cell', x: (FACT_X + 250)|0, z: 232}],
         projectors: PROJECTORS.map(pr => ({x: (pr.x + (pr.mdx || 0))|0, pz: pr.pz, throwZ: pr.throwZ, src: pr.src})),
+        /* THREE AEROPLANES, NOT ONE. The 1993 model's aeroplane is a relay between
+           two bays; the jets of 1998 and 2005 cross the whole frame at their own
+           year, at z 640, once each visit (Eldar, 2026-09-15: "их же больше"). */
+        flybys: (typeof FLYBYS === 'object' ? FLYBYS : []).map(f => {
+          const b = BEATS.find(bt => bt.y === f.y);
+          return {y: f.y, x: b ? b.x|0 : null, dir: f.dir, cy: f.cy, z: 640, code: 'drawFlybys'};
+        }),
         relays: [
           {name: '1993 aeroplane', from: '1989 pedestal centre', to: '1993 centre', code: 'PLANE93'},
           {name: '2007 data', from: '2007 point cloud', to: 'Digital Revolution screen', code: 'drawDataRelay07'},
