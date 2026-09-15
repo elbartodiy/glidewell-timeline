@@ -340,7 +340,7 @@ const BEATS = [
    table:[], pyr:{dx:520, w:460},
    /* no pedestal: the scanner lives in the lit capsule on the panel */},
 
-  {x:26900, y:'2023', t:'THE CROSSOVER', tHide:true, tier:1, yLift:110, railBelow:true,   // its voice hangs in a strip under the article, not down the side   // the panel letters the title itself; the beat carries it so its page and its inline pieces can be keyed by it
+  {x:26900, y:'2023', t:'THE CROSSOVER', tHide:true, tier:1, yLift:110, yBand:true, railBelow:true,   // the numeral is centred in the empty band the panel publishes, not hung from yLift (Eldar, 2026-09-15)   // its voice hangs in a strip under the article, not down the side   // the panel letters the title itself; the beat carries it so its page and its inline pieces can be keyed by it
    pinZ:1000,   // the year rides the panel's own plane, so it stays centred on the white strip
    th:'',
    d:'March 2023: for the first time, more digital impressions arrive at Glidewell in a month than physical ones. Nothing announces it — it is simply the month the two lines cross, sixteen years after the first digital case came in.',
@@ -2635,7 +2635,18 @@ function drawBeatText(b, focusAmt){
           ctx.font = eraFont(170 * (seg.yearScale || 1) * (seg.tScale||1) * (b._ys||1) * (b.ysMul||1) * fScale * kk * SS, '', seg.fontYear || seg.font);
           ctx.fillStyle = `rgba(${seg.ink},${0.5 + 0.45*near})`;
           // a numeral can be lifted clear of whatever stands under it on the panel
-          const yBase8 = mixN(py(140 - (b.yLift || 0), kk), H*0.16, focusAmt);
+          const fb = b.yBand && BAY_FREE[b.y];
+          let yRest;
+          if (fb && fb.frame === state.time){
+            /* CENTRED IN THE BAND, NOT HUNG FROM A NUMBER. yLift put the
+               baseline at a world height and left the air above and below the
+               numeral unequal, which is what shows on a tall white panel. The
+               numeral's own ink is measured and its middle put on the middle of
+               the empty band the bay just published. */
+            const m8 = ctx.measureText(b.y);
+            yRest = (fb.top + fb.bot) / 2 + (m8.actualBoundingBoxAscent - m8.actualBoundingBoxDescent) / 2;
+          } else yRest = py(140 - (b.yLift || 0), kk);
+          const yBase8 = mixN(yRest, H*0.16, focusAmt);
           letterRelief(0.5);                // the cut edge, and nothing else on the glyph
           ctx.fillText(b.y, cx, yBase8);
           noShadow();
@@ -4991,6 +5002,15 @@ function drawRec23(t){
   try { ctx.letterSpacing = `${58*TRACK.title*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(32,42,54,0.96)';
   ctx.fillText('The crossover', cx, py(46, kk));
+  /* THE PANEL PUBLISHES ITS EMPTY BAND. The year over this bay is not drawn
+     here — it is the hall's own numeral, on the era's type plane — so the only
+     way it can sit centred in the white above the title is for the panel to
+     say, every frame, where that white ends. Measured off the title's own ink,
+     not off its baseline, so the band is what the eye actually sees.
+     (Eldar, 2026-09-15: "год должен быть в центре по вертикали внутри
+     свободного пространства".) */
+  BAY_FREE['2023'] = {top: 0, bot: py(46, kk) - ctx.measureText('The crossover').actualBoundingBoxAscent,
+                      frame: state.time};
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(60,70,84,0.95)';
@@ -5703,6 +5723,11 @@ let AI_ROBOT_X = null, PENDANT_AT = null, PENDANT_X = null;
 /* where a bay photograph put its plinth face this frame, by year — a title
    flagged tOnBay is lettered on it, so it is pinned to the picture, not the air */
 const BAY_LABELS = {};
+/* and where a bay photograph leaves an empty band above its own lettering, by
+   year — a year flagged yBand is centred in it instead of hanging from a world
+   coordinate. Stamped with the frame it was measured in: a bay that has been
+   culled must not hand last frame's band to the type. */
+const BAY_FREE = {};
 /* THE PENDANT IS ON THE NEAR PLANE. It was drawn inside the cell, at the cell's
    depth — inside the counters' own depth range — so as the camera moved it slid
    out from behind the counter's end and stood in front of it: behind the table
