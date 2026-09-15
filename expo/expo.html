@@ -9587,7 +9587,52 @@ function hallOwns(b){
   const x = b.x + (b.ped.dx ?? -430);
   return x > HALL_FRAME_L && x < HALL_FRAME_R;
 }
+/* THE RED CARPET. Laid on the hall's floor between the two counters, from well
+   behind the pedestal to just in front of it (Eldar's sketch, 2026-09-14): a
+   rectangle on the floor plane, so it narrows with depth like the floor does
+   and the pedestal stands on it. It is as wide as the counters' gap at the
+   bench line, so it meets their end faces there; drawn over the sheen, because
+   a carpet is matte, and under the pedestal and the counters. */
+const CARPET_Z_FAR = 900, CARPET_Z_NEAR = 300;
+function drawHallCarpet(){
+  if (Math.abs(cam.x - HALL_MID) > 4200 || !hallReady()) return;
+  const br = BENCH_BREAKS.find(v => Math.abs(v.x - HALL_MID) < 1);
+  /* wider than the gap: the counters' end faces recede with depth, and a carpet
+     cut exactly to the bench line stopped short of them everywhere else, with
+     a wedge of stone either side. Cut wider it runs under the counters at
+     every depth, and its far corners hide behind their backs. */
+  const half = (br ? br.half : 580) + 220;
+  const kF = k(CARPET_Z_FAR), kN = k(CARPET_Z_NEAR);
+  const yF = py(1080, kF), yN = py(1080, kN);
+  const xFL = px(HALL_MID - half, kF), xFR = px(HALL_MID + half, kF);
+  const xNL = px(HALL_MID - half, kN), xNR = px(HALL_MID + half, kN);
+  if (xNR < 0 || xNL > W) return;
+  ctx.save();
+  const shape = (inset) => {
+    // the same trapezoid, pulled in by a fraction of its own width at every edge
+    const dF = (xFR - xFL) * inset, dN = (xNR - xNL) * inset, dy = (yN - yF) * inset;
+    ctx.beginPath();
+    ctx.moveTo(xFL + dF, yF + dy); ctx.lineTo(xFR - dF, yF + dy);
+    ctx.lineTo(xNR - dN, yN - dy); ctx.lineTo(xNL + dN, yN - dy); ctx.closePath();
+  };
+  // the pile: deep crimson far off, warmer and lighter as it comes toward you, lit from the room
+  const g = ctx.createLinearGradient(0, yF, 0, yN);
+  g.addColorStop(0, '#7e1522'); g.addColorStop(0.55, '#961a2a'); g.addColorStop(1, '#a3202f');
+  shape(0); ctx.fillStyle = g; ctx.fill();
+  // the room's light falls across it from the left, the way it falls on the floor
+  const lx = ctx.createLinearGradient(xFL, 0, xFR, 0);
+  lx.addColorStop(0, 'rgba(255,225,200,0.16)'); lx.addColorStop(0.5, 'rgba(255,225,200,0.05)'); lx.addColorStop(1, 'rgba(40,10,15,0.14)');
+  shape(0); ctx.fillStyle = lx; ctx.fill();
+  // the binding: a darker border, and a hairline of lighter pile just inside it
+  ctx.lineJoin = 'miter';
+  shape(0.012); ctx.strokeStyle = 'rgba(70,10,18,0.55)'; ctx.lineWidth = Math.max(1, (xNR - xNL) * 0.018); ctx.stroke();
+  shape(0.028); ctx.strokeStyle = 'rgba(255,170,170,0.16)'; ctx.lineWidth = 1 * SS; ctx.stroke();
+  // it lies on the floor: a hair of shadow along its edges where the pile meets the stone
+  shape(0); ctx.strokeStyle = 'rgba(35,20,25,0.35)'; ctx.lineWidth = 1.2 * SS; ctx.stroke();
+  ctx.restore();
+}
 function drawHallExhibit(){
+  drawHallCarpet();
   for (const b of BEATS) if (b.ped && b.ped.spin && Math.abs(b.x + (b.ped.dx ?? -430) - cam.x) < 2600) drawHallCrown(b);
 }
 function drawPedestal(b, t, hero){
