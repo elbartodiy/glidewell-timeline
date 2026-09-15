@@ -14469,6 +14469,20 @@ async function boot(){
     add(232, 'MACHINE', 'machining cell — the far one', FACT_X + 250, FACT_X + 250);
     add(190, 'MACHINE', 'machining cell — the near one', FACT_X - 300, FACT_X - 300);
     add(-90, 'PLINTH', 'pedestals (hero objects)', -3450, WORLD_END + 300);
+    /* the layers the hall grew after the first plan was drawn (2026-08-25):
+       the glass hall's three plates and its pedestal, the carpet, the two model
+       plinths of the seventies, the stones of 1973 — all asked of the code */
+    if (typeof HALL_ROOM_Z === 'number'){
+      add(HALL_ROOM_Z, 'REC', 'glass hall — room plate (wall photograph, fitted to the wall height)', HALL_FRAME_L, HALL_FRAME_R);
+      add(HALL_ROOM_Z, 'FLOOR', 'glass hall — polished floor plate, under the whole late stretch', SHOW_L, SHOW_R);
+      add(HALL_PORTAL_Z, 'REC', 'glass hall — doorway uprights (steel)', HALL_FRAME_L, HALL_FRAME_R);
+      add(HALL_PED_Z, 'PLINTH', 'glass hall — the crown pedestal (an object in the room)', HALL_MID - 180, HALL_MID + 180);
+      if (typeof CARPET_Z_FAR === 'number')
+        add(CARPET_Z_NEAR, 'FLOOR', 'glass hall — red carpet, z ' + CARPET_Z_NEAR + ' … ' + CARPET_Z_FAR, HALL_MID - 800, HALL_MID + 800);
+    }
+    { const b73 = BEATS.find(b => b.y === '1973'); if (b73) add(120, 'PLINTH', '1973 — the two labs on their stones', b73.x - L73_W/2, b73.x + L73_W/2); }
+    add(120, 'PLINTH', '1979 — eight labs on one plinth', (REC_L + REC_R)/2 - G8_W/2, (REC_L + REC_R)/2 + G8_W/2);
+    add(430, 'PLINTH', '1979 — the plant on its block, behind the eight', (REC_L + REC_R)/2 - 520, (REC_L + REC_R)/2 + 520);
     const pz = new Set(), fz = new Set();
     for (const b of BEATS)
       for (const it of [...(b.st||[]), ...(b.table||[]), ...(b.props||[]),
@@ -14508,6 +14522,78 @@ async function boot(){
     console.log('FACT_X ' + (FACT_X|0) + ' · SHOW_L ' + (SHOW_L|0) + ' · SHOW_R ' + (SHOW_R|0) +
                 ' · WORLD_END ' + (WORLD_END|0) + ' · horizon ' + CFG.horizon + ' · F ' + CFG.F +
                 ' · benchY ' + CFG.benchY);
+    /* AND THE SAME PLAN AS DATA. The plan sheets (expo/plan/) are drawn from this
+       object, not transcribed by hand: qa/plan_dump.py loads ?plan=1 headless,
+       reads the JSON block appended below and writes expo/plan/plan-data.js.
+       Everything the drawing needs is asked of the running hall — depths, bays,
+       breaks, what each page holds — so the plan cannot disagree with the code. */
+    try {
+      const seenYear = new Set();
+      const beatsOut = BEATS.map(b => {
+        const sub = seenYear.has(b.y); seenYear.add(b.y);
+        const inHall = typeof hallOwns === 'function' && hallOwns(b);
+        return {
+          y: b.y, t: b.t || null, x: b.x|0, sub, sign: b.sign || null, fly: !!b.fly, era: segIdx(b.x) + 1,
+          ped: b.ped ? {dx: b.ped.dx ?? -430, obj: b.ped.obj || null, spin: !!b.ped.spin, points: !!b.ped.points,
+                        vitrine: !!b.ped.vitrine, big: !!b.ped.big, z: inHall ? HALL_PED_Z : -90,
+                        gapHalf: b.ped.gapHalf || 330} : null,
+          wall: (b.wall || []).map(w => ({img: w.img || null, dx: w.dx || 0, w: w.w || 0, cy: w.cy || 0,
+                                          cap: w.cap || null, pz: w.pz ?? null})),
+          onCounter: [...(b.st || []), ...(b.table || []), ...(b.props || [])]
+            .map(it => ({name: it.img || it.kind || it.title || '?', dx: it.dx || 0, lz: it.lz ?? null, w: it.w || 0})),
+          page: {
+            words: STUDY_MORE[b.x] ? STUDY_MORE[b.x].split(/\s+/).length : 0,
+            photos: ((typeof STUDY_PHOTOS_BY_TITLE === 'object' && STUDY_PHOTOS_BY_TITLE[b.t || b.y]) || []).length,
+            voices: (STUDY_MEDIA[b.x] || []).length,
+            people: ((typeof BEAT_PEOPLE === 'object' && BEAT_PEOPLE[b.y + '|' + (b.t || '')]) || []).length,
+            links: !!(typeof STUDY_LINKS === 'object' && STUDY_LINKS[b.t]),
+            inline: !!(typeof STUDY_INLINE === 'object' && STUDY_INLINE[b.t]),
+          },
+        };
+      });
+      const recList = [['1979', REC_L, REC_R, 610, 'portal'], ['1989', REC3_L, REC3_R, 728, 'portal'],
+        ['1993', REC93_L, REC93_R, 728, 'plinth'], ['Digital Revolution', REC2_L, REC2_R, 970, 'portal'],
+        ['2017 glass hall', REC17_L, REC17_R, 1000, 'room'], ['2018', REC18_L, REC18_R, 1000, 'bench'],
+        ['2022', REC4_L, REC4_R, 1000, 'plinth'], ['2023', REC23_L, REC23_R, 1000, 'bench']];
+      const PLAN = {
+        version: 2, date: new Date().toISOString().slice(0, 10), assetV: typeof ASSET_V === 'string' ? ASSET_V : null,
+        cam: {F: CFG.F, horizon: CFG.horizon, benchY: CFG.benchY, benchDepth: CFG.benchDepth, floor: 1080},
+        world: {x0: -3450, end: WORLD_END|0, showL: SHOW_L|0, showR: SHOW_R|0, factX: FACT_X|0},
+        eras: SEGMENTS.map((sg, i) => ({n: i + 1, x0: sg.x0|0, x1: sg.x1|0, z0: sg.z0, tz: sg.tz, wall: sg.wall,
+          font: sg.font, fontYear: sg.fontYear || null, lamp: sg.lamp, floorPlate: !!sg.floor, plateBench: !!sg.plateBench})),
+        recs: recList.map(([name, x0, x1, z, kind]) => ({name, x0: x0|0, x1: x1|0, z, kind})),
+        hall: {frameL: HALL_FRAME_L|0, frameR: HALL_FRAME_R|0, mid: HALL_MID|0, portalZ: HALL_PORTAL_Z,
+               roomZ: HALL_ROOM_Z, pedZ: HALL_PED_Z, pedH: HALL_PED_H,
+               carpet: typeof CARPET_Z_FAR === 'number' ? {zFar: CARPET_Z_FAR, zNear: CARPET_Z_NEAR} : null},
+        plates: PLATES.map(pl => ({x: pl.x|0, sw: pl.sw, layers: (pl.layers || []).map(Ly => ({img: Ly.img, z: Ly.z}))})),
+        cuts: (typeof CUTS === 'object' ? CUTS : []).map(c => ({x: (c.x ?? c.at ?? 0)|0, w: (c.w || 0)|0})),
+        breaks: BENCH_BREAKS.map(br => ({x: br.x|0, half: br.half|0, tag: br.l73 ? '1973 stones' : null})),
+        tables: TABLES.map(tb => ({x0: tb.x0|0, x1: tb.x1|0, era: SEGMENTS.indexOf(tb.seg) + 1})),
+        beats: beatsOut,
+        lamps: LIGHT_GRID.map(l => l.x|0).sort((a, b) => a - b), lampZ: 240,
+        chandeliers: {z: 520, x: [-1180, 560, 2140].map(g => ((SHOW_L + SHOW_R) / 2 + g)|0)},
+        figures: FIGURES.map(f => ({x: f.x|0, z: f.z})),
+        machines: [{name: 'near cell', x: (FACT_X - 300)|0, z: 190}, {name: 'far cell', x: (FACT_X + 250)|0, z: 232}],
+        projectors: PROJECTORS.map(pr => ({x: (pr.x + (pr.mdx || 0))|0, pz: pr.pz, throwZ: pr.throwZ, src: pr.src})),
+        relays: [
+          {name: '1993 aeroplane', from: '1989 pedestal centre', to: '1993 centre', code: 'PLANE93'},
+          {name: '2007 data', from: '2007 point cloud', to: 'Digital Revolution screen', code: 'drawDataRelay07'},
+          {name: '2018 data', from: '2018 vitrine', to: '2019 factory pendant', code: 'drawAIRelay'},
+        ],
+        props: {bench: PROPS.length, sheets: typeof SHEETS === 'object' ? SHEETS.length : 0, fg: typeof FG_ITEMS === 'object' ? FG_ITEMS.length : 0},
+        assets: {photo: Object.keys(PHOTO_TEX), sprites: Object.keys(PROP_SPRITES), embedded: typeof IMGS === 'object' ? Object.keys(IMGS) : [],
+                 fonts: typeof PAGE_FONTS === 'object' ? PAGE_FONTS.map(f => f[0]) : [],
+                 media: [...new Set(Object.values(STUDY_MEDIA_BY_TITLE).flat().map(m => m.src))]},
+        people: typeof PEOPLE === 'object' ? Object.keys(PEOPLE) : [],
+        layers: L,
+      };
+      window.PLAN_DUMP = PLAN;
+      const tag = document.createElement('script');
+      tag.type = 'application/json'; tag.id = 'plan-json';
+      tag.textContent = JSON.stringify(PLAN);
+      document.body.appendChild(tag);
+      console.log('PLAN_JSON ready · ' + tag.textContent.length + ' bytes');
+    } catch (e){ console.error('PLAN_JSON failed', e); }
   }
   requestAnimationFrame(loop);
   /* AND NOTHING HEAVY IS LEFT TO BE BUILT ON ARRIVAL. Several of the bays put
