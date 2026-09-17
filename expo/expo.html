@@ -9450,29 +9450,37 @@ function drawCrown3D(cx, footY, size, alpha){
   const L = [-0.48, 0.72, -0.50];                    // upper left, in front
   const Ln = Math.hypot(...L); L[0]/=Ln; L[1]/=Ln; L[2]/=Ln;
   const Hh = [L[0], L[1], L[2] - 1]; const Hn = Math.hypot(...Hh); Hh[0]/=Hn; Hh[1]/=Hn; Hh[2]/=Hn;
-  const quads = [];
+  const quads = [], backRuns = [];   // backRuns: runs of far faces along one meridian, one fill each
   for (let m = 0; m < M; m++){
     const m2 = (m + 1) % M;
+    let r0 = -1;                                        // where this meridian's run of far faces began
     for (let p = 0; p < P - 1; p++){
       const a = pts[m][p], b = pts[m2][p], c = pts[m2][p+1], d = pts[m][p+1];
-      // the normal, in view space
+      /* THE INSIDE IS PAINTED, BUT AS ONE SHAPE. Faces turned away used to be
+         skipped, and where the surface folds at the occlusal rim — the cusps
+         rise while the table dips — a visible band can test as "facing away"
+         by a hair. It was skipped, nothing stood behind it, and the room showed
+         through the crown (Eldar: "дырка видна сквозь коронку", 2026-09-11).
+         Painting each far face as its own filled and stroked quad fixed that
+         and cost seven milliseconds a frame at the hall — the far faces are
+         nearly half the mesh, and the walk through the last bays went heavy
+         with it (Eldar, 2026-09-16). They go into ONE path now, filled once,
+         flat, in the matte tone of the fitting surface: the shell is still
+         solid behind every slit, at the price of a single fill.
+         Which way a face turns is read off the SCREEN — the signed area of the
+         drawn quad — not off the normal before perspective: the two disagree
+         by a hair at grazing angles, and a hair is a slit a room shows through. */
+      const area = (a.x*b.y - b.x*a.y) + (b.x*c.y - c.x*b.y) + (c.x*d.y - d.x*c.y) + (d.x*a.y - a.x*d.y);
+      if (area <= 0){ if (r0 < 0) r0 = p; continue; }     // a far face: it joins this meridian's run
+      if (r0 >= 0){ backRuns.push(m, m2, r0, p - 1); r0 = -1; }
+      // the normal, in view space — worth computing only for a face that will be lit
       const ux = b.X - a.X, uy = b.Y - a.Y, uz = b.Z - a.Z;
       const vx = d.X - a.X, vy = d.Y - a.Y, vz = d.Z - a.Z;
       let nx = uy*vz - uz*vy, ny = uz*vx - ux*vz, nz = ux*vy - uy*vx;
       const nl = Math.hypot(nx, ny, nz) || 1; nx/=nl; ny/=nl; nz/=nl;
-      /* THE INSIDE IS DRAWN TOO. Faces turned away used to be skipped, and
-         where the surface folds at the occlusal rim — the cusps rise while the
-         table dips — a visible band can test as "facing away" by a hair. It
-         was skipped, nothing stood behind it, and the room showed through the
-         crown (Eldar: "дырка видна сквозь коронку", 2026-09-11). Now the far
-         faces are painted first, in the matte tone of the fitting surface, so
-         whatever slips through the glaze shows the inside of a crown. */
-      /* which way it faces is read off the SCREEN — the signed area of the
-         drawn quad — not off the normal before perspective: the two disagree
-         by a hair at grazing angles, and a hair is a slit a room shows through */
-      const area = (a.x*b.y - b.x*a.y) + (b.x*c.y - c.x*b.y) + (c.x*d.y - d.x*c.y) + (d.x*a.y - a.x*d.y);
-      quads.push({a, b, c, d, nx, ny, nz, p, back: area <= 0, z: (a.z + b.z + c.z + d.z) / 4});
+      quads.push({a, b, c, d, nx, ny, nz, p, z: (a.z + b.z + c.z + d.z) / 4});
     }
+    if (r0 >= 0) backRuns.push(m, m2, r0, P - 2);
   }
   /* AND IT IS CLOSED AT THE FOOT. The bottom ring was skipped — a crown IS open
      underneath — and with the inside culled away, tipping the piece toward the
@@ -9504,22 +9512,32 @@ function drawCrown3D(cx, footY, size, alpha){
       quads.push({cap: ring, nx, ny, nz, p: 0, z: zs / M});
     }
   }
-  quads.sort((q1, q2) => (q2.z + (q2.back ? 1e6 : 0)) - (q1.z + (q1.back ? 1e6 : 0)));   // the inside first, then far to near
+  quads.sort((q1, q2) => q2.z - q1.z);               // far first
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.lineJoin = 'round';
-  for (const q of quads){
-    if (q.back){
-      // the inside of the shell: matte, unglazed, in shadow
-      const lamB = Math.max(0, -(q.nx*L[0] + q.ny*L[1] + q.nz*L[2]));
-      const scB = 0.30 + 0.22 * lamB;
-      ctx.fillStyle = `rgb(${(214*scB)|0},${(203*scB)|0},${(191*scB)|0})`;
-      ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 0.9;
+  /* THE INSIDE OF THE SHELL: ONE FILL PER STRIP, NOT PER FACE. The far faces of
+     a lathe object fall in contiguous runs down each meridian, so a run is one
+     simple polygon — up one side of the strip and back down the other — and the
+     whole inside costs about a hundred fills instead of seventeen hundred. Flat
+     matte, no shading and no stroke: it is only ever glimpsed through the slits
+     the near faces leave. (Collecting every far face into ONE path and filling
+     that was tried first and is worse: a self-overlapping path that large costs
+     the rasteriser more than the small fills it replaces.) */
+  if (backRuns.length){
+    ctx.fillStyle = 'rgb(84,80,75)'; ctx.strokeStyle = 'rgb(84,80,75)'; ctx.lineWidth = 0.9;
+    for (let i = 0; i < backRuns.length; i += 4){
+      const A = pts[backRuns[i]], B = pts[backRuns[i+1]], p0 = backRuns[i+2], p1 = backRuns[i+3] + 1;
       ctx.beginPath();
-      ctx.moveTo(q.a.x, q.a.y); ctx.lineTo(q.b.x, q.b.y); ctx.lineTo(q.c.x, q.c.y); ctx.lineTo(q.d.x, q.d.y);
-      ctx.closePath(); ctx.fill(); ctx.stroke();
-      continue;
+      ctx.moveTo(A[p0].x, A[p0].y);
+      for (let q = p0 + 1; q <= p1; q++) ctx.lineTo(A[q].x, A[q].y);
+      for (let q = p1; q >= p0; q--) ctx.lineTo(B[q].x, B[q].y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();        // ~a hundred of them: it closes the seam between strips
     }
+  }
+  for (const q of quads){
     if (q.cap){
       // the fitting surface: matte, unglazed, and darker than the glaze around it
       const lamC = Math.max(0, q.nx*L[0] + q.ny*L[1] + q.nz*L[2]);
