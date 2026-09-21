@@ -2970,6 +2970,9 @@ function drawLines(lines, cx, y, lh){
    is still centred under the beat) but the words hang off one invisible left
    line, the one the first line already started on. */
 const CAP_COLW = () => 23 * SS * 700 / 26;   // the width b._d was wrapped to
+/* the same width in WORLD units at the counter's front plane, where one world
+   unit is one SS — the long block under a caption is cut to it */
+const CAP_HALF = 23 * 700 / 26 / 2;
 function drawCapLines(lines, cx, y, lh){
   const x = cx - CAP_COLW() / 2;
   const prev = ctx.textAlign;
@@ -8238,8 +8241,8 @@ const sheetOf = tb => {
     if (tb.seg !== SEGMENTS[sh.era]) continue;
     if (sh.era === 0 && onPlate(tb)) return null;          // the founding bay is a plate
     const L = PHOTO_TEX['bench_' + sh.key + '_cap_l'], M = PHOTO_TEX['bench_' + sh.key + '_mid'],
-          R = PHOTO_TEX['bench_' + sh.key + '_cap_r'];
-    if (L && M && R) return {sh, L, M, R};
+          R = PHOTO_TEX['bench_' + sh.key + '_cap_r'], G = PHOTO_TEX['bench_' + sh.key + '_long'];
+    if (L && M && R) return {sh, L, M, R, G: G || M};
     return null;
   }
   return null;
@@ -8264,13 +8267,39 @@ function drawSheetBenches(){
     };
     const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
     if (cx1 - cx0 < 1) continue;
-    const wL = wOf(L), wR = wOf(R), wM = wOf(M);
+    const wL = wOf(L), wR = wOf(R), wM = wOf(M), wG = wOf(S2.G);
     ctx.save();
     ctx.beginPath(); ctx.rect(cx0, yBack, cx1 - cx0, yFloor - yBack + 4); ctx.clip();
-    /* the middle first, then the two ends over it: the last tile may reach into
-       an end's ground, and the end must win */
-    let i = 0;
-    for (let a = tb.x0 + wL; a < tb.x1 - wR - 0.5 && i < 300; a += wM, i++) piece(M, a, wM);
+    /* THE LONG BLOCK GOES UNDER THE TEXT. A counter is four parts, not three
+       (Eldar, 2026-09-21): the two ends, the short block that carries the door
+       rhythm, and a long unbroken block the width of the caption — so that no
+       seam runs through a line of type. The captions' spans are laid out first
+       and the short block fills whatever is left between them. */
+    const spans = [];
+    for (const b of BEATS){
+      if (b.under || b.x < tb.x0 || b.x > tb.x1) continue;
+      const c = Math.min(Math.max(b.x + (b.capDX || 0), tb.x0 + 350), tb.x1 - 350);
+      const half = CAP_HALF + 40;
+      spans.push([Math.max(tb.x0 + wL, c - half), Math.min(tb.x1 - wR, c + half)]);
+    }
+    spans.sort((u, v) => u[0] - v[0]);
+    const lay = (im, w, a0, a1) => {
+      if (a1 - a0 < 0.5) return;
+      ctx.save();
+      const s0 = px(a0, kf), s1 = px(a1, kf);
+      ctx.beginPath(); ctx.rect(s0, yBack, Math.max(1, s1 - s0), yFloor - yBack + 4); ctx.clip();
+      let n2 = 0;
+      for (let a = a0; a < a1 - 0.2 && n2 < 400; a += w, n2++) piece(im, a, w);
+      ctx.restore();
+    };
+    let at = tb.x0 + wL;
+    for (const [s0, s1] of spans){
+      if (s1 <= at) continue;
+      lay(M, wM, at, Math.max(at, s0));
+      lay(S2.G, wG, Math.max(at, s0), s1);
+      at = s1;
+    }
+    lay(M, wM, at, tb.x1 - wR);
     piece(L, tb.x0, wL);
     piece(R, tb.x1 - wR, wR);
     ctx.restore();
@@ -8407,7 +8436,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260921-solid';
+const ASSET_V = '20260921-long';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -8485,16 +8514,20 @@ async function loadPhotoSkin(){
     ph_car79: 'car_1979.png',         // and the mail van that drives its platform as you scroll
     front_e4: 'front_e4.jpg',         // the white era's counter face: one door of Eldar's render, mid-door to mid-door
     bench_b1_cap_l: 'bench_b1_cap_l.png',   // 1907–1979 · Table_1: the left end return
-    bench_b1_mid:   'bench_b1_mid.png',     // one door of the middle, mid-door to mid-door
+    bench_b1_mid:   'bench_b1_mid.png',     // the short block — one door
+    bench_b1_long:  'bench_b1_long.png',    // the long block — unbroken, it goes under the caption
     bench_b1_cap_r: 'bench_b1_cap_r.png',   // the right end return
     bench_b2_cap_l: 'bench_b2_cap_l.png',   // 1980–1988 · Table_3: the left end return
-    bench_b2_mid:   'bench_b2_mid.png',     // one door of the middle, mid-door to mid-door
+    bench_b2_mid:   'bench_b2_mid.png',     // the short block — one door
+    bench_b2_long:  'bench_b2_long.png',    // the long block — unbroken, it goes under the caption
     bench_b2_cap_r: 'bench_b2_cap_r.png',   // the right end return
     bench_b3_cap_l: 'bench_b3_cap_l.png',   // 1993–2007 · Table_4: the left end return
-    bench_b3_mid:   'bench_b3_mid.png',     // one door of the middle, mid-door to mid-door
+    bench_b3_mid:   'bench_b3_mid.png',     // the short block — one door
+    bench_b3_long:  'bench_b3_long.png',    // the long block — unbroken, it goes under the caption
     bench_b3_cap_r: 'bench_b3_cap_r.png',   // the right end return
     bench_b4_cap_l: 'bench_b4_cap_l.png',   // 2009–2026 · Table_5: the left end return
-    bench_b4_mid:   'bench_b4_mid.png',     // one door of the middle, mid-door to mid-door
+    bench_b4_mid:   'bench_b4_mid.png',     // the short block — one door
+    bench_b4_long:  'bench_b4_long.png',    // the long block — unbroken, it goes under the caption
     bench_b4_cap_r: 'bench_b4_cap_r.png',   // the right end return
   };
   await Promise.all(Object.entries(want).map(([key, file]) => new Promise(res => {

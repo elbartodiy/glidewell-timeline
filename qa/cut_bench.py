@@ -107,12 +107,32 @@ def cut(key):
     mid = lambda i: (doors[i] + doors[i+1]) // 2
 
     P = {'cap_l': a[:, 0:mid(0)], 'mid': a[:, mid(2):mid(2) + pitch], 'cap_r': a[:, mid(len(doors) - 2):]}
+    # THE LONG BLOCK, for the bench captions to sit on. Eldar: a counter is four
+    # parts — an end, the short block, a long block the size of the text, and
+    # the other end — and the long one goes under the caption so no seam cuts
+    # through a line of type. Until the renders come back without door seams the
+    # long block is made from the widest seam-free span inside one door, which
+    # repeats into an unbroken panel of any length.
+    d0, d1 = doors[2], doors[3]
+    inner = band[d0:d1]
+    good = inner > (float(np.median(inner)) - 5)
+    best, run0, cur0 = (0, 0), 0, 0
+    for i, v in enumerate(good):
+        if v:
+            cur0 += 1
+            if cur0 > best[0]: best = (cur0, i - cur0 + 1)
+        else: cur0 = 0
+    w0 = max(24, int(best[0] * .6)); x0s = d0 + best[1] + (best[0] - w0) // 2
+    P['long'] = a[:, x0s:x0s + w0]
     L, R = edge_mean(P['mid'], 'L'), edge_mean(P['mid'], 'R')
     tgt = (L + R) / 2
     P['mid'] = ramp(P['mid'], tgt / L, tgt / R)
     one = np.ones(3, np.float32)
     P['cap_l'] = ramp(P['cap_l'], one, tgt / edge_mean(P['cap_l'], 'R'))
     P['cap_r'] = ramp(P['cap_r'], tgt / edge_mean(P['cap_r'], 'L'), one)
+    # the long block is flat by construction; hold it at the tile's own level
+    gl = tgt / ((edge_mean(P['long'], 'L') + edge_mean(P['long'], 'R')) / 2)
+    P['long'] = ramp(P['long'], gl, gl)
 
     U = (1080 - 700) / (H - lip)
     print(f'{key} <- {fn}:  {n}x{H}  кромка выпрямлена на строку {T:.0f}  дверей {len(doors)-1}  шаг {pitch} px')
