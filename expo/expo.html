@@ -14683,6 +14683,10 @@ async function boot(){
           {kind: 'machine',   z: 232, name: 'фрезерная ячейка · дальняя', x: (FACT_X + 250)|0, w: 520},
           ...PROJECTORS.map(pr => ({kind: 'projector', z: pr.throwZ, name: 'проектор 1993',
                                     x: (pr.x + (pr.mdx || 0))|0, w: 900})),
+          /* the finale table: a free-standing island at the very end, past the
+             last run of counter, with the four products laid on it. It is not
+             in TABLES and was on no list at all (Eldar asked what it was) */
+          {kind: 'table', z: 150, name: 'финальный стол · 900×240', x: FIN_X|0, w: 900},
         ],
         projectors: PROJECTORS.map(pr => ({x: (pr.x + (pr.mdx || 0))|0, pz: pr.pz, throwZ: pr.throwZ, src: pr.src})),
         /* THREE AEROPLANES, NOT ONE. The 1993 model's aeroplane is a relay between
