@@ -8281,17 +8281,28 @@ function drawSheetBenches(){
        not get a smaller counter — its doors are the same doors as everywhere
        else. The two ends simply overlap, and because the right piece begins on
        a door's own seam the overlap reads as one more seam in the row. */
-    const wL = wOf(L), wR = wOf(R);
+    const wL = wOf(L), wR = wOf(R), wG = wOf(G);
     ctx.save();
     ctx.beginPath(); ctx.rect(cx0, yBack, cx1 - cx0, yFloor - yBack + 4); ctx.clip();
-    /* the middle panel simply becomes as long as the run needs. It has no
-       doors, no handles and no joints in it, so its length is the one thing in
-       the counter that can change without anything showing — and it is drawn
-       ONCE, so there is no join anywhere between the two ends. */
-    const a0 = tb.x0 + wL, a1 = tb.x1 - wR;
-    if (a1 - a0 > 0.5) put(G, a0, a1 - a0);
-    put(L, tb.x0, wL);
+    /* THE MIDDLE PANEL REPEATS AT ITS OWN SIZE. It is the one part of the
+       counter that can be as long as a run needs, but it is a panel, not a
+       rubber sheet: stretched five times over it smeared the grain and pulled
+       its moulding apart. So it is laid a whole number of times, each within a
+       few per cent of the size it was drawn, and the joins fall on the panel's
+       own edges — the seams the render already has between one panel and the
+       next. Butted, not faded: an overlap fading through itself showed, and
+       a seam that the cabinet has anyway does not. */
+    const a0 = tb.x0 + wL, a1 = tb.x1 - wR, mid = a1 - a0;
+    if (mid > 0.5){
+      const n = Math.min(24, Math.max(1, Math.round(mid / wG))), w = mid / n;
+      for (let i = 0; i < n; i++) put(G, a0 + i * w, w);
+    }
+    /* the right end goes down first and the left end over it, so that when the
+       two overlap in a short run it is the INNER edges that are buried and both
+       of the counter's own corners stay: its worktop is mitred at each end and
+       burying one of them chopped the corner square (Eldar, 2026-09-21). */
     put(R, tb.x1 - wR, wR);
+    put(L, tb.x0, wL);
     ctx.restore();
   }
   ctx.restore();
