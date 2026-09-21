@@ -126,7 +126,7 @@ for (let i = 1; i < RUNS.length; i++){
 
 /* ---- the rows, top to bottom. h is the height each one is given. ---- */
 const ROWS = [
-  {key: 'wall',   name: 'Стена и панели',     sub: 'глубина z',            h: 92},
+  {key: 'wall',   name: 'Стена',               sub: 'какая и на какой глубине', h: 96},
   {key: 'photo',  name: 'Фото на стене',      sub: 'b.wall',               h: 34},
   {key: 'type',   name: 'Год и заголовок',    sub: 'плоскость текста',     h: 26},
   {key: 'light',  name: 'Свет',               sub: 'светильники · люстры', h: 30},
@@ -201,10 +201,29 @@ function draw(){
        own name, and inside the frame it lands on the wall bars themselves */
     for (const z of [550, 850, 1400, 1850])
       add(txt({x: VW - R - 4, y: zy(z) - 2.5, 'text-anchor': 'end', fill: '#9a9a9a', style: F(400, 7)}, 'z ' + z));
-    for (const e of eras){
-      const a = sx(e.x0), b = sx(e.x1v), yy = zy(e.z0);
+    /* EACH WALL NAMED, AND EVERY JOINT MARKED. The row used to say only how deep
+       a wall stood. Era 1 is two walls — the 1907 boards and the 1970
+       panelling, joined behind the tall cabinet — and era 4's panelling gives
+       way to plain white at the hall's column; neither showed (Eldar,
+       2026-09-21). */
+    const wr = (P.wallRuns || []).filter(w => w.x1 > X0 && w.x0 < X1);
+    for (const w of wr){
+      const a = sx(Math.max(w.x0, X0)), b = sx(Math.min(w.x1, X1)), yy = zy(w.z);
       add(el('rect', {x: a, y: yy - 3, width: b - a, height: 6, fill: FIL2, stroke: '#7d7d7d', 'stroke-width': .7}));
-      if (b - a > 60) add(txt({x: (a + b) / 2, y: yy - 6, 'text-anchor': 'middle', fill: INK, style: F(600, 8)}, 'стена z ' + e.z0));
+      const lbl = w.tex + ' · z ' + w.z;
+      if (b - a > lbl.length * 4.1 + 8)
+        add(txt({x: (a + b) / 2, y: yy - 6, 'text-anchor': 'middle', fill: INK, style: F(600, 8)}, lbl));
+      else if (b - a > 34)
+        add(txt({x: (a + b) / 2, y: yy - 6, 'text-anchor': 'middle', fill: INK, style: F(600, 8)}, 'z ' + w.z));
+    }
+    for (let i = 1; i < wr.length; i++){
+      const x = sx(wr[i].x0 <= X1 ? wr[i].x0 : X1);
+      add(el('line', {x1: x, y1: t + 4, x2: x, y2: t + h - 4, stroke: '#3a3a3a', 'stroke-width': 1, 'stroke-dasharray': '3 2'}));
+      if (!NAMES) continue;
+      const g = el('g', {transform: `translate(${x - 3},${t + h - 5}) rotate(-90)`});
+      g.appendChild(txt({x: 0, y: 0, fill: '#3a3a3a', style: F(600, 7)},
+        'СМЕНА СТЕНЫ ' + fmt(wr[i].x0) + (wr[i].hidden || wr[i - 1].hidden ? ' · ' + (wr[i].hidden || wr[i - 1].hidden) : '')));
+      add(g);
     }
     for (const r of P.recs.filter(v => v.kind !== 'room')){
       const a = sx(r.x0), b = sx(r.x1), yy = zy(r.z);
@@ -366,7 +385,8 @@ function draw(){
     add(el('line', {x1: L + 8, y1: NOTES_Y + 6 + i * 24, x2: L + IW - 8, y2: NOTES_Y + 6 + i * 24, stroke: '#d9d9d9', 'stroke-width': .7}));
   // a short legend in the left margin, beside the notes
   const lg = [['□', 'объект'], ['○', 'пьедестал'], ['▭', 'полоса — слой на своей глубине'],
-              ['⇢', 'поток между заливами'], ['┆', 'смена способа отрисовки стола']];
+              ['⇢', 'поток между заливами'], ['┆', 'смена стола, во всю высоту листа'],
+              ['╎', 'смена стены, внутри своей строки']];
   lg.forEach(([g, s], i) => {
     add(txt({x: 26, y: NOTES_Y + 16 + i * 14, fill: INK, style: F(600, 9)}, g));
     add(txt({x: 42, y: NOTES_Y + 16 + i * 14, fill: DIM, style: F(400, 8.5)}, s));

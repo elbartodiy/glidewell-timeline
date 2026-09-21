@@ -14611,6 +14611,34 @@ async function boot(){
         eras: SEGMENTS.map((sg, i) => ({n: i + 1, x0: sg.x0|0, x1: sg.x1|0, z0: sg.z0, tz: sg.tz, wall: sg.wall,
           font: sg.font, fontYear: sg.fontYear || null, lamp: sg.lamp, floorPlate: !!sg.floor, plateBench: !!sg.plateBench})),
         recs: recList.map(([name, x0, x1, z, kind]) => ({name, x0: x0|0, x1: x1|0, z, kind})),
+        /* WHERE THE WALL ITSELF CHANGES — not only its depth. Era 1 carries two
+           walls, the 1907 boards and the 1970 panelling, and the joint is made
+           behind the tall cabinet so it is never seen; era 4's panelling gives
+           way to plain white at the glass hall's own column. Every other change
+           happens across a recreation. (Eldar, 2026-09-21.) */
+        wallRuns: (() => {
+          const nm = t => t && t.src ? t.src.split('/').pop().split('?')[0].replace(/\.(webp|jpg|png)$/, '') : 'процедурная';
+          const out = [];
+          SEGMENTS.forEach((sg, i) => {
+            const tex = TEX[sg.wall], tile = (tex && (tex.worldW || tex.width * 0.9))|0;
+            if (i === 0 && PHOTO_SKIN && TEX.wall1_dark && TEX.wall1_dark !== tex){
+              const sw = wallSwitchX()|0;
+              out.push({era: 1, x0: sg.x0|0, x1: sw, z: sg.z0, tex: nm(TEX.wall1_dark),
+                        tile: (TEX.wall1_dark.worldW || TEX.wall1_dark.width * 0.9)|0, hidden: 'за высоким шкафом'});
+              out.push({era: 1, x0: sw, x1: sg.x1|0, z: sg.z0, tex: nm(tex), tile});
+              return;
+            }
+            if (i === SEGMENTS.length - 1 && typeof HALL_FRAME_L === 'number'){
+              const pure = (HALL_FRAME_L - 60)|0;
+              out.push({era: i + 1, x0: sg.x0|0, x1: pure, z: sg.z0, tex: nm(tex), tile});
+              out.push({era: i + 1, x0: pure, x1: sg.x1|0, z: sg.z0, tex: 'чистый белый',
+                        tile: 0, hidden: 'за колонной зала'});
+              return;
+            }
+            out.push({era: i + 1, x0: sg.x0|0, x1: sg.x1|0, z: sg.z0, tex: nm(tex), tile});
+          });
+          return out;
+        })(),
         hall: {frameL: HALL_FRAME_L|0, frameR: HALL_FRAME_R|0, mid: HALL_MID|0, portalZ: HALL_PORTAL_Z,
                roomZ: HALL_ROOM_Z, pedZ: HALL_PED_Z, pedH: HALL_PED_H,
                carpet: typeof CARPET_Z_FAR === 'number' ? {zFar: CARPET_Z_FAR, zNear: CARPET_Z_NEAR} : null},
