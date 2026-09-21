@@ -1,0 +1,374 @@
+<meta charset="utf-8">
+<title>Зал в плане · лист для печати</title>
+<style>
+  /* A SHEET TO WRITE ON. The screen plan is dark because the hall is dark; a
+     sheet of paper is the opposite problem — every gram of toner is a place a
+     pen cannot be read. So: white ground, pale grey bodies, hairline outlines,
+     and type dark enough to read but never black except where it must be.
+     One page, landscape. A3 and A4 share the same √2 proportion, so the one
+     drawing fits both: only the paper changes, the layout never does. */
+  html, body { margin: 0; background: #7a7d82; }
+  body { font: 400 13px/1.4 "Helvetica Neue", Arial, sans-serif; color: #222; }
+
+  .bar { position: sticky; top: 0; z-index: 5; display: flex; gap: 14px; align-items: center;
+         padding: 10px 16px; background: #23262b; color: #e8eaec; font-size: 13px; }
+  .bar b { font-weight: 600; letter-spacing: .04em; }
+  .bar label { display: flex; gap: 6px; align-items: center; color: #b9bfc6; }
+  .bar button { font: inherit; padding: 5px 14px; border: 0; border-radius: 3px;
+                background: #e8eaec; color: #23262b; cursor: pointer; }
+  .bar .hint { color: #8d949c; margin-left: auto; }
+
+  .page { width: 420mm; height: 297mm; margin: 18px auto; background: #fff;
+          box-shadow: 0 2px 18px rgba(0,0,0,.35); }
+  .page.a4 { width: 297mm; height: 210mm; }
+  svg { display: block; width: 100%; height: 100%; }
+
+  @media print {
+    html, body { background: #fff; }
+    .bar { display: none; }
+    /* .page.a4 is two classes and would otherwise beat this rule, keep its
+       210mm height against a 198mm printable area and spill onto a second page */
+    .page, .page.a4 { width: 100%; height: 100%; margin: 0; box-shadow: none; }
+  }
+</style>
+
+<div class="bar">
+  <b>Зал в плане · для печати</b>
+  <label><input type="radio" name="paper" value="a3" checked> A3</label>
+  <label><input type="radio" name="paper" value="a4"> A4</label>
+  <label><input type="checkbox" id="names" checked> подписи объектов</label>
+  <button id="go">Печать</button>
+  <span class="hint">альбомная ориентация · поля 6 мм · чёрно-белая печать</span>
+</div>
+
+<div class="page" id="page"></div>
+
+<style id="paper">@page { size: A3 landscape; margin: 6mm; }</style>
+<script src="plan-data.js"></script>
+<script>
+const P = window.PLAN;
+const NS = 'http://www.w3.org/2000/svg';
+const el = (n, a = {}) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
+const txt = (a, s) => { const t = el('text', a); t.textContent = s; return t; };
+const fmt = n => Math.round(n).toLocaleString('en-US').replace(/,/g, ' ');
+const F = (w, s) => `font:${w} ${s}px "Helvetica Neue",Arial,sans-serif`;
+
+/* THE INK. Five values and no more: anything finer is lost by a laser printer
+   and by a photocopy of the sheet afterwards. */
+const INK  = '#1a1a1a';     // type that must be read
+const DIM  = '#6b6b6b';     // type that supports it
+const RULE = '#b4b4b4';     // hairlines
+const FILL = '#e9e9e9';     // a body you may write over
+const FIL2 = '#d2d2d2';     // a body that must read as heavier
+
+const VW = 1414, VH = 1000;                 // √2, so A3 and A4 take the same drawing
+const L = 168, R = 30, T = 10, B = 10;      // margins inside the sheet
+const IW = VW - L - R;
+const X0 = P.world.x0, X1 = P.world.showR;
+const sx = v => L + (v - X0) / (X1 - X0) * IW;
+
+const ERA_NAME = {1: 'Аналоговый век', 2: 'Эпоха PFM', 3: 'Масштаб', 4: 'Шоурум'};
+const eras = P.eras.map(e => ({...e, name: ERA_NAME[e.n], x1v: Math.min(e.x1, X1)}));
+const pedX = b => b.x + (b.ped ? b.ped.dx : 0);
+const hall = P.hall;
+
+/* the counter, read as runs and gaps, each gap named by whatever stands in it */
+const CELLS = [];
+for (const e of eras){
+  const runs = P.tables.filter(t => t.era === e.n).sort((a, b) => a.x0 - b.x0);
+  let cur = e.x0;
+  const gapName = (a, b) => {
+    const ped = P.beats.find(bt => bt.ped && pedX(bt) > a && pedX(bt) < b);
+    if (ped) return 'пьедестал ' + ped.y;
+    const br = P.breaks.find(v => v.x > a && v.x < b && v.tag); if (br) return br.tag;
+    const rec = P.recs.find(r => r.x0 < b && r.x1 > a && r.kind !== 'bench'); if (rec) return 'рекреация ' + rec.name;
+    const pl = P.layers.find(v => v.layer === 'PLINTH' && v.x0 < b && v.x1 > a && v.z > 0);
+    if (pl) return pl.name.split(' — ')[0];
+    return null;
+  };
+  for (const r of runs){
+    if (r.x0 > cur + 40) CELLS.push({v: 0, x0: cur, x1: r.x0, why: gapName(cur, r.x0)});
+    CELLS.push({v: 1, x0: Math.max(cur, r.x0), x1: Math.min(r.x1, e.x1v)});
+    cur = r.x1;
+  }
+  if (cur < e.x1v - 40) CELLS.push({v: 0, x0: cur, x1: e.x1v, why: gapName(cur, e.x1v) || 'финал — стола нет'});
+}
+
+/* ---- the rows, top to bottom. h is the height each one is given. ---- */
+const ROWS = [
+  {key: 'wall',   name: 'Стена и панели',     sub: 'глубина z',            h: 92},
+  {key: 'photo',  name: 'Фото на стене',      sub: 'b.wall',               h: 34},
+  {key: 'type',   name: 'Год и заголовок',    sub: 'плоскость текста',     h: 26},
+  {key: 'light',  name: 'Свет',               sub: 'светильники · люстры', h: 30},
+  {key: 'floor',  name: 'Пол',                sub: 'отражение · ковёр',    h: 30},
+  {key: 'bench',  name: 'Стол',               sub: 'прогоны и разрывы',    h: 54},
+  {key: 'items',  name: 'Предметы на столе',  sub: 'b.st · b.table',       h: 34},
+  {key: 'models', name: 'Постаменты моделей', sub: '1973 · 1979',          h: 28},
+  {key: 'ped',    name: 'Пьедесталы героев',  sub: 'b.ped',                h: 40},
+  {key: 'obj',    name: 'Роботы · проектор',  sub: 'и люди в зале',        h: 30},
+  {key: 'air',    name: 'Самолёты и потоки',  sub: 'через кадр и между',   h: 38},
+  {key: 'page',   name: 'Страница чтения',    sub: 'слов · фото · голоса', h: 46},
+];
+const GAP = 9;
+const HEAD_Y = T + 44, HEAD_H = 30;          // the era band
+const BODY_Y = HEAD_Y + HEAD_H + 12;
+const AXIS_H = 44;
+const NOTES_H = 150;
+
+const svg = el('svg', {viewBox: `0 0 ${VW} ${VH}`, xmlns: NS});
+const add = n => svg.appendChild(n);
+
+/* the sheet is laid out once, then drawn — render() clears and repeats it, so
+   the layout lives in exactly one place and the toolbar can redraw at will */
+const bodyH = ROWS.reduce((a, r) => a + r.h, 0) + GAP * (ROWS.length - 1);
+const AXIS_Y = BODY_Y + bodyH + 14;
+const NOTES_Y = AXIS_Y + AXIS_H + 10;
+const rowTop = {};
+let NAMES = true;
+
+const RH = Object.fromEntries(ROWS.map(r => [r.key, r.h]));
+const bar = (key, x0, x1, pad, fill, stroke) => {
+  const t = rowTop[key], h = RH[key];
+  const a = sx(x0), b = sx(x1);
+  add(el('rect', {x: a, y: t + pad, width: Math.max(1.2, b - a), height: h - pad * 2,
+                  fill: fill || FILL, stroke: stroke || RULE, 'stroke-width': .7}));
+  return [a, b, t, h];
+};
+/* A NAME ONLY WHERE IT FITS. Four photographs hang within a few hundred units
+   of 1907 and their names printed straight over one another. Each row keeps the
+   right edge of the last name it printed; a name that would touch it is
+   dropped, and the mark stays — the sheet is for finding things, and an
+   unreadable stack of names finds nothing. */
+const lastLabel = {};
+const labelFits = (key, cx, s2) => {
+  const half = s2.length * 1.9 + 3;
+  if (lastLabel[key] != null && cx - half < lastLabel[key]) return false;
+  lastLabel[key] = cx + half; return true;
+};
+const mark = (key, x, kind, label) => {
+  const t = rowTop[key], h = RH[key], cx = sx(x), cy = t + h / 2;
+  if (kind === 'ring'){
+    add(el('circle', {cx, cy, r: 5, fill: '#fff', stroke: '#4a4a4a', 'stroke-width': 1.1}));
+    add(el('circle', {cx, cy, r: 1.6, fill: '#4a4a4a'}));
+  } else if (kind === 'sq'){
+    add(el('rect', {x: cx - 3.4, y: cy - 3.4, width: 6.8, height: 6.8, fill: FILL, stroke: '#6e6e6e', 'stroke-width': .8}));
+  } else {
+    add(el('circle', {cx, cy, r: 2.6, fill: '#fff', stroke: '#6e6e6e', 'stroke-width': .9}));
+  }
+  if (label && NAMES && labelFits(key, cx, label))
+    add(txt({x: cx, y: cy - 7, 'text-anchor': 'middle', fill: DIM, style: F(400, 7)}, label));
+};
+
+function draw(){
+  for (const k in lastLabel) delete lastLabel[k];
+  // ---- 1. the wall, at its depth; the panels and the hall's room behind it
+  {
+    const t = rowTop.wall, h = RH.wall, zTop = 1950, zBot = 460;
+    const zy = z => t + h - 8 - (z - zBot) / (zTop - zBot) * (h - 20);
+    for (const z of [550, 680, 850, 1000, 1400, 1850])
+      add(el('line', {x1: L, y1: zy(z), x2: VW - R, y2: zy(z), stroke: '#ededed', 'stroke-width': .5}));
+    /* the ladder is read off the RIGHT margin: on the left it lands on the row's
+       own name, and inside the frame it lands on the wall bars themselves */
+    for (const z of [550, 850, 1400, 1850])
+      add(txt({x: VW - R + 3, y: zy(z) + 2.4, fill: '#9a9a9a', style: F(400, 7)}, 'z ' + z));
+    for (const e of eras){
+      const a = sx(e.x0), b = sx(e.x1v), yy = zy(e.z0);
+      add(el('rect', {x: a, y: yy - 3, width: b - a, height: 6, fill: FIL2, stroke: '#7d7d7d', 'stroke-width': .7}));
+      if (b - a > 60) add(txt({x: (a + b) / 2, y: yy - 6, 'text-anchor': 'middle', fill: INK, style: F(600, 8)}, 'стена z ' + e.z0));
+    }
+    for (const r of P.recs.filter(v => v.kind !== 'room')){
+      const a = sx(r.x0), b = sx(r.x1), yy = zy(r.z);
+      add(el('rect', {x: a, y: yy - 3, width: Math.max(2, b - a), height: 6, fill: '#fff', stroke: '#4a4a4a', 'stroke-width': .9}));
+    }
+    const a = sx(hall.frameL), b = sx(hall.frameR);
+    add(el('rect', {x: a, y: zy(hall.roomZ) - 3, width: b - a, height: 6, fill: '#fff', stroke: '#2f2f2f', 'stroke-width': 1.1}));
+    if (NAMES) add(txt({x: (a + b) / 2, y: zy(hall.roomZ) - 6, 'text-anchor': 'middle', fill: INK, style: F(600, 8)}, 'комната зала 1850'));
+    add(el('rect', {x: a, y: zy(hall.portalZ) - 2.5, width: b - a, height: 5, fill: FIL2, stroke: '#7d7d7d', 'stroke-width': .7}));
+  }
+
+  // ---- 2. photographs on the wall, one mark each
+  for (const b of P.beats) for (const w of b.wall) mark('photo', b.x + w.dx, 'sq', w.img);
+
+  // ---- 3. the type plane
+  for (const e of eras){
+    const [a, b, t, h] = bar('type', e.x0, e.x1v, 7);
+    if (b - a > 70) add(txt({x: (a + b) / 2, y: t + h / 2 + 3, 'text-anchor': 'middle', fill: INK, style: F(600, 8)}, 'z ' + e.tz));
+  }
+
+  // ---- 4. light
+  for (const x of P.lamps) mark('light', x, 'dot');
+  for (const x of P.chandeliers.x) mark('light', x, 'ring', NAMES ? 'люстра' : '');
+
+  // ---- 5. floor, reflection, carpet
+  for (const e of eras) bar('floor', e.x0, e.x1v, 9, '#f6f6f6');
+  bar('floor', P.world.showL, P.world.showR, 9, FILL);
+  if (NAMES) add(txt({x: (sx(P.world.showL) + sx(P.world.showR)) / 2, y: rowTop.floor + 19, 'text-anchor': 'middle', fill: INK, style: F(600, 8)}, 'отражение + плита зала'));
+  if (hall.carpet){
+    const [a, b, t, h] = bar('floor', hall.mid - 800, hall.mid + 800, 6, '#bdbdbd', '#4a4a4a');
+    if (NAMES) add(txt({x: (a + b) / 2, y: t + h + 8, 'text-anchor': 'middle', fill: INK, style: F(600, 7.5)}, 'ковёр'));
+  }
+
+  // ---- 6. the counter: runs and gaps, each gap named
+  for (const c of CELLS){
+    const a = sx(c.x0), b = sx(c.x1), t = rowTop.bench, h = RH.bench;
+    if (c.v){
+      add(el('rect', {x: a, y: t + 8, width: Math.max(1, b - a), height: h - 16, fill: FILL, stroke: '#8a8a8a', 'stroke-width': .7}));
+    } else {
+      add(el('rect', {x: a, y: t + 4, width: Math.max(1.2, b - a), height: h - 8, fill: '#fff', stroke: '#4a4a4a', 'stroke-width': 1, 'stroke-dasharray': '3 2'}));
+      if (NAMES && c.why && b - a > 8){
+        const g = el('g', {transform: `translate(${(a + b) / 2},${t + h - 6}) rotate(-90)`});
+        g.appendChild(txt({x: 0, y: 3.2, fill: INK, style: F(500, 7.5)}, c.why));
+        add(g);
+      }
+    }
+  }
+
+  // ---- 7. objects standing on the counter
+  for (const b of P.beats) for (const it of b.onCounter) mark('items', b.x + it.dx, 'sq', it.name);
+
+  // ---- 8. the model plinths
+  for (const l of P.layers.filter(v => v.layer === 'PLINTH' && v.z > 0 && v.z < 500)){
+    const [a, b, t, h] = bar('models', l.x0, l.x1, 7, FIL2, '#7d7d7d');
+    if (NAMES && b - a > 26) add(txt({x: (a + b) / 2, y: t + h / 2 + 3, 'text-anchor': 'middle', fill: INK, style: F(600, 7.5)}, l.name.split(' — ')[0]));
+  }
+
+  // ---- 9. the hero pedestals
+  for (const b of P.beats.filter(v => v.ped)){
+    const x = pedX(b), t = rowTop.ped, h = RH.ped;
+    mark('ped', x, 'ring');
+    add(txt({x: sx(x), y: t + h - 5, 'text-anchor': 'middle', fill: INK, style: F(600, 8.5)}, b.y));
+    if (NAMES) add(txt({x: sx(x), y: t + 10, 'text-anchor': 'middle', fill: DIM, style: F(400, 7)},
+      (b.ped.obj || '—') + (b.ped.spin ? ' ⟳' : b.ped.points ? ' ·:·' : '')));
+  }
+
+  // ---- 10. machines, the projector, people
+  for (const m of P.machines) mark('obj', m.x, 'sq', NAMES ? 'робот' : '');
+  for (const p of P.projectors) mark('obj', p.x, 'sq', NAMES ? 'проектор' : '');
+  for (const f of P.figures) mark('obj', f.x, 'dot');
+
+  // ---- 11. aeroplanes through the frame, and the streams between bays
+  {
+    const t = rowTop.air, h = RH.air;
+    const arrow = (x0, x1, yy, label, heavy) => {
+      const a = sx(x0), b = sx(x1), d = b > a ? 1 : -1;
+      add(el('line', {x1: a, y1: yy, x2: b - 7 * d, y2: yy, stroke: heavy ? '#3a3a3a' : '#7d7d7d', 'stroke-width': heavy ? 1.2 : 1}));
+      add(el('polygon', {points: [b, yy, b - 8 * d, yy - 3.2, b - 8 * d, yy + 3.2].join(' '), fill: heavy ? '#3a3a3a' : '#7d7d7d'}));
+      add(el('circle', {cx: a, cy: yy, r: 2, fill: heavy ? '#3a3a3a' : '#7d7d7d'}));
+      if (NAMES) add(txt({x: (a + b) / 2, y: yy - 5, 'text-anchor': 'middle', fill: DIM, style: F(400, 7)}, label));
+    };
+    for (const f of (P.flybys || [])) if (f.x != null)
+      arrow(f.x - (f.dir > 0 ? 1300 : -1300), f.x + (f.dir > 0 ? 1300 : -1300), t + 12, 'самолёт ' + f.y, true);
+    const by = yy => P.beats.find(b => b.y === yy && !b.sub);
+    const dr = P.recs.find(r => r.name === 'Digital Revolution');
+    arrow(pedX(by('1989')), by('1993').x, t + 27, 'модель 1993', true);
+    arrow(by('2007').x, (dr.x0 + dr.x1) / 2, t + 27, 'точки 2007');
+    arrow(by('2018').x, P.world.factX, t + 27, 'точки 2018');
+  }
+
+  // ---- 12. how much each page holds
+  {
+    const t = rowTop.page, h = RH.page, base = t + h - 12;
+    const max = Math.max(...P.beats.map(b => b.page.words));
+    add(el('line', {x1: L, y1: base, x2: VW - R, y2: base, stroke: RULE, 'stroke-width': .7}));
+    for (const b of P.beats){
+      const hh = (b.page.words / max) * (h - 20);
+      add(el('rect', {x: sx(b.x) - 3.2, y: base - hh, width: 6.4, height: hh, fill: b.page.words < 300 ? '#fff' : FILL, stroke: '#6e6e6e', 'stroke-width': .7}));
+      const extra = (b.page.photos ? 'ф' : '') + (b.page.voices ? 'г' : '') + (b.page.people ? 'л' : '');
+      if (NAMES && extra) add(txt({x: sx(b.x), y: base + 8, 'text-anchor': 'middle', fill: DIM, style: F(400, 7)}, extra));
+    }
+    add(txt({x: L + 3, y: t + 10, fill: DIM, style: F(400, 7.5)}, 'высота — объём статьи, пустая колонка < 300 слов · ф фото · г голоса · л люди'));
+  }
+
+  // ---- the years
+  add(el('line', {x1: L, y1: AXIS_Y, x2: VW - R, y2: AXIS_Y, stroke: '#8a8a8a', 'stroke-width': .9}));
+  const taken = [-1e9, -1e9];
+  for (const b of P.beats){
+    const x = sx(b.x), half = b.y.length * 2.6 + 3;
+    add(el('line', {x1: x, y1: AXIS_Y, x2: x, y2: AXIS_Y + 5, stroke: '#8a8a8a', 'stroke-width': .8}));
+    let row = -1;
+    for (let r = 0; r < 2; r++) if (x - half > taken[r]){ row = r; break; }
+    if (row < 0) continue;
+    taken[row] = x + half;
+    const yy = AXIS_Y + (row ? 26 : 14);
+    add(el('line', {x1: x, y1: AXIS_Y, x2: x, y2: yy - 7, stroke: '#c4c4c4', 'stroke-width': .6}));
+    add(txt({x, y: yy, 'text-anchor': 'middle', fill: b.sub ? DIM : INK, style: F(b.sub ? 400 : 600, b.sub ? 8 : 9.5)}, b.sub ? '(' + b.y + ')' : b.y));
+  }
+  add(txt({x: L - 10, y: AXIS_Y + 14, 'text-anchor': 'end', fill: INK, style: F(600, 10)}, 'ГОДЫ'));
+  add(txt({x: L - 10, y: AXIS_Y + 26, 'text-anchor': 'end', fill: DIM, style: F(400, 8)}, 'в скобках — вторая карточка'));
+  {
+    const unit = 5000, bw = unit / (X1 - X0) * IW, yy = AXIS_Y + 38;
+    add(el('line', {x1: L, y1: yy, x2: L + bw, y2: yy, stroke: DIM, 'stroke-width': 1}));
+    for (const x of [L, L + bw]) add(el('line', {x1: x, y1: yy - 3, x2: x, y2: yy + 3, stroke: DIM, 'stroke-width': 1}));
+    add(txt({x: L + bw + 6, y: yy + 3, fill: DIM, style: F(500, 8.5)}, fmt(unit) + ' ЕДИНИЦ'));
+  }
+
+  // ---- the band to write in
+  add(el('rect', {x: L, y: NOTES_Y, width: IW, height: NOTES_H - 10, fill: '#fff', stroke: RULE, 'stroke-width': .8}));
+  add(txt({x: L + 8, y: NOTES_Y + 13, fill: INK, style: F(600, 10) + ';letter-spacing:.1em'}, 'ЗАМЕТКИ'));
+  for (let i = 1; i * 24 < NOTES_H - 22; i++)
+    add(el('line', {x1: L + 8, y1: NOTES_Y + 6 + i * 24, x2: L + IW - 8, y2: NOTES_Y + 6 + i * 24, stroke: '#d9d9d9', 'stroke-width': .7}));
+  // a short legend in the left margin, beside the notes
+  const lg = [['□', 'объект'], ['○', 'пьедестал'], ['▭', 'полоса — слой на своей глубине'], ['⇢', 'поток между заливами']];
+  lg.forEach(([g, s], i) => {
+    add(txt({x: 10, y: NOTES_Y + 16 + i * 14, fill: INK, style: F(600, 9)}, g));
+    add(txt({x: 26, y: NOTES_Y + 16 + i * 14, fill: DIM, style: F(400, 8.5)}, s));
+  });
+}
+
+function render(){
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  add(el('rect', {x: 0, y: 0, width: VW, height: VH, fill: '#fff'}));
+  // title + header are redrawn with the body
+  add(txt({x: L, y: T + 18, fill: INK, style: F(600, 17) + ';letter-spacing:.02em'}, 'GLIDEWELL · A CENTURY OF ACCESS — ЗАЛ В ПЛАНЕ'));
+  add(txt({x: L, y: T + 34, fill: DIM, style: F(400, 11)},
+    `по слоям и объектам · снято с кода ${P.date} · длина ${fmt(X1 - X0)} ед. · ${P.beats.length} карточек`));
+  add(txt({x: VW - R, y: T + 18, fill: DIM, style: F(400, 11), 'text-anchor': 'end'}, 'Пометки: ____________________'));
+  add(txt({x: VW - R, y: T + 34, fill: DIM, style: F(400, 11), 'text-anchor': 'end'}, 'Дата: __________   Кто: __________'));
+  add(el('line', {x1: L, y1: T + 40, x2: VW - R, y2: T + 40, stroke: RULE, 'stroke-width': .8}));
+  for (const e of eras){
+    const a = sx(e.x0), b = sx(e.x1v);
+    add(el('rect', {x: a, y: HEAD_Y, width: b - a, height: HEAD_H, fill: '#f4f4f4', stroke: RULE, 'stroke-width': .8}));
+    add(txt({x: (a + b) / 2, y: HEAD_Y + 13, 'text-anchor': 'middle', fill: INK, style: F(600, 11) + ';letter-spacing:.08em'}, 'ЭПОХА ' + e.n));
+    add(txt({x: (a + b) / 2, y: HEAD_Y + 25, 'text-anchor': 'middle', fill: DIM, style: F(400, 10)}, e.name));
+    add(el('line', {x1: a, y1: HEAD_Y, x2: a, y2: AXIS_Y, stroke: RULE, 'stroke-width': .8, 'stroke-dasharray': '4 4'}));
+  }
+  add(el('line', {x1: sx(X1), y1: HEAD_Y, x2: sx(X1), y2: AXIS_Y, stroke: RULE, 'stroke-width': .8, 'stroke-dasharray': '4 4'}));
+  for (const r of P.recs){
+    const a = sx(r.x0), b = sx(r.x1);
+    add(el('rect', {x: a, y: HEAD_Y + 4, width: Math.max(2, b - a), height: HEAD_H - 8, fill: FIL2, stroke: '#7d7d7d', 'stroke-width': .8}));
+    if (b - a > 26) add(txt({x: (a + b) / 2, y: HEAD_Y + 19, 'text-anchor': 'middle', fill: INK, style: F(600, 8.5)},
+      ({'Digital Revolution': 'DR', '2017 glass hall': 'ЗАЛ'})[r.name] || r.name));
+    for (const x of [r.x0, r.x1])
+      add(el('line', {x1: sx(x), y1: HEAD_Y + 4, x2: sx(x), y2: AXIS_Y, stroke: '#cfcfcf', 'stroke-width': .6, 'stroke-dasharray': '2 5'}));
+  }
+  for (const b of P.beats)                         // a guide at every card, faint enough to write over
+    add(el('line', {x1: sx(b.x), y1: BODY_Y, x2: sx(b.x), y2: AXIS_Y, stroke: '#efefef', 'stroke-width': .5}));
+  let yy = BODY_Y;
+  for (const r of ROWS){
+    rowTop[r.key] = yy;
+    add(el('rect', {x: L, y: yy, width: IW, height: r.h, fill: '#fcfcfc', stroke: RULE, 'stroke-width': .6}));
+    add(txt({x: L - 10, y: yy + (r.h > 40 ? 15 : r.h / 2 + 4), 'text-anchor': 'end', fill: INK, style: F(600, 11.5)}, r.name));
+    add(txt({x: L - 10, y: yy + (r.h > 40 ? 27 : r.h / 2 + 15), 'text-anchor': 'end', fill: DIM, style: F(400, 9)}, r.sub));
+    yy += r.h + GAP;
+  }
+  draw();
+}
+
+document.getElementById('page').appendChild(svg);
+render();
+
+document.getElementById('names').addEventListener('change', e => { NAMES = e.target.checked; render(); });
+document.getElementById('go').addEventListener('click', () => window.print());
+const setPaper = a4 => {
+  document.getElementById('page').classList.toggle('a4', a4);
+  document.getElementById('paper').textContent = `@page { size: ${a4 ? 'A4' : 'A3'} landscape; margin: 6mm; }`;
+};
+for (const r of document.querySelectorAll('input[name=paper]'))
+  r.addEventListener('change', e => setPaper(e.target.value === 'a4'));
+/* ?paper=a4 and ?names=0 so the sheet can be printed to a file without hands */
+{
+  const q = new URLSearchParams(location.search);
+  if (q.get('paper') === 'a4'){ document.querySelector('input[value=a4]').checked = true; setPaper(true); }
+  if (q.get('names') === '0'){ document.getElementById('names').checked = false; NAMES = false; render(); }
+}
+</script>
