@@ -2186,7 +2186,7 @@ function drawBench(){
   const yTopF = py(CFG.benchY, kf);
   for (const tb of TABLES){
     const seg = tb.seg, bx0 = tb.x0, bx1 = tb.x1;
-    if (onPlate(tb) || era1Photo(tb) || era2Photo(tb) || era4Photo(tb)) continue;   // a photograph takes this run over
+    if (onPlate(tb) || sheetOf(tb)) continue;   // a photograph takes this run over
     const sx0f = px(bx0, kf), sx1f = px(bx1, kf);
     if (sx1f <= 0 || sx0f >= W) continue;
     const tex = TEX[seg.bench];
@@ -8212,184 +8212,63 @@ const onPlate = tb => !!tb.seg.plateBench && tb.x0 >= PLATE_FROM - 40;
    the floor and is clipped there. Tiles alternate flipped, so the column that
    ends one is the column that begins the next and the join is continuous by
    construction — one drawImage a tile, nothing feathered, nothing clipped. */
-const AGE01 = {back: 1, front: 53, bot: 438};
-/* HOW BIG THE SHEET IS, IN THE WORLD — settled once, with the camera at rest,
-   and never again. I had been deriving it each frame from the counter's depth
-   ON SCREEN, and that is not proportional to k: at rest it is 74 px, in the
-   opening dolly 217. So the sheet's world width ran from 2124 units to 3252 as
-   the camera came in — the counter physically stretched, slid left, coarsened,
-   and the things standing on it, which do not move, ended up somewhere else
-   entirely. A counter is a counter whatever the lens is doing. */
-const AGE01_UROW = ((CFG.benchY - CFG.horizon) *
-  (1 - CFG.F / (CFG.F + CFG.benchDepth))) / (AGE01.front - AGE01.back);
-const era1Photo = tb => tb.seg === SEGMENTS[0] && !onPlate(tb) && !!PHOTO_TEX.bench_age01;
-function drawEra1Bench(){
-  const im = PHOTO_TEX.bench_age01;
-  if (!im) return;
-  const IW = im.naturalWidth || im.width, IH = im.naturalHeight || im.height;
-  const kf = k(0), wpp = kf * SS;
-  const wWorld = IW * AGE01_UROW;                    // fixed, in world units
-  const rowPx = AGE01_UROW * wpp;                    // one image row, on screen
-  const y0 = py(CFG.benchY, kf) - AGE01.front * rowPx;
-  const yTop = y0 + AGE01.back * rowPx, yBot = y0 + IH * rowPx;
-  const yFloor = py(1080, kf);
-  if (wWorld < 1) return;
-  ctx.save();
-  for (const tb of TABLES){
-    if (!era1Photo(tb)) continue;
-    const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
-    if (cx1 - cx0 < 1) continue;
-    ctx.save();
-    ctx.beginPath(); ctx.rect(cx0, yTop, cx1 - cx0, yFloor - yTop + 4); ctx.clip();
-    let i = 0;
-    for (let a = tb.x0; a < tb.x1 && i < 80; a += wWorld, i++){
-      const sa = px(a, kf), sWid = wWorld * wpp;   // grows with the room, not with the lens
-      if (sa > W || sa + sWid < 0) continue;
-      ctx.save();
-      if (i % 2){ ctx.translate(sa + sWid, 0); ctx.scale(-1, 1); ctx.translate(-sa, 0); }
-      ctx.drawImage(im, 0, AGE01.back, IW, IH - AGE01.back,
-                    sa, yTop, sWid + 0.7, yBot - yTop);
-      ctx.restore();
-    }
-    // the era's own light over the face, and the year rail on its edge
-    const seg = tb.seg, shF = seg.shade != null ? seg.shade : 1;
-    const yFront = py(CFG.benchY, kf);
-    const gr = ctx.createLinearGradient(0, yFront, 0, yFloor);
-    gr.addColorStop(0, 'rgba(255,220,160,0.10)');
-    gr.addColorStop(0.08, 'rgba(0,0,0,0)');
-    gr.addColorStop(1, `rgba(0,0,0,${0.62 * shF})`);
-    ctx.fillStyle = gr;
-    ctx.fillRect(cx0, yFront, cx1 - cx0, yFloor - yFront);
-    benchRail(seg, cx0, yFront, cx1 - cx0);
-    ctx.restore();
-    for (const [ex, edge] of [[tb.x0, 1], [tb.x1, -1]]){
-      const exs = px(ex, kf);
-      if (exs < -40 || exs > W + 40) continue;
-      ctx.fillStyle = 'rgba(0,0,0,0.30)';
-      ctx.fillRect(edge > 0 ? exs : exs - 5 * SS, yTop, 5 * SS, yFloor - yTop);
-      ctx.fillStyle = 'rgba(255,240,210,0.10)';
-      ctx.fillRect(edge > 0 ? exs + 5 * SS : exs - 7 * SS, yTop, 2 * SS, yFloor - yTop);
-    }
-  }
-  ctx.restore();
-}
 
-/* ERA 2'S COUNTER, 1980 TO THE 1989 RECREATION — cut from the office_1980
-   master-geometry render, between two real door joints so the mirror tiling
-   closes on itself.
-
-   The render's camera sits almost at worktop height: its top surface is a
-   28-row sliver where the hall's counter is 74 px deep. Fitting the whole sheet
-   by that sliver would have blown it up 2.6x and made the doors three times too
-   wide. So the two bands are fitted separately. The fronts — the part you
-   actually look at — keep the photograph's own aspect exactly, which is what
-   settles the sheet's width in the world; the worktop sliver is then stretched
-   on its own to the hall's real depth, and a stone slab takes a vertical
-   stretch without telling anyone. */
-const B80 = {front: 28, bot: 437};
-const B80_U = (1080 - CFG.benchY) / (B80.bot - B80.front);   // world units per image row
-const era2Photo = tb => tb.seg === SEGMENTS[1] && !!PHOTO_TEX.bench_1980;
-function drawEra2Bench(){
-  const im = PHOTO_TEX.bench_1980;
-  if (!im) return;
-  const IW = im.naturalWidth || im.width, IH = im.naturalHeight || im.height;
-  const kf = k(0), wpp = kf * SS;
-  const wWorld = IW * B80_U;                         // fixed, in world units
-  const yBack = py(CFG.benchY, k(CFG.benchDepth));   // where the hall's worktop starts
-  const yFront = py(CFG.benchY, kf), yFloor = py(1080, kf);
-  if (wWorld < 1 || yFloor - yBack < 2) return;
-  ctx.save();
-  for (const tb of TABLES){
-    if (!era2Photo(tb)) continue;
-    const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
-    if (cx1 - cx0 < 1) continue;
-    ctx.save();
-    ctx.beginPath(); ctx.rect(cx0, yBack, cx1 - cx0, yFloor - yBack + 4); ctx.clip();
-    let i = 0;
-    for (let a = tb.x0; a < tb.x1 && i < 80; a += wWorld, i++){
-      const sa = px(a, kf), sWid = wWorld * wpp;
-      if (sa > W || sa + sWid < 0) continue;
-      ctx.save();
-      if (i % 2){ ctx.translate(sa + sWid, 0); ctx.scale(-1, 1); ctx.translate(-sa, 0); }
-      ctx.drawImage(im, 0, 0, IW, B80.front,
-                    sa, yBack, sWid + 0.7, yFront - yBack);
-      ctx.drawImage(im, 0, B80.front, IW, IH - B80.front,
-                    sa, yFront, sWid + 0.7, yFloor - yFront);
-      ctx.restore();
-    }
-    const shF = tb.seg.shade != null ? tb.seg.shade : 1;
-    const gr = ctx.createLinearGradient(0, yFront, 0, yFloor);
-    gr.addColorStop(0, 'rgba(255,220,160,0.10)');
-    gr.addColorStop(0.08, 'rgba(0,0,0,0)');
-    gr.addColorStop(1, `rgba(0,0,0,${0.62 * shF})`);
-    ctx.fillStyle = gr;
-    ctx.fillRect(cx0, yFront, cx1 - cx0, yFloor - yFront);
-    benchRail(tb.seg, cx0, yFront, cx1 - cx0);
-    ctx.restore();
-    for (const [ex, edge] of [[tb.x0, 1], [tb.x1, -1]]){
-      const exs = px(ex, kf);
-      if (exs < -40 || exs > W + 40) continue;
-      ctx.fillStyle = 'rgba(0,0,0,0.30)';
-      ctx.fillRect(edge > 0 ? exs : exs - 5 * SS, yBack, 5 * SS, yFloor - yBack);
-      ctx.fillStyle = 'rgba(255,240,210,0.10)';
-      ctx.fillRect(edge > 0 ? exs + 5 * SS : exs - 7 * SS, yBack, 2 * SS, yFloor - yBack);
-    }
+/* EVERY COUNTER IN THE HALL, THE SAME WAY: LEFT END, MIDDLE, RIGHT END.
+   Eldar's rule (2026-09-21): a counter is three elements and nothing else — an
+   end return, one door repeated along the run, and the other end return. Each
+   era has its own render, made from the hall's own eye so the worktop is a
+   plane and not an edge, and each is cut into those three pieces. The sheet
+   carries the worktop and the face together, as one piece of furniture is
+   photographed; the band above `top` is the worktop and is stretched on its own
+   to the hall's real depth, the face below keeps the photograph's proportions.
+   The founding bay keeps its plate — that is the bench with Jim's tools on it,
+   and it is not to be touched. */
+const BENCH_SHEETS = [
+  {era: 0, key: 'b1', top: 46},   // 1907–1979 · dark boards, panelled doors, brass cups
+  {era: 1, key: 'b2', top: 50},   // 1980–1988 · walnut veneer, beige laminate
+  {era: 2, key: 'b3', top: 57},   // 1993–2007 · grey-green doors, speckled laminate
+  {era: 3, key: 'b4', top: 54},   // 2009–2026 · white lacquer, its diode light photographed
+];
+const sheetOf = tb => {
+  for (const sh of BENCH_SHEETS){
+    if (tb.seg !== SEGMENTS[sh.era]) continue;
+    if (sh.era === 0 && onPlate(tb)) return null;          // the founding bay is a plate
+    const L = PHOTO_TEX['bench_' + sh.key + '_cap_l'], M = PHOTO_TEX['bench_' + sh.key + '_mid'],
+          R = PHOTO_TEX['bench_' + sh.key + '_cap_r'];
+    if (L && M && R) return {sh, L, M, R};
+    return null;
   }
-  ctx.restore();
-}
-/* ERA 4'S COUNTER — ONE SHEET, AND A REAL END ON EACH RUN. Until now the white
-   era took a procedural worktop with a photographic face laid over it, and each
-   run was simply sliced off at the break with a drawn dark line for an end.
-   Eldar's render carries the worktop and the face together and has its own end
-   returns, so it is cut into three — the left return with half a door, one door
-   of middle, the right return — and a run is built end, middle repeated, end.
-   The light is in the picture: the diode line under the worktop lip and the one
-   in the toe recess are photographed, so nothing is painted over them.
-   (Eldar, 2026-09-21: "не надо ничего рисовать дополнительно поверх".) */
-const E4 = {top: 21, bot: 438};                          // rows: the worktop band, then the face
-const E4_U = (1080 - CFG.benchY) / (E4.bot - E4.top);    // world units per image row
-const era4Photo = tb => tb.seg === SEGMENTS[3] && !!PHOTO_TEX.bench_e4_mid &&
-                        !!PHOTO_TEX.bench_e4_cap_l && !!PHOTO_TEX.bench_e4_cap_r;
-function drawEra4Bench(){
-  const mid = PHOTO_TEX.bench_e4_mid, cl = PHOTO_TEX.bench_e4_cap_l, cr = PHOTO_TEX.bench_e4_cap_r;
-  if (!mid || !cl || !cr) return;
+  return null;
+};
+function drawSheetBenches(){
   const kf = k(0), wpp = kf * SS;
-  const yBack = py(CFG.benchY, k(CFG.benchDepth));   // where the hall's worktop starts
+  const yBack = py(CFG.benchY, k(CFG.benchDepth));
   const yFront = py(CFG.benchY, kf), yFloor = py(1080, kf);
   if (yFloor - yBack < 2) return;
-  const wOf = im => (im.naturalWidth || im.width) * E4_U;
-  /* the worktop band is stretched on its own to the hall's real depth, the face
-     keeps the photograph's proportions — the same split era 2 uses */
-  /* ONE SHEET, WORKTOP AND FACE TOGETHER. The counter is one piece of furniture
-     and it is photographed as one (Eldar, twice). The band above E4.top is the
-     worktop seen from above and is stretched on its own to the hall's real
-     depth; the face below keeps the photograph's proportions. That split is era
-     2's, and it is the only stretching there is — so the sheet must be made
-     from the hall's own eye: the worktop's visible depth is 74 world units
-     against a 380-unit face, one fifth of it, and a sheet that shows less has
-     to be blown up to fill it. */
-  const piece = (im, wx, wWorld) => {
-    const IW = im.naturalWidth || im.width, IH = im.naturalHeight || im.height;
-    const sa = px(wx, kf), sWid = wWorld * wpp;
-    if (sa > W || sa + sWid < 0) return;
-    ctx.drawImage(im, 0, 0, IW, E4.top, sa, yBack, sWid + 0.7, yFront - yBack);
-    ctx.drawImage(im, 0, E4.top, IW, IH - E4.top, sa, yFront, sWid + 0.7, yFloor - yFront);
-  };
-  const wL = wOf(cl), wR = wOf(cr), wM = wOf(mid);
   ctx.save();
   for (const tb of TABLES){
-    if (!era4Photo(tb)) continue;
+    const S2 = sheetOf(tb); if (!S2) continue;
+    const {sh, L, M, R} = S2;
+    const U = (1080 - CFG.benchY) / ((L.naturalHeight || L.height) - sh.top);   // world units per image row
+    const wOf = im => (im.naturalWidth || im.width) * U;
+    const piece = (im, wx, wWorld) => {
+      const IW = im.naturalWidth || im.width, IH = im.naturalHeight || im.height;
+      const sa = px(wx, kf), sWid = wWorld * wpp;
+      if (sa > W || sa + sWid < 0) return;
+      ctx.drawImage(im, 0, 0, IW, sh.top, sa, yBack, sWid + 0.7, yFront - yBack);
+      ctx.drawImage(im, 0, sh.top, IW, IH - sh.top, sa, yFront, sWid + 0.7, yFloor - yFront);
+    };
     const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
     if (cx1 - cx0 < 1) continue;
+    const wL = wOf(L), wR = wOf(R), wM = wOf(M);
     ctx.save();
     ctx.beginPath(); ctx.rect(cx0, yBack, cx1 - cx0, yFloor - yBack + 4); ctx.clip();
-    /* the middle first, then the two ends over it: the last tile of the middle
-       may reach into the end's ground, and the end must win */
-    const a0 = tb.x0 + wL, a1 = tb.x1 - wR;
+    /* the middle first, then the two ends over it: the last tile may reach into
+       an end's ground, and the end must win */
     let i = 0;
-    for (let a = a0; a < a1 - 0.5 && i < 200; a += wM, i++) piece(mid, a, wM);
-    piece(cl, tb.x0, wL);
-    piece(cr, tb.x1 - wR, wR);
+    for (let a = tb.x0 + wL; a < tb.x1 - wR - 0.5 && i < 300; a += wM, i++) piece(M, a, wM);
+    piece(L, tb.x0, wL);
+    piece(R, tb.x1 - wR, wR);
     ctx.restore();
   }
   ctx.restore();
@@ -8524,7 +8403,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260921-bench4';
+const ASSET_V = '20260921-benches';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -8601,11 +8480,18 @@ async function loadPhotoSkin(){
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
     ph_car79: 'car_1979.png',         // and the mail van that drives its platform as you scroll
     front_e4: 'front_e4.jpg',         // the white era's counter face: one door of Eldar's render, mid-door to mid-door
-    bench_e4_cap_l: 'bench_e4_cap_l.png',   // era 4's counter, cut from table_2026: the left return with half a door
-    bench_e4_mid:   'bench_e4_mid.png',     // one door of the middle, mid-door to mid-door
-    bench_e4_cap_r: 'bench_e4_cap_r.png',   // the right return
-    bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
-    bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
+    bench_b1_cap_l: 'bench_b1_cap_l.png',   // 1907–1979 · Table_1: the left end return
+    bench_b1_mid:   'bench_b1_mid.png',     // one door of the middle, mid-door to mid-door
+    bench_b1_cap_r: 'bench_b1_cap_r.png',   // the right end return
+    bench_b2_cap_l: 'bench_b2_cap_l.png',   // 1980–1988 · Table_3: the left end return
+    bench_b2_mid:   'bench_b2_mid.png',     // one door of the middle, mid-door to mid-door
+    bench_b2_cap_r: 'bench_b2_cap_r.png',   // the right end return
+    bench_b3_cap_l: 'bench_b3_cap_l.png',   // 1993–2007 · Table_4: the left end return
+    bench_b3_mid:   'bench_b3_mid.png',     // one door of the middle, mid-door to mid-door
+    bench_b3_cap_r: 'bench_b3_cap_r.png',   // the right end return
+    bench_b4_cap_l: 'bench_b4_cap_l.png',   // 2009–2026 · Table_5: the left end return
+    bench_b4_mid:   'bench_b4_mid.png',     // one door of the middle, mid-door to mid-door
+    bench_b4_cap_r: 'bench_b4_cap_r.png',   // the right end return
   };
   await Promise.all(Object.entries(want).map(([key, file]) => new Promise(res => {
     const im = new Image();
@@ -14012,20 +13898,16 @@ function frame(){
   drawAIRelay(t);      // the one object that belongs to two beats at once
   drawFactory(t);
 
-  drawEra1Bench();    // era 1, up to the cabinet: its own photographed counter
-  drawEra2Bench();    // era 2, 1980 to the 1989 recreation
   drawPlateBench(t);  // and the founding bay, cut from its centrepiece
   drawRec4Columns(null, true);  // the portal's columns stand ON that floor — over its sheen
   drawProjectors(t, 'machineGround');   // a machine standing on the floor goes behind the counters
   drawHallExhibit();  // the pedestal and its crown stand in the room, behind the counters (Eldar)
   drawBench();        // reflection can never be laid over the furniture
-  /* ERA 4'S FACE COMES AFTER THE HALL'S FLOOR. Laid with the other photographic
-     counters, before drawHallExhibit, it was painted UNDER the glass hall's red
-     carpet — and the carpet runs a couple of hundred units past the counter's
-     end on purpose, so it covered the end of the run and the joint showed
-     (Eldar, 2026-09-21: "стык виден стол под ковром"). Furniture goes over the
-     floor, always. */
-  drawEra4Bench();
+/* THE COUNTERS COME AFTER THE HALL'S FLOOR. Laid before it, the glass hall's
+     red carpet — which runs a couple of hundred units past the counter's end on
+     purpose — was painted over the end of the run and the joint showed (Eldar,
+     2026-09-21). Furniture goes over the floor, always. */
+  drawSheetBenches();
   drawShowroomLight(t);   // light coming OUT of the furniture, so after it
   drawProjectors(t, 'machine');   // it stands on the bench, so it comes after it
 
@@ -14696,10 +14578,11 @@ async function boot(){
            filled outward in strips, and the procedural texture — whose face in
            the white era is a photographic tile. */
         tables: TABLES.map(tb => {
-          const how = onPlate(tb) ? 'plate' : era1Photo(tb) ? 'sheet' : era2Photo(tb) ? 'sheet' : 'proc';
+          const sh = sheetOf(tb);
+          const how = onPlate(tb) ? 'plate' : sh ? 'sheet' : 'proc';
           const src = t2 => t2 && t2.src ? 'фото ' + t2.src.split('/').pop().split('?')[0] : 'процедурная';
           return {x0: tb.x0|0, x1: tb.x1|0, era: SEGMENTS.indexOf(tb.seg) + 1, how,
-                  sheet: onPlate(tb) ? 'plate_bay_front' : era1Photo(tb) ? 'bench_age01' : era2Photo(tb) ? 'bench_1980' : null,
+                  sheet: onPlate(tb) ? 'plate_bay_front' : sh ? 'bench_' + sh.sh.key : null,
                   top: how === 'proc' ? src(TEX[tb.seg.bench]) : null,
                   face: how === 'proc' ? src(TEX[tb.seg.front]) : null};
         }),
