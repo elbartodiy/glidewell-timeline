@@ -8223,20 +8223,6 @@ const onPlate = tb => !!tb.seg.plateBench && tb.x0 >= PLATE_FROM - 40;
    to the hall's real depth, the face below keeps the photograph's proportions.
    The founding bay keeps its plate — that is the bench with Jim's tools on it,
    and it is not to be touched. */
-/* THE MITRED ENDS ARE OFF, and it is not because they are wrong. Eldar makes
-   them on purpose: over the last forty columns the worktop's top surface
-   closes to nothing and the counter turns its corner. But a mitre closes ACROSS
-   THE COUNTER'S DEPTH, and this hall's counter is 340 units deep seen as 74
-   units of visible top — while these renders carry 22. Laid in the front plane
-   at its own 30 units of width the return therefore closes over more x than it
-   has y to close, and it reads as a notch bitten out of the corner rather than
-   as the counter ending. It cannot be laid in the depth plane either: the
-   render's own return is drawn for a camera standing at worktop height, so its
-   far corner comes DOWN, where this hall looks down on the counter and needs it
-   to close UP and toward the centre. One camera height fixes both — the same
-   one that would give the 19.5% of visible top. Until then a run ends on a
-   door, a vertical cut inside a break. */
-const BENCH_ENDS = false;
 const BENCH_SHEETS = [
   /* `top` is the row in the sheet where the worktop's TOP SURFACE ends — the lit
      arris along the front of the slab — and it is the row the hall stands at
@@ -8255,14 +8241,21 @@ const sheetOf = tb => {
   for (const sh of BENCH_SHEETS){
     if (tb.seg !== SEGMENTS[sh.era]) continue;
     if (sh.era === 0 && onPlate(tb)) return null;          // the founding bay is a plate
-    const L = PHOTO_TEX['bench_' + sh.key + '_cap_l'], M = PHOTO_TEX['bench_' + sh.key + '_mid'],
-          R = PHOTO_TEX['bench_' + sh.key + '_cap_r'], G = PHOTO_TEX['bench_' + sh.key + '_long'],
-          M2 = PHOTO_TEX['bench_' + sh.key + '_mid2'];
-    if (L && M && R) return {sh, L, M, R, G: G || M, M2: M2 || M};
+    const L = PHOTO_TEX['bench_' + sh.key + '_left'],
+          G = PHOTO_TEX['bench_' + sh.key + '_long'],
+          R = PHOTO_TEX['bench_' + sh.key + '_right'];
+    if (L && G && R) return {sh, L, G, R};
     return null;
   }
   return null;
 };
+/* THE COUNTER IS THE RENDER, ONE TO ONE. Eldar, 2026-09-21: every counter looks
+   exactly like the one he drew — its own end and its two doors on the left, its
+   own end and its two doors on the right — and if a run has to be longer, it is
+   the middle panel, the one with no doors in it, that gets longer. Nothing else
+   is touched. No caps of my own, no door laid one after another, no patches.
+   The middle panel repeats with its joins faded through each other, which on a
+   doorless panel leaves nothing to see. */
 function drawSheetBenches(){
   const kf = k(0), wpp = kf * SS;
   const yBack = py(CFG.benchY, k(CFG.benchDepth));
@@ -8271,93 +8264,56 @@ function drawSheetBenches(){
   ctx.save();
   for (const tb of TABLES){
     const S2 = sheetOf(tb); if (!S2) continue;
-    const {sh, L, M, R} = S2;
-    const U = (1080 - CFG.benchY) / ((L.naturalHeight || L.height) - sh.top);   // world units per image row
+    const {sh, L, G, R} = S2;
+    const IH = L.naturalHeight || L.height;
+    const U = (1080 - CFG.benchY) / (IH - sh.top);         // world units per image row
     const wOf = im => (im.naturalWidth || im.width) * U;
-    /* NOTHING IS STRETCHED. The sheet goes down at its own proportions, one
-       scale for the whole of it, hung by the row where the worktop's top
-       surface meets its front edge — that row sits at bench height, so the
-       counter is 380 units from there to the floor exactly as it should be,
-       and whatever of the top surface the render shows above it is what the
-       render shows. It used to be drawn in two bands, the worktop's own band
-       pulled up to the depth this hall's perspective gives a counter, which is
-       three and a half times what these renders carry: it smeared the stone,
-       it turned each piece's own shading into a visible block, and it made a
-       wedge of the render's end. Eldar, 2026-09-21: leave the worktops as they
-       were made and do not stretch them. */
-    const piece = (im, wx, wWorld, flip) => {
-      const IH = im.naturalHeight || im.height;
+    const rowH = (yFloor - yFront) / (IH - sh.top);
+    const yTop = yFront - sh.top * rowH, hh = IH * rowH;
+    const put = (im, wx, wWorld) => {
       const sa = px(wx, kf), sWid = wWorld * wpp;
       if (sa > W || sa + sWid < 0) return;
-      const rowH = (yFloor - yFront) / (IH - sh.top), y0 = yFront - sh.top * rowH;
-      if (!flip){ ctx.drawImage(im, sa, y0, sWid + 0.7, IH * rowH); return; }
-      ctx.save();
-      ctx.translate(sa + sWid + 0.7, 0); ctx.scale(-1, 1);
-      ctx.drawImage(im, 0, y0, sWid + 0.7, IH * rowH);
-      ctx.restore();
+      ctx.drawImage(im, sa, yTop, sWid + 0.7, hh);
     };
     const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
     if (cx1 - cx0 < 1) continue;
-    const wL = BENCH_ENDS ? wOf(L) : 0, wR = BENCH_ENDS ? wOf(R) : 0,
-          wM = wOf(M), wM2 = wOf(S2.M2), wG = wOf(S2.G);
+    let wL = wOf(L), wR = wOf(R);
+    const wG = wOf(G), len = tb.x1 - tb.x0;
+    if (wL + wR > len){ const sc = len / (wL + wR); wL *= sc; wR *= sc; }
     ctx.save();
     ctx.beginPath(); ctx.rect(cx0, yBack, cx1 - cx0, yFloor - yBack + 4); ctx.clip();
-    /* EVERY JOINT IN A RUN IS A JOINT THE RENDER ALREADY HAS. Eldar, plainly:
-       a smooth run, no joints, no pieces sticking out. The render is a chain of
-       columns — end, door, door, LONG PANEL, door, door, end — and a piece cut
-       from it carries the column it started on and the column it ended on. Lay
-       two pieces so that the second begins on the column the first ended on and
-       the joint disappears: the worktop's grain runs straight through it,
-       because in the render it did.
-
-       A MIRRORED tile begins on the very column it would otherwise have ended
-       on, so doors alternate flipped and every door-to-door joint is real. The
-       door to the LEFT of the long panel and the door to its RIGHT are two
-       different tiles (M and M2) for the same reason: the long panel is entered
-       from the left on its own left column and left on its right column, so the
-       tile before it must be M unflipped and the tile after it M2 unflipped.
-       Coming back the other way the long panel is laid mirrored, and the doors
-       return to the M family. That is why the number of doors in a stretch has
-       a parity, and why the stretch takes whole doors at their own width and
-       the long panel shifts by up to half a door to keep it. The caption has
-       155 units of slack inside the long panel, which is more than that.
-
-       A run therefore ends wherever it ends — on a door, mid-door if that is
-       where the break falls. That is the counter going behind a wall, and it is
-       the one place a cut belongs. */
-    const A0 = tb.x0, A1 = tb.x1, CAPW = 23 * 700 / 26;   // the caption's own column
-    let at = A0, fam = 0, flip = false, pFlip = false, guard = 0;
-    const door = () => { piece(fam ? S2.M2 : M, at, fam ? wM2 : wM, flip);
-                         at += fam ? wM2 : wM; flip = !flip; guard++; };
-    const cs = [];
-    for (const b of BEATS){
-      if (b.under || b.x < tb.x0 || b.x > tb.x1) continue;
-      cs.push(b.x + (b.capDX || 0));
+    const a0 = tb.x0 + wL, a1 = tb.x1 - wR, mid = a1 - a0;
+    if (mid > 0.5){
+      const FADE = Math.min(wG * 0.3, 90);
+      const n = Math.min(40, Math.max(1, Math.round(mid / wG)));
+      const w = (mid + FADE * (n - 1)) / n;               // the tiles overlap by FADE
+      for (let i = 0; i < n; i++){
+        const x = a0 + i * (w - FADE);
+        if (i === 0){ put(G, x, w); continue; }
+        // the join comes up through what is already laid, in steps of alpha
+        const K = 7;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(px(x + FADE, kf), yBack, Math.max(1, px(a1, kf) - px(x + FADE, kf)) + 1,
+                 yFloor - yBack + 4);
+        ctx.clip();
+        put(G, x, w);
+        ctx.restore();
+        for (let j = 1; j <= K; j++){
+          const b0 = x + FADE * (j - 1) / K, b1 = x + FADE * j / K;
+          ctx.save();
+          ctx.globalAlpha = j / (K + 1);
+          ctx.beginPath();
+          ctx.rect(px(b0, kf), yBack, Math.max(1, px(b1, kf) - px(b0, kf)) + 1,
+                   yFloor - yBack + 4);
+          ctx.clip();
+          put(G, x, w);
+          ctx.restore();
+        }
+      }
     }
-    cs.sort((p, q) => p - q);
-    for (let ci = 0; ci < cs.length && guard < 400; ci++){
-      const c = cs[ci], step = fam ? wM2 : wM;
-      /* whole doors up to where the long panel wants to start. The LAST of them
-         has to be the one whose far column is the panel's near column, and
-         doors alternate, so its parity is fixed — the panel then shifts by up
-         to half a door, which the caption has room for inside it. */
-      let n = Math.max(0, Math.round((c - wG / 2 - at) / step));
-      if (n > 0 && ((n % 2) === 1) !== (flip === pFlip)) n -= 1;
-      while (n > 0 && at + n * step > c - CAPW / 2) n -= 2;      // never past the type
-      for (let i = 0; i < n && guard < 400; i++) door();
-      if (at + wG > A1 + 1 || at > c - CAPW / 2 + 1) break;
-      /* the panel is its own width, unless the next caption stands so close
-         that they share one stretch — then it runs to the halfway line between
-         them, which is the one place in a run no line of type can reach */
-      let w = wG;
-      if (ci + 1 < cs.length && cs[ci + 1] - wG / 2 < at + wG)
-        w = Math.max(CAPW, (c + cs[ci + 1]) / 2 - at);
-      piece(S2.G, at, w, pFlip); at += w;
-      fam = pFlip ? 0 : 1; flip = pFlip; pFlip = !pFlip;
-    }
-    while (at < A1 - 0.5 && guard < 400) door();
-    while (at < A1 - 0.5 && guard < 600){ guard++; door(); }
-    if (BENCH_ENDS){ piece(L, tb.x0, wL); piece(R, tb.x1 - wR, wR); }
+    put(L, tb.x0, wL);
+    put(R, tb.x1 - wR, wR);
     ctx.restore();
   }
   ctx.restore();
@@ -8492,7 +8448,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260921-mirror';
+const ASSET_V = '20260921-side';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -8569,26 +8525,18 @@ async function loadPhotoSkin(){
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
     ph_car79: 'car_1979.png',         // and the mail van that drives its platform as you scroll
     front_e4: 'front_e4.jpg',         // the white era's counter face: one door of Eldar's render, mid-door to mid-door
-    bench_b1_cap_l: 'bench_b1_cap_l.png',   // 1907–1979 · Table_1: the left end return
-    bench_b1_mid:   'bench_b1_mid.png',     // the short block — one door
+    bench_b1_left:  'bench_b1_left.png',
     bench_b1_long:  'bench_b1_long.png',
-    bench_b1_mid2:  'bench_b1_mid2.png',    // the long block — unbroken, it goes under the caption
-    bench_b1_cap_r: 'bench_b1_cap_r.png',   // the right end return
-    bench_b2_cap_l: 'bench_b2_cap_l.png',   // 1980–1988 · Table_3: the left end return
-    bench_b2_mid:   'bench_b2_mid.png',     // the short block — one door
+    bench_b1_right: 'bench_b1_right.png',
+    bench_b2_left:  'bench_b2_left.png',
     bench_b2_long:  'bench_b2_long.png',
-    bench_b2_mid2:  'bench_b2_mid2.png',    // the long block — unbroken, it goes under the caption
-    bench_b2_cap_r: 'bench_b2_cap_r.png',   // the right end return
-    bench_b3_cap_l: 'bench_b3_cap_l.png',   // 1993–2007 · Table_4: the left end return
-    bench_b3_mid:   'bench_b3_mid.png',     // the short block — one door
+    bench_b2_right: 'bench_b2_right.png',
+    bench_b3_left:  'bench_b3_left.png',
     bench_b3_long:  'bench_b3_long.png',
-    bench_b3_mid2:  'bench_b3_mid2.png',    // the long block — unbroken, it goes under the caption
-    bench_b3_cap_r: 'bench_b3_cap_r.png',   // the right end return
-    bench_b4_cap_l: 'bench_b4_cap_l.png',   // 2009–2026 · Table_5: the left end return
-    bench_b4_mid:   'bench_b4_mid.png',     // the short block — one door
+    bench_b3_right: 'bench_b3_right.png',
+    bench_b4_left:  'bench_b4_left.png',
     bench_b4_long:  'bench_b4_long.png',
-    bench_b4_mid2:  'bench_b4_mid2.png',    // the long block — unbroken, it goes under the caption
-    bench_b4_cap_r: 'bench_b4_cap_r.png',   // the right end return
+    bench_b4_right: 'bench_b4_right.png',
   };
   await Promise.all(Object.entries(want).map(([key, file]) => new Promise(res => {
     const im = new Image();

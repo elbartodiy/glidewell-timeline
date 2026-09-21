@@ -91,13 +91,14 @@ def cut(key):
     # end | door | door | LONG | door | door | end.  Every piece but the left end
     # begins WITH its own seam column, so a piece laid against the next one puts
     # the seam back exactly once — a joint that reads as the cabinet's own.
-    # `mid` is the door to the LEFT of the long panel, `mid2` the one to its
-    # RIGHT. The hall lays them mirror-alternating, so every joint in a run is a
-    # joint this render actually has — a mirrored tile begins on the very column
-    # the one before it ended on, and the grain of the worktop runs straight
-    # through it. That is why both doors are needed and not one.
-    P = {'cap_l': a[:, 0:s[0]], 'mid': a[:, s[1]:s[2]], 'long': a[:, s[2]:s[3]],
-         'mid2': a[:, s[3]:s[4]], 'cap_r': a[:, s[5]:]}
+    # THREE PIECES, AND THE COUNTER IS THE RENDER. Eldar, 2026-09-21: every
+    # counter looks exactly like this one, one to one — the end and its two
+    # doors on the left, the end and its two doors on the right, and if a run
+    # has to be longer it is the middle panel, the one with no doors in it,
+    # that gets longer. Nothing else changes. So the render is cut in exactly
+    # three: everything up to the middle panel, the middle panel, everything
+    # after it.
+    P = {'left': a[:, 0:s[2]], 'long': a[:, s[2]:s[3]], 'right': a[:, s[3]:]}
 
     U = (1080 - 700) / (H - lip)                      # world units per image column
     print(f'{key} <- {fn}:  {n}x{H}  швы {s}')
@@ -107,21 +108,6 @@ def cut(key):
         img.save(f'{ROOT}/expo/assets/photo/bench_{key}_{nm}.png', optimize=True)
         img.save(f'{ROOT}/expo/assets/photo/bench_{key}_{nm}.webp', quality=94, method=6)
         print(f'   {nm:<6} {arr.shape[1]:>4}x{arr.shape[0]}  → {arr.shape[1] * U:6.1f} ед.')
-    def edge(p, side, w=10):
-        arr = P[p]
-        o = min(12, max(2, arr.shape[1] // 3 - w))     # clear of the seam's own shadow
-        sl = arr[:, o:o + w, :3] if side == 'L' else arr[:, -w - o:-o, :3]
-        al = arr[:, o:o + w, 3] if side == 'L' else arr[:, -w - o:-o, 3]
-        m = al > 200
-        return np.array([sl[..., c][m].mean() for c in range(3)])
-    lvl = edge('mid', 'L').mean()
-    print('   яркость на стыках: торец→дверца %.2f%%  дверца→дверца %.2f%%  '
-          'дверца→панель %.2f%%  панель→дверца %.2f%%  дверца→торец %.2f%%' % tuple(
-        100 * abs(x - y).mean() / lvl for x, y in (
-            (edge('cap_l', 'R'), edge('mid', 'L')), (edge('mid', 'R'), edge('mid', 'L')),
-            (edge('mid', 'R'), edge('long', 'L')), (edge('long', 'R'), edge('mid', 'L')),
-            (edge('mid', 'R'), edge('cap_r', 'L')))))
-    print('   длинная панель = %.2f дверцы' % (P['long'].shape[1] / P['mid'].shape[1]))
 
 for key in (sys.argv[1:] or JOBS):
     cut(key)
