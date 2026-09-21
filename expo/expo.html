@@ -14617,7 +14617,20 @@ async function boot(){
         plates: PLATES.map(pl => ({x: pl.x|0, sw: pl.sw, layers: (pl.layers || []).map(Ly => ({img: Ly.img, z: Ly.z}))})),
         cuts: (typeof CUTS === 'object' ? CUTS : []).map(c => ({x: (c.x ?? c.at ?? 0)|0, w: (c.w || 0)|0})),
         breaks: BENCH_BREAKS.map(br => ({x: br.x|0, half: br.half|0, tag: br.l73 ? '1973 stones' : null})),
-        tables: TABLES.map(tb => ({x0: tb.x0|0, x1: tb.x1|0, era: SEGMENTS.indexOf(tb.seg) + 1})),
+        /* WHAT PAINTS EACH RUN. Eldar could see the counter change and could not
+           find the change on the plan, because the plan only knew where the
+           counter was, not what it was made of (2026-09-21). Four methods:
+           a whole photographed sheet laid end to end, the founding bay's plate
+           filled outward in strips, and the procedural texture — whose face in
+           the white era is a photographic tile. */
+        tables: TABLES.map(tb => {
+          const how = onPlate(tb) ? 'plate' : era1Photo(tb) ? 'sheet' : era2Photo(tb) ? 'sheet' : 'proc';
+          const src = t2 => t2 && t2.src ? 'фото ' + t2.src.split('/').pop().split('?')[0] : 'процедурная';
+          return {x0: tb.x0|0, x1: tb.x1|0, era: SEGMENTS.indexOf(tb.seg) + 1, how,
+                  sheet: onPlate(tb) ? 'plate_bay_front' : era1Photo(tb) ? 'bench_age01' : era2Photo(tb) ? 'bench_1980' : null,
+                  top: how === 'proc' ? src(TEX[tb.seg.bench]) : null,
+                  face: how === 'proc' ? src(TEX[tb.seg.front]) : null};
+        }),
         beats: beatsOut,
         lamps: LIGHT_GRID.map(l => l.x|0).sort((a, b) => a - b), lampZ: 240,
         chandeliers: {z: 520, x: [-1180, 560, 2140].map(g => ((SHOW_L + SHOW_R) / 2 + g)|0)},

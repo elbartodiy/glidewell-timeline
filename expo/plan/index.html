@@ -225,7 +225,14 @@
   </section>
 </div>
 
-<script src="plan-data.js"></script>
+<script>
+  /* THE DATA IS NEVER SERVED FROM THE CACHE. qa/plan_dump.mjs rewrites
+     plan-data.js whenever the hall changes, and a cached copy shows yesterday's
+     hall without saying so — which is exactly how this sheet came to disagree
+     with the code once already (2026-09-21). document.write keeps the load
+     synchronous, so the drawing below still finds window.PLAN. */
+  document.write('<scr' + 'ipt src="plan-data.js?v=' + Date.now() + '"><\/scr' + 'ipt>');
+</script>
 <script>
 const P = window.PLAN;
 const NS='http://www.w3.org/2000/svg';
