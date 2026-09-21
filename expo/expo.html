@@ -2187,6 +2187,7 @@ function drawBench(){
   for (const tb of TABLES){
     const seg = tb.seg, bx0 = tb.x0, bx1 = tb.x1;
     if (onPlate(tb) || era1Photo(tb) || era2Photo(tb)) continue;   // a photograph takes this run over
+    const faceIsPhoto = era4Photo(tb);   // era 4: the worktop is still ours, the face is Eldar's render
     const sx0f = px(bx0, kf), sx1f = px(bx1, kf);
     if (sx1f <= 0 || sx0f >= W) continue;
     const tex = TEX[seg.bench];
@@ -2213,7 +2214,8 @@ function drawBench(){
     const fx0 = Math.max(0, sx0f), fx1 = Math.min(W, sx1f);
     const yBotF = py(1080, kf);
     const fh = yBotF - yTopF;
-    if (fx1 > fx0 && fh > 1){
+    if (faceIsPhoto){ /* drawEra4Bench lays the face, ends and all */ }
+    else if (fx1 > fx0 && fh > 1){
       ctx.save();
       ctx.beginPath(); ctx.rect(fx0, yTopF, fx1 - fx0, Math.min(H, yBotF) - yTopF); ctx.clip();
       const texF = TEX[seg.front];
@@ -8337,6 +8339,60 @@ function drawEra2Bench(){
   }
   ctx.restore();
 }
+/* ERA 4'S COUNTER — ONE SHEET, AND A REAL END ON EACH RUN. Until now the white
+   era took a procedural worktop with a photographic face laid over it, and each
+   run was simply sliced off at the break with a drawn dark line for an end.
+   Eldar's render carries the worktop and the face together and has its own end
+   returns, so it is cut into three — the left return with half a door, one door
+   of middle, the right return — and a run is built end, middle repeated, end.
+   The light is in the picture: the diode line under the worktop lip and the one
+   in the toe recess are photographed, so nothing is painted over them.
+   (Eldar, 2026-09-21: "не надо ничего рисовать дополнительно поверх".) */
+const E4 = {top: 21, bot: 438};                          // rows: the worktop band, then the face
+const E4_U = (1080 - CFG.benchY) / (E4.bot - E4.top);    // world units per image row
+const era4Photo = tb => tb.seg === SEGMENTS[3] && !!PHOTO_TEX.bench_e4_mid &&
+                        !!PHOTO_TEX.bench_e4_cap_l && !!PHOTO_TEX.bench_e4_cap_r;
+function drawEra4Bench(){
+  const mid = PHOTO_TEX.bench_e4_mid, cl = PHOTO_TEX.bench_e4_cap_l, cr = PHOTO_TEX.bench_e4_cap_r;
+  if (!mid || !cl || !cr) return;
+  const kf = k(0), wpp = kf * SS;
+  const yBack = py(CFG.benchY, k(CFG.benchDepth));   // where the hall's worktop starts
+  const yFront = py(CFG.benchY, kf), yFloor = py(1080, kf);
+  if (yFloor - yFront < 2) return;
+  const wOf = im => (im.naturalWidth || im.width) * E4_U;
+  /* the worktop band is stretched on its own to the hall's real depth, the face
+     keeps the photograph's proportions — the same split era 2 uses */
+  /* ONLY THE FACE COMES FROM THE PHOTOGRAPH, FOR NOW. The render was made from
+     almost worktop height, so its top surface is a 21-row sliver where the hall
+     looks down on 81 rows of it: laid in, it had to be stretched about four
+     times and read as a smear rather than stone (Eldar: "почему столешница так
+     убого выглядит?"). The hall keeps its own worktop until a render is made
+     from the hall's own eye. */
+  const piece = (im, wx, wWorld) => {
+    const IW = im.naturalWidth || im.width, IH = im.naturalHeight || im.height;
+    const sa = px(wx, kf), sWid = wWorld * wpp;
+    if (sa > W || sa + sWid < 0) return;
+    ctx.drawImage(im, 0, E4.top, IW, IH - E4.top, sa, yFront, sWid + 0.7, yFloor - yFront);
+  };
+  const wL = wOf(cl), wR = wOf(cr), wM = wOf(mid);
+  ctx.save();
+  for (const tb of TABLES){
+    if (!era4Photo(tb)) continue;
+    const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
+    if (cx1 - cx0 < 1) continue;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(cx0, yFront, cx1 - cx0, yFloor - yFront + 4); ctx.clip();
+    /* the middle first, then the two ends over it: the last tile of the middle
+       may reach into the end's ground, and the end must win */
+    const a0 = tb.x0 + wL, a1 = tb.x1 - wR;
+    let i = 0;
+    for (let a = a0; a < a1 - 0.5 && i < 200; a += wM, i++) piece(mid, a, wM);
+    piece(cl, tb.x0, wL);
+    piece(cr, tb.x1 - wR, wR);
+    ctx.restore();
+  }
+  ctx.restore();
+}
 function drawPlateBench(t){
   const P = PLATES[0]; if (!P) return;
   const L = (P.layers || [])[0]; if (!L || !L.sp) return;
@@ -8467,7 +8523,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260911-gmain';
+const ASSET_V = '20260921-bench4';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -8544,6 +8600,9 @@ async function loadPhotoSkin(){
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
     ph_car79: 'car_1979.png',         // and the mail van that drives its platform as you scroll
     front_e4: 'front_e4.jpg',         // the white era's counter face: one door of Eldar's render, mid-door to mid-door
+    bench_e4_cap_l: 'bench_e4_cap_l.png',   // era 4's counter, cut from table_2026: the left return with half a door
+    bench_e4_mid:   'bench_e4_mid.png',     // one door of the middle, mid-door to mid-door
+    bench_e4_cap_r: 'bench_e4_cap_r.png',   // the right return
     bench_age01: 'bench_age01.jpg',   // era 1's counter, up to the cabinet
     bench_1980: 'bench_1980.jpg',     // era 2's counter, 1980 to the 1989 recreation
   };
@@ -13618,39 +13677,16 @@ function drawShowroom(t){
    stays matte. There is not one visible fitting anywhere on it. This is painted
    after the counter, because it is light coming OUT of the counter. */
 function drawShowroomLight(t){
-  if (cam.x < SHOW_L - 2400 || cam.x > SHOW_R + 2400) return;
-  const kf2 = k(2), S = kf2 * SS;
-  const x0 = Math.max(-40, px(SHOW_L, kf2)), x1 = Math.min(W + 40, px(SHOW_R, kf2));
-  if (x1 <= x0) return;
-  const yLip = py(CFG.benchY + 34, kf2);
-  const yBase = py(1032, kf2), yFloor = py(1080, kf2);
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-  /* the diode light belongs to the FURNITURE: one run per table span, so no
-     glow hangs in the air across a recreation or a counter break */
-  const lip = ctx.createLinearGradient(0, yLip, 0, yLip + 46 * S);
-  lip.addColorStop(0, 'rgba(255,250,238,0.30)');
-  lip.addColorStop(1, 'rgba(255,248,234,0)');
-  const wash = ctx.createLinearGradient(0, yBase, 0, yFloor + 90 * S);
-  wash.addColorStop(0, 'rgba(255,248,232,0.26)');
-  wash.addColorStop(0.35, 'rgba(255,246,228,0.075)');
-  wash.addColorStop(1, 'rgba(255,244,224,0)');
-  for (const tb of TABLES){
-    if (tb.x1 < SHOW_L || tb.x0 > SHOW_R) continue;
-    const sx0 = Math.max(x0, px(Math.max(tb.x0 + 14, SHOW_L), kf2));
-    const sx1 = Math.min(x1, px(Math.min(tb.x1 - 14, SHOW_R), kf2));
-    if (sx1 <= sx0) continue;
-    ctx.fillStyle = lip; ctx.fillRect(sx0, yLip, sx1 - sx0, 46 * S);
-    ctx.fillStyle = 'rgba(255,252,244,0.85)';
-    ctx.fillRect(sx0, yBase, sx1 - sx0, Math.max(1, 3.4 * S));
-    ctx.fillStyle = wash; ctx.fillRect(sx0, yBase, sx1 - sx0, yFloor + 90 * S - yBase);
-  }
-  /* THE LONE G IS GONE. One illuminated mark per run of counter: it had no
-     reason to be a single letter on a shop fascia, and because a plate whose
-     rectangle reached the caption band was skipped in favour of the run's
-     other end, it JUMPED from one side of the counter to the other as you
-     moved. Removed outright rather than tuned. */
-  ctx.restore();
+  /* NOTHING IS PAINTED OVER THE COUNTER ANY MORE. This used to lay a diode
+     glow under the worktop lip, a bright line in the toe recess and a wash of
+     light across the floor — all of it invented, and all of it only on the last
+     stretch, so the same furniture stood unlit for the eleven thousand units
+     before it. Eldar's counter render carries both lines in the photograph
+     itself ("не надо ничего рисовать дополнительно поверх", 2026-09-21), and
+     the floor answers on its own: drawFloorSheen folds the painted frame down
+     across the floor line, so a counter that glows is reflected glowing. The
+     function is kept as the one place that would own showroom-wide light if it
+     is ever wanted again. */
 }
 
 /* The polish. A floor like that one is half of every photograph taken in the
@@ -13982,6 +14018,13 @@ function frame(){
   drawProjectors(t, 'machineGround');   // a machine standing on the floor goes behind the counters
   drawHallExhibit();  // the pedestal and its crown stand in the room, behind the counters (Eldar)
   drawBench();        // reflection can never be laid over the furniture
+  /* ERA 4'S FACE COMES AFTER THE HALL'S FLOOR. Laid with the other photographic
+     counters, before drawHallExhibit, it was painted UNDER the glass hall's red
+     carpet — and the carpet runs a couple of hundred units past the counter's
+     end on purpose, so it covered the end of the run and the joint showed
+     (Eldar, 2026-09-21: "стык виден стол под ковром"). Furniture goes over the
+     floor, always. */
+  drawEra4Bench();
   drawShowroomLight(t);   // light coming OUT of the furniture, so after it
   drawProjectors(t, 'machine');   // it stands on the bench, so it comes after it
 
