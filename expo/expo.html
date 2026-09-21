@@ -8268,12 +8268,23 @@ function drawSheetBenches(){
     const {sh, L, M, R} = S2;
     const U = (1080 - CFG.benchY) / ((L.naturalHeight || L.height) - sh.top);   // world units per image row
     const wOf = im => (im.naturalWidth || im.width) * U;
+    /* NOTHING IS STRETCHED. The sheet goes down at its own proportions, one
+       scale for the whole of it, hung by the row where the worktop's top
+       surface meets its front edge — that row sits at bench height, so the
+       counter is 380 units from there to the floor exactly as it should be,
+       and whatever of the top surface the render shows above it is what the
+       render shows. It used to be drawn in two bands, the worktop's own band
+       pulled up to the depth this hall's perspective gives a counter, which is
+       three and a half times what these renders carry: it smeared the stone,
+       it turned each piece's own shading into a visible block, and it made a
+       wedge of the render's end. Eldar, 2026-09-21: leave the worktops as they
+       were made and do not stretch them. */
     const piece = (im, wx, wWorld) => {
       const IW = im.naturalWidth || im.width, IH = im.naturalHeight || im.height;
       const sa = px(wx, kf), sWid = wWorld * wpp;
       if (sa > W || sa + sWid < 0) return;
-      ctx.drawImage(im, 0, 0, IW, sh.top, sa, yBack, sWid + 0.7, yFront - yBack);
-      ctx.drawImage(im, 0, sh.top, IW, IH - sh.top, sa, yFront, sWid + 0.7, yFloor - yFront);
+      const rowH = (yFloor - yFront) / (IH - sh.top);
+      ctx.drawImage(im, sa, yFront - sh.top * rowH, sWid + 0.7, IH * rowH);
     };
     const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
     if (cx1 - cx0 < 1) continue;
@@ -8460,7 +8471,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260921-grid2';
+const ASSET_V = '20260921-asis';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
