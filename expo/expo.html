@@ -2791,14 +2791,51 @@ function capX(b, kf){
       const half = 350 * SS;
       const lo = px(tt.x0, kf) + half, hi = px(tt.x1, kf) - half;
       if (lo < hi) cw = Math.max(lo, Math.min(hi, cw));
+      /* a run too short to hold the column at all — 2019's is 510 units — used
+         to be left unclamped, and the line hung 249 units off the end of the
+         counter. It is centred on the run instead: it overhangs both sides
+         evenly, which reads as a line under a small cabinet. */
+      else cw = (px(tt.x0, kf) + px(tt.x1, kf)) / 2;
     }
   }
   return cw;
 }
 let CAP_RECT = null;                 // where the caption actually landed, last frame
+/* TWO LINES NEVER SHARE THE SAME GROUND. Beats stand as close as 285 units in
+   places — 2001 and 2000 — and both captions were drawn at full strength on top
+   of each other, which is two paragraphs in the same rectangle and neither of
+   them readable. The claim goes to whichever beat the camera is nearer, and the
+   other fades out of the way; walk on and they change places. The test is on
+   the words actually measured, not on the column they were wrapped to, so lines
+   that merely stand close — 1980 and 1984 — both stay. */
+function capClashes(kf){
+  const rank = [], hide = new Set(), claimed = [];
+  for (let i = 0; i < BEATS.length; i++){
+    const b = BEATS[i];
+    if (b.under || b.descWall || !b._d || Math.abs(b.x - cam.x) > 3500) continue;
+    if (b._capWss !== SS){
+      ctx.save();
+      ctx.font = eraFont(23 * SS, '', segAt(b.x).font);
+      let w = 0;
+      for (const ln of b._d) w = Math.max(w, ctx.measureText(ln).width);
+      ctx.restore();
+      b._capW = w; b._capWss = SS;
+    }
+    rank.push({i, b, d: Math.abs(b.x - cam.x)});
+  }
+  rank.sort((u, v) => u.d - v.d);
+  const halfC = CAP_COLW() / 2, gap = 18 * SS;
+  for (const r of rank){
+    const a = capX(r.b, kf) - halfC, z = a + r.b._capW;
+    if (claimed.some(c => a < c[1] + gap && z > c[0] - gap)) hide.add(r.i);
+    else claimed.push([a, z]);
+  }
+  return hide;
+}
 function drawBenchDescs(){
   CAP_RECT = null;
   const kf = k(0);
+  const clash = capClashes(kf);
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
     if (b.under || Math.abs(b.x - cam.x) > 3500){ b._capA = 0; continue; }
@@ -2819,7 +2856,11 @@ function drawBenchDescs(){
     const capWant = Math.max(0, Math.min(1,
       Math.min((W - (cwP + halfC)) / fadeC, (cwP - halfC) / fadeC)));
     b._capA = (b._capA || 0) + (capWant - (b._capA || 0)) * Math.min(1, (state.dt || 0.016) * 10);
-    let dAmt = Math.max(focusAmt, b._capA);
+    /* eased, so a line that loses its place walks off rather than blinking */
+    b._capH = (b._capH == null ? 1 : b._capH) +
+              ((clash.has(i) ? 0 : 1) - (b._capH == null ? 1 : b._capH)) *
+              Math.min(1, (state.dt || 0.016) * 6);
+    let dAmt = Math.max(focusAmt, b._capA) * b._capH;
     if (b.album) dAmt *= 1 - (albumAnim[i] || 0);
     // and the PFM line's own page carries its own words: the bench line bows out
     if (state.pfmView && state.pfmView.beat === i) dAmt *= 1 - state.pfmView.amt;
