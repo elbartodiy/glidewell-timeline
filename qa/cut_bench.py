@@ -75,6 +75,13 @@ def cut(key):
     a = np.asarray(im).astype(np.float32)
     ys, xs = np.nonzero(a[..., 3] > 8)
     Y0, Y1, X0, X1 = ys.min(), ys.max(), xs.min(), xs.max()
+    # the object's own edge is anti-aliased: a dozen rows of half-transparent
+    # pixels top and bottom. Laid against the hall's floor that soft edge reads
+    # as a pale line under the counter, so the crop is tightened to the rows
+    # that are actually solid. 
+    rowa = a[Y0:Y1 + 1, X0:X1 + 1, 3].mean(axis=1)
+    solid = np.nonzero(rowa > 200)[0]
+    Y0, Y1 = Y0 + solid[0], Y0 + solid[-1]
     a = a[Y0:Y1 + 1, X0:X1 + 1]
     n = a.shape[1]
     a, T = straighten(a, (int(.12 * n), int(.88 * n)))

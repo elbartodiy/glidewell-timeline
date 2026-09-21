@@ -8228,10 +8228,10 @@ const BENCH_SHEETS = [
      face begins. It is measured off the ALPHA bounding box — the renders are
      transparent PNGs and flattening them to RGB bakes their background in,
      which is how a grey ground came to stand behind the counters once. */
-  {era: 0, key: 'b1', top: 44},   // 1907–1979 · dark boards, panelled doors, brass cups
-  {era: 1, key: 'b2', top: 50},   // 1980–1988 · walnut veneer, beige laminate
-  {era: 2, key: 'b3', top: 57},   // 1993–2007 · grey-green doors, speckled laminate
-  {era: 3, key: 'b4', top: 50},   // 2009–2026 · white lacquer, its diode light photographed
+  {era: 0, key: 'b1', top: 42},   // 1907–1979 · dark boards, panelled doors, brass cups
+  {era: 1, key: 'b2', top: 47},   // 1980–1988 · walnut veneer, beige laminate
+  {era: 2, key: 'b3', top: 55},   // 1993–2007 · grey-green doors, speckled laminate
+  {era: 3, key: 'b4', top: 48},   // 2009–2026 · white lacquer, its diode light photographed
 ];
 const sheetOf = tb => {
   for (const sh of BENCH_SHEETS){
@@ -8407,7 +8407,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260921-straight';
+const ASSET_V = '20260921-solid';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
