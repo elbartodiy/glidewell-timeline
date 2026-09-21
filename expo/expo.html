@@ -8277,41 +8277,19 @@ function drawSheetBenches(){
     };
     const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
     if (cx1 - cx0 < 1) continue;
-    let wL = wOf(L), wR = wOf(R);
-    const wG = wOf(G), len = tb.x1 - tb.x0;
-    if (wL + wR > len){ const sc = len / (wL + wR); wL *= sc; wR *= sc; }
+    /* NOTHING IS EVER SCALED. A run shorter than the two ends put together does
+       not get a smaller counter — its doors are the same doors as everywhere
+       else. The two ends simply overlap, and because the right piece begins on
+       a door's own seam the overlap reads as one more seam in the row. */
+    const wL = wOf(L), wR = wOf(R);
     ctx.save();
     ctx.beginPath(); ctx.rect(cx0, yBack, cx1 - cx0, yFloor - yBack + 4); ctx.clip();
-    const a0 = tb.x0 + wL, a1 = tb.x1 - wR, mid = a1 - a0;
-    if (mid > 0.5){
-      const FADE = Math.min(wG * 0.3, 90);
-      const n = Math.min(40, Math.max(1, Math.round(mid / wG)));
-      const w = (mid + FADE * (n - 1)) / n;               // the tiles overlap by FADE
-      for (let i = 0; i < n; i++){
-        const x = a0 + i * (w - FADE);
-        if (i === 0){ put(G, x, w); continue; }
-        // the join comes up through what is already laid, in steps of alpha
-        const K = 7;
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(px(x + FADE, kf), yBack, Math.max(1, px(a1, kf) - px(x + FADE, kf)) + 1,
-                 yFloor - yBack + 4);
-        ctx.clip();
-        put(G, x, w);
-        ctx.restore();
-        for (let j = 1; j <= K; j++){
-          const b0 = x + FADE * (j - 1) / K, b1 = x + FADE * j / K;
-          ctx.save();
-          ctx.globalAlpha = j / (K + 1);
-          ctx.beginPath();
-          ctx.rect(px(b0, kf), yBack, Math.max(1, px(b1, kf) - px(b0, kf)) + 1,
-                   yFloor - yBack + 4);
-          ctx.clip();
-          put(G, x, w);
-          ctx.restore();
-        }
-      }
-    }
+    /* the middle panel simply becomes as long as the run needs. It has no
+       doors, no handles and no joints in it, so its length is the one thing in
+       the counter that can change without anything showing — and it is drawn
+       ONCE, so there is no join anywhere between the two ends. */
+    const a0 = tb.x0 + wL, a1 = tb.x1 - wR;
+    if (a1 - a0 > 0.5) put(G, a0, a1 - a0);
     put(L, tb.x0, wL);
     put(R, tb.x1 - wR, wR);
     ctx.restore();
@@ -8448,7 +8426,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260921-side';
+const ASSET_V = '20260921-whole';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
