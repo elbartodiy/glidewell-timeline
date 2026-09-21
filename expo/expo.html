@@ -14671,16 +14671,16 @@ async function boot(){
            wants to work on those as their own group. The 1993 architectural
            model was in no list at all until now. */
         exhibits: [
-          {kind: 'plinth',    z: 120, name: '1973 · две лаборатории на камнях',
+          {kind: 'plinth',    z: 120, name: '1973 · две лаборатории',
            x: (BEATS.find(b => b.y === '1973') || {x: 0}).x|0, w: L73_W},
-          {kind: 'plinth',    z: 120, name: '1979 · восемь лабораторий на плинте',
+          {kind: 'plinth',    z: 120, name: '1979 · восемь лабораторий',
            x: ((REC_L + REC_R)/2)|0, w: G8_W},
-          {kind: 'plinth',    z: 430, name: '1979 · главное здание на блоке',
+          {kind: 'plinth',    z: 430, name: '1979 · главное здание',
            x: ((REC_L + REC_R)/2)|0, w: 1040},
           {kind: 'model',     z: 240, name: '1993 · макет здания',
            x: ((REC93_L + REC93_R)/2)|0, w: 330},
-          {kind: 'machine',   z: 190, name: 'фрезерная ячейка, ближняя', x: (FACT_X - 300)|0, w: 520},
-          {kind: 'machine',   z: 232, name: 'фрезерная ячейка, дальняя', x: (FACT_X + 250)|0, w: 520},
+          {kind: 'machine',   z: 190, name: 'фрезерная ячейка · ближняя', x: (FACT_X - 300)|0, w: 520},
+          {kind: 'machine',   z: 232, name: 'фрезерная ячейка · дальняя', x: (FACT_X + 250)|0, w: 520},
           ...PROJECTORS.map(pr => ({kind: 'projector', z: pr.throwZ, name: 'проектор 1993',
                                     x: (pr.x + (pr.mdx || 0))|0, w: 900})),
         ],
