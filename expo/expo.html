@@ -8284,18 +8284,17 @@ function drawSheetBenches(){
     const wL = wOf(L), wR = wOf(R), wG = wOf(G);
     ctx.save();
     ctx.beginPath(); ctx.rect(cx0, yBack, cx1 - cx0, yFloor - yBack + 4); ctx.clip();
-    /* THE MIDDLE PANEL REPEATS AT ITS OWN SIZE. It is the one part of the
-       counter that can be as long as a run needs, but it is a panel, not a
-       rubber sheet: stretched five times over it smeared the grain and pulled
-       its moulding apart. So it is laid a whole number of times, each within a
-       few per cent of the size it was drawn, and the joins fall on the panel's
-       own edges — the seams the render already has between one panel and the
-       next. Butted, not faded: an overlap fading through itself showed, and
-       a seam that the cabinet has anyway does not. */
+    /* THE MIDDLE PANEL IS NEVER STRETCHED — not to fill a run, not by seven per
+       cent, not at all. It is drawn at the size it was rendered, as many times
+       as the run needs, and the panels OVERLAP by whatever the run does not
+       divide into: each one lays its own left edge over the one before, which
+       is the seam the render already has between one panel and the next. The
+       last one runs past the end of the middle and the right end of the counter
+       is drawn over it. Nothing in a counter is ever scaled (Eldar, twice). */
     const a0 = tb.x0 + wL, a1 = tb.x1 - wR, mid = a1 - a0;
     if (mid > 0.5){
-      const n = Math.min(24, Math.max(1, Math.round(mid / wG))), w = mid / n;
-      for (let i = 0; i < n; i++) put(G, a0 + i * w, w);
+      const n = Math.min(24, Math.max(1, Math.ceil(mid / wG))), step = mid / n;
+      for (let i = 0; i < n; i++) put(G, a0 + i * step, wG);
     }
     /* the right end goes down first and the left end over it, so that when the
        two overlap in a short run it is the INNER edges that are buried and both
