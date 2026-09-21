@@ -2186,8 +2186,7 @@ function drawBench(){
   const yTopF = py(CFG.benchY, kf);
   for (const tb of TABLES){
     const seg = tb.seg, bx0 = tb.x0, bx1 = tb.x1;
-    if (onPlate(tb) || era1Photo(tb) || era2Photo(tb)) continue;   // a photograph takes this run over
-    const faceIsPhoto = era4Photo(tb);   // era 4: the worktop is still ours, the face is Eldar's render
+    if (onPlate(tb) || era1Photo(tb) || era2Photo(tb) || era4Photo(tb)) continue;   // a photograph takes this run over
     const sx0f = px(bx0, kf), sx1f = px(bx1, kf);
     if (sx1f <= 0 || sx0f >= W) continue;
     const tex = TEX[seg.bench];
@@ -2214,8 +2213,7 @@ function drawBench(){
     const fx0 = Math.max(0, sx0f), fx1 = Math.min(W, sx1f);
     const yBotF = py(1080, kf);
     const fh = yBotF - yTopF;
-    if (faceIsPhoto){ /* drawEra4Bench lays the face, ends and all */ }
-    else if (fx1 > fx0 && fh > 1){
+    if (fx1 > fx0 && fh > 1){
       ctx.save();
       ctx.beginPath(); ctx.rect(fx0, yTopF, fx1 - fx0, Math.min(H, yBotF) - yTopF); ctx.clip();
       const texF = TEX[seg.front];
@@ -8358,20 +8356,23 @@ function drawEra4Bench(){
   const kf = k(0), wpp = kf * SS;
   const yBack = py(CFG.benchY, k(CFG.benchDepth));   // where the hall's worktop starts
   const yFront = py(CFG.benchY, kf), yFloor = py(1080, kf);
-  if (yFloor - yFront < 2) return;
+  if (yFloor - yBack < 2) return;
   const wOf = im => (im.naturalWidth || im.width) * E4_U;
   /* the worktop band is stretched on its own to the hall's real depth, the face
      keeps the photograph's proportions — the same split era 2 uses */
-  /* ONLY THE FACE COMES FROM THE PHOTOGRAPH, FOR NOW. The render was made from
-     almost worktop height, so its top surface is a 21-row sliver where the hall
-     looks down on 81 rows of it: laid in, it had to be stretched about four
-     times and read as a smear rather than stone (Eldar: "почему столешница так
-     убого выглядит?"). The hall keeps its own worktop until a render is made
-     from the hall's own eye. */
+  /* ONE SHEET, WORKTOP AND FACE TOGETHER. The counter is one piece of furniture
+     and it is photographed as one (Eldar, twice). The band above E4.top is the
+     worktop seen from above and is stretched on its own to the hall's real
+     depth; the face below keeps the photograph's proportions. That split is era
+     2's, and it is the only stretching there is — so the sheet must be made
+     from the hall's own eye: the worktop's visible depth is 74 world units
+     against a 380-unit face, one fifth of it, and a sheet that shows less has
+     to be blown up to fill it. */
   const piece = (im, wx, wWorld) => {
     const IW = im.naturalWidth || im.width, IH = im.naturalHeight || im.height;
     const sa = px(wx, kf), sWid = wWorld * wpp;
     if (sa > W || sa + sWid < 0) return;
+    ctx.drawImage(im, 0, 0, IW, E4.top, sa, yBack, sWid + 0.7, yFront - yBack);
     ctx.drawImage(im, 0, E4.top, IW, IH - E4.top, sa, yFront, sWid + 0.7, yFloor - yFront);
   };
   const wL = wOf(cl), wR = wOf(cr), wM = wOf(mid);
@@ -8381,7 +8382,7 @@ function drawEra4Bench(){
     const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
     if (cx1 - cx0 < 1) continue;
     ctx.save();
-    ctx.beginPath(); ctx.rect(cx0, yFront, cx1 - cx0, yFloor - yFront + 4); ctx.clip();
+    ctx.beginPath(); ctx.rect(cx0, yBack, cx1 - cx0, yFloor - yBack + 4); ctx.clip();
     /* the middle first, then the two ends over it: the last tile of the middle
        may reach into the end's ground, and the end must win */
     const a0 = tb.x0 + wL, a1 = tb.x1 - wR;
