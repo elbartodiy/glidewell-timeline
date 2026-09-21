@@ -14636,6 +14636,26 @@ async function boot(){
         chandeliers: {z: 520, x: [-1180, 560, 2140].map(g => ((SHOW_L + SHOW_R) / 2 + g)|0)},
         figures: FIGURES.map(f => ({x: f.x|0, z: f.z})),
         machines: [{name: 'near cell', x: (FACT_X - 300)|0, z: 190}, {name: 'far cell', x: (FACT_X + 250)|0, z: 232}],
+        /* EVERYTHING THAT STANDS IN THE ROOM AND IS MEANT TO BE LOOKED AT, in one
+           list. Eldar: the model plinths, the robots and the projector are the
+           same kind of thing by meaning and by how they stand, so they belong
+           together (2026-09-21). The hero pedestals (b.ped) stay out of it — he
+           wants to work on those as their own group. The 1993 architectural
+           model was in no list at all until now. */
+        exhibits: [
+          {kind: 'plinth',    z: 120, name: '1973 · две лаборатории на камнях',
+           x: (BEATS.find(b => b.y === '1973') || {x: 0}).x|0, w: L73_W},
+          {kind: 'plinth',    z: 120, name: '1979 · восемь лабораторий на плинте',
+           x: ((REC_L + REC_R)/2)|0, w: G8_W},
+          {kind: 'plinth',    z: 430, name: '1979 · главное здание на блоке',
+           x: ((REC_L + REC_R)/2)|0, w: 1040},
+          {kind: 'model',     z: 240, name: '1993 · макет здания',
+           x: ((REC93_L + REC93_R)/2)|0, w: 330},
+          {kind: 'machine',   z: 190, name: 'фрезерная ячейка, ближняя', x: (FACT_X - 300)|0, w: 520},
+          {kind: 'machine',   z: 232, name: 'фрезерная ячейка, дальняя', x: (FACT_X + 250)|0, w: 520},
+          ...PROJECTORS.map(pr => ({kind: 'projector', z: pr.throwZ, name: 'проектор 1993',
+                                    x: (pr.x + (pr.mdx || 0))|0, w: 900})),
+        ],
         projectors: PROJECTORS.map(pr => ({x: (pr.x + (pr.mdx || 0))|0, pz: pr.pz, throwZ: pr.throwZ, src: pr.src})),
         /* THREE AEROPLANES, NOT ONE. The 1993 model's aeroplane is a relay between
            two bays; the jets of 1998 and 2005 cross the whole frame at their own

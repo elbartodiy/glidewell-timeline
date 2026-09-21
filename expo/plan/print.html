@@ -38,12 +38,12 @@
   <label><input type="radio" name="paper" value="a4"> A4</label>
   <label><input type="checkbox" id="names" checked> подписи объектов</label>
   <button id="go">Печать</button>
-  <span class="hint">альбомная ориентация · поля 6 мм · чёрно-белая печать</span>
+  <span class="hint">альбомная ориентация · поля 10 мм · чёрно-белая печать</span>
 </div>
 
 <div class="page" id="page"></div>
 
-<style id="paper">@page { size: A3 landscape; margin: 6mm; }</style>
+<style id="paper">@page { size: A3 landscape; margin: 10mm; }</style>
 <script>
   /* THE DATA IS NEVER SERVED FROM THE CACHE. qa/plan_dump.mjs rewrites
      plan-data.js whenever the hall changes, and a cached copy shows yesterday's
@@ -69,7 +69,11 @@ const FILL = '#e9e9e9';     // a body you may write over
 const FIL2 = '#d2d2d2';     // a body that must read as heavier
 
 const VW = 1414, VH = 1000;                 // √2, so A3 and A4 take the same drawing
-const L = 168, R = 30, T = 10, B = 10;      // margins inside the sheet
+/* THE SHEET KEEPS ITS DISTANCE FROM THE PAPER. At a 30-unit right margin the
+   depth ladder sat in the last two per cent of the sheet, and a printer that
+   cannot reach closer than about 11 mm cropped exactly that — which is where
+   2026 stands, and what Eldar saw cut off (2026-09-21). */
+const L = 168, R = 74, T = 10, B = 10;      // margins inside the sheet
 const IW = VW - L - R;
 const X0 = P.world.x0, X1 = P.world.showR;
 const sx = v => L + (v - X0) / (X1 - X0) * IW;
@@ -129,15 +133,15 @@ const ROWS = [
   {key: 'floor',  name: 'Пол',                sub: 'отражение · ковёр',    h: 30},
   {key: 'bench',  name: 'Стол',               sub: 'прогоны и разрывы',    h: 54},
   {key: 'items',  name: 'Предметы на столе',  sub: 'b.st · b.table',       h: 34},
-  {key: 'models', name: 'Постаменты моделей', sub: '1973 · 1979',          h: 28},
   {key: 'ped',    name: 'Пьедесталы героев',  sub: 'b.ped',                h: 40},
-  {key: 'obj',    name: 'Роботы · проектор',  sub: 'и люди в зале',        h: 30},
+  {key: 'exh',    name: 'Экспонаты',          sub: 'постаменты · машины · макет', h: 44},
+  {key: 'people', name: 'Люди',               sub: 'FIGURES',              h: 20},
   {key: 'air',    name: 'Самолёты и потоки',  sub: 'через кадр и между',   h: 38},
   {key: 'page',   name: 'Страница чтения',    sub: 'слов · фото · голоса', h: 46},
 ];
 const GAP = 9;
 const HEAD_Y = T + 44, HEAD_H = 30;          // the era band
-const BODY_Y = HEAD_Y + HEAD_H + 12;
+const BODY_Y = HEAD_Y + HEAD_H + 46;   // the era band, then the recreations row with its two lines of names
 const AXIS_H = 44;
 const NOTES_H = 150;
 
@@ -196,7 +200,7 @@ function draw(){
     /* the ladder is read off the RIGHT margin: on the left it lands on the row's
        own name, and inside the frame it lands on the wall bars themselves */
     for (const z of [550, 850, 1400, 1850])
-      add(txt({x: VW - R + 3, y: zy(z) + 2.4, fill: '#9a9a9a', style: F(400, 7)}, 'z ' + z));
+      add(txt({x: VW - R - 4, y: zy(z) - 2.5, 'text-anchor': 'end', fill: '#9a9a9a', style: F(400, 7)}, 'z ' + z));
     for (const e of eras){
       const a = sx(e.x0), b = sx(e.x1v), yy = zy(e.z0);
       add(el('rect', {x: a, y: yy - 3, width: b - a, height: 6, fill: FIL2, stroke: '#7d7d7d', 'stroke-width': .7}));
@@ -266,10 +270,25 @@ function draw(){
   // ---- 7. objects standing on the counter
   for (const b of P.beats) for (const it of b.onCounter) mark('items', b.x + it.dx, 'sq', it.name);
 
-  // ---- 8. the model plinths
-  for (const l of P.layers.filter(v => v.layer === 'PLINTH' && v.z > 0 && v.z < 500)){
-    const [a, b, t, h] = bar('models', l.x0, l.x1, 7, FIL2, '#7d7d7d');
-    if (NAMES && b - a > 26) add(txt({x: (a + b) / 2, y: t + h / 2 + 3, 'text-anchor': 'middle', fill: INK, style: F(600, 7.5)}, l.name.split(' — ')[0]));
+  /* 8. THE EXHIBITS, IN ONE ROW. The plinths of 1973 and 1979, the 1993
+     architectural model, the projector and the two milling cells: all of them
+     stand on the floor of the room and are there to be looked at, so they are
+     one kind of thing (Eldar, 2026-09-21). The glass hall's crown pedestal is
+     NOT here — it is a hero pedestal, and it used to appear in both rows, which
+     is what made the row unreadable. Two lines, so neighbours never collide. */
+  {
+    const t = rowTop.exh, h = RH.exh;
+    const items = (P.exhibits || []).slice().sort((u, v) => u.x - v.x);
+    let lastEnd = [-1e9, -1e9];
+    for (const it of items){
+      const a = sx(it.x - it.w / 2), b = sx(it.x + it.w / 2);
+      const line = a > lastEnd[0] + 4 ? 0 : 1;
+      lastEnd[line] = Math.max(b, a + (NAMES ? it.name.length * 3.6 : 0));
+      const y = t + 8 + line * 18;
+      add(el('rect', {x: a, y: y - 4, width: Math.max(2, b - a), height: 8,
+                      fill: it.kind === 'machine' ? FIL2 : FILL, stroke: '#5e5e5e', 'stroke-width': .8}));
+      if (NAMES) add(txt({x: a, y: y + 12, fill: DIM, style: F(400, 7)}, it.name + ' · z ' + it.z));
+    }
   }
 
   // ---- 9. the hero pedestals
@@ -281,10 +300,8 @@ function draw(){
       (b.ped.obj || '—') + (b.ped.spin ? ' ⟳' : b.ped.points ? ' ·:·' : '')));
   }
 
-  // ---- 10. machines, the projector, people
-  for (const m of P.machines) mark('obj', m.x, 'sq', NAMES ? 'робот' : '');
-  for (const p of P.projectors) mark('obj', p.x, 'sq', NAMES ? 'проектор' : '');
-  for (const f of P.figures) mark('obj', f.x, 'dot');
+  // ---- 10. the people in the hall: scenery, not exhibits
+  for (const f of P.figures) mark('people', f.x, 'dot', NAMES ? 'z ' + f.z : '');
 
   // ---- 11. aeroplanes through the frame, and the streams between bays
   {
@@ -351,8 +368,8 @@ function draw(){
   const lg = [['□', 'объект'], ['○', 'пьедестал'], ['▭', 'полоса — слой на своей глубине'],
               ['⇢', 'поток между заливами'], ['┆', 'смена способа отрисовки стола']];
   lg.forEach(([g, s], i) => {
-    add(txt({x: 10, y: NOTES_Y + 16 + i * 14, fill: INK, style: F(600, 9)}, g));
-    add(txt({x: 26, y: NOTES_Y + 16 + i * 14, fill: DIM, style: F(400, 8.5)}, s));
+    add(txt({x: 26, y: NOTES_Y + 16 + i * 14, fill: INK, style: F(600, 9)}, g));
+    add(txt({x: 42, y: NOTES_Y + 16 + i * 14, fill: DIM, style: F(400, 8.5)}, s));
   });
 }
 
@@ -366,21 +383,41 @@ function render(){
   add(txt({x: VW - R, y: T + 18, fill: DIM, style: F(400, 11), 'text-anchor': 'end'}, 'Пометки: ____________________'));
   add(txt({x: VW - R, y: T + 34, fill: DIM, style: F(400, 11), 'text-anchor': 'end'}, 'Дата: __________   Кто: __________'));
   add(el('line', {x1: L, y1: T + 40, x2: VW - R, y2: T + 40, stroke: RULE, 'stroke-width': .8}));
+  /* THE ERAS GET THE BAND TO THEMSELVES. The recreations used to be boxed on
+     top of it, which left era 4's name under the 2022 box and turned the whole
+     band into a row of grey rectangles nobody could name (Eldar, 2026-09-21).
+     Eras here, recreations in their own row below, every one of them written
+     out. */
   for (const e of eras){
-    const a = sx(e.x0), b = sx(e.x1v);
+    const a = sx(e.x0), b = sx(e.x1v), mid = (a + b) / 2;
     add(el('rect', {x: a, y: HEAD_Y, width: b - a, height: HEAD_H, fill: '#f4f4f4', stroke: RULE, 'stroke-width': .8}));
-    add(txt({x: (a + b) / 2, y: HEAD_Y + 13, 'text-anchor': 'middle', fill: INK, style: F(600, 11) + ';letter-spacing:.08em'}, 'ЭПОХА ' + e.n));
-    add(txt({x: (a + b) / 2, y: HEAD_Y + 25, 'text-anchor': 'middle', fill: DIM, style: F(400, 10)}, e.name));
+    add(txt({x: mid, y: HEAD_Y + 13, 'text-anchor': 'middle', fill: INK, style: F(600, 11) + ';letter-spacing:.08em'}, 'ЭПОХА ' + e.n));
+    add(txt({x: mid, y: HEAD_Y + 25, 'text-anchor': 'middle', fill: DIM, style: F(400, 10)}, e.name));
     add(el('line', {x1: a, y1: HEAD_Y, x2: a, y2: AXIS_Y, stroke: RULE, 'stroke-width': .8, 'stroke-dasharray': '4 4'}));
   }
   add(el('line', {x1: sx(X1), y1: HEAD_Y, x2: sx(X1), y2: AXIS_Y, stroke: RULE, 'stroke-width': .8, 'stroke-dasharray': '4 4'}));
-  for (const r of P.recs){
-    const a = sx(r.x0), b = sx(r.x1);
-    add(el('rect', {x: a, y: HEAD_Y + 4, width: Math.max(2, b - a), height: HEAD_H - 8, fill: FIL2, stroke: '#7d7d7d', 'stroke-width': .8}));
-    if (b - a > 26) add(txt({x: (a + b) / 2, y: HEAD_Y + 19, 'text-anchor': 'middle', fill: INK, style: F(600, 8.5)},
-      ({'Digital Revolution': 'DR', '2017 glass hall': 'ЗАЛ'})[r.name] || r.name));
-    for (const x of [r.x0, r.x1])
-      add(el('line', {x1: sx(x), y1: HEAD_Y + 4, x2: sx(x), y2: AXIS_Y, stroke: '#cfcfcf', 'stroke-width': .6, 'stroke-dasharray': '2 5'}));
+  /* the recreations: a box each, and the name written under it on one of two
+     lines with a leader, so a narrow bay is named as plainly as a wide one */
+  {
+    const RY = HEAD_Y + HEAD_H + 4, RH2 = 12;
+    add(txt({x: L - 10, y: RY + 9, 'text-anchor': 'end', fill: INK, style: F(600, 10)}, 'Рекреации'));
+    add(txt({x: L - 10, y: RY + 20, 'text-anchor': 'end', fill: DIM, style: F(400, 8)}, 'бухты и залы'));
+    const taken = [-1e9, -1e9];
+    for (const r of P.recs){
+      const a = sx(r.x0), b = sx(r.x1), mid = (a + b) / 2;
+      add(el('rect', {x: a, y: RY, width: Math.max(2, b - a), height: RH2, fill: FIL2, stroke: '#5e5e5e', 'stroke-width': .9}));
+      for (const x of [r.x0, r.x1])
+        add(el('line', {x1: sx(x), y1: RY, x2: sx(x), y2: AXIS_Y, stroke: '#d4d4d4', 'stroke-width': .6, 'stroke-dasharray': '2 5'}));
+      const nm = ({'Digital Revolution': 'Digital Revolution', '2017 glass hall': 'стеклянный зал 2017'})[r.name] || r.name;
+      const half = nm.length * 2.2 + 4;
+      let line = -1;
+      for (let i = 0; i < 2; i++) if (mid - half > taken[i]){ line = i; break; }
+      if (line < 0) continue;
+      taken[line] = mid + half;
+      const ty = RY + RH2 + 9 + line * 10;
+      add(el('line', {x1: mid, y1: RY + RH2, x2: mid, y2: ty - 6, stroke: '#9a9a9a', 'stroke-width': .6}));
+      add(txt({x: mid, y: ty, 'text-anchor': 'middle', fill: INK, style: F(500, 8)}, nm));
+    }
   }
   for (const b of P.beats)                         // a guide at every card, faint enough to write over
     add(el('line', {x1: sx(b.x), y1: BODY_Y, x2: sx(b.x), y2: AXIS_Y, stroke: '#efefef', 'stroke-width': .5}));
@@ -402,7 +439,7 @@ document.getElementById('names').addEventListener('change', e => { NAMES = e.tar
 document.getElementById('go').addEventListener('click', () => window.print());
 const setPaper = a4 => {
   document.getElementById('page').classList.toggle('a4', a4);
-  document.getElementById('paper').textContent = `@page { size: ${a4 ? 'A4' : 'A3'} landscape; margin: 6mm; }`;
+  document.getElementById('paper').textContent = `@page { size: ${a4 ? 'A4' : 'A3'} landscape; margin: 10mm; }`;
 };
 for (const r of document.querySelectorAll('input[name=paper]'))
   r.addEventListener('change', e => setPaper(e.target.value === 'a4'));
