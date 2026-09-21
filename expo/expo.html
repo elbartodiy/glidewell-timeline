@@ -8223,6 +8223,15 @@ const onPlate = tb => !!tb.seg.plateBench && tb.x0 >= PLATE_FROM - 40;
    to the hall's real depth, the face below keeps the photograph's proportions.
    The founding bay keeps its plate — that is the bench with Jim's tools on it,
    and it is not to be touched. */
+/* THE ENDS ARE OFF until the counters are re-rendered in parallel projection.
+   In every render the worktop's back edge dives 20 to 42 rows across the last
+   forty columns — the render's own vanishing point — and the hall blows the
+   worktop band up three and a half times, so that dive arrives as a wedge
+   standing at the end of every run (Eldar, 2026-09-21). It is the render's
+   geometry, not something to be pulled straight here. Until then a run ends on
+   a door, which is a vertical cut inside a break and reads as the counter
+   carrying on behind the wall. One word: set `ends` back to true. */
+const BENCH_ENDS = false;
 const BENCH_SHEETS = [
   /* `top` is the row in the sheet where the worktop's TOP SURFACE ends — the lit
      arris along the front of the slab — and it is the row the hall stands at
@@ -8268,7 +8277,8 @@ function drawSheetBenches(){
     };
     const cx0 = Math.max(0, px(tb.x0, kf)), cx1 = Math.min(W, px(tb.x1, kf));
     if (cx1 - cx0 < 1) continue;
-    const wL = wOf(L), wR = wOf(R), wM = wOf(M), wG = wOf(S2.G);
+    const wL = BENCH_ENDS ? wOf(L) : 0, wR = BENCH_ENDS ? wOf(R) : 0,
+          wM = wOf(M), wG = wOf(S2.G);
     ctx.save();
     ctx.beginPath(); ctx.rect(cx0, yBack, cx1 - cx0, yFloor - yBack + 4); ctx.clip();
     /* ONE GRID PER RUN, AND NO PIECE IS EVER CUT. Eldar, 2026-09-21: lay it all
@@ -8315,8 +8325,7 @@ function drawSheetBenches(){
       }
       for (let i = at; i < N; i++) piece(M, A0 + i * u, u);
     }
-    piece(L, tb.x0, wL);
-    piece(R, tb.x1 - wR, wR);
+    if (BENCH_ENDS){ piece(L, tb.x0, wL); piece(R, tb.x1 - wR, wR); }
     ctx.restore();
   }
   ctx.restore();
@@ -8451,7 +8460,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260921-grid';
+const ASSET_V = '20260921-grid2';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
