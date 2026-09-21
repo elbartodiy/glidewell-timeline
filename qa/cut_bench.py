@@ -91,8 +91,13 @@ def cut(key):
     # end | door | door | LONG | door | door | end.  Every piece but the left end
     # begins WITH its own seam column, so a piece laid against the next one puts
     # the seam back exactly once — a joint that reads as the cabinet's own.
-    P = {'cap_l': a[:, 0:s[0]], 'mid': a[:, s[1]:s[2]],
-         'long': a[:, s[2]:s[3]], 'cap_r': a[:, s[5]:]}
+    # `mid` is the door to the LEFT of the long panel, `mid2` the one to its
+    # RIGHT. The hall lays them mirror-alternating, so every joint in a run is a
+    # joint this render actually has — a mirrored tile begins on the very column
+    # the one before it ended on, and the grain of the worktop runs straight
+    # through it. That is why both doors are needed and not one.
+    P = {'cap_l': a[:, 0:s[0]], 'mid': a[:, s[1]:s[2]], 'long': a[:, s[2]:s[3]],
+         'mid2': a[:, s[3]:s[4]], 'cap_r': a[:, s[5]:]}
 
     U = (1080 - 700) / (H - lip)                      # world units per image column
     print(f'{key} <- {fn}:  {n}x{H}  швы {s}')
