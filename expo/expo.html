@@ -408,7 +408,7 @@ const BEATS = [
    th:'The front door to the all-digital workflow.',
    d:'fastscan.io, built with Medit, folds an intraoral scanner into the ecosystem — no impressions, no remakes, data straight into design and mill.',
    wall:[],
-   table:[], pyr:{dx:590, w:460, lz:25},   // one book's width to the right, and in the middle of the worktop (Eldar, 2026-09-22)
+   table:[], pyr:{dx:660, w:460, lz:0},   // one book's width to the right, and in the middle of the worktop (Eldar, 2026-09-22)
    /* no pedestal: the scanner lives in the lit capsule on the panel */},
 
   {x:26900, y:'2023', t:'THE CROSSOVER', tHide:true, tier:1, yLift:267, railBelow:true,   // its middle on the ceiling band, with 2018 and 2022 (Eldar, 2026-09-22); it no longer centres itself in the panel's free band   // the numeral is centred in the empty band the panel publishes, not hung from yLift (Eldar, 2026-09-15)   // its voice hangs in a strip under the article, not down the side   // the panel letters the title itself; the beat carries it so its page and its inline pieces can be keyed by it
@@ -2181,8 +2181,12 @@ function drawWall(){
     gr.addColorStop(0.10, `rgba(5,2,0,${(0.56*top).toFixed(3)})`);
     gr.addColorStop(0.20, `rgba(5,2,0,${(0.34*top).toFixed(3)})`);
     gr.addColorStop(0.32, `rgba(5,2,0,${(0.22*sh).toFixed(3)})`);
-    gr.addColorStop(0.75, `rgba(5,2,0,${(0.18*sh).toFixed(3)})`);
-    gr.addColorStop(1, `rgba(5,2,0,${(0.6*sh).toFixed(3)})`);
+    /* AND THE FOOT IS A SHADOW, NOT A HOLE. The last stop was 0.6 of black, so
+       wherever a counter did not cover it the wall ended in a black band that
+       ran the length of the hall (Eldar, 2026-09-22, the first arrow). A wall
+       meeting a floor darkens; it does not go out. */
+    gr.addColorStop(0.80, `rgba(5,2,0,${(0.16*sh).toFixed(3)})`);
+    gr.addColorStop(1, `rgba(5,2,0,${(0.30*sh).toFixed(3)})`);
     ctx.fillStyle = gr; ctx.fillRect(sx0, 0, sx1 - sx0, yFoot);
     ctx.restore();
   }
@@ -2200,6 +2204,22 @@ function drawWall(){
    different heights (Eldar, 2026-09-22, twice: «пол должен соединяться ровно в
    этой точке, где стыкуется левый угол белой стены... и никуда не двигаться»,
    and the black hole at 1989 and the Digital Revolution). */
+/* ONE EDGE, WITH A STEP IN IT. The bay's own slab starts at the panel's FOOT —
+   that is the join Eldar marked. Its neighbour cannot simply stop at the WALL's
+   foot at the same x: the two slabs then share a corner but not an edge, and
+   because both run down to the same point on the near plane, the one that
+   starts lower leans away from the one that starts higher — an unpainted
+   triangle opens between them and grows the further the bay is off centre
+   (Eldar, 2026-09-22, the arrow: «черная дыра, которая на самом деле
+   продолжается через всю линию»). Nor may the neighbour simply follow the bay
+   down, which is what left the sliver along the wall's foot an hour earlier.
+   So the neighbour's far edge is a POLYLINE: it runs on the wall's foot line to
+   the bay's x, then steps straight DOWN to the bay's own foot, and the side it
+   shares with the bay starts there. One edge, drawn twice from the same two
+   points. bayDrop marks the corner that carries the step; bayFoot is the bay's
+   own corner. */
+const bayDrop = (x, z, y, yz) => ({x, z, drop: true, y: y != null ? y : CFG.benchY + 240,
+                                   yz: yz != null ? yz : CFG.benchDepth});
 const bayFoot = (x, z, y, yz) => ({x, z, y: y != null ? y : CFG.benchY + 240,
                                    yz: yz != null ? yz : CFG.benchDepth});
 const FAR93_L = bayFoot(REC93_BL, REC93_Z), FAR93_R = bayFoot(REC93_BR, REC93_Z);
@@ -2210,6 +2230,14 @@ const FARDR_L = bayFoot(REC2_L, 970), FARDR_R = bayFoot(REC2_R, 970);
 const FAR18_L = bayFoot(REC18_L, 1000), FAR18_R = bayFoot(REC18_R, 1000);
 const FAR22_L = bayFoot(REC4_L, 1000), FAR22_R = bayFoot(REC4_R, 1000);
 const FAR23_L = bayFoot(REC23_L, 1000), FAR23_R = bayFoot(REC23_R, 1000);
+/* the same points, seen from the neighbour's side — it walks the wall's foot
+   line to this x and then steps down to meet the bay here */
+const EDG93_L = bayDrop(REC93_BL, REC93_Z), EDG93_R = bayDrop(REC93_BR, REC93_Z);
+const EDG89_L = bayDrop(REC3_L, 728, 1080, 728), EDG89_R = bayDrop(REC3_R, 728, 1080, 728);
+const EDGDR_L = bayDrop(REC2_L, 970), EDGDR_R = bayDrop(REC2_R, 970);
+const EDG18_L = bayDrop(REC18_L, 1000), EDG18_R = bayDrop(REC18_R, 1000);
+const EDG22_L = bayDrop(REC4_L, 1000), EDG22_R = bayDrop(REC4_R, 1000);
+const EDG23_L = bayDrop(REC23_L, 1000), EDG23_R = bayDrop(REC23_R, 1000);
 /* the floor: each era has its own material tone; the change lands exactly
    on the recreation line — the ground is part of the aging, not a black hole */
 const FLOOR_TONES = {
@@ -2217,7 +2245,17 @@ const FLOOR_TONES = {
     ['#4a2f17', '#1d1108'],   // craft: dark oiled wood
     ['#485042', '#1e2119'],   // workshop: worn linoleum
     ['#5f656e', '#2c3037'],   // office: carpet-tile grey, lit like the room after it
-    ['#686d75', '#31353b'],   // white room: polished light concrete
+    /* THE WHITE ROOM'S FLOOR IS LIGHT. It was written as "polished light
+       concrete" and painted #686d75 — a dark blue-grey, a tone from the office
+       era — and the only places it is ever visible are the slots between the
+       counters and the bays, where every neighbour is white. So each slot read
+       as a hole punched in the floor (Eldar, 2026-09-22, arrow and blue circle:
+       «черная дыра... этот пол основной должен продолжаться назад до стены»).
+       The far stop is the tone the bays' own slabs are cut from, so the floor
+       now runs unbroken from the counter back to the wall the LED panel hangs
+       on; the near stop stays darker than the slabs, which is what still lets
+       a bay's threshold read as a lighter rectangle on it. */
+    ['#d5dade', '#8b9198'],   // white room: polished light concrete
   ],
   /* Keyed by the bay, not by its position in this list. They were positional,
      and inserting three rows in the middle silently moved two portals onto
@@ -2252,7 +2290,7 @@ function drawFloor(){
   const spans = [
     [SEGMENTS[0].x0 - 900, REC_L,  T.era[0]],
     [REC_L,  REC_R,  T.rec.r1979],
-    [REC_R,  REC3_L, T.era[1], null, FAR89_L],
+    [REC_R,  REC3_L, T.era[1], null, EDG89_L],
     [REC3_L, REC3_R, T.rec.r1989, FAR89_L, FAR89_R],
     /* THE BAND'S FAR CORNERS ARE THE PANEL'S OWN TWO. The white strip on the
        wall is a vertical rectangle on the bay's plane and must stay one; what
@@ -2263,20 +2301,20 @@ function drawFloor(){
        the near plane, exactly where it always was (Eldar, 2026-09-22: «дальняя
        часть прикреплена ровно к точкам края белой стенки, передняя — как
        была»). */
-    [REC3_R, REC93_L, T.era[2], FAR89_R, FAR93_L],
+    [REC3_R, REC93_L, T.era[2], EDG89_R, EDG93_L],
     [REC93_L, REC93_R, T.rec.r1993, FAR93_L, FAR93_R],
-    [REC93_R, REC2_L, T.era[2], FAR93_R, FARDR_L],
+    [REC93_R, REC2_L, T.era[2], EDG93_R, EDGDR_L],
     [REC2_L, REC2_R, T.rec.rDR, FARDR_L, FARDR_R],
-    [REC2_R, REC17_L, T.era[3], FARDR_R, null],
+    [REC2_R, REC17_L, T.era[3], EDGDR_R, null],
     /* NO FLOOR IN THE GLASS HALL. That bay is a photograph of a room, and the
        room in it has a marble floor of its own running to the bottom of the
        frame; the hall's painted floor laid over it read as a white haze across
        the lower half of the render. The gap is not a gap: the photograph fills
        it. */
-    [REC17_R, REC18_L, T.era[3], null, FAR18_L],
+    [REC17_R, REC18_L, T.era[3], null, EDG18_L],
     [REC18_L, REC18_R, T.rec.r2018, FAR18_L, FAR18_R],
-    [REC18_R, REC4_L, T.era[3], FAR18_R, FAR22_L],
-    [REC4_R, REC23_L, T.era[3], FAR22_R, FAR23_L],
+    [REC18_R, REC4_L, T.era[3], EDG18_R, EDG22_L],
+    [REC4_R, REC23_L, T.era[3], EDG22_R, EDG23_L],
     [REC23_L, REC23_R, T.rec.r2023, FAR23_L, FAR23_R],
     [REC4_L, REC4_R, T.rec.r2022, FAR22_L, FAR22_R],
     /* From the crossover onward the approach, Hall and TODAY share one pale
@@ -2293,17 +2331,22 @@ function drawFloor(){
     const yTop = py(1080, k(segF.z0 || 550));
     /* a far corner is a POINT, not just an x: a bay's foot sits lower than the
        wall's own foot line, and both slabs that meet there must use it. */
-    const corner = (o, x) => o ? {x: px(o.x, k(o.z)), y: py(o.y, k(o.yz))}
+    const corner = (o, x) => o ? {x: px(o.x, k(o.z)), drop: !!o.drop,
+                                 y: o.y != null ? py(o.y, k(o.yz)) : yTop}
                                : {x: px(x, kSeam), y: yTop};
     const cL = corner(fa, a), cR = corner(fb, b);
     const xTL = cL.x, xTR = cR.x;
     const xBL = px(a, kNear), xBR = px(b, kNear);
     if (Math.max(xTR, xBR) < 0 || Math.min(xTL, xBL) > W) continue;
-    const g = ctx.createLinearGradient(0, Math.min(cL.y, cR.y), 0, H);
+    const g = ctx.createLinearGradient(0, Math.min(cL.y, cR.y, yTop), 0, H);
     g.addColorStop(0, tone[0]);
     g.addColorStop(1, tone[1]);
     ctx.beginPath();
-    ctx.moveTo(cL.x, cL.y); ctx.lineTo(cR.x, cR.y);
+    // the far edge, left to right, with a step down at a neighbour's bay corner
+    ctx.moveTo(cL.x, cL.y);
+    if (cL.drop) ctx.lineTo(cL.x, yTop);
+    if (cR.drop) ctx.lineTo(cR.x, yTop);
+    ctx.lineTo(cR.x, cR.y);
     ctx.lineTo(xBR, H); ctx.lineTo(xBL, H);
     ctx.closePath();
     ctx.fillStyle = g;
@@ -2611,6 +2654,43 @@ function noShadow(){
   ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
   ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
 }
+/* THE FLAT TOP ON A BIG NUMERAL. Chrome rasterises canvas text with the top of
+   a glyph snapped to a whole device pixel and gives that first row no partial
+   coverage — "2022" set on a bare canvas in the same browser does it at 93px
+   and at 280px alike, so it is the rasteriser and not anything in this file.
+   Every round apex therefore ends in a flat line one pixel wide, and on the
+   hall's largest type that line reads as a cut (Eldar, 2026-09-22: «у годов,
+   которые большие, сверху обрезано, как будто бы линия из одного, двух
+   пикселей»). Neither a stroke over the fill nor a change of size moves it.
+   What does is setting the numeral at twice the size on a sheet of its own and
+   laying it down at half: the downsample gives the apex the coverage the
+   rasteriser refused it. ONE sheet, kept between frames and only ever grown —
+   a canvas per frame is a garbage machine, and at most three years are lettered
+   at once. The caller's font, fill, alignment and relief are all honoured: the
+   colour is read off ctx, and the shadow lands on the drawImage. */
+let NUM_SHEET = null;
+function paintNumeral(str, cx, yBase, sizePx, fam){
+  // small type is rasterised finely enough that the snapped row does not show
+  if (!(sizePx > 26) || sizePx > 1400){ ctx.fillText(str, cx, yBase); return; }
+  if (!NUM_SHEET) NUM_SHEET = document.createElement('canvas');
+  const g = NUM_SHEET.getContext('2d');
+  const f2 = `${(sizePx * 2).toFixed(2)}px ${fam}`;
+  g.font = f2;
+  const m = g.measureText(str);
+  const asc = Math.ceil(m.actualBoundingBoxAscent) + 6;
+  const desc = Math.ceil(m.actualBoundingBoxDescent) + 6;
+  const w = Math.ceil(m.width) + 12, h = asc + desc;
+  if (!(w > 0) || !(h > 0)){ ctx.fillText(str, cx, yBase); return; }
+  if (NUM_SHEET.width < w || NUM_SHEET.height < h){
+    NUM_SHEET.width = Math.max(NUM_SHEET.width, w);
+    NUM_SHEET.height = Math.max(NUM_SHEET.height, h);
+  }
+  g.clearRect(0, 0, w, h);   // only what is read back — the sheet keeps the largest size it has ever needed
+  g.font = f2; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  g.fillStyle = ctx.fillStyle;
+  g.fillText(str, 6, asc);
+  ctx.drawImage(NUM_SHEET, 0, 0, w, h, cx - w / 4, yBase - asc / 2, w / 2, h / 2);
+}
 function drawBeatText(b, focusAmt){
   if (b.under) return;   // this fact lives under the tabletop, on the bench face
   if (b.plaque){
@@ -2806,7 +2886,9 @@ function drawBeatText(b, focusAmt){
           const r = drawHungYear(b, seg, cx, band, fScale, focusAmt, near);
           hitTop = r.yBase - r.cap - 18 * SS;
         } else {
-          ctx.font = eraFont(170 * (seg.yearScale || 1) * (seg.tScale||1) * (b._ys||1) * (b.ysMul||1) * fScale * kk * SS, '', seg.fontYear || seg.font);
+          const ySz8 = 170 * (seg.yearScale || 1) * (seg.tScale||1) * (b._ys||1) * (b.ysMul||1) * fScale * kk * SS;
+          const yFam8 = seg.fontYear || seg.font;
+          ctx.font = eraFont(ySz8, '', yFam8);
           ctx.fillStyle = `rgba(${seg.ink},${0.5 + 0.45*near})`;
           // a numeral can be lifted clear of whatever stands under it on the panel
           const fb = b.yBand && BAY_FREE[b.y];
@@ -2822,7 +2904,7 @@ function drawBeatText(b, focusAmt){
           } else yRest = py(140 - (b.yLift || 0), kk);
           const yBase8 = mixN(yRest, H*0.16, focusAmt);
           letterRelief(0.5);                // the cut edge, and nothing else on the glyph
-          ctx.fillText(b.y, cx, yBase8);
+          paintNumeral(b.y, cx, yBase8, ySz8, yFam8);
           noShadow();
         }
       }
@@ -7139,7 +7221,8 @@ let DR_SCAN_RUNG = false;
 function drawRec2(t){
   const mid = (REC2_L + REC2_R) / 2;
   if (Math.abs(cam.x - mid) > CULL_BAY) return;
-  drawBayStep(REC2_L, REC2_R, STEP_TONE.cool, 964, 520);   // back on this bay's pilasters (964), nose where the block always stood (520)
+  /* (the step is laid at the END of this bay — it stands in front of the
+     pilasters, so it is painted after them; see the call below) */
   const lock0 = Math.max(0, 1 - Math.abs(cam.x - mid) / 900);
   const ease0 = lock0 * lock0 * (3 - 2 * lock0);
   const kk = k(970);
@@ -7375,6 +7458,13 @@ function drawRec2(t){
     ctx.fillStyle = 'rgba(200,235,255,0.16)';
     ctx.fillRect(sxc - cw/2 + 6*SS, 0, 3*SS, yBase);
   }
+  /* THE STEP STANDS IN FRONT OF THE PILASTERS. Its back is riveted to their
+     plane and its nose is four hundred units nearer, so from the side its end
+     must cover the foot of the column, exactly as it does at 1989 — where the
+     step has always been painted after them. Painted before, it read as a block
+     sliding behind the bay (Eldar, 2026-09-22: «ступенька должна как бы
+     перекрывать колонну»). */
+  drawBayStep(REC2_L, REC2_R, STEP_TONE.cool, 964, 520);
 }
 
 /* the 2022 recreation: the scanner's portal — panelled white ends here,
@@ -7382,7 +7472,7 @@ function drawRec2(t){
 function drawRec4(t){
   const mid = (REC4_L + REC4_R) / 2;
   if (Math.abs(cam.x - mid) > CULL_BAY) return;
-  drawBayStep(REC4_L, REC4_R, STEP_TONE.white, 992, 520);   // back on the portal columns' plane, nose at 520 as before
+  /* (the step is laid after the portal's columns, at the end of this bay) */
   const kk = k(1000);   // the portal stands proud of the deep white wall
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
   const x0 = px(REC4_L, kk), x1 = px(REC4_R, kk);
@@ -7441,6 +7531,7 @@ function drawRec4(t){
     }
   }
   drawRec4Columns(yBase);
+  drawBayStep(REC4_L, REC4_R, STEP_TONE.white, 992, 520);   // in front of the portal's own columns
 }
 /* THE STEP AT THE MOUTH OF A BAY. 1979 had it first: between the panel's foot
    and the floor slab a dark band showed, and the columns seemed to stand over a
@@ -7490,19 +7581,29 @@ function drawBayStep(L, R, tone, zBack, zNose){
   ctx.fillRect(nx0, yNose, nx1 - nx0, yStepFoot - yNose);
   ctx.fillStyle = T.nosing;
   ctx.fillRect(nx0, Math.round(yNose), nx1 - nx0, Math.max(1, 1.4 * SS));
-  /* THE BLOCK HAS ENDS. It was a tread and a riser and nothing else, so the
-     moment the bay stood off-centre and perspective opened one of its ends,
-     you looked into a hole where the side of the stone should be. Each end is
-     a quad from the back edge to the nose, in the riser's stone a shade darker
-     — the light strip does not turn the corner, so the end face is unlit. */
-  const eg = ctx.createLinearGradient(0, yTreadBack, 0, yStepFoot);
-  eg.addColorStop(0, T.riser[1]); eg.addColorStop(1, T.riser[2]);
+  /* THE BLOCK HAS ENDS, AND THEY ARE THE SAME STONE. Each end is a quad from
+     the back edge to the nose. It used to be painted in the riser's two darker
+     tones with a further 22% of black over it — the light strip was held not to
+     turn the corner — and against the lit front the side then read as a black
+     hole (Eldar, 2026-09-22). It takes the riser's own three tones now, the
+     concealed strip turns the corner at half strength, and the only difference
+     left is a tenth of shade, which is what a face at right angles to a light
+     actually loses. */
+  const eg = ctx.createLinearGradient(0, yNose, 0, yStepFoot);
+  eg.addColorStop(0, T.riser[0]); eg.addColorStop(0.5, T.riser[1]); eg.addColorStop(1, T.riser[2]);
   const endFace = (xb, xn) => {
     if (Math.abs(xn - xb) < 0.5) return;
-    ctx.fillStyle = eg;
-    ctx.beginPath(); ctx.moveTo(xb, yTreadBack); ctx.lineTo(xn, yNose);
-    ctx.lineTo(xn, yStepFoot); ctx.lineTo(xb, yBackFoot); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fill();
+    const path = () => { ctx.beginPath(); ctx.moveTo(xb, yTreadBack); ctx.lineTo(xn, yNose);
+                         ctx.lineTo(xn, yStepFoot); ctx.lineTo(xb, yBackFoot); ctx.closePath(); };
+    ctx.fillStyle = eg; path(); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.06)'; ctx.fill();
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const eglow = ctx.createLinearGradient(0, yNose + 2 * SS, 0, yStepFoot);
+    eglow.addColorStop(0, `rgba(${T.glow},0.62)`); eglow.addColorStop(0.4, `rgba(${T.glow},0.24)`);
+    eglow.addColorStop(1, `rgba(${T.glow},0.03)`);
+    ctx.fillStyle = eglow; path(); ctx.fill();
+    ctx.restore();
   };
   if (nx1 < bx1) endFace(bx1, nx1);   // the right end opens when the bay is left of centre
   if (nx0 > bx0) endFace(bx0, nx0);   // the left end, when it is right of centre
@@ -8796,15 +8897,24 @@ function drawSheetBenches(){
        own back edge, which is still climbing out of its mitre for the first
        fifty units. That showed as an ear sticking up out of the corner (Eldar).
        It is clipped to the stretch the left piece does not reach. */
-    if (wL + wR > tb.x1 - tb.x0){
-      ctx.save();
-      const cs = px(tb.x0 + wL, kf);
-      ctx.beginPath(); ctx.rect(cs, yBack, Math.max(1, cx1 - cs) + 1, yFloor - yBack + 4);
-      ctx.clip();
+    /* AND THE CORNER KEEPS ITS WHOLE MITRE. Cutting the right piece back to
+       exactly where the left one ends leaves only the last few columns of it —
+       and a counter's mitre needs about an eighth of the end piece to fall
+       through. What showed was the left piece's flat back edge turning down in
+       one step: the ear Eldar kept pointing at on the short runs (2026-09-22).
+       The cut is made at the start of that mitre instead, and the left piece is
+       clipped to the same line so it cannot paint back over the corner. What is
+       hidden of the left piece there is plain panel. */
+    const MITRE = wR * 0.12;
+    const tight = wL + wR > tb.x1 - tb.x0;
+    const cut = tight ? Math.min(tb.x0 + wL, tb.x1 - MITRE) : tb.x1;
+    if (tight){
+      ctx.save(); clipTo(cut, tb.x1 + 40); put(R, tb.x1 - wR, wR); ctx.restore();
+      ctx.save(); clipTo(tb.x0 - 40, cut); put(L, tb.x0, wL); ctx.restore();
+    } else {
       put(R, tb.x1 - wR, wR);
-      ctx.restore();
-    } else put(R, tb.x1 - wR, wR);
-    put(L, tb.x0, wL);
+      put(L, tb.x0, wL);
+    }
     /* PLAIN GROUND UNDER A LINE. A caption is read off the counter's own front,
        and on a short run the doorless middle is 127 units wide (1995) while the
        line is 620 — so the sentence lay across two door seams and a handle.
@@ -10714,14 +10824,26 @@ function drawBookPyramid(b, t){
      pile against its back edge — 25 sets it in the middle of that band (Eldar,
      2026-09-22: «чтобы они где-то посередине стола лежали»). Near the front
      plane either way, which is what keeps it bolted to the counter. */
-  const kk = k(b.pyr.lz != null ? b.pyr.lz : 55);
+  /* BOLTED TO THE COUNTER, NOT MERELY NEAR IT. The white era's counter is a
+     PHOTOGRAPH, and drawSheetBenches lays the whole of it — worktop band and
+     all — on the front plane, k(0). A pile standing at any other depth
+     therefore travels at a different rate across the frame from the counter
+     under it, and at 25 units that difference is small enough to read as slack
+     rather than as distance: the books slid on the table as the camera panned
+     (Eldar, 2026-09-22: «Constant Change ездит относительно стола — они должны
+     быть прикреплены к столу»). Two things join without sliding only if they
+     are drawn from the same world x at the same k, so the pile takes the
+     counter's own plane. Where it sits ACROSS the worktop is then a height, not
+     a depth: benchY − 11 puts its base in the middle of the photographed top
+     band, which is where lz 25 used to put it at rest. */
+  const kk = k(0);
   const sx = px(b.x + b.pyr.dx, kk);
   if (sx < -600 || sx > W + 600) return;
   const wWorld = b.pyr.w;
   const scale = (wWorld / BOOK_SPRITE.w) * kk * SS;
-  const sy = py(CFG.benchY - 2, kk);
+  const sy = py(CFG.benchY - 11, kk);
   pushHit(sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale, BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale,
-          {type:'photo', sp: BOOK_CARD, wx: b.x + b.pyr.dx, cy: CFG.benchY - 190, z: 55, w: 420,
+          {type:'photo', sp: BOOK_CARD, wx: b.x + b.pyr.dx, cy: CFG.benchY - 190, z: 0, w: 420,
            beat: BEATS.indexOf(b)});
   const baseRow = BOOK_SPRITE.base != null ? BOOK_SPRITE.base : BOOK_SPRITE.h;
   ctx.drawImage(BOOK_SPRITE.c, sx - BOOK_SPRITE.w*scale/2, sy - baseRow*scale,
@@ -12333,6 +12455,13 @@ let FROST = null;
 const STUDY_INLINE = {
   'THE CROSSOVER': {
     boxTop: true,          // the case first, then what happened to it, then the voice
+    /* THE CAPTION IS THE PAGE'S STANDFIRST. Set under the rule in two lines it
+       left two bands of air — one between the title and the rule, one between
+       the rule and itself — and pushed the carton down the page. It is one line
+       now, standing where a standfirst stands, above the rule; the carton
+       follows the rule directly and its top edge lands where that caption used
+       to be (Eldar, 2026-09-22). */
+    overRule: true,
     box: {head: 'One case, as it arrived',
           sub: 'both jaws, still in the trays they were taken in',
           hint: 'click to digitize', done: 'and this is what happened to it \u2014 the case became data'},
@@ -12588,6 +12717,7 @@ function drawStudy(){
   };
   ctx.textAlign = 'left';
 
+  const inl = STUDY_INLINE[b.t];
   /* ---- the head: year, title, standfirst, rule — one stack, the same on every page ---- */
   y += 9 * u;                                              // the year's baseline
   ctx.font = K.font(PAGE.year);
@@ -12610,6 +12740,19 @@ function drawStudy(){
     ctx.font = K.font(PAGE.lead);
     ctx.fillStyle = `rgba(${K.dim},0.95)`;
     flow(b.th, PAGE.leadLH * SS);
+    y += 1 * u;
+  } else if (inl && inl.overRule && inl.box){
+    /* the carton's caption, in the standfirst's own place — and on ONE line:
+       it is set down from the standfirst's size until it fits the column,
+       the same way the title is (Eldar, 2026-09-22: «этот текст в одну
+       строчку уместим») */
+    const capLine = inl.box.head + ' \u2014 ' + inl.box.sub;
+    let cSz = PAGE.lead;
+    ctx.font = K.font(cSz);
+    while (ctx.measureText(capLine).width > textW && cSz > 14){ cSz -= 0.5; ctx.font = K.font(cSz); }
+    ctx.fillStyle = `rgba(${K.dim},0.95)`;
+    y += PAGE.leadLH * SS * 0.86;
+    if (y > topClip && y < botClip) ctx.fillText(capLine, left, y);
     y += 1 * u;
   }
   y += 2 * u;
@@ -12711,7 +12854,6 @@ function drawStudy(){
   }
 
   /* ---- the body ---- */
-  const inl = STUDY_INLINE[b.t];
   let boxDone = false;
   const drawInlineBox = () => {
     if (!inl || boxDone) return;
@@ -12722,18 +12864,20 @@ function drawStudy(){
       const fw = Math.min(textW, 720 * SS), fh = fw * sp2.h / sp2.w;
       const fx = left + (textW - fw) / 2;
       S.diss = Math.max(0, Math.min(1, (S.diss || 0) + (S.dissing ? (state.dt || 0.016) * 0.7 : 0)));
-      ctx.font = K.font(PAGE.small, '700');
-      try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
-      ctx.fillStyle = `rgba(${K.dim},0.95)`;
-      ctx.textAlign = 'center';
-      if (y > topClip && y < botClip) ctx.fillText(inl.box.head, fx + fw / 2, y);
-      try { ctx.letterSpacing = '0px'; } catch(err){}
-      y += 24 * SS;
-      ctx.font = K.font(19, 'italic');
-      ctx.fillStyle = `rgba(${K.dim},0.9)`;
-      if (y > topClip && y < botClip) ctx.fillText(inl.box.sub, fx + fw / 2, y);
-      ctx.textAlign = 'left';
-      y += 22 * SS;
+      if (!inl.overRule){
+        ctx.font = K.font(PAGE.small, '700');
+        try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
+        ctx.fillStyle = `rgba(${K.dim},0.95)`;
+        ctx.textAlign = 'center';
+        if (y > topClip && y < botClip) ctx.fillText(inl.box.head, fx + fw / 2, y);
+        try { ctx.letterSpacing = '0px'; } catch(err){}
+        y += 24 * SS;
+        ctx.font = K.font(19, 'italic');
+        ctx.fillStyle = `rgba(${K.dim},0.9)`;
+        if (y > topClip && y < botClip) ctx.fillText(inl.box.sub, fx + fw / 2, y);
+        ctx.textAlign = 'left';
+        y += 22 * SS;
+      }
       if (y + fh > topClip && y < botClip){
         ctx.save();
         ctx.globalAlpha = a * Math.max(0, 1 - S.diss * 1.1);
@@ -12801,8 +12945,11 @@ function drawStudy(){
       if (S.diss >= 1){
         S.doneAt = S.doneAt || state.time;
         const wait = state.time - S.doneAt;
-        S._swap = Math.max(0, Math.min(1, (wait - 2) / 0.5));
-        if (wait > 2 && S._figY != null){
+        /* ONE, TWO — AND THE NEXT INVITATION. Two full seconds of an empty
+           rectangle read as the page having stopped (Eldar, 2026-09-22: «не
+           такая долгая пауза, как сейчас, а быстрее»). */
+        S._swap = Math.max(0, Math.min(1, (wait - 0.9) / 0.4));
+        if (wait > 0.9 && S._figY != null){
           const aa = S._swap;
           const label = 'Digitize another one?';
           ctx.save();
