@@ -2821,8 +2821,13 @@ function capColW(b){
   if (capRec(b.x) == null){
     const tt = benchFor(b);
     if (tt){
-      const f = benchFlat(tt), fl = f.a1 - f.a0 - 30;
-      if (fl < wu && fl >= 0.6 * wu) wu = fl;
+      const f = benchFlat(tt);
+      let fl = f.a1 - f.a0 - 30;
+      /* a counter with no flat middle worth the name — 2019's is 510 units from
+         end to end — takes the whole run's width instead, so at least the line
+         stops where the counter stops. */
+      if (fl < 0.6 * wu) fl = (tt.x1 - tt.x0) - 30;
+      if (fl < wu && fl >= 0.5 * wu) wu = fl;
     }
   }
   if (b._dwu !== wu){
