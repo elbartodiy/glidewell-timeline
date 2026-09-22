@@ -392,9 +392,14 @@ const BEATS = [
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
    wall:[],
    table:[],
-   st:[{img:'ellen', w:120, dx:55, lz:30, lift:26, cap:'Dr. Ellen Paulisick · GL alum'},
-       {img:'nadia', w:120, dx:206, lz:30, lift:26, cap:'Dr. Nadia Rodriguez · GL alum'},
-       {img:'bianca', w:120, dx:357, lz:30, lift:26, cap:'Dr. Bianca Clark · GL alum'}]},
+   /* they stand ON the counter. The 26-unit lift is the one a painted counter
+      needs (era 1's plate, where a foot at depth reads as sunk into the
+      photograph); this run is a real photographed cabinet with a real worktop,
+      and the lift simply left the three frames — and their contact shadows —
+      hanging in the air (Eldar, 2026-09-22: «фотки выпускниц парят в воздухе»). */
+   st:[{img:'ellen', w:120, dx:55, lz:30, cap:'Dr. Ellen Paulisick · GL alum'},
+       {img:'nadia', w:120, dx:206, lz:30, cap:'Dr. Nadia Rodriguez · GL alum'},
+       {img:'bianca', w:120, dx:357, lz:30, cap:'Dr. Bianca Clark · GL alum'}]},
 
   {x:26340, y:'2022', t:'FASTSCAN.IO', thBelow:true, capDX:-36,   // the bay is a photograph; the italic line cannot live on it, and the column is a shade wider than the panel
    tOnBay:true,   // the title is lettered on the plinth block of the render, centred on its face
@@ -784,6 +789,9 @@ const REC93_Z = 728;
 const REC93_MID = (REC93_L + REC93_R) / 2;
 const REC93_HALF = (REC93_R - REC93_L) / 2 * (CFG.F + REC93_Z) / (CFG.F + CFG.benchDepth);
 const REC93_BL = REC93_MID - REC93_HALF, REC93_BR = REC93_MID + REC93_HALF;
+/* the two points everything in this bay hangs off: the foot of the white panel,
+   which is also where the floor's white begins */
+const FAR93_L = {x: REC93_BL, z: REC93_Z}, FAR93_R = {x: REC93_BR, z: REC93_Z};
 /* The 2018 bay, cut inside era 4 for the same reason: no seam to bridge. */
 const REC18_L = bayStart(3) + 300, REC18_R = bayStart(3) + 1200;
 /* The 2023 bay: the crossing. Cut inside era 4, 2000 wide, panel in the middle
@@ -2227,9 +2235,18 @@ function drawFloor(){
     [REC_L,  REC_R,  T.rec.r1979],
     [REC_R,  REC3_L, T.era[1]],
     [REC3_L, REC3_R, T.rec.r1989],
-    [REC3_R, REC93_BL, T.era[2]],
-    [REC93_BL, REC93_BR, T.rec.r1993],   // the band's own edges — the panel above stands on the same two
-    [REC93_BR, REC2_L, T.era[2]],
+    /* THE BAND'S FAR CORNERS ARE THE PANEL'S OWN TWO. The white strip on the
+       wall is a vertical rectangle on the bay's plane and must stay one; what
+       hangs off it is the floor. So the floor's far edge is drawn at the
+       PANEL's corners — its world x at the panel's own depth — and the two
+       neighbouring slabs take the same points for their shared edge, so all
+       three still tile. The near edge is untouched, at the bay's own width on
+       the near plane, exactly where it always was (Eldar, 2026-09-22: «дальняя
+       часть прикреплена ровно к точкам края белой стенки, передняя — как
+       была»). */
+    [REC3_R, REC93_L, T.era[2], null, FAR93_L],
+    [REC93_L, REC93_R, T.rec.r1993, FAR93_L, FAR93_R],
+    [REC93_R, REC2_L, T.era[2], FAR93_R, null],
     [REC2_L, REC2_R, T.rec.rDR],
     [REC2_R, REC17_L, T.era[3]],
     /* NO FLOOR IN THE GLASS HALL. That bay is a photograph of a room, and the
@@ -2249,13 +2266,14 @@ function drawFloor(){
     [REC23_R, HALL_FRAME_L - 60, T.era[3]],
     [HALL_FRAME_L - 60, SEGMENTS[3].x1 + 900, T.rec.r2017],
   ];
-  for (const [a, b, tone] of spans){
+  for (const [a, b, tone, fa, fb] of spans){
     const segF = segAt((a + b) / 2);
     /* The same line the wall's foot is drawn to, computed the same way. Taking
        one from the counter's depth and the other from the wall's is how a strip
        of naked background opens between them. */
     const yTop = py(1080, k(segF.z0 || 550));
-    const xTL = px(a, kSeam), xTR = px(b, kSeam);
+    const xTL = fa ? px(fa.x, k(fa.z)) : px(a, kSeam);
+    const xTR = fb ? px(fb.x, k(fb.z)) : px(b, kSeam);
     const xBL = px(a, kNear), xBR = px(b, kNear);
     if (Math.max(xTR, xBR) < 0 || Math.min(xTL, xBL) > W) continue;
     const g = ctx.createLinearGradient(0, yTop, 0, H);
@@ -6239,23 +6257,22 @@ function drawAIRelay(t){
 function drawRec93(t){
   const mid = (REC93_L + REC93_R) / 2;
   if (Math.abs(cam.x - mid) > CULL_BAY) return;
-  const kk = k(REC93_Z), kSeam = k(CFG.benchDepth);
-  /* THE PANEL IS THE STANDING HALF OF THE BAND (see REC93_BL/BR). Its head is on
-     the bay's plane, its foot on the floor's own far line — the same two points
-     the floor patch starts from — so the corner where the white turns from the
-     wall onto the ground is one corner, at every position of the camera, and
-     the way it skews as you pass is the skew of one object. */
-  const yFoot = py(1080, k(SEGMENTS[2].z0 || 850)) + 1;
-  const tx0 = px(REC93_BL, kk), tx1 = px(REC93_BR, kk);
-  const fx0 = px(REC93_BL, kSeam), fx1 = px(REC93_BR, kSeam);
-  const wg = ctx.createLinearGradient(0, 0, 0, yFoot);
+  const kk = k(REC93_Z);
+  /* THE PANEL IS A PANEL: a vertical rectangle on the bay's own plane, at the
+     bay's own width. It was briefly drawn as a quad with its foot on the floor's
+     plane, to make the join — which skewed the white on the WALL, and a strip of
+     wall does not lean (Eldar, 2026-09-22: «раньше эта линия была всё время
+     вертикально, и так и должно быть; вертикальную линию не надо было
+     трогать»). The join is made on the floor's side instead: the floor's far
+     corners are drawn at THESE two points (FAR93_L/R in drawFloor). */
+  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const x0 = px(REC93_BL, kk), x1 = px(REC93_BR, kk);
+  const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#c3cad0');
   wg.addColorStop(0.42, '#dee4e9');
   wg.addColorStop(1, '#979ea5');
   ctx.fillStyle = wg;
-  ctx.beginPath();
-  ctx.moveTo(tx0, 0); ctx.lineTo(tx1, 0); ctx.lineTo(fx1, yFoot); ctx.lineTo(fx0, yFoot);
-  ctx.closePath(); ctx.fill();
+  ctx.fillRect(x0, 0, x1 - x0, yBase);
   // the reveal the picture lands in, so the film reads as hung and not floating
   const cx = px(mid, kk);
   // no reveal and no frame: the projector lays its own ground, in exactly the
