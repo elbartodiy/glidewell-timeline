@@ -102,7 +102,8 @@ def cut(key):
 
     U = (1080 - 700) / (H - lip)                      # world units per image column
     print(f'{key} <- {fn}:  {n}x{H}  швы {s}')
-    print(f"   BENCH_SHEETS: {{era: ?, key: '{key}', top: {lip}}}")
+    print(f"   BENCH_SHEETS: {{era: ?, key: '{key}', top: {lip}, "
+          f"endL: {s[0]}, endR: {n - s[5]}}}")
     for nm, arr in P.items():
         img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
         img.save(f'{ROOT}/expo/assets/photo/bench_{key}_{nm}.png', optimize=True)

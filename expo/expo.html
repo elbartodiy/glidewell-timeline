@@ -2854,7 +2854,13 @@ function capX(b, kf){
     for (const tt of TABLES){
       const l = px(tt.x0, kf), r = px(tt.x1, kf);
       if (r <= cw) gl = Math.max(gl, r);
-      if (l >= cw) gr = Math.min(gr, l);
+      else if (l >= cw) gr = Math.min(gr, l);
+      /* AND A COUNTER THE CENTRE ITSELF LANDS ON. Classed as neither side, such
+         a run was skipped altogether and the line stayed lying across it —
+         which is how 1989 was still half on the walnut counter after the first
+         fix. It is pushed off the nearer edge of it. */
+      else if (cw - l < r - cw) gr = Math.min(gr, l);
+      else gl = Math.max(gl, r);
     }
     const half = capColW(b) / 2 + 10 * SS;
     cw = (gr - gl >= 2 * half) ? Math.max(gl + half, Math.min(gr - half, cw))
@@ -8338,10 +8344,14 @@ const BENCH_SHEETS = [
      off the ALPHA bounding box — the renders are transparent PNGs and flattening
      them to RGB bakes their background in, which is how a grey ground came to
      stand behind the counters once. */
-  {era: 0, key: 'b1', top: 39},   // 1907–1979 · dark boards, panelled doors, brass cups
-  {era: 1, key: 'b2', top: 29},   // 1980–1988 · walnut veneer, beige laminate
-  {era: 2, key: 'b3', top: 25},   // 1993–2007 · grey-green doors, speckled laminate
-  {era: 3, key: 'b4', top: 24},   // 2009–2026 · white lacquer, its diode light photographed
+  /* endL / endR are the render's own end returns, in sheet columns — the narrow
+     band outside the last door at each end. Recorded because they are the only
+     measurement of the counter's own end there is; the hall does not lay them
+     anywhere by itself. */
+  {era: 0, key: 'b1', top: 39, endL: 42, endR: 46},   // 1907–1979 · dark boards, panelled doors, brass cups
+  {era: 1, key: 'b2', top: 29, endL: 38, endR: 39},   // 1980–1988 · walnut veneer, beige laminate
+  {era: 2, key: 'b3', top: 25, endL: 34, endR: 35},   // 1993–2007 · grey-green doors, speckled laminate
+  {era: 3, key: 'b4', top: 24, endL: 33, endR: 34},   // 2009–2026 · white lacquer, its diode light photographed
 ];
 const sheetOf = tb => {
   for (const sh of BENCH_SHEETS){
