@@ -2071,8 +2071,17 @@ function drawWall(){
     const kw = k(seg.z0);
     let ex0 = wx0, ex1 = wx1;
     const zL = abutPanelZ(seg.x0), zR = abutPanelZ(seg.x1);
-    if (zL != null) ex0 = Math.min(ex0, cam.x + (px(wx0, k(zL)) - W/2) / (kw * SS));
-    if (zR != null) ex1 = Math.max(ex1, cam.x + (px(wx1, k(zR)) - W/2) / (kw * SS));
+    /* AND IT IS TUCKED UNDER THE BAY, NOT BUTTED AGAINST IT. Landed exactly on
+       the panel's edge, the join between two eras' walls was a hairline sitting
+       right beside the bay's pilaster — visible at every camera, because two
+       edges that meet on one screen column cannot both be antialiased away
+       (Eldar, 2026-09-23: «справа от колонны на стене виден стык — сдвинь его
+       левее, чтобы он не появлялся рядом с колонной»). Ninety units further in,
+       on the wall's own plane, puts the edge well inside the bay, which is
+       painted after the wall and covers it whole. */
+    const ABUT_TUCK = 90;
+    if (zL != null) ex0 = Math.min(ex0, cam.x + (px(wx0, k(zL)) - W/2) / (kw * SS)) - ABUT_TUCK;
+    if (zR != null) ex1 = Math.max(ex1, cam.x + (px(wx1, k(zR)) - W/2) / (kw * SS)) + ABUT_TUCK;
     const sx0 = Math.max(0, px(ex0, kw)), sx1 = Math.min(W, px(ex1, kw));
     if (sx1 <= 0 || sx0 >= W || sx1 <= sx0) continue;
     const tex = TEX[seg.wall];
@@ -7736,7 +7745,13 @@ function drawBayStep(L, R, tone, zBack, zNose, backZ){
      there the tread and the floor are the same line (Eldar, 2026-09-23). */
   const yTreadBack = backZ != null ? py(1080, k(backZ)) : py(zTread, kFar);
   const yNose = py(zTread, kStep), yStepFoot = py(1080, kStep);
-  const yBackFoot = backZ != null ? yTreadBack : py(1080, kFar);
+  /* AND THE BLOCK KEEPS ITS THICKNESS AT THE BACK. Pinning the tread to the
+     wall's foot and then putting the block's base on the same line collapsed
+     the end face to a triangle: the block appeared to taper away to nothing at
+     the side (Eldar, 2026-09-23: «правая грань стала треугольной — верни как
+     было, не возвращая отражение»). The base is the tread's own line plus the
+     block's own height at that plane, so the end is the quad it always was. */
+  const yBackFoot = yTreadBack + (py(1080, kFar) - py(zTread, kFar));
   /* BOLTED TO THE BAY. Its ends were taken from wherever the counters happened
      to stop, which is a different plane and a different pair of numbers on each
      side — so the block slid against its own panel as the camera moved and came
