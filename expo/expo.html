@@ -337,12 +337,23 @@ const BEATS = [
       counter, half again as large — see the prop pushed in initDecor. */
    wall2:[]},
 
-  {x:24450, y:'2018', t:'', tier:1, yLift:110,
-   pinZ:1000,
+  /* THE THREE LATE YEARS STAND ON ONE LINE. 2018, 2022 and 2023 are lettered on
+     the same ceiling line — the grey band the downlights are set in — and 2022
+     was the only one on it. yLift 300 at a pinZ within four units of 2022's is
+     the same height on screen (Eldar, 2026-09-22, red dashes across all three). */
+  {x:24450, y:'2018', t:'', tier:1, yLift:300,
+   pinZ:1000, descBase:true,   // its line is read off the factory's base, which is the only even surface it has
    th:'',
    d:'1,500 pairs of scans, and the profile between opposing teeth that technicians find hardest. The paper, written with UC Berkeley, is called Learning Beyond Human Expertise.',
    wall:[], table:[]},   // the design-station monitor is gone: the crown itself is the exhibit now
-  {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true,
+  /* the block is centred on the wall between the 2018 bay's right pilaster and
+     the 2022 bay's left one — (REC18_R + REC4_L)/2 — and lifted clear of the
+     ceiling band, though not up to it: the factory's own year stays lower than
+     the three that are lettered on the line (Eldar, 2026-09-22). 145, not the
+     175 the world midpoint gives: the pilasters stand at z 994 and the type at
+     672, so the midpoint has to be taken on the SCREEN at the bay's own view —
+     175 × k(994)/k(672). */
+  {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true, blockDX:145, yLift:120,
    th:'The analog→digital climax: robots make crowns.',
    d:'Automated, AI-designed, robotic monolithic production.',
    wall:[], table:[],
@@ -370,7 +381,7 @@ const BEATS = [
    table:[], pyr:{dx:520, w:460},
    /* no pedestal: the scanner lives in the lit capsule on the panel */},
 
-  {x:26900, y:'2023', t:'THE CROSSOVER', tHide:true, tier:1, yLift:110, yBand:true, railBelow:true,   // the numeral is centred in the empty band the panel publishes, not hung from yLift (Eldar, 2026-09-15)   // its voice hangs in a strip under the article, not down the side   // the panel letters the title itself; the beat carries it so its page and its inline pieces can be keyed by it
+  {x:26900, y:'2023', t:'THE CROSSOVER', tHide:true, tier:1, yLift:300, railBelow:true,   // on the ceiling line with 2018 and 2022 (Eldar, 2026-09-22); it no longer centres itself in the panel's free band   // the numeral is centred in the empty band the panel publishes, not hung from yLift (Eldar, 2026-09-15)   // its voice hangs in a strip under the article, not down the side   // the panel letters the title itself; the beat carries it so its page and its inline pieces can be keyed by it
    pinZ:1000,   // the year rides the panel's own plane, so it stays centred on the white strip
    th:'',
    d:'March 2023: for the first time, more digital impressions arrive at Glidewell in a month than physical ones. Nothing announces it — it is simply the month the two lines cross, sixteen years after the first digital case came in.',
@@ -2683,7 +2694,12 @@ function drawBeatText(b, focusAmt){
        flying years do it: the type keeps the era's own size and height, it just
        stops sliding sideways against the picture it belongs to. */
     const kk = k(wz - 8);
-    const cx = px(b.x, k(b.pinZ || (wz - 8)));
+    /* blockDX: the whole wall block — numeral, title and thesis — lettered off
+       the beat's own centre. 2019 stands in front of the factory, but its
+       lettering belongs to the WALL: it is centred between the two bay
+       pilasters that bound that stretch of it, not over the machines (Eldar,
+       2026-09-22: «он крепится к стене... чтобы он был посредине»). */
+    const cx = px(b.x + (b.blockDX || 0), k(b.pinZ || (wz - 8)));
     if (cx > -900 && cx < W + 900){
       ctx.globalAlpha = flyDim;
       ctx.save();
@@ -3024,6 +3040,25 @@ function drawBenchDescs(){
     if (state.pfmView && state.pfmView.beat === i) dAmt *= 1 - state.pfmView.amt;
     if (dAmt < 0.02) continue;
     const seg = segAt(b.x);
+    /* A LINE ON THE FACTORY'S BASE. 2018's sentence had nowhere to go: its own
+       counter ends where the machines begin, so it was laid over them and could
+       not be read. The cells share one base now, and the base is a wide, even,
+       dark surface at a known depth — the line is set on it, centred, in light
+       ink (Eldar, 2026-09-22: «положим туда, на это основание»). */
+    if (b.descBase && typeof CELL_Z !== 'undefined'){
+      const kp = k(CELL_Z);
+      const cxB = px((cellX(0) + cellX(1)) / 2, kp);
+      const yB = py(884, kp) + 40 * SS;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.font = eraFont(23 * SS, '', seg.font);
+      ctx.fillStyle = `rgba(226,234,242,${(dAmt * 0.95).toFixed(3)})`;
+      ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 7 * SS; ctx.shadowOffsetY = 2 * SS;
+      drawCapLines(b._d, cxB, yB, 32 * SS, capColW(b));
+      CAP_RECT = null;
+      ctx.restore();
+      continue;
+    }
     if (b.descWall){
       // machinery owns floor, wall and air here: the line reads as a plaque
       // at the foot of the frame, light ink over the vignette
@@ -5406,7 +5441,7 @@ function drawRec18(t){
   ctx.font = eraFont(58 * kk * SS, '700', SEGMENTS[3].font);
   try { ctx.letterSpacing = `${58*TRACK.title*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(32,42,54,0.96)';
-  ctx.fillText('The first AI crown', cx, py(46, kk));
+  ctx.fillText('The first AI crown', cx, py(46 - AI_VITRINE.dy, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
   /* THE TITLE STANDS ALONE. The line under it — «no hand drew it · no tool cut
      it · it was proposed» — is gone: the bay shows the crown being made, and
@@ -5456,6 +5491,14 @@ const AI_VITRINE = {
      it grows downward and its foot stops about thirty pixels above the
      counter's line at the bay's own view. */
   grow: 1.22,
+  /* AND THE WHOLE BLOCK SITS IN THE MIDDLE OF ITS AIR. With 2018 lettered up on
+     the ceiling line there was 125 px between the year and the title and 26 px
+     between the screen's foot and the counter — the block was hanging off the
+     bottom of its space. Lifted by 113 units of the panel's plane (50 px at the
+     bay's own view, 2100×1000) the two gaps are 75 and 76: the same air above
+     and below, which is what Eldar's two green arrows ask for (2026-09-22). The
+     title moves with it — it is the same block. */
+  dy: 113,
   w: 500, top: 112, bot: 792,        // the niche in world units on the panel's plane
   crownW: 375, crownCY: 405,         // the big crown: ~60% of the free height, a little above centre
   smallW: 66, cubeW: 112,            // the physical piece and its glass
@@ -5639,6 +5682,7 @@ function drawAiCrownVitrine(mid, kk, t){
   const r = 10 * kk * SS;
   const niche = () => { ctx.beginPath(); ctx.roundRect(nx0, nTop, nw, nh, r); };
   ctx.save();
+  ctx.translate(0, py(V.top - V.dy, kk) - nTop);   // the block's own lift, with its title
   ctx.translate(cx, nTop); ctx.scale(V.grow, V.grow); ctx.translate(-cx, -nTop);
   /* IT IS A SCREEN. This was a white lit niche with a pale crown assembling in
      it — and against a white wall, in a white room, it read as nothing at all:
@@ -10741,7 +10785,29 @@ const FACT_X = SHIFT(24870);
    a pole and a control pendant on a stalk beside it. The arm is a yellow shape
    glimpsed through the glass. Drawing the arm bare was the whole reason it read
    as a toy: no machine on a shop floor is bare. */
-function drawCell(cx, cz, t, phase, pendant){
+/* ONE FLOOR UNDER BOTH CELLS. They stood at z 190 and 232 — one forty units in
+   front of the other — and each carried its own dark plinth, so the pair read as
+   two machines that happened to be standing near each other. They are on one
+   depth now and share one base (Eldar, 2026-09-22: «пусть они будут на одном
+   уровне... и общая база») — which is also the surface 2018's line is read off. */
+const CELL_Z = 210, CELL_HW = 196;
+const cellX = i => FACT_X + (i ? 250 : -300);
+function drawFactoryBase(){
+  const kp = k(CELL_Z), S = kp * SS;
+  const y0 = py(884, kp), y1 = py(1080, kp);
+  const x0 = px(cellX(0) - CELL_HW, kp), x1 = px(cellX(1) + CELL_HW, kp);
+  if (x1 < 0 || x0 > W) return;
+  const pg = ctx.createLinearGradient(0, y0, 0, y1);
+  pg.addColorStop(0, '#4c5259'); pg.addColorStop(0.5, '#3b4147'); pg.addColorStop(1, '#2b3036');
+  ctx.fillStyle = pg;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x0, y0, x1 - x0, y1 - y0, [10 * S, 10 * S, 2 * S, 2 * S]);
+  else ctx.rect(x0, y0, x1 - x0, y1 - y0);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.10)';
+  ctx.fillRect(x0, y0, x1 - x0, 2 * S);
+}
+function drawCell(cx, cz, t, phase, pendant, noPlinth){
   const kk = k(cz), S = kk * SS;
   const X = wx => px(wx, kk), Y = wy => py(wy, kk);
   const sx = X(cx);
@@ -10751,16 +10817,18 @@ function drawCell(cx, cz, t, phase, pendant){
   ctx.lineJoin = 'round';
   const yTop = Y(408), yGl = Y(474), yBase = Y(884), yFloor = Y(1080);
 
-  // the plinth
-  const pg = ctx.createLinearGradient(0, yBase, 0, yFloor);
-  pg.addColorStop(0, '#4c5259'); pg.addColorStop(0.5, '#3b4147'); pg.addColorStop(1, '#2b3036');
-  ctx.fillStyle = pg;
-  ctx.beginPath();
-  if (ctx.roundRect) ctx.roundRect(X(cx - HW), yBase, HW * 2 * S, yFloor - yBase, [10 * S, 10 * S, 2 * S, 2 * S]);
-  else ctx.rect(X(cx - HW), yBase, HW * 2 * S, yFloor - yBase);
-  ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,0.10)';
-  ctx.fillRect(X(cx - HW), yBase, HW * 2 * S, 2 * S);
+  // the plinth — unless the pair share one (drawFactoryBase)
+  if (!noPlinth){
+    const pg = ctx.createLinearGradient(0, yBase, 0, yFloor);
+    pg.addColorStop(0, '#4c5259'); pg.addColorStop(0.5, '#3b4147'); pg.addColorStop(1, '#2b3036');
+    ctx.fillStyle = pg;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(X(cx - HW), yBase, HW * 2 * S, yFloor - yBase, [10 * S, 10 * S, 2 * S, 2 * S]);
+    else ctx.rect(X(cx - HW), yBase, HW * 2 * S, yFloor - yBase);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.10)';
+    ctx.fillRect(X(cx - HW), yBase, HW * 2 * S, 2 * S);
+  }
 
   // the body, with the roof cowl swept back
   const bg = ctx.createLinearGradient(X(cx - HW), 0, X(cx + HW), 0);
@@ -11110,7 +11178,7 @@ function drawFactory(t, over){
   if (lit > 0.01){
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    for (const [cx2, cz2] of [[FACT_X - 300, 190], [FACT_X + 250, 232]]){
+    for (const [cx2, cz2] of [[cellX(0), CELL_Z], [cellX(1), CELL_Z]]){
       const kc = k(cz2), sxc = px(cx2, kc), roof = py(408, kc);
       if (sxc < -400 || sxc > W + 400) continue;
       const halfC = 150 * kc * SS;
@@ -11131,9 +11199,10 @@ function drawFactory(t, over){
     ctx.restore();
   }
   if (!over) drawPendant(t);       // behind the left counter — the veil pass must not paint it back in front
-  drawCell(FACT_X - 300, 190, t, 0, true);
-  drawCell(FACT_X + 250, 232, t, 2.4, false);
-  const kk = k(190);
+  drawFactoryBase();
+  drawCell(cellX(0), CELL_Z, t, 0, true, true);
+  drawCell(cellX(1), CELL_Z, t, 2.4, false, true);
+  const kk = k(CELL_Z);
   // the factory is painted twice, under and over the counter; its target is claimed once
   if (!over) pushHit(px(FACT_X - 480, kk), py(560, kk), (960)*kk*SS, py(1080,kk)-py(560,kk),
                      {type:'focus', beat: BEATS.indexOf(b), anchor: FACT_X});
@@ -12033,7 +12102,12 @@ const STUDY_PHOTOS_BY_TITLE = {
                     {img: 'lab3ben', cap: 'The benches, 1983–1984'},
                     {img: 'lab3rec', cap: 'Reception, 1983–1984'}],
   '1993': [{img: 'lab5move', cap: 'Move-in day at 4141 MacArthur Boulevard, Newport Beach — the fifth lab'}],
-  'R&D IS BORN': [{img: 'christensen', cap: 'Dr. Rella Christensen'}],
+  /* IT WAS THE WRONG CHRISTENSEN. 'christensen' is the portrait of Dr. GORDON
+     Christensen (see PEOPLE: gordon), and this page's subject is Dr. RELLA
+     Christensen — her own portrait has been in the repository all along, under
+     'rella', and the wall photograph at the beat already uses it. Eldar caught
+     it on the page itself (2026-09-22, «???» over the picture). */
+  'R&D IS BORN': [{img: 'rella', cap: 'Dr. Rella Christensen'}],
 };
 const STUDY_MEDIA_BY_TITLE = {
   'FOUNDED': [{name:'Jim Glidewell', img:'jimnow', pid:'jim', src:'media/jim_glass.mp4', label:'in his own workshop'}],
