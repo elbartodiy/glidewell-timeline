@@ -8439,6 +8439,16 @@ function drawSheetBenches(){
       const clipTo = (b0, b1) => { ctx.beginPath();
         ctx.rect(px(b0, kf), yBack, Math.max(1, px(b1, kf) - px(b0, kf)) + 1,
                  yFloor - yBack + 4); ctx.clip(); };
+      /* THE MIDDLE NEVER RUNS UNDER AN END. A run whose middle is shorter than
+         one panel still gets one whole panel — it is never scaled — so it runs
+         PAST a1 and out to the end of the table, and the end piece is then laid
+         on top of it. The end piece's worktop is mitred: above the mitre it is
+         transparent, and through that transparency the middle panel's square
+         corner showed. That is why the counter between 1988 and 1989 finished
+         with a straight vertical cut instead of the render's own rounded corner
+         (Eldar, 2026-09-21). The middle is clipped to the stretch between the
+         two ends, so what stands outside a mitre is the room, as in the render. */
+      ctx.save(); clipTo(a0, a1);
       for (let i = 0; i < n; i++){
         const x = a0 + i * step;
         if (i === 0 || fade < 1){ put(G, x, wG); continue; }
@@ -8452,6 +8462,7 @@ function drawSheetBenches(){
           ctx.restore();
         }
       }
+      ctx.restore();
     }
     /* the right end goes down first and the left end over it, so that when the
        two overlap in a short run it is the INNER edges that are buried and both
