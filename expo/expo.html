@@ -836,7 +836,7 @@ const SEGMENTS = [
       colour a shade darker (Eldar, on these tables only). */
    light:{pool:'214,240,224', poolR:820, poolA:0.20},
    bgc:[10,12,11], grain:0.014},
-  {x0:REC3_R, x1:REC2_L, z0:850, z1:850, tz:680, wall:'wall3', bench:'bench3', front:'front3',
+  {x0:REC3_R, x1:REC2_L, z0:850, z1:850, tz:680, wall:'wall3', bench:'bench3', front:'front3', wPhase:0.5,
    font:'Verdana, Tahoma, "DejaVu Sans", sans-serif',
    /* the YEARS of this stretch are set in a wide, heavy grotesk (Eldar: "очень
       широкий, тяжёлый, как Helvetica, но широкий — девяностые"); the titles and
@@ -2101,7 +2101,15 @@ function drawWall(){
     ctx.fillStyle = wallTone(tex);
     ctx.fillRect(sx0, 0, sx1 - sx0, yFoot);
     const worldLeft = cam.x - (W/2) / (k(seg.z0) * SS);
-    let wx = wx0 + Math.floor((Math.min(worldLeft, ex0) - wx0) / tileW) * tileW;
+    /* A SEGMENT MAY SHIFT ITS OWN TILING. The panel joins fall a whole tile
+       apart from the segment's start, and era 2's first one landed a hand's
+       width to the right of the 1989 pilaster — a vertical line beside the
+       column at every camera (Eldar, 2026-09-23, twice). A phase moves every
+       join in that era by a fraction of a tile without touching anything else;
+       the wall is a repeating panel, so there is no right place for a join,
+       only places where it is not read. */
+    const phase = (seg.wPhase || 0) * tileW;
+    let wx = wx0 + phase + Math.floor((Math.min(worldLeft, ex0) - wx0 - phase) / tileW) * tileW;
     /* the panelled white wall of 2019 runs on to the doorway's column — to the
        column as you SEE it. The column stands 400 units nearer than the wall,
        so from the left it projects to the right of the wall point under it,
@@ -2260,8 +2268,28 @@ const STEP_NOSE_Z = 520;    // and where its nose stands
    it, so it is pinned to the floor line of the NEAREST wall the bay has — at or
    below both neighbours' skirtings, which is the only place the join can close
    on both sides. */
-const stepEdge = (x, zBack, zNose, backZ) => ({x, z: zBack, step: zNose != null ? zNose : STEP_NOSE_Z,
-                                               backZ: backZ != null ? backZ : zBack});
+/* WHERE THE BLOCK'S BACK PLANE HAS TO BE. Its top surface sits forty units off
+   the floor, so its back edge draws HIGHER on screen than the floor line of
+   anything standing behind it — that is the gap Eldar marked with two dots
+   beside the skirting. Moving the whole block NEARER brings its back edge down
+   without changing its shape. The plane that puts the block's top edge exactly
+   on a given wall's floor line follows from the two heights and nothing else,
+   and it is re-solved each frame because the camera dollies:
+       py(1040, k(zB)) = py(1080, k(zW))
+   (Eldar, 2026-09-23, three frames side by side: «опустить пол помоста так,
+   чтобы зелёные точки сложились в одну».) */
+const stepBackZ = (wallZ) => (1040 - CFG.horizon) / (1080 - CFG.horizon)
+                             * (CFG.F + wallZ - cam.z) - (CFG.F - cam.z);
+/* A STEP BAY'S FLOOR CORNER IS ONE POINT, AND THE EDGE BELOW IT IS ONE LINE.
+   Routed along the block's outline it became a polyline, and the podium's left
+   edge and the light floor beside it then met at an angle — two planes, a
+   broken line (Eldar: «это не прямая линия, а ломаная»). The corner is the
+   FLOOR at the block's back plane, so everything from there to the near plane
+   is the world line x = wx at y = 1080: straight by construction, with the
+   block's whole base lying ON it. Both the bay and its neighbour draw the same
+   point, so the join cannot open. */
+const stepEdge = (x, zBack, zNose, wallZ) => ({x, z: zBack, step: zNose != null ? zNose : STEP_NOSE_Z,
+                                               wallZ: wallZ != null ? wallZ : null});
 const bayFoot = (x, z, y, yz) => ({x, z, y: y != null ? y : CFG.benchY + 240,
                                    yz: yz != null ? yz : CFG.benchDepth});
 const FAR93_L = bayFoot(REC93_BL, REC93_Z), FAR93_R = bayFoot(REC93_BR, REC93_Z);
@@ -2276,15 +2304,12 @@ const FAR93_L = bayFoot(REC93_BL, REC93_Z), FAR93_R = bayFoot(REC93_BR, REC93_Z)
    to the floor line on its own plane, so that line is the skirting the block's
    back edge has to meet. (Era 1's wall, at 680, would have put the back edge
    thirty units lower and turned the step into a ramp.) */
-/* THE BACK EDGE STAYS ON THE BLOCK'S OWN PLANE. It was pinned for a while to
-   the floor line of the wall beside it, to close the step Eldar drew between
-   the podium's corner and the skirting — and it closed it, but it made the
-   tread half as deep again, and the left edge of the podium then met the light
-   floor in front of it at a visible angle. That line has to be ONE line, podium
-   and floor together (Eldar, 2026-09-23: «эта линия должна быть единой, без
-   преломления — верни как было»). Reverted; the join with the skirting is a
-   separate problem and will be solved without moving the block. */
-const STEP_89_BACK = null;
+/* 1989 KEEPS THE CONSTRUCTION IT HAD. Its block and its slab were right before
+   any of this; putting them on the step-edge scheme only bent them (Eldar,
+   2026-09-23: «та ступенька, которая была раньше нормальной, теперь выглядит
+   криво — верни код, который был»). */
+const FAR89_L = bayFoot(REC3_L, 728, 1080, 728), FAR89_R = bayFoot(REC3_R, 728, 1080, 728);
+const EDG89_L = bayDrop(REC3_L, 728, 1080, 728), EDG89_R = bayDrop(REC3_R, 728, 1080, 728);
 /* 1979 HAS A BLOCK TOO — it had the first one, and it was taken away with the
    runner. Without it the bay's panel and the models' plinth stop at the
    counter's foot line and nothing stands under them: through the slot between
@@ -2294,13 +2319,12 @@ const STEP_89_BACK = null;
    the shallow pair its own pilasters give it. */
 const STEP_79_L = stepEdge(REC_L - STEP_PAD, 604, 522);
 const STEP_79_R = stepEdge(REC_R + STEP_PAD, 604, 522);
-const STEP_89_L = stepEdge(REC3_L - STEP_PAD, 722, 640, STEP_89_BACK);
-const STEP_89_R = stepEdge(REC3_R + STEP_PAD, 722, 640, STEP_89_BACK);
-const STEP_DR_BACK = null, STEP_22_BACK = null;
-const STEP_DR_L = stepEdge(REC2_L - STEP_PAD, 964, null, STEP_DR_BACK);
-const STEP_DR_R = stepEdge(REC2_R + STEP_PAD, 964, null, STEP_DR_BACK);
-const STEP_22_L = stepEdge(REC4_L - STEP_PAD, 992, null, STEP_22_BACK);
-const STEP_22_R = stepEdge(REC4_R + STEP_PAD, 992, null, STEP_22_BACK);
+const STEP_DR_WALL = 850;      // era 2's skirting — the line the eye reads beside this bay
+const STEP_22_WALL = 1400;     // the white room's own wall
+const STEP_DR_L = stepEdge(REC2_L - STEP_PAD, 964, null, STEP_DR_WALL);
+const STEP_DR_R = stepEdge(REC2_R + STEP_PAD, 964, null, STEP_DR_WALL);
+const STEP_22_L = stepEdge(REC4_L - STEP_PAD, 992, null, STEP_22_WALL);
+const STEP_22_R = stepEdge(REC4_R + STEP_PAD, 992, null, STEP_22_WALL);
 const FAR18_L = bayFoot(REC18_L, 1000), FAR18_R = bayFoot(REC18_R, 1000);
 const FAR23_L = bayFoot(REC23_L, 1000), FAR23_R = bayFoot(REC23_R, 1000);
 /* the same points, seen from the neighbour's side — it walks the wall's foot
@@ -2360,8 +2384,8 @@ function drawFloor(){
   const spans = [
     [SEGMENTS[0].x0 - 900, REC_L - STEP_PAD,  T.era[0], null, STEP_79_L],
     [REC_L - STEP_PAD,  REC_R + STEP_PAD,  T.rec.r1979, STEP_79_L, STEP_79_R],
-    [REC_R + STEP_PAD,  REC3_L - STEP_PAD, T.era[1], STEP_79_R, STEP_89_L],
-    [REC3_L - STEP_PAD, REC3_R + STEP_PAD, T.rec.r1989, STEP_89_L, STEP_89_R],
+    [REC_R + STEP_PAD,  REC3_L, T.era[1], STEP_79_R, EDG89_L],
+    [REC3_L, REC3_R, T.rec.r1989, FAR89_L, FAR89_R],
     /* THE BAND'S FAR CORNERS ARE THE PANEL'S OWN TWO. The white strip on the
        wall is a vertical rectangle on the bay's plane and must stay one; what
        hangs off it is the floor. So the floor's far edge is drawn at the
@@ -2371,7 +2395,7 @@ function drawFloor(){
        the near plane, exactly where it always was (Eldar, 2026-09-22: «дальняя
        часть прикреплена ровно к точкам края белой стенки, передняя — как
        была»). */
-    [REC3_R + STEP_PAD, REC93_L, T.era[2], STEP_89_R, EDG93_L],
+    [REC3_R, REC93_L, T.era[2], EDG89_R, EDG93_L],
     [REC93_L, REC93_R, T.rec.r1993, FAR93_L, FAR93_R],
     [REC93_R, REC2_L - STEP_PAD, T.era[2], EDG93_R, STEP_DR_L],
     [REC2_L - STEP_PAD, REC2_R + STEP_PAD, T.rec.rDR, STEP_DR_L, STEP_DR_R],
@@ -2414,11 +2438,8 @@ function drawFloor(){
          along the tread to the nose, down the riser to the floor — so no part
          of the floor can ever appear outside it. */
       if (o.step != null){
-        const kb = k(o.z), kn = k(o.step);
-        return {x: px(o.x, kb), y: yTop,
-                via: [{x: px(o.x, kb), y: py(1080, k(o.backZ))},
-                      {x: px(o.x, kn), y: py(1040, kn)},
-                      {x: px(o.x, kn), y: py(1080, kn)}]};
+        const kb = k(o.wallZ != null ? stepBackZ(o.wallZ) : o.z);
+        return {x: px(o.x, kb), y: py(1080, kb), drop: true};
       }
       return {x: px(o.x, k(o.z)), drop: !!o.drop,
               y: o.y != null ? py(o.y, k(o.yz)) : yTop};
@@ -7424,7 +7445,7 @@ function drawRec2(t){
      часть светлой стены — их нужно подрезать ровно там, где начинается этот
      толстый пол»). The bay stands ON the block: it stops at the tread's back
      line, at the block's own plane, and the block takes it from there. */
-  const yBase = py(1040, k(964));
+  const yBase = py(1080, k(STEP_DR_WALL));
   const x0 = px(REC2_L, kk), x1 = px(REC2_R, kk);
   // the luminous panel
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
@@ -7667,7 +7688,7 @@ function drawRec2(t){
      step has always been painted after them. Painted before, it read as a block
      sliding behind the bay (Eldar, 2026-09-22: «ступенька должна как бы
      перекрывать колонну»). */
-  drawBayStep(REC2_L, REC2_R, STEP_TONE.cool, 964, 520, STEP_DR_BACK);
+  drawBayStep(REC2_L, REC2_R, STEP_TONE.cool, null, 520, STEP_DR_WALL);
 }
 
 /* the 2022 recreation: the scanner's portal — panelled white ends here,
@@ -7692,7 +7713,7 @@ function drawRec4(t){
      (Eldar, 2026-09-23, circle 1: «подрезать то, что торчит»). The background
      is drawn to the block's width and the bay's contents stay on their own
      coordinates, so nothing else moves. */
-  const yBase = py(1040, k(992));
+  const yBase = py(1080, k(STEP_22_WALL));
   const x0 = px(REC4_L, kk), x1 = px(REC4_R, kk);
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#f2f4f6');
@@ -7752,7 +7773,7 @@ function drawRec4(t){
     }
   }
   drawRec4Columns(yBase);
-  drawBayStep(REC4_L, REC4_R, STEP_TONE.white, 992, 520, STEP_22_BACK);   // in front of the portal's own columns
+  drawBayStep(REC4_L, REC4_R, STEP_TONE.white, null, 520, STEP_22_WALL);   // in front of the portal's own columns
 }
 /* THE STEP AT THE MOUTH OF A BAY. 1979 had it first: between the panel's foot
    and the floor slab a dark band showed, and the columns seemed to stand over a
@@ -7760,7 +7781,7 @@ function drawRec4(t){
    nosing, and a concealed strip washing the riser and a little of the floor.
    It belongs to every recreation, not to one, and each takes its own stone: the
    craft century's is warm, the later rooms are cool and pale. */
-function drawBayStep(L, R, tone, zBack, zNose, backZ){
+function drawBayStep(L, R, tone, zBack, zNose, wallZ){
   /* Where the block stands in depth. EVERY BAY NOW NAMES ITS OWN PILASTERS'
      PLANE, and the default is only a fallback: 1989 was riveted to its columns
      at 722 and the other two were left on the generic 590, so those two slid
@@ -7775,7 +7796,7 @@ function drawBayStep(L, R, tone, zBack, zNose, backZ){
      them (Eldar, 2026-09-22: «ступенька куда-то назад ушла»). A bay may name
      its nose as well: the back on its own pilasters' plane, the nose out at the
      depth the block always had. 1989 keeps the shallow pair it was drawn with. */
-  const zB = zBack != null ? zBack : 590;
+  const zB = wallZ != null ? stepBackZ(wallZ) : (zBack != null ? zBack : 590);
   const zF = zNose != null ? zNose : (zBack != null ? zBack - 82 : 520);
   const kFar = k(zB), kStep = k(zF), zTread = 1040;
   /* THE BACK EDGE IS THE WALL'S FOOT. A block standing in a niche is deeper
@@ -7783,7 +7804,7 @@ function drawBayStep(L, R, tone, zBack, zNose, backZ){
      ABOVE the skirting and the two lines never meet. The block is buried in the
      wall: backZ names the wall whose floor line its back edge lies on, and
      there the tread and the floor are the same line (Eldar, 2026-09-23). */
-  const yTreadBack = backZ != null ? py(1080, k(backZ)) : py(zTread, kFar);
+  const yTreadBack = py(zTread, kFar);
   const yNose = py(zTread, kStep), yStepFoot = py(1080, kStep);
   /* AND THE BLOCK KEEPS ITS THICKNESS AT THE BACK. Pinning the tread to the
      wall's foot and then putting the block's base on the same line collapsed
@@ -7791,7 +7812,7 @@ function drawBayStep(L, R, tone, zBack, zNose, backZ){
      the side (Eldar, 2026-09-23: «правая грань стала треугольной — верни как
      было, не возвращая отражение»). The base is the tread's own line plus the
      block's own height at that plane, so the end is the quad it always was. */
-  const yBackFoot = yTreadBack + (py(1080, kFar) - py(zTread, kFar));
+  const yBackFoot = py(1080, kFar);
   /* BOLTED TO THE BAY. Its ends were taken from wherever the counters happened
      to stop, which is a different plane and a different pair of numbers on each
      side — so the block slid against its own panel as the camera moved and came
@@ -8247,7 +8268,7 @@ function drawRec3(t){
     ctx.fillRect(sxc - cw/2 + 6*SS, 0, 3*SS, yFootC);
   }
   // the block at the mouth, on the pilasters' plane and under their feet
-  drawBayStep(REC3_L, REC3_R, STEP_TONE.steel, 722, null, STEP_89_BACK);
+  drawBayStep(REC3_L, REC3_R, STEP_TONE.steel, 722);
   /* (The seam render also has a white column beside the dark one. Eldar tried
      it here and took it out — the bay's two steel pilasters are the columns
      he wants; the white era begins on the wall, 2026-09-10.) */
