@@ -2842,6 +2842,24 @@ function capColW(b){
 function capX(b, kf){
   const rm = capRec(b.x);
   let cw = px((rm != null ? rm : b.x) + (b.capDX || 0), kf);
+  if (rm != null){
+    /* A RECREATION'S LINE LIES ON ITS OWN FLOOR, AND ONLY ON IT. Centred on the
+       bay it still ran onto the counter beside it: the counter stands at the
+       front plane and reaches further out across the screen than the slab does,
+       so world coordinates that clear it do not clear it on screen. 1989's line
+       began on the walnut counter and finished on the pale floor — two surfaces,
+       two inks, one sentence (Eldar). It is held inside the screen gap between
+       the counter that ends before it and the one that starts after. */
+    let gl = -1e9, gr = 1e9;
+    for (const tt of TABLES){
+      const l = px(tt.x0, kf), r = px(tt.x1, kf);
+      if (r <= cw) gl = Math.max(gl, r);
+      if (l >= cw) gr = Math.min(gr, l);
+    }
+    const half = capColW(b) / 2 + 10 * SS;
+    cw = (gr - gl >= 2 * half) ? Math.max(gl + half, Math.min(gr - half, cw))
+                               : (gl + gr) / 2;
+  }
   if (rm == null){
     const tt = benchFor(b);
     if (tt){
