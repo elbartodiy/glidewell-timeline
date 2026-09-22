@@ -2781,21 +2781,73 @@ function capRec(x){
     if (x > a && x < b2) return (a + b2) / 2;
   return null;
 }
+/* WHERE A COUNTER IS FLAT. A photographed run is an end and two doors, then the
+   doorless middle panel, then two doors and the other end. Eldar: if a line
+   needs room, take the part of the counter that is flat — where there are no
+   doors. So this returns that middle span, and a caption is clamped into it. */
+function benchFlat(tb){
+  const S2 = sheetOf(tb);
+  if (!S2) return {a0: tb.x0 + 350, a1: tb.x1 - 350};
+  const IH = S2.L.naturalHeight || S2.L.height;
+  const U = (1080 - CFG.benchY) / (IH - S2.sh.top);
+  return {a0: tb.x0 + (S2.L.naturalWidth || S2.L.width) * U,
+          a1: tb.x1 - (S2.R.naturalWidth || S2.R.width) * U};
+}
+/* the run a beat's line reads off — its own, or, when the beat stands in a gap
+   between two counters, the nearest one. The tour reads left to right, so a
+   counter ahead is preferred to one already passed. It is the same choice the
+   drawing makes, in one place, so the line is clamped to the counter it is
+   actually lying on. */
+function benchFor(b){
+  const own = TABLES.find(t => b.x >= t.x0 && b.x <= t.x1);
+  if (own) return own;
+  let best = null, bd = 1e9;
+  for (const tt of TABLES){
+    let d = b.x < tt.x0 ? tt.x0 - b.x : (b.x > tt.x1 ? b.x - tt.x1 : 0);
+    if (tt.x1 < b.x) d += 500;
+    if (d < bd){ bd = d; best = tt; }
+  }
+  return bd < 1400 ? best : null;
+}
+/* THE COLUMN TAKES THE FLAT PANEL'S WIDTH. Where the doorless middle of a run
+   is narrower than the column the line was wrapped to, the line used to hang
+   over the doors on both sides and read across their seams and handles. It is
+   re-wrapped to the panel instead: fewer words to a line, more lines, all of
+   them on flat ground. Below about three fifths of the column there is no panel
+   worth wrapping to — one run in fifteen — and the line keeps its own width,
+   centred. */
+function capColW(b){
+  let wu = 23 * 700 / 26;                           // the width b._d was wrapped to
+  if (capRec(b.x) == null){
+    const tt = benchFor(b);
+    if (tt){
+      const f = benchFlat(tt), fl = f.a1 - f.a0 - 30;
+      if (fl < wu && fl >= 0.6 * wu) wu = fl;
+    }
+  }
+  if (b._dwu !== wu){
+    ctx.save();
+    ctx.font = `100px ${segAt(b.x).font}`;
+    b._d = wrapCalc(b.d, wu * 100 / 23);
+    ctx.restore();
+    b._dwu = wu; b._capWss = null;                   // its measured width is stale
+  }
+  return wu * SS;
+}
 function capX(b, kf){
   const rm = capRec(b.x);
   let cw = px((rm != null ? rm : b.x) + (b.capDX || 0), kf);
   if (rm == null){
-    const tt = TABLES.find(t => b.x >= t.x0 && b.x <= t.x1);
+    const tt = benchFor(b);
     if (tt){
-      // pinned to the beat's own table span — the line never crosses a gap
-      const half = 350 * SS;
-      const lo = px(tt.x0, kf) + half, hi = px(tt.x1, kf) - half;
-      if (lo < hi) cw = Math.max(lo, Math.min(hi, cw));
-      /* a run too short to hold the column at all — 2019's is 510 units — used
-         to be left unclamped, and the line hung 249 units off the end of the
-         counter. It is centred on the run instead: it overhangs both sides
-         evenly, which reads as a line under a small cabinet. */
-      else cw = (px(tt.x0, kf) + px(tt.x1, kf)) / 2;
+      // pinned to the FLAT part of that counter — never across a door, never
+      // across the gap between two runs
+      const f = benchFlat(tt), half = capColW(b) / 2 + 18 * SS;
+      const lo = px(f.a0, kf) + half, hi = px(f.a1, kf) - half;
+      /* a flat span too short to hold the column — 2019's counter is 510 units
+         long altogether — takes the line at its centre, overhanging evenly,
+         which reads as a line under a small cabinet. */
+      cw = lo < hi ? Math.max(lo, Math.min(hi, cw)) : (px(f.a0, kf) + px(f.a1, kf)) / 2;
     }
   }
   return cw;
@@ -2813,6 +2865,7 @@ function capClashes(kf){
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
     if (b.under || b.descWall || !b._d || Math.abs(b.x - cam.x) > 3500) continue;
+    capColW(b);
     if (b._capWss !== SS){
       ctx.save();
       ctx.font = eraFont(23 * SS, '', segAt(b.x).font);
@@ -2824,9 +2877,9 @@ function capClashes(kf){
     rank.push({i, b, d: Math.abs(b.x - cam.x)});
   }
   rank.sort((u, v) => u.d - v.d);
-  const halfC = CAP_COLW() / 2, gap = 18 * SS;
+  const gap = 18 * SS;
   for (const r of rank){
-    const a = capX(r.b, kf) - halfC, z = a + r.b._capW;
+    const a = capX(r.b, kf) - capColW(r.b) / 2, z = a + r.b._capW;
     if (claimed.some(c => a < c[1] + gap && z > c[0] - gap)) hide.add(r.i);
     else claimed.push([a, z]);
   }
@@ -2852,7 +2905,7 @@ function drawBenchDescs(){
        finally lands. Keying it to the drawn position deadlocked: the line is
        only drawn while it is visible, so once it went out it never got a fresh
        position and could never come back — 1989's simply stopped appearing. */
-    const cwP = capX(b, kf), halfC = CAP_COLW() / 2, fadeC = 130 * SS;
+    const cwP = capX(b, kf), halfC = capColW(b) / 2, fadeC = 130 * SS;
     const capWant = Math.max(0, Math.min(1,
       Math.min((W - (cwP + halfC)) / fadeC, (cwP - halfC) / fadeC)));
     b._capA = (b._capA || 0) + (capWant - (b._capA || 0)) * Math.min(1, (state.dt || 0.016) * 10);
@@ -2904,25 +2957,14 @@ function drawBenchDescs(){
       continue;
     }
     let cw = cwP;
-    let onTable = TABLES.find(t => b.x >= t.x0 && b.x <= t.x1);
-    // a pedestal break may leave the beat without a table right under it —
-    // the label then steps onto the nearest counter, unless a recreation
-    // slab owns this ground
+    // the counter this line reads off — its own, or the nearest one when the
+    // beat stands in a gap. One function, shared with capX, so the line is
+    // clamped to the counter it is actually lying on.
     const inRec = (b.x > REC_L && b.x < REC_R) || (b.x > REC3_L && b.x < REC3_R) ||
                   (b.x > REC93_L && b.x < REC93_R) || (b.x > REC18_L && b.x < REC18_R) ||
                   (b.x > REC23_L && b.x < REC23_R) || (b.x > REC17_L && b.x < REC17_R) ||
                   (b.x > REC2_L && b.x < REC2_R) || (b.x > REC4_L && b.x < REC4_R);
-    if (!onTable && !inRec){
-      // prefer the counter to the right: the tour reads left to right,
-      // the label leads the eye onward past the pedestal
-      let best = null, bd = 1e9;
-      for (const tt of TABLES){
-        let d = b.x < tt.x0 ? tt.x0 - b.x : (b.x > tt.x1 ? b.x - tt.x1 : 0);
-        if (tt.x1 < b.x) d += 500;
-        if (d < bd){ bd = d; best = tt; }
-      }
-      if (bd < 1400) onTable = best;
-    }
+    let onTable = inRec ? TABLES.find(t => b.x >= t.x0 && b.x <= t.x1) : benchFor(b);
     let ink = descInk(seg), shadow = true, slabDrop = 0;   // light ink, in the era's own light
     // the white era needs dark ink on its pale face — unless the hero dim
     // has already sunk the scene, where light ink glows over the dark
@@ -2979,13 +3021,13 @@ function drawBenchDescs(){
       ctx.save();
       ctx.font = eraFont(22 * SS, 'italic', seg.font);
       ctx.fillStyle = `rgba(${ink},${(dAmt * 0.70).toFixed(3)})`;
-      drawCapLines([b.th], cw, capTop - 44 * SS, 0);
+      drawCapLines([b.th], cw, capTop - 44 * SS, 0, capColW(b));
       ctx.restore();
     }
     let capW = 0;
     for (const ln of b._d) capW = Math.max(capW, ctx.measureText(ln).width);
-    drawCapLines(b._d, cw, capTop, 32 * SS);
-    CAP_RECT = {x0: cw - CAP_COLW()/2 - 14 * SS, x1: cw - CAP_COLW()/2 + capW + 14 * SS,
+    drawCapLines(b._d, cw, capTop, 32 * SS, capColW(b));
+    CAP_RECT = {x0: cw - capColW(b)/2 - 14 * SS, x1: cw - capColW(b)/2 + capW + 14 * SS,
                 y0: capTop - 30 * SS, y1: capTop + b._d.length * 32 * SS};
     ctx.restore();
   }
@@ -3011,8 +3053,8 @@ function drawLines(lines, cx, y, lh){
    is still centred under the beat) but the words hang off one invisible left
    line, the one the first line already started on. */
 const CAP_COLW = () => 23 * SS * 700 / 26;   // the width b._d was wrapped to
-function drawCapLines(lines, cx, y, lh){
-  const x = cx - CAP_COLW() / 2;
+function drawCapLines(lines, cx, y, lh, colw){
+  const x = cx - (colw != null ? colw : CAP_COLW()) / 2;
   const prev = ctx.textAlign;
   ctx.textAlign = 'left';
   for (let i = 0; i < lines.length; i++) ctx.fillText(lines[i], x, y + i * lh);
