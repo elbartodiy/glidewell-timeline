@@ -8429,7 +8429,19 @@ function drawPlates(t){
    own counter line, which is why the still-life stands where it always did.
    (The number I had before — a 19px band — was the bullnose. That single
    mis-reading is what made me tell you this could not be done.) */
-const PL_ROW = {top: 303, front: 377, bot: 617, skirt: 588};
+const PL_ROW = {top: 303, front: 377, bull: 397, bot: 617, skirt: 588};
+/* THE FOUNDING BENCH HAS ENDS NOW. Eldar rendered them — a short piece of the
+   same counter carrying both of its mitred corners (Artefacts/Interior/
+   1sttablecorners.png) — so the run stops on the counter's own corner instead of
+   on a straight cut, the way every other counter in the hall does
+   (2026-09-22: «чтобы и тот стол, который в эпохе начала компании, имел такие
+   же края»). qa/cut_corners.py reads these off the file: the lit arris along
+   the front at row 72, the bullnose ending at 93, the mitre closing 130 columns
+   in, and 90 columns of plain counter kept past it for the join to dissolve
+   into. The two renders are not the same photograph, so the piece is scaled by
+   the one measure that has to match where they meet — the thickness of the
+   worktop: 20 rows of plate against 21 of corner. */
+const PL_END = {arris: 72, bull: 93, join: 90};
 /* Left of the cabinet is the century BEFORE the company — 1907, lost-wax, the
    dark boards — and it keeps the counter it always had. The photographed bench
    is the founding lab's, and it begins where that room begins: past the
@@ -8684,6 +8696,15 @@ function drawPlateBench(t){
   const yTop = rowY(PL_ROW.top), yBot = rowY(PL_ROW.bot), yFloor = py(1080, kf);
   // the two clean stretches, in image columns
   const STRIPS = [[20, 540], [1420, 1780]];
+  /* THE RUN'S OWN CORNERS, and how much of the run they own. The mitre itself
+     (130 columns) is the piece; the 90 columns of plain counter behind it are
+     the join, and the tiling runs on under them. EU is the corner render's
+     world units per pixel: the worktop's thickness measured on both files,
+     20 rows of plate at uPer against 21 rows of corner. */
+  const ELi = PHOTO_TEX.ph_p1_endL, ERi = PHOTO_TEX.ph_p1_endR;
+  const EU = (PL_ROW.bull - PL_ROW.front) * uPer / (PL_END.bull - PL_END.arris);
+  const solidL = ELi ? ((ELi.naturalWidth || ELi.width) - PL_END.join) * EU : 0;
+  const solidR = ERi ? ((ERi.naturalWidth || ERi.width) - PL_END.join) * EU : 0;
   ctx.save();
   for (const tb of TABLES){
     if (!onPlate(tb)) continue;
@@ -8694,7 +8715,11 @@ function drawPlateBench(t){
        counter: the still-life standing on it lives in the rows above 303, and
        cutting the sheet at the worktop's back edge took every tall object in
        the founding bay with it. The EXTENSION is cut there; the plate is not. */
-    ctx.beginPath(); ctx.rect(cx0, rowY(0), cx1 - cx0, yFloor - rowY(0) + 4); ctx.clip();
+    /* AND IT STOPS SHORT OF THE CORNERS. A mitred end is a shape, and the
+       tiling is a rectangle: laid to the very end of the run it filled the air
+       above the mitre with worktop, and the corner could not be seen at all. */
+    const tx0 = Math.max(cx0, px(tb.x0 + solidL, kf)), tx1 = Math.min(cx1, px(tb.x1 - solidR, kf));
+    ctx.beginPath(); ctx.rect(tx0, rowY(0), Math.max(0, tx1 - tx0), yFloor - rowY(0) + 4); ctx.clip();
     if (pR > tb.x0 && pL < tb.x1)
       ctx.drawImage(im, px(pL, kf), rowY(0), sw, yBot - rowY(0));
     /* Outward from the plate in both directions, alternating the two clean
@@ -8774,6 +8799,55 @@ function drawPlateBench(t){
       }
     }
     if (pR > tb.x0 && pL < tb.x1) skirtUnder(0, IW, px(pL, kf), sw, false);
+    ctx.restore();
+    /* THE TWO CORNERS. Hung by the same line as everything else — the render's
+       lit arris (row 72) on the hall's counter line — and laid at EU, so the
+       worktop's thickness runs on through the join without a step. The piece
+       dissolves into the tiling along its inner edge over the 90 columns of
+       plain counter it was cut with, and its own wood is mirrored below it down
+       to the floor, exactly as the plate's is (the render stops short of the
+       floor too). */
+    ctx.save();
+    ctx.beginPath(); ctx.rect(cx0, rowY(0), cx1 - cx0, yFloor - rowY(0) + 4); ctx.clip();
+    if (ELi && ERi){
+      const yE = py(CFG.benchY, kf) - PL_END.arris * EU * SS;
+      const layEnd = (im2, x0w, fadeRight) => {
+        const iw2 = im2.naturalWidth || im2.width, ih2 = im2.naturalHeight || im2.height;
+        const sa = px(x0w, kf), sWid = iw2 * EU * SS, hE = ih2 * EU * SS;
+        if (sa > W || sa + sWid < 0) return;
+        const BAND2 = 40;                       // rows of plain wood at the foot of the piece
+        const bh2 = BAND2 * EU * SS;
+        const put2 = (a2, b2, al) => {
+          if (b2 <= a2) return;
+          ctx.save();
+          ctx.globalAlpha = al;
+          ctx.beginPath(); ctx.rect(a2, yE - 2, b2 - a2, yFloor - yE + 4); ctx.clip();
+          ctx.drawImage(im2, sa, yE, sWid + 0.6, hE);
+          let y2 = yE + hE, m2 = true;
+          while (y2 < yFloor - 0.5 && bh2 > 1){
+            ctx.save();
+            ctx.beginPath(); ctx.rect(sa, y2, sWid + 1, Math.min(bh2, yFloor - y2) + 0.5); ctx.clip();
+            if (m2){ ctx.translate(0, 2 * y2 + bh2); ctx.scale(1, -1); }
+            ctx.drawImage(im2, 0, ih2 - BAND2, iw2, BAND2, sa, y2, sWid + 1, bh2);
+            ctx.restore();
+            y2 += bh2; m2 = !m2;
+          }
+          ctx.restore();
+        };
+        const f = PL_END.join * EU * SS, N2 = 8;
+        if (fadeRight){
+          put2(sa, sa + sWid - f, 1);
+          for (let j = 0; j < N2; j++)
+            put2(sa + sWid - f * (N2 - j) / N2, sa + sWid - f * (N2 - j - 1) / N2, 1 - (j + 0.5) / N2);
+        } else {
+          put2(sa + f, sa + sWid, 1);
+          for (let j = 0; j < N2; j++)
+            put2(sa + f * j / N2, sa + f * (j + 1) / N2, (j + 0.5) / N2);
+        }
+      };
+      layEnd(ELi, tb.x0, true);
+      layEnd(ERi, tb.x1 - (ERi.naturalWidth || ERi.width) * EU, false);
+    }
     // the era's own light over the whole face, and the year rail on its edge
     const seg = tb.seg, shF = seg.shade != null ? seg.shade : 1;
     const gr = ctx.createLinearGradient(0, rowY(PL_ROW.front), 0, yFloor);
@@ -8784,15 +8858,9 @@ function drawPlateBench(t){
     ctx.fillRect(cx0, rowY(PL_ROW.front), cx1 - cx0, yFloor - rowY(PL_ROW.front));
     benchRail(seg, cx0, rowY(PL_ROW.front), cx1 - cx0);
     ctx.restore();
-    // the ends of the run, so it stops rather than simply ceasing
-    for (const [ex, edge] of [[tb.x0, 1], [tb.x1, -1]]){
-      const exs = px(ex, kf);
-      if (exs < -40 || exs > W + 40) continue;
-      ctx.fillStyle = 'rgba(0,0,0,0.30)';
-      ctx.fillRect(edge > 0 ? exs : exs - 5 * SS, yTop, 5 * SS, yFloor - yTop);
-      ctx.fillStyle = 'rgba(255,240,210,0.10)';
-      ctx.fillRect(edge > 0 ? exs + 5 * SS : exs - 7 * SS, yTop, 2 * SS, yFloor - yTop);
-    }
+    /* (the two painted bands that used to stand here — a dark stripe and a
+       light one, so the run «stopped rather than simply ceasing» — are gone:
+       the counter has its own corners now.) */
   }
   ctx.restore();
   void t;
@@ -8801,7 +8869,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260921-implant';
+const ASSET_V = '20260922-corners';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -8878,6 +8946,8 @@ async function loadPhotoSkin(){
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
     ph_car79: 'car_1979.png',         // and the mail van that drives its platform as you scroll
     ph_implant: 'implant.png',         // 2009–13: the screw-retained unit itself — crown, titanium base and implant, as Eldar rendered them, the parts a little apart
+    ph_p1_endL: 'bench_p1_left.png',   // the founding bench's own two corners, cut from Eldar's render by qa/cut_corners.py
+    ph_p1_endR: 'bench_p1_right.png',
     front_e4: 'front_e4.jpg',         // the white era's counter face: one door of Eldar's render, mid-door to mid-door
     bench_b1_left:  'bench_b1_left.png',
     bench_b1_long:  'bench_b1_long.png',
