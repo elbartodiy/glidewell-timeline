@@ -257,10 +257,15 @@ const BEATS = [
   {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true, yLift:190, flyLift:66,   // built exactly like 2007: same apex plane, same lift, so the same size and the same throw   // on the line its neighbours hang from — and clear of the plinth's crossed beams
    th:'Own the science, so you can own the quality and the price.',
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir. Labs go digital: scanning, on-screen design, milling.',
-   wall:[{img:'rella', w:250, dx:555, top:215, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
+   /* her portrait hangs clear of the monitor now — up and to the left, in the
+      empty wall between the two years, where Eldar boxed it (2026-09-22) */
+   wall:[{img:'rella', w:250, dx:300, top:120, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
    table:[],
    ped:{obj:'puck', dx:0}, capDX:-540,
-   props:[{kind:'crt', dx:700, lz:130, w:320, label:'CAD revolution'}]},
+   /* the monitor is the exhibit of this bay's right-hand block, so it is sized
+      to that block: 430 of the run's 543, which the gravity pass then centres on
+      it (Eldar, 2026-09-22: bigger, and even air either side) */
+   props:[{kind:'crt', dx:700, lz:130, w:430, label:'CAD revolution'}]},
 
   {x:16520, y:'2001', capDX:-430,   // its line steps left of the plastic-injection block written on the bench face
    t:'WEB · CLINICAL VOICE', minor:true, yLift:190,
@@ -292,7 +297,11 @@ const BEATS = [
    ped:{obj:'dataTooth', dx:0, points:true}, capDX:-540},
 
   /* ---- ERA 4 · the white room, 2009–2026 ---- */
-  {x:21080, y:'2009', t:'BRUXZIR', tier:1, fly:true,
+  /* 2009 THROUGH 2017 LETTER ON ONE LINE TOO — the one the factory's year uses.
+     They had no lift at all and hung a whole numeral lower than 2019 (Eldar,
+     2026-09-22: «все года с 2009 по 2017 поднять на тот же уровень, на котором
+     сейчас 2019»). One plane, one lift: 120. */
+  {x:21080, y:'2009', t:'BRUXZIR', tier:1, fly:true, yLift:120,
    th:'Revolution: the best, made affordable — and the default.',
    d:'June 2009: the monolithic solid-zirconia crown goes mainstream and becomes the #1 brand. In the same month Glidewell opens the Authorized BruxZir Lab program and lets rival laboratories mill it too — the surest way to make a thing ordinary is to stop owning it alone.',
    wall:[], table:[],
@@ -316,17 +325,17 @@ const BEATS = [
    d:'Own-made Ti-bases, abutments and screws plus a flat lab fee — and BruxZir bonded to the Ti-base in the lab, so no cement goes in the patient’s mouth. It arrives as the Inclusive Tooth Replacement System (2012), a patient-specific case in one box, and ends in the BruxZir Full-Arch Prosthesis (Nov 2013): a whole arch milled from one blank.',
    wall:[], table:[]},
 
-  {x:22550, y:'2010s', t:'SCANNERS · SCALE',
+  {x:22550, y:'2010s', t:'SCANNERS · SCALE', yLift:120,
    th:'Scale through vertical integration.',
    d:'August 2012: Glidewell buys IOS Technologies outright, and with it the FastScan intraoral scanner and the TS150 mill — rather than wait for someone else to build the scanner it depends on. The International Technology Center had opened the year before.',
    wall:[], table:[]},
 
-  {x:23170, y:'2015', t:'HAHN TAPERED IMPLANT', minor:true,
+  {x:23170, y:'2015', t:'HAHN TAPERED IMPLANT', minor:true, yLift:120,
    th:'The BruxZir move, applied to the most expensive tooth — premium, made affordable.',
    d:'June 2015: Glidewell’s own implant, designed with implant pioneer Dr. Jack Hahn — premium quality at a fraction of the price. It only takes the Glidewell HT name years later.',
    wall:[], table:[]},
 
-  {x:24020, y:'2017', t:'GLIDEWELL.IO',
+  {x:24020, y:'2017', t:'GLIDEWELL.IO', yLift:120,
    /* the glass hall that used to stand here has moved to the end of the walk;
       the year keeps its place on the wall, with the mill on its plinth */
    th:'Future: the lab moves into the chair.',
@@ -337,11 +346,14 @@ const BEATS = [
       counter, half again as large — see the prop pushed in initDecor. */
    wall2:[]},
 
-  /* THE THREE LATE YEARS STAND ON ONE LINE. 2018, 2022 and 2023 are lettered on
-     the same ceiling line — the grey band the downlights are set in — and 2022
-     was the only one on it. yLift 300 at a pinZ within four units of 2022's is
-     the same height on screen (Eldar, 2026-09-22, red dashes across all three). */
-  {x:24450, y:'2018', t:'', tier:1, yLift:300,
+  /* THE THREE LATE YEARS STAND ON ONE LINE, BY THEIR MIDDLE. 2018, 2022 and
+     2023 are lettered on the ceiling band the downlights are set in, and what
+     has to land on it is the numerals' vertical CENTRE — at 300 they hung above
+     it (Eldar, 2026-09-22, the dashed line through the digits). Measured at the
+     bay's own view, 2100×1000: the band's middle is y 70, the numeral's ascent
+     65.4 px at 90.1 px of type, so the baseline wants 103 and the lift 267. The
+     three share one type plane, so one number serves all three. */
+  {x:24450, y:'2018', t:'', tier:1, yLift:267,
    pinZ:1000, descBase:true,   // its line is read off the factory's base, which is the only even surface it has
    th:'',
    d:'1,500 pairs of scans, and the profile between opposing teeth that technicians find hardest. The paper, written with UC Berkeley, is called Learning Beyond Human Expertise.',
@@ -374,14 +386,14 @@ const BEATS = [
   {x:26340, y:'2022', t:'FASTSCAN.IO', thBelow:true, capDX:-36,   // the bay is a photograph; the italic line cannot live on it, and the column is a shade wider than the panel
    tOnBay:true,   // the title is lettered on the plinth block of the render, centred on its face
    pinZ:996,   // the year stays centred over the instrument, on the bay's own plane — it does not slide behind a column
-   yLift:300,  // and high: it hung from the walnut once; with the wood gone it sits in the air between the capsule's top and the frame's edge (Eldar)
+   yLift:267,  // its middle on the ceiling band, with 2018 and 2023 (Eldar, 2026-09-22)
    th:'The front door to the all-digital workflow.',
    d:'fastscan.io, built with Medit, folds an intraoral scanner into the ecosystem — no impressions, no remakes, data straight into design and mill.',
    wall:[],
    table:[], pyr:{dx:520, w:460},
    /* no pedestal: the scanner lives in the lit capsule on the panel */},
 
-  {x:26900, y:'2023', t:'THE CROSSOVER', tHide:true, tier:1, yLift:300, railBelow:true,   // on the ceiling line with 2018 and 2022 (Eldar, 2026-09-22); it no longer centres itself in the panel's free band   // the numeral is centred in the empty band the panel publishes, not hung from yLift (Eldar, 2026-09-15)   // its voice hangs in a strip under the article, not down the side   // the panel letters the title itself; the beat carries it so its page and its inline pieces can be keyed by it
+  {x:26900, y:'2023', t:'THE CROSSOVER', tHide:true, tier:1, yLift:267, railBelow:true,   // its middle on the ceiling band, with 2018 and 2022 (Eldar, 2026-09-22); it no longer centres itself in the panel's free band   // the numeral is centred in the empty band the panel publishes, not hung from yLift (Eldar, 2026-09-15)   // its voice hangs in a strip under the article, not down the side   // the panel letters the title itself; the beat carries it so its page and its inline pieces can be keyed by it
    pinZ:1000,   // the year rides the panel's own plane, so it stays centred on the white strip
    th:'',
    d:'March 2023: for the first time, more digital impressions arrive at Glidewell in a month than physical ones. Nothing announces it — it is simply the month the two lines cross, sixteen years after the first digital case came in.',
@@ -1409,7 +1421,11 @@ function initLights(){
 function initTables(){
   // every pedestal claims a wide gap of its own, centered on it
   for (const b of BEATS)
-    if (b.ped) BENCH_BREAKS.push({x: b.x + (b.ped.dx ?? -430), half: b.ped.gapHalf || 330});
+    /* a pedestal parts the counter — but 2007's exhibit is a cloud of points
+       with no plinth under it any more (Eldar, 2026-09-22), and the gap it left
+       stranded the year's line on a 520-unit scrap of counter. The cloud floats
+       two hundred units above the worktop; the counter runs on under it. */
+    if (b.ped && !b.ped.points) BENCH_BREAKS.push({x: b.x + (b.ped.dx ?? -430), half: b.ped.gapHalf || 330});
   /* THE CABINET STANDS IN A BREAK. It read as hanging because the counter ran
      straight past in front of it with nothing under its feet. The counter now
      stops short of it and picks up again where the jar used to stand, so the
@@ -2888,12 +2904,19 @@ function benchFlat(tb){
    drawing makes, in one place, so the line is clamped to the counter it is
    actually lying on. */
 function benchFor(b){
-  const own = TABLES.find(t => b.x >= t.x0 && b.x <= t.x1);
+  /* THE RUN THE LINE ASKED FOR. This was measured from the BEAT, and a beat
+     that stands in a gap — every beat with a pedestal does — was handed the
+     nearest run ahead of it, even when its own capDX pointed the other way. At
+     2000 and 2007 that put a five-line sentence on a 543-unit scrap of counter,
+     where it hung off both ends into the room (Eldar, 2026-09-22, boxed on both
+     pages). The line's own coordinate chooses the run. */
+  const bx = b.x + (b.capDX || 0);
+  const own = TABLES.find(t => bx >= t.x0 && bx <= t.x1);
   if (own) return own;
   let best = null, bd = 1e9;
   for (const tt of TABLES){
-    let d = b.x < tt.x0 ? tt.x0 - b.x : (b.x > tt.x1 ? b.x - tt.x1 : 0);
-    if (tt.x1 < b.x) d += 500;
+    let d = bx < tt.x0 ? tt.x0 - bx : (bx > tt.x1 ? bx - tt.x1 : 0);
+    if (tt.x1 < bx) d += 500;
     if (d < bd){ bd = d; best = tt; }
   }
   return bd < 1400 ? best : null;
@@ -7031,7 +7054,7 @@ let DR_SCAN_RUNG = false;
 function drawRec2(t){
   const mid = (REC2_L + REC2_R) / 2;
   if (Math.abs(cam.x - mid) > CULL_BAY) return;
-  drawBayStep(REC2_L, REC2_R, STEP_TONE.cool);   // the mouth of the bay gets its block, in this room's own stone
+  drawBayStep(REC2_L, REC2_R, STEP_TONE.cool, 964);   // on this bay's own pilasters' plane, so it cannot slide against them (Eldar, 2026-09-22)
   const lock0 = Math.max(0, 1 - Math.abs(cam.x - mid) / 900);
   const ease0 = lock0 * lock0 * (3 - 2 * lock0);
   const kk = k(970);
@@ -7274,7 +7297,7 @@ function drawRec2(t){
 function drawRec4(t){
   const mid = (REC4_L + REC4_R) / 2;
   if (Math.abs(cam.x - mid) > CULL_BAY) return;
-  drawBayStep(REC4_L, REC4_R, STEP_TONE.white);   // the mouth of the bay gets its block, in this room's own stone
+  drawBayStep(REC4_L, REC4_R, STEP_TONE.white, 992);   // on the portal columns' own plane (drawPortalColumns), riveted to their feet
   const kk = k(1000);   // the portal stands proud of the deep white wall
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
   const x0 = px(REC4_L, kk), x1 = px(REC4_R, kk);
@@ -7341,10 +7364,14 @@ function drawRec4(t){
    It belongs to every recreation, not to one, and each takes its own stone: the
    craft century's is warm, the later rooms are cool and pale. */
 function drawBayStep(L, R, tone, zBack){
-  /* Where the block stands in depth. By default its back edge lands on the
-     line the bay's panel was cut at; a bay may instead set it on its own
-     pilasters' plane (zBack), so the block's back corners are riveted to the
-     columns' feet and the two cannot slide apart as the camera moves. */
+  /* Where the block stands in depth. EVERY BAY NOW NAMES ITS OWN PILASTERS'
+     PLANE, and the default is only a fallback: 1989 was riveted to its columns
+     at 722 and the other two were left on the generic 590, so those two slid
+     against their own bays as the camera moved and their end faces — which only
+     appear when perspective opens an end — behaved differently from 1989's
+     (Eldar, 2026-09-22: «она ездит относительно центра композиции и не имеет
+     стенки сбоку»). The three planes are the ones their columns are drawn
+     on: 722 at 1989, 964 at the Digital Revolution, 992 at 2022. */
   const zB = zBack != null ? zBack : 590, zF = zBack != null ? zBack - 82 : 520;
   const kFar = k(zB), kStep = k(zF), zTread = 1040;
   const yTreadBack = py(zTread, kFar), yNose = py(zTread, kStep), yStepFoot = py(1080, kStep);
