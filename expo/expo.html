@@ -2241,13 +2241,19 @@ const bayDrop = (x, z, y, yz) => ({x, z, drop: true, y: y != null ? y : CFG.benc
    one descriptor by both sides, it cannot open at any angle. */
 const STEP_PAD = 60;        // how far the block runs past its pilasters, each side
 const STEP_NOSE_Z = 520;    // and where its nose stands
-const stepEdge = (x, zBack) => ({x, z: zBack, step: STEP_NOSE_Z});
+const stepEdge = (x, zBack, zNose) => ({x, z: zBack, step: zNose != null ? zNose : STEP_NOSE_Z});
 const bayFoot = (x, z, y, yz) => ({x, z, y: y != null ? y : CFG.benchY + 240,
                                    yz: yz != null ? yz : CFG.benchDepth});
 const FAR93_L = bayFoot(REC93_BL, REC93_Z), FAR93_R = bayFoot(REC93_BR, REC93_Z);
 /* 1989's panel is drawn down to the floor line on its OWN plane, not to the
    counter's — so its feet are read there (drawRec3). */
-const FAR89_L = bayFoot(REC3_L, 728, 1080, 728), FAR89_R = bayFoot(REC3_R, 728, 1080, 728);
+/* 1989 HAS A STEP TOO, and its slab was still cut to the panel: the light floor
+   came out narrower than the block standing on it and the two corners did not
+   meet (Eldar, 2026-09-22, the dotted lines on the first screenshot). Its block
+   is the shallow pair the step was first drawn with — back on the pilasters at
+   722, nose 82 in front of them. */
+const STEP_89_L = stepEdge(REC3_L - STEP_PAD, 722, 640);
+const STEP_89_R = stepEdge(REC3_R + STEP_PAD, 722, 640);
 const STEP_DR_L = stepEdge(REC2_L - STEP_PAD, 964), STEP_DR_R = stepEdge(REC2_R + STEP_PAD, 964);
 const STEP_22_L = stepEdge(REC4_L - STEP_PAD, 992), STEP_22_R = stepEdge(REC4_R + STEP_PAD, 992);
 const FAR18_L = bayFoot(REC18_L, 1000), FAR18_R = bayFoot(REC18_R, 1000);
@@ -2255,7 +2261,6 @@ const FAR23_L = bayFoot(REC23_L, 1000), FAR23_R = bayFoot(REC23_R, 1000);
 /* the same points, seen from the neighbour's side — it walks the wall's foot
    line to this x and then steps down to meet the bay here */
 const EDG93_L = bayDrop(REC93_BL, REC93_Z), EDG93_R = bayDrop(REC93_BR, REC93_Z);
-const EDG89_L = bayDrop(REC3_L, 728, 1080, 728), EDG89_R = bayDrop(REC3_R, 728, 1080, 728);
 const EDG18_L = bayDrop(REC18_L, 1000), EDG18_R = bayDrop(REC18_R, 1000);
 const EDG23_L = bayDrop(REC23_L, 1000), EDG23_R = bayDrop(REC23_R, 1000);
 /* the floor: each era has its own material tone; the change lands exactly
@@ -2310,8 +2315,8 @@ function drawFloor(){
   const spans = [
     [SEGMENTS[0].x0 - 900, REC_L,  T.era[0]],
     [REC_L,  REC_R,  T.rec.r1979],
-    [REC_R,  REC3_L, T.era[1], null, EDG89_L],
-    [REC3_L, REC3_R, T.rec.r1989, FAR89_L, FAR89_R],
+    [REC_R,  REC3_L - STEP_PAD, T.era[1], null, STEP_89_L],
+    [REC3_L - STEP_PAD, REC3_R + STEP_PAD, T.rec.r1989, STEP_89_L, STEP_89_R],
     /* THE BAND'S FAR CORNERS ARE THE PANEL'S OWN TWO. The white strip on the
        wall is a vertical rectangle on the bay's plane and must stay one; what
        hangs off it is the floor. So the floor's far edge is drawn at the
@@ -2321,7 +2326,7 @@ function drawFloor(){
        the near plane, exactly where it always was (Eldar, 2026-09-22: «дальняя
        часть прикреплена ровно к точкам края белой стенки, передняя — как
        была»). */
-    [REC3_R, REC93_L, T.era[2], EDG89_R, EDG93_L],
+    [REC3_R + STEP_PAD, REC93_L, T.era[2], STEP_89_R, EDG93_L],
     [REC93_L, REC93_R, T.rec.r1993, FAR93_L, FAR93_R],
     [REC93_R, REC2_L - STEP_PAD, T.era[2], EDG93_R, STEP_DR_L],
     [REC2_L - STEP_PAD, REC2_R + STEP_PAD, T.rec.rDR, STEP_DR_L, STEP_DR_R],
@@ -2353,11 +2358,23 @@ function drawFloor(){
        wall's own foot line, and both slabs that meet there must use it. */
     const corner = (o, x) => {
       if (!o) return {x: px(x, kSeam), y: yTop};
-      /* a step corner: the far point stays on the wall's foot line, and the
-         side runs down the step's own base — back corner, then front corner */
-      if (o.step != null) return {x: px(o.x, kSeam), y: yTop,
-        via: [{x: px(o.x, k(o.z)),      y: py(1080, k(o.z))},
-              {x: px(o.x, k(o.step)),   y: py(1080, k(o.step))}]};
+      /* A STEP CORNER TRACES THE BLOCK'S OWN SILHOUETTE. Taking the far point on
+         the counter's plane made the slab WIDER at the back than the block
+         standing on it, and taking the side along the block's BASE let it
+         stand proud of the block's outline: either way a pale wedge slid out
+         from behind the step as the bay left the middle of the frame (Eldar,
+         2026-09-22: «позади колонн слева и справа появляются ездящие уши
+         белые»). The edge is now the block's outline exactly — its back plane's
+         x on the wall's foot line, down to the tread's back corner, forward
+         along the tread to the nose, down the riser to the floor — so no part
+         of the floor can ever appear outside it. */
+      if (o.step != null){
+        const kb = k(o.z), kn = k(o.step);
+        return {x: px(o.x, kb), y: yTop,
+                via: [{x: px(o.x, kb), y: py(1040, kb)},
+                      {x: px(o.x, kn), y: py(1040, kn)},
+                      {x: px(o.x, kn), y: py(1080, kn)}]};
+      }
       return {x: px(o.x, k(o.z)), drop: !!o.drop,
               y: o.y != null ? py(o.y, k(o.yz)) : yTop};
     };
@@ -14364,6 +14381,17 @@ function update(dt){
    the wall of 2019 continues to the doorway's column and the wood is the
    finale's alone — from the doorway's far column to the end. */
 const SHOW_L = HALL_FRAME_R + 60, SHOW_R = WORLD_END + 300;
+/* WHERE THE CEILING IS DRAWN FROM, WHICH IS NOT WHERE THE ROOM BEGINS. The
+   timber soffit and the lit coffer both started at SHOW_L — a point taken sixty
+   units past the doorway's far column, on purpose, so the column would cover
+   the end of the run. But the column stands at 992 and the run at 1394, and
+   two planes do not hold a joint: walking up to the finale the column slid off
+   the end of the wood and you saw where the board began, with the ceiling dark
+   to the left of it (Eldar, 2026-09-22: «мы не должны видеть этот левый край
+   доски, и освещение должно продолжаться налево, за колонну»). Both now begin
+   six hundred units INSIDE the doorway, where the hall's own plate — painted
+   after them — covers everything that is not behind the column. */
+const SHOW_DRAW_L = HALL_FRAME_R - 600;
 /* THE TIMBER BAND'S SCREEN EXTENT. The horizontal walnut strip that runs the
    length of the showroom — the years in this stretch are hung on it rather than
    merely set in front of it, so they need its actual screen coordinates. One
@@ -14385,7 +14413,7 @@ function drawShowroom(t){
   /* the run begins AT the doorway's far column now (SHOW_L is that column):
      the column covers its end, so there is nothing hanging in the air, and the
      wood and its downlights read as one ceiling from the door onward (Eldar) */
-  const x0 = px(SHOW_L, kk) - 12 * SS;
+  const x0 = px(SHOW_DRAW_L, kk) - 12 * SS;
   const x1 = px(SHOW_R, kk);
   if (x1 < -200 || x0 > W + 200) return;
   ctx.save();
