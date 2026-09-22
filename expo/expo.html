@@ -245,9 +245,14 @@ const BEATS = [
   {x:14150, y:'1998', t:'CHAIRSIDE PERSPECTIVES', minor:true, yLift:190,
    th:'Teaching becomes a channel — reach turns into trust.',
    d:'The Chairside Perspectives newsletter begins — the seed of the Chairside magazine and Glidewell’s teaching voice.',
-   wall:[{img:'chairv1', w:285, dx:-340, top:150, rot:-0.4, style:'white', cap:'Vol 1, Issue 1 · 2006', link:'https://glidewelldental.com/education/chairside-magazine'},
-         {img:'chairv12', w:285, dx:0, top:150, style:'white', cap:'Vol 12 · 2017', link:'https://glidewelldental.com/education/chairside-magazine'},
-         {img:'chairv21', w:285, dx:340, top:150, rot:0.4, style:'white', cap:'Vol 21 · 2026', link:'https://glidewelldental.com/education/chairside-magazine'}], table:[]},
+   /* the three covers hang in the middle of the air they have: measured on the
+      render, 32 px between the thesis and the covers' top against 152 px between
+      the issue line and the counter, so the block comes down 60 px — 125 units
+      of the wall's own plane (Eldar, 2026-09-22: «чтобы этот воздух был
+      одинаковым») */
+   wall:[{img:'chairv1', w:285, dx:-340, top:275, rot:-0.4, style:'white', cap:'Vol 1, Issue 1 · 2006', link:'https://glidewelldental.com/education/chairside-magazine'},
+         {img:'chairv12', w:285, dx:0, top:275, style:'white', cap:'Vol 12 · 2017', link:'https://glidewelldental.com/education/chairside-magazine'},
+         {img:'chairv21', w:285, dx:340, top:275, rot:0.4, style:'white', cap:'Vol 21 · 2026', link:'https://glidewelldental.com/education/chairside-magazine'}], table:[]},
 
   {x:14925, y:'1999', t:'IN-CERAM ZIRCONIA', minor:true, yLift:190,
    th:'The zirconia story starts quietly, long before the revolution.',
@@ -262,10 +267,9 @@ const BEATS = [
    wall:[{img:'rella', w:250, dx:300, top:120, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
    table:[],
    ped:{obj:'puck', dx:0}, capDX:-540,
-   /* the monitor is the exhibit of this bay's right-hand block, so it is sized
-      to that block: 430 of the run's 543, which the gravity pass then centres on
-      it (Eldar, 2026-09-22: bigger, and even air either side) */
-   props:[{kind:'crt', dx:700, lz:130, w:430, label:'CAD revolution'}]},
+   /* the monitor keeps the size it was drawn at — Eldar is remaking that screen
+      and did not ask for it to grow (2026-09-22) */
+   props:[{kind:'crt', dx:700, lz:130, w:320, label:'CAD revolution'}]},
 
   {x:16520, y:'2001', capDX:-430,   // its line steps left of the plastic-injection block written on the bench face
    t:'WEB · CLINICAL VOICE', minor:true, yLift:190,
@@ -365,11 +369,20 @@ const BEATS = [
      175 the world midpoint gives: the pilasters stand at z 994 and the type at
      672, so the midpoint has to be taken on the SCREEN at the bay's own view —
      175 × k(994)/k(672). */
-  {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true, blockDX:145, yLift:120,
+  /* the line at the foot of the frame is off altogether — the bay says it
+     already (Eldar, 2026-09-22: «нам не нужно это, давай её удалим»); the text
+     stays in the data because the reading page is keyed to it */
+  {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true, descHide:true, blockDX:145, yLift:120,
    th:'The analog→digital climax: robots make crowns.',
    d:'Automated, AI-designed, robotic monolithic production.',
    wall:[], table:[],
-   plasma:{dx:330, cy:470, w:430, mode:'wave'}},
+   /* the live screen sits in the band between the block of type and the cells'
+      roofs, right of the block's own centre and well inside the two pilasters
+      (Eldar, 2026-09-22: «чуть выше, чуть правее... его не видно»). Measured at
+      the bay's own view: the thesis' foot is at 241 px and the roofs are at 382,
+      so a 380-wide screen (117 px tall) at cy 280 stands at 254–371 with air at
+      both ends — at 404 it was behind the right-hand cabin altogether. */
+   plasma:{dx:430, cy:280, w:380, mode:'wave'}},
 
   /* The plate carries the three portraits that stand under it, so moving the
      BEAT moved them too. It has its own offset now: plaqueDX shifts the plate
@@ -390,7 +403,7 @@ const BEATS = [
    th:'The front door to the all-digital workflow.',
    d:'fastscan.io, built with Medit, folds an intraoral scanner into the ecosystem — no impressions, no remakes, data straight into design and mill.',
    wall:[],
-   table:[], pyr:{dx:520, w:460},
+   table:[], pyr:{dx:590, w:460, lz:25},   // one book's width to the right, and in the middle of the worktop (Eldar, 2026-09-22)
    /* no pedestal: the scanner lives in the lit capsule on the panel */},
 
   {x:26900, y:'2023', t:'THE CROSSOVER', tHide:true, tier:1, yLift:267, railBelow:true,   // its middle on the ceiling band, with 2018 and 2022 (Eldar, 2026-09-22); it no longer centres itself in the panel's free band   // the numeral is centred in the empty band the panel publishes, not hung from yLift (Eldar, 2026-09-15)   // its voice hangs in a strip under the article, not down the side   // the panel letters the title itself; the beat carries it so its page and its inline pieces can be keyed by it
@@ -1436,11 +1449,11 @@ function initLights(){
 function initTables(){
   // every pedestal claims a wide gap of its own, centered on it
   for (const b of BEATS)
-    /* a pedestal parts the counter — but 2007's exhibit is a cloud of points
-       with no plinth under it any more (Eldar, 2026-09-22), and the gap it left
-       stranded the year's line on a 520-unit scrap of counter. The cloud floats
-       two hundred units above the worktop; the counter runs on under it. */
-    if (b.ped && !b.ped.points) BENCH_BREAKS.push({x: b.x + (b.ped.dx ?? -430), half: b.ped.gapHalf || 330});
+    /* a pedestal parts the counter — and it keeps parting it where the plinth
+       has gone and only the cloud of points is left: Eldar wants that space open
+       until he has finished with it (2026-09-22: «там должно быть так, как
+       было... нам там прилавок не нужен»). */
+    if (b.ped) BENCH_BREAKS.push({x: b.x + (b.ped.dx ?? -430), half: b.ped.gapHalf || 330});
   /* THE CABINET STANDS IN A BREAK. It read as hanging because the counter ran
      straight past in front of it with nothing under its feet. The counter now
      stops short of it and picks up again where the jar used to stand, so the
@@ -2953,8 +2966,13 @@ function capColW(b){
        cannot be wider than the counter it lies on — 2019's run is 510 units
        from end to end — so a short run wraps it to its own width. */
     if (tt){
+      /* A LINE IS NEVER WIDER THAN THE COUNTER IT LIES ON. The old rule gave up
+         below half a column and left the sentence hanging off both ends of a
+         short run — 2001's did exactly that on the 543-unit block beside the CAD
+         monitor (Eldar, 2026-09-22). It wraps to the run instead, down to 240
+         units, which is still four or five words to a line. */
       const runW = (tt.x1 - tt.x0) - 260;             // the two mitred ends and their air
-      if (runW < wu && runW >= 0.5 * wu) wu = runW;
+      if (runW < wu) wu = Math.max(240, runW);
     }
   }
   if (b._dwu !== wu){
@@ -3064,6 +3082,7 @@ function drawBenchDescs(){
        finally lands. Keying it to the drawn position deadlocked: the line is
        only drawn while it is visible, so once it went out it never got a fresh
        position and could never come back — 1989's simply stopped appearing. */
+    if (b.descHide){ b._capA = 0; continue; }   // a beat whose line the hall does not show
     const cwP = capX(b, kf), halfC = capColW(b) / 2, fadeC = 130 * SS;
     /* A LINE AT THE FOOT OF THE FRAME BELONGS TO ITS OWN BAY. descWall lines are
        drawn in the middle of the frame, but their fade was still measured on
@@ -7080,7 +7099,7 @@ let DR_SCAN_RUNG = false;
 function drawRec2(t){
   const mid = (REC2_L + REC2_R) / 2;
   if (Math.abs(cam.x - mid) > CULL_BAY) return;
-  drawBayStep(REC2_L, REC2_R, STEP_TONE.cool, 964);   // on this bay's own pilasters' plane, so it cannot slide against them (Eldar, 2026-09-22)
+  drawBayStep(REC2_L, REC2_R, STEP_TONE.cool, 964, 520);   // back on this bay's pilasters (964), nose where the block always stood (520)
   const lock0 = Math.max(0, 1 - Math.abs(cam.x - mid) / 900);
   const ease0 = lock0 * lock0 * (3 - 2 * lock0);
   const kk = k(970);
@@ -7323,7 +7342,7 @@ function drawRec2(t){
 function drawRec4(t){
   const mid = (REC4_L + REC4_R) / 2;
   if (Math.abs(cam.x - mid) > CULL_BAY) return;
-  drawBayStep(REC4_L, REC4_R, STEP_TONE.white, 992);   // on the portal columns' own plane (drawPortalColumns), riveted to their feet
+  drawBayStep(REC4_L, REC4_R, STEP_TONE.white, 992, 520);   // back on the portal columns' plane, nose at 520 as before
   const kk = k(1000);   // the portal stands proud of the deep white wall
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
   const x0 = px(REC4_L, kk), x1 = px(REC4_R, kk);
@@ -7389,7 +7408,7 @@ function drawRec4(t){
    nosing, and a concealed strip washing the riser and a little of the floor.
    It belongs to every recreation, not to one, and each takes its own stone: the
    craft century's is warm, the later rooms are cool and pale. */
-function drawBayStep(L, R, tone, zBack){
+function drawBayStep(L, R, tone, zBack, zNose){
   /* Where the block stands in depth. EVERY BAY NOW NAMES ITS OWN PILASTERS'
      PLANE, and the default is only a fallback: 1989 was riveted to its columns
      at 722 and the other two were left on the generic 590, so those two slid
@@ -7398,7 +7417,14 @@ function drawBayStep(L, R, tone, zBack){
      (Eldar, 2026-09-22: «она ездит относительно центра композиции и не имеет
      стенки сбоку»). The three planes are the ones their columns are drawn
      on: 722 at 1989, 964 at the Digital Revolution, 992 at 2022. */
-  const zB = zBack != null ? zBack : 590, zF = zBack != null ? zBack - 82 : 520;
+  /* THE BACK IS RIVETED, THE NOSE STAYS WHERE IT WAS. Taking the nose 82 units
+     in front of a back that stands at 964 or 992 put the whole block behind the
+     counters, and all that was left of it was a pair of ends peeping out beside
+     them (Eldar, 2026-09-22: «ступенька куда-то назад ушла»). A bay may name
+     its nose as well: the back on its own pilasters' plane, the nose out at the
+     depth the block always had. 1989 keeps the shallow pair it was drawn with. */
+  const zB = zBack != null ? zBack : 590;
+  const zF = zNose != null ? zNose : (zBack != null ? zBack - 82 : 520);
   const kFar = k(zB), kStep = k(zF), zTread = 1040;
   const yTreadBack = py(zTread, kFar), yNose = py(zTread, kStep), yStepFoot = py(1080, kStep);
   const yBackFoot = py(1080, kFar);
@@ -10558,7 +10584,10 @@ function makeBookPyramid(){
     g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = 1;
     g.strokeRect(sx + 0.5, sy + 0.5, fw - 1, fh - 1);
   }
-  return {c, w: c.width, h: c.height};
+  /* WHERE THE PILE ACTUALLY STANDS. The bottom row's baseline is row 340 of the
+     360-row canvas; hung by the canvas the pile floated twenty rows above the
+     counter (Eldar, 2026-09-22: «они парят над столом»). */
+  return {c, w: c.width, h: c.height, base: 340};
 }
 /* the book card: cover, story, code — a product card without the price tag */
 let BOOK_CARD = null;
@@ -10640,7 +10669,12 @@ function drawBookPyramid(b, t){
   /* near the front plane: at 155 deep the pile slid against the counter's
      own edge with every turn of the wheel — the slower a thing on the table
      moves, the looser it reads bolted to it */
-  const kk = k(55);
+  /* and how far back on the worktop it stands: the white era's counter is a
+     photograph whose top surface reads about twenty pixels deep, so 55 put the
+     pile against its back edge — 25 sets it in the middle of that band (Eldar,
+     2026-09-22: «чтобы они где-то посередине стола лежали»). Near the front
+     plane either way, which is what keeps it bolted to the counter. */
+  const kk = k(b.pyr.lz != null ? b.pyr.lz : 55);
   const sx = px(b.x + b.pyr.dx, kk);
   if (sx < -600 || sx > W + 600) return;
   const wWorld = b.pyr.w;
@@ -10649,7 +10683,8 @@ function drawBookPyramid(b, t){
   pushHit(sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale, BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale,
           {type:'photo', sp: BOOK_CARD, wx: b.x + b.pyr.dx, cy: CFG.benchY - 190, z: 55, w: 420,
            beat: BEATS.indexOf(b)});
-  ctx.drawImage(BOOK_SPRITE.c, sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale,
+  const baseRow = BOOK_SPRITE.base != null ? BOOK_SPRITE.base : BOOK_SPRITE.h;
+  ctx.drawImage(BOOK_SPRITE.c, sx - BOOK_SPRITE.w*scale/2, sy - baseRow*scale,
                 BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale);
 }
 /* a freestanding table plane, rotated in plan — any yaw, anywhere on the floor */
@@ -11190,8 +11225,17 @@ function drawFactory(t, over){
      line's far end across the right counter it is meant to vanish behind. The
      counters' ends are flat, at their front edge's x; the line is clipped to
      the opening between them, so no pass can put it in front of a table. */
+  /* AND IT RUNS UNDER THE COUNTER'S CORNER. Clipped exactly at the run's start
+     the line stopped in the open: a counter's first 120 units are its mitred
+     return, cut away, so the solid front begins later and a dozen pixels of
+     bare line showed before it (Eldar, 2026-09-22: «она не доезжает... нужно,
+     чтобы коронки уходили туда, не было видно края»). The pass painted BEFORE
+     the counters runs on past that corner and they swallow it; the second pass,
+     painted after them, keeps the tight clip so it cannot cross a table. */
+  const clipL = px(FACT_X - 560, k(0));
+  const clipR = px(FACT_X + 560 + (over ? 0 : 220), k(0));
   ctx.save();
-  ctx.beginPath(); ctx.rect(px(FACT_X - 560, k(0)), 0, px(FACT_X + 560, k(0)) - px(FACT_X - 560, k(0)), H); ctx.clip();
+  ctx.beginPath(); ctx.rect(clipL, 0, clipR - clipL, H); ctx.clip();
   ctx.fillStyle = '#2b2f34';
   for (const lx of [c0 + 24*kc*SS, (c0 + c1)/2 - legW/2])
     ctx.fillRect(lx, cy0 + 36*kc*SS, legW, yFl - cy0 - 36*kc*SS);
