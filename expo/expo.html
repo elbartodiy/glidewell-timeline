@@ -2732,7 +2732,15 @@ function paintNumeral(str, cx, yBase, sizePx, fam){
     NUM_SHEET.width = Math.max(NUM_SHEET.width, w);
     NUM_SHEET.height = Math.max(NUM_SHEET.height, h);
   }
-  g.clearRect(0, 0, w, h);   // only what is read back — the sheet keeps the largest size it has ever needed
+  /* THE WHOLE SHEET, NOT THE PART BEING USED. Three years are lettered in a
+     frame and each takes a different size, so a big numeral leaves its ink on
+     the sheet and a smaller one after it reads a rectangle that still has the
+     big one's rows just outside it. drawImage samples a hair beyond its source
+     rectangle when it scales, so those rows bled back in: a faint rule under
+     every year and the ghost of a bigger numeral behind it (Eldar, 2026-09-23:
+     «что это?»). Clearing a few hundred square pixels three times a frame costs
+     nothing; leaving them costs the type. */
+  g.clearRect(0, 0, NUM_SHEET.width, NUM_SHEET.height);
   g.font = f2; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
   g.fillStyle = ctx.fillStyle;
   g.fillText(str, 6, asc);
