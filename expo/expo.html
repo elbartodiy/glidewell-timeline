@@ -305,7 +305,13 @@ const BEATS = [
      They had no lift at all and hung a whole numeral lower than 2019 (Eldar,
      2026-09-22: «все года с 2009 по 2017 поднять на тот же уровень, на котором
      сейчас 2019»). One plane, one lift: 120. */
-  {x:21080, y:'2009', t:'BRUXZIR', tier:1, fly:true, yLift:120,
+  /* IT CAME FORWARD TOO FAR. With no apex of its own the numeral flew to 265 —
+     the nearest plane any year takes — and kept its full wall lift, so it grew
+     by a third AND rose, and its top crossed the lit ceiling band (Eldar,
+     2026-09-22: «увеличивается вверх и пересекает линию потолка — нужно чуть
+     вперёд и ниже»). 420 is a third of the way in instead of two thirds, and
+     the lift it takes out in the air is a third of the one it rests at. */
+  {x:21080, y:'2009', t:'BRUXZIR', tier:1, fly:true, yLift:120, flyZ:420, flyLift:30,
    th:'Revolution: the best, made affordable — and the default.',
    d:'June 2009: the monolithic solid-zirconia crown goes mainstream and becomes the #1 brand. In the same month Glidewell opens the Authorized BruxZir Lab program and lets rival laboratories mill it too — the surest way to make a thing ordinary is to stop owning it alone.',
    wall:[], table:[],
@@ -387,7 +393,7 @@ const BEATS = [
   /* The plate carries the three portraits that stand under it, so moving the
      BEAT moved them too. It has its own offset now: plaqueDX shifts the plate
      alone, and the people stay where they were put. */
-  {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870, plaque:true, plaqueDX:-230, plaqueLz:6, plaqueBenchDX:125,   // the plate stands on the counter in front of the portraits, left of the graduation cap so neither crosses the other
+  {x:25490, y:'2019', t:'GUIDING LEADERS', minor:true, sub:24870, plaque:true, plaqueDX:-230, plaqueLz:6, plaqueBenchDX:125, capW:420,   // the plate stands on the counter in front of the portraits, left of the graduation cap so neither crosses the other
    th:'Reinvesting in the profession — and our channel for finding hero dentists.',
    d:'Glidewell launches Guiding Leaders — a free leadership & practice-development program; now ~100 alumni, up to 80 CE units per cohort.',
    wall:[],
@@ -408,7 +414,7 @@ const BEATS = [
    th:'The front door to the all-digital workflow.',
    d:'fastscan.io, built with Medit, folds an intraoral scanner into the ecosystem — no impressions, no remakes, data straight into design and mill.',
    wall:[],
-   table:[], pyr:{dx:660, w:460, lz:0},   // one book's width to the right, and in the middle of the worktop (Eldar, 2026-09-22)
+   table:[], pyr:{dx:730, w:460, lz:0},   // one book's width to the right, and in the middle of the worktop (Eldar, 2026-09-22)
    /* no pedestal: the scanner lives in the lit capsule on the panel */},
 
   {x:26900, y:'2023', t:'THE CROSSOVER', tHide:true, tier:1, yLift:267, railBelow:true,   // its middle on the ceiling band, with 2018 and 2022 (Eldar, 2026-09-22); it no longer centres itself in the panel's free band   // the numeral is centred in the empty band the panel publishes, not hung from yLift (Eldar, 2026-09-15)   // its voice hangs in a strip under the article, not down the side   // the panel letters the title itself; the beat carries it so its page and its inline pieces can be keyed by it
@@ -2220,23 +2226,37 @@ function drawWall(){
    own corner. */
 const bayDrop = (x, z, y, yz) => ({x, z, drop: true, y: y != null ? y : CFG.benchY + 240,
                                    yz: yz != null ? yz : CFG.benchDepth});
+/* A BAY WITH A STEP IN ITS MOUTH JOINS ITS NEIGHBOURS ALONG THE STEP. The slab
+   under such a bay was pinned to its panel's foot while the neighbour was
+   pinned to the wall's — two lines that share a corner but not an edge, and
+   neither of them is where the eye actually reads the join. What the eye reads
+   is the step's own base: the block stands on the floor, and the light floor
+   has to spring from the two points its front edge rests on, at every camera
+   (Eldar, 2026-09-22: «верхние углы этого светлого пола должны точно
+   соприкасаться с точками левой и правой нижней грани ступеньки — и под любым
+   углом»). So the boundary between a step bay and its neighbour is not a point
+   but a LINE WITH TWO BENDS, and both slabs draw exactly the same three points:
+   the wall's foot, the step's back-bottom corner, the step's front-bottom
+   corner — and from there the shared side runs to the near plane. Drawn from
+   one descriptor by both sides, it cannot open at any angle. */
+const STEP_PAD = 60;        // how far the block runs past its pilasters, each side
+const STEP_NOSE_Z = 520;    // and where its nose stands
+const stepEdge = (x, zBack) => ({x, z: zBack, step: STEP_NOSE_Z});
 const bayFoot = (x, z, y, yz) => ({x, z, y: y != null ? y : CFG.benchY + 240,
                                    yz: yz != null ? yz : CFG.benchDepth});
 const FAR93_L = bayFoot(REC93_BL, REC93_Z), FAR93_R = bayFoot(REC93_BR, REC93_Z);
 /* 1989's panel is drawn down to the floor line on its OWN plane, not to the
    counter's — so its feet are read there (drawRec3). */
 const FAR89_L = bayFoot(REC3_L, 728, 1080, 728), FAR89_R = bayFoot(REC3_R, 728, 1080, 728);
-const FARDR_L = bayFoot(REC2_L, 970), FARDR_R = bayFoot(REC2_R, 970);
+const STEP_DR_L = stepEdge(REC2_L - STEP_PAD, 964), STEP_DR_R = stepEdge(REC2_R + STEP_PAD, 964);
+const STEP_22_L = stepEdge(REC4_L - STEP_PAD, 992), STEP_22_R = stepEdge(REC4_R + STEP_PAD, 992);
 const FAR18_L = bayFoot(REC18_L, 1000), FAR18_R = bayFoot(REC18_R, 1000);
-const FAR22_L = bayFoot(REC4_L, 1000), FAR22_R = bayFoot(REC4_R, 1000);
 const FAR23_L = bayFoot(REC23_L, 1000), FAR23_R = bayFoot(REC23_R, 1000);
 /* the same points, seen from the neighbour's side — it walks the wall's foot
    line to this x and then steps down to meet the bay here */
 const EDG93_L = bayDrop(REC93_BL, REC93_Z), EDG93_R = bayDrop(REC93_BR, REC93_Z);
 const EDG89_L = bayDrop(REC3_L, 728, 1080, 728), EDG89_R = bayDrop(REC3_R, 728, 1080, 728);
-const EDGDR_L = bayDrop(REC2_L, 970), EDGDR_R = bayDrop(REC2_R, 970);
 const EDG18_L = bayDrop(REC18_L, 1000), EDG18_R = bayDrop(REC18_R, 1000);
-const EDG22_L = bayDrop(REC4_L, 1000), EDG22_R = bayDrop(REC4_R, 1000);
 const EDG23_L = bayDrop(REC23_L, 1000), EDG23_R = bayDrop(REC23_R, 1000);
 /* the floor: each era has its own material tone; the change lands exactly
    on the recreation line — the ground is part of the aging, not a black hole */
@@ -2303,9 +2323,9 @@ function drawFloor(){
        была»). */
     [REC3_R, REC93_L, T.era[2], EDG89_R, EDG93_L],
     [REC93_L, REC93_R, T.rec.r1993, FAR93_L, FAR93_R],
-    [REC93_R, REC2_L, T.era[2], EDG93_R, EDGDR_L],
-    [REC2_L, REC2_R, T.rec.rDR, FARDR_L, FARDR_R],
-    [REC2_R, REC17_L, T.era[3], EDGDR_R, null],
+    [REC93_R, REC2_L - STEP_PAD, T.era[2], EDG93_R, STEP_DR_L],
+    [REC2_L - STEP_PAD, REC2_R + STEP_PAD, T.rec.rDR, STEP_DR_L, STEP_DR_R],
+    [REC2_R + STEP_PAD, REC17_L, T.era[3], STEP_DR_R, null],
     /* NO FLOOR IN THE GLASS HALL. That bay is a photograph of a room, and the
        room in it has a marble floor of its own running to the bottom of the
        frame; the hall's painted floor laid over it read as a white haze across
@@ -2313,10 +2333,10 @@ function drawFloor(){
        it. */
     [REC17_R, REC18_L, T.era[3], null, EDG18_L],
     [REC18_L, REC18_R, T.rec.r2018, FAR18_L, FAR18_R],
-    [REC18_R, REC4_L, T.era[3], EDG18_R, EDG22_L],
-    [REC4_R, REC23_L, T.era[3], EDG22_R, EDG23_L],
+    [REC18_R, REC4_L - STEP_PAD, T.era[3], EDG18_R, STEP_22_L],
+    [REC4_R + STEP_PAD, REC23_L, T.era[3], STEP_22_R, EDG23_L],
     [REC23_L, REC23_R, T.rec.r2023, FAR23_L, FAR23_R],
-    [REC4_L, REC4_R, T.rec.r2022, FAR22_L, FAR22_R],
+    [REC4_L - STEP_PAD, REC4_R + STEP_PAD, T.rec.r2022, STEP_22_L, STEP_22_R],
     /* From the crossover onward the approach, Hall and TODAY share one pale
        polished floor. The Hall is no longer a full-frame photograph laid over
        it, so its reflections can continue through the neighbouring bays. */
@@ -2331,9 +2351,16 @@ function drawFloor(){
     const yTop = py(1080, k(segF.z0 || 550));
     /* a far corner is a POINT, not just an x: a bay's foot sits lower than the
        wall's own foot line, and both slabs that meet there must use it. */
-    const corner = (o, x) => o ? {x: px(o.x, k(o.z)), drop: !!o.drop,
-                                 y: o.y != null ? py(o.y, k(o.yz)) : yTop}
-                               : {x: px(x, kSeam), y: yTop};
+    const corner = (o, x) => {
+      if (!o) return {x: px(x, kSeam), y: yTop};
+      /* a step corner: the far point stays on the wall's foot line, and the
+         side runs down the step's own base — back corner, then front corner */
+      if (o.step != null) return {x: px(o.x, kSeam), y: yTop,
+        via: [{x: px(o.x, k(o.z)),      y: py(1080, k(o.z))},
+              {x: px(o.x, k(o.step)),   y: py(1080, k(o.step))}]};
+      return {x: px(o.x, k(o.z)), drop: !!o.drop,
+              y: o.y != null ? py(o.y, k(o.yz)) : yTop};
+    };
     const cL = corner(fa, a), cR = corner(fb, b);
     const xTL = cL.x, xTR = cR.x;
     const xBL = px(a, kNear), xBR = px(b, kNear);
@@ -2347,7 +2374,9 @@ function drawFloor(){
     if (cL.drop) ctx.lineTo(cL.x, yTop);
     if (cR.drop) ctx.lineTo(cR.x, yTop);
     ctx.lineTo(cR.x, cR.y);
+    if (cR.via) for (const p of cR.via) ctx.lineTo(p.x, p.y);
     ctx.lineTo(xBR, H); ctx.lineTo(xBL, H);
+    if (cL.via) for (let i = cL.via.length - 1; i >= 0; i--) ctx.lineTo(cL.via[i].x, cL.via[i].y);
     ctx.closePath();
     ctx.fillStyle = g;
     ctx.fill();
@@ -2356,9 +2385,10 @@ function drawFloor(){
        change of material. */
     ctx.strokeStyle = 'rgba(0,0,0,0.20)';
     ctx.lineWidth = 1.4 * SS;
-    ctx.beginPath(); ctx.moveTo(cR.x, cR.y); ctx.lineTo(xBR, H); ctx.stroke();
+    const jR = cR.via ? cR.via[cR.via.length - 1] : cR;   // the joint starts where the side does
+    ctx.beginPath(); ctx.moveTo(jR.x, jR.y); ctx.lineTo(xBR, H); ctx.stroke();
     ctx.strokeStyle = 'rgba(255,255,255,0.10)';
-    ctx.beginPath(); ctx.moveTo(cR.x + 1.4 * SS, cR.y); ctx.lineTo(xBR + 1.4 * SS, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(jR.x + 1.4 * SS, jR.y); ctx.lineTo(xBR + 1.4 * SS, H); ctx.stroke();
   }
 }
 
@@ -2811,11 +2841,13 @@ function drawBeatText(b, focusAmt){
         const r = drawHungYear(b, seg, cx, bandF, fScale, focusAmt, near);
         hitTopF = r.yBase - r.cap - 18 * SS;
       } else {
-        ctx.font = eraFont(170 * (seg.yearScale || 1) * ts * fScale * kk * SS, '', seg.fontYear || seg.font);
+        const ySz9 = 170 * (seg.yearScale || 1) * ts * fScale * kk * SS;
+        const yFam9 = seg.fontYear || seg.font;
+        ctx.font = eraFont(ySz9, '', yFam9);
         ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
         const yBase9 = mixN(py(140 - lift, kk), H*0.16, focusAmt);
         letterRelief(0.55);                 // the cut edge, and nothing else on the glyph
-        ctx.fillText(b.y, cx, yBase9);
+        paintNumeral(b.y, cx, yBase9, ySz9, yFam9);
         noShadow();
       }
       pushHit(cx - 340*kk*SS, hitTopF, 680*kk*SS, py(330, kk) - hitTopF,
@@ -3081,6 +3113,13 @@ function benchFor(b){
    centred. */
 function capColW(b){
   let wu = 23 * 700 / 26;                           // the width b._d was wrapped to
+  /* A BEAT MAY NAME ITS OWN COLUMN. The run rule below is written for a counter
+     with two mitred ends; the Guiding Leaders plinth is a plain block, and the
+     260 units it took off for those ends left the sentence in a narrow stack
+     with a hand's width of empty stone either side of it (Eldar, 2026-09-22:
+     «блок текста слишком узкий — растянуть, чтобы было меньше строк и фронт
+     стола был заполнен ровно»). */
+  if (b.capW) return b.capW * SS_W(b);
   if (capRec(b.x) == null){
     const tt = benchFor(b);
     /* THE GROUND IS MADE FLAT UNDER THE LINE (drawSheetBenches lays the
@@ -3106,6 +3145,17 @@ function capColW(b){
     b._dwu = wu; b._capWss = null;                   // its measured width is stale
   }
   return wu * SS;
+}
+/* the same wrap bookkeeping, for a beat that names its own width */
+function SS_W(b){
+  if (b._dwu !== b.capW){
+    ctx.save();
+    ctx.font = `100px ${segAt(b.x).font}`;
+    b._d = wrapCalc(b.d, b.capW * 100 / 23);
+    ctx.restore();
+    b._dwu = b.capW; b._capWss = null;
+  }
+  return SS;
 }
 function capX(b, kf){
   const rm = capRec(b.x);
@@ -7565,7 +7615,7 @@ function drawBayStep(L, R, tone, zBack, zNose){
      out far too long at 2022. It runs from pilaster to pilaster now, half a
      column past each, in the bay's own world coordinates: it cannot drift
      against the wall it belongs to. */
-  const wx0 = L - 60, wx1 = R + 60;
+  const wx0 = L - STEP_PAD, wx1 = R + STEP_PAD;
   const bx0 = px(wx0, kFar), bx1 = px(wx1, kFar);
   const nx0 = px(wx0, kStep), nx1 = px(wx1, kStep);
   if (nx1 < -200 || nx0 > W + 200) return;
@@ -7632,7 +7682,16 @@ const STEP_TONE = {
 /* the pilasters are drawn twice: once with the panel, and once again AFTER the
    floor sheen — a column stands ON the floor, so its body must sit over the
    reflection, not under a milky wash of it */
-function drawRec4Columns(yBase, floorOnly){ drawPortalColumns([REC4_L, REC4_R], yBase, floorOnly); }
+/* THE COLUMNS STAND ON THE STEP. They were drawn down to the counter's foot
+   line — below the step's tread — and they are repainted twice after the block,
+   so both uprights ran down its face and out onto the floor in front of it
+   (Eldar, 2026-09-22: «эти колонны слишком длинные, нужно их обрезать — они
+   заканчиваются ровно там, где заканчивается постамент»). A column ends where
+   its own plane meets the tread: the tread's world height at 992. The passed
+   yBase is ignored on purpose — there is only one place a column can end. */
+function drawRec4Columns(yBase, floorOnly){
+  drawPortalColumns([REC4_L, REC4_R], py(1040, k(992)), floorOnly);
+}
 /* the same steel pilaster frames the 2017 glass hall and the 2022 portal */
 function drawPortalColumns(cols, yBase, floorOnly){
   if (yBase == null) yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
@@ -10364,23 +10423,37 @@ function hallOwns(b){
    bench line, so it meets their end faces there; drawn over the sheen, because
    a carpet is matte, and under the pedestal and the counters. */
 const CARPET_Z_FAR = 900, CARPET_Z_NEAR = 300;
+/* IT DOES NOT STOP AT THE DOORWAY. The runner was cut to the hall's own gap, so
+   it ended in mid-air at the right-hand counter — a rug with a visible far
+   corner lying in a room that continues (Eldar, 2026-09-22: «этот ковёр
+   продолжается дальше направо, оставаясь спрятанным за столом, и появляется
+   почти уже в самом финале... заканчивается за финальным столом, мы не видим
+   его края, он остаётся под пьедесталом, на котором стоят все фигуры»). It runs
+   from the hall to well past the stage now: the counters between hide it, the
+   platform of the finale stands on it, and its far end is behind TODAY's own
+   counter where no one sees it end. */
+const CARPET_X1 = () => STAGE_X + 640;
 function drawHallCarpet(){
-  if (Math.abs(cam.x - HALL_MID) > 4200 || !hallReady()) return;
+  if (!hallReady()) return;
   const br = BENCH_BREAKS.find(v => Math.abs(v.x - HALL_MID) < 1);
   /* wider than the gap: the counters' end faces recede with depth, and a carpet
      cut exactly to the bench line stopped short of them everywhere else, with
      a wedge of stone either side. Cut wider it runs under the counters at
      every depth, and its far corners hide behind their backs. */
   const half = (br ? br.half : 580) + 220;
+  const wx0 = HALL_MID - half, wx1 = CARPET_X1();
+  if (cam.x < wx0 - 4200 || cam.x > wx1 + 4200) return;
   const kF = k(CARPET_Z_FAR), kN = k(CARPET_Z_NEAR);
   const yF = py(1080, kF), yN = py(1080, kN);
-  const xFL = px(HALL_MID - half, kF), xFR = px(HALL_MID + half, kF);
-  const xNL = px(HALL_MID - half, kN), xNR = px(HALL_MID + half, kN);
+  const xFL = px(wx0, kF), xFR = px(wx1, kF);
+  const xNL = px(wx0, kN), xNR = px(wx1, kN);
   if (xNR < 0 || xNL > W) return;
   ctx.save();
-  const shape = (inset) => {
-    // the same trapezoid, pulled in by a fraction of its own width at every edge
-    const dF = (xFR - xFL) * inset, dN = (xNR - xNL) * inset, dy = (yN - yF) * inset;
+  /* the binding is a BORDER, in world units — as a fraction of the width it
+     grew with the run and would have been a foot wide by the stage */
+  const shape = (bw) => {
+    const dF = bw * kF * SS, dN = bw * kN * SS;
+    const dy = (yN - yF) * (bw / (CARPET_Z_FAR - CARPET_Z_NEAR));
     ctx.beginPath();
     ctx.moveTo(xFL + dF, yF + dy); ctx.lineTo(xFR - dF, yF + dy);
     ctx.lineTo(xNR - dN, yN - dy); ctx.lineTo(xNL + dN, yN - dy); ctx.closePath();
@@ -10395,8 +10468,8 @@ function drawHallCarpet(){
   shape(0); ctx.fillStyle = lx; ctx.fill();
   // the binding: a darker border, and a hairline of lighter pile just inside it
   ctx.lineJoin = 'miter';
-  shape(0.012); ctx.strokeStyle = 'rgba(70,10,18,0.55)'; ctx.lineWidth = Math.max(1, (xNR - xNL) * 0.018); ctx.stroke();
-  shape(0.028); ctx.strokeStyle = 'rgba(255,170,170,0.16)'; ctx.lineWidth = 1 * SS; ctx.stroke();
+  shape(20); ctx.strokeStyle = 'rgba(70,10,18,0.55)'; ctx.lineWidth = Math.max(1, 28 * kN * SS); ctx.stroke();
+  shape(46); ctx.strokeStyle = 'rgba(255,170,170,0.16)'; ctx.lineWidth = 1 * SS; ctx.stroke();
   // it lies on the floor: a hair of shadow along its edges where the pile meets the stone
   shape(0); ctx.strokeStyle = 'rgba(35,20,25,0.35)'; ctx.lineWidth = 1.2 * SS; ctx.stroke();
   ctx.restore();
@@ -12732,7 +12805,13 @@ function drawStudy(){
   ctx.fillStyle = `rgba(${K.ink},0.92)`;
   if (studyTitle) ctx.fillText(studyTitle, left, y);
   try { ctx.letterSpacing = '0px'; } catch(err){}
-  y += 6 * u;
+  /* A PAGE WHOSE FIGURE IS THE SUBJECT HAS NO RULE. On the crossover the rule
+     sat between a one-line caption and the carton that caption names, and it
+     put a band of air on each side of itself for no work done — the caption and
+     the picture belong together (Eldar, 2026-09-22: «эту линию отбивки уберём,
+     она там не нужна»). The head closes up around it. */
+  const noRule = !!(inl && inl.overRule);
+  y += (noRule ? 2.7 : 6) * u;
   /* the standfirst is the thesis — one line about why this year is here. The
      lede that used to sit under it repeated the article's first paragraph
      almost word for word; on a page that has an article, it is not printed. */
@@ -12751,14 +12830,17 @@ function drawStudy(){
     ctx.font = K.font(cSz);
     while (ctx.measureText(capLine).width > textW && cSz > 14){ cSz -= 0.5; ctx.font = K.font(cSz); }
     ctx.fillStyle = `rgba(${K.dim},0.95)`;
-    y += PAGE.leadLH * SS * 0.86;
+    y += PAGE.leadLH * SS * 0.72;
     if (y > topClip && y < botClip) ctx.fillText(capLine, left, y);
-    y += 1 * u;
   }
-  y += 2 * u;
-  ctx.fillStyle = K.rule;
-  if (y > topClip && y < botClip) ctx.fillRect(left, y, textW, 1.5 * SS);
-  y += 5 * u;
+  if (noRule){
+    y += 0.9 * u;                       // the caption and its picture, and nothing between them
+  } else {
+    y += 2 * u;
+    ctx.fillStyle = K.rule;
+    if (y > topClip && y < botClip) ctx.fillRect(left, y, textW, 1.5 * SS);
+    y += 5 * u;
+  }
 
   /* ---- the right-hand column, laid alongside the head ---- */
   let sy = G.top - S.scroll * SS;
