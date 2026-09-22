@@ -2863,14 +2863,14 @@ function capColW(b){
   let wu = 23 * 700 / 26;                           // the width b._d was wrapped to
   if (capRec(b.x) == null){
     const tt = benchFor(b);
+    /* THE GROUND IS MADE FLAT UNDER THE LINE (drawSheetBenches lays the
+       doorless panel there), so the line no longer wraps itself to whatever
+       flat span the run happens to have. What is still true is that a line
+       cannot be wider than the counter it lies on — 2019's run is 510 units
+       from end to end — so a short run wraps it to its own width. */
     if (tt){
-      const f = benchFlat(tt);
-      let fl = f.a1 - f.a0 - 30;
-      /* a counter with no flat middle worth the name — 2019's is 510 units from
-         end to end — takes the whole run's width instead, so at least the line
-         stops where the counter stops. */
-      if (fl < 0.6 * wu) fl = (tt.x1 - tt.x0) - 30;
-      if (fl < wu && fl >= 0.5 * wu) wu = fl;
+      const runW = (tt.x1 - tt.x0) - 260;             // the two mitred ends and their air
+      if (runW < wu && runW >= 0.5 * wu) wu = runW;
     }
   }
   if (b._dwu !== wu){
@@ -2912,14 +2912,17 @@ function capX(b, kf){
   if (rm == null){
     const tt = benchFor(b);
     if (tt){
-      // pinned to the FLAT part of that counter — never across a door, never
-      // across the gap between two runs
-      const f = benchFlat(tt), half = capColW(b) / 2 + 18 * SS;
-      const lo = px(f.a0, kf) + half, hi = px(f.a1, kf) - half;
-      /* a flat span too short to hold the column — 2019's counter is 510 units
-         long altogether — takes the line at its centre, overhanging evenly,
-         which reads as a line under a small cabinet. */
-      cw = lo < hi ? Math.max(lo, Math.min(hi, cw)) : (px(f.a0, kf) + px(f.a1, kf)) / 2;
+      /* IT STANDS UNDER ITS OWN YEAR, ON THE RUN THAT CARRIES IT. It used to be
+         clamped into the doorless middle of the run, which on a long counter
+         with a short middle pushed a line hundreds of units away from the beat
+         it belongs to — 1996's sentence stood under the 1998 magazines. The
+         counter is made flat under the line instead (drawSheetBenches), so all
+         that is left to respect is the run itself: the line stays on one
+         counter, clear of the mitred ends by the same 120 the plain panel keeps
+         (Eldar, 2026-09-22: «сдвинуть к самому краю стола»). */
+      const half = capColW(b) / 2 + 18 * SS, keep = 120;
+      const lo = px(tt.x0 + keep, kf) + half, hi = px(tt.x1 - keep, kf) - half;
+      cw = lo < hi ? Math.max(lo, Math.min(hi, cw)) : (px(tt.x0, kf) + px(tt.x1, kf)) / 2;
     }
   }
   return cw;
@@ -6066,7 +6069,19 @@ function drawRec93(t){
   if (Math.abs(cam.x - mid) > CULL_BAY) return;
   const kk = k(728);
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
-  const x0 = px(REC93_L, kk), x1 = px(REC93_R, kk);
+  /* THE SCREEN AND THE SLAB ARE ONE BAND. The pale panel stands at z 728 and
+     the bay's floor slab runs from the wall's foot at z 340, so the same world
+     span drew 340 px of panel over 447 px of floor: the band narrowed where it
+     turned onto the ground, and the bay read as a screen with a wider carpet
+     under it. The panel keeps its own depth — it is on the wall, and a wall
+     object that took the floor's scale would slide against the wall as you
+     passed it — and is given the world width that makes the two edges meet:
+     475 × k(340)/k(728) each side of the bay's centre. Measured at the bay's
+     own view, which is the composition (Eldar, 2026-09-22: «чуть пошире и
+     объединить с этой линией на полу, чтобы это была единая линия, идущая
+     сверху вниз и по полу»). */
+  const halfP = (REC93_R - REC93_L) / 2 * k(CFG.benchDepth) / kk;
+  const x0 = px(mid - halfP, kk), x1 = px(mid + halfP, kk);
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#c3cad0');
   wg.addColorStop(0.42, '#dee4e9');
@@ -8473,6 +8488,9 @@ function drawSheetBenches(){
        else. The two ends simply overlap, and because the right piece begins on
        a door's own seam the overlap reads as one more seam in the row. */
     const wL = wOf(L), wR = wOf(R), wG = wOf(G);
+    const clipTo = (b0, b1) => { ctx.beginPath();
+      ctx.rect(px(b0, kf), yBack, Math.max(1, px(b1, kf) - px(b0, kf)) + 1,
+               yFloor - yBack + 4); ctx.clip(); };
     ctx.save();
     ctx.beginPath(); ctx.rect(cx0, yBack, cx1 - cx0, yFloor - yBack + 4); ctx.clip();
     /* THE MIDDLE PANEL IS NEVER STRETCHED AND NEVER MIRRORED, AND NO JOIN IN IT
@@ -8490,9 +8508,6 @@ function drawSheetBenches(){
       const n = Math.min(24, Math.max(1, Math.ceil(mid / wG - 1e-6)));
       const step = n > 1 ? (mid - wG) / (n - 1) : 0;
       const fade = Math.min(wG - step, 150);
-      const clipTo = (b0, b1) => { ctx.beginPath();
-        ctx.rect(px(b0, kf), yBack, Math.max(1, px(b1, kf) - px(b0, kf)) + 1,
-                 yFloor - yBack + 4); ctx.clip(); };
       /* THE MIDDLE NEVER RUNS UNDER AN END. A run whose middle is shorter than
          one panel still gets one whole panel — it is never scaled — so it runs
          PAST a1 and out to the end of the table, and the end piece is then laid
@@ -8537,6 +8552,68 @@ function drawSheetBenches(){
       ctx.restore();
     } else put(R, tb.x1 - wR, wR);
     put(L, tb.x0, wL);
+    /* PLAIN GROUND UNDER A LINE. A caption is read off the counter's own front,
+       and on a short run the doorless middle is 127 units wide (1995) while the
+       line is 620 — so the sentence lay across two door seams and a handle.
+       Eldar's instruction, 2026-09-22: take the doorless part of the counter's
+       own file and lay it under the line, so the ground behind the words is one
+       tone. Nothing is invented and nothing is stretched: it is the middle
+       panel the run is built from, laid again where the line falls.
+
+       ONLY THE FRONT. He asked for the counter's FRONTAL plane to be plain
+       («эта плоскость стола фронтальная была бы без линий, без дверей»), and that is
+       also what keeps the counter's corners: the worktop above the line carries
+       the render's own mitred return at each end, and a rectangle laid over it
+       would chop that corner square. The patch takes the rows below the sheet's
+       `top` only — exactly the band the run itself lays between yFront and the
+       floor — so the worktop is never touched.
+
+       WHERE IT ENDS. Reaching into an end piece it runs to the counter's own
+       end, because a patch that stopped in the middle of a door would leave
+       that door's seam beside the words; on the middle side it dissolves into
+       the panel it is a copy of, where there is nothing to see anyway. */
+    /* AND WITHOUT THE PANEL'S OWN SEAM. Every piece of the run carries its cut
+       column at each edge — measured on bench_b3_long, column 0 reads 0 of 255
+       and the last column 19, against 123 across the panel — because the run
+       WANTS that line where two pieces meet. A patch does not: laid whole, its
+       own edge column drew a black joint in the middle of an otherwise plain
+       front. The two columns at each edge are left out of the copy. */
+    const SEAM_INS = 2;
+    const putFace = (im, wx, wWorld) => {
+      const IW = im.naturalWidth || im.width, u = wWorld / IW;
+      const sa = px(wx + SEAM_INS * u, kf), sWid = (IW - 2 * SEAM_INS) * u * wpp;
+      if (sa > W || sa + sWid < 0) return;
+      ctx.drawImage(im, SEAM_INS, sh.top, IW - 2 * SEAM_INS, IH - sh.top,
+                    sa, yFront, sWid + 0.7, yFloor - yFront);
+    };
+    for (const b of BEATS){
+      if (b.under || b.descWall || !b.d) continue;
+      if (Math.abs(b.x - cam.x) > 3500) continue;
+      if (capRec(b.x) != null || benchFor(b) !== tb) continue;
+      const half = capColW(b) / 2 + 40 * SS;          // the column, plus a margin of air
+      const cwS = capX(b, kf);
+      let w0 = cam.x + (cwS - half - W / 2) / wpp, w1 = cam.x + (cwS + half - W / 2) / wpp;
+      let f0 = true, f1 = true;                       // which edges have to dissolve
+      if (w0 < tb.x0 + wL){ w0 = tb.x0; f0 = false; }
+      if (w1 > tb.x1 - wR){ w1 = tb.x1; f1 = false; }
+      if (w1 - w0 < 20) continue;
+      const n2 = Math.max(1, Math.ceil((w1 - w0) / (wG - 8)));   // they overlap by the seam they dropped
+      const st2 = n2 > 1 ? (w1 - w0 - wG) / (n2 - 1) : 0;
+      const copies = () => { for (let i = 0; i < n2; i++) putFace(G, w0 + i * st2, wG); };
+      ctx.save(); clipTo(w0, w1); copies(); ctx.restore();
+      const FD = 140, K2 = 8;
+      for (let j = 1; j <= K2; j++){
+        const a = j / (K2 + 1);
+        if (f0){
+          ctx.save(); ctx.globalAlpha = a;
+          clipTo(w0 - FD * (K2 - j + 1) / K2, w0 - FD * (K2 - j) / K2); copies(); ctx.restore();
+        }
+        if (f1){
+          ctx.save(); ctx.globalAlpha = a;
+          clipTo(w1 + FD * (K2 - j) / K2, w1 + FD * (K2 - j + 1) / K2); copies(); ctx.restore();
+        }
+      }
+    }
     ctx.restore();
   }
   ctx.restore();
