@@ -4229,8 +4229,22 @@ function drawOutro(){
 function drawFinaleTable(t){
   if (Math.abs(cam.x - FIN_X) > 3800) return;
   // the modern lit table
-  drawYawedTable(FIN_X, 150, 0, 900, 240, 700, 380,
+  const FT = drawYawedTable(FIN_X, 150, 0, 900, 240, 700, 380,
     {side0:'#eef1f4', side1:'#c6ccd2', top:'#f7f9fb', edge:'rgba(120,130,140,0.5)'});
+  if (WOOD_ON && woodImg()){
+    const kT = k(150 - 120), kF = k(150 + 120);
+    const yB = py(700, kT), yF2 = py(700, kF);
+    const xa = px(FIN_X - 450, kT), xb = px(FIN_X + 450, kT);
+    const xc = px(FIN_X + 450, kF), xd = px(FIN_X - 450, kF);
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(xa, yB); ctx.lineTo(xb, yB); ctx.lineTo(xc, yF2); ctx.lineTo(xd, yF2);
+    ctx.closePath(); ctx.clip();
+    ctx.globalCompositeOperation = 'multiply';
+    const x0 = Math.min(xa, xd), x1 = Math.max(xb, xc);
+    ctx.drawImage(WOOD_IMG, x0, yB, x1 - x0, yF2 - yB);
+    ctx.restore();
+  }
   // light breathing under the tabletop edge
   const ke = k(32);
   const y0 = py(700, ke) + 6*SS;
@@ -7526,12 +7540,7 @@ function drawRec2(t){
     cg.addColorStop(0, '#3c4046'); cg.addColorStop(0.45, '#7e858c'); cg.addColorStop(1, '#2e3238');
     ctx.fillStyle = cg;
     ctx.fillRect(sxc - cw/2, 0, cw, yBase);
-    // ice-cool trim with a faint glow: the doorway into the digital age
-    ctx.fillStyle = 'rgba(170,225,255,0.55)';
-    ctx.fillRect(sxc - cw/2 + 2*SS, 0, 2*SS, yBase);
-    ctx.fillRect(sxc + cw/2 - 4*SS, 0, 2*SS, yBase);
-    ctx.fillStyle = 'rgba(200,235,255,0.16)';
-    ctx.fillRect(sxc - cw/2 + 6*SS, 0, 3*SS, yBase);
+    // (the ice-cool trim is gone with the other columns' — see drawHallPortalColumns)
   }
   /* THE STEP STANDS IN FRONT OF THE PILASTERS. Its back is riveted to their
      plane and its nose is four hundred units nearer, so from the side its end
@@ -7740,9 +7749,6 @@ function drawPortalColumns(cols, yBase, floorOnly){
     cg.addColorStop(0, '#9aa0a6'); cg.addColorStop(0.45, '#d4d9dd'); cg.addColorStop(1, '#878d93');
     ctx.fillStyle = cg;
     ctx.fillRect(sxc - cw/2, 0, cw, yBase);
-    ctx.fillStyle = 'rgba(150,215,255,0.6)';
-    ctx.fillRect(sxc - cw/2 + 2*SS, 0, 2*SS, yBase);
-    ctx.fillRect(sxc + cw/2 - 4*SS, 0, 2*SS, yBase);
   }
   if (floorOnly) ctx.restore();
 }
@@ -7821,8 +7827,16 @@ function drawRec17(t){
       ctx.clip();
       ctx.fillStyle = wash; ctx.fillRect(0, bh - 1, W, washH + 2);
       ctx.restore();
+      /* HALF STRENGTH WAS NOT ENOUGH. Under the doorway the render's own sharp
+         mirror band — the pilaster bases, upside down — came through the wash
+         as a grey slab lying on the marble beside the column, which reads as a
+         piece of the column itself rather than as a reflection (Eldar,
+         2026-09-23: «это не отражение, это кусочек реальной колонны... и
+         бежевый слой надо сделать чуть менее прозрачным»). The wash takes most
+         of that band now; what is left below it is the soft reflection, which
+         is the part that is worth having. */
       ctx.save();
-      ctx.globalAlpha = 0.5;
+      ctx.globalAlpha = 0.86;
       ctx.beginPath(); ctx.rect(Math.round(bx0), bh - 1, Math.round(bw), washH + 2); ctx.clip();
       ctx.fillStyle = wash; ctx.fillRect(0, bh - 1, W, washH + 2);
       ctx.restore();
@@ -7863,8 +7877,12 @@ function drawHallPortalColumns(floorOnly){
     g.addColorStop(0,'#858c93'); g.addColorStop(.18,'#cbd1d6');
     g.addColorStop(.55,'#eef1f3'); g.addColorStop(1,'#7b8289');
     ctx.fillStyle=g; ctx.fillRect(sx-cw/2,0,cw,yBase);
-    ctx.fillStyle='rgba(145,210,248,.55)';
-    ctx.fillRect(sx-cw/2+2*SS,0,2*SS,yBase);
+    /* NO BLUE LINE DOWN A COLUMN. A cold strip was painted two units in from
+       each arris on every portal upright — meant as an edge light, read as a
+       neon tube stuck to the metal, and it had no source anywhere in the room
+       (Eldar, 2026-09-23: «откуда эта голубая линия... я бы её вообще убрал,
+       и такие же на других колоннах»). The gradient across the column already
+       carries the light. */
     const shoe=ctx.createLinearGradient(sx-cw*.64,0,sx+cw*.64,0);
     shoe.addColorStop(0,'#737a81'); shoe.addColorStop(.22,'#c6ccd1');
     shoe.addColorStop(.58,'#eef1f3'); shoe.addColorStop(1,'#6e757c');
@@ -8880,6 +8898,24 @@ const sheetOf = tb => {
    is touched. No caps of my own, no door laid one after another, no patches.
    The middle panel repeats with its joins faded through each other, which on a
    doorless panel leaves nothing to see. */
+/* AN EXPERIMENT, BEHIND ?wood=1. Eldar asked to see the finale's table top in
+   the wood pattern that arrived as assets/wood.jpg — «просто закрасить слоем
+   верхнюю плоскость этого стола» (2026-09-23). It is laid on that table's top
+   plane and nowhere else, clipped to the plane's own four corners so it takes
+   the table's perspective, and multiplied, so the edge light and the breathing
+   strip under the lip still read through it. Off by default: the finale is a
+   white room, and a plank top in it is a decision, not a fix. */
+const WOOD_ON = /[?&]wood=1/.test(location.search);
+let WOOD_IMG = null, WOOD_TRIED = false;
+function woodImg(){
+  if (!WOOD_TRIED){
+    WOOD_TRIED = true;
+    const im = new Image();
+    im.onload = () => { WOOD_IMG = im; };
+    im.src = '../assets/wood.jpg';
+  }
+  return WOOD_IMG;
+}
 function drawSheetBenches(){
   const kf = k(0), wpp = kf * SS;
   const yBack = py(CFG.benchY, k(CFG.benchDepth));
