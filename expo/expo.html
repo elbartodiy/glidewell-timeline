@@ -8440,7 +8440,20 @@ function drawSheetBenches(){
        two overlap in a short run it is the INNER edges that are buried and both
        of the counter's own corners stay: its worktop is mitred at each end and
        burying one of them chopped the corner square (Eldar, 2026-09-21). */
-    put(R, tb.x1 - wR, wR);
+    /* WHERE THE TWO ENDS OVERLAP, THE RIGHT ONE IS CUT BACK. On a run shorter
+       than both of them the right piece used to run the whole width under the
+       left one — and its worktop, at full height, stood above the left piece's
+       own back edge, which is still climbing out of its mitre for the first
+       fifty units. That showed as an ear sticking up out of the corner (Eldar).
+       It is clipped to the stretch the left piece does not reach. */
+    if (wL + wR > tb.x1 - tb.x0){
+      ctx.save();
+      const cs = px(tb.x0 + wL, kf);
+      ctx.beginPath(); ctx.rect(cs, yBack, Math.max(1, cx1 - cs) + 1, yFloor - yBack + 4);
+      ctx.clip();
+      put(R, tb.x1 - wR, wR);
+      ctx.restore();
+    } else put(R, tb.x1 - wR, wR);
     put(L, tb.x0, wL);
     ctx.restore();
   }
