@@ -14005,6 +14005,13 @@ function frame(){
      drawn, and everything standing on the floor now covers it in turn. */
   drawFloorSheen();
   drawHallPortalColumns(true);  // its metal shoe stays above the reflected floor
+  /* AND THE 2022 PORTAL'S SHOE WITH IT. This pass exists to cover the column's
+     own reflection, nothing else, so it belongs here — with the sheen it
+     answers and BEFORE everything that stands on the floor. It used to run
+     after the factory, and the foot of the left column was then painted over
+     the milling cells, which stand a thousand units in front of it: walking up
+     to 2019 a grey cylinder appeared on top of the machines (Eldar). */
+  drawRec4Columns(null, true);
 
   // mid-ground: people and machines stand in front of the wall...
   drawStage(t);
@@ -14020,7 +14027,6 @@ function frame(){
   drawFactory(t);
 
   drawPlateBench(t);  // and the founding bay, cut from its centrepiece
-  drawRec4Columns(null, true);  // the portal's columns stand ON that floor — over its sheen
   drawProjectors(t, 'machineGround');   // a machine standing on the floor goes behind the counters
   drawHallExhibit();  // the pedestal and its crown stand in the room, behind the counters (Eldar)
   drawBench();        // reflection can never be laid over the furniture
