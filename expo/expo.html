@@ -116,7 +116,14 @@ const BEATS = [
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
      The album belongs to the walk up to 1970, not to the moment of it. */
-  album:{dx:-1070, lz:85, w:225, edgeOK:true, title:'THE FAMILY ALBUM', cover:'ph_album',   // a quarter smaller, so it sits ON the counter instead of over both its edges, and stepped in from the bay's edge again
+  /* AND IT LIES UNDER THE PHOTOGRAPH. Not at the frame's own dx: the frame
+     hangs on the wall (z 550, k 0.626) and the book lies on the counter
+     (k 0.980), so the same world step is a far bigger screen step out here —
+     -820 on the wall is -524 on the bench, and that is what puts the two on one
+     vertical when the walk stops at the year. At -1070 the book sat a whole
+     frame-width left of it, out at the bay's edge (Eldar, 2026-09-22:
+     «положить правее, прямо под фотографию Джима»). */
+  album:{dx:-524, lz:85, w:225, edgeOK:true, title:'THE FAMILY ALBUM', cover:'ph_album',   // a quarter smaller, so it sits ON the counter instead of over both its edges
           photos:[['father42','jim15'],['jim18','jim1970']]}},
 
   {x:3450, y:'1970s', t:'PFM ERA', plaque:true,
@@ -201,7 +208,16 @@ const BEATS = [
       carton, the postmark, the impressions in their bubble wrap — and it comes
       with the stone cap it was photographed on. */
    ped:{photo:'ph_postbox', dx:0, low:true},
-   capDX:-430},   // the line stands clear of the plinth, on the left of the slab
+   /* THE LINE READS OFF A BACKGROUND THAT DOES NOT CHANGE UNDER IT. Set 430
+     left of the plinth it began on the steel panel, crossed the pale edge of
+     the bay's step and finished on the column — three tones under three lines
+     of one sentence. Centred on the plinth (capDX 0) and dropped 108 px
+     (capDY), it lies wholly below that step, where the bay's floor is one even
+     grey (measured on the render: 100–130 of 255 all the way across from 780
+     down, against 29–217 above it) and the light ink carries. Eldar,
+     2026-09-22: «по центру относительно этой колонны, и чуть ниже, чтобы там
+     фон был равномерным». */
+   capDX:0, capDY:108},
 
   /* ---- ERA 3 · the computer arrives, 1995–2007
           (1993 · Newport Beach happens inside the video splice) ---- */
@@ -552,6 +568,20 @@ function applyCut(){
       const to = b84.x + (b84.x - b80.x);
       if (to < b88.x) { moved.push([b88.x, to]); b88.x = to; }
     }
+  }
+  /* 1976 BY HAND TOO. The last beat of the craft era keeps its own coordinate
+     through the rhythm pass, and its block — the year, its two photographs and
+     the hanging set that follows them — finished hard against the 1979 bay's
+     pilaster: the right-hand frame ended at 9269 and the bay's wall begins a
+     couple of hundred units later. Eldar asked for the whole block a little
+     left (2026-09-22). 150 units, applied AFTER the spacing so the seventies
+     keep their even intervals and nothing else in the era moves; the
+     photographs and the caption are positioned by dx from the year, so they
+     travel with it, and the hanging set is seated from the year in
+     initFilmRelays for the same reason. */
+  {
+    const b76 = BEATS.find(b => b.y === '1976');
+    if (b76){ moved.push([b76.x, b76.x - 150]); b76.x -= 150; }
   }
   const rekey = obj => {
     const out = {};
@@ -3050,7 +3080,10 @@ function drawBenchDescs(){
        at Eldar's window the last line of a three-line caption was running
        through the timeline itself. It is lifted by however much it overhangs,
        never above the bench line's own margin. */
-    let capTop = py(CFG.benchY, kf) + 78*SS + slabDrop;
+    /* capDY: a beat may drop its own line past something the bay has at the
+       standard height — a step, a plinth's cap, a render's own edge. In screen
+       units before SS, like every other offset here. */
+    let capTop = py(CFG.benchY, kf) + 78*SS + slabDrop + (b.capDY || 0) * SS;
     {
       const foot = capTop + (b._d.length - 1) * 32 * SS;
       const limit = H - 96 * SS;
@@ -3237,7 +3270,15 @@ function initFilmRelays(){
        set — from Jim's things on the left to the PFM stages on the right
        (Eldar, 2026-09-10) */
     {kind: 'crt70',  x: (lamp != null ? lamp : bayEnd + 400) + 95, w: 250},
-    {kind: 'hang',   x: SHIFT(6060),  w: 320, cy: 320, era: 0},   // after 1976, before the 1979 column
+    /* 1976's hanging set: ABOVE the photograph, not on it. At cy 320 the set
+       spanned 189–451 and the frames under it start at 360, so the film covered
+       the top half of the right-hand photograph (Eldar, 2026-09-22: «телевизор
+       сейчас на фотографии Джима — пусть чуть выше и чуть левее»). At cy 210 it
+       spans 79–341 and clears the frames by 19 units. Seated from the year
+       rather than from a fixed 6060, so it travels with the block: 560 puts it
+       100 units left of the photograph's own dx of 660. */
+    {kind: 'hang',   x: (BEATS.find(b => b.y === '1976') || {x: SHIFT(6060) - 560}).x + 560,
+     w: 320, cy: 210, era: 0},
     /* 1988's hanging set: centred in the air between the year's last digit and
        the 1989 bay's pilaster, so it touches neither (Eldar) */
     {kind: 'hang',   x: ((BEATS.find(b => b.y === '1988') || {x: REC3_L - 700}).x + 215 + (REC3_L - 60)) / 2, w: 320, cy: 282, era: 1},
@@ -5320,9 +5361,9 @@ function drawRec18(t){
   ctx.fillStyle = 'rgba(32,42,54,0.96)';
   ctx.fillText('The first AI crown', cx, py(46, kk));
   try { ctx.letterSpacing = '0px'; } catch(e){}
-  ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
-  ctx.fillStyle = 'rgba(60,70,84,0.95)';
-  ctx.fillText('no hand drew it \u00b7 no tool cut it \u00b7 it was proposed', cx, py(96, kk));   // air under the title, as at 2023
+  /* THE TITLE STANDS ALONE. The line under it — «no hand drew it · no tool cut
+     it · it was proposed» — is gone: the bay shows the crown being made, and
+     Eldar took the caption off it (2026-09-22). */
   ctx.restore();
 
   drawAiCrownVitrine(mid, kk, t);
@@ -8780,20 +8821,14 @@ function initDecor(){
       PROPS.push({x, z: 45 + R()*60, kind: kinds[(R()*kinds.length)|0],
                   w: 95 + R()*60, flip: R() > 0.5});
     }
-    // pinned sheets between beats (not in the white room)
-    for (let x = a + 300; si < 3 && x < b; x += 620 + R()*480){
-      if (BEATS.some(bt => Math.abs(bt.x - x) < 560)) continue;
-      /* and clear of the framed photographs: a sketch pinned behind a frame is
-         a sketch nobody sees. The frames own their stretch of wall; these take
-         what is left between them. */
-      if (BEATS.some(bt => (bt.wall || []).some(it => {
-            const sp = SPRITES[it.img];
-            const halfW = sp ? sp.w * (it.w / sp.inner.w) / 2 : (it.w || 300) / 2;
-            return Math.abs(bt.x + it.dx - x) < halfW + 190;
-          }))) continue;
-      SHEETS.push({x, cy: 210 + R()*230, era: si, rot: (R()-0.5)*7,
-                   w: 130 + R()*60, sprite: makeSheet(si, (x|0))});
-    }
+    /* NOTHING IS PINNED ON THE WALL ANY MORE. The pass that scattered typed
+       sheets between the beats survived every filter in exactly ONE place in
+       the whole hall — a sketch of a tooth on the seventies wall at 7699,
+       between the second lab and direct-mail — and Eldar took it down
+       (2026-09-22: «висит листочек с каким-то зубом — давай его уберём»). One
+       object is not a rhythm, so the pass goes rather than the one sheet: the
+       generator (makeSheet) and the draw are still here, and the loop that fed
+       them is in git at 41d6e4e if the wall ever wants paper again. */
   }
   // mid-ground people & machines (the wall is far enough now)
   FIGURES.push({x: SHIFT(16460), z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
@@ -9956,7 +9991,8 @@ function drawPedestal(b, t, hero){
     }
     return;
   }
-  // column
+  // column — but a cloud of points has no plinth at all (Eldar, 2026-09-22)
+  if (!ped.points){
   const cg = ctx.createLinearGradient(sx - colW/2, 0, sx + colW/2, 0);
   if (era === 0){
     cg.addColorStop(0, '#241408'); cg.addColorStop(.45, '#43290f'); cg.addColorStop(1, '#180d05');
@@ -9998,6 +10034,7 @@ function drawPedestal(b, t, hero){
     ctx.beginPath(); ctx.ellipse(sx, yTop + capH + 2*SS, colW*0.52, ry*0.7, 0, 0, Math.PI); ctx.fill();
     ctx.restore();
   }
+  }
   // the object
   const obj = PED_SPRITES[ped.obj];
   /* a wide, low machine needs more of the cap than a puck does — `wide` lets
@@ -10015,9 +10052,14 @@ function drawPedestal(b, t, hero){
        and lighting the plinth from inside itself. The mesh is the crown's own
        lathe: its vertices, rotated, projected, and drawn as dots. No spotlights
        on it and no dome over it; nothing to look through. */
-    const cloudFoot = yTop - 30 * kk * SS;          // lifted clear of the cap (Eldar: "чуть повыше")
-    drawPointCloud(sx, cloudFoot, ow * 1.35, t, hero);
-    PC07 = {cx: sx, footY: cloudFoot, size: ow * 1.35};   // the data relay leaves from here
+    /* A FIFTH LARGER, AND STANDING ON NOTHING. Eldar, 2026-09-22: the cloud a
+       little bigger (1.35 → 1.62, his «на 0,2») and the plinth under it gone
+       altogether — which is the beat's own argument, since what is on show here
+       is not an object but the case turned into data. It keeps the height it
+       had: cloudFoot is still measured from where the cap was. */
+    const cloudFoot = yTop - 30 * kk * SS;          // lifted clear of where the cap was (Eldar: "чуть повыше")
+    drawPointCloud(sx, cloudFoot, ow * 1.62, t, hero);
+    PC07 = {cx: sx, footY: cloudFoot, size: ow * 1.62};   // the data relay leaves from here
   } else if (ped.spin){
     const footY3 = yTop - 3*kk*SS;
     // the shade it puts on the stone, sized to the crown's own footprint
