@@ -3050,8 +3050,17 @@ function drawBenchDescs(){
        only drawn while it is visible, so once it went out it never got a fresh
        position and could never come back — 1989's simply stopped appearing. */
     const cwP = capX(b, kf), halfC = capColW(b) / 2, fadeC = 130 * SS;
-    const capWant = Math.max(0, Math.min(1,
-      Math.min((W - (cwP + halfC)) / fadeC, (cwP - halfC) / fadeC)));
+    /* A LINE AT THE FOOT OF THE FRAME BELONGS TO ITS OWN BAY. descWall lines are
+       drawn in the middle of the frame, but their fade was still measured on
+       capX — the counter position of their beat — and capX only nears the frame's
+       edge when the beat itself does. 2019's line therefore held all the way to
+       2022 (Eldar, 2026-09-22: «она должна исчезать, когда мы уходим из 2019»).
+       It is measured from the beat now: whole within 450 units of it, gone by
+       800 — which is about where the walk is halfway to the next year. */
+    const capWant = b.descWall
+      ? Math.max(0, Math.min(1, (800 - Math.abs(b.x - cam.x)) / 350))
+      : Math.max(0, Math.min(1,
+          Math.min((W - (cwP + halfC)) / fadeC, (cwP - halfC) / fadeC)));
     b._capA = (b._capA || 0) + (capWant - (b._capA || 0)) * Math.min(1, (state.dt || 0.016) * 10);
     /* eased, so a line that loses its place walks off rather than blinking */
     b._capH = (b._capH == null ? 1 : b._capH) +
@@ -3131,7 +3140,13 @@ function drawBenchDescs(){
     let ink = descInk(seg), shadow = true, slabDrop = 0;   // light ink, in the era's own light
     // the white era needs dark ink on its pale face — unless the hero dim
     // has already sunk the scene, where light ink glows over the dark
-    if (segIdx(b.x) === 3 && (state.hero || 0) < 0.25){ ink = '55,61,69'; shadow = false; }
+    /* THE WHITE ERA'S LINES ARE DARK, ALWAYS. The ink used to follow the hero
+       veil: light while the scene was dimmed, dark once it lifted — so walking
+       past the factory (whose own apex raises the veil) the Guiding Leaders line
+       came up blue and then turned black in front of you, for no reason a
+       visitor could see (Eldar, 2026-09-22). The room is pale under it either
+       way; it is dark from the first frame it appears. */
+    if (segIdx(b.x) === 3){ ink = '55,61,69'; shadow = false; }
     if (onTable){
       /* the placement is settled in capX, above — one function, so the fade and
          the words agree about where the line is */
