@@ -2276,11 +2276,27 @@ const FAR93_L = bayFoot(REC93_BL, REC93_Z), FAR93_R = bayFoot(REC93_BR, REC93_Z)
    to the floor line on its own plane, so that line is the skirting the block's
    back edge has to meet. (Era 1's wall, at 680, would have put the back edge
    thirty units lower and turned the step into a ramp.) */
-const STEP_89_BACK = 728;
+/* THE BACK EDGE STAYS ON THE BLOCK'S OWN PLANE. It was pinned for a while to
+   the floor line of the wall beside it, to close the step Eldar drew between
+   the podium's corner and the skirting — and it closed it, but it made the
+   tread half as deep again, and the left edge of the podium then met the light
+   floor in front of it at a visible angle. That line has to be ONE line, podium
+   and floor together (Eldar, 2026-09-23: «эта линия должна быть единой, без
+   преломления — верни как было»). Reverted; the join with the skirting is a
+   separate problem and will be solved without moving the block. */
+const STEP_89_BACK = null;
+/* 1979 HAS A BLOCK TOO — it had the first one, and it was taken away with the
+   runner. Without it the bay's panel and the models' plinth stop at the
+   counter's foot line and nothing stands under them: through the slot between
+   two counter runs you see straight past into the room, and the whole bay
+   reads as hovering (Eldar, 2026-09-23: «там не хватает ступеньки... парит в
+   воздухе, не касаясь пола»). Its stone is the craft century's warm one, on
+   the shallow pair its own pilasters give it. */
+const STEP_79_L = stepEdge(REC_L - STEP_PAD, 604, 522);
+const STEP_79_R = stepEdge(REC_R + STEP_PAD, 604, 522);
 const STEP_89_L = stepEdge(REC3_L - STEP_PAD, 722, 640, STEP_89_BACK);
 const STEP_89_R = stepEdge(REC3_R + STEP_PAD, 722, 640, STEP_89_BACK);
-const STEP_DR_BACK = 850;      // era 2's wall, the nearer of the two beside the Digital Revolution
-const STEP_22_BACK = 1400;     // the white room's own wall — 2022 has no other
+const STEP_DR_BACK = null, STEP_22_BACK = null;
 const STEP_DR_L = stepEdge(REC2_L - STEP_PAD, 964, null, STEP_DR_BACK);
 const STEP_DR_R = stepEdge(REC2_R + STEP_PAD, 964, null, STEP_DR_BACK);
 const STEP_22_L = stepEdge(REC4_L - STEP_PAD, 992, null, STEP_22_BACK);
@@ -2342,9 +2358,9 @@ function drawFloor(){
   const kNear = k(-40);
   const T = FLOOR_TONES;
   const spans = [
-    [SEGMENTS[0].x0 - 900, REC_L,  T.era[0]],
-    [REC_L,  REC_R,  T.rec.r1979],
-    [REC_R,  REC3_L - STEP_PAD, T.era[1], null, STEP_89_L],
+    [SEGMENTS[0].x0 - 900, REC_L - STEP_PAD,  T.era[0], null, STEP_79_L],
+    [REC_L - STEP_PAD,  REC_R + STEP_PAD,  T.rec.r1979, STEP_79_L, STEP_79_R],
+    [REC_R + STEP_PAD,  REC3_L - STEP_PAD, T.era[1], STEP_79_R, STEP_89_L],
     [REC3_L - STEP_PAD, REC3_R + STEP_PAD, T.rec.r1989, STEP_89_L, STEP_89_R],
     /* THE BAND'S FAR CORNERS ARE THE PANEL'S OWN TWO. The white strip on the
        wall is a vertical rectangle on the bay's plane and must stay one; what
@@ -6886,6 +6902,10 @@ function drawMapWall(t){
   const mid = (REC_L + REC_R) / 2;
   if (Math.abs(cam.x - mid) > CULL_BAY) return;
   const kk = k(610);
+  /* the bay stands ON its block: panel and pilasters end at the tread's back
+     line, at the block's own plane, and the block takes it from there — and the
+     background is drawn to the BLOCK's width, so no ledge of floor stands out
+     beside it */
   const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
   const x0 = px(REC_L, kk), x1 = px(REC_R, kk);
   // the light wall panel
@@ -7404,7 +7424,7 @@ function drawRec2(t){
      часть светлой стены — их нужно подрезать ровно там, где начинается этот
      толстый пол»). The bay stands ON the block: it stops at the tread's back
      line, at the block's own plane, and the block takes it from there. */
-  const yBase = py(1080, k(STEP_DR_BACK));
+  const yBase = py(1040, k(964));
   const x0 = px(REC2_L, kk), x1 = px(REC2_R, kk);
   // the luminous panel
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
@@ -7412,7 +7432,17 @@ function drawRec2(t){
   wg.addColorStop(0.45, '#f2f6f9');
   wg.addColorStop(1, '#c2c9cf');
   ctx.fillStyle = wg;
-  ctx.fillRect(x0, 0, x1 - x0, yBase);
+  /* THE PANEL IS AS WIDE AS THE BLOCK UNDER IT. The block runs sixty units past
+     the pilasters on each side; the panel stopped at them, so between the
+     wall's foot and the block's back edge a strip of the bay's own floor stood
+     out beyond the panel — a pale ledge poking out of the side of the podium
+     (Eldar, 2026-09-23, circle 1: «подрезать то, что торчит»). The background
+     is drawn to the block's width and the bay's contents stay on their own
+     coordinates, so nothing else moves. */
+  {
+    const bx0 = px(REC2_L - STEP_PAD, kk), bx1 = px(REC2_R + STEP_PAD, kk);
+    ctx.fillRect(bx0, 0, bx1 - bx0, yBase);
+  }
   // a dark display niche, and the crown glowing inside it
   const sp = PED_SPRITES.crown2;
   const w = 360 * kk * SS, h = w * sp.h / sp.w;
@@ -7655,14 +7685,24 @@ function drawRec4(t){
      часть светлой стены — их нужно подрезать ровно там, где начинается этот
      толстый пол»). The bay stands ON the block: it stops at the tread's back
      line, at the block's own plane, and the block takes it from there. */
-  const yBase = py(1080, k(STEP_22_BACK));
+  /* THE PANEL IS AS WIDE AS THE BLOCK UNDER IT. The block runs sixty units past
+     the pilasters on each side; the panel stopped at them, so between the
+     wall's foot and the block's back edge a strip of the bay's own floor stood
+     out beyond the panel — a pale ledge poking out of the side of the podium
+     (Eldar, 2026-09-23, circle 1: «подрезать то, что торчит»). The background
+     is drawn to the block's width and the bay's contents stay on their own
+     coordinates, so nothing else moves. */
+  const yBase = py(1040, k(992));
   const x0 = px(REC4_L, kk), x1 = px(REC4_R, kk);
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#f2f4f6');
   wg.addColorStop(0.5, '#fbfcfd');
   wg.addColorStop(1, '#dde0e3');
   ctx.fillStyle = wg;
-  ctx.fillRect(x0, 0, x1 - x0, yBase);
+  {
+    const bx0 = px(REC4_L - STEP_PAD, kk), bx1 = px(REC4_R + STEP_PAD, kk);
+    ctx.fillRect(bx0, 0, bx1 - bx0, yBase);
+  }
   // a faint scan-sweep drifts across the panel — the room itself being read
   const sweep = (state.time * 120) % 1400 - 200;
   const swx = x0 + (x1 - x0) * (sweep / 1000);
