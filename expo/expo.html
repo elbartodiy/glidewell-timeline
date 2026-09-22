@@ -8335,6 +8335,7 @@ const onPlate = tb => !!tb.seg.plateBench && tb.x0 >= PLATE_FROM - 40;
    to the hall's real depth, the face below keeps the photograph's proportions.
    The founding bay keeps its plate — that is the bench with Jim's tools on it,
    and it is not to be touched. */
+const WT_DEEP = /[?&]wt=1/.test(location.search);
 const BENCH_SHEETS = [
   /* `top` is the row in the sheet where the worktop's TOP SURFACE ends — the lit
      arris along the front of the slab — and it is the row the hall stands at
@@ -8386,9 +8387,25 @@ function drawSheetBenches(){
     const wOf = im => (im.naturalWidth || im.width) * U;
     const rowH = (yFloor - yFront) / (IH - sh.top);
     const yTop = yFront - sh.top * rowH, hh = IH * rowH;
+    /* ?wt=1 puts the worktop back on the hall's own depth — the band above `top`
+       pulled from the 23 units the render carries to the 74 this hall gives a
+       counter. It is off by default because Eldar saw the pull and stopped it;
+       it is here so the two can be compared on the site rather than argued
+       about, since it is the one thing that decides whether the end of a run
+       reads as a corner or as a cut. */
     const put = (im, wx, wWorld, flip) => {
       const sa = px(wx, kf), sWid = wWorld * wpp;
       if (sa > W || sa + sWid < 0) return;
+      if (WT_DEEP){
+        const IW = im.naturalWidth || im.width;
+        ctx.save();
+        if (flip){ ctx.translate(sa + sWid + 0.7, 0); ctx.scale(-1, 1); }
+        const x0s = flip ? 0 : sa;
+        ctx.drawImage(im, 0, 0, IW, sh.top, x0s, yBack, sWid + 0.7, yFront - yBack);
+        ctx.drawImage(im, 0, sh.top, IW, IH - sh.top, x0s, yFront, sWid + 0.7, yFloor - yFront);
+        ctx.restore();
+        return;
+      }
       if (!flip){ ctx.drawImage(im, sa, yTop, sWid + 0.7, hh); return; }
       ctx.save();
       ctx.translate(sa + sWid + 0.7, 0); ctx.scale(-1, 1);
