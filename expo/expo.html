@@ -583,6 +583,35 @@ function applyCut(){
     const b76 = BEATS.find(b => b.y === '1976');
     if (b76){ moved.push([b76.x, b76.x - 150]); b76.x -= 150; }
   }
+  /* THE WHITE ROOM'S YEARS ARE A COMPOSITION OF FOUR, exactly as the eighties
+     are a composition of three: 2009, the 2010s, 2015 and 2017 stand between
+     the Digital Revolution bay's right pilaster and the 2018 bay's left one,
+     with the same air between each pair and between each end year and its
+     pilaster — five equal intervals of 846 in a span of 4230. The even spacing
+     the rhythm pass gives them is measured over FIVE beats, and 2009–13 is no
+     longer one of them: its year came off the wall when the implant took its
+     place on the counter, so the wall showed a double gap after 2009 and then
+     three short ones, with 2009 crowding the left pilaster and 2017 running
+     into the right (Eldar, 2026-09-22). 2009–13 keeps its own coordinate: it is
+     an object now, not a numeral, and it stands between 2009 and the 2010s. */
+  {
+    const L = REC2_R, R = REC18_L;
+    const run = ['2009', '2010s', '2015', '2017'].map(y => BEATS.find(b => b.y === y)).filter(Boolean);
+    if (run.length === 4) run.forEach((b, i) => {
+      const to = L + (R - L) * (i + 1) / (run.length + 1), d = to - b.x;
+      if (Math.abs(d) < 1) return;
+      for (const s2 of BEATS) if (s2.sub != null && Math.abs(s2.sub - b.x) < 1){ moved.push([s2.x, s2.x + d]); s2.x += d; s2.sub = to; }
+      moved.push([b.x, to]); b.x = to;
+    });
+    /* AND THE JOINT IN THE COUNTER GOES WITH THEM. The plain joint written at
+       22280 sat at 26800, which after the spacing is 68 units from the 2010s
+       numerals — a beat standing on the end of a run has its line pushed
+       hundreds of units away from its own year. A joint belongs between two
+       years: it goes to the middle of the span, between the 2010s and 2015. */
+    const b10 = BEATS.find(b => b.y === '2010s'), b15 = BEATS.find(b => b.y === '2015');
+    const brJ = BENCH_BREAKS.find(v => Math.abs(v.x - SHIFT(22280)) < 1);
+    if (brJ && b10 && b15) brJ.x = (b10.x + b15.x) / 2;
+  }
   const rekey = obj => {
     const out = {};
     for (const k0 in obj){
@@ -10537,10 +10566,16 @@ function makeBannerVert(title, sub, cta, imgName){
   return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
 }
 function initBanners(){
+  /* A CARD HANGS WITH ITS YEAR. They were written at fixed coordinates, and the
+     moment the white room's years were set out between their pilasters
+     (applyCut, 2026-09-22) every card stayed behind: BruxZir hung 425 units
+     right of 2009, the implant card 372 left of 2015, the io card 461 left of
+     2017 — those offsets are what they had, and they keep them. */
+  const bx = (y, dx) => { const b = BEATS.find(z => z.y === y); return (b ? b.x : 0) + dx; };
   BANNERS = [
-    {x: SHIFT(21505), w: 550, sp: makeBanner('BruxZir\u00ae', 'The best dentistry \u2014 made affordable', 'The #1 crown')},
-    {x: SHIFT(23180), w: 550, sp: makeBanner('Glidewell HT\u2122', 'Premium implant, a fraction of the price', 'Premium \u00b7 affordable')},
-    {x: SHIFT(23915), w: 240, cy: 455, sp: makeBannerVert('glidewell.io', 'The lab moves\ninto your office', 'Single-visit', 'fastmill')},
+    {x: bx('2009', 425), w: 550, sp: makeBanner('BruxZir\u00ae', 'The best dentistry \u2014 made affordable', 'The #1 crown')},
+    {x: bx('2015', -372), w: 550, sp: makeBanner('Glidewell HT\u2122', 'Premium implant, a fraction of the price', 'Premium \u00b7 affordable')},
+    {x: bx('2017', -461), w: 240, cy: 455, sp: makeBannerVert('glidewell.io', 'The lab moves\ninto your office', 'Single-visit', 'fastmill')},
     {x: SHIFT(27700), w: 480, sp: makeBanner('CrownAI', 'Designed by intelligence, milled by robots', 'AI in every crown', 'todayai')},
   ];
 }
