@@ -7407,10 +7407,34 @@ function drawRec17(t){
     const srcH = fl.naturalHeight - srcY, floorH = H - bh;
     const fs = floorH / srcH, fw = fl.naturalWidth * fs;
     const roomCX = px(HALL_MID, k(HALL_ROOM_Z));
+    /* AND IT STOPS BEFORE TODAY. The polished floor with the reflections in it
+       is the glass hall's own, and it was laid under everything from the
+       crossing to the end of the world — so the last bay, which is not that
+       room, stood on it too. Eldar, 2026-09-22: it ends a little before the
+       CrownAI card and the word TODAY, about where that bay's line is written.
+       560 units short of the last beat (39240 against TODAY at 39800), and it
+       dissolves over the 500 before that rather than stopping on a line: what
+       comes up under it is the hall's own drawn floor, in the same tone. */
+    const fEndW = (BEATS[BEATS.length - 1] || {x: HALL_MID + 2000}).x - 560;
+    const fEnd = px(fEndW, k(0)), fStart = px(fEndW - 500, k(0));
+    const layFloor = (x0, x1, alpha) => {
+      if (x1 <= 0 || x0 >= W || x1 <= x0) return;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.beginPath(); ctx.rect(x0, bh-1, x1 - x0, floorH+2); ctx.clip();
+      ctx.drawImage(fl, 0, srcY, fl.naturalWidth, srcH,
+                    Math.round(roomCX-fw/2), Math.round(bh), Math.round(fw), Math.ceil(floorH));
+      ctx.restore();
+    };
     ctx.save();
     ctx.beginPath(); ctx.rect(0, bh-1, W, floorH+2); ctx.clip();
-    ctx.drawImage(fl, 0, srcY, fl.naturalWidth, srcH,
-                  Math.round(roomCX-fw/2), Math.round(bh), Math.round(fw), Math.ceil(floorH));
+    layFloor(0, Math.min(W, fStart), 1);
+    const KF = 8;
+    for (let j = 0; j < KF; j++)
+      layFloor(fStart + (fEnd - fStart) * j / KF, fStart + (fEnd - fStart) * (j + 1) / KF,
+               1 - (j + 0.5) / KF);
+    /* the wash band goes exactly as far as the floor it belongs to */
+    ctx.beginPath(); ctx.rect(0, bh-1, Math.max(0, Math.min(W, fEnd)), floorH+2); ctx.clip();
     /* NO SECOND WALL UNDER THE FLOOR LINE. The render's floor mirrors the room
        sharply for the first rows under the skirting — a band of pilaster bases
        upside down — and that band runs under the whole late stretch, because
@@ -11028,18 +11052,12 @@ function drawStage(t){
   fg.addColorStop(0, '#9aa0a6'); fg.addColorStop(1, '#5e646a');
   ctx.fillStyle = fg;
   ctx.fillRect(xF0, yF, xF1 - xF0, yB - yF);
-  // the angled side table in the recreation zone (per the green-board sketch)
-  const T = drawYawedTable(SHIFT(27690), 300, 34, 620, 260, 820, 260,
-    {top:'#dfe2e5', side0:'#b7bbbf', side1:'#82878c', edge:'rgba(255,255,255,0.5)'});
-  // a round stand on it
-  const kS = k(280);
-  const sxS = px(SHIFT(27620), kS);
-  const yS = py(820, kS);
-  ctx.fillStyle = '#c7cbd0';
-  ctx.fillRect(sxS - 26*kS*SS, yS - 60*kS*SS, 52*kS*SS, 60*kS*SS);
-  ctx.beginPath(); ctx.ellipse(sxS, yS - 60*kS*SS, 34*kS*SS, 9*kS*SS, 0, 0, 7);
-  ctx.fillStyle = '#eceff2'; ctx.fill();
-  pushHit(sxS - 40*kS*SS, yS - 120*kS*SS, 80*kS*SS, 120*kS*SS, {type:'focus', beat: BEATS.length - 1, anchor: SHIFT(27620)});
+  /* THE GREEN-BOARD SKETCH'S SIDE TABLE IS GONE. An angled table at 39310 and
+     a round stand at 39240, both from the first sketch of this zone, stood
+     behind TODAY's counter in another layer — half hidden, and what showed of
+     them read as offcuts of some earlier construction (Eldar, 2026-09-22:
+     «там торчат кусочки предыдущих столов — давай просто удалим»). The stage
+     itself, the man on it and the audience stay: that is the finale. */
 
   // Jim on stage — a presence, later a generated-video moment
   const kJ = k(480);
@@ -11308,7 +11326,10 @@ function drawImpression(cx, cy, w, upper){
   ctx.restore();
   ctx.restore();
 }
-function drawBits(cx, cy, w, dz, seed){
+/* onPale: the same digits over a page instead of over the dark room. They are
+   drawn in the page's own ink then — additive light on white is invisible,
+   which is why the figure used to need a black rectangle under it. */
+function drawBits(cx, cy, w, dz, seed, onPale){
   const h = w * 0.94, rx = w * 0.5, ry = h * 0.5, ix = w * 0.29, iy = h * 0.31;
   const R = rng(seed);
   ctx.textAlign = 'center';
@@ -11323,7 +11344,9 @@ function drawBits(cx, cy, w, dz, seed){
     const y = cy + Math.sin(th) * mry - u * u * w * 0.46 * sp;
     const al = Math.sin(Math.PI * u);
     ctx.font = `${(w * 0.052 * (0.7 + 0.5 * rr)).toFixed(1)}px monospace`;
-    ctx.fillStyle = `rgba(${(150 + 60 * rr) | 0},${(215 + 30 * rr) | 0},255,${(al * 0.92).toFixed(3)})`;
+    ctx.fillStyle = onPale
+      ? `rgba(${(18 + 26 * rr) | 0},${(58 + 34 * rr) | 0},${(112 + 40 * rr) | 0},${(al * 0.85).toFixed(3)})`
+      : `rgba(${(150 + 60 * rr) | 0},${(215 + 30 * rr) | 0},255,${(al * 0.92).toFixed(3)})`;
     ctx.fillText(ch, x, y);
   }
   ctx.textAlign = 'left';
@@ -12402,16 +12425,19 @@ function drawStudy(){
         ctx.drawImage(spriteMip(sp2, fw, fh), fx, y, fw, fh);
         ctx.restore();
         if (S.diss > 0){
-          /* the digits are drawn additively, and on a pale page that is the same
-             as drawing nothing — so the carton's own rectangle goes dark as it
-             dissolves, and the data lights up inside it */
+          /* NO BLACK SCREEN WHERE THE CASE WAS. The digits used to be drawn
+             additively, which on a pale page is the same as drawing nothing, so
+             the carton's rectangle was filled almost black for them to light up
+             in — and when the dissolve finished that rectangle stayed: a black
+             panel in the middle of a white page (Eldar, 2026-09-22: «этого
+             чёрного экрана быть не должно — просто свободное пространство»). The
+             digits are drawn in the page's own ink over the page itself, and
+             they carry their own fade, so when the case has finished becoming
+             data the space it occupied is empty. */
           ctx.save();
-          ctx.globalAlpha = a * Math.min(1, S.diss * 1.3);
-          ctx.fillStyle = 'rgba(9,13,19,0.94)';
-          ctx.beginPath(); ctx.roundRect(fx, y, fw, fh, 6 * SS); ctx.fill();
-          ctx.globalCompositeOperation = 'lighter';
-          drawBits(fx + fw * 0.37, y + fh * 0.55, fw * 0.30, S.diss, 20230301);
-          drawBits(fx + fw * 0.67, y + fh * 0.57, fw * 0.26, S.diss, 20230302);
+          ctx.globalAlpha = a;
+          drawBits(fx + fw * 0.37, y + fh * 0.55, fw * 0.30, S.diss, 20230301, true);
+          drawBits(fx + fw * 0.67, y + fh * 0.57, fw * 0.26, S.diss, 20230302, true);
           ctx.restore();
           if (S.diss > 0.55){
             ctx.save();
@@ -12419,7 +12445,7 @@ function drawStudy(){
             ctx.textAlign = 'center';
             ctx.font = K.font(19, '700');
             try { ctx.letterSpacing = `${19*TRACK.label*SS}px`; } catch(err){}
-            ctx.fillStyle = 'rgba(150,215,255,0.95)';
+            ctx.fillStyle = `rgba(${K.accent},0.95)`;   // it reads on the page now, not on a black panel
             ctx.fillText('Scanned \u00b7 one file \u00b7 no model', fx + fw / 2, y + fh * 0.30);
             try { ctx.letterSpacing = '0px'; } catch(err){}
             ctx.textAlign = 'left';
