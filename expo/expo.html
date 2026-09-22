@@ -116,14 +116,15 @@ const BEATS = [
    /* edgeOK: the founding bay is 2320 units wide and the frame shows about
      1800, so anything standing at its edge cannot also be in shot at the apex.
      The album belongs to the walk up to 1970, not to the moment of it. */
-  /* AND IT LIES UNDER THE PHOTOGRAPH. Not at the frame's own dx: the frame
-     hangs on the wall (z 550, k 0.626) and the book lies on the counter
-     (k 0.980), so the same world step is a far bigger screen step out here —
-     -820 on the wall is -524 on the bench, and that is what puts the two on one
-     vertical when the walk stops at the year. At -1070 the book sat a whole
-     frame-width left of it, out at the bay's edge (Eldar, 2026-09-22:
-     «положить правее, прямо под фотографию Джима»). */
-  album:{dx:-524, lz:85, w:225, edgeOK:true, title:'THE FAMILY ALBUM', cover:'ph_album',   // a quarter smaller, so it sits ON the counter instead of over both its edges
+  /* IT LIES IN THE MIDDLE OF THE CLEAR COUNTER. Eldar drew the two gaps equal
+     (2026-09-22): from the counter's own corner to the book, and from the book
+     to the still life that begins in the photograph. The run starts at 3032 and
+     the plate's objects at 3936 — pL 3373 plus the 540 image columns the first
+     clean strip covers, at 1.0429 units a column — so the book's centre is at
+     3484, which is -826 from the year. (It had been put under Jim's frame, at
+     -524; the frame is on the wall and the book on the counter, so that was
+     only ever true from one camera.) */
+  album:{dx:-826, lz:85, w:225, edgeOK:true, title:'THE FAMILY ALBUM', cover:'ph_album',   // a quarter smaller, so it sits ON the counter instead of over both its edges
           photos:[['father42','jim15'],['jim18','jim1970']]}},
 
   {x:3450, y:'1970s', t:'PFM ERA', plaque:true,
@@ -3169,6 +3170,7 @@ function drawCapLines(lines, cx, y, lh, colw){
 }
 /* line breaks are computed once at a reference size — they never re-flow */
 function cacheWrap(){
+  const LETTERED = BEATS.filter(b => !b.plaque);   // the beats that put a numeral on the wall
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
     const seg = segAt(b.x);
@@ -3176,17 +3178,30 @@ function cacheWrap(){
     b._th = wrapCalc(b.th, 100 * 500/30);
     ctx.font = `100px ${seg.font}`;
     b._d = wrapCalc(b.d, 100 * 700/26);
-    // year lane: half the distance to the nearest neighbour, minus breathing room
+    /* year lane: half the distance to the nearest neighbour, minus breathing
+       room. A BEAT THAT LETTERS NO YEAR IS NOT A NEIGHBOUR. The lane is the
+       room a NUMERAL has on the wall, so it is measured to the numerals either
+       side of it — never to a beat that carries its name some other way (a
+       plaque beat letters nothing on the plaster: 1970s has its bronze plate,
+       2009–13 has the implant and a bench plate). And because one scale is
+       shared by a whole era, a single such neighbour shrank every year in the
+       room: the moment the implant took 2009–13's place, its 308-unit gap to
+       the 2010s halved the white room's numerals, all of them (Eldar,
+       2026-09-22: «почему на 2009 и далее поменялось начертание года?»). */
     const fs = 170 * (seg.tScale || 1);
     ctx.font = `${Math.round(fs)}px ${seg.font}`;
     const w = ctx.measureText(b.y).width;
-    const lane = Math.max(160, Math.min(i > 0 ? b.x - BEATS[i-1].x : 1e9,
-                          i < BEATS.length-1 ? BEATS[i+1].x - b.x : 1e9) - 90);
-    b._ys = Math.min(1, lane / Math.max(1, w));
+    const j = LETTERED.indexOf(b);
+    const pv = j > 0 ? LETTERED[j - 1] : null;
+    const nx = j >= 0 && j < LETTERED.length - 1 ? LETTERED[j + 1] : null;
+    const lane = Math.max(160, Math.min(pv ? b.x - pv.x : 1e9,
+                          nx ? nx.x - b.x : 1e9) - 90);
+    b._ys = j < 0 ? 1 : Math.min(1, lane / Math.max(1, w));
   }
   // one shared year scale per era — identical sizes inside each space
   for (const seg of SEGMENTS){
-    const era = BEATS.filter(b => b.x >= seg.x0 && b.x < seg.x1 && !b.sub);
+    const era = LETTERED.filter(b => b.x >= seg.x0 && b.x < seg.x1 && !b.sub);
+    if (!era.length) continue;
     const m = Math.min(1, ...era.map(b => b._ys));
     era.forEach(b => b._ys = m);
   }
@@ -5432,6 +5447,15 @@ function rec18Phase(mid){
   return u * u * (3 - 2 * u);
 }
 const AI_VITRINE = {
+  /* THE SCREEN IS DRAWN LARGER, NOT ZOOMED. Eldar, 2026-09-22: «увеличь
+     (перегенерируй, кодом, не зумом) экран AI». Everything in it — the
+     viewport, its grid, the type, the crown, the field of data under it — is
+     drawn from world units, so the whole thing is put down through one
+     transform about the niche's top centre and comes out at its own resolution
+     rather than as a magnified picture. 1.22 is what the panel has room for:
+     it grows downward and its foot stops about thirty pixels above the
+     counter's line at the bay's own view. */
+  grow: 1.22,
   w: 500, top: 112, bot: 792,        // the niche in world units on the panel's plane
   crownW: 375, crownCY: 405,         // the big crown: ~60% of the free height, a little above centre
   smallW: 66, cubeW: 112,            // the physical piece and its glass
@@ -5614,6 +5638,8 @@ function drawAiCrownVitrine(mid, kk, t){
   const near = ph;
   const r = 10 * kk * SS;
   const niche = () => { ctx.beginPath(); ctx.roundRect(nx0, nTop, nw, nh, r); };
+  ctx.save();
+  ctx.translate(cx, nTop); ctx.scale(V.grow, V.grow); ctx.translate(-cx, -nTop);
   /* IT IS A SCREEN. This was a white lit niche with a pale crown assembling in
      it — and against a white wall, in a white room, it read as nothing at all:
      Eldar could not tell what he was looking at. What 2018 actually was is a
@@ -5813,6 +5839,7 @@ function drawAiCrownVitrine(mid, kk, t){
                   py(V.bot - 10, kk) - py(V.bot - 158, kk), t, ph,
                   (cam.x - mid) * kk * SS);   // how far the walk has carried past this bay, in screen pixels
   ctx.restore();
+  ctx.restore();          // the growth transform
 }
 
 /* THE DESIGN STATION. The first AI crown existed as a file before it existed
@@ -7407,34 +7434,25 @@ function drawRec17(t){
     const srcH = fl.naturalHeight - srcY, floorH = H - bh;
     const fs = floorH / srcH, fw = fl.naturalWidth * fs;
     const roomCX = px(HALL_MID, k(HALL_ROOM_Z));
-    /* AND IT STOPS BEFORE TODAY. The polished floor with the reflections in it
-       is the glass hall's own, and it was laid under everything from the
-       crossing to the end of the world — so the last bay, which is not that
-       room, stood on it too. Eldar, 2026-09-22: it ends a little before the
-       CrownAI card and the word TODAY, about where that bay's line is written.
-       560 units short of the last beat (39240 against TODAY at 39800), and it
-       dissolves over the 500 before that rather than stopping on a line: what
-       comes up under it is the hall's own drawn floor, in the same tone. */
+    /* IT IS THE GLASS HALL'S FLOOR, AND IT RUNS ONLY AS FAR AS THAT ROOM DOES.
+       Laid under everything from the crossing to the end of the world, it put
+       the polished reflections under bays that are not that room at all. It
+       begins at the crossing's own screen wall (the LED wall at 33175) and ends
+       560 units short of the last beat — 39240, a little before the CrownAI card
+       and the word TODAY. BOTH ENDS ARE PLAIN CUTS: each line falls behind a
+       counter (the run at 32610–35248 hides the first, the one at 36412–40000 the
+       second), so there is nothing to soften, and a floor meeting another floor
+       does not dissolve (Eldar, 2026-09-22: «начало достаточно прямым, без
+       растворений... край всё равно не виден за столом»). */
+    const vw23 = (typeof FILM_RELAYS !== 'undefined' ? FILM_RELAYS : []).find(q => q.kind === 'vwall');
+    const fStartW = vw23 ? vw23.x : HALL_MID - 2000;
     const fEndW = (BEATS[BEATS.length - 1] || {x: HALL_MID + 2000}).x - 560;
-    const fEnd = px(fEndW, k(0)), fStart = px(fEndW - 500, k(0));
-    const layFloor = (x0, x1, alpha) => {
-      if (x1 <= 0 || x0 >= W || x1 <= x0) return;
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.beginPath(); ctx.rect(x0, bh-1, x1 - x0, floorH+2); ctx.clip();
-      ctx.drawImage(fl, 0, srcY, fl.naturalWidth, srcH,
-                    Math.round(roomCX-fw/2), Math.round(bh), Math.round(fw), Math.ceil(floorH));
-      ctx.restore();
-    };
+    const fStart = Math.max(0, px(fStartW, k(0))), fEnd = Math.min(W, px(fEndW, k(0)));
+    if (fEnd > fStart){
     ctx.save();
-    ctx.beginPath(); ctx.rect(0, bh-1, W, floorH+2); ctx.clip();
-    layFloor(0, Math.min(W, fStart), 1);
-    const KF = 8;
-    for (let j = 0; j < KF; j++)
-      layFloor(fStart + (fEnd - fStart) * j / KF, fStart + (fEnd - fStart) * (j + 1) / KF,
-               1 - (j + 0.5) / KF);
-    /* the wash band goes exactly as far as the floor it belongs to */
-    ctx.beginPath(); ctx.rect(0, bh-1, Math.max(0, Math.min(W, fEnd)), floorH+2); ctx.clip();
+    ctx.beginPath(); ctx.rect(fStart, bh-1, fEnd - fStart, floorH+2); ctx.clip();
+    ctx.drawImage(fl, 0, srcY, fl.naturalWidth, srcH,
+                  Math.round(roomCX-fw/2), Math.round(bh), Math.round(fw), Math.ceil(floorH));
     /* NO SECOND WALL UNDER THE FLOOR LINE. The render's floor mirrors the room
        sharply for the first rows under the skirting — a band of pilaster bases
        upside down — and that band runs under the whole late stretch, because
@@ -7462,6 +7480,7 @@ function drawRec17(t){
       ctx.restore();
     }
     ctx.restore();
+    }
   }
   /* The room is fitted to the wall's height, never zoomed: its horizontal
      excess over the opening is the travel the deeper plane uses for parallax,
@@ -8438,10 +8457,16 @@ const PL_ROW = {top: 303, front: 377, bull: 397, bot: 617, skirt: 588};
    же края»). qa/cut_corners.py reads these off the file: the lit arris along
    the front at row 72, the bullnose ending at 93, the mitre closing 130 columns
    in, and 90 columns of plain counter kept past it for the join to dissolve
-   into. The two renders are not the same photograph, so the piece is scaled by
-   the one measure that has to match where they meet — the thickness of the
-   worktop: 20 rows of plate against 21 of corner. */
-const PL_END = {arris: 72, bull: 93, join: 90};
+   into. The two renders are not the same photograph, so the piece has to be
+   scaled by ONE of their shared measures, and the choice shows at the join:
+   scaled by the worktop's THICKNESS (20 rows of plate against 21 of corner) the
+   top surface came out 6.7 units shallower than the plate's, and that step in
+   the back edge is the ear Eldar saw at the corner (2026-09-22). Scaled by the
+   top surface's DEPTH instead — 74 rows of plate at uPer over the corner's 71,
+   from its back edge at row 1 to the arris at 72 — the back edge runs straight
+   through the join and the thickness is out by 1.9 units, which is under two
+   pixels on a line that already carries a shadow. */
+const PL_END = {back: 1, arris: 72, bull: 93, join: 90};
 /* Left of the cabinet is the century BEFORE the company — 1907, lost-wax, the
    dark boards — and it keeps the counter it always had. The photographed bench
    is the founding lab's, and it begins where that room begins: past the
@@ -8699,10 +8724,10 @@ function drawPlateBench(t){
   /* THE RUN'S OWN CORNERS, and how much of the run they own. The mitre itself
      (130 columns) is the piece; the 90 columns of plain counter behind it are
      the join, and the tiling runs on under them. EU is the corner render's
-     world units per pixel: the worktop's thickness measured on both files,
-     20 rows of plate at uPer against 21 rows of corner. */
+     world units per pixel: the worktop's own depth measured on both files, 74
+     rows of plate at uPer against the corner's 71 (see PL_END). */
   const ELi = PHOTO_TEX.ph_p1_endL, ERi = PHOTO_TEX.ph_p1_endR;
-  const EU = (PL_ROW.bull - PL_ROW.front) * uPer / (PL_END.bull - PL_END.arris);
+  const EU = (PL_ROW.front - PL_ROW.top) * uPer / (PL_END.arris - PL_END.back);
   const solidL = ELi ? ((ELi.naturalWidth || ELi.width) - PL_END.join) * EU : 0;
   const solidR = ERi ? ((ERi.naturalWidth || ERi.width) - PL_END.join) * EU : 0;
   ctx.save();
@@ -8802,7 +8827,7 @@ function drawPlateBench(t){
     ctx.restore();
     /* THE TWO CORNERS. Hung by the same line as everything else — the render's
        lit arris (row 72) on the hall's counter line — and laid at EU, so the
-       worktop's thickness runs on through the join without a step. The piece
+       worktop's back edge runs on through the join without a step. The piece
        dissolves into the tiling along its inner edge over the 90 columns of
        plain counter it was cut with, and its own wood is mirrored below it down
        to the floor, exactly as the plate's is (the render stops short of the
@@ -10666,10 +10691,19 @@ function initBanners(){
      right of 2009, the implant card 372 left of 2015, the io card 461 left of
      2017 — those offsets are what they had, and they keep them. */
   const bx = (y, dx) => { const b = BEATS.find(z => z.y === y); return (b ? b.x : 0) + dx; };
+  /* AND THEY STAND CLEAR OF THE ERA'S SCREEN. The film's plasma hangs between
+     2009 and the 2010s, on the deep wall (z 1384, k 0.394) while the cards hang
+     at k 0.579 — so «air» between them is a screen measure, not a world one, and
+     the two cards were overlapping the screen by some 260 units each (Eldar,
+     2026-09-22, red over both edges). Solved on screen, at the view from in
+     front of the screen: the plasma's half-width is 173 units of screen against
+     a card's 159, and the gap is set to the 70 the io card already had from the
+     implant card — which is why that one barely moves. That gives +178 from
+     2009, -122 from 2015 and -453 from 2017. */
   BANNERS = [
-    {x: bx('2009', 425), w: 550, sp: makeBanner('BruxZir\u00ae', 'The best dentistry \u2014 made affordable', 'The #1 crown')},
-    {x: bx('2015', -372), w: 550, sp: makeBanner('Glidewell HT\u2122', 'Premium implant, a fraction of the price', 'Premium \u00b7 affordable')},
-    {x: bx('2017', -461), w: 240, cy: 455, sp: makeBannerVert('glidewell.io', 'The lab moves\ninto your office', 'Single-visit', 'fastmill')},
+    {x: bx('2009', 178), w: 550, sp: makeBanner('BruxZir\u00ae', 'The best dentistry \u2014 made affordable', 'The #1 crown')},
+    {x: bx('2015', -122), w: 550, sp: makeBanner('Glidewell HT\u2122', 'Premium implant, a fraction of the price', 'Premium \u00b7 affordable')},
+    {x: bx('2017', -453), w: 240, cy: 455, sp: makeBannerVert('glidewell.io', 'The lab moves\ninto your office', 'Single-visit', 'fastmill')},
     {x: SHIFT(27700), w: 480, sp: makeBanner('CrownAI', 'Designed by intelligence, milled by robots', 'AI in every crown', 'todayai')},
   ];
 }
@@ -12509,12 +12543,19 @@ function drawStudy(){
           drawBits(fx + fw * 0.37, y + fh * 0.55, fw * 0.30, S.diss, 20230301, true);
           drawBits(fx + fw * 0.67, y + fh * 0.57, fw * 0.26, S.diss, 20230302, true);
           ctx.restore();
+          /* WHAT HAPPENED, AND THEN WHAT YOU CAN DO NEXT — IN ONE PLACE. The
+             answer stands in the middle of the space the case left, and two
+             seconds later the invitation takes that same line: one thing at a
+             time, where the eye already is (Eldar, 2026-09-22: «подними
+             надпись digitize, чтобы она появлялась вместо этой — и шрифт
+             крупнее в обоих случаях»). Both are set at 26 rather than 19. */
+          S._figY = y; S._figH = fh; S._figX = fx; S._figW = fw;
           if (S.diss > 0.55){
             ctx.save();
-            ctx.globalAlpha = a * Math.min(1, (S.diss - 0.55) / 0.35);
+            ctx.globalAlpha = a * Math.min(1, (S.diss - 0.55) / 0.35) * (1 - (S._swap || 0));
             ctx.textAlign = 'center';
-            ctx.font = K.font(19, '700');
-            try { ctx.letterSpacing = `${19*TRACK.label*SS}px`; } catch(err){}
+            ctx.font = K.font(26, '700');
+            try { ctx.letterSpacing = `${26*TRACK.label*SS}px`; } catch(err){}
             ctx.fillStyle = `rgba(${K.accent},0.95)`;   // it reads on the page now, not on a black panel
             ctx.fillText('Scanned \u00b7 one file \u00b7 no model', fx + fw / 2, y + fh * 0.30);
             try { ctx.letterSpacing = '0px'; } catch(err){}
@@ -12549,26 +12590,28 @@ function drawStudy(){
       if (S.diss >= 1){
         S.doneAt = S.doneAt || state.time;
         const wait = state.time - S.doneAt;
-        if (wait > 2){
-          const aa = Math.min(1, (wait - 2) / 0.5);
+        S._swap = Math.max(0, Math.min(1, (wait - 2) / 0.5));
+        if (wait > 2 && S._figY != null){
+          const aa = S._swap;
           const label = 'Digitize another one?';
           ctx.save();
           ctx.globalAlpha = a * aa;
-          ctx.font = K.font(20, '700');
+          ctx.font = K.font(26, '700');
           const tw3 = ctx.measureText(label).width;
-          const bx3 = left + (textW - tw3) / 2, by3 = y + 46 * SS;   // air over it and under it: it is not a caption
+          // it stands exactly where the answer stood: the middle of the space the case left
+          const bx3 = S._figX + (S._figW - tw3) / 2, by3 = S._figY + S._figH * 0.30;
           const hot3 = Input.hover && Input.hover.x > bx3 - 18 * SS && Input.hover.x < bx3 + tw3 + 18 * SS &&
-                       Input.hover.y > by3 - 26 * SS && Input.hover.y < by3 + 12 * SS;
+                       Input.hover.y > by3 - 30 * SS && Input.hover.y < by3 + 14 * SS;
           ctx.fillStyle = `rgba(${K.accent},${hot3 ? 0.95 : 0.8})`;
           if (by3 > topClip && by3 < botClip){
             ctx.fillText(label, bx3, by3);
-            ctx.fillRect(bx3, by3 + 7 * SS, tw3, Math.max(1, 1.4 * SS));
-            pushHit(bx3 - 18 * SS, by3 - 26 * SS, tw3 + 36 * SS, 40 * SS, {type: 'redigitize'});
+            ctx.fillRect(bx3, by3 + 9 * SS, tw3, Math.max(1, 1.6 * SS));
+            pushHit(bx3 - 18 * SS, by3 - 30 * SS, tw3 + 36 * SS, 46 * SS, {type: 'redigitize'});
           }
           ctx.restore();
-          y += 86 * SS;
-        } else y += 12 * SS;
-      } else { S.doneAt = 0; y += 12 * SS; }
+        }
+        y += 12 * SS;
+      } else { S.doneAt = 0; S._swap = 0; y += 12 * SS; }
     }
   };
   if (inl && inl.boxTop) drawInlineBox();
