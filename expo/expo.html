@@ -281,7 +281,20 @@ const BEATS = [
    wall:[], table:[],
    rig:{kind:'disc', dx:-250, lz:150, w:240}},
 
+  /* THIS BEAT IS AN OBJECT, NOT A YEAR. The implant stands on the counter here
+     (initDecor) and the beat's name lies beside it on the same counter, on the
+     hall's own bench plate — nothing at all is left on the wall: no numerals,
+     no title, no thesis (Eldar, 2026-09-21: «не наверху, приклеенную к стене
+     — положить её на стол рядом с имплантом»). plaqueLz puts the plate on the
+     counter rather than on the plaster, and a plaque beat letters no year
+     anywhere — the year stays a datum, for ?study= and for the plan. The plate
+     stands 180 units right of the object, at the front of the worktop (the
+     implant is at z 60, the plate at 18): at 130 its left edge came up against
+     the implant's screw, and the plate's own half-width is about a hundred
+     units, so 180 leaves a clear gap and still ends 30 units short of where
+     the counter itself ends (26735). */
   {x:21930, y:'2009–13', t:'SCREW-RETAINED', minor:true,
+   plaque:true, plaqueLz:18, plaqueBenchDX:180,
    th:'The barrier wasn’t the technique — it was the price of the parts.',
    d:'Own-made Ti-bases, abutments and screws plus a flat lab fee — and BruxZir bonded to the Ti-base in the lab, so no cement goes in the patient’s mouth. It arrives as the Inclusive Tooth Replacement System (2012), a patient-specific case in one box, and ends in the BruxZir Full-Arch Prosthesis (Nov 2013): a whole arch milled from one blank.',
    wall:[], table:[]},
@@ -8617,7 +8630,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260921-whole';
+const ASSET_V = '20260921-implant';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -8693,6 +8706,7 @@ async function loadPhotoSkin(){
     ph_labs73: 'labs_1973.png',       // 1973: the first two labs, each on its own stone — the counter gives way to them
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
     ph_car79: 'car_1979.png',         // and the mail van that drives its platform as you scroll
+    ph_implant: 'implant.png',         // 2009–13: the screw-retained unit itself — crown, titanium base and implant, as Eldar rendered them, the parts a little apart
     front_e4: 'front_e4.jpg',         // the white era's counter face: one door of Eldar's render, mid-door to mid-door
     bench_b1_left:  'bench_b1_left.png',
     bench_b1_long:  'bench_b1_long.png',
@@ -8802,6 +8816,18 @@ function initDecor(){
     const bpl = BEATS.find(b => b.t === 'PLASTIC INJECTION');
     if (bpl) PROPS.push({x: bpl.x, z: 52, kind: 'ph_plastic', w: 110,
       cap: 'Plastic injection \u00b7 2000 \u2014 an in-house division making the boxes, the articulators and the supplies every case ships in. Own the supply chain, and you own the price.'});
+    /* 2009–13 STANDS ON THE COUNTER. The screw-retained beat is about three
+       parts — the crown, the titanium base and the implant — and about what
+       they cost, so the parts themselves stand at the beat, in the place its
+       year had on the counter (Eldar, 2026-09-21: «поставить на стол вместо
+       2009-13 года»). His render shows them a little apart, the way a
+       catalogue shows an assembly — that is how it was drawn and it is laid
+       down as it is. 200×540 px of cut-out at 70 units wide is 189 units tall:
+       half the counter's own height (1080 floor − 700 bench = 380), so it
+       reads as this bay's exhibit beside the 139-tall mill at 2017. No
+       caption: a tap opens the beat's page, which is where its story is. */
+    const bsr = BEATS.find(b => b.t === 'SCREW-RETAINED');
+    if (bsr) PROPS.push({x: bsr.x, z: 60, kind: 'ph_implant', w: 70, study: 'SCREW-RETAINED'});
   }
 
   /* The welcome still life is gone: the film plays where the heirlooms stood.
@@ -9141,6 +9167,14 @@ function drawProps(midPass){
         sp: Object.assign({inner: {w: sp.w, h: sp.h}}, sp),
         wx: p.x, cy: CFG.benchY - (p.w * sp.h / sp.w) / 2, z: bz(p.z),
         w: p.w, cap: p.cap, beat: nearestBeat(p.x).i});
+    }
+    /* OR IT IS THE BEAT ITSELF. An object standing in the place of its year
+       opens that year's reading page — the same door the writing on the wall
+       opens, so a beat still has ONE page and merely two ways in. The beat is
+       named by its title, never by a coordinate (Eldar, 2026-09-21). */
+    else if (p.study){
+      const bi = BEATS.findIndex(bb => bb.t === p.study);
+      if (bi >= 0) pushHit(sx - pw2/2, syFoot - ph2, pw2, ph2, {type: 'study', beat: bi});
     }
   }
 }
