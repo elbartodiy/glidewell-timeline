@@ -94,6 +94,12 @@ let DATA = null, offset = 0;
 async function load(){
   const r = await fetch('../data/events.json?nc=' + Date.now());
   DATA = await r.json();
+  // прошедшее выбрасываем по своим часам: файл может быть вчерашним
+  const today = new Date().toISOString().slice(0, 10);
+  DATA.events = (DATA.events || []).filter(e => e.to >= today);
+  DATA.count = DATA.events.length;
+  const age = (Date.now() - new Date(DATA.updated)) / 86400000;
+  document.querySelector('.dot').style.background = age > 1 ? 'var(--amber)' : 'var(--green)';
   document.getElementById('upd').textContent =
     new Date(DATA.updated).toLocaleString('ru-RU', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
   document.getElementById('cnt').textContent = DATA.count;

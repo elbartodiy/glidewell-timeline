@@ -4278,6 +4278,142 @@ function drawFilmRelays(){
 }
 
 const FIN_X = SHIFT(29750);
+/* ТАБЛО МЕРОПРИЯТИЙ — как расписание вылетов, на стене финала.
+   Зал заканчивается тем, что компания делает прямо сейчас, и это единственный
+   объект в нём, который меняется сам: настоящие ближайшие курсы, город, даты,
+   преподаватели, остались ли места (Эльдар, 2026-09-23).
+
+   Данные лежат в data/events.json СВОИМ файлом. Витрина, откуда они берутся,
+   не отдаёт CORS — из браузера её не прочитать, — а зал может стоять на машине
+   в здании без интернета, и табло, зависящее от запроса наружу, однажды
+   погаснет на глазах у посетителей. Файл обновляет скрипт (expo/tools/
+   fetch_events.py) по ночам; зал перечитывает его раз в четверть часа. */
+/* СВОЙ КУСОК СТЕНЫ. На 1560 оно налезало на карточку CrownAI и на строчку
+   «An arc the length of one life»; 2400 — пустой участок левее их обоих. */
+const BOARD_X = FIN_X - 2400;
+/* И ОНО НЕ ДОСТАЁТ ДО БАННЕРОВ. Карточки висят на ближней плоскости и
+   расходятся по экрану быстрее стены, поэтому при каком-нибудь положении
+   камеры любая из них наедет на угол табло — увести это расстоянием нельзя,
+   можно только не занимать ту полосу высоты. Низ табло держится выше, чем
+   начинается карточка (Эльдар, 2026-09-23). */
+const BOARD_W = 1120, BOARD_TOP = 26, BOARD_H = 430;
+let BOARD = {rows: [], updated: null, at: 0, scroll: 0, tried: 0};
+function boardLoad(){
+  const now = (typeof state !== 'undefined' ? state.time : 0) || 0;
+  if (BOARD.tried && now - BOARD.tried < 900) return;      // раз в 15 минут
+  BOARD.tried = now || 1e-6;
+  fetch('data/events.json?nc=' + Date.now())
+    .then(r => r.json())
+    .then(d => { BOARD.rows = d.events || []; BOARD.updated = d.updated; })
+    .catch(() => {});                                       // нет файла — просто пустая доска
+}
+const BOARD_MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function drawEventBoard(t){
+  if (Math.abs(cam.x - BOARD_X) > CULL_BAY) return;
+  boardLoad();
+  const seg = SEGMENTS[3];
+  const kw = k((seg.z0 || 1400) - 6);
+  const x0 = px(BOARD_X - BOARD_W/2, kw), x1 = px(BOARD_X + BOARD_W/2, kw);
+  if (x1 < -40 || x0 > W + 40) return;
+  const yTop = py(BOARD_TOP, kw), yBot = py(BOARD_TOP + BOARD_H, kw);
+  const w = x1 - x0, h = yBot - yTop, u = kw * SS;          // одна мировая единица
+  ctx.save();
+  /* корпус: тёмная панель с тонкой рамкой, как настоящее табло на светлой стене */
+  ctx.shadowColor = 'rgba(20,26,34,0.34)'; ctx.shadowBlur = 26 * u; ctx.shadowOffsetY = 8 * u;
+  ctx.fillStyle = '#10141a';
+  ctx.beginPath(); ctx.roundRect(x0, yTop, w, h, 8 * u); ctx.fill();
+  noShadow();
+  ctx.strokeStyle = 'rgba(190,205,220,0.30)'; ctx.lineWidth = Math.max(1, 1.6 * u);
+  ctx.beginPath(); ctx.roundRect(x0, yTop, w, h, 8 * u); ctx.stroke();
+
+  const pad = 34 * u;
+  /* шапка */
+  ctx.font = eraFont(30 * u, '600', seg.font);
+  try { ctx.letterSpacing = `${30 * 0.14 * u}px`; } catch(e){}
+  ctx.fillStyle = 'rgba(236,241,246,0.94)';
+  ctx.fillText('GLIDEWELL EDUCATION', x0 + pad, yTop + 52 * u);
+  try { ctx.letterSpacing = '0px'; } catch(e){}
+  ctx.font = eraFont(19 * u, '', seg.font);
+  ctx.fillStyle = 'rgba(122,134,146,0.95)';
+  ctx.textAlign = 'right';
+  /* если файлу больше суток — говорим это вслух, а не притворяемся живыми */
+  const stale = BOARD.age != null && BOARD.age > 1;
+  if (stale) ctx.fillStyle = 'rgba(242,178,60,0.85)';
+  ctx.fillText(stale ? 'UPDATED ' + Math.floor(BOARD.age) + 'D AGO' : 'UPCOMING · LIVE',
+               x1 - pad, yTop + 52 * u);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(190,205,220,0.20)';
+  ctx.fillRect(x0 + pad, yTop + 68 * u, w - pad * 2, Math.max(1, 1 * u));
+
+  /* строки: ползут вверх, дошли до конца — возвращаются */
+  const rowH = 54 * u, headH = 84 * u;
+  const listTop = yTop + headH, listH = h - headH - 30 * u;
+  const rows = BOARD.rows;
+  if (!rows.length){
+    ctx.font = eraFont(20 * u, 'italic', seg.font);
+    ctx.fillStyle = 'rgba(122,134,146,0.8)';
+    ctx.fillText('—', x0 + pad, listTop + 40 * u);
+    ctx.restore(); return;
+  }
+  const span = rows.length * rowH;
+  BOARD.scroll = span > listH ? ((t * 16 * u) % (span + listH * 0.4)) : 0;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0 + 2, listTop, w - 4, listH); ctx.clip();
+  const today = new Date();
+  for (let i = 0; i < rows.length; i++){
+    const e = rows[i];
+    const y = listTop + i * rowH - BOARD.scroll + 34 * u;
+    if (y < listTop - rowH || y > listTop + listH + rowH) continue;
+    if (i % 2 === 0){
+      ctx.fillStyle = 'rgba(255,255,255,0.028)';
+      ctx.fillRect(x0 + 2, y - 34 * u, w - 4, rowH);
+    }
+    const d1 = new Date(e.from + 'T00:00'), d2 = new Date(e.to + 'T00:00');
+    const day = d1.getDate() === d2.getDate() ? String(d1.getDate())
+              : d1.getDate() + '–' + d2.getDate();
+    ctx.font = eraFont(27 * u, '600', seg.font);
+    ctx.fillStyle = 'rgba(242,178,60,0.96)';
+    ctx.fillText(day, x0 + pad, y);
+    ctx.font = eraFont(15 * u, '', seg.font);
+    ctx.fillStyle = 'rgba(122,134,146,0.95)';
+    ctx.fillText(BOARD_MON[d1.getMonth()], x0 + pad, y + 17 * u);
+
+    const cx2 = x0 + pad + 74 * u;
+    ctx.font = eraFont(21 * u, '', seg.font);
+    ctx.fillStyle = 'rgba(232,237,242,0.95)';
+    let ttl = e.title;
+    while (ctx.measureText(ttl).width > w * 0.50 && ttl.length > 8) ttl = ttl.slice(0, -1);
+    ctx.fillText(ttl === e.title ? ttl : ttl.trim() + '…', cx2, y);
+    ctx.font = eraFont(15 * u, '', seg.font);
+    ctx.fillStyle = 'rgba(122,134,146,0.92)';
+    let who = (e.instructors || []).join(' · ');
+    while (ctx.measureText(who).width > w * 0.50 && who.length > 6) who = who.slice(0, -1);
+    ctx.fillText(who, cx2, y + 17 * u);
+
+    ctx.fillStyle = 'rgba(214,222,230,0.92)';
+    ctx.font = eraFont(19 * u, '', seg.font);
+    ctx.fillText(e.city, x0 + w * 0.66, y);
+
+    const days = Math.round((d1 - today) / 86400000);
+    const st = !e.open ? ['SOLD OUT', '229,72,77'] : days <= 7 ? ['CLOSING', '242,178,60'] : ['OPEN', '75,208,122'];
+    ctx.textAlign = 'right';
+    ctx.font = eraFont(15 * u, '600', seg.font);
+    try { ctx.letterSpacing = `${15 * 0.1 * u}px`; } catch(e2){}
+    ctx.fillStyle = `rgba(${st[1]},0.95)`;
+    ctx.fillText(st[0], x1 - pad, y);
+    try { ctx.letterSpacing = '0px'; } catch(e2){}
+    ctx.textAlign = 'left';
+  }
+  ctx.restore();
+  /* мягкие растворения сверху и снизу, чтобы строки не обрубались */
+  const fade = ctx.createLinearGradient(0, listTop, 0, listTop + 26 * u);
+  fade.addColorStop(0, '#10141a'); fade.addColorStop(1, 'rgba(16,20,26,0)');
+  ctx.fillStyle = fade; ctx.fillRect(x0 + 2, listTop, w - 4, 26 * u);
+  const fade2 = ctx.createLinearGradient(0, listTop + listH - 26 * u, 0, listTop + listH);
+  fade2.addColorStop(0, 'rgba(16,20,26,0)'); fade2.addColorStop(1, '#10141a');
+  ctx.fillStyle = fade2; ctx.fillRect(x0 + 2, listTop + listH - 26 * u, w - 4, 26 * u);
+  ctx.restore();
+}
 function drawOutro(){
   // the finale is the mirror of the welcome: the mark under the ceiling,
   // the closing line, and a lit still life of today's products below
@@ -15117,6 +15253,7 @@ function frame(){
 
   drawTallUnits();      // furniture against the wall, before anything hung on it
   drawOutro();
+  drawEventBoard(t);   // расписание курсов на стене финала
   drawSheets();
 
   // wall layer: photos and panels sit deepest
