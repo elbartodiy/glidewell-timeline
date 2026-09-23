@@ -4290,137 +4290,184 @@ const FIN_X = SHIFT(29750);
    fetch_events.py) по ночам; зал перечитывает его раз в четверть часа. */
 /* СВОЙ КУСОК СТЕНЫ. На 1560 оно налезало на карточку CrownAI и на строчку
    «An arc the length of one life»; 2400 — пустой участок левее их обоих. */
-const BOARD_X = FIN_X - 2400;
-/* И ОНО НЕ ДОСТАЁТ ДО БАННЕРОВ. Карточки висят на ближней плоскости и
-   расходятся по экрану быстрее стены, поэтому при каком-нибудь положении
-   камеры любая из них наедет на угол табло — увести это расстоянием нельзя,
-   можно только не занимать ту полосу высоты. Низ табло держится выше, чем
-   начинается карточка (Эльдар, 2026-09-23). */
-const BOARD_W = 1460, BOARD_TOP = -120, BOARD_H = 540;
-let BOARD = {rows: [], updated: null, at: 0, scroll: 0, tried: 0, age: null};
+const BOARD_X = FIN_X - 3400;      // свой участок стены: правее стеклянного зала, левее карточек
+/* РАЗМЕРЫ ТАБЛО. Сверху его держит ореховый карниз (низ на −90), снизу —
+   столешница (700). Всё, что между ними, — его полоса; залезть на карниз значит
+   читаться как наклейка поверх потолка. */
+const BOARD_W = 2260, BOARD_TOP = -60, BOARD_H = 585;
+/* Низ держится выше, чем начинается карточка CrownAI: она висит на ближней
+   плоскости и по экрану едет быстрее стены, поэтому при некоторых камерах
+   наезжает на угол. Развести их расстоянием нельзя — только высотой. */
+/* ОДНА ШКАЛА НА ВСЁ. Строки не должны касаться друг друга, а кегли — спорить:
+   высота строки втрое больше названия курса, вторичное — ровно вдвое меньше
+   главного, поля одинаковые со всех сторон (Эльдар, 2026-09-23: «не впритык,
+   стильно и удобно»). Всё в мировых единицах, на экран переводится через u. */
+const BD = {pad: 64, head: 116, row: 116, date: 50, mon: 22, title: 34, who: 22,
+            city: 28, tag: 20, brand: 40};
+let BOARD = {rows: [], updated: null, scroll: 0, tried: 0, age: null};
 function boardLoad(){
   const now = (typeof state !== 'undefined' ? state.time : 0) || 0;
   if (BOARD.tried && now - BOARD.tried < 900) return;      // раз в 15 минут
   BOARD.tried = now || 1e-6;
   fetch('data/events.json?nc=' + Date.now())
     .then(r => r.json())
-    .then(d => { BOARD.rows = d.events || []; BOARD.updated = d.updated; })
-    .catch(() => {});                                       // нет файла — просто пустая доска
+    .then(d => {
+      /* ФАЙЛ МОЖЕТ БЫТЬ СТАРЫМ — ЗАЛ ЭТО ПЕРЕЖИВЁТ. Обновлялка ходит по
+         расписанию, но день без сети или упавшая задача бывают у всех, а
+         табло, показывающее вчерашний курс, хуже пустого. Прошедшее зал
+         отбрасывает сам, по своим часам. */
+      const today = new Date().toISOString().slice(0, 10);
+      BOARD.rows = (d.events || []).filter(e => e.to >= today);
+      BOARD.updated = d.updated;
+      BOARD.age = d.updated ? (Date.now() - new Date(d.updated)) / 86400000 : null;
+    })
+    .catch(() => {});
 }
 const BOARD_MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+/* ТАБЛО МЕРОПРИЯТИЙ на стене финала: настоящие ближайшие курсы — город, даты,
+   преподаватели, остались ли места. Единственный объект в зале, который меняется
+   сам (Эльдар, 2026-09-23). Данные лежат СВОИМ файлом в data/events.json: витрина,
+   откуда они берутся, не отдаёт CORS, а зал может стоять на машине в здании без
+   интернета — табло, зависящее от запроса наружу, однажды погаснет на людях. */
 function drawEventBoard(t){
   if (Math.abs(cam.x - BOARD_X) > CULL_BAY) return;
   boardLoad();
   const seg = SEGMENTS[3];
   const kw = k((seg.z0 || 1400) - 6);
+  const u = kw * SS;
   const x0 = px(BOARD_X - BOARD_W/2, kw), x1 = px(BOARD_X + BOARD_W/2, kw);
   if (x1 < -40 || x0 > W + 40) return;
   const yTop = py(BOARD_TOP, kw), yBot = py(BOARD_TOP + BOARD_H, kw);
-  const w = x1 - x0, h = yBot - yTop, u = kw * SS;          // одна мировая единица
+  const w = x1 - x0, h = yBot - yTop, pad = BD.pad * u;
+  const F = seg.font;
   ctx.save();
-  /* корпус: тёмная панель с тонкой рамкой, как настоящее табло на светлой стене */
-  ctx.shadowColor = 'rgba(20,26,34,0.34)'; ctx.shadowBlur = 26 * u; ctx.shadowOffsetY = 8 * u;
-  ctx.fillStyle = '#10141a';
-  ctx.beginPath(); ctx.roundRect(x0, yTop, w, h, 8 * u); ctx.fill();
+
+  /* ---- корпус: тёмное стекло в тонкой светлой оправе ---- */
+  ctx.shadowColor = 'rgba(16,22,30,0.30)'; ctx.shadowBlur = 30 * u; ctx.shadowOffsetY = 10 * u;
+  const body = ctx.createLinearGradient(0, yTop, 0, yBot);
+  body.addColorStop(0, '#171b21'); body.addColorStop(1, '#0d1014');
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.roundRect(x0, yTop, w, h, 10 * u); ctx.fill();
   noShadow();
-  ctx.strokeStyle = 'rgba(190,205,220,0.30)'; ctx.lineWidth = Math.max(1, 1.6 * u);
-  ctx.beginPath(); ctx.roundRect(x0, yTop, w, h, 8 * u); ctx.stroke();
+  ctx.strokeStyle = 'rgba(206,218,230,0.22)'; ctx.lineWidth = Math.max(1, 1.4 * u);
+  ctx.beginPath(); ctx.roundRect(x0 + 0.5, yTop + 0.5, w - 1, h - 1, 10 * u); ctx.stroke();
 
-  const pad = 34 * u;
-  /* шапка */
-  ctx.font = eraFont(38 * u, '600', seg.font);
-  try { ctx.letterSpacing = `${38 * 0.14 * u}px`; } catch(e){}
-  ctx.fillStyle = 'rgba(236,241,246,0.94)';
-  ctx.fillText('GLIDEWELL EDUCATION', x0 + pad, yTop + 62 * u);
+  /* ---- шапка ---- */
+  const hy = yTop + BD.head * 0.56 * u;
+  ctx.font = eraFont(BD.brand * u, '600', F);
+  try { ctx.letterSpacing = `${BD.brand * 0.16 * u}px`; } catch(e){}
+  ctx.fillStyle = 'rgba(240,245,250,0.95)';
+  ctx.fillText('GLIDEWELL EDUCATION', x0 + pad, hy);
   try { ctx.letterSpacing = '0px'; } catch(e){}
-  ctx.font = eraFont(23 * u, '', seg.font);
-  ctx.fillStyle = 'rgba(122,134,146,0.95)';
-  ctx.textAlign = 'right';
-  /* если файлу больше суток — говорим это вслух, а не притворяемся живыми */
-  const stale = BOARD.age != null && BOARD.age > 1;
-  if (stale) ctx.fillStyle = 'rgba(242,178,60,0.85)';
-  ctx.fillText(stale ? 'UPDATED ' + Math.floor(BOARD.age) + 'D AGO' : 'UPCOMING · LIVE',
-               x1 - pad, yTop + 62 * u);
-  ctx.textAlign = 'left';
-  ctx.fillStyle = 'rgba(190,205,220,0.20)';
-  ctx.fillRect(x0 + pad, yTop + 80 * u, w - pad * 2, Math.max(1, 1.2 * u));
+  ctx.font = eraFont(BD.tag * u, '', F);
+  ctx.fillStyle = 'rgba(128,140,152,0.9)';
+  ctx.fillText('Upcoming courses', x0 + pad, hy + BD.brand * 0.78 * u);
+  {   /* состояние справа: точка и слово, янтарём если файл старше суток */
+    const stale = BOARD.age != null && BOARD.age > 1;
+    const label = stale ? Math.floor(BOARD.age) + ' d ago' : 'Live';
+    ctx.font = eraFont(BD.tag * u, '600', F);
+    try { ctx.letterSpacing = `${BD.tag * 0.12 * u}px`; } catch(e){}
+    ctx.textAlign = 'right';
+    ctx.fillStyle = stale ? 'rgba(232,176,72,0.92)' : 'rgba(118,208,150,0.92)';
+    ctx.fillText(label.toUpperCase(), x1 - pad, hy);
+    const tw = ctx.measureText(label.toUpperCase()).width;
+    ctx.beginPath();
+    ctx.arc(x1 - pad - tw - 14 * u, hy - BD.tag * 0.3 * u, 4.5 * u, 0, 7);
+    ctx.fill();
+    try { ctx.letterSpacing = '0px'; } catch(e){}
+    ctx.textAlign = 'left';
+  }
+  ctx.fillStyle = 'rgba(206,218,230,0.16)';
+  ctx.fillRect(x0 + pad, yTop + BD.head * u, w - pad * 2, Math.max(1, 1 * u));
 
-  /* строки: ползут вверх, дошли до конца — возвращаются */
-  const rowH = 66 * u, headH = 100 * u;
-  const listTop = yTop + headH, listH = h - headH - 30 * u;
+  /* ---- строки ---- */
   const rows = BOARD.rows;
+  const listTop = yTop + BD.head * u, listH = h - BD.head * u - 22 * u;
   if (!rows.length){
-    ctx.font = eraFont(20 * u, 'italic', seg.font);
-    ctx.fillStyle = 'rgba(122,134,146,0.8)';
-    ctx.fillText('—', x0 + pad, listTop + 40 * u);
+    ctx.font = eraFont(BD.who * u, 'italic', F);
+    ctx.fillStyle = 'rgba(128,140,152,0.75)';
+    ctx.fillText('—', x0 + pad, listTop + 60 * u);
     ctx.restore(); return;
   }
-  /* РОВНОЕ ДВИЖЕНИЕ. Скорость считалась как t × u, где u — масштаб кадра: он
-     меняется на каждом наезде камеры, и лента то ускорялась, то дёргалась, а
-     на каждом обороте ещё и прыгала. Теперь это накопитель в МИРОВЫХ единицах,
-     который растёт на dt и заворачивается по длине списка, а сам список
-     рисуется дважды подряд — оборот происходит внутри, и шва не видно
-     (Эльдар, 2026-09-23: «движение дёрганное»). */
-  const rowWorld = 66, spanWorld = rows.length * rowWorld;
-  BOARD.scroll = (BOARD.scroll + (state.dt || 0.016) * 26) % spanWorld;
-  const span = spanWorld * u;
+  /* РОВНОЕ ДВИЖЕНИЕ: накопитель в МИРОВЫХ единицах, растёт на dt и заворачивается
+     по длине списка; список рисуется дважды подряд, поэтому оборота не видно. */
+  BOARD.scroll = (BOARD.scroll + (state.dt || 0.016) * 34) % (rows.length * BD.row);
+  const rowH = BD.row * u;
   ctx.save();
   ctx.beginPath(); ctx.rect(x0 + 2, listTop, w - 4, listH); ctx.clip();
   const today = new Date();
+  const colCity = x0 + w * 0.645, colTag = x1 - pad;
   for (let i = 0; i < rows.length * 2; i++){
     const e = rows[i % rows.length];
-    const y = listTop + i * rowH - BOARD.scroll * u + 40 * u;
-    if (y < listTop - rowH || y > listTop + listH + rowH) continue;
-    if (i % 2 === 0){
-      ctx.fillStyle = 'rgba(255,255,255,0.028)';
-      ctx.fillRect(x0 + 2, y - 34 * u, w - 4, rowH);
-    }
+    const yr = listTop + i * rowH - BOARD.scroll * u;     // верх строки
+    if (yr < listTop - rowH || yr > listTop + listH) continue;
+    const ym = yr + rowH * 0.5;                            // её середина
+    /* волосок-разделитель, а не полосатая заливка: спокойнее и чище */
+    ctx.fillStyle = 'rgba(206,218,230,0.075)';
+    ctx.fillRect(x0 + pad, yr, w - pad * 2, Math.max(1, 0.8 * u));
+
     const d1 = new Date(e.from + 'T00:00'), d2 = new Date(e.to + 'T00:00');
     const day = d1.getDate() === d2.getDate() ? String(d1.getDate())
               : d1.getDate() + '–' + d2.getDate();
-    ctx.font = eraFont(34 * u, '600', seg.font);
-    ctx.fillStyle = 'rgba(242,178,60,0.96)';
-    ctx.fillText(day, x0 + pad, y);
-    ctx.font = eraFont(19 * u, '', seg.font);
-    ctx.fillStyle = 'rgba(122,134,146,0.95)';
-    ctx.fillText(BOARD_MON[d1.getMonth()], x0 + pad, y + 21 * u);
+    ctx.font = eraFont(BD.date * u, '600', F);
+    ctx.fillStyle = 'rgba(236,180,74,0.96)';
+    ctx.fillText(day, x0 + pad, ym + BD.date * 0.12 * u);
+    const dw = ctx.measureText(day).width;
+    ctx.font = eraFont(BD.mon * u, '600', F);
+    try { ctx.letterSpacing = `${BD.mon * 0.14 * u}px`; } catch(e){}
+    ctx.fillStyle = 'rgba(148,160,172,0.9)';
+    ctx.fillText(BOARD_MON[d1.getMonth()], x0 + pad + dw + 12 * u, ym + BD.date * 0.12 * u);
+    try { ctx.letterSpacing = '0px'; } catch(e){}
 
-    const cx2 = x0 + pad + 134 * u;   // «25–26» шире, чем 96 — название въезжало в дату
-    ctx.font = eraFont(26 * u, '', seg.font);
-    ctx.fillStyle = 'rgba(232,237,242,0.95)';
+    const cx2 = x0 + pad + 210 * u;
+    const colW = colCity - cx2 - 40 * u;
+    ctx.font = eraFont(BD.title * u, '', F);
+    ctx.fillStyle = 'rgba(234,240,246,0.96)';
     let ttl = e.title;
-    while (ctx.measureText(ttl).width > w * 0.50 && ttl.length > 8) ttl = ttl.slice(0, -1);
-    ctx.fillText(ttl === e.title ? ttl : ttl.trim() + '…', cx2, y);
-    ctx.font = eraFont(19 * u, '', seg.font);
-    ctx.fillStyle = 'rgba(122,134,146,0.92)';
-    let who = (e.instructors || []).join(' · ');
-    while (ctx.measureText(who).width > w * 0.50 && who.length > 6) who = who.slice(0, -1);
-    ctx.fillText(who, cx2, y + 21 * u);
+    while (ctx.measureText(ttl).width > colW && ttl.length > 8) ttl = ttl.slice(0, -1);
+    ctx.fillText(ttl === e.title ? ttl : ttl.trim() + '…', cx2, ym - BD.title * 0.22 * u);
+    /* преподавателей режем по ИМЕНАМ, а не по буквам: «Dr. Jinny» посреди
+       фамилии читается как опечатка, а «+6» — как факт */
+    ctx.font = eraFont(BD.who * u, '', F);
+    ctx.fillStyle = 'rgba(128,140,152,0.9)';
+    const names = e.instructors || [];
+    let who = names.join(' · '), cut = names.length;
+    while (cut > 1 && ctx.measureText(who).width > colW){
+      cut--; who = names.slice(0, cut).join(' · ') + '   +' + (names.length - cut);
+    }
+    while (ctx.measureText(who).width > colW && who.length > 6) who = who.slice(0, -1);
+    ctx.fillText(who, cx2, ym + BD.title * 0.74 * u);
 
-    ctx.fillStyle = 'rgba(214,222,230,0.92)';
-    ctx.font = eraFont(24 * u, '', seg.font);
-    ctx.fillText(e.city, x0 + w * 0.66, y);
+    ctx.font = eraFont(BD.city * u, '', F);
+    ctx.fillStyle = 'rgba(206,216,226,0.92)';
+    ctx.fillText(e.city, colCity, ym + BD.city * 0.12 * u);
 
+    /* состояние — тихая пилюля, а не крик */
     const days = Math.round((d1 - today) / 86400000);
-    const st = !e.open ? ['SOLD OUT', '229,72,77'] : days <= 7 ? ['CLOSING', '242,178,60'] : ['OPEN', '75,208,122'];
-    ctx.textAlign = 'right';
-    ctx.font = eraFont(19 * u, '600', seg.font);
-    try { ctx.letterSpacing = `${19 * 0.1 * u}px`; } catch(e2){}
+    const st = !e.open ? ['SOLD OUT', '226,96,100'] : days <= 7 ? ['CLOSING', '236,180,74'] : ['OPEN', '118,208,150'];
+    ctx.font = eraFont(BD.tag * u, '600', F);
+    try { ctx.letterSpacing = `${BD.tag * 0.12 * u}px`; } catch(e2){}
+    const pw = ctx.measureText(st[0]).width, ph = BD.tag * 2.1 * u;
+    const px0 = colTag - pw - 22 * u, py0 = ym - ph / 2;
+    ctx.fillStyle = `rgba(${st[1]},0.13)`;
+    ctx.beginPath(); ctx.roundRect(px0, py0, pw + 22 * u, ph, ph / 2); ctx.fill();
     ctx.fillStyle = `rgba(${st[1]},0.95)`;
-    ctx.fillText(st[0], x1 - pad, y);
-    try { ctx.letterSpacing = '0px'; } catch(e2){}
+    ctx.textAlign = 'right';
+    ctx.fillText(st[0], colTag - 11 * u, ym + BD.tag * 0.34 * u);
     ctx.textAlign = 'left';
+    try { ctx.letterSpacing = '0px'; } catch(e2){}
   }
   ctx.restore();
-  /* мягкие растворения сверху и снизу, чтобы строки не обрубались */
-  const fade = ctx.createLinearGradient(0, listTop, 0, listTop + 26 * u);
-  fade.addColorStop(0, '#10141a'); fade.addColorStop(1, 'rgba(16,20,26,0)');
-  ctx.fillStyle = fade; ctx.fillRect(x0 + 2, listTop, w - 4, 26 * u);
-  const fade2 = ctx.createLinearGradient(0, listTop + listH - 26 * u, 0, listTop + listH);
-  fade2.addColorStop(0, 'rgba(16,20,26,0)'); fade2.addColorStop(1, '#10141a');
-  ctx.fillStyle = fade2; ctx.fillRect(x0 + 2, listTop + listH - 26 * u, w - 4, 26 * u);
+  /* растворения сверху и снизу, чтобы строки уходили, а не обрубались */
+  const f1 = ctx.createLinearGradient(0, listTop, 0, listTop + 34 * u);
+  f1.addColorStop(0, '#161a20'); f1.addColorStop(1, 'rgba(22,26,32,0)');
+  ctx.fillStyle = f1; ctx.fillRect(x0 + 2, listTop, w - 4, 34 * u);
+  const f2 = ctx.createLinearGradient(0, yBot - 40 * u, 0, yBot - 2);
+  f2.addColorStop(0, 'rgba(13,16,20,0)'); f2.addColorStop(1, '#0d1014');
+  ctx.fillStyle = f2; ctx.fillRect(x0 + 2, yBot - 40 * u, w - 4, 38 * u);
   ctx.restore();
 }
+
 function drawOutro(){
   // the finale is the mirror of the welcome: the mark under the ceiling,
   // the closing line, and a lit still life of today's products below
