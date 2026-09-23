@@ -2257,7 +2257,13 @@ const bayDrop = (x, z, y, yz) => ({x, z, drop: true, y: y != null ? y : CFG.benc
    corner — and from there the shared side runs to the near plane. Drawn from
    one descriptor by both sides, it cannot open at any angle. */
 const STEP_PAD = 60;        // how far the block runs past its pilasters, each side
-const STEP_NOSE_Z = 520;    // and where its nose stands
+/* AND HOW DEEP IT IS. Every block used to name its own nose plane, and the two
+   white bays ended up four hundred units deep — a platform sticking out into
+   the room rather than a step at the mouth of a bay (Eldar, 2026-09-23:
+   «уменьши его до ступеньки, не надо его так далеко вытаскивать»). One depth
+   for all of them, the shallow one 1989 was drawn with. */
+const STEP_DEPTH = 88;
+const noseOf = zBay => zBay - STEP_DEPTH;
 /* AND WHERE ITS BACK EDGE LANDS. The tread's back was derived from a world
    height on the block's own plane — and the block stands in a niche, DEEPER
    than the wall beside it, so its back edge came out above the skirting's
@@ -2301,12 +2307,9 @@ const FAR93_L = bayFoot(REC93_BL, REC93_Z), FAR93_R = bayFoot(REC93_BR, REC93_Z)
    to the floor line on its own plane, so that line is the skirting the block's
    back edge has to meet. (Era 1's wall, at 680, would have put the back edge
    thirty units lower and turned the step into a ramp.) */
-/* 1989 KEEPS THE CONSTRUCTION IT HAD. Its block and its slab were right before
-   any of this; putting them on the step-edge scheme only bent them (Eldar,
-   2026-09-23: «та ступенька, которая была раньше нормальной, теперь выглядит
-   криво — верни код, который был»). */
-const FAR89_L = bayFoot(REC3_L, 728, 1080, 728), FAR89_R = bayFoot(REC3_R, 728, 1080, 728);
-const EDG89_L = bayDrop(REC3_L, 728, 1080, 728), EDG89_R = bayDrop(REC3_R, 728, 1080, 728);
+const R89_BAY_Z = 722;      // 1989's own plane — where its pilasters stand
+const STEP_89_L = stepEdge(REC3_L - STEP_PAD, R89_BAY_Z), STEP_89_R = stepEdge(REC3_R + STEP_PAD, R89_BAY_Z);
+const FSTP_89_L = stepFoot(REC3_L - STEP_PAD, R89_BAY_Z), FSTP_89_R = stepFoot(REC3_R + STEP_PAD, R89_BAY_Z);
 /* 1979 HAS A BLOCK TOO — it had the first one, and it was taken away with the
    runner. Without it the bay's panel and the models' plinth stop at the
    counter's foot line and nothing stands under them: through the slot between
@@ -2321,12 +2324,13 @@ const STEP_DR_L = stepEdge(REC2_L - STEP_PAD, DR_BAY_Z), STEP_DR_R = stepEdge(RE
 const FSTP_DR_L = stepFoot(REC2_L - STEP_PAD, DR_BAY_Z), FSTP_DR_R = stepFoot(REC2_R + STEP_PAD, DR_BAY_Z);
 const STEP_22_L = stepEdge(REC4_L - STEP_PAD, R22_BAY_Z), STEP_22_R = stepEdge(REC4_R + STEP_PAD, R22_BAY_Z);
 const FSTP_22_L = stepFoot(REC4_L - STEP_PAD, R22_BAY_Z), FSTP_22_R = stepFoot(REC4_R + STEP_PAD, R22_BAY_Z);
-const FAR18_L = bayFoot(REC18_L, 1000), FAR18_R = bayFoot(REC18_R, 1000);
+const R18_BAY_Z = 994;      // 2018's own plane — where its pilasters stand
+const STEP_18_L = stepEdge(REC18_L - STEP_PAD, R18_BAY_Z), STEP_18_R = stepEdge(REC18_R + STEP_PAD, R18_BAY_Z);
+const FSTP_18_L = stepFoot(REC18_L - STEP_PAD, R18_BAY_Z), FSTP_18_R = stepFoot(REC18_R + STEP_PAD, R18_BAY_Z);
 const FAR23_L = bayFoot(REC23_L, 1000), FAR23_R = bayFoot(REC23_R, 1000);
 /* the same points, seen from the neighbour's side — it walks the wall's foot
    line to this x and then steps down to meet the bay here */
 const EDG93_L = bayDrop(REC93_BL, REC93_Z), EDG93_R = bayDrop(REC93_BR, REC93_Z);
-const EDG18_L = bayDrop(REC18_L, 1000), EDG18_R = bayDrop(REC18_R, 1000);
 const EDG23_L = bayDrop(REC23_L, 1000), EDG23_R = bayDrop(REC23_R, 1000);
 /* the floor: each era has its own material tone; the change lands exactly
    on the recreation line — the ground is part of the aging, not a black hole */
@@ -2380,8 +2384,8 @@ function drawFloor(){
   const spans = [
     [SEGMENTS[0].x0 - 900, REC_L - STEP_PAD,  T.era[0], null, STEP_79_L],
     [REC_L - STEP_PAD,  REC_R + STEP_PAD,  T.rec.r1979, stepFoot(REC_L - STEP_PAD, R79_BAY_Z), stepFoot(REC_R + STEP_PAD, R79_BAY_Z)],
-    [REC_R + STEP_PAD,  REC3_L, T.era[1], STEP_79_R, EDG89_L],
-    [REC3_L, REC3_R, T.rec.r1989, FAR89_L, FAR89_R],
+    [REC_R + STEP_PAD,  REC3_L - STEP_PAD, T.era[1], STEP_79_R, STEP_89_L],
+    [REC3_L - STEP_PAD, REC3_R + STEP_PAD, T.rec.r1989, FSTP_89_L, FSTP_89_R],
     /* THE BAND'S FAR CORNERS ARE THE PANEL'S OWN TWO. The white strip on the
        wall is a vertical rectangle on the bay's plane and must stay one; what
        hangs off it is the floor. So the floor's far edge is drawn at the
@@ -2391,7 +2395,7 @@ function drawFloor(){
        the near plane, exactly where it always was (Eldar, 2026-09-22: «дальняя
        часть прикреплена ровно к точкам края белой стенки, передняя — как
        была»). */
-    [REC3_R, REC93_L, T.era[2], EDG89_R, EDG93_L],
+    [REC3_R + STEP_PAD, REC93_L, T.era[2], STEP_89_R, EDG93_L],
     [REC93_L, REC93_R, T.rec.r1993, FAR93_L, FAR93_R],
     [REC93_R, REC2_L - STEP_PAD, T.era[2], EDG93_R, STEP_DR_L],
     [REC2_L - STEP_PAD, REC2_R + STEP_PAD, T.rec.rDR, FSTP_DR_L, FSTP_DR_R],
@@ -2401,9 +2405,9 @@ function drawFloor(){
        frame; the hall's painted floor laid over it read as a white haze across
        the lower half of the render. The gap is not a gap: the photograph fills
        it. */
-    [REC17_R, REC18_L, T.era[3], null, EDG18_L],
-    [REC18_L, REC18_R, T.rec.r2018, FAR18_L, FAR18_R],
-    [REC18_R, REC4_L - STEP_PAD, T.era[3], EDG18_R, STEP_22_L],
+    [REC17_R, REC18_L - STEP_PAD, T.era[3], null, STEP_18_L],
+    [REC18_L - STEP_PAD, REC18_R + STEP_PAD, T.rec.r2018, FSTP_18_L, FSTP_18_R],
+    [REC18_R + STEP_PAD, REC4_L - STEP_PAD, T.era[3], STEP_18_R, STEP_22_L],
     [REC4_R + STEP_PAD, REC23_L, T.era[3], STEP_22_R, EDG23_L],
     [REC23_L, REC23_R, T.rec.r2023, FAR23_L, FAR23_R],
     [REC4_L - STEP_PAD, REC4_R + STEP_PAD, T.rec.r2022, FSTP_22_L, FSTP_22_R],
@@ -5825,11 +5829,18 @@ function drawRec18(t){
   const mid = (REC18_L + REC18_R) / 2;
   if (Math.abs(cam.x - mid) > CULL_BAY) return;
   const kk = k(1000);
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  /* the bay stands ON its block: the panel ends on the tread line and is drawn
+     to the BLOCK's width, on the BLOCK's own plane */
+  const yBase = py(1040, k(R18_BAY_Z));
   const x0 = px(REC18_L, kk), x1 = px(REC18_R, kk);
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#e6eaee'); wg.addColorStop(0.45, '#f7fafc'); wg.addColorStop(1, '#cad0d6');
-  ctx.fillStyle = wg; ctx.fillRect(x0, 0, x1 - x0, yBase);
+  ctx.fillStyle = wg;
+  {
+    const kb = k(R18_BAY_Z);
+    ctx.fillRect(px(REC18_L - STEP_PAD, kb), 0,
+                 px(REC18_R + STEP_PAD, kb) - px(REC18_L - STEP_PAD, kb), yBase);
+  }
   const cx = px(mid, kk);
   ctx.save();
   ctx.textAlign = 'center';
@@ -5852,6 +5863,7 @@ function drawRec18(t){
     ctx.fillStyle = cg;
     ctx.fillRect(sxc - cw/2, 0, cw, yBase);
   }
+  drawBayStep(REC18_L, REC18_R, STEP_TONE.white, R18_BAY_Z, noseOf(R18_BAY_Z));
 }
 
 /* THE FIRST AI CROWN, AS A THING BEING MADE. The bay used to hold a monitor
@@ -6920,7 +6932,7 @@ function drawMapWall(t){
      line, at the block's own plane, and the block takes it from there — and the
      background is drawn to the BLOCK's width, so no ledge of floor stands out
      beside it */
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  const yBase = py(1040, k(R79_BAY_Z));
   const x0 = px(REC_L, kk), x1 = px(REC_R, kk);
   // the light wall panel
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
@@ -6928,7 +6940,17 @@ function drawMapWall(t){
   wg.addColorStop(0.4, '#8a8070');
   wg.addColorStop(1, '#5c5346');
   ctx.fillStyle = wg;
-  ctx.fillRect(x0, 0, x1 - x0, yBase);
+  {
+    /* ONE PLANE FOR THE BAY'S OWN EDGE. The background was laid on the panel's
+       plane while the pilasters stand on the bay's, so the same world x came
+       out at two screen x and a hair of panel slid out from behind the column
+       as the camera moved (Eldar, 2026-09-23: «полосочка правой стенки выезжает
+       из-за колонны — её край должен быть спрятан за колонной и не двигаться»).
+       The edge is the pilaster's own outer edge, on the pilaster's own plane. */
+    const kb = k(R79_BAY_Z);
+    const bx0 = px(REC_L - STEP_PAD, kb), bx1 = px(REC_R + STEP_PAD, kb);
+    ctx.fillRect(bx0, 0, bx1 - bx0, yBase);
+  }
   /* THE MAP HAS COME OFF THE WALL. Nine pins on a paper map said exactly what
      the nine models now say standing on the counter, and the two together were
      the same idea told twice. The panel keeps its light and its columns; the
@@ -7454,7 +7476,14 @@ function drawRec2(t){
      is drawn to the block's width and the bay's contents stay on their own
      coordinates, so nothing else moves. */
   {
-    const bx0 = px(REC2_L - STEP_PAD, kk), bx1 = px(REC2_R + STEP_PAD, kk);
+    /* ONE PLANE FOR THE BAY'S OWN EDGE. The background was laid on the panel's
+       plane while the pilasters stand on the bay's, so the same world x came
+       out at two screen x and a hair of panel slid out from behind the column
+       as the camera moved (Eldar, 2026-09-23: «полосочка правой стенки выезжает
+       из-за колонны — её край должен быть спрятан за колонной и не двигаться»).
+       The edge is the pilaster's own outer edge, on the pilaster's own plane. */
+    const kb = k(DR_BAY_Z);
+    const bx0 = px(REC2_L - STEP_PAD, kb), bx1 = px(REC2_R + STEP_PAD, kb);
     ctx.fillRect(bx0, 0, bx1 - bx0, yBase);
   }
   // a dark display niche, and the crown glowing inside it
@@ -7681,7 +7710,7 @@ function drawRec2(t){
      step has always been painted after them. Painted before, it read as a block
      sliding behind the bay (Eldar, 2026-09-22: «ступенька должна как бы
      перекрывать колонну»). */
-  drawBayStep(REC2_L, REC2_R, STEP_TONE.cool, DR_BAY_Z, 520);
+  drawBayStep(REC2_L, REC2_R, STEP_TONE.cool, DR_BAY_Z, noseOf(DR_BAY_Z));
 }
 
 /* the 2022 recreation: the scanner's portal — panelled white ends here,
@@ -7714,7 +7743,14 @@ function drawRec4(t){
   wg.addColorStop(1, '#dde0e3');
   ctx.fillStyle = wg;
   {
-    const bx0 = px(REC4_L - STEP_PAD, kk), bx1 = px(REC4_R + STEP_PAD, kk);
+    /* ONE PLANE FOR THE BAY'S OWN EDGE. The background was laid on the panel's
+       plane while the pilasters stand on the bay's, so the same world x came
+       out at two screen x and a hair of panel slid out from behind the column
+       as the camera moved (Eldar, 2026-09-23: «полосочка правой стенки выезжает
+       из-за колонны — её край должен быть спрятан за колонной и не двигаться»).
+       The edge is the pilaster's own outer edge, on the pilaster's own plane. */
+    const kb = k(R22_BAY_Z);
+    const bx0 = px(REC4_L - STEP_PAD, kb), bx1 = px(REC4_R + STEP_PAD, kb);
     ctx.fillRect(bx0, 0, bx1 - bx0, yBase);
   }
   // a faint scan-sweep drifts across the panel — the room itself being read
@@ -7766,7 +7802,7 @@ function drawRec4(t){
     }
   }
   drawRec4Columns(yBase);
-  drawBayStep(REC4_L, REC4_R, STEP_TONE.white, R22_BAY_Z, 520);   // in front of the portal's own columns
+  drawBayStep(REC4_L, REC4_R, STEP_TONE.white, R22_BAY_Z, noseOf(R22_BAY_Z));   // in front of the portal's own columns
 }
 /* THE STEP AT THE MOUTH OF A BAY. 1979 had it first: between the panel's foot
    and the floor slab a dark band showed, and the columns seemed to stand over a
@@ -8229,8 +8265,10 @@ function drawRec3(t){
      feet. (Eldar, 2026-09-10: the columns cut into the floor; the block ran
      out past them and showed an open end.) */
   const kk = k(728);
-  const yBase = py(1080, kk);
-  const x0 = px(REC3_L, kk), x1 = px(REC3_R, kk);
+  /* the bay stands ON its block: the panel ends on the tread line, at the
+     block's own plane, and it is drawn to the BLOCK's width */
+  const yBase = py(1040, k(R89_BAY_Z));
+  const x0 = px(REC3_L - STEP_PAD, k(R89_BAY_Z)), x1 = px(REC3_R + STEP_PAD, k(R89_BAY_Z));
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#7d8894');
   wg.addColorStop(0.4, '#9aa5b0');
@@ -8261,7 +8299,7 @@ function drawRec3(t){
     ctx.fillRect(sxc - cw/2 + 6*SS, 0, 3*SS, yFootC);
   }
   // the block at the mouth, on the pilasters' plane and under their feet
-  drawBayStep(REC3_L, REC3_R, STEP_TONE.steel, 722);
+  drawBayStep(REC3_L, REC3_R, STEP_TONE.steel, R89_BAY_Z, noseOf(R89_BAY_Z));
   /* (The seam render also has a white column beside the dark one. Eldar tried
      it here and took it out — the bay's two steel pilasters are the columns
      he wants; the white era begins on the wall, 2026-09-10.) */
@@ -15027,6 +15065,17 @@ function frame(){
   drawFilmWallPlasma();      // the 2009 plasma hangs on the wall, behind the counters
   drawShowroom(t);   // the room the last stretch is actually set in
   // recreations stand proud of the deeper era walls — they paint on top
+  /* 1979 HAD THE FIRST BLOCK AND IT WAS TAKEN AWAY WITH THE RUNNER. Without it
+     the bay's panel and the models' plinth stopped at the counter's foot line
+     with nothing standing under them, and through the slot between two counter
+     runs you saw straight past into the room — the bay hovered (Eldar,
+     2026-09-23: «там просто нет ступеньки... парит в воздухе, не касаясь
+     пола»). Its stone is the craft century's warm one. It is laid HERE, before
+     the bay, because at 1979 a counter runs right across the mouth: the
+     furniture is painted later and covers the block everywhere except the
+     slot, which is exactly where it is wanted. The bay's own pilasters end on
+     its tread, so there is nothing of them left for it to cover. */
+  drawBayStep(REC_L, REC_R, STEP_TONE.warm, R79_BAY_Z, noseOf(R79_BAY_Z));
   drawMapWall(t);
   drawLabs73();
   drawRec3(t);
