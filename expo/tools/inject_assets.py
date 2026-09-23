@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Regenerate the base64 asset block inside expo.html from expo/assets/_src.
+"""Regenerate the base64 asset block inside expo.html from expo/src/pictures.
 
-The sources live in assets/_src now, out of the way of the four folders the
-hall actually reads at runtime (photo, people, album, fonts). They are the
-originals of the pictures already inlined in expo.html; nothing loads them.
+The sources live in src/pictures, with everything else the hall was built from,
+out of the way of the four folders it actually reads at runtime (photo, people,
+album, fonts). They are the originals of the pictures already inlined in
+expo.html; nothing loads them.
 
 AND IT REFUSES TO SHRINK THE BLOCK. It replaces the whole block, so a source
 folder that has gone missing — moved, emptied, tidied away — used to mean an
@@ -14,7 +15,7 @@ import base64, glob, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HTML = os.path.join(HERE, '..', 'expo.html')
-ASSETS = os.path.join(HERE, '..', 'assets', '_src')
+ASSETS = os.path.join(HERE, '..', 'src', 'pictures')
 
 entries = []
 total = 0

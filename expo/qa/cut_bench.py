@@ -29,7 +29,7 @@ import sys
 import numpy as np
 from PIL import Image
 
-ROOT = __file__.rsplit('/', 2)[0]   # .../expo — the renders and the cut-outs both live under it
+ROOT = __file__.rsplit('/', 2)[0]   # .../expo — sources in src/, cut-outs in assets/
 JOBS = {
     'b1': 'Table_1.png',   # 1907–1979
     'b2': 'Table_3.png',   # 1980–1988
@@ -75,7 +75,7 @@ def lip_row(a):
 
 def cut(key):
     fn = JOBS[key]
-    a = np.asarray(Image.open(f'{ROOT}/Artefacts/{fn}').convert('RGBA')).astype(np.float32)
+    a = np.asarray(Image.open(f'{ROOT}/src/renders/{fn}').convert('RGBA')).astype(np.float32)
     ys, xs = np.nonzero(a[..., 3] > 8)
     Y0, Y1, X0, X1 = ys.min(), ys.max(), xs.min(), xs.max()
     rowa = a[Y0:Y1 + 1, X0:X1 + 1, 3].mean(axis=1)

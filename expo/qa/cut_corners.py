@@ -4,7 +4,7 @@
 The counter of the founding bay is a PHOTOGRAPH (plate_bay_front.png, laid by
 drawPlateBench and extended sideways by tiling two clean strips of itself), so
 it had no ends: a run simply stopped on a straight cut. Eldar rendered the ends
-for it — Artefacts/Interior/1sttablecorners.png, a short piece of the same
+for it — src/renders/1sttablecorners.png, a short piece of the same
 counter with both of its mitred corners — and this takes the two corners off it.
 
 NOTHING IS REDRAWN. The corner is the render's own: the cut column is where the
@@ -18,8 +18,8 @@ The printed rows go into PL_END in expo.html.
 import numpy as np
 from PIL import Image
 
-ROOT = __file__.rsplit('/', 2)[0]   # .../expo — the renders and the cut-outs both live under it
-SRC = f'{ROOT}/Artefacts/Interior/1sttablecorners.png'
+ROOT = __file__.rsplit('/', 2)[0]   # .../expo — sources in src/, cut-outs in assets/
+SRC = f'{ROOT}/src/renders/1sttablecorners.png'
 OUT = f'{ROOT}/assets/photo'
 JOIN = 90          # columns of plain counter kept past the mitre, for the dissolve
 
