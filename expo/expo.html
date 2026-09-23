@@ -4487,7 +4487,10 @@ const PROJECTORS = [
    /* the stand moved to the RIGHT of the composition and the machine is
       mirrored with it, so it throws across from that side — the left of the
       slab is where the 727 puts down */
-   src: 'media/reel_1993.mp4', throwZ: 240, mdx: 340, mirror: true, stand: true, ground: true,
+   /* mdx 340 put the stand on the bay's own pale slab, which is the room in the
+      film, not the room you are standing in; 660 clears the slab's edge and
+      sets it on the era's blue floor (Eldar, 2026-09-23) */
+   src: 'media/reel_1993.mp4', throwZ: 240, mdx: 660, mirror: true, stand: true, ground: true,
    clip: {name: '4141 MacArthur Blvd', label: 'the building, before it was built',
           src: 'media/reel_1993.mp4'}},
 ];
@@ -8018,8 +8021,18 @@ function drawRec17(t){
     if (fEnd > fStart){
     ctx.save();
     ctx.beginPath(); ctx.rect(fStart, bh-1, fEnd - fStart, floorH+2); ctx.clip();
+    /* THE FLOOR IS LIFTED A FEW ROWS OVER THE WALL PLATE. The room's own
+       pilasters do not stop exactly on the render's floor line — a few rows of
+       their bases hang below it, and beside their reflections those rows read
+       as a piece of the real column standing on the marble (Eldar, 2026-09-23:
+       «кусочек реальных колонн — их нужно спрятать за полом»). The plate is
+       drawn from six units higher and stretched by the same amount: the bases
+       go under the floor, and the join itself is a floor line, which is where
+       a floor line belongs. */
+    const FL_LIFT = Math.round(6 * SS);
     ctx.drawImage(fl, 0, srcY, fl.naturalWidth, srcH,
-                  Math.round(roomCX-fw/2), Math.round(bh), Math.round(fw), Math.ceil(floorH));
+                  Math.round(roomCX-fw/2), Math.round(bh) - FL_LIFT,
+                  Math.round(fw), Math.ceil(floorH) + FL_LIFT);
     /* NO SECOND WALL UNDER THE FLOOR LINE. The render's floor mirrors the room
        sharply for the first rows under the skirting — a band of pilaster bases
        upside down — and that band runs under the whole late stretch, because
@@ -9502,7 +9515,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260922-corners';
+const ASSET_V = '20260923-implant2';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -9579,6 +9592,7 @@ async function loadPhotoSkin(){
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
     ph_car79: 'car_1979.png',         // and the mail van that drives its platform as you scroll
     ph_implant: 'implant.png',         // 2009–13: the screw-retained unit itself — crown, titanium base and implant, as Eldar rendered them, the parts a little apart
+    ph_implant2: 'implant2.png',       // and the two bare screws, photographed lying down — they go flat on the counter beside it
     ph_p1_endL: 'bench_p1_left.png',   // the founding bench's own two corners, cut from Eldar's render by qa/cut_corners.py
     ph_p1_endR: 'bench_p1_right.png',
     front_e4: 'front_e4.jpg',         // the white era's counter face: one door of Eldar's render, mid-door to mid-door
@@ -9696,6 +9710,16 @@ function initDecor(){
        caption: a tap opens the beat's page, which is where its story is. */
     const bsr = BEATS.find(b => b.t === 'SCREW-RETAINED');
     if (bsr) PROPS.push({x: bsr.x, z: 60, kind: 'ph_implant', w: 70, study: 'SCREW-RETAINED'});
+    /* AND THE TWO BARE SCREWS BESIDE IT, LYING DOWN. Eldar's second render
+       (implant2.png) is photographed from above with the two implants crossed,
+       so it cannot stand up on the counter the way the assembly does — it is
+       laid flat on the worktop instead (Eldar, 2026-09-23: «новая картинка
+       будет лежать на столе, а не стоять»). Its width is read off the
+       assembly's: the screw in implant.png is about 46 of its 200 px wide at
+       70 units, so one screw is ~16 units across; the pair in the new render is
+       about seven screw-widths wide, which puts it at 115. It sits 120 units
+       left of the assembly, at the front of the worktop. */
+    if (bsr) PROPS.push({x: bsr.x - 120, z: 18, kind: 'ph_implant2', w: 115, lay: true, study: 'SCREW-RETAINED'});
   }
 
   /* The welcome still life is gone: the film plays where the heirlooms stood.
@@ -10017,13 +10041,30 @@ function drawProps(midPass){
        without a shadow is not on a surface, it is in front of one, and no
        amount of detail in the sprite itself will fix that. */
     const pw2 = sp.w * scale, ph2 = sp.h * scale;
+    /* A THING THAT LIES DOWN HAS NO HEIGHT. A standing prop is hung by its
+       bottom edge from the counter's line; one photographed from above is the
+       surface itself, so it is centred on that line instead — half of it in
+       front of the line and half behind, which is what a plan view on a
+       worktop looks like. It takes no shadow either: the render carries its
+       own, and the hall's would print a second one under a flat picture. */
+    if (p.lay){
+      ctx.drawImage(sp.c, sx - pw2/2, syFoot - ph2 * 0.62, pw2, ph2);
+      if (p.study){
+        const bi0 = BEATS.findIndex(bb => bb.t === p.study);
+        if (bi0 >= 0) pushHit(sx - pw2/2, syFoot - ph2 * 0.62, pw2, ph2, {type:'study', beat: bi0});
+      }
+      continue;
+    }
     contactShadow(sx, syFoot, pw2, 0.42);
     // and the dark line where it actually meets the surface
     ctx.fillStyle = 'rgba(0,0,0,0.22)';
     ctx.fillRect(sx - pw2 * 0.30, syFoot - 1.4 * SS, pw2 * 0.60, 2.4 * SS);
     ctx.save();
     if (p.flip){ ctx.translate(sx, 0); ctx.scale(-1, 1); ctx.translate(-sx, 0); }
-    ctx.globalAlpha = 0.95;
+    /* A THING IS NOT TRANSLUCENT. Every prop was laid at 95%, which nobody
+       notices against plaster and everybody notices against a lit screen: the
+       implant at 2009 had the plasma showing through it (Eldar, 2026-09-23).
+       The sprites carry their own alpha; the hall does not add any. */
     ctx.drawImage(sp.c, sx - pw2/2, syFoot - ph2, pw2, ph2);
     ctx.restore();
     /* A PROP MAY HAVE SOMETHING TO SAY. Most of these are furniture, but one or
@@ -10751,7 +10792,6 @@ function drawHallCarpet(){
   ctx.restore();
 }
 function drawHallExhibit(){
-  drawHallCarpet();
   for (const b of BEATS) if (b.ped && b.ped.spin && Math.abs(b.x + (b.ped.dx ?? -430) - cam.x) < 2600) drawHallCrown(b);
 }
 function drawPedestal(b, t, hero){
@@ -15170,6 +15210,14 @@ function frame(){
      the milling cells, which stand a thousand units in front of it: walking up
      to 2019 a grey cylinder appeared on top of the machines (Eldar). */
   drawRec4Columns(null, true);
+
+  /* THE RUNNER IS UNDER THE PEOPLE. It was laid with the hall's exhibit, after
+     the figures, so the three of the audience who stand ON it had their feet
+     painted over: the rug read as a panel standing in front of them (Eldar,
+     2026-09-23: «ковёр находится перед персонажами — нужно, чтобы они стояли
+     на нём»). A floor covering belongs with the floor: before anything that
+     stands on it, after the sheen it lies over. */
+  drawHallCarpet();
 
   // mid-ground: people and machines stand in front of the wall...
   drawStage(t);
