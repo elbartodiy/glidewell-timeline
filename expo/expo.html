@@ -5082,8 +5082,14 @@ function updateWhoosh(){
    room tone, not a soundtrack, and it must never fight a speaking voice — so it
    ducks hard whenever a clip is playing and idles when nobody is watching.
    Browsers refuse sound before a gesture, so it waits for the first touch. */
-const MUSIC = {src: 'audio/mus_hall.m4a', vol: 0.30, duck: 0.18, cur: 0, el: null,
-               off: localStorage.getItem('glidewell.music') !== 'on'};   // silent by default: the film is the soundtrack now
+/* ДРУГУЮ ДОРОЖКУ МОЖНО ПРИМЕРИТЬ, НЕ МЕНЯЯ ЗАЛ. ?mus=<имя> берёт
+   audio/mus_<имя>.m4a вместо обычной — чтобы послушать вариант прямо в зале и
+   сравнить, а не решать по файлу на диске (Эльдар, 2026-09-23). ?mus=on
+   включает звук сразу, иначе музыка по умолчанию молчит. */
+const MUS_PICK = (/[?&]mus=([a-z0-9_]+)/.exec(location.search) || [])[1];
+const MUSIC = {src: MUS_PICK && MUS_PICK !== 'on' ? `audio/mus_${MUS_PICK}.m4a` : 'audio/mus_hall.m4a',
+               vol: 0.30, duck: 0.18, cur: 0, el: null,
+               off: MUS_PICK ? false : localStorage.getItem('glidewell.music') !== 'on'};   // silent by default: the film is the soundtrack now
 /* the master switch: kills ALL sound — film, clips, music — with one tap */
 const SOUND = {off: localStorage.getItem('glidewell.sound') === 'off'};
 /* ONE-SHOT PINGS. Not a whoosh cue — those are placed on the rail and timed to
