@@ -1,0 +1,567 @@
+{
+ "updated": "2026-09-23T11:10:00-07:00",
+ "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
+ "count": 34,
+ "events": [
+  {
+   "title": "Dental Sleep Medicine: Snoring and Sleep Apnea Treatment Made Easy",
+   "from": "2026-09-25",
+   "to": "2026-09-26",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Jamison Spencer"
+   ],
+   "duration": "Two Days",
+   "price": "795.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/dental-sleep-medicine-treating-patients-with-sleep-related-disordered-breathing?variant=52802100560236"
+  },
+  {
+   "title": "All-on-X FP3 Fundamentals: Modern Full-Arch Workflow",
+   "from": "2026-09-25",
+   "to": "2026-09-26",
+   "city": "Louisville, KY",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Bushra Imam",
+    "Dr. Paresh B. Patel",
+    "Dr. Taylor Manalili"
+   ],
+   "duration": "Two Days",
+   "price": "1295.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/all-on-x-fp3-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=52849324917100"
+  },
+  {
+   "title": "Techniques for Predictable Implant Surgery",
+   "from": "2026-09-25",
+   "to": "2026-09-25",
+   "city": "New York, NY",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Paresh B. Patel",
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/techniques-for-predictable-implant-surgery?variant=52759772529004"
+  },
+  {
+   "title": "Implant Surgery, Aligner Therapy and CAD/CAM Dentistry",
+   "from": "2026-09-25",
+   "to": "2026-09-26",
+   "city": "New York, NY",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Arvind Petrie",
+    "Dr. Ben Miraglia",
+    "Dr. Danielle Brown",
+    "Dr. Darshan Patel",
+    "Dr. Jinny Bender",
+    "Dr. Justin Chi",
+    "Dr. Louis Kaufman",
+    "Dr. Paresh B. Patel",
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "Two Days",
+   "price": "1190.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/implant-surgery-aligner-therapy-and-cad-cam-dentistry?variant=52748773556588"
+  },
+  {
+   "title": "Incorporating Digital Dentistry and Aligner Therapy",
+   "from": "2026-09-26",
+   "to": "2026-09-26",
+   "city": "New York, NY",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Arvind Petrie",
+    "Dr. Ben Miraglia",
+    "Dr. Danielle Brown",
+    "Dr. Darshan Patel",
+    "Dr. Jinny Bender",
+    "Dr. Justin Chi",
+    "Dr. Louis Kaufman"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/incorporating-aligner-therapy-and-cad-cam-dentistry?variant=52759890133356"
+  },
+  {
+   "title": "Techniques for Predictable Implant Surgery",
+   "from": "2026-10-02",
+   "to": "2026-10-02",
+   "city": "Las Vegas, NV",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Paresh B. Patel",
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/techniques-for-predictable-implant-surgery?variant=53228926075244"
+  },
+  {
+   "title": "Implant Surgery, Aligner Therapy and CAD/CAM Dentistry",
+   "from": "2026-10-02",
+   "to": "2026-10-03",
+   "city": "Las Vegas, NV",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Arvind Petrie",
+    "Dr. Ben Miraglia",
+    "Dr. Danielle Brown",
+    "Dr. Darshan Patel",
+    "Dr. Jinny Bender",
+    "Dr. Justin Chi",
+    "Dr. Louis Kaufman",
+    "Dr. Paresh B. Patel",
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "Two Days",
+   "price": "1190.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/implant-surgery-aligner-therapy-and-cad-cam-dentistry?variant=53228907168108"
+  },
+  {
+   "title": "Effective and Practical Implant Overdentures",
+   "from": "2026-10-02",
+   "to": "2026-10-03",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Raymond Choi"
+   ],
+   "duration": "Two Days",
+   "price": "795.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=53730326708588"
+  },
+  {
+   "title": "Clear Aligner Therapy Simplified",
+   "from": "2026-10-03",
+   "to": "2026-10-03",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Ben Miraglia"
+   ],
+   "duration": "One Day",
+   "price": "195.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/introduction-to-clear-aligner-therapy-made-easy?variant=53049767723372"
+  },
+  {
+   "title": "Clear Aligners Therapy Advanced Course",
+   "from": "2026-10-03",
+   "to": "2026-10-03",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Ben Miraglia"
+   ],
+   "duration": "One Day",
+   "price": "95.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/clear-aligners-therapy-advanced-course?variant=53190191120748"
+  },
+  {
+   "title": "Incorporating Digital Dentistry and Aligner Therapy",
+   "from": "2026-10-03",
+   "to": "2026-10-03",
+   "city": "Las Vegas, NV",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Arvind Petrie",
+    "Dr. Ben Miraglia",
+    "Dr. Danielle Brown",
+    "Dr. Darshan Patel",
+    "Dr. Jinny Bender",
+    "Dr. Justin Chi",
+    "Dr. Louis Kaufman"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/incorporating-aligner-therapy-and-cad-cam-dentistry?variant=53228912705900"
+  },
+  {
+   "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
+   "from": "2026-10-16",
+   "to": "2026-10-17",
+   "city": "Louisville, KY",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Paresh B. Patel"
+   ],
+   "duration": "Two Days",
+   "price": "795.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=52784432546156"
+  },
+  {
+   "title": "Techniques for Predictable Implant Surgery",
+   "from": "2026-10-23",
+   "to": "2026-10-23",
+   "city": "Houston, TX",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Paresh B. Patel",
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/techniques-for-predictable-implant-surgery?variant=52759773446508"
+  },
+  {
+   "title": "Implant Surgery, Aligner Therapy and CAD/CAM Dentistry",
+   "from": "2026-10-23",
+   "to": "2026-10-24",
+   "city": "Houston, TX",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Arvind Petrie",
+    "Dr. Ben Miraglia",
+    "Dr. Danielle Brown",
+    "Dr. Darshan Patel",
+    "Dr. Jinny Bender",
+    "Dr. Justin Chi",
+    "Dr. Louis Kaufman",
+    "Dr. Paresh B. Patel",
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "Two Days",
+   "price": "1190.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/implant-surgery-aligner-therapy-and-cad-cam-dentistry?variant=52748774932844"
+  },
+  {
+   "title": "Advanced Concepts in Full-Arch Implant Restoration: FP1 Workflows",
+   "from": "2026-10-23",
+   "to": "2026-10-24",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Bushra Imam",
+    "Dr. Isaac Tawil",
+    "Dr. Taylor Manalili"
+   ],
+   "duration": "Two Days",
+   "price": "1295.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/dental-sleep-medicine-snoring-and-sleep-apnea-treatment-made-easy?variant=52844970836332"
+  },
+  {
+   "title": "Incorporating Digital Dentistry and Aligner Therapy",
+   "from": "2026-10-24",
+   "to": "2026-10-24",
+   "city": "Houston, TX",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Arvind Petrie",
+    "Dr. Ben Miraglia",
+    "Dr. Danielle Brown",
+    "Dr. Darshan Patel",
+    "Dr. Jinny Bender",
+    "Dr. Justin Chi",
+    "Dr. Louis Kaufman"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/incorporating-aligner-therapy-and-cad-cam-dentistry?variant=52759891738988"
+  },
+  {
+   "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
+   "from": "2026-10-30",
+   "to": "2026-10-31",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "Two Days",
+   "price": "795.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/surgical-placement-of-dental-implants-a-restorative-driven-approach?variant=52802009203052"
+  },
+  {
+   "title": "Techniques for Predictable Implant Surgery",
+   "from": "2026-10-30",
+   "to": "2026-10-30",
+   "city": "Miami, FL",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Paresh B. Patel",
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/techniques-for-predictable-implant-surgery?variant=52759775150444"
+  },
+  {
+   "title": "Implant Surgery, Aligner Therapy and CAD/CAM Dentistry",
+   "from": "2026-10-30",
+   "to": "2026-10-31",
+   "city": "Miami, FL",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Arvind Petrie",
+    "Dr. Ben Miraglia",
+    "Dr. Danielle Brown",
+    "Dr. Darshan Patel",
+    "Dr. Jinny Bender",
+    "Dr. Justin Chi",
+    "Dr. Louis Kaufman",
+    "Dr. Paresh B. Patel",
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "Two Days",
+   "price": "1190.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/implant-surgery-aligner-therapy-and-cad-cam-dentistry?variant=52748777455980"
+  },
+  {
+   "title": "Incorporating Digital Dentistry and Aligner Therapy",
+   "from": "2026-10-31",
+   "to": "2026-10-31",
+   "city": "Miami, FL",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Arvind Petrie",
+    "Dr. Ben Miraglia",
+    "Dr. Danielle Brown",
+    "Dr. Darshan Patel",
+    "Dr. Jinny Bender",
+    "Dr. Justin Chi",
+    "Dr. Louis Kaufman"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/incorporating-aligner-therapy-and-cad-cam-dentistry?variant=52759892263276"
+  },
+  {
+   "title": "Practical Chairside 3D Printing: A Hands-On Approach Chicago, IL | 5 CE",
+   "from": "2026-11-06",
+   "to": "2026-11-06",
+   "city": "Chicago, IL",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Bianca Clark"
+   ],
+   "duration": "One Day",
+   "price": "0.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/practical-chairside-3d-printing-a-hands-on-approach-chicago-il-5-ce?variant=54006669181292"
+  },
+  {
+   "title": "Dental Sleep Medicine: Snoring and Sleep Apnea Treatment Made Easy",
+   "from": "2026-11-06",
+   "to": "2026-11-07",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Jamison Spencer"
+   ],
+   "duration": "Two Days",
+   "price": "795.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/dental-sleep-medicine-treating-patients-with-sleep-related-disordered-breathing?variant=53730342863212"
+  },
+  {
+   "title": "Clear Aligner Therapy Simplified",
+   "from": "2026-11-07",
+   "to": "2026-11-07",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Ben Miraglia"
+   ],
+   "duration": "One Day",
+   "price": "195.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/introduction-to-clear-aligner-therapy-made-easy?variant=53049767788908"
+  },
+  {
+   "title": "Clear Aligners Therapy Advanced Course",
+   "from": "2026-11-07",
+   "to": "2026-11-07",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Ben Miraglia"
+   ],
+   "duration": "One Day",
+   "price": "95.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/clear-aligners-therapy-advanced-course?variant=53190191186284"
+  },
+  {
+   "title": "Restoring Dental Implants: From Digital Impression to Final Restoration",
+   "from": "2026-11-13",
+   "to": "2026-11-13",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Taylor Manalili"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/restoring-dental-implants-from-digital-impression-to-final-restoration?variant=52977532305772"
+  },
+  {
+   "title": "Restoring Dental Implants, 3D Printing for Bite Splints, Sleep Devices, and Dentures",
+   "from": "2026-11-13",
+   "to": "2026-11-14",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Bianca Clark",
+    "Dr. Taylor Manalili"
+   ],
+   "duration": "One Day",
+   "price": "1090.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/restoring-dental-implants-3d-printing-for-bite-splints-sleep-devices-and-dentures?variant=52982358770028"
+  },
+  {
+   "title": "3D Printing for Bite Splints, Sleep Devices, and Dentures – Expanding Clinical Possibilities",
+   "from": "2026-11-14",
+   "to": "2026-11-14",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Bianca Clark"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/3d-printing-for-bite-sleep-devices-and-dentures-expanding-clinical-possibilities?variant=52977542398316"
+  },
+  {
+   "title": "Esthetic Techniques with Anterior Crowns and Veneers",
+   "from": "2026-11-20",
+   "to": "2026-11-20",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Danielle Brown"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=53730192687468"
+  },
+  {
+   "title": "Techniques for Predictable Implant Surgery",
+   "from": "2026-12-03",
+   "to": "2026-12-03",
+   "city": "Nashville, TN",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Paresh B. Patel",
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/techniques-for-predictable-implant-surgery?variant=52759775805804"
+  },
+  {
+   "title": "Implant Surgery, Aligner Therapy and CAD/CAM Dentistry",
+   "from": "2026-12-03",
+   "to": "2026-12-04",
+   "city": "Nashville, TN",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Arvind Petrie",
+    "Dr. Ben Miraglia",
+    "Dr. Danielle Brown",
+    "Dr. Darshan Patel",
+    "Dr. Jinny Bender",
+    "Dr. Justin Chi",
+    "Dr. Louis Kaufman",
+    "Dr. Paresh B. Patel",
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "Two Days",
+   "price": "1190.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/implant-surgery-aligner-therapy-and-cad-cam-dentistry?variant=52748780241260"
+  },
+  {
+   "title": "Effective and Practical Implant Overdentures",
+   "from": "2026-12-04",
+   "to": "2026-12-05",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Raymond Choi"
+   ],
+   "duration": "Two Days",
+   "price": "795.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=52810903716204"
+  },
+  {
+   "title": "Incorporating Digital Dentistry and Aligner Therapy",
+   "from": "2026-12-04",
+   "to": "2026-12-04",
+   "city": "Nashville, TN",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Arvind Petrie",
+    "Dr. Ben Miraglia",
+    "Dr. Danielle Brown",
+    "Dr. Darshan Patel",
+    "Dr. Jinny Bender",
+    "Dr. Justin Chi",
+    "Dr. Louis Kaufman"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/incorporating-aligner-therapy-and-cad-cam-dentistry?variant=52759892787564"
+  },
+  {
+   "title": "All-on-X FP3 Fundamentals: Modern Full-Arch Workflow",
+   "from": "2026-12-04",
+   "to": "2026-12-05",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Bushra Imam",
+    "Dr. Paresh B. Patel",
+    "Dr. Taylor Manalili"
+   ],
+   "duration": "Two Days",
+   "price": "1295.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/all-on-x-fp3-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=53730165195116"
+  },
+  {
+   "title": "All-on-X FP3 Fundamentals: Modern Full-Arch Workflow",
+   "from": "2026-12-11",
+   "to": "2026-12-12",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Bushra Imam",
+    "Dr. Paresh B. Patel",
+    "Dr. Taylor Manalili"
+   ],
+   "duration": "Two Days",
+   "price": "1295.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/all-on-x-fp3-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=52849325015404"
+  }
+ ]
+}

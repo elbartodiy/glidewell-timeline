@@ -1,0 +1,33 @@
+# ЭТОТ ФАЙЛ НУЖНО ПОЛОЖИТЬ В .github/workflows/events.yml
+# Отсюда он не работает: GitHub запускает только то, что лежит в .github/workflows.
+# Мой токен не имеет права записывать туда, поэтому файл лежит здесь —
+# скопируй его на место сам (через веб-интерфейс GitHub: Add file -> Create new file,
+# путь .github/workflows/events.yml) или выдай токену право workflow, и положу я.
+
+name: Обновить табло мероприятий
+
+# Раз в сутки и по кнопке. Табло читает expo/data/events.json со своего же
+# адреса: витрина отдаёт JSON без CORS, значит из браузера к ней не достучаться,
+# а зал может стоять на машине в здании без интернета — файл должен лежать рядом.
+on:
+  schedule:
+    - cron: '17 6 * * *'      # 06:17 UTC ≈ 23:17 по Ирвайну
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 expo/tools/fetch_events.py
+      - name: Закоммитить, если что-то изменилось
+        run: |
+          if git diff --quiet expo/data/events.json; then
+            echo "расписание не изменилось"
+          else
+            git config user.name  "glidewell-bot"
+            git config user.email "actions@github.com"
+            git add expo/data/events.json
+            git commit -m "Табло: расписание курсов на $(date -u +%F)"
+            git push
+          fi

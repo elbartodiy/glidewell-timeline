@@ -1,0 +1,135 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Табло мероприятий — стенд</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    --bg:#0b0d10; --panel:#121519; --line:#1e242b; --ink:#e8edf2; --dim:#79838f;
+    --amber:#f2b23c; --green:#4bd07a; --red:#e5484d;
+  }
+  *{ box-sizing:border-box }
+  html,body{ height:100%; margin:0 }
+  body{ background:var(--bg); color:var(--ink);
+        font:16px/1.4 "Avenir Next","Helvetica Neue",Helvetica,Arial,sans-serif;
+        display:flex; flex-direction:column; overflow:hidden }
+
+  header{ display:flex; align-items:baseline; gap:18px; padding:20px 30px 14px;
+          border-bottom:1px solid var(--line) }
+  header h1{ margin:0; font-size:20px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase }
+  header .sub{ color:var(--dim); font-size:13px; letter-spacing:0.05em }
+  header .clock{ margin-left:auto; font-variant-numeric:tabular-nums; font-size:22px;
+                 color:var(--amber); letter-spacing:0.06em }
+
+  .cols{ display:grid; grid-template-columns:118px 1fr 190px 150px 120px;
+         gap:0 22px; padding:10px 30px; color:var(--dim);
+         font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
+         border-bottom:1px solid var(--line) }
+
+  main{ flex:1; overflow:hidden; position:relative }
+  .rows{ position:absolute; inset:0; will-change:transform }
+  .row{ display:grid; grid-template-columns:118px 1fr 190px 150px 120px;
+        gap:0 22px; padding:13px 30px; align-items:center;
+        border-bottom:1px solid var(--line) }
+  .row:nth-child(even){ background:var(--panel) }
+  .date{ font-variant-numeric:tabular-nums; color:var(--amber); font-size:19px; letter-spacing:0.02em }
+  .date span{ color:var(--dim); font-size:12px; display:block; letter-spacing:0.1em; text-transform:uppercase }
+  .title{ font-size:16.5px }
+  .title em{ display:block; font-style:normal; color:var(--dim); font-size:12.5px; margin-top:2px }
+  .city{ font-size:15px; letter-spacing:0.02em }
+  .kind{ color:var(--dim); font-size:12px; letter-spacing:0.12em; text-transform:uppercase }
+  .state{ font-size:12.5px; letter-spacing:0.1em; text-transform:uppercase; text-align:right }
+  .open{ color:var(--green) } .shut{ color:var(--red) } .soon{ color:var(--amber) }
+
+  /* перещёлкивание, как на механическом табло */
+  .flip{ animation:flip .42s ease both }
+  @keyframes flip{ from{ transform:rotateX(-88deg); opacity:0 } to{ transform:none; opacity:1 } }
+
+  footer{ display:flex; gap:26px; align-items:center; padding:12px 30px;
+          border-top:1px solid var(--line); color:var(--dim); font-size:12px;
+          letter-spacing:0.06em }
+  footer b{ color:var(--ink); font-weight:500 }
+  .dot{ width:7px; height:7px; border-radius:50%; background:var(--green); display:inline-block;
+        margin-right:7px; animation:pulse 2.4s ease-in-out infinite }
+  @keyframes pulse{ 0%,100%{ opacity:1 } 50%{ opacity:.25 } }
+</style>
+
+<header>
+  <h1>Glidewell Education</h1>
+  <div class="sub">Upcoming courses &amp; symposia</div>
+  <div class="clock" id="clock"></div>
+</header>
+
+<div class="cols">
+  <div>Date</div><div>Course</div><div>Location</div><div>Type</div><div style="text-align:right">Seats</div>
+</div>
+
+<main><div class="rows" id="rows"></div></main>
+
+<footer>
+  <span><span class="dot"></span>Live</span>
+  <span>Обновлено: <b id="upd">—</b></span>
+  <span><b id="cnt">—</b> дат</span>
+  <span>Источник: витрина обучения Glidewell</span>
+</footer>
+
+<script>
+const MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const pad = n => String(n).padStart(2, '0');
+
+function dateCell(a, b){
+  const d1 = new Date(a + 'T00:00'), d2 = new Date(b + 'T00:00');
+  const day = d1.getDate() === d2.getDate() ? pad(d1.getDate())
+            : pad(d1.getDate()) + '–' + pad(d2.getDate());
+  return `<div class="date">${day}<span>${MON[d1.getMonth()]}</span></div>`;
+}
+function stateCell(e){
+  const days = Math.round((new Date(e.from) - new Date()) / 86400000);
+  if (!e.open) return '<div class="state shut">sold out</div>';
+  if (days <= 7)  return '<div class="state soon">closing</div>';
+  return '<div class="state open">open</div>';
+}
+
+let DATA = null, offset = 0;
+
+async function load(){
+  const r = await fetch('../data/events.json?nc=' + Date.now());
+  DATA = await r.json();
+  document.getElementById('upd').textContent =
+    new Date(DATA.updated).toLocaleString('ru-RU', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+  document.getElementById('cnt').textContent = DATA.count;
+  render();
+}
+function render(){
+  const host = document.getElementById('rows');
+  host.innerHTML = DATA.events.map((e, i) => `
+    <div class="row flip" style="animation-delay:${Math.min(i, 12) * 26}ms">
+      ${dateCell(e.from, e.to)}
+      <div class="title">${e.title}<em>${e.instructors.join(' · ') || '&nbsp;'}</em></div>
+      <div class="city">${e.city}</div>
+      <div class="kind">${e.kind}</div>
+      ${stateCell(e)}
+    </div>`).join('');
+}
+
+/* ползёт вверх, как расписание вылетов: дошло до конца — возвращается к началу */
+function scroll(){
+  const host = document.getElementById('rows');
+  const over = host.scrollHeight - host.parentElement.clientHeight;
+  if (over > 0){
+    offset += 0.32;
+    if (offset > over + 60){ offset = -20; }
+    host.style.transform = `translateY(${-Math.max(0, offset)}px)`;
+  }
+  requestAnimationFrame(scroll);
+}
+
+function tick(){
+  const d = new Date();
+  document.getElementById('clock').textContent =
+    pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+}
+setInterval(tick, 1000); tick();
+load();
+setInterval(load, 15 * 60 * 1000);   // перечитывает файл каждые 15 минут
+requestAnimationFrame(scroll);
+</script>
