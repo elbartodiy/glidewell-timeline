@@ -4,7 +4,7 @@
 The counter of the founding bay is a PHOTOGRAPH (plate_bay_front.png, laid by
 drawPlateBench and extended sideways by tiling two clean strips of itself), so
 it had no ends: a run simply stopped on a straight cut. Eldar rendered the ends
-for it — src/renders/1sttablecorners.png, a short piece of the same
+for it — 1sttablecorners.png, a short piece of the same
 counter with both of its mitred corners — and this takes the two corners off it.
 
 NOTHING IS REDRAWN. The corner is the render's own: the cut column is where the
@@ -15,11 +15,26 @@ plain counter for the join to dissolve into.
 
 The printed rows go into PL_END in expo.html.
 """
+import os
 import numpy as np
 from PIL import Image
 
 ROOT = __file__.rsplit('/', 2)[0]   # .../expo — sources in src/, cut-outs in assets/
-SRC = f'{ROOT}/src/renders/1sttablecorners.png'
+
+def find_src(name):
+    """Where a source file lives is Eldar's business, not this script's.
+
+    src/ is his cupboard and he rearranges it — the renders have been called
+    Artefacts, then src/renders, then 'Expo timeline artefacts/Interior' — so a
+    hard path here is a thing that breaks every time he tidies (2026-09-23).
+    The name is stable; the shelf is not. This walks src/ and takes the first
+    file with that name."""
+    for root, _dirs, files in os.walk(os.path.join(ROOT, 'src')):
+        if name in files:
+            return os.path.join(root, name)
+    raise SystemExit(f'не найден исходник {name} нигде в {ROOT}/src')
+
+SRC = find_src('1sttablecorners.png')
 OUT = f'{ROOT}/assets/photo'
 JOIN = 90          # columns of plain counter kept past the mitre, for the dissolve
 

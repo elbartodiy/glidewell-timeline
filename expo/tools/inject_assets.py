@@ -1,38 +1,58 @@
 #!/usr/bin/env python3
-"""Regenerate the base64 asset block inside expo.html from expo/src/pictures.
+"""Regenerate the base64 asset block inside expo.html from the pictures in src/.
 
-The sources live in src/pictures, with everything else the hall was built from,
-out of the way of the four folders it actually reads at runtime (photo, people,
-album, fonts). They are the originals of the pictures already inlined in
-expo.html; nothing loads them.
+WHERE THE SOURCES ARE IS ELDAR'S BUSINESS. src/ is his cupboard and he
+rearranges it — these forty-three were loose in assets/, then assets/_src, then
+src/pictures, and are now sorted into folders of his own inside it. So this
+does not walk a path: it takes the names already inlined in expo.html and finds
+each one anywhere under src/, ignoring the renders (which are cut by other
+scripts and must never be inlined) and the audio.
 
-AND IT REFUSES TO SHRINK THE BLOCK. It replaces the whole block, so a source
-folder that has gone missing — moved, emptied, tidied away — used to mean an
-empty block and forty-three pictures out of the hall in one run (Eldar,
-2026-09-23, asking whether he could delete them). If there are fewer files than
-there are entries already in the html, it stops and says so."""
+AND IT REFUSES TO SHRINK THE BLOCK. It replaces the block whole, so a source
+that has gone missing used to mean that picture out of the hall. If any name
+cannot be found it names it and stops, having changed nothing.
+
+A NEW picture is added by putting the file under src/ and naming it in
+expo.html's ASSETS block first — or by passing --add name.jpg.
+"""
 import base64, glob, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HTML = os.path.join(HERE, '..', 'expo.html')
-ASSETS = os.path.join(HERE, '..', 'src', 'pictures')
+SRC  = os.path.join(HERE, '..', 'src')
+SKIP = ('audio',)                       # nothing here is a picture for the hall
 
-entries = []
-total = 0
-for p in sorted(glob.glob(os.path.join(ASSETS, '*.jpg')) + glob.glob(os.path.join(ASSETS, '*.png'))):
-    name = os.path.splitext(os.path.basename(p))[0]
+src_txt = open(HTML, encoding='utf8').read()
+want = re.findall(r'([A-Za-z0-9_]+):"data:image/(jpeg|png);base64', src_txt)
+if not want:
+    sys.exit('ASSETS block not found in expo.html')
+for extra in sys.argv[1:]:
+    if extra.startswith('--add='):
+        nm = os.path.splitext(os.path.basename(extra[6:]))[0]
+        want.append((nm, 'png' if extra.endswith('.png') else 'jpeg'))
+
+index = {}
+for root, dirs, files in os.walk(SRC):
+    dirs[:] = [d for d in dirs if d not in SKIP]
+    for fn in files:
+        nm, ext = os.path.splitext(fn)
+        if ext.lower() in ('.jpg', '.jpeg', '.png'):
+            index.setdefault(nm, os.path.join(root, fn))
+
+missing = [nm for nm, _ in want if nm not in index]
+if missing:
+    sys.exit('не найдены исходники в src/: ' + ', '.join(missing) + ' — ничего не менял')
+
+entries, total = [], 0
+for nm, kind in want:
+    p = index[nm]
     raw = open(p, 'rb').read()
     total += len(raw)
-    mime = 'image/png' if p.endswith('.png') else 'image/jpeg'
-    entries.append(f'{name}:"data:{mime};base64,{base64.b64encode(raw).decode()}"')
+    mime = 'image/png' if p.lower().endswith('.png') else 'image/jpeg'
+    entries.append(f'{nm}:"data:{mime};base64,{base64.b64encode(raw).decode()}"')
 
 block = '//<ASSETS>\nwindow.ASSETS = {' + ',\n'.join(entries) + '};\n//</ASSETS>'
-src = open(HTML, encoding='utf8').read()
-have = src.count(':"data:image')      # the first entry shares its line with the opening brace
-if len(entries) < have:
-    sys.exit(f'refusing: {len(entries)} files in {ASSETS} but {have} already inlined — '
-             f'the sources have moved or been removed, and this would strip the hall')
-out, n = re.subn(r'//<ASSETS>.*?//</ASSETS>', lambda m: block, src, flags=re.S)
+out, n = re.subn(r'//<ASSETS>.*?//</ASSETS>', lambda m: block, src_txt, flags=re.S)
 if n != 1:
     sys.exit('ASSETS markers not found (or found twice)')
 open(HTML, 'w', encoding='utf8').write(out)

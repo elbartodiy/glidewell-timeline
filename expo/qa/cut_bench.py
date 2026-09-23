@@ -26,10 +26,25 @@ kept by prominence, and the strongest six are the ends and the doors.
 The printed `top` row goes into BENCH_SHEETS in expo.html.
 """
 import sys
+import os
 import numpy as np
 from PIL import Image
 
 ROOT = __file__.rsplit('/', 2)[0]   # .../expo — sources in src/, cut-outs in assets/
+
+def find_src(name):
+    """Where a source file lives is Eldar's business, not this script's.
+
+    src/ is his cupboard and he rearranges it — the renders have been called
+    Artefacts, then src/renders, then 'Expo timeline artefacts/Interior' — so a
+    hard path here is a thing that breaks every time he tidies (2026-09-23).
+    The name is stable; the shelf is not. This walks src/ and takes the first
+    file with that name."""
+    for root, _dirs, files in os.walk(os.path.join(ROOT, 'src')):
+        if name in files:
+            return os.path.join(root, name)
+    raise SystemExit(f'не найден исходник {name} нигде в {ROOT}/src')
+
 JOBS = {
     'b1': 'Table_1.png',   # 1907–1979
     'b2': 'Table_3.png',   # 1980–1988
@@ -75,7 +90,7 @@ def lip_row(a):
 
 def cut(key):
     fn = JOBS[key]
-    a = np.asarray(Image.open(f'{ROOT}/src/renders/{fn}').convert('RGBA')).astype(np.float32)
+    a = np.asarray(Image.open(find_src(fn)).convert('RGBA')).astype(np.float32)
     ys, xs = np.nonzero(a[..., 3] > 8)
     Y0, Y1, X0, X1 = ys.min(), ys.max(), xs.min(), xs.max()
     rowa = a[Y0:Y1 + 1, X0:X1 + 1, 3].mean(axis=1)
