@@ -18,9 +18,9 @@ The printed rows go into PL_END in expo.html.
 import numpy as np
 from PIL import Image
 
-ROOT = __file__.rsplit('/', 2)[0]
+ROOT = __file__.rsplit('/', 2)[0]   # .../expo — the renders and the cut-outs both live under it
 SRC = f'{ROOT}/Artefacts/Interior/1sttablecorners.png'
-OUT = f'{ROOT}/expo/assets/photo'
+OUT = f'{ROOT}/assets/photo'
 JOIN = 90          # columns of plain counter kept past the mitre, for the dissolve
 
 

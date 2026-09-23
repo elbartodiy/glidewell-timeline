@@ -29,7 +29,7 @@ import sys
 import numpy as np
 from PIL import Image
 
-ROOT = __file__.rsplit('/', 2)[0]
+ROOT = __file__.rsplit('/', 2)[0]   # .../expo — the renders and the cut-outs both live under it
 JOBS = {
     'b1': 'Table_1.png',   # 1907–1979
     'b2': 'Table_3.png',   # 1980–1988
@@ -106,8 +106,8 @@ def cut(key):
           f"endL: {s[0]}, endR: {n - s[5]}}}")
     for nm, arr in P.items():
         img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
-        img.save(f'{ROOT}/expo/assets/photo/bench_{key}_{nm}.png', optimize=True)
-        img.save(f'{ROOT}/expo/assets/photo/bench_{key}_{nm}.webp', quality=94, method=6)
+        img.save(f'{ROOT}/assets/photo/bench_{key}_{nm}.png', optimize=True)
+        img.save(f'{ROOT}/assets/photo/bench_{key}_{nm}.webp', quality=94, method=6)
         print(f'   {nm:<6} {arr.shape[1]:>4}x{arr.shape[0]}  → {arr.shape[1] * U:6.1f} ед.')
 
 for key in (sys.argv[1:] or JOBS):

@@ -5,7 +5,7 @@
 <video> cannot seek: a reel that must start mid-tape sits on frame 0 and the
 projector shows a white slate. GitHub Pages answers ranges; so does this.
 
-    python3 qa/serve.py            # http://localhost:8777/expo/expo.html
+    python3 expo/qa/serve.py       # http://localhost:8777/expo/expo.html
     python3 qa/serve.py 8080
 """
 import os, re, sys
@@ -65,6 +65,7 @@ class RangeHandler(SimpleHTTPRequestHandler):
 
 if __name__ == '__main__':
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8777
-    os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+    # two levels up: the repository root, so /expo/... and /doc/... are both served
+    os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
     print(f'serving {os.getcwd()} on http://localhost:{port}/expo/expo.html (ranges on)')
     ThreadingHTTPServer(('', port), RangeHandler).serve_forever()
