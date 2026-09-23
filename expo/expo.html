@@ -12406,6 +12406,9 @@ const PEOPLE = {
                 "His subject is not the crown but the sentence about the crown. Thirty years of taking something new out of the laboratory and saying it plainly enough that an ordinary practice will actually use it."],
            quote:{q:'What we do here at Glidewell is present high-quality, affordable education in a very approachable way.',
                   src:'Chairside Magazine, Vol. 21-1'},
+           album:[{img:'park_temple', cap:'Temple Dental School \u2014 the \u201cfun\u201d photograph for the Odontolog yearbook.'},
+                  {img:'park_hopi',   cap:'Treating the Hopi and Navajo of Arizona, Keams Canyon Service Unit, Indian Health Service.'},
+                  {img:'park_band',   cap:'On stage with the house band at an American Academy of Implant Dentistry meeting.'}],
            clips:[{src:'media/park_01.mp4', label:'on teaching as the product'},
                   {src:'media/park_06.mp4', label:'on Chairside'},
                   {src:'media/park_07.mp4', label:'on vertical integration'},
@@ -12507,12 +12510,28 @@ const PORTRAIT_IDS = [
   'dorfman', 'norton'
 ];
 const PORTRAIT = {};
+/* A PERSON MAY HAVE AN ALBUM. The portrait says who someone is now; these are
+   the pictures of the life behind the job, and they belong on the page rather
+   than on the wall of a bay — the bay is about the company, the page is about
+   the man (Eldar, 2026-09-23, Neil Park's three). Loaded like the portraits,
+   by file name, from assets/album. */
+const ALBUM = {};
+function loadAlbumPhotos(){
+  const want = new Set();
+  for (const id in PEOPLE) for (const a of (PEOPLE[id].album || [])) want.add(a.img);
+  for (const f of want){
+    const im = new Image();
+    im.onload = () => { ALBUM[f] = {el: im, w: im.naturalWidth, h: im.naturalHeight}; };
+    im.src = 'assets/album/' + f + '.jpg?v=' + ASSET_V;
+  }
+}
 function loadPortraits(){
   for (const id of PORTRAIT_IDS){
     const im = new Image();
     im.onload = () => { PORTRAIT[id] = {el: im, w: im.naturalWidth, h: im.naturalHeight}; };
     im.src = 'assets/people/' + id + '.jpg?v=' + ASSET_V;
   }
+  loadAlbumPhotos();
 }
 /* The forms a person goes by in the prose. Longest first, so 'Dr. Neil Park'
    is matched before 'Neil Park'. Only the FIRST mention on a page becomes a
@@ -14015,6 +14034,44 @@ function drawPerson(){
       y += 52 * SS;
     }
     drawPlayer();          // short pages: it lands under the quote, as before
+    /* THE ALBUM, AT THE FOOT OF THE PAGE. Three across the text column, each a
+       little under a third of it, with its caption under it — small enough to
+       read as a row of snapshots rather than as illustration, and last because
+       they are the life behind the job, not the argument of the page. */
+    if (P.album && P.album.length){
+      const n = P.album.length, gap = 14 * SS;
+      const aw = (textW - gap * (n - 1)) / n, ah = Math.round(aw * 0.75);
+      y += 30 * SS;
+      ctx.font = K.font(PAGE.small, '700');
+      try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
+      ctx.fillStyle = `rgba(${K.dim},0.95)`;
+      if (y > topClip && y < botClip) ctx.fillText('From his own album', left, y);
+      try { ctx.letterSpacing = '0px'; } catch(err){}
+      y += 22 * SS;
+      let capBot = y + ah;
+      for (let ai = 0; ai < n; ai++){
+        const a = P.album[ai], im = ALBUM[a.img];
+        const ax = left + ai * (aw + gap);
+        if (im && y + ah > topClip && y < botClip){
+          ctx.save();
+          ctx.beginPath(); ctx.roundRect(ax, y, aw, ah, 3 * SS); ctx.clip();
+          const sc = Math.max(aw / im.w, ah / im.h);
+          ctx.drawImage(im.el, ax + aw/2 - im.w*sc/2, y + ah/2 - im.h*sc/2, im.w*sc, im.h*sc);
+          ctx.restore();
+          ctx.strokeStyle = 'rgba(26,28,30,0.14)'; ctx.lineWidth = 1 * SS;
+          ctx.beginPath(); ctx.roundRect(ax, y, aw, ah, 3 * SS); ctx.stroke();
+          /* no tap: the inspect view flies a photograph out of the ROOM, from
+             world coordinates a picture on a page does not have. These are
+             snapshots in a column of prose and they read at this size. */
+        }
+        ctx.font = K.font(15);
+        ctx.fillStyle = `rgba(${K.dim},0.92)`;
+        const cb = flowText(a.cap, ax, y + ah + 18 * SS, aw, 19 * SS,
+                            {seen, top: topClip, bot: botClip, ink: `rgba(${K.dim},0.92)`});
+        capBot = Math.max(capBot, cb);
+      }
+      y = capBot + 30 * SS;
+    }
   }
 
   // THE RAIL. It scrolls with the page, and it chooses what the player shows.
