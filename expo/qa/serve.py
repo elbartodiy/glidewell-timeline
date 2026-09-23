@@ -13,8 +13,9 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 class RangeHandler(SimpleHTTPRequestHandler):
     def send_head(self):
-        # the repo root is the old research tool; the exhibition is what we verify
-        if self.path in ('/', '/index.html'):
+        # the root is the landing page now, and it is a page worth seeing as it
+        # will be seen; /hall is the short way straight into the exhibition
+        if self.path in ('/hall', '/hall/'):
             self.send_response(302); self.send_header('Location', '/expo/expo.html')
             self.end_headers(); return None
         path = self.translate_path(self.path)

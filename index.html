@@ -3,48 +3,126 @@
 <title>Glidewell — A Century of Access</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-  :root{ --ink:#1c1e20; --dim:#7a7f86; --line:#e2e5e8; --acc:#b4232c; }
+  :root{ --ink:#1c1e20; --dim:#787d84; --line:#e4e7ea; --acc:#b4232c; --bg:#fbfbfc; }
   *{ box-sizing:border-box }
-  html,body{ height:100% }
-  body{ margin:0; background:#fbfbfc; color:var(--ink); display:grid; place-items:center;
+  body{ margin:0; background:var(--bg); color:var(--ink);
         font:16px/1.5 "Avenir Next","Helvetica Neue",Helvetica,Arial,sans-serif }
-  main{ width:min(680px, calc(100% - 48px)); padding:40px 0 }
-  h1{ font-size:26px; font-weight:600; margin:0 0 6px; letter-spacing:-0.01em }
-  p.sub{ margin:0 0 34px; color:var(--dim); font-size:15px }
-  a.card{ display:block; text-decoration:none; color:inherit; border:1px solid var(--line);
-          border-radius:8px; padding:20px 22px; margin-bottom:14px; background:#fff;
-          transition:border-color .15s ease, transform .15s ease }
-  a.card:hover{ border-color:var(--acc); transform:translateY(-1px) }
-  a.card b{ display:block; font-size:18px; font-weight:600; margin-bottom:4px }
-  a.card span{ color:var(--dim); font-size:14.5px }
-  ul{ margin:8px 0 0; padding-left:0; list-style:none; font-size:14px }
-  ul li{ display:inline-block; margin:0 16px 0 0 }
-  ul a{ color:var(--dim); text-decoration:none; border-bottom:1px solid var(--line) }
-  ul a:hover{ color:var(--acc); border-color:var(--acc) }
-  footer{ margin-top:30px; color:var(--dim); font-size:13px; border-top:1px solid var(--line); padding-top:14px }
+  main{ width:min(1020px, calc(100% - 44px)); margin:0 auto; padding:46px 0 70px }
+  h1{ font-size:27px; font-weight:600; margin:0 0 4px; letter-spacing:-0.01em }
+  p.sub{ margin:0 0 36px; color:var(--dim); font-size:15px }
+
+  .cols{ display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start }
+  @media (max-width:760px){ .cols{ grid-template-columns:1fr } }
+
+  section{ background:#fff; border:1px solid var(--line); border-radius:9px; padding:22px 24px 18px }
+  section > h2{ font-size:19px; font-weight:600; margin:0 0 2px }
+  section > p{ margin:0 0 16px; color:var(--dim); font-size:14px }
+
+  a.main{ display:block; text-decoration:none; color:inherit; border:1px solid var(--line);
+          border-radius:7px; padding:14px 16px; margin-bottom:16px; background:#fcfcfd;
+          transition:border-color .15s ease, background .15s ease }
+  a.main:hover{ border-color:var(--acc); background:#fff }
+  a.main b{ display:block; font-size:16.5px; font-weight:600; margin-bottom:2px }
+  a.main span{ color:var(--dim); font-size:13.5px }
+
+  h3{ font-size:11.5px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase;
+      color:var(--dim); margin:18px 0 8px; padding-top:14px; border-top:1px solid var(--line) }
+  h3:first-of-type{ border-top:0; padding-top:0 }
+  ul{ margin:0; padding:0; list-style:none }
+  li{ margin:0 0 7px }
+  li a{ color:var(--ink); text-decoration:none; font-size:14.5px; border-bottom:1px solid transparent }
+  li a:hover{ color:var(--acc); border-color:var(--acc) }
+  li em{ color:var(--dim); font-style:normal; font-size:13px; margin-left:7px }
+  code{ font:12.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; background:#f2f4f6;
+        padding:2px 5px; border-radius:3px; color:#4a5056 }
+  footer{ margin-top:30px; color:var(--dim); font-size:13px }
+  footer p{ margin:0 0 5px }
 </style>
+
 <main>
   <h1>Glidewell — A Century of Access</h1>
   <p class="sub">Два инструмента одного проекта.</p>
 
-  <a class="card" href="expo/expo.html">
-    <b>Экспо — зал</b>
-    <span>Прогулка по залу: пролёты, экспонаты, страницы чтения, голоса.</span>
-  </a>
+  <div class="cols">
 
-  <a class="card" href="doc/index.html">
-    <b>Док-таймлайн</b>
-    <span>Рабочая база фильма: биты, связи, спикеры, кастинг, план съёмок.</span>
-  </a>
+    <section>
+      <h2>Экспо — зал</h2>
+      <p>Прогулка по залу: пролёты, экспонаты, страницы чтения, голоса.</p>
 
-  <ul>
-    <li><a href="doc/film.html">Фильм</a></li>
-    <li><a href="doc/schedule.html">График</a></li>
-    <li><a href="doc/cast-results.html">Кастинг</a></li>
-    <li><a href="doc/activations.html">Активации</a></li>
-    <li><a href="doc/ai-jim.html">AI Jim</a></li>
-    <li><a href="expo/plan/">План зала</a></li>
-  </ul>
+      <a class="main" href="expo/expo.html">
+        <b>Открыть зал →</b>
+        <span>3.7 МБ, грузится один раз</span>
+      </a>
 
-  <footer>Если открывал прямые адреса вроде /film.html — теперь они живут в /doc/.</footer>
+      <h3>Входы внутрь зала</h3>
+      <ul>
+        <li><a href="expo/expo.html?at=10300">1979 · девять лабораторий</a></li>
+        <li><a href="expo/expo.html?at=14700">1989 · национальный лидер</a></li>
+        <li><a href="expo/expo.html?at=15900">1993 · Newport Beach</a></li>
+        <li><a href="expo/expo.html?at=24400">2007 · Digital Revolution</a></li>
+        <li><a href="expo/expo.html?at=32100">2022 · fastscan.io</a></li>
+        <li><a href="expo/expo.html?at=35720">Стеклянный зал</a></li>
+        <li><a href="expo/expo.html?at=41200">Финал · TODAY</a></li>
+        <li><a href="expo/expo.html?people=1">Стена голосов</a></li>
+      </ul>
+
+      <h3>План и стенды</h3>
+      <ul>
+        <li><a href="expo/plan/">Зал в плане · 2</a><em>текущий</em></li>
+        <li><a href="expo/plan/print.html">Лист для печати</a></li>
+        <li><a href="expo/plan/2026-08-25/">План от 25 августа</a><em>архив</em></li>
+        <li><a href="expo/lab/podium.html">Стенд: помост в устье пролёта</a></li>
+      </ul>
+
+      <h3>Параметры адреса</h3>
+      <ul>
+        <li><code>?at=</code><em>позиция камеры</em></li>
+        <li><code>?study=2009</code><em>страница чтения</em></li>
+        <li><code>?person=park</code><em>страница человека</em></li>
+        <li><code>?rq=1</code><em>полное разрешение</em></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Док-таймлайн</h2>
+      <p>Рабочая база фильма: биты, связи, спикеры, кастинг, план съёмок.</p>
+
+      <a class="main" href="doc/index.html">
+        <b>Открыть таймлайн →</b>
+        <span>биты, люди, территория, сториборд</span>
+      </a>
+
+      <h3>Страницы</h3>
+      <ul>
+        <li><a href="doc/film.html">Фильм</a><em>For the Sake of Smiles</em></li>
+        <li><a href="doc/schedule.html">График съёмок</a><em>выбор слота</em></li>
+        <li><a href="doc/cast-results.html">Кастинг</a><em>результаты опроса</em></li>
+        <li><a href="doc/activations.html">Активации</a><em>за пределами фильма</em></li>
+        <li><a href="doc/ai-jim.html">AI-Jim</a><em>прототип квеста</em></li>
+      </ul>
+
+      <h3>Архив версий</h3>
+      <ul>
+        <li><a href="doc/versions/Glidewell_Timeline_Horizontal_v37.html">Горизонтальный таймлайн v37</a><em>последний</em></li>
+        <li><a href="doc/versions/Glidewell_Timeline_Horizontal_v30.html">v30</a></li>
+        <li><a href="doc/versions/Glidewell_Timeline_Horizontal_v20.html">v20</a></li>
+        <li><a href="doc/versions/Glidewell_Timeline_Horizontal_v6.html">v6</a><em>самый ранний</em></li>
+        <li><a href="doc/versions/expo_v1.0-first-viewing_2026-09-04.html">Зал v1.0</a><em>первый просмотр, 4 сентября</em></li>
+      </ul>
+
+      <h3>Материал</h3>
+      <ul>
+        <li><a href="doc/glidewell_shoots.ics">Календарь съёмок</a><em>.ics</em></li>
+        <li><code>doc/Video/</code><em>превью фильма</em></li>
+        <li><code>doc/SPEAKERS/</code><em>интервью</em></li>
+        <li><code>doc/Real_photos/</code> <code>doc/Source_Photos/</code></li>
+      </ul>
+    </section>
+
+  </div>
+
+  <footer>
+    <p>Прямые адреса вида <code>/film.html</code> переехали в <code>/doc/</code>.</p>
+    <p>Материал зала — в <code>expo/Artefacts/</code>, скрипты резки — в <code>expo/qa/</code>.</p>
+  </footer>
 </main>
