@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cast — who knows them (survey results)</title>
+<style>
+  :root{
+    --paper:#f4efe6; --ink:#1c1a17; --ink2:#3a352d; --mut:#7a7264; --line:#ddd4c5;
+    --red:#c0392b; --navy:#1E3A8A; --slate:#6b7a8f; --card:#fffdf8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font:16px/1.55 "Inter",-apple-system,system-ui,sans-serif;padding:0 20px 80px}
+  .wrap{max-width:720px;margin:0 auto}
+  header{border-bottom:2px solid var(--red);padding:44px 0 12px;margin-bottom:4px}
+  h1{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:30px;margin:0;letter-spacing:-.01em}
+  .sub{color:var(--mut);font-size:14px;margin-top:6px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  #state{color:var(--mut);font-size:14px;padding:26px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:14px 0}
+  .top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .ph{width:46px;height:46px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:#e7ddcc}
+  .ini{width:46px;height:46px;border-radius:50%;flex:0 0 auto;background:var(--navy);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:600}
+  .nm{font-family:"Newsreader",serif;font-weight:600;font-size:19px}
+  .cnt{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--mut);white-space:nowrap}
+  .resp{border-top:1px dashed var(--line);padding:9px 0 2px}
+  .resp:first-of-type{border-top:none}
+  .rhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .who{font-weight:600;font-size:14px}
+  .fam{font-family:"IBM Plex Mono",monospace;font-size:10.5px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--mut)}
+  .fam.close{background:#e8eefb;border-color:var(--navy);color:var(--navy);font-weight:600}
+  .fam.know{background:#eef1f4;border-color:var(--slate);color:var(--slate)}
+  .connect{font-size:14.5px;line-height:1.5;color:var(--ink2);margin:4px 0 2px}
+  .connect:empty{display:none}
+  footer{margin-top:36px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Who knows the cast</h1>
+    <div class="sub">Live from the survey — who told us they know each person, how well, and whether they can connect us. Updates on its own; no copy-paste. <span class="mono" id="meta"></span></div>
+  </header>
+  <div id="state">Loading responses…</div>
+  <div id="list"></div>
+  <footer>Glidewell documentary · internal · survey results</footer>
+</div>
+
+<script>
+var ENDPOINT="https://script.google.com/macros/s/AKfycby3qKlPjAHdiTQEPBFtunNB2b_BDYf_dwzTpSKAy1pB6A302qxqKsJFZQk1Q--peCqw/exec";
+var FAM={no:"Don't know", know:"Acquainted", close:"Work closely"};
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+function initials(n){return (n||'?').split(/\s+/).map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();}
+
+function render(data){
+  var ids=Object.keys(data||{});
+  var state=document.getElementById('state'), list=document.getElementById('list');
+  if(!ids.length){ state.textContent="No responses yet. As soon as someone submits the survey, they'll appear here automatically."; return; }
+  // most-mentioned first
+  ids.sort(function(a,b){ return (data[b].items||[]).length - (data[a].items||[]).length; });
+  var total=ids.reduce(function(s,id){return s+(data[id].items||[]).length;},0);
+  document.getElementById('meta').textContent='· '+ids.length+' people · '+total+' responses';
+  state.style.display='none';
+  list.innerHTML=ids.map(function(id){
+    var p=data[id], items=p.items||[], nm=p.name||id;
+    var head='<div class="top">'
+      +'<img class="ph" src="gl_photos/'+id+'.jpg" alt="" onerror="this.outerHTML=&quot;<span class=\\&quot;ini\\&quot;>'+initials(nm)+'</span>&quot;">'
+      +'<span class="nm">'+esc(nm)+'</span>'
+      +'<span class="cnt">'+items.length+(items.length===1?' response':' responses')+'</span></div>';
+    var body=items.map(function(it){
+      var fam=it.fam?'<span class="fam '+esc(it.fam)+'">'+(FAM[it.fam]||esc(it.fam))+'</span>':'';
+      return '<div class="resp"><div class="rhead"><span class="who">'+esc(it.respondent||'—')+'</span>'+fam+'</div>'
+        +'<div class="connect">'+esc(it.connect||'')+'</div></div>';
+    }).join('');
+    return '<div class="card">'+head+body+'</div>';
+  }).join('');
+}
+
+fetch(ENDPOINT,{method:'GET'})
+  .then(function(r){return r.json();})
+  .then(render)
+  .catch(function(err){
+    document.getElementById('state').innerHTML=
+      "Couldn't load results yet. This page needs the receiver's read-endpoint (doGet) — once the Apps Script is redeployed with it, results show here automatically.<br><span class='mono' style='font-size:11px'>("+esc(err.message||err)+")</span>";
+  });
+</script>
+</body>
+</html>
