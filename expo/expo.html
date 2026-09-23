@@ -4304,74 +4304,9 @@ function drawOutro(){
 function drawFinaleTable(t){
   if (Math.abs(cam.x - FIN_X) > 3800) return;
   // the modern lit table
-  const FT = drawYawedTable(FIN_X, 150, 0, 900, 240, 700, 380,
+  drawYawedTable(FIN_X, 150, 0, 900, 240, 700, 380,
     {side0:'#eef1f4', side1:'#c6ccd2', top:'#f7f9fb', edge:'rgba(120,130,140,0.5)'});
-  if (WOOD_ON && woodImg()){
-    /* THE PATTERN LIES ON THE TABLE, NOT ON THE SCREEN. Dropped into the top's
-       bounding box it stayed square whatever the table did: the plane leans as
-       the table passes the middle of the frame, and the planks did not lean
-       with it (Eldar, 2026-09-23). A plane's texture is mapped correctly by
-       walking it in WORLD DEPTH and laying one band per step: each band takes
-       the table's own left and right edges at that depth, and the shear from
-       one band to the next is the shear the table's own side has — so the grain
-       runs with the table at every camera.
-       THE BANDS ARE ASSEMBLED OFF-SCREEN AND MULTIPLIED ONCE. Multiplied one by
-       one, every overlap between two bands was multiplied twice and the
-       worktop came out ruled with dark lines. */
-    const HW = 450, HD = 120, CZ = 150, TOPY = 700, N = 44, PAD = 4;
-    const IW = WOOD_IMG.naturalWidth, IH = WOOD_IMG.naturalHeight;
-    const kAt = lz => k(CZ + lz);
-    const kFar = kAt(HD), kNear = kAt(-HD);
-    const qx = [px(FIN_X - HW, kFar), px(FIN_X + HW, kFar), px(FIN_X + HW, kNear), px(FIN_X - HW, kNear)];
-    const qy = [py(TOPY, kFar), py(TOPY, kFar), py(TOPY, kNear), py(TOPY, kNear)];
-    const bx = Math.floor(Math.min(...qx)) - 8, by = Math.floor(Math.min(...qy)) - 4;
-    const bw = Math.ceil(Math.max(...qx)) - bx + 16, bh = Math.ceil(Math.max(...qy)) - by + 8;
-    if (bw > 2 && bh > 2 && bx < W && bx + bw > 0){
-      if (!WOOD_BUF) WOOD_BUF = document.createElement('canvas');
-      if (WOOD_BUF.width < bw || WOOD_BUF.height < bh){
-        WOOD_BUF.width = Math.max(WOOD_BUF.width, bw);
-        WOOD_BUF.height = Math.max(WOOD_BUF.height, bh);
-      }
-      const gb = WOOD_BUF.getContext('2d');
-      gb.setTransform(1, 0, 0, 1, 0, 0);
-      gb.clearRect(0, 0, WOOD_BUF.width, WOOD_BUF.height);
-      for (let i = 0; i < N; i++){
-        const k1 = kAt(HD - 2 * HD * (i / N));           // the band's far edge
-        const k0 = kAt(HD - 2 * HD * ((i + 1) / N));     // and its near edge
-        const y1 = py(TOPY, k1) - by, y0 = py(TOPY, k0) - by;
-        if (y0 - y1 < 0.01) continue;
-        const xa = px(FIN_X - HW, k1) - bx, xb = px(FIN_X + HW, k1) - bx;
-        const xc = px(FIN_X - HW, k0) - bx;
-        const sv0 = IH * (i / N), sv1 = IH * ((i + 1) / N);
-        /* EACH BAND IS DRAWN A FEW PIXELS WIDE OF THE TABLE, and the clip cuts
-           it. A band is a parallelogram and the table is a trapezoid: laid at
-           the table's exact width, a band's far side leans by the amount the
-           NEAR side leans and stops short of the edge — 44 bands, 44 short
-           ends, and the table came out with a sawtooth down its side (Eldar,
-           2026-09-23: «плохо выглядит»). Four pixels of overdraw stretch the
-           grain by under one part in two hundred and are cut off anyway. */
-        const sX = (xb - xa + 2 * PAD) / IW, sY = (y0 - y1) / (sv1 - sv0);
-        const c2 = ((xc - xa) / (y0 - y1)) * sY;         // the table's own side
-        /* each band reaches a device pixel and a half PAST the next one's top
-           edge: laid exactly edge to edge, two antialiased borders do not add
-           up to one opaque row and the worktop came out combed with light
-           lines. The overlap is measured in the destination and converted back
-           to source rows, so it is the same width at every depth. */
-        const over = Math.min(IH - sv0, 1.5 / Math.max(1e-4, sY));
-        gb.setTransform(sX, 0, c2, sY, xa - PAD - c2 * sv0, y1 - sY * sv0);
-        gb.drawImage(WOOD_IMG, 0, sv0, IW, sv1 - sv0 + over, 0, sv0, IW, sv1 - sv0 + over);
-      }
-      gb.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(qx[0], qy[0]); ctx.lineTo(qx[1], qy[1]);
-      ctx.lineTo(qx[2], qy[2]); ctx.lineTo(qx[3], qy[3]);
-      ctx.closePath(); ctx.clip();
-      ctx.globalCompositeOperation = 'multiply';
-      ctx.drawImage(WOOD_BUF, 0, 0, bw, bh, bx, by, bw, bh);
-      ctx.restore();
-    }
-  }
+
   // light breathing under the tabletop edge
   const ke = k(32);
   const y0 = py(700, ke) + 6*SS;
@@ -9126,24 +9061,6 @@ const sheetOf = tb => {
    is touched. No caps of my own, no door laid one after another, no patches.
    The middle panel repeats with its joins faded through each other, which on a
    doorless panel leaves nothing to see. */
-/* AN EXPERIMENT, BEHIND ?wood=1. Eldar asked to see the finale's table top in
-   the wood pattern that arrived as assets/wood.jpg — «просто закрасить слоем
-   верхнюю плоскость этого стола» (2026-09-23). It is laid on that table's top
-   plane and nowhere else, clipped to the plane's own four corners so it takes
-   the table's perspective, and multiplied, so the edge light and the breathing
-   strip under the lip still read through it. Off by default: the finale is a
-   white room, and a plank top in it is a decision, not a fix. */
-const WOOD_ON = /[?&]wood=1/.test(location.search);
-let WOOD_IMG = null, WOOD_TRIED = false, WOOD_BUF = null;
-function woodImg(){
-  if (!WOOD_TRIED){
-    WOOD_TRIED = true;
-    const im = new Image();
-    im.onload = () => { WOOD_IMG = im; };
-    im.src = '../assets/wood.jpg';
-  }
-  return WOOD_IMG;
-}
 function drawSheetBenches(){
   const kf = k(0), wpp = kf * SS;
   const yBack = py(CFG.benchY, k(CFG.benchDepth));
