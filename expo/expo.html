@@ -2307,7 +2307,7 @@ const FAR93_L = bayFoot(REC93_BL, REC93_Z), FAR93_R = bayFoot(REC93_BR, REC93_Z)
    to the floor line on its own plane, so that line is the skirting the block's
    back edge has to meet. (Era 1's wall, at 680, would have put the back edge
    thirty units lower and turned the step into a ramp.) */
-const R89_BAY_Z = 722;      // 1989's own plane — where its pilasters stand
+const R89_BAY_Z = SEGMENTS[1].z0;      // 680
 const STEP_89_L = stepEdge(REC3_L - STEP_PAD, R89_BAY_Z), STEP_89_R = stepEdge(REC3_R + STEP_PAD, R89_BAY_Z);
 const FSTP_89_L = stepFoot(REC3_L - STEP_PAD, R89_BAY_Z), FSTP_89_R = stepFoot(REC3_R + STEP_PAD, R89_BAY_Z);
 /* 1979 HAS A BLOCK TOO — it had the first one, and it was taken away with the
@@ -2317,9 +2317,21 @@ const FSTP_89_L = stepFoot(REC3_L - STEP_PAD, R89_BAY_Z), FSTP_89_R = stepFoot(R
    reads as hovering (Eldar, 2026-09-23: «там не хватает ступеньки... парит в
    воздухе, не касаясь пола»). Its stone is the craft century's warm one, on
    the shallow pair its own pilasters give it. */
-const R79_BAY_Z = 604;
+/* THE BAY STANDS ON THE WALL'S OWN PLANE. The bench settled it: the block's
+   bottom back corner lands on the skirting's line only when the bay's plane and
+   the wall's plane are the SAME number — «только так и может быть, когда у них
+   одинаковое расстояние» (Eldar, 2026-09-23). These three bays were drawn on
+   planes of their own, a hundred-odd units behind the wall beside them, so the
+   block sat a finger above the floor line and the skirting appeared to run on
+   underneath it. Each takes the plane of the wall it is cut into: the
+   pilasters, the panel's edge and the block's back, all three. */
+const R79_BAY_Z = SEGMENTS[0].z0;      // 550 — the wall 1979 is cut into
 const STEP_79_L = stepEdge(REC_L - STEP_PAD, R79_BAY_Z), STEP_79_R = stepEdge(REC_R + STEP_PAD, R79_BAY_Z);
-const DR_BAY_Z = 964, R22_BAY_Z = 992;     // each bay's own plane — where its pilasters stand
+const DR_BAY_Z = SEGMENTS[2].z0;       // 850 — era 2's wall, the one the Digital Revolution is cut into
+/* 2018 and 2022 sit inside the white room, whose wall stands at 1400 — far
+   behind the counters, so no skirting of theirs is ever visible beside a block.
+   They keep the plane their pilasters were drawn on. */
+const R22_BAY_Z = 992;
 const STEP_DR_L = stepEdge(REC2_L - STEP_PAD, DR_BAY_Z), STEP_DR_R = stepEdge(REC2_R + STEP_PAD, DR_BAY_Z);
 const FSTP_DR_L = stepFoot(REC2_L - STEP_PAD, DR_BAY_Z), FSTP_DR_R = stepFoot(REC2_R + STEP_PAD, DR_BAY_Z);
 const STEP_22_L = stepEdge(REC4_L - STEP_PAD, R22_BAY_Z), STEP_22_R = stepEdge(REC4_R + STEP_PAD, R22_BAY_Z);
@@ -6965,7 +6977,7 @@ function drawMapWall(t){
      shop window. */
   // pilaster columns on both edges — same plane as the walls they join
   for (const wxc of [REC_L, REC_R]){
-    const kc = k(604);
+    const kc = k(R79_BAY_Z);
     const sxc = px(wxc, kc);
     const cw = 120 * kc * SS;
     if (sxc < -cw || sxc > W + cw) continue;
@@ -7694,7 +7706,7 @@ function drawRec2(t){
   ctx.restore();
   // pilaster columns, cool tone, same plane
   for (const wxc of [REC2_L, REC2_R]){
-    const kc = k(964);
+    const kc = k(DR_BAY_Z);
     const sxc = px(wxc, kc);
     const cw = 120 * kc * SS;
     if (sxc < -cw || sxc > W + cw) continue;
@@ -8282,7 +8294,7 @@ function drawRec3(t){
           cap: '1989 · 95% of cases arrive by mail', beat: BEATS.findIndex(b => b.y === '1989')});
   ctx.drawImage(sp.c, cx - w/2, cyS - h/2, w, h);
   for (const wxc of [REC3_L, REC3_R]){
-    const kc = k(722);
+    const kc = k(R89_BAY_Z);
     const sxc = px(wxc, kc);
     const cw = 120 * kc * SS;
     const yFootC = py(1080, kc);
