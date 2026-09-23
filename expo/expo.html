@@ -4294,7 +4294,12 @@ const BOARD_X = FIN_X - 3400;      // свой участок стены: пра
 /* РАЗМЕРЫ ТАБЛО. Сверху его держит ореховый карниз (низ на −90), снизу —
    столешница (700). Всё, что между ними, — его полоса; залезть на карниз значит
    читаться как наклейка поверх потолка. */
-const BOARD_W = 2260, BOARD_TOP = -60, BOARD_H = 585;
+/* ПРОПОРЦИИ ЭКРАНА, А НЕ ЛЕНТЫ. 2260×585 — это почти 4:1, такой формы панелей
+   на стенах не бывает, и доска читалась как наклейка (Эльдар, 2026-09-23:
+   «слишком широкое и короткое, надо реалистичнее»). 16:9 — то, что действительно
+   висит: высоту берём всю, какая есть между карнизом (низ на −90) и столешницей
+   (700), ширина следует из неё. */
+const BOARD_H = 740, BOARD_W = Math.round(BOARD_H * 16 / 9), BOARD_TOP = -48;
 /* Низ держится выше, чем начинается карточка CrownAI: она висит на ближней
    плоскости и по экрану едет быстрее стены, поэтому при некоторых камерах
    наезжает на угол. Развести их расстоянием нельзя — только высотой. */
@@ -4302,8 +4307,8 @@ const BOARD_W = 2260, BOARD_TOP = -60, BOARD_H = 585;
    высота строки втрое больше названия курса, вторичное — ровно вдвое меньше
    главного, поля одинаковые со всех сторон (Эльдар, 2026-09-23: «не впритык,
    стильно и удобно»). Всё в мировых единицах, на экран переводится через u. */
-const BD = {pad: 64, head: 116, row: 116, date: 50, mon: 22, title: 34, who: 22,
-            city: 28, tag: 20, brand: 40};
+const BD = {pad: 52, head: 112, row: 118, date: 40, mon: 19, title: 30, who: 19.5,
+            city: 25, tag: 18, brand: 34};
 let BOARD = {rows: [], updated: null, scroll: 0, tried: 0, age: null};
 function boardLoad(){
   const now = (typeof state !== 'undefined' ? state.time : 0) || 0;
@@ -4396,7 +4401,23 @@ function drawEventBoard(t){
   ctx.save();
   ctx.beginPath(); ctx.rect(x0 + 2, listTop, w - 4, listH); ctx.clip();
   const today = new Date();
-  const colCity = x0 + w * 0.645, colTag = x1 - pad;
+  /* КОЛОНКА ДАТЫ ШИРИНОЙ С САМУЮ ДЛИННУЮ ДАТУ, а не с ту, что попалась. «11–12
+     DEC» шире, чем «2 OCT», и упиралась в название (Эльдар, 2026-09-23). Меряем
+     все строки разом и от самой широкой отступаем; так столкнуться нельзя. */
+  let dateW = 0;
+  for (const e of rows){
+    const a = new Date(e.from + 'T00:00'), b = new Date(e.to + 'T00:00');
+    const dd = a.getDate() === b.getDate() ? String(a.getDate())
+             : a.getDate() + '\u2013' + b.getDate();
+    ctx.font = eraFont(BD.date * u, '600', F);
+    let ww = ctx.measureText(dd).width + 12 * u;
+    ctx.font = eraFont(BD.mon * u, '600', F);
+    try { ctx.letterSpacing = `${BD.mon * 0.14 * u}px`; } catch(e2){}
+    ww += ctx.measureText(BOARD_MON[a.getMonth()]).width;
+    try { ctx.letterSpacing = '0px'; } catch(e2){}
+    if (ww > dateW) dateW = ww;
+  }
+  const colCity = x0 + w * 0.695, colTag = x1 - pad;
   for (let i = 0; i < rows.length * 2; i++){
     const e = rows[i % rows.length];
     const yr = listTop + i * rowH - BOARD.scroll * u;     // верх строки
@@ -4419,7 +4440,7 @@ function drawEventBoard(t){
     ctx.fillText(BOARD_MON[d1.getMonth()], x0 + pad + dw + 12 * u, ym + BD.date * 0.12 * u);
     try { ctx.letterSpacing = '0px'; } catch(e){}
 
-    const cx2 = x0 + pad + 210 * u;
+    const cx2 = x0 + pad + dateW + 40 * u;
     const colW = colCity - cx2 - 40 * u;
     ctx.font = eraFont(BD.title * u, '', F);
     ctx.fillStyle = 'rgba(234,240,246,0.96)';
