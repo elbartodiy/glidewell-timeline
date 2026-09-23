@@ -31,6 +31,17 @@ for extra in sys.argv[1:]:
         nm = os.path.splitext(os.path.basename(extra[6:]))[0]
         want.append((nm, 'png' if extra.endswith('.png') else 'jpeg'))
 
+# ИМЯ В expo.html НЕ ВСЕГДА ИМЯ ФАЙЛА. Обложки Chairside и кадр AI лежат в
+# артефактах под своими родными именами, и переименовывать чужой материал
+# ради скрипта — неправильно: пусть скрипт знает соответствие (2026-09-23).
+ALIAS = {
+    # ключ в expo.html : имя файла-оригинала в src/
+    'chairv1':  'Chairside_1_1',
+    'chairv12': 'Chairside_12_3',
+    'chairv21': 'Chairside_21_2',
+    'todayai':  'today-ai',
+}
+
 index = {}
 for root, dirs, files in os.walk(SRC):
     dirs[:] = [d for d in dirs if d not in SKIP]
@@ -39,16 +50,45 @@ for root, dirs, files in os.walk(SRC):
         if ext.lower() in ('.jpg', '.jpeg', '.png'):
             index.setdefault(nm, os.path.join(root, fn))
 
+for key, fname in ALIAS.items():
+    if key not in index and fname in index:
+        index[key] = index[fname]
+
 missing = [nm for nm, _ in want if nm not in index]
 if missing:
     sys.exit('не найдены исходники в src/: ' + ', '.join(missing) + ' — ничего не менял')
 
+# THE SOURCE IS THE ARCHIVE, THE BLOCK IS THE PAGE. An original is kept at
+# whatever size it came in; the hall draws these small — the Chairside covers
+# are 147 px wide on a 2100 frame, 293 on retina — so inlining the originals
+# raw put nine hundred kilobytes onto a three-megabyte page for nothing anyone
+# can see (2026-09-23). Each picture goes in capped at CAP on the long side and
+# re-encoded, and only if that comes out smaller than the file itself; PNGs are
+# left exactly as they are, because a logo or a QR code is not a photograph.
+CAP, Q = 760, 86
+
+def payload(p):
+    raw = open(p, 'rb').read()
+    if p.lower().endswith('.png'):
+        return raw, 'image/png'
+    try:
+        from PIL import Image
+        import io
+        im = Image.open(p).convert('RGB')
+        if max(im.size) > CAP:
+            k = CAP / max(im.size)
+            im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS)
+        buf = io.BytesIO()
+        im.save(buf, 'JPEG', quality=Q, optimize=True, progressive=True)
+        small = buf.getvalue()
+        return (small if len(small) < len(raw) else raw), 'image/jpeg'
+    except ImportError:
+        return raw, 'image/jpeg'
+
 entries, total = [], 0
 for nm, kind in want:
-    p = index[nm]
-    raw = open(p, 'rb').read()
+    raw, mime = payload(index[nm])
     total += len(raw)
-    mime = 'image/png' if p.lower().endswith('.png') else 'image/jpeg'
     entries.append(f'{nm}:"data:{mime};base64,{base64.b64encode(raw).decode()}"')
 
 block = '//<ASSETS>\nwindow.ASSETS = {' + ',\n'.join(entries) + '};\n//</ASSETS>'
