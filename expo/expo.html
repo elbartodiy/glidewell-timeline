@@ -1477,12 +1477,14 @@ const BENCH_BREAKS = [1700, 7350, 9250, 13100, 16900, 22280]
 /* 1973: no counter — the two labs stand on their own stones, the way the nine
    do at 1979, and the counters stop short of them on both sides (Eldar,
    2026-09-11). The small joint that used to sit here (3345) is gone with it. */
-/* 900, А НЕ 760. Новый рендер двух лабораторий содержит тумбы целиком, до
-   пола: от линии прилавка вниз в нём 0.665 высоты, а в зале от прилавка (700)
-   до пола (1080) — 380 единиц. Ширина, при которой эти две величины сходятся,
-   и есть 900: 900 × 0.6345 (пропорция кадра) × 0.665 = 380. Рендер не тянут —
-   под него подводят геометрию (Эльдар, 2026-09-24: «прям как есть ставь»). */
-const L73_W = 900;   // the pair of plinths, in world units
+/* ШИРИНА СЧИТАЕТСЯ ИЗ КАДРА, А НЕ ПОДБИРАЕТСЯ. Рендер содержит тумбы целиком,
+   до пола; в зале от прилавка (700) до пола (1080) ровно 380 единиц. Значит
+   ширина задана однозначно: L73_W × (H/W) × (доля кадра ниже линии прилавка)
+   = 380. Эльдар удлинил стойки, кадр стал 1962×1452, линия прилавка на строке
+   416 из 1452 — ниже неё 0.7135 высоты, и 380 / (0.7401 × 0.7135) = 720.
+   Пересчитывать при каждой перезаливке: обе величины замеряются по файлу
+   (2026-09-24). */
+const L73_W = 720;   // the pair of plinths, in world units
 BENCH_BREAKS.push({x: SHIFT(4400), half: L73_W / 2 + 440, l73: true});   // the counters stand well back from the two stones — Eldar hatched their ends away (2026-09-11)   // re-centred on the beat once applyCut has spaced it
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
 /* the counters stop two column-widths clear of the doorway's pilasters — on
@@ -8656,9 +8658,9 @@ function drawLabs73(){
   if (!sp) return;
   if (X73 == null){ const b = BEATS.find(b2 => b2.y === '1973'); X73 = b ? b.x : SHIFT(4400); }
   if (Math.abs(cam.x - X73) > CULL_BAY) return;
-  /* 0.335 — доля высоты кадра над линией прилавка, замерена по самому файлу:
-     тумбы выходят на полную ширину на строке 417 из 1245. */
-  const kR = k(120), TOP = 0.335;
+  /* 0.2865 — доля высоты кадра над линией прилавка, замерена по файлу: тумбы
+     выходят на полную ширину на строке 416 из 1452. */
+  const kR = k(120), TOP = 0.2865;
   const wR = L73_W * kR * SS, hR = wR * sp.h / sp.w;
   const yBench = py(CFG.benchY, kR), yFoot = yBench + hR * (1 - TOP);
   const xR = px(X73, kR) - wR / 2;
@@ -9935,7 +9937,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260924-labs73';
+const ASSET_V = '20260924-labs73b';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
