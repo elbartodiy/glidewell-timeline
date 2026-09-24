@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<!--
+  ДВА КОДА, КОТОРЫЕ ВОЗВРАЩАЮТ СКАНЕР В РЕЖИМ КЛАВИАТУРЫ.
+
+  Почему он молчал: этот же сканер (MJ-3000) стоит в игровом автомате, и там
+  он переведён в режим виртуального COM-порта — в проекте arcade-cabinet это
+  сказано прямо: «После этого сканер перестанет работать как клавиатура».
+  Браузер такой сканер не видит в принципе: он не печатает, он говорит в порт.
+
+  Коды взяты из arcade-cabinet/app/scanner-codes (вендорский мануал MJ-3000),
+  из раздела «Откат». Здесь оставлены ТОЛЬКО два отката, чтобы нельзя было
+  случайно отсканировать «USB COM» ещё раз.
+
+  Эльдар, 2026-09-23.
+-->
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Сканер: вернуть режим клавиатуры</title>
+<style>
+  :root{ --bg:#15181c; --panel:#1d2126; --line:#2c323a; --ink:#e8ecf0; --dim:#8b949e;
+         --accent:#7cc4ff; --warn:#e8b45c; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);padding:32px 16px 80px;
+       font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:760px;margin:0 auto}
+  h1{font-size:24px;font-weight:600;margin:0 0 6px}
+  .sub{color:var(--dim);margin:0 0 28px}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+        padding:22px;margin-bottom:18px;display:flex;gap:22px;align-items:center}
+  .num{flex:none;width:38px;height:38px;border-radius:50%;background:var(--accent);
+       color:#0c1117;font:700 19px/38px inherit;text-align:center}
+  .code{flex:none;background:#fff;padding:12px;border-radius:10px}
+  .code img{display:block;width:210px;height:210px;image-rendering:pixelated}
+  .txt h2{font-size:17px;font-weight:600;margin:0 0 6px}
+  .txt p{margin:0;color:var(--dim);font-size:14px;line-height:1.55}
+  .note{border-left:3px solid var(--warn);padding:14px 0 14px 16px;margin-top:26px;
+        color:var(--dim);font-size:14px;line-height:1.6}
+  .note b{color:var(--warn)}
+  code{background:#12151a;padding:2px 6px;border-radius:5px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Вернуть сканеру режим клавиатуры</h1>
+  <p class="sub">Сканируй эти два кода <b>прямо с экрана, этим же сканером</b>, по порядку.
+     После каждого он коротко пикнет.</p>
+
+  <div class="step">
+    <div class="num">1</div>
+    <div class="code"><img src="5-USB-KBW.png" alt="USB KBW"></div>
+    <div class="txt">
+      <h2>Режим клавиатуры (USB KBW)</h2>
+      <p>Сканер снова начинает «печатать» код туда, где стоит курсор.
+         Именно этого сейчас не хватает: браузер не видит сканер, который
+         говорит в COM-порт.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">2</div>
+    <div class="code"><img src="4-AUTO-INDUCTION.png" alt="Automatic Induction"></div>
+    <div class="txt">
+      <h2>Чтение без кнопки (Automatic Induction)</h2>
+      <p>Сканер читает сам, как только увидит код — подносишь бейдж и всё.
+         Это то, о чём ты спрашивал: «чтобы не нажимать на кнопочку».</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Важно про автомат.</b> Если это физически тот же сканер, что стоит в
+    игровом автомате, — после кода №1 автомат перестанет им управлять:
+    там он работает через COM-порт в режиме Host mode. Чтобы вернуть его в
+    автомат, нужны коды <code>1-USB-COM</code>, <code>2-HOST-MODE</code> и
+    <code>6-CONTINUOUS-POWER</code> из папки
+    <code>arcade-cabinet/app/scanner-codes</code>.
+    Если сканер отдельный — ничего не сломается.
+  </div>
+
+  <div class="note" style="border-left-color:var(--accent)">
+    Дальше: открой <code>expo/lab/badge.html</code> и поднеси бейдж.
+    Строка должна появиться сама.
+  </div>
+</div>
+</body>
+</html>
