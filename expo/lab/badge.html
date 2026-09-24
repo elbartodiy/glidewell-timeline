@@ -113,12 +113,21 @@
       </div>
       <button id="send" disabled>Отправить книгу</button>
       <button class="ghost" id="clearform">Очистить</button>
+      <!-- КНОПКА ДОЛЖНА ГОВОРИТЬ, ПОЧЕМУ ОНА СЕРАЯ. Эльдар отсканировал два
+           бейджа и решил, что «не срабатывает»: в бейдже не было почты, поле
+           осталось пустым, кнопка молча не нажималась (2026-09-23). -->
+      <div id="why" style="margin-top:10px;font:13px/1.5 inherit;color:var(--warn)"></div>
       <div class="note">
         Отправки почты со страницы нет и не будет без твоего решения: статический сайт
         письма слать не умеет, а слать персональные данные гостей в чужой сервис
         без спроса нельзя. Сейчас запись просто ложится в очередь на этой машине —
         это и есть тот «простой вариант, если интернета нет».
       </div>
+    </div>
+
+    <div class="panel full">
+      <h2>журнал скана <span style="font-weight:400;text-transform:none;letter-spacing:0">— всё, что долетело до страницы</span></h2>
+      <div class="meta" id="log" style="max-height:150px;overflow:auto">—</div>
     </div>
 
     <div class="panel full">
@@ -271,7 +280,14 @@ function parse(text){
 
 let lastScan = null;
 
+const LOG = [];
+function logLine(s){
+  LOG.unshift(new Date().toLocaleTimeString() + '  ' + s);
+  if (LOG.length > 40) LOG.pop();
+  $('log').textContent = LOG.join('\n');
+}
 function show(text, timing){
+  logLine('скан: ' + JSON.stringify(text));
   lastScan = {text, at: new Date().toISOString(), timing};
   $('raw').textContent = text;
 
@@ -305,13 +321,29 @@ function show(text, timing){
   $('gname').value = p.fields.name || '';
   $('gmail').value = p.fields.email || '';
   lastScan.parsed = p;
+  /* ПОЧТЫ В БЕЙДЖЕ ЧАЩЕ ВСЕГО НЕТ — там один номер регистрации. Это не сбой,
+     это нормальный случай: адрес вводит сам гость. Но об этом надо сказать
+     вслух и поставить курсор куда надо, иначе выглядит как «не сработало». */
+  if (!p.fields.email){
+    $('parsehint').innerHTML = '<b style="color:var(--warn)">В этом бейдже почты нет</b> — ' +
+      'только то, что выше. Адрес вводит гость: курсор уже стоит в поле «Почта».';
+    setTimeout(() => { try { $('gmail').focus(); } catch(e){} }, 30);
+  } else {
+    $('parsehint').innerHTML = '<b style="color:var(--ok)">Почта пришла из бейджа</b> — ' +
+      'гостю остаётся только подтвердить согласие.';
+  }
   check();
 }
 
 /* ── ГОСТЕВОЙ ЭКРАН И ОЧЕРЕДЬ ─────────────────────────────────────────── */
 function check(){
   const mail = $('gmail').value.trim();
-  $('send').disabled = !($('consent').checked && EMAIL_RE.test(mail));
+  const okMail = EMAIL_RE.test(mail), okConsent = $('consent').checked;
+  $('send').disabled = !(okMail && okConsent);
+  const need = [];
+  if (!okMail) need.push(mail ? 'адрес почты выглядит неправильно' : 'нужен адрес почты');
+  if (!okConsent) need.push('нужна галочка согласия');
+  $('why').textContent = need.length ? '⃠ ' + need.join(' · ') : '';
 }
 ['gname','gmail'].forEach(id => $(id).addEventListener('input', check));
 $('consent').addEventListener('change', check);
@@ -345,6 +377,7 @@ $('send').addEventListener('click', () => {
     sent: false                       // ставится, когда книгу действительно отправили
   });
   save(q); draw();
+  logLine('в очередь: ' + $('gmail').value.trim());
   $('gname').value = ''; $('gmail').value = ''; $('consent').checked = false;
   $('raw').textContent = 'записано · следующий гость';
   $('flags').innerHTML = '<span class="pill ok">в очереди</span>';
