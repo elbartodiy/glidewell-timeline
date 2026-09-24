@@ -233,7 +233,14 @@ const BEATS = [
    th:'',
    d:'15 April 1993: 71,000 sq ft at 4141 MacArthur Blvd — nearly five times the floor the nine labs were consolidated into, and the address the company grew up in.',
    wall:[], table:[]},
+  /* ОКНО В КАБИНЕТ. Год, в котором в компании появился собственный
+     стоматологический кабинет, показывает не фотографию на стене, а ДЫРУ в
+     ней: прямоугольный проём, за которым на глубине стоит комната, и она
+     ходит медленнее стены — тот самый параллакс (Эльдар, 2026-09-23).
+     Пропорция проёма взята из самого снимка: 1602×870 стекла между рамами,
+     то есть 1.841. */
   {x:12590, y:'1995', t:'OPERATORY · PLAYSAFE', minor:true, yLift:190,
+   win:{dx:0, w:620, top:195, z:1560},
    th:'Test where dentists work — and step beyond the crown.',
    d:'An in-house operatory opens to test materials on real patients; PlaySafe mouthguards launch.',
    wall:[], table:[],
@@ -7585,7 +7592,9 @@ function drawRec2Front(t){
   ctx.fillStyle = pgl; ctx.fillRect(nx - pw/2, plY, pw, (H - plY) * 0.6);
   // the top is a slab of glass with real thickness — underside, then the edge
   // that runs round it and catches the light, then the face
-  const capRx = pw * 0.56, capRy = 13 * kn * SS, capT = 17 * kn * SS;
+  /* кромка плиты потолстела с 17 до 24: по ней теперь бежит строка, и тонкий
+     кант её не вмещал (Эльдар, 2026-09-23) */
+  const capRx = pw * 0.56, capRy = 13 * kn * SS, capT = 24 * kn * SS;
   ctx.fillStyle = 'rgba(139,160,175,0.95)';
   ctx.beginPath(); ctx.ellipse(nx, plY + capT, capRx, capRy, 0, 0, 7); ctx.fill();
   const eg = ctx.createLinearGradient(nx - capRx, 0, nx + capRx, 0);
@@ -7630,13 +7639,16 @@ function drawRec2Front(t){
        центр — постоянный отступ от верха тумбы, в её же масштабе. 77.6 — это
        ровно тот зазор, что был в покое: (py(730,k(970)) − plY)/(kn·SS)
        (Эльдар: «микроэкранчик поплыл вниз», 2026-09-23). */
-    /* ЛЕНТА ИДЁТ КОЛЬЦОМ ПО ВСЕЙ ТУМБЕ, а не окошком в её середине: она
-       садится сразу под кромку плиты и занимает всю ширину барабана
-       (Эльдар: «пусть бегает по всему кружочку»). */
-    const sh2 = 19 * kn * SS;
-    const stripY = plY + 17 * kn * SS + sh2 * 0.5 + 3 * kn * SS;
-    const iw = pw;                             // во всю ширину барабана: это кольцо, а не окно
-    const R = (iw / 2) * 1.18;                 // the cylinder it is wrapped around
+    /* СТРОКА БЕЖИТ ПО КРОМКЕ ПЛИТЫ, А НЕ ПО БАРАБАНУ. «Таблетка» сверху шире
+       тумбы и видна отовсюду; лента на барабане под ней читалась как отдельная
+       железка неизвестно где (Эльдар, 2026-09-23: «она должна быть прям на
+       постаменте, по её линии»). Теперь строка живёт внутри самой кромки: её
+       ширина — ширина плиты, её изгиб — нижняя дуга эллипса плиты, а не
+       выдуманный прогиб. */
+    const sh2 = capT - 5 * kn * SS;
+    const stripY = plY + capT * 0.5;
+    const iw = capRx * 2;
+    const R = (iw / 2) * 1.16;                 // цилиндр, вокруг которого обёрнута лента
     // the line as it is written on the wall, rendered flat once
     const ow2 = Math.ceil(W), oh2 = Math.ceil(sh2) + 2;
     if (!state.rec2Strip || state.rec2Strip.width !== ow2 || state.rec2Strip.height !== oh2){
@@ -7664,27 +7676,28 @@ function drawRec2Front(t){
       gs.fillText(SCAN_TX, sx2, oh2 * 0.72);
     gs.textAlign = 'center';
     ctx.save();
-    // the recess, its edges curved by the barrel of the column
-    const yTopC = stripY - sh2/2, yBotC = stripY + sh2/2, bow = 3.2 * kn * SS;
+    /* ОБРЕЗКА — САМА КРОМКА. Её силуэт: нижняя дуга плиты сверху, нижняя дуга
+       изнанки снизу, две вертикали по краям. Ровно та фигура, которой кромка
+       и нарисована, — поэтому лента не может из неё выйти. */
+    const yTopC = stripY - sh2/2, yBotC = stripY + sh2/2;
     ctx.beginPath();
-    ctx.moveTo(nx - iw/2, yTopC);
-    ctx.quadraticCurveTo(nx, yTopC + bow, nx + iw/2, yTopC);
-    ctx.lineTo(nx + iw/2, yBotC);
-    ctx.quadraticCurveTo(nx, yBotC + bow, nx - iw/2, yBotC);
+    ctx.ellipse(nx, plY, capRx, capRy, 0, 0, Math.PI);
+    ctx.lineTo(nx - capRx, plY + capT);
+    ctx.ellipse(nx, plY + capT, capRx, capRy, 0, Math.PI, 0, true);
     ctx.closePath();
     ctx.clip();
     ctx.fillStyle = '#0b1216';
-    ctx.fillRect(nx - iw/2, yTopC - 2, iw, sh2 + 6);
+    ctx.fillRect(nx - iw/2, plY - capRy - 2, iw, capT + capRy * 2 + 4);
     // re-lay the flat line onto the barrel: a slice at screen x reads the line
     // at the arc distance that lands there, so letters crowd toward the edges
     const step = Math.max(1, Math.round(1.5 * SS));
     for (let x = -iw/2; x < iw/2; x += step){
       const u = Math.max(-0.999, Math.min(0.999, x / R));
       const s = R * Math.asin(u);
-      // the frame's edge is a quadratic Bezier with its control point at `bow`,
-      // and such a curve only reaches HALF of it at the middle — the letters
-      // were sagging twice as far as the glass they sit behind
-      const sag = bow * 0.5 * (1 - (x / (iw/2)) * (x / (iw/2)));
+      /* провис строки — это сама дуга плиты: на смещении x от центра нижний
+         край эллипса опускается на capRy·√(1−(x/capRx)²), и буквы идут по ней */
+      const uu = x / capRx;
+      const sag = capRy * Math.sqrt(Math.max(0, 1 - uu * uu));
       ctx.drawImage(state.rec2Strip,
                     Math.round(nx + s), 0, step + 1, oh2,
                     Math.round(nx + x), yTopC + sag - 1, step + 1, oh2);
@@ -7697,21 +7710,45 @@ function drawRec2Front(t){
     sg2.addColorStop(1, 'rgba(0,0,0,0.38)');
     ctx.fillStyle = sg2; ctx.fillRect(nx - iw/2, yTopC - 2, iw, sh2 + 6);
     ctx.restore();
-    // the bezel, and the light it spills onto the column
+    /* КАНТ ЛЕНТЫ ИДЁТ ПО ДУГАМ ПЛИТЫ. Он был построен на `bow` — прогибе
+       прежнего окошка в барабане; когда лента переехала на кромку, переменной
+       не стало, и кадр валился целиком, а headless отдавал чёрный экран.
+       Теперь кант — те же две дуги, которыми обрезана сама кромка. */
     ctx.strokeStyle = `rgba(210,240,255,${(0.20 + 0.20 * lit).toFixed(3)})`;
     ctx.lineWidth = 1.2 * SS;
     ctx.beginPath();
-    ctx.moveTo(nx - iw/2, yTopC); ctx.quadraticCurveTo(nx, yTopC + bow, nx + iw/2, yTopC);
-    ctx.moveTo(nx - iw/2, yBotC); ctx.quadraticCurveTo(nx, yBotC + bow, nx + iw/2, yBotC);
+    ctx.ellipse(nx, plY, capRx, capRy, 0, 0, Math.PI);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(nx, plY + capT, capRx, capRy, 0, 0, Math.PI);
     ctx.stroke();
     drawGlow('120,215,255', nx, stripY, pw * 1.5, 0.08 + 0.18 * lit);
   }
-  drawGlow('225,245,255', nx, ny, cw * 1.5, 0.12 + 0.13 * ease);
-  ctx.drawImage(spm.c, nx - cw/2, ny - chh/2, cw, chh);
-  /* коронка делает то же, что и вся панель вокруг неё: пролёт не должен
-     отзываться на палец двумя разными способами (Эльдар, 2026-09-23) */
-  pushHit(nx - cw/2, ny - chh/2, cw, chh,
-          {type: 'focus', beat: nearestBeat(mid).i, anchor: mid, page: DR_PAGE});
+  /* КОРОНКИ НЕТ, ПОКА ЕЁ НЕ ОТСКАНИРУЮТ. Она стояла на постаменте всегда, и
+     сканирующий луч работал по уже готовому предмету — то есть по предмету,
+     который не из чего было получить. Теперь до подхода на постаменте пусто:
+     луч сходится, и ровно в тот миг, когда коронка встаёт на экран, она
+     вспыхивает и появляется, а дальше идёт вместе с ней (Эльдар, 2026-09-23:
+     «коронки нету до тех пор, пока не появляется вспышка»).
+     scanPhase латчится на единице — раз родившись, она больше не исчезает. */
+  const born = scanPhase(mid);
+  const bA = Math.max(0, Math.min(1, (born - 0.72) / 0.28));
+  if (bA > 0.004){
+    const e2 = bA * bA * (3 - 2 * bA);
+    // вспышка рождения: ярче всего в самом начале и гаснет к концу
+    const flash = Math.max(0, 1 - bA) * Math.min(1, bA * 5);
+    if (flash > 0.01) drawGlow('235,250,255', nx, ny, cw * (2.2 + 1.6 * flash), 0.55 * flash);
+    drawGlow('225,245,255', nx, ny, cw * 1.5, (0.12 + 0.13 * ease) * e2);
+    ctx.save();
+    ctx.globalAlpha = e2;
+    const gs2 = 0.90 + 0.10 * e2;            // чуть подрастает, пока проявляется
+    ctx.drawImage(spm.c, nx - cw * gs2 / 2, ny - chh * gs2 / 2, cw * gs2, chh * gs2);
+    ctx.restore();
+    /* коронка делает то же, что и вся панель вокруг неё: пролёт не должен
+       отзываться на палец двумя разными способами (Эльдар, 2026-09-23) */
+    pushHit(nx - cw/2, ny - chh/2, cw, chh,
+            {type: 'focus', beat: nearestBeat(mid).i, anchor: mid, page: DR_PAGE});
+  }
 }
 
 /* Anything that completes exactly at the alignment and then stays completed:
@@ -11653,6 +11690,82 @@ function drawPatentCard(b){
     ctx.fillText(d.cap, ax, py(d.cy + d.w * 1.28 / 2 + 44, kk));
     ctx.restore();
   }
+}
+/* ОКНО В СТЕНЕ — ПРОЁМ, А НЕ КАРТИНКА.
+   Снимок кабинета пришёл в раме; рама с него срезана (стекло 1602×870, всё
+   остальное — переплёт), потому что раму зал рисует сам: она должна стоять на
+   плоскости СТЕНЫ, а комната — на своей глубине, иначе параллакса не будет.
+
+   Комната берётся на k(win.z), то есть дальше стены, и потому идёт за камерой
+   медленнее проёма: это и есть ощущение глубины, о котором просил Эльдар. Она
+   набирается в полтора раза шире проёма, чтобы при сдвиге из-за косяка не
+   выехал её край, и обрезается проёмом.
+
+   Переплёт повторяет тот, что на снимке: тонкий тёмный кант по периметру и
+   вертикальная стойка у каждого края — на нём было именно так. */
+/* ПРОЁМ И СНИМОК — РАЗНЫЕ ПРОПОРЦИИ. Снимок нарочно широкий: его ширина это
+   запас на параллакс, а не размер окна (Эльдар, 2026-09-23: «оно должно быть
+   адекватного, небольшого размера, но чтобы было видно кресло»). Поэтому проём
+   живёт со своей пропорцией 1.45 — нормальное окно, — а комната набирается по
+   ВЫСОТЕ проёма с запасом 32%, и лишнее уходит за косяки. Запас считается так:
+   на ±450 единиц хода камеры дальняя плоскость отстаёт примерно на 68·SS
+   пикселей, а 32% высоты дают по 104·SS с каждой стороны. */
+const WIN_ASPECT = 1602 / 870;      // пропорция самого снимка
+const WIN_OPEN = 1.45;              // пропорция проёма
+const WIN_OVER = 1.32;              // насколько комната выше проёма
+function drawWallWindow(b){
+  const d = b.win;
+  const im = IMGS.operatory;
+  const wz = (segAt(b.x).tz || wallZAt(b.x)) - 12, kk = k(wz);
+  const ax = wallSX(b.x, d.dx, kk);
+  const hWorld = d.w / WIN_OPEN;
+  const w = d.w * kk * SS, h = hWorld * kk * SS;
+  const yTop = py(d.top, kk);
+  const x0 = ax - w / 2, y0 = yTop;
+  if (x0 > W + w || x0 + w < -w) return;
+  rivet('window:' + b.x, ax, k(exhibitZ(b.x)));
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip();
+  // тёмный интерьер за проёмом — на случай, если снимок ещё не загрузился
+  ctx.fillStyle = '#20262b'; ctx.fillRect(x0, y0, w, h);
+  if (im && im.el){
+    /* комната меряется от ПРОЁМА, а не от своей глубины: иначе она съёжится
+       вместе с k и в окне останется марка. А ходит она за камерой по своей
+       глубине — отсюда и берётся отставание, то есть параллакс. */
+    const rh = h * WIN_OVER, rw = rh * WIN_ASPECT;
+    const lag = px(b.x + d.dx, k(d.z)) - ax;
+    const rx = ax + lag - rw / 2;
+    const ry = y0 + h / 2 - rh / 2;
+    ctx.drawImage(spriteMip({c: im.el}, rw, rh), rx, ry, rw, rh);
+  }
+  // стекло: слабый холодный отблеск сверху вниз, чтобы читалось как за стеклом
+  const gl = ctx.createLinearGradient(x0, y0, x0 + w * 0.5, y0 + h);
+  gl.addColorStop(0, 'rgba(200,225,245,0.10)');
+  gl.addColorStop(0.45, 'rgba(200,225,245,0.02)');
+  gl.addColorStop(1, 'rgba(200,225,245,0.06)');
+  ctx.fillStyle = gl; ctx.fillRect(x0, y0, w, h);
+  ctx.restore();
+
+  // ── ПЕРЕПЛЁТ ──
+  const bar = Math.max(2 * SS, w * 0.0135);      // 22 из 1602 на снимке
+  ctx.fillStyle = '#23272b';
+  ctx.fillRect(x0 - bar, y0 - bar, w + bar * 2, bar);              // верх
+  ctx.fillRect(x0 - bar, y0 + h, w + bar * 2, bar);                // низ
+  ctx.fillRect(x0 - bar, y0, bar, h);                              // лево
+  ctx.fillRect(x0 + w, y0, bar, h);                                // право
+  // тонкий светлый кант снаружи: край проёма в штукатурке
+  ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = Math.max(1, SS);
+  ctx.strokeRect(x0 - bar - SS, y0 - bar - SS, w + bar * 2 + SS * 2, h + bar * 2 + SS * 2);
+  // и тень, которую проём отбрасывает внутрь комнаты сверху
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip();
+  const sh = ctx.createLinearGradient(0, y0, 0, y0 + h * 0.22);
+  sh.addColorStop(0, 'rgba(0,0,0,0.38)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sh; ctx.fillRect(x0, y0, w, h * 0.22);
+  ctx.restore();
+
+  pushHit(x0, y0, w, h, {type: 'study', beat: BEATS.indexOf(b)});
 }
 function drawDocCard(b, bi){
   const d = b.doc;
@@ -16318,6 +16431,7 @@ function frame(){
     if (Math.abs(b.x - cam.x) > CULL_BEAT) continue;
     if (b.doc) drawDocCard(b, i);
     if (b.patent) drawPatentCard(b);
+    if (b.win) drawWallWindow(b);
     for (const it of b.wall){
       const sp = SPRITES[it.img]; if (!sp) continue;
       // sized on the era's text plane (equal framing everywhere), but
@@ -17244,6 +17358,7 @@ window.addEventListener('load', boot);   // assets block sits below — wait for
    поэтому смена значения с data: на путь ничего не меняет в работе.
    Собирает файлы tools/build_assets.py из оригиналов в src/. */
 window.ASSETS = {artic:'assets/img/artic.jpg',
+operatory:'assets/img/operatory.jpg',
 bianca:'assets/img/bianca.jpg',
 bizcard:'assets/img/bizcard.jpg',
 bookfront:'assets/img/bookfront.jpg',
