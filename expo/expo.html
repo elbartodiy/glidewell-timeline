@@ -262,11 +262,20 @@ const BEATS = [
   {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true, yLift:190, flyLift:66,   // built exactly like 2007: same apex plane, same lift, so the same size and the same throw   // on the line its neighbours hang from — and clear of the plinth's crossed beams
    th:'Own the science, so you can own the quality and the price.',
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir.',
-   /* her portrait hangs clear of the monitor now — up and to the left, in the
-      empty wall between the two years, where Eldar boxed it (2026-09-22) */
-   wall:[{img:'rella', w:250, dx:300, top:120, rot:-0.6, cap:'Dr. Rella Christensen', style:'white'}],
+   /* ПОРТРЕТ СНЯТ СО СТЕНЫ. Релла Кристенсен жива, интервью с ней ещё впереди,
+      а фотография в белой рамке с именем под ней, да ещё и с силуэтом
+      посетителя, стоящим к ней лицом, читалась мемориальной доской. Висела она
+      там по случайной причине: её снимок лежал в папке отдельно от остальных,
+      а остальные пошли аватарами. В статье и в «People of this moment» она
+      остаётся — там она источник (Эльдар, 2026-09-23). */
+   wall:[],
+   /* на её месте — то, ради чего заводят собственную науку: патентный лист.
+      «Mostly patents that allow us to manufacture without having someone
+      else's patents preventing us» — тридцать выдано, тридцать в заявках. */
+   /* правее и ниже тезиса: лист вставал углом на слово «price» в подзаголовке */
+   patent:{dx:400, w:280, cy:345, rot:-0.6, cap:'thirty issued, thirty pending'},
    table:[],
-   ped:{obj:'puck', dx:0}, capDX:-540,
+   ped:{obj:'artglass', dx:0}, capDX:-540,
    table:[]},
 
   {x:16520, y:'2001', capDX:-430,   // its line steps left of the plastic-injection block written on the bench face
@@ -300,6 +309,9 @@ const BEATS = [
       не пускает монитор левее начала пролёта прилавка — он ровно на неё и
       садился. Монитор встаёт справа от коробки, с воздухом от неё. */
    props:[{kind:'crt', dx:322, lz:130, w:320, label:'CAD revolution'}],
+   /* заготовка переехала сюда с 2000-го: диск — предмет станка, а не отдела.
+      Его и грызёт фреза на экране рядом. */
+   ped:{obj:'puck', dx:0},
    th:'The mill arrives at the bench — the lab’s half of the crown goes digital.',
    d:'Glidewell takes up the outside milling systems — Cercon, Wol-Ceram — and four years later has its own: scan the model, design the coping on screen, mill it from a block.',
    wall:[], table:[]},
@@ -396,7 +408,10 @@ const BEATS = [
   /* the line at the foot of the frame is off altogether — the bay says it
      already (Eldar, 2026-09-22: «нам не нужно это, давай её удалим»); the text
      stays in the data because the reading page is keyed to it */
+  /* видео ложится в поток сразу после первого абзаца, а не в колонку и не в
+     конец: страница должна привлекать им (Эльдар, 2026-09-23) */
   {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true, descHide:true, blockDX:145, yLift:120,
+   railBelow:true, clipAt:0,
    th:'The analog→digital climax: robots make crowns.',
    d:'Automated, AI-designed, robotic monolithic production.',
    wall:[], table:[],
@@ -10548,6 +10563,65 @@ function makePedObj(kind){
     g.beginPath(); g.moveTo(-70, 8); g.lineTo(70, 8); g.stroke();
     return {c, w: c.width, h: c.height};
   }
+  if (kind === 'artglass'){
+    /* КОРОНКА НА ПРОСВЕТ. Предмет 2000 года — не то, что сделали, а то, от
+       чего хотели избавиться: облицовочный композит, красиво пропускающий
+       свет, и внутри него глухая тёмная конструкция, которую никаким слоем не
+       спрячешь. Ровно за этим и гнались — за коронкой, светящейся насквозь,
+       одной и той же от края до края; она придёт только в 2009-м
+       (Эльдар, 2026-09-23: «сделать эту коронку на просвет, чтобы показать,
+       что внутри что-то темнее, как конструкция — за этим же гнались»). */
+    size(170, 150);
+    const tooth = () => {
+      g.beginPath();
+      g.moveTo(-52, 48);
+      g.bezierCurveTo(-60, 8, -54, -28, -38, -46);
+      g.quadraticCurveTo(-26, -58, -14, -46);
+      g.quadraticCurveTo(-6, -36, 0, -46);
+      g.quadraticCurveTo(6, -56, 16, -46);
+      g.quadraticCurveTo(28, -58, 40, -44);
+      g.bezierCurveTo(56, -24, 60, 10, 50, 48);
+      g.quadraticCurveTo(0, 62, -52, 48);
+      g.closePath();
+    };
+    g.save(); g.translate(85, 78);
+    // свет из-за коронки: он и делает её прозрачной
+    const halo = g.createRadialGradient(0, 0, 10, 0, 0, 86);
+    halo.addColorStop(0,   'rgba(255,238,206,0.55)');
+    halo.addColorStop(0.6, 'rgba(255,236,200,0.16)');
+    halo.addColorStop(1,   'rgba(255,236,200,0)');
+    g.fillStyle = halo;
+    g.beginPath(); g.arc(0, -2, 86, 0, 7); g.fill();
+    g.save();
+    tooth(); g.clip();
+    // тело облицовки, светлое там, где оно тонкое
+    const body = g.createRadialGradient(-6, 6, 8, -6, 6, 74);
+    body.addColorStop(0,   '#fff6e2');
+    body.addColorStop(0.62,'#f6e8cc');
+    body.addColorStop(1,   '#e6d2ae');
+    g.fillStyle = body;
+    g.fillRect(-70, -70, 140, 140);
+    // КОНСТРУКЦИЯ ВНУТРИ: колпачок, свет через него не идёт
+    g.save();
+    g.translate(0, 7); g.scale(0.74, 0.68);
+    tooth();
+    const core = g.createLinearGradient(-40, -30, 40, 40);
+    core.addColorStop(0, 'rgba(96,86,74,0.86)');
+    core.addColorStop(1, 'rgba(58,50,42,0.92)');
+    g.fillStyle = core; g.fill();
+    g.restore();
+    // и ещё раз облицовка поверх — конструкция читается СКВОЗЬ материал
+    g.fillStyle = 'rgba(252,240,214,0.42)';
+    g.fillRect(-70, -70, 140, 140);
+    g.restore();
+    // тонкий край, где свет выходит наружу
+    tooth();
+    g.strokeStyle = 'rgba(255,246,222,0.85)'; g.lineWidth = 1.6; g.stroke();
+    g.fillStyle = 'rgba(255,255,255,0.55)';
+    g.beginPath(); g.ellipse(-27, -25, 8, 14, -0.5, 0, 7); g.fill();
+    g.restore();
+    return {c, w: LW, h: LH};
+  }
   if (kind === 'crown'){
     size(170, 150);
     g.save(); g.translate(85, 78);
@@ -11179,6 +11253,105 @@ function drawPedestal(b, t, hero){
    the same frames, because it is standing in their row — but it is paper, not
    a photograph: a heading, a rule, and the grey suggestion of type. It is a
    working document, so it says so, and it does not pretend to be an exhibit. */
+/* ПАТЕНТНЫЙ ЛИСТ. Настенный предмет 2000 года: чертёж в рамке, как в заявке —
+   разрез коронки с выносками и номерами позиций. Номер патента НЕ печатается:
+   выдумывать его на стене выставки про настоящую компанию нельзя, а настоящего
+   у нас под рукой нет. Рисуется как doc-карточка — своей глубиной от стены и
+   через wallSX, по закону заклёпки (Эльдар, 2026-09-23). */
+function drawPatentCard(b){
+  const d = b.patent;
+  const wz = (segAt(b.x).tz || wallZAt(b.x)) - 12, kk = k(wz);
+  const ax = wallSX(b.x, d.dx, kk);
+  rivet('patent:' + b.x, ax, k(exhibitZ(b.x)));
+  const w = d.w * kk * SS, h = w * 1.28;
+  const cy = py(d.cy, kk);
+  if (ax < -w * 2 || ax > W + w * 2) return;
+  ctx.save();
+  ctx.translate(ax, cy);
+  ctx.rotate((d.rot || 0) * Math.PI / 180);
+  // рамка, стекло, бумага
+  ctx.shadowColor = 'rgba(0,0,0,0.42)'; ctx.shadowBlur = 12 * kk * SS; ctx.shadowOffsetY = 5 * kk * SS;
+  ctx.fillStyle = '#e9e7e1';
+  ctx.fillRect(-w/2, -h/2, w, h);
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  const pad = w * 0.05;
+  ctx.fillStyle = '#fbfaf5';
+  ctx.fillRect(-w/2 + pad, -h/2 + pad, w - pad*2, h - pad*2);
+  const ix = -w/2 + pad*2.2, iw = w - pad*4.4;
+  // шапка
+  ctx.fillStyle = 'rgba(48,52,58,0.80)';
+  ctx.font = `600 ${(w*0.058).toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  try { ctx.letterSpacing = (w*0.020).toFixed(1) + 'px'; } catch(e){}
+  ctx.fillText('UNITED STATES PATENT', 0, -h/2 + pad*3.0);
+  try { ctx.letterSpacing = '0px'; } catch(e){}
+  ctx.fillStyle = 'rgba(48,52,58,0.45)';
+  ctx.fillRect(ix, -h/2 + pad*3.7, iw, Math.max(1, w*0.009));
+  // ЧЕРТЁЖ: коронка в разрезе — облицовка снаружи, колпачок внутри
+  ctx.save();
+  ctx.translate(0, -h*0.06);
+  const S2 = w * 0.0042;
+  ctx.scale(S2, S2);
+  const tooth = (sx, sy) => {
+    ctx.save(); ctx.scale(sx, sy);
+    ctx.beginPath();
+    ctx.moveTo(-52, 48);
+    ctx.bezierCurveTo(-60, 8, -54, -28, -38, -46);
+    ctx.quadraticCurveTo(-26, -58, -14, -46);
+    ctx.quadraticCurveTo(-6, -36, 0, -46);
+    ctx.quadraticCurveTo(6, -56, 16, -46);
+    ctx.quadraticCurveTo(28, -58, 40, -44);
+    ctx.bezierCurveTo(56, -24, 60, 10, 50, 48);
+    ctx.quadraticCurveTo(0, 62, -52, 48);
+    ctx.closePath();
+    ctx.restore();
+  };
+  ctx.lineWidth = 2.2 / S2 * (w * 0.0042);
+  ctx.strokeStyle = 'rgba(40,44,50,0.85)';
+  ctx.lineWidth = 2.2;
+  tooth(1, 1); ctx.stroke();
+  tooth(0.74, 0.68); ctx.stroke();
+  // штриховка сечения между контурами
+  ctx.save();
+  ctx.beginPath(); tooth(1, 1); ctx.clip();
+  ctx.strokeStyle = 'rgba(40,44,50,0.30)'; ctx.lineWidth = 1;
+  for (let hx = -120; hx < 120; hx += 7){
+    ctx.beginPath(); ctx.moveTo(hx, -70); ctx.lineTo(hx + 70, 70); ctx.stroke();
+  }
+  ctx.restore();
+  // выноски с номерами позиций
+  ctx.strokeStyle = 'rgba(40,44,50,0.70)'; ctx.lineWidth = 1.2;
+  ctx.fillStyle = 'rgba(40,44,50,0.85)';
+  ctx.font = '13px "Helvetica Neue", Arial, sans-serif';
+  ctx.textAlign = 'left';
+  const lead = (x0, y0, x1, y1, n) => {
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x0, y0, 2, 0, 7); ctx.fill();
+    ctx.fillText(n, x1 + 4, y1 + 4);
+  };
+  lead(-46, -14, -92, -40, '10');
+  lead(-24, 6, -92, 34, '12');
+  lead(44, 22, 74, 52, '14');
+  ctx.restore();
+  // призрак текста под чертежом
+  const rows = [0.94, 0.78, 0.88, 0.61, 0.90, 0.72];
+  let ry = h/2 - pad*2.2 - h*0.052*rows.length;
+  for (const r of rows){
+    ctx.fillStyle = 'rgba(70,74,80,0.26)';
+    ctx.fillRect(ix, ry, iw * r, Math.max(1, w*0.013));
+    ry += h * 0.052;
+  }
+  ctx.restore();
+  if (d.cap){
+    const seg = segAt(b.x);
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = eraFont(19 * kk * SS, '', seg.font);
+    ctx.fillStyle = `rgba(${seg.ink},0.55)`;
+    ctx.fillText(d.cap, ax, py(d.cy + d.w * 1.28 / 2 + 44, kk));
+    ctx.restore();
+  }
+}
 function drawDocCard(b, bi){
   const d = b.doc;
   const wz = (segAt(b.x).tz || wallZAt(b.x)) - 12, kk = k(wz);
@@ -13000,7 +13173,9 @@ const STUDY_MEDIA_BY_TITLE = {
   'HAHN TAPERED IMPLANT': [{name:'Dr. Randolph Resnik', img:'resnik', pid:'resnik', src:'media/resnik_01.mp4', label:'on implants leaving the specialty'}],
   'GLIDEWELL.IO': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_09.mp4', label:'on the Symposium'}],
   '2018': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_01.mp4', label:''}],
-  'BRUXZIR FACTORY': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_01.mp4', label:''}],
+  /* на фабрике стоял azernikov_01 — общий рассказ о себе; Эльдар просит
+     поставить новое видео, где он рассказывает эту историю (2026-09-23) */
+  'BRUXZIR FACTORY': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_03.mp4', label:'on CAD/CAM'}],
   'GUIDING LEADERS': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_01.mp4', label:'on teaching as the product'}],
   'THE CROSSOVER': [{name:'Dr. Randolph Resnik', img:'resnik', pid:'resnik', src:'media/resnik_02.mp4', label:'on the scan replacing the impression'}],
   /* the man who automated the crown, on the crown that could not be automated —
@@ -13617,6 +13792,34 @@ function drawStudy(){
       } else { S.doneAt = 0; S._swap = 0; y += 12 * SS; }
     }
   };
+  /* ГОЛОС ВНУТРИ СТАТЬИ. Полоса с клипами жила одним куском в конце страницы;
+     для фабрики Эльдар попросил поставить видео сразу после первого абзаца —
+     «чтобы оно привлекало» (2026-09-23). Полоса стала функцией, которую
+     страница может позвать в любом месте потока: b.clipAt — номер абзаца,
+     после которого она ложится. Без clipAt всё как было, в конце. */
+  let voicesDone = false;
+  const drawVoiceStrip = () => {
+    if (voicesDone || !(media && media.length && b.railBelow)) return;
+    voicesDone = true;
+    y += 2 * u;
+    ctx.fillStyle = K.rule;
+    if (y > topClip && y < botClip) ctx.fillRect(left, y, textW, 1.5 * SS);
+    y += 5 * u;
+    ctx.font = K.font(PAGE.small, '700');
+    try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
+    ctx.fillStyle = `rgba(${K.dim},0.95)`;
+    if (y > topClip && y < botClip) ctx.fillText(media.length > 1 ? 'The voices' : 'Watch', left, y);
+    try { ctx.letterSpacing = '0px'; } catch(err){}
+    y += 3 * u;
+    const tw4 = Math.min(PAGE.side * SS, textW), th4 = Math.round(tw4 * 170 / 300), gap4 = 3 * u;
+    let rx4 = left;
+    for (let mi = 0; mi < media.length; mi++){
+      if (rx4 + tw4 > left + textW + 1){ rx4 = left; y += th4 + gap4; }
+      studyClipTile(media[mi], rx4, y, tw4, th4, S, K, b, topClip, botClip);
+      rx4 += tw4 + gap4;
+    }
+    y += th4 + 4 * u;
+  };
   if (inl && inl.boxTop) drawInlineBox();
   const bodyInk = `rgba(${K.ink},0.88)`;
   if (!more){
@@ -13629,8 +13832,10 @@ function drawStudy(){
     /* AN ARTICLE IS NOT A WALL OF TEXT. A paragraph opening with "## " is a
        subheading; a line opening with "• " is a bullet hung on its own
        indent. Everything else is a paragraph, with a paragraph's space after. */
+    let paraN = -1;
     for (const para0 of more.split('\n\n')){
       let para = para0;
+      paraN++;
       if (para.startsWith('## ')){
         /* the heading is the first line; the paragraph under it may follow on
            the next line of the same block, or stand as a block of its own */
@@ -13670,29 +13875,10 @@ function drawStudy(){
         } else flow(rawLine, PAGE.bodyLH * SS, bodyInk);
       }
       y += 2 * u;
+      if (b.clipAt != null && paraN === b.clipAt) drawVoiceStrip();
     }
   }
-  /* voices in a strip under the article, for the page that asked for it */
-  if (media && media.length && b.railBelow){
-    y += 2 * u;
-    ctx.fillStyle = K.rule;
-    if (y > topClip && y < botClip) ctx.fillRect(left, y, textW, 1.5 * SS);
-    y += 5 * u;
-    ctx.font = K.font(PAGE.small, '700');
-    try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
-    ctx.fillStyle = `rgba(${K.dim},0.95)`;
-    if (y > topClip && y < botClip) ctx.fillText(media.length > 1 ? 'The voices' : 'Watch', left, y);
-    try { ctx.letterSpacing = '0px'; } catch(err){}
-    y += 3 * u;
-    const tw4 = Math.min(PAGE.side * SS, textW), th4 = Math.round(tw4 * 170 / 300), gap4 = 3 * u;
-    let rx4 = left;
-    for (let mi = 0; mi < media.length; mi++){
-      if (rx4 + tw4 > left + textW + 1){ rx4 = left; y += th4 + gap4; }
-      studyClipTile(media[mi], rx4, y, tw4, th4, S, K, b, topClip, botClip);
-      rx4 += tw4 + gap4;
-    }
-    y += th4 + 4 * u;
-  }
+  drawVoiceStrip();    // страницы, не назвавшие места, получают полосу здесь
   drawInlineBox();     // pages that did not ask for it at the head get it here
   const links = STUDY_LINKS[b.t];
   if (links){
@@ -15457,6 +15643,7 @@ function frame(){
     const b = BEATS[i];
     if (Math.abs(b.x - cam.x) > CULL_BEAT) continue;
     if (b.doc) drawDocCard(b, i);
+    if (b.patent) drawPatentCard(b);
     for (const it of b.wall){
       const sp = SPRITES[it.img]; if (!sp) continue;
       // sized on the era's text plane (equal framing everywhere), but
@@ -15829,6 +16016,7 @@ async function boot(){
   PED_SPRITES.logo1970 = makePedObj('logo1970');
   PED_SPRITES.bizcard = makePedObj('bizcard');
   PED_SPRITES.puck = makePedObj('puck');
+  PED_SPRITES.artglass = makePedObj('artglass');
   /* the wand comes with its own dock in the photograph, so it needs no drawn
      cradle to lean on — it stands, the way it stands in the 2022 vitrine */
   PED_SPRITES.scanner = PROP_SPRITES.ph_scanner || makePedObj('puck');
