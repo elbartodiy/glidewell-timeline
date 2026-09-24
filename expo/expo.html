@@ -613,7 +613,13 @@ function applyCut(){
        hall is 3,000 wide, and measured to its centre the last free beat (2015)
        was handed a place inside it — its year printed on the glass. For that
        bay the interval ends at the pilaster, with a little air. */
-    const edge = {};   // (the glass hall no longer sits beside a beat that spacing can move)
+    /* ШИРОКИЙ ПРОЛЁТ ОГРАНИЧИВАЕТ СОСЕДА СВОИМ КРАЕМ, А НЕ СЕРЕДИНОЙ. Для 1993
+       это не отвлечённость: интервал до 1995 отмерялся от ЦЕНТРА пролёта, а
+       пролёт шириной в панель — и 1995 вставал вплотную к его белой пилястре,
+       а на подходе камеры цифра наезжала на неё (Эльдар, 2026-09-23: «не
+       хватает воздуха, и из-за этого всё плывёт»). Интервал теперь кончается
+       на пилястре плюс воздух. */
+    const edge = {'1993': [REC93_L - 260, REC93_R + 260]};
     for (let f = 0; f < fixed.length - 1; f++){
       const p = fixed[f], q = fixed[f + 1];
       if (q - p < 2) continue;                       // nothing free between them
@@ -8406,47 +8412,114 @@ function drawHallCrown(b){
 /* the 1989 recreation: era 2 ends; a light panel carries the USA mail map;
    era 3 begins on the far side */
 let USA_SPRITE = null;
+/* КАРТА 1989 ГОДА. Она висела с первого наброска: восемнадцать точек ломаной,
+   которые «примерно Америка», и подписи не разобрать. Эльдар (2026-09-23):
+   «весь мир поменялся вокруг, а эта карта до сих пор висит такой простушкой —
+   поднять повыше, сделать побольше и понятнее».
+
+   Теперь это настоящий контур континентальных штатов — тихоокеанский берег,
+   техасская излучина, Мексиканский залив, флоридский полуостров, Атлантика до
+   Мэна, вырез Великих озёр и прямая северная граница, — узнаваемый с другого
+   конца зала. Лист набирается в 1.5 раза крупнее, чем висит, чтобы на
+   ретине не мылился. Смысл картинки прежний и единственный: из одной точки в
+   округе Ориндж почта расходится по всей стране. */
+const USA_OUTLINE = [
+  [1,8],[2,12],[1.5,17],[3,21],[4,24],[6,28],[9,31],[11,34],[13,37],[16,40],[18,42],[21,44],
+  [26,43],[30,44],[35,44.5],[39,46],[41,45],[44,45.5],
+  [46,48],[48,51],[50,53],[52,55],[54,54],[56,52],[58,51],
+  [61,52],[64,52.5],[66,51.5],[69,52],[71,51],[74,52],[76,51],
+  [78,51],[80,53],[81,56],[82,59],[83,61],[84,58],[84.5,54],[84,51],
+  [86,49],[88,46],[90,43],[92,40],[94,37],[95,34],[96.5,31],[97,28],[98,25],[99,22],[97,20],
+  [95,19],[93,21],[91,19],[89,21],[86,20],[84,23],[82,18],[80,15],[78,17],[76,14],[74,13],
+  [60,12],[45,11],[30,10],[14,9],[6,8],
+];
 function makeUsaSprite(){
-  const c = document.createElement('canvas'); c.width = 980; c.height = 620;
+  const RES = 1.5;
+  const c = document.createElement('canvas');
+  c.width = 980 * RES; c.height = 620 * RES;
   const g = c.getContext('2d');
+  g.setTransform(RES, 0, 0, RES, 0, 0);          // рисуем в прежних единицах
+  // рама и паспарту
   g.save();
   g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 18; g.shadowOffsetY = 8;
   g.fillStyle = '#2c2e33'; g.fillRect(14, 14, 952, 592);
   g.restore();
-  g.fillStyle = '#e8e6dc'; g.fillRect(34, 34, 912, 552);
-  // a simplified continental outline
-  g.strokeStyle = 'rgba(70,80,95,0.8)'; g.lineWidth = 4; g.lineJoin = 'round';
-  g.beginPath();
-  g.moveTo(120, 180); g.lineTo(180, 130); g.lineTo(320, 110); g.lineTo(470, 120);
-  g.lineTo(620, 105); g.lineTo(780, 130); g.lineTo(870, 190); g.lineTo(880, 280);
-  g.lineTo(830, 360); g.lineTo(840, 440); g.lineTo(760, 470); g.lineTo(660, 450);
-  g.lineTo(560, 490); g.lineTo(430, 470); g.lineTo(300, 480); g.lineTo(210, 420);
-  g.lineTo(140, 330); g.lineTo(100, 250); g.closePath();
-  g.stroke();
-  g.fillStyle = 'rgba(140,160,185,0.12)'; g.fill();
-  // the hub in Southern California, routes across the country
-  const hub = [178, 330];
-  const dots = [[300,200],[420,160],[560,150],[700,170],[810,220],[830,330],[760,410],[620,420],[480,410],[350,390],[260,300],[520,270],[660,300]];
-  g.strokeStyle = 'rgba(190,60,45,0.4)'; g.lineWidth = 2;
-  for (const [dx, dy] of dots){
-    g.beginPath(); g.moveTo(hub[0], hub[1]);
-    g.quadraticCurveTo((hub[0]+dx)/2, Math.min(hub[1], dy) - 60, dx, dy);
-    g.stroke();
+  const pap = g.createLinearGradient(0, 34, 0, 586);
+  pap.addColorStop(0, '#f2efe4'); pap.addColorStop(1, '#e4e0d2');
+  g.fillStyle = pap; g.fillRect(34, 34, 912, 552);
+  g.strokeStyle = 'rgba(70,80,95,0.25)'; g.lineWidth = 2;
+  g.strokeRect(52, 52, 876, 516);
+
+  /* контур: 0..100 по x и 0..62 по y кладутся в поле карты */
+  const MX = 96, MY = 92, MW = 788, MH = 400;
+  const P = ([x, y]) => [MX + x / 100 * MW, MY + y / 62 * MH];
+  const path = () => {
+    g.beginPath();
+    USA_OUTLINE.forEach((pt, i) => { const [x, y] = P(pt); i ? g.lineTo(x, y) : g.moveTo(x, y); });
+    g.closePath();
+  };
+  // суша
+  const land = g.createLinearGradient(0, MY, 0, MY + MH);
+  land.addColorStop(0, 'rgba(146,168,190,0.30)');
+  land.addColorStop(1, 'rgba(120,145,170,0.20)');
+  g.fillStyle = land; path(); g.fill();
+  g.strokeStyle = 'rgba(52,64,80,0.85)'; g.lineWidth = 3.2; g.lineJoin = 'round';
+  path(); g.stroke();
+
+  /* ПОЧТА ИЗ ОДНОЙ ТОЧКИ. Хаб — округ Ориндж; дуги уходят к городам, и у
+     каждой на дальнем конце маленькая стрелка: это не «точки на карте», это
+     направление движения коробки. */
+  const hub = P([16, 41]);
+  const DOTS = [[30,20],[43,16],[57,15],[70,17],[81,22],[86,33],[80,44],[64,43],[50,42],[34,39],[26,29],[54,27],[69,30],[82,55]];
+  g.lineCap = 'round';
+  for (const d of DOTS){
+    const [dx, dy] = P(d);
+    const mx = (hub[0] + dx) / 2, my = Math.min(hub[1], dy) - 58;
+    g.strokeStyle = 'rgba(190,60,45,0.38)'; g.lineWidth = 2.4;
+    g.beginPath(); g.moveTo(hub[0], hub[1]); g.quadraticCurveTo(mx, my, dx, dy); g.stroke();
+    // стрелка по касательной в конце дуги
+    const tx = dx - mx, ty = dy - my, L = Math.hypot(tx, ty) || 1;
+    const ux = tx / L, uy = ty / L;
+    g.fillStyle = 'rgba(190,60,45,0.55)';
+    g.beginPath();
+    g.moveTo(dx, dy);
+    g.lineTo(dx - ux*13 - uy*5, dy - uy*13 + ux*5);
+    g.lineTo(dx - ux*13 + uy*5, dy - uy*13 - ux*5);
+    g.closePath(); g.fill();
   }
-  for (const [dx, dy] of dots){
+  for (const d of DOTS){
+    const [dx, dy] = P(d);
+    g.fillStyle = '#fdfaf2';
+    g.beginPath(); g.arc(dx, dy, 7.5, 0, 7); g.fill();
     g.fillStyle = '#c23a2c';
-    g.beginPath(); g.arc(dx, dy, 6, 0, 7); g.fill();
+    g.beginPath(); g.arc(dx, dy, 5, 0, 7); g.fill();
   }
-  g.fillStyle = 'rgba(190,60,45,0.3)';
-  g.beginPath(); g.arc(hub[0], hub[1], 20, 0, 7); g.fill();
+  // хаб
+  g.fillStyle = 'rgba(190,60,45,0.22)';
+  g.beginPath(); g.arc(hub[0], hub[1], 26, 0, 7); g.fill();
   g.fillStyle = '#c23a2c';
-  g.beginPath(); g.arc(hub[0], hub[1], 9, 0, 7); g.fill();
-  g.fillStyle = 'rgba(60,66,76,0.9)';
+  g.beginPath(); g.arc(hub[0], hub[1], 11, 0, 7); g.fill();
+  g.strokeStyle = '#fdfaf2'; g.lineWidth = 3;
+  g.beginPath(); g.arc(hub[0], hub[1], 11, 0, 7); g.stroke();
+  // подпись хаба — с выноской, чтобы не лежала на берегу
+  g.strokeStyle = 'rgba(80,90,105,0.75)'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(hub[0] - 12, hub[1] + 8); g.lineTo(hub[0] - 46, hub[1] + 48); g.stroke();
+  g.fillStyle = 'rgba(50,58,70,0.9)';
+  g.textAlign = 'right';
+  g.font = '600 26px "Helvetica Neue", Arial, sans-serif';
+  g.fillText('Orange, California', hub[0] - 50, hub[1] + 56);
+
+  // заголовок и подпись листа
   g.textAlign = 'center';
-  g.font = '600 30px "Helvetica Neue", Arial, sans-serif';
-  try { g.letterSpacing = '5px'; } catch(e){}
-  g.fillText('3,500+ dentists \u00b7 nationwide \u00b7 by mail', 490, 560);
-  return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
+  g.fillStyle = 'rgba(50,58,70,0.92)';
+  g.font = '600 34px "Helvetica Neue", Arial, sans-serif';
+  try { g.letterSpacing = '7px'; } catch(e){}
+  g.fillText('ONE LABORATORY, ONE COUNTRY', 490, 108);
+  try { g.letterSpacing = '0px'; } catch(e){}
+  g.fillStyle = 'rgba(60,66,76,0.8)';
+  g.font = '28px "Helvetica Neue", Arial, sans-serif';
+  g.fillText('3,500+ dentists · 95% of cases arrive by mail', 490, 552);
+  return {c, w: 980, h: 620, inner: {w: 980, h: 620}};
 }
 /* 1973 · THE SECOND LAB. Eldar's render: the two buildings as models, each on
    its own marble stone, cut out together. Set exactly like the nine labs of
@@ -8535,9 +8608,14 @@ function drawRec3(t){
   ctx.fillStyle = wg;
   ctx.fillRect(x0, 0, x1 - x0, yBase);
   const sp = USA_SPRITE;
-  const w = 470 * kk * SS, h = w * sp.h / sp.w;
-  const cx = px(mid, kk), cyS = py(505, kk);
-  pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp, wx: mid, cy: 505, z: 726, w: 470,
+  /* выше и крупнее: 470 на 505 карта тонула за коробкой и читалась пятном */
+  /* 560 на 310 — это верхний предел: ниже карта уходит за коробку, выше её
+     верхний край подходит к подзаголовку «National leader». Замерено на
+     плоскости 728 при k=0.553. */
+  const MAP_W = 560, MAP_CY = 310;
+  const w = MAP_W * kk * SS, h = w * sp.h / sp.w;
+  const cx = px(mid, kk), cyS = py(MAP_CY, kk);
+  pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp, wx: mid, cy: MAP_CY, z: 726, w: MAP_W,
           cap: '1989 · 95% of cases arrive by mail', beat: BEATS.findIndex(b => b.y === '1989')});
   ctx.drawImage(sp.c, cx - w/2, cyS - h/2, w, h);
   for (const wxc of [REC3_L, REC3_R]){
