@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-23T18:24:36+00:00",
+ "updated": "2026-09-24T04:53:07+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
  "count": 34,
  "events": [
@@ -14,7 +14,7 @@
    ],
    "duration": "Two Days",
    "price": "795.00",
-   "open": true,
+   "open": false,
    "url": "https://glidewelldirect.com/products/dental-sleep-medicine-treating-patients-with-sleep-related-disordered-breathing?variant=52802100560236"
   },
   {
