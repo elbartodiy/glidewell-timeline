@@ -259,8 +259,16 @@ const BEATS = [
    d:'In-Ceram Zirconia material arrives — zirconia enters the lab a full decade before BruxZir.',
    wall:[], table:[]},
 
-  {x:15700, y:'2000', t:'R&D IS BORN', tier:1, fly:true, yLift:190, flyLift:66,   // built exactly like 2007: same apex plane, same lift, so the same size and the same throw   // on the line its neighbours hang from — and clear of the plinth's crossed beams
-   th:'Own the science, so you can own the quality and the price.',
+  /* СТАНЦИЯ 2000 — ЭТО ОДИН ДОКУМЕНТ НА СТЕНЕ. Полное имя вместо аббревиатуры,
+     тезис снят со стены и написан внутри патента как название изобретения, а
+     постамент с коронкой и скрещенными лучами убран совсем: у года остаётся
+     год, имя и лист (Эльдар, 2026-09-23). */
+  {x:15700, y:'2000', t:'RESEARCH AND DEVELOPMENT', tier:1, fly:true, yLift:190, flyLift:66,
+   /* тезис пустой, а не отсутствующий: каждый бит обязан иметь th — его
+      прогоняют через wrapCalc ещё до первого кадра, и undefined роняет весь
+      зал в чёрный экран. Пустая строка не печатается (все рисовалки стоят за
+      `if (b.th && …)`), а слова живут теперь на листе патента. */
+   th:'',
    d:'Burned by depending on an outside material, and inspired by Dr. Rella Christensen’s idea of a “Volkscrown” everyone could afford — the engine behind BruxZir.',
    /* ПОРТРЕТ СНЯТ СО СТЕНЫ. Релла Кристенсен жива, интервью с ней ещё впереди,
       а фотография в белой рамке с именем под ней, да ещё и с силуэтом
@@ -269,13 +277,10 @@ const BEATS = [
       а остальные пошли аватарами. В статье и в «People of this moment» она
       остаётся — там она источник (Эльдар, 2026-09-23). */
    wall:[],
-   /* на её месте — то, ради чего заводят собственную науку: патентный лист.
-      «Mostly patents that allow us to manufacture without having someone
-      else's patents preventing us» — тридцать выдано, тридцать в заявках. */
-   /* правее и ниже тезиса: лист вставал углом на слово «price» в подзаголовке */
-   patent:{dx:400, w:280, cy:345, rot:-0.6, cap:'thirty issued, thirty pending'},
-   table:[],
-   ped:{obj:'artglass', dx:0}, capDX:-540,
+   /* ЛИСТ СТОИТ РОВНО ПО МЕТКЕ ГОДА — dx 0. Он больше не украшение сбоку, он
+      сам экспонат: название изобретения на нём и есть тезис станции. */
+   patent:{dx:0, w:420, cy:400, rot:-0.5, cap:'thirty issued, thirty pending'},
+   table:[], capDX:-540,
    table:[]},
 
   {x:16520, y:'2001', capDX:-430,   // its line steps left of the plastic-injection block written on the bench face
@@ -393,7 +398,7 @@ const BEATS = [
      bay's own view, 2100×1000: the band's middle is y 70, the numeral's ascent
      65.4 px at 90.1 px of type, so the baseline wants 103 and the lift 267. The
      three share one type plane, so one number serves all three. */
-  {x:24450, y:'2018', t:'', tier:1, yLift:267,
+  {x:24450, y:'2018', t:'', tier:1, yLift:267, railBelow:true, clipAt:0,
    pinZ:1000, descBase:true,   // its line is read off the factory's base, which is the only even surface it has
    th:'',
    d:'1,500 pairs of scans, and the profile between opposing teeth that technicians find hardest. The paper, written with UC Berkeley, is called Learning Beyond Human Expertise.',
@@ -1753,7 +1758,7 @@ Thirty-two beats on the wall today; twenty of them carry a detail page.
      2019 BruxZir Factory, 2019 Guiding Leaders. Is the list incomplete, or do
      the dates need checking?
 
-  4) 2000 "R&D IS BORN" is our editorial construction; no such event is in the
+  4) 2000 "RESEARCH AND DEVELOPMENT" is our editorial construction; no such event is in the
      list. Keep it, but prop it up with the three materials of 2000 (section 3).
 
   5) "July 2026 - 85 million units" sits in the list between May and August
@@ -1887,7 +1892,7 @@ Thirty-two beats on the wall today; twenty of them carry a detail page.
      2019 BruxZir Factory, 2019 Guiding Leaders.
      Список неполный или даты надо перепроверить?
 
-  4) 2000 «R&D IS BORN» — наша редакторская конструкция, такого
+  4) 2000 «RESEARCH AND DEVELOPMENT» — наша редакторская конструкция, такого
      события в списке нет. Оставить, но подпереть тремя материалами
      2000 года (см. раздел 3).
 
@@ -5037,7 +5042,7 @@ const WHOOSH = {
     {y:'1979',  t:'NINE LABS',          f:'ws01', g:0.80},              // recreation
     {y:'1989',  t:'NATIONAL LEADER',    f:'ws18', g:0.95, keep:true},   // ELDAR: the first one he kept
     {y:'1993',  t:'',                   f:'ws03', g:0.95},              // recreation, tier 1
-    {y:'2000',  t:'R&D IS BORN',        f:'ws05', g:0.80},
+    {y:'2000',  t:'RESEARCH AND DEVELOPMENT', f:'ws05', g:0.80},
     {y:'2007',  t:'FIRST DIGITAL CASE', f:'ws01', g:0.70, keep:true},   // ELDAR: keep
     {rec:'DR',                          f:'ws03', g:0.95, keep:true},   // ELDAR: "a bomb — we will use this often"
     {y:'2009',  t:'BRUXZIR',            f:'ws07', g:0.95},              // the revolution gets the long swell
@@ -11263,11 +11268,22 @@ function drawPedestal(b, t, hero){
    the same frames, because it is standing in their row — but it is paper, not
    a photograph: a heading, a rule, and the grey suggestion of type. It is a
    working document, so it says so, and it does not pretend to be an exhibit. */
-/* ПАТЕНТНЫЙ ЛИСТ. Настенный предмет 2000 года: чертёж в рамке, как в заявке —
-   разрез коронки с выносками и номерами позиций. Номер патента НЕ печатается:
-   выдумывать его на стене выставки про настоящую компанию нельзя, а настоящего
-   у нас под рукой нет. Рисуется как doc-карточка — своей глубиной от стены и
-   через wallSX, по закону заклёпки (Эльдар, 2026-09-23). */
+/* ПАТЕНТНЫЙ ЛИСТ — ЕДИНСТВЕННЫЙ ЭКСПОНАТ 2000 ГОДА.
+   Станция про собственную науку не показывает предмет: она показывает
+   ДОКУМЕНТ. Название изобретения на листе — это и есть тезис года, поэтому со
+   стены он снят: «Own the science, so you can own the quality and the price».
+   Лист висит ровно по метке года, постамент с коронкой и лучами убран
+   (Эльдар, 2026-09-23: «всё это нужно написать в виде патента... с такой
+   печатью... патент пусть на стене прямо ровно по этой R&D метке»).
+
+   Номер патента НЕ печатается. Выдумать номер — значит поставить на стене
+   выставки про настоящую компанию ссылку на чужой настоящий документ. Вместо
+   номера — даты и правило, которые в компании действительно есть: подан в
+   2000-м, и два-три новых продукта в год с тех пор. Печать символическая, и
+   это видно: по кольцу идёт имя отдела и город, в середине — год.
+
+   Каждая строка ВПИСЫВАЕТСЯ измерением, а не долей ширины на глаз: на этом
+   листе уже один раз вылезла шапка (qa/lint.mjs R1). */
 function drawPatentCard(b){
   const d = b.patent;
   const wz = (segAt(b.x).tz || wallZAt(b.x)) - 12, kk = k(wz);
@@ -11276,46 +11292,94 @@ function drawPatentCard(b){
   const w = d.w * kk * SS, h = w * 1.28;
   const cy = py(d.cy, kk);
   if (ax < -w * 2 || ax > W + w * 2) return;
+  const SER = '"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+  const SAN = '"Helvetica Neue", Arial, sans-serif';
+  /* ставит кегль и разрядку и ужимает их ВМЕСТЕ, пока строка не влезет:
+     разрядка входит в измеренную ширину, поэтому мерить надо после неё */
+  const fit = (txt, maxW, size, track, weight, fam) => {
+    let fs = size, tr = track;
+    for (let i = 0; i < 7; i++){
+      ctx.font = `${weight ? weight + ' ' : ''}${fs.toFixed(2)}px ${fam}`;
+      try { ctx.letterSpacing = tr.toFixed(2) + 'px'; } catch(e){}
+      const tw = ctx.measureText(txt).width;
+      if (tw <= maxW) break;
+      const f = maxW / tw; fs *= f; tr *= f;
+    }
+    return fs;
+  };
+  const clearTrack = () => { try { ctx.letterSpacing = '0px'; } catch(e){} };
+
   ctx.save();
   ctx.translate(ax, cy);
   ctx.rotate((d.rot || 0) * Math.PI / 180);
+
   // рамка, стекло, бумага
-  ctx.shadowColor = 'rgba(0,0,0,0.42)'; ctx.shadowBlur = 12 * kk * SS; ctx.shadowOffsetY = 5 * kk * SS;
-  ctx.fillStyle = '#e9e7e1';
+  ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14 * kk * SS; ctx.shadowOffsetY = 6 * kk * SS;
+  ctx.fillStyle = '#e7e4dc';
   ctx.fillRect(-w/2, -h/2, w, h);
   ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-  const pad = w * 0.05;
-  ctx.fillStyle = '#fbfaf5';
+  const pad = w * 0.045;
+  const pg = ctx.createLinearGradient(0, -h/2, 0, h/2);
+  pg.addColorStop(0, '#fdfcf6'); pg.addColorStop(1, '#f2eee1');
+  ctx.fillStyle = pg;
   ctx.fillRect(-w/2 + pad, -h/2 + pad, w - pad*2, h - pad*2);
-  const ix = -w/2 + pad*2.2, iw = w - pad*4.4;
-  // шапка
-  /* ШАПКА ВПИСЫВАЕТСЯ В ЛИСТ, А НЕ ВЫЛЕЗАЕТ ЗА НЕГО. Кегль и разрядка были
-     заданы долями ширины листа на глаз, и при разрядке строка вылезала за
-     оба края (Эльдар, 2026-09-23). Теперь строка МЕРЯЕТСЯ и ужимается до
-     ширины наборного поля: разрядка входит в измерение, поэтому считать надо
-     после того, как она выставлена. */
-  ctx.fillStyle = 'rgba(48,52,58,0.80)';
+  // печатная рамка документа — двойная линейка, как на бланке
+  const bx = -w/2 + pad*1.9, by = -h/2 + pad*1.9, bw2 = w - pad*3.8, bh2 = h - pad*3.8;
+  ctx.strokeStyle = 'rgba(46,50,56,0.55)';
+  ctx.lineWidth = Math.max(1, w*0.006); ctx.strokeRect(bx, by, bw2, bh2);
+  ctx.lineWidth = Math.max(1, w*0.002); ctx.strokeRect(bx + w*0.012, by + w*0.012, bw2 - w*0.024, bh2 - w*0.024);
+
+  const ix = bx + w*0.045, iw = bw2 - w*0.09;
+  let y = by + w*0.075;
+
+  // ── шапка ──
+  ctx.fillStyle = 'rgba(40,44,50,0.88)';
   ctx.textAlign = 'center';
-  {
-    const HEAD = 'UNITED STATES PATENT';
-    let fs = w * 0.058, tr = w * 0.020;
-    for (let i = 0; i < 6; i++){
-      ctx.font = `600 ${fs.toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;
-      try { ctx.letterSpacing = tr.toFixed(2) + 'px'; } catch(e){}
-      const tw = ctx.measureText(HEAD).width;
-      if (tw <= iw) break;
-      const f = iw / tw;
-      fs *= f; tr *= f;
-    }
-    ctx.fillText(HEAD, 0, -h/2 + pad*3.0);
-    try { ctx.letterSpacing = '0px'; } catch(e){}
+  fit('UNITED STATES PATENT', iw, w*0.056, w*0.022, '600', SAN);
+  ctx.fillText('UNITED STATES PATENT', 0, y);
+  clearTrack();
+  y += w*0.030;
+  ctx.strokeStyle = 'rgba(46,50,56,0.5)'; ctx.lineWidth = Math.max(1, w*0.004);
+  ctx.beginPath(); ctx.moveTo(ix, y); ctx.lineTo(ix + iw, y); ctx.stroke();
+
+  // ── строка заявителя и даты ──
+  y += w*0.042;
+  ctx.fillStyle = 'rgba(60,64,70,0.75)';
+  ctx.textAlign = 'left';
+  fit('James R. Glidewell Dental Ceramics · Irvine, California', iw*0.72, w*0.030, 0, '', SER);
+  ctx.fillText('James R. Glidewell Dental Ceramics · Irvine, California', ix, y);
+  ctx.textAlign = 'right';
+  fit('Filed 2000', iw*0.26, w*0.030, 0, '', SER);
+  ctx.fillText('Filed 2000', ix + iw, y);
+
+  // ── название изобретения: это и есть тезис года ──
+  y += w*0.052;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(28,32,38,0.92)';
+  const TITLE = ['OWN THE SCIENCE,', 'SO YOU CAN OWN THE', 'QUALITY AND THE PRICE'];
+  let ts = w*0.072, tt = w*0.006;
+  for (const ln of TITLE) ts = Math.min(ts, fit(ln, iw*0.94, ts, tt, '600', SER));
+  for (const ln of TITLE){
+    fit(ln, iw*0.94, ts, tt, '600', SER);
+    ctx.fillText(ln, 0, y);
+    y += ts * 1.24;
   }
-  ctx.fillStyle = 'rgba(48,52,58,0.45)';
-  ctx.fillRect(ix, -h/2 + pad*3.7, iw, Math.max(1, w*0.009));
-  // ЧЕРТЁЖ: коронка в разрезе — облицовка снаружи, колпачок внутри
+  clearTrack();
+
+  /* ── ПОЛОСЫ ЛИСТА. Всё, что ниже заголовка, делится на полосы ЗАРАНЕЕ, и
+     каждая вещь живёт в своей. Сперва чертёж был нарисован «на глаз» от
+     середины — и залез на заголовок, а выноски ушли за край листа на стену
+     (Эльдар увидел сразу). Масштаб чертежа теперь берётся из меньшего: что
+     позволяет ширина набора и что позволяет высота полосы. */
+  const restTop = y + w*0.020;
+  const restBot = by + bh2 - w*0.085;
+  const figH = (restBot - restTop) * 0.50;
+  const figCy = restTop + figH * 0.46;
+  const S2 = Math.min(iw / 205, figH / 175);
+
+  // ── FIG. 1 — коронка в разрезе ──
   ctx.save();
-  ctx.translate(0, -h*0.06);
-  const S2 = w * 0.0042;
+  ctx.translate(0, figCy);
   ctx.scale(S2, S2);
   const tooth = (sx, sy) => {
     ctx.save(); ctx.scale(sx, sy);
@@ -11331,42 +11395,106 @@ function drawPatentCard(b){
     ctx.closePath();
     ctx.restore();
   };
-  ctx.lineWidth = 2.2 / S2 * (w * 0.0042);
-  ctx.strokeStyle = 'rgba(40,44,50,0.85)';
-  ctx.lineWidth = 2.2;
-  tooth(1, 1); ctx.stroke();
-  tooth(0.74, 0.68); ctx.stroke();
-  // штриховка сечения между контурами
   ctx.save();
   ctx.beginPath(); tooth(1, 1); ctx.clip();
-  ctx.strokeStyle = 'rgba(40,44,50,0.30)'; ctx.lineWidth = 1;
-  for (let hx = -120; hx < 120; hx += 7){
-    ctx.beginPath(); ctx.moveTo(hx, -70); ctx.lineTo(hx + 70, 70); ctx.stroke();
+  ctx.strokeStyle = 'rgba(36,40,46,0.26)'; ctx.lineWidth = 1;
+  for (let hx = -130; hx < 130; hx += 8){
+    ctx.beginPath(); ctx.moveTo(hx, -75); ctx.lineTo(hx + 75, 75); ctx.stroke();
   }
   ctx.restore();
-  // выноски с номерами позиций
-  ctx.strokeStyle = 'rgba(40,44,50,0.70)'; ctx.lineWidth = 1.2;
-  ctx.fillStyle = 'rgba(40,44,50,0.85)';
-  ctx.font = '13px "Helvetica Neue", Arial, sans-serif';
+  ctx.strokeStyle = 'rgba(36,40,46,0.9)'; ctx.lineWidth = 2.4;
+  tooth(1, 1); ctx.stroke();
+  tooth(0.74, 0.68); ctx.stroke();
+  ctx.strokeStyle = 'rgba(36,40,46,0.75)'; ctx.lineWidth = 1.1;
+  ctx.fillStyle = 'rgba(36,40,46,0.9)';
+  ctx.font = '15px ' + SAN;
   ctx.textAlign = 'left';
   const lead = (x0, y0, x1, y1, n) => {
     ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
-    ctx.beginPath(); ctx.arc(x0, y0, 2, 0, 7); ctx.fill();
-    ctx.fillText(n, x1 + 4, y1 + 4);
+    ctx.beginPath(); ctx.arc(x0, y0, 2.4, 0, 7); ctx.fill();
+    ctx.fillText(n, x1 + 6, y1 + 5);
   };
-  lead(-46, -14, -92, -40, '10');
-  lead(-24, 6, -92, 34, '12');
-  lead(44, 22, 74, 52, '14');
+  lead(-47, -16, -84, -40, '10');
+  lead(-22, 10, -84, 34, '12');
+  lead(45, 26, 66, 52, '14');
   ctx.restore();
-  // призрак текста под чертежом
-  const rows = [0.94, 0.78, 0.88, 0.61, 0.90, 0.72];
-  let ry = h/2 - pad*2.2 - h*0.052*rows.length;
-  for (const r of rows){
-    ctx.fillStyle = 'rgba(70,74,80,0.26)';
-    ctx.fillRect(ix, ry, iw * r, Math.max(1, w*0.013));
-    ry += h * 0.052;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(60,64,70,0.8)';
+  fit('FIG. 1', iw*0.3, w*0.030, w*0.012, '600', SAN);
+  ctx.fillText('FIG. 1', 0, restTop + figH);
+  clearTrack();
+
+  /* ── «ОПИСАНИЕ» СЛЕВА, ПЕЧАТЬ СПРАВА. Две колонки серых линеек залезали под
+     печать; теперь текст занимает левые 58% полосы, печать стоит в правых. */
+  {
+    const specTop = restTop + figH + w*0.030;
+    const specW = iw * 0.56;
+    const rows = [0.96, 0.88, 0.94, 0.71, 0.92, 0.85, 0.63, 0.90];
+    const stepY = Math.max(w*0.020, (restBot - specTop) / (rows.length + 0.5));
+    ctx.fillStyle = 'rgba(70,74,80,0.24)';
+    let ry = specTop;
+    for (const r of rows){
+      if (ry > restBot) break;
+      ctx.fillRect(ix, ry, specW * r, Math.max(1, w*0.009));
+      ry += stepY;
+    }
+
+    // ── ПЕЧАТЬ ──
+    const R = Math.min(w*0.115, (restBot - specTop) * 0.46);
+    const sx = ix + iw - R*1.02, sy2 = (specTop + restBot) / 2;
+    ctx.save();
+    ctx.translate(sx, sy2);
+    ctx.fillStyle = 'rgba(126,42,38,0.13)';
+    ctx.beginPath();
+    for (let i = 0; i < 72; i++){
+      const a = i / 72 * Math.PI * 2, rr = R * (i % 2 ? 1 : 0.955);
+      ctx[i ? 'lineTo' : 'moveTo'](Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(126,42,38,0.55)';
+    ctx.lineWidth = Math.max(1, w*0.005);
+    ctx.beginPath(); ctx.arc(0, 0, R*0.90, 0, 7); ctx.stroke();
+    ctx.lineWidth = Math.max(1, w*0.002);
+    ctx.beginPath(); ctx.arc(0, 0, R*0.80, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, R*0.50, 0, 7); ctx.stroke();
+    const ring = (txt, radius, from, to, size, flip) => {
+      ctx.font = `600 ${size.toFixed(2)}px ${SAN}`;
+      ctx.textAlign = 'center';
+      const step = (to - from) / Math.max(1, txt.length - 1);
+      for (let i = 0; i < txt.length; i++){
+        ctx.save();
+        ctx.rotate(from + step * i);
+        ctx.translate(0, flip ? radius : -radius);
+        if (flip) ctx.rotate(Math.PI);
+        ctx.fillText(txt[i], 0, 0);
+        ctx.restore();
+      }
+    };
+    ctx.fillStyle = 'rgba(126,42,38,0.72)';
+    ring('RESEARCH AND DEVELOPMENT', R*0.855, -Math.PI*0.60, Math.PI*0.60, R*0.135, false);
+    ring('IRVINE  CALIFORNIA', R*0.855, -Math.PI*0.28, Math.PI*0.28, R*0.135, true);
+    ctx.save();
+    ctx.scale(R*0.0062, R*0.0062);
+    ctx.strokeStyle = 'rgba(126,42,38,0.75)'; ctx.lineWidth = 5;
+    tooth(0.62, 0.62); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = 'rgba(126,42,38,0.85)';
+    ctx.textAlign = 'center';
+    fit('2000', R*0.8, R*0.26, R*0.04, '700', SAN);
+    ctx.fillText('2000', 0, R*0.40);
+    clearTrack();
+    ctx.restore();
   }
+
+  // ── нижняя строка: правило, которое в компании действительно есть ──
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(60,64,70,0.7)';
+  const FOOT = 'Renewed every year since — two or three new products a year';
+  fit(FOOT, iw*0.62, w*0.028, 0, '', SER);
+  ctx.fillText(FOOT, ix, by + bh2 - w*0.030);
+
   ctx.restore();
+
   if (d.cap){
     const seg = segAt(b.x);
     ctx.save();
@@ -12830,7 +12958,7 @@ const STUDY_BY_TITLE = {
   "SILENT NITE": "In 1996, Glidewell introduced the Silent Nite sleep appliance — a custom, dentist-delivered oral device that gently advances the lower jaw to keep the airway open during sleep, reducing snoring and mild obstructive sleep apnea. It was deliberately built to be comfortable, adjustable, and inexpensive enough for any general dentist to fit, not just sleep specialists.\n\n## Why it matters\n\nEvery previous Glidewell product fixed something already broken: a worn tooth, a missing tooth, a failed restoration. Silent Nite is different — it keeps a problem from starting. It is prevention, not repair. That is a quiet but real shift in what a dental lab believes it is for: not only rebuilding mouths, but protecting sleep, breathing, and health.\n\n## Two or three a year\nSilent Nite is the first clear instance of a rule Jim set for his research department and has never relaxed: bring two or three viable new products to market every year — a sleep appliance, a material, a process that simplifies a day in the practice. “Do not rely on vendors' new products to be your strategy for future growth. They don't care about your future; they care about theirs.”\n\n## The same year, at sea\n1996 was also the year the company sat under a federal labour lawsuit for sixteen months, drawn out by its own attorney's billable hours, and Jim took three months on a boat to ask whether the effort was worth it. The answer was yes, with two lessons: manage your own lawyers, and keep everything you can — legal, design, food, cleaning — inside the company, where people's interests are the company's interests. Glidewell has had its own attorneys on staff ever since.",
   "CHAIRSIDE PERSPECTIVES": "In August 1998 Glidewell began mailing a modest clinical newsletter to its dentist customers — “Chairside Perspectives” It was short, practical, and unglamorous: proven tips and techniques shared by the lab's own on-staff clinicians, the dentists who practiced inside what was becoming the nation's largest dental laboratory. It ran in this newsletter form for roughly eight years before outgrowing the format.\n\n## Why it matters\n\nA few mailed pages did not move the industry in 1998. What matters is what it seeded — the founding instinct that Glidewell should not only make restorations but teach the dentist how to use them. That instinct is the through-line from the 1980 “education as a bond” beat to everything that follows. Reach, even small reach, was being converted into trust.\n\nThe newsletter outgrew its own format and became Chairside magazine, which is edited today by Neil Park — a dentist who ran his own practice for twelve years, then spent nineteen at Nobel Biocare building the courses that teach dentists a new technique. The job the 1998 mailing invented is still the job.\n\n## The persona on paper\nJim's business cards carry his photograph; so, by rule, do everyone's at Glidewell. People do not throw away a photograph, he reasons, and a customer who knows you only from print keeps the image you gave them. He prefers it that way — he does not meet customers if he can help it, because “if you meet your customers, you have the ability to ruin their perception of who you are.” A teaching publication is the same idea at scale: the laboratory speaks to the dentist in its own voice, on its own terms, every month.\n\n## What the channel became\nToday the company has more than two hundred and fifty training videos on YouTube, a weekly online study club, live courses, a flagship symposium and the magazine Neil Park edits — and the newsletter of 1998 is where that voice first learned to speak to a clinician at the chair.",
   "IN-CERAM ZIRCONIA": "Zirconia came into the laboratory quietly, a full decade before it changed everything. In-Ceram Zirconia, an alumina-zirconia core material from Vita, arrived in the late 1990s as one of several ways to build a crown without metal: a strong ceramic substructure, veneered with porcelain, in place of the cast coping. It was slow, expensive and technique-sensitive, and it did not take over. But it put the word in the room.\n\n## A glass crown and a potato\nJim's own search for a metal-free, affordable crown had begun earlier, at a medical products show in Anaheim in the early 1990s, where he met a materials specialist from Specialty Glass in Florida named Dick Pettigrew. Jim's idea was a castable dental glass for the poor world: a wax pattern, a burn-out, a lump of glass in the sprue melted with an acetylene torch — and half a potato pressed over the hot ring, so that its steam forced the glass into the mould. “This process may sound silly, but it actually works perfectly.” They worked on it for a year with a research technician, Al Botkin. Then a sixty-five-page agreement arrived that made Glidewell a mere distributor and gave the glass company half of Jim's distribution and all of the manufacturing. He did not sign. Pettigrew's three patents went to Pentron, Pentron's to Ivoclar, and with years of development Ivoclar launched IPS e.max — the esthetic monolithic crown the market had been waiting for.\n\n## The lesson, and the lineage\n“This experience taught me to develop all of my ‘inspirations’ in-house.” Glidewell has had full-time patent attorneys on staff ever since. And the line from here runs straight: Dicor's cast glass in the early 1980s, Coors' alumina Cerestore, In-Ceram's zirconia core, e.max's lithium disilicate — every one an attempt at a crown made of a single material. The one that finally did it, in 2009, was full-contour zirconia, milled in one piece, and it came out of this laboratory.\n\n## Meanwhile, on the night shift\nIn 1999 a Bosnian refugee named Dzevad Ceranic joined the lab as a dental technician on nights. He would not meet the owner for years — until a dinner at a friend's house in Newport Beach turned out to be Jim's house. “Where do you work?” “I work for you, sir. On the third floor.” “That's where I work too!” Today he is vice-president of laboratory operations.\n\n“Monolithic is the new standard.” — Jim Glidewell, Constant Change",
-  "R&D IS BORN": "Around the turn of the 2000s Glidewell stopped relying on outside vendors for its key materials and began building its own Research & Development. Two moments pushed Jim there. First, a bad experience betting on an outside material — Artglass, a lab veneering composite — taught him that if you don't own the material, you don't own your quality or your future. Second, a conversation with independent researcher Dr. Rella Christensen about a “Volkscrown” — a people's crown, affordable to everyone, that performed like cast gold. Together they pointed at one conclusion: to make the best dentistry affordable and dependable, Glidewell needed its own science.\n\n## Why it matters\n\nEvery later breakthrough — the CAD/CAM build-out of 2002–2006, BruxZir (2009), the automated factory (2019), AI-driven design — grows out of this one decision to build in-house R&D. It is the structural reason the company can keep making the best affordable: it controls the materials and the process end to end. By about 2000 Glidewell had already developed dozens of materials and lab services and was expanding the R&D team that today numbers 150+ people, including a dozen-plus PhDs.\n\nWhat the decision bought first was the machine. The milling laboratory built out from 2002, and the crown that comes out of it in 2009, are this same decision carried through; the mill has a station of its own two years along this wall.\n\n## The structure arrives with the science\nThe same years brought the company its first professional back office. After the dot-com bust of 2000 Rob Grice, who had run mergers with Cisco, walked up to Jim at a neighbourhood barbecue and asked to be considered for CFO; Jim took him to the Fort Lauderdale boat show for three days to watch how he handled people, and hired him. Grice built the HR, IT and R&D leadership that is still in place, and was Jim's closest friend until his death in 2010. “At the time he joined us, we were an overgrown dental laboratory lacking some of the sophisticated management systems necessary to grow a lot larger.”\n\n## The rule\nResearch at Glidewell is not a department that waits for a vendor's catalogue. Jim's standing instruction is two or three viable products a year, an R&D budget on the order of eight per cent of sales, and everything developed inside the building. Thirty patents have been issued, thirty more are pending — “mostly patents that allow us to manufacture without having someone else's patents preventing us.” The crown that made the company's name carries no patent at all.\n\n“Make sure you have a research and development department that brings two or three new products to market every year.” — Jim Glidewell, Constant Change",
+  "RESEARCH AND DEVELOPMENT": "Around the turn of the 2000s Glidewell stopped relying on outside vendors for its key materials and began building its own Research & Development. Two moments pushed Jim there. First, a bad experience betting on an outside material — Artglass, a lab veneering composite — taught him that if you don't own the material, you don't own your quality or your future. Second, a conversation with independent researcher Dr. Rella Christensen about a “Volkscrown” — a people's crown, affordable to everyone, that performed like cast gold. Together they pointed at one conclusion: to make the best dentistry affordable and dependable, Glidewell needed its own science.\n\n## Why it matters\n\nEvery later breakthrough — the CAD/CAM build-out of 2002–2006, BruxZir (2009), the automated factory (2019), AI-driven design — grows out of this one decision to build in-house R&D. It is the structural reason the company can keep making the best affordable: it controls the materials and the process end to end. By about 2000 Glidewell had already developed dozens of materials and lab services and was expanding the R&D team that today numbers 150+ people, including a dozen-plus PhDs.\n\nWhat the decision bought first was the machine. The milling laboratory built out from 2002, and the crown that comes out of it in 2009, are this same decision carried through; the mill has a station of its own two years along this wall.\n\n## The structure arrives with the science\nThe same years brought the company its first professional back office. After the dot-com bust of 2000 Rob Grice, who had run mergers with Cisco, walked up to Jim at a neighbourhood barbecue and asked to be considered for CFO; Jim took him to the Fort Lauderdale boat show for three days to watch how he handled people, and hired him. Grice built the HR, IT and R&D leadership that is still in place, and was Jim's closest friend until his death in 2010. “At the time he joined us, we were an overgrown dental laboratory lacking some of the sophisticated management systems necessary to grow a lot larger.”\n\n## The rule\nResearch at Glidewell is not a department that waits for a vendor's catalogue. Jim's standing instruction is two or three viable products a year, an R&D budget on the order of eight per cent of sales, and everything developed inside the building. Thirty patents have been issued, thirty more are pending — “mostly patents that allow us to manufacture without having someone else's patents preventing us.” The crown that made the company's name carries no patent at all.\n\n“Make sure you have a research and development department that brings two or three new products to market every year.” — Jim Glidewell, Constant Change",
   "PLASTIC INJECTION": "Around 2000 the laboratory started making its own plastic: the case boxes the impressions travel in, articulators, the small supplies a lab consumes by the thousand. It is a footnote as a product and a headline as a principle. Glidewell is vertically integrated to a degree almost no company its size attempts — it prints its own advertising, designs and builds its own laboratory interiors, machines its own titanium parts, mixes its own zirconia, runs its own cafeterias and employs its own attorneys.\n\n## Time compression\nJim's argument for it is not cost but speed. Expand into ten thousand square feet the normal way — interview designers, wait for the good one to finish other jobs, put the cabinets out to bid, wait for the winning shop to fit you in — and six months pass before the space earns anything. His own designers and cabinet shop do it in two and a half. “Vertical integration is the mother of time compression. It allows you to accomplish everything faster and at less expense.” He concedes it does not always guarantee quality — sometimes it gives what he calls adequate results — but it gives supercharged growth, and “speed to market is a product.”\n\n## What in-house looks like\nThe company's 2019 headcount shows the shape of it: 2,851 people in dental production — and 350 in logistics, 342 in facilities, 254 in engineering and technology, 196 in manufacturing, 107 in advertising and marketing, 75 in research, 66 in accounting, 57 in education. Do you think, Jim asks, that McDonald's hires outside designers to build fast-food restaurants?\n\n## The other side of the ledger\nOwning the chain has costs he does not hide: six hundred cars parked off-site every month, eight hundred and fifty people on a night shift, a German laboratory losing money against a market where every dentist employs a technician of his own. The polar bear, as the old printer salesman told him, will not make it in Panama.\n\n“Forget about virtual corporations. Build a vertical corporation.” — Jim Glidewell, Constant Change",
   "WEB · CLINICAL VOICE": "The first Glidewell Laboratories website went live in 2001, and the same years gave the company a clinical voice on camera: Dr. Michael DiTolla, a working dentist who joined around 2001 and became the face of its education — and, eight years later, the on-camera champion of BruxZir.\n\n## Perception is reality\nJim had been managing the company's image on paper for twenty years, and the web was paper that reached everyone at once. His rules for print carried straight over: colour, never black and white; the right-hand page, never the left; the price in the advertisement, always — “tell potential customers the price upfront and they will be essentially prequalified when they contact you”; the logo bottom right, where the eye leaves the page. Seventy per cent of readers decide on the headline, the photograph and the caption; the body copy is for the other thirty.\n\n## Why a lab speaks\nMarketing, in Jim's telling, is not a cost centre but the reason the jobs exist. “All of my employees should recognize that their jobs might not be here if it weren't for our marketing team's execution in crafting our story and delivering it to dentists nationwide.” Where the company once served five hundred dentists it now serves fifty-eight thousand — around forty per cent of the profession — and it picks up some eight thousand new customers a year in a country that graduates forty-five hundred dentists. The budget he recommends to any laboratory is four to ten per cent of sales, and he spends at the top of it.\n\n## The addresses today\nThe company Jim built keeps its front door on the web: the sites, the shop and the social channels are linked below, each opening in its own window.\n\n“Perception is reality.” — Jim Glidewell, Constant Change",
   "CAD/CAM ENTERS THE LAB": "In the early 2000s the laboratory's half of the crown went digital. Instead of carving a coping in wax and casting it, a technician scanned the stone model, designed the coping on a screen and milled it out of a block. Nothing changed at the dentist's end — the impression was still taken in silicone, poured into a model and posted in a box — but inside the building the machine had arrived.\n\n## Who got there first, and it was not Glidewell\nThe idea is older than the company's use of it. François Duret designed the first dental CAD/CAM in the 1970s; in 1985 Werner Mörmann and Marco Brandestini put CEREC into a dental office in Zurich and milled a restoration while the patient sat in the chair. Nobel Biocare's Procera made the CAD/CAM ceramic substructure a commercial product in the mid-1990s, and around 2001 milled-zirconia frameworks arrived from 3M ESPE (Lava), Dentsply (Cercon) and Nobel (Procera Forte). Those outside systems opened the door.\n\n## What Glidewell did\nIt walked through early, and then built its own. As one of the largest laboratories in the country it took up the outside systems around 2002 — Cercon and Wol-Ceram — and in about 2004 hired an engineer from 3D Systems, Mervyn Rudgley, to lead digital manufacturing, with one explicit brief: a zirconia substructure at the price of a PFM. In 2006 that became Prismatik CZ, the company's own milling-and-software system paired with a 3Shape scanner. A clever trick — milling thin copings from a soft, bisque-fired block and sintering them afterwards — let it skip costly diamond tooling and drive the cost down. The angle was never the newest technology; it was the best one at a price a working dentist could say yes to.\n\n## Why this is the hinge\nThe first half of this hall is a craft: many skilled hands, several weeks, one restoration. Everything after 2009 is a process: a file, a mill, a line. This is where the one becomes the other. Without the quiet build-out of these years there is no BruxZir in 2009 and no automated factory in 2019 — the company would have had to buy its revolution from somebody else, at somebody else's price.\n\n## And what it still was not\nThe model on the scanner's table was a physical model, poured from a silicone impression that had travelled to Orange County in a box. Digital began at the laboratory's door. Five years later it would begin in the patient's mouth — and that is the year standing next to this one.\n\n“Do things faster, better, and less expensive than the competition.” — Jim Glidewell, Constant Change",
@@ -12948,7 +13076,8 @@ const PEOPLE_MORE = {
            {src:'media/azernikov_02.mp4', label:'on why the PFM could not be machined'},
            {src:'media/azernikov_03.mp4', label:'on CAD/CAM'},
            {src:'media/azernikov_04.mp4', label:'on full digitalization'},
-           {src:'media/azernikov_05.mp4', label:'on monolithic BruxZir'}]},   // Eldar: no caption on the first one
+           {src:'media/azernikov_05.mp4', label:'on monolithic BruxZir'},
+           {src:'media/azernikov_06.mp4', label:'on the case database'}]},   // Eldar: no caption on the first one
   farran: {name:'Howard Farran', role:'Founder, Dentaltown; host, “Dentistry Uncensored”', bio:['Dr. Howard Farran, DDS, MBA, is dentistry’s megaphone: founder of Dentaltown (the profession’s town square — 200K+ dentists) and host of “Dentistry Uncensored”, which he has run to 1,700+ episodes and still publishes EVERY WEEKDAY (episodes #1706–1709 in June 2026 alone).']},
   feuerstein: {name:'Paul Feuerstein, DMD', role:'GP (45+ yrs); Editor-in-Chief, Dentistry Today; dental-tech authority', bio:['Added 2026-07-24 (Eric\'s addition, from the planning meeting) — one of the two KOLs who, per Eric, are now free of a practice on the road and can travel to the Irvine campus for an interview — possibly alongside Jim (idea only — NOT yet agreed with Jim; don\'t promise it). Who he is.']},
   brenneise: {name:'Rob Brenneise', role:'Chief Growth Officer, Glidewell — since Dec 2023 · ex-SVP Sales, Marketing & Education · ex-VP Sales, CAD/CAM & glidewell.io · ~30 yrs in dental sales before that: DenMat 1995-2012, Experience Dental Studio, Dental Lab Holdings, VIAX', bio:['Rob Brenneise is Glidewell\'s Chief Growth Officer, in that role since December 2023.']},
@@ -13143,7 +13272,7 @@ function flowText(text, x, y, maxW, lineH, o){
    cannot drift. */
 const BEAT_PEOPLE = {
   '1970|FOUNDED': ['jim'],
-  '2000|R&D IS BORN': ['rella'],
+  '2000|RESEARCH AND DEVELOPMENT': ['rella'],
   '2001|WEB \u00b7 CLINICAL VOICE': ['ditolla'],
   /* DiTolla снят с этой страницы: интервью у него не брали, в тексте статьи
      он не упоминается, а в «People of this moment» стоял — и выходило, что зал
@@ -13181,7 +13310,7 @@ const STUDY_PHOTOS_BY_TITLE = {
      Christensen — her own portrait has been in the repository all along, under
      'rella', and the wall photograph at the beat already uses it. Eldar caught
      it on the page itself (2026-09-22, «???» over the picture). */
-  'R&D IS BORN': [{img: 'rella', cap: 'Dr. Rella Christensen'}],
+  'RESEARCH AND DEVELOPMENT': [{img: 'rella', cap: 'Dr. Rella Christensen'}],
 };
 /* люди страницы пролёта: Азерников назван в её тексте — пустых отсылок здесь
    не бывает (Эльдар, 2026-09-22) */
@@ -13201,7 +13330,10 @@ const STUDY_MEDIA_BY_TITLE = {
   'SCANNERS \u00b7 SCALE': [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2010s_patel.mp4', label:'on scanners in every office'}],
   'HAHN TAPERED IMPLANT': [{name:'Dr. Randolph Resnik', img:'resnik', pid:'resnik', src:'media/resnik_01.mp4', label:'on implants leaving the specialty'}],
   'GLIDEWELL.IO': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_09.mp4', label:'on the Symposium'}],
-  '2018': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_01.mp4', label:''}],
+  /* на 2018 стоял azernikov_01 — общий рассказ о себе; страница про сеть,
+     обученную на архиве случаев, и голос ей нужен про этот архив (Эльдар,
+     2026-09-23). Ложится в поток после первого абзаца, как на фабрике. */
+  '2018': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_06.mp4', label:'on the case database'}],
   /* на фабрике стоял azernikov_01 — общий рассказ о себе; Эльдар просит
      поставить новое видео, где он рассказывает эту историю (2026-09-23) */
   'BRUXZIR FACTORY': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_03.mp4', label:'on CAD/CAM'}],
