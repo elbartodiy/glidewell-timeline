@@ -7483,8 +7483,18 @@ function drawRec2Front(t){
   eg.addColorStop(0.72, 'rgba(198,224,240,0.28)');
   eg.addColorStop(0.94, 'rgba(206,232,247,0.55)');
   eg.addColorStop(1,    'rgba(24,36,48,0.62)');
+  /* КРОМКА ИДЁТ ПО БОЧКЕ, А НЕ ПОПЕРЁК НЕЁ. Она была прямоугольником: прямая
+     хорда резала обе эллиптические дуги, и по краям плиты повисали два
+     квадратных угла, которых у цилиндра быть не может. Теперь верх кромки —
+     нижняя дуга самой плиты, низ — нижняя дуга её изнанки, а замыкают их две
+     вертикали на крайних точках (Эльдар увидел это при наезде, 2026-09-23). */
   ctx.fillStyle = eg;
-  ctx.fillRect(nx - capRx, plY, capRx * 2, capT);
+  ctx.beginPath();
+  ctx.ellipse(nx, plY, capRx, capRy, 0, 0, Math.PI);
+  ctx.lineTo(nx - capRx, plY + capT);
+  ctx.ellipse(nx, plY + capT, capRx, capRy, 0, Math.PI, 0, true);
+  ctx.closePath();
+  ctx.fill();
   ctx.fillStyle = 'rgba(238,249,255,0.96)';
   ctx.beginPath(); ctx.ellipse(nx, plY, capRx, capRy, 0, 0, 7); ctx.fill();
   ctx.strokeStyle = 'rgba(255,255,255,0.92)'; ctx.lineWidth = 1.3 * SS;
@@ -7501,7 +7511,14 @@ function drawRec2Front(t){
        a screen switching itself off while you could still plainly see it. It
        dims as you leave — it never goes dark. */
     const lit = 0.34 + 0.66 * ease;
-    const stripY = py(730, kk), sh2 = 19 * kn * SS;
+    /* ЗАКЛЁПКА. Окно врезано в колонну — значит и висеть оно должно на её
+       плоскости. Оно стояло на py(730, kk), то есть на глубине стены (970),
+       тогда как сама колонна живёт на ближнем плане k(-90): при наезде камеры
+       два k расходятся, и экран уползал вниз, под кромку плиты. Теперь его
+       центр — постоянный отступ от верха тумбы, в её же масштабе. 77.6 — это
+       ровно тот зазор, что был в покое: (py(730,k(970)) − plY)/(kn·SS)
+       (Эльдар: «микроэкранчик поплыл вниз», 2026-09-23). */
+    const stripY = plY + 77.6 * kn * SS, sh2 = 19 * kn * SS;
     const iw = pw - 34 * kn * SS;              // air at both sides: it is set INTO the column
     const R = (iw / 2) * 1.18;                 // the cylinder it is wrapped around
     // the line as it is written on the wall, rendered flat once
@@ -7513,8 +7530,9 @@ function drawRec2Front(t){
     const gs = state.rec2Strip.getContext('2d');
     gs.clearRect(0, 0, ow2, oh2);
     gs.textAlign = 'center';
-    gs.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
-    try { gs.letterSpacing = `${20*TRACK.label*kk*SS}px`; } catch(e){}
+    // тот же кегль, что и был в покое (20·kk·SS), но привязанный к колонне
+    gs.font = eraFont(8.66 * kn * SS, '700', SEGMENTS[3].font);
+    try { gs.letterSpacing = `${8.66*TRACK.label*kn*SS}px`; } catch(e){}
     gs.fillStyle = `rgba(150,228,255,${(0.55 + 0.42 * lit).toFixed(3)})`;
     /* A MONITOR RUNS WHETHER OR NOT YOU ARE LOOKING AT IT. The line used to be
        written once, centred, and only while the recreation was near; it is a
@@ -7623,6 +7641,19 @@ function drawRec2(t){
      line, at the block's own plane, and the block takes it from there. */
   const yBase = py(1040, k(DR_BAY_Z));
   const x0 = px(REC2_L, kk), x1 = px(REC2_R, kk);
+  /* ВЕСЬ ПРОЛЁТ ОТКРЫВАЕТ СВОЮ СТРАНИЦУ. Кликабельной была одна коронка, а
+     экран, надписи и сама панель не отзывались ни на что — посетитель жмёт в
+     «The digital revolution» и не получает ничего (Эльдар, 2026-09-23: «там
+     только на зуб нажимается»). Зона кладётся ПЕРВОЙ: hitAt перебирает список
+     с конца, поэтому коронка, которую кладут ниже по коду, по-прежнему берёт
+     своё, а всё остальное поле проваливается сюда. Жест тот же, что у коронки
+     — наезд камеры, а следом страница 2007 года: пролёт не должен отзываться
+     на палец двумя разными способами. */
+  {
+    const mid = (REC2_L + REC2_R) / 2;
+    pushHit(x0, 0, x1 - x0, yBase,
+            {type:'focus', beat: nearestBeat(mid).i, anchor: mid});
+  }
   // the luminous panel
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#dfe5ea');
@@ -12674,7 +12705,8 @@ const PEOPLE_MORE = {
          "On what comes next: \u201cConnect the clinic\u2019s systems before you make them smarter.\u201d \u201cSelf-driving companies in ten to twenty years.\u201d \u201cPeople would ask for a faster horse \u2014 until someone brings the disruption.\u201d And on why he does it at all: \u201cA crown made wrong hurts someone\u2019s quality of life. That is what drives me.\u201d"],
     quote:{q:'There\'s a lot of excitement around our work because, until now, real-world, tangible applications of GANs did not exist\u2026 To my knowledge, this is the first time anybody has generated a physical object with this technique.', src:'Chairside Magazine, Vol. 13-2 (Glidewell), 2018'},
     clips:[{src:'media/azernikov_01.mp4', label:''},
-           {src:'media/azernikov_02.mp4', label:'on why the PFM could not be machined'}]},   // Eldar: no caption on the first one
+           {src:'media/azernikov_02.mp4', label:'on why the PFM could not be machined'},
+           {src:'media/azernikov_03.mp4', label:'on CAD/CAM'}]},   // Eldar: no caption on the first one
   farran: {name:'Howard Farran', role:'Founder, Dentaltown; host, “Dentistry Uncensored”', bio:['Dr. Howard Farran, DDS, MBA, is dentistry’s megaphone: founder of Dentaltown (the profession’s town square — 200K+ dentists) and host of “Dentistry Uncensored”, which he has run to 1,700+ episodes and still publishes EVERY WEEKDAY (episodes #1706–1709 in June 2026 alone).']},
   feuerstein: {name:'Paul Feuerstein, DMD', role:'GP (45+ yrs); Editor-in-Chief, Dentistry Today; dental-tech authority', bio:['Added 2026-07-24 (Eric\'s addition, from the planning meeting) — one of the two KOLs who, per Eric, are now free of a practice on the road and can travel to the Irvine campus for an interview — possibly alongside Jim (idea only — NOT yet agreed with Jim; don\'t promise it). Who he is.']},
   brenneise: {name:'Rob Brenneise', role:'Chief Growth Officer, Glidewell — since Dec 2023 · ex-SVP Sales, Marketing & Education · ex-VP Sales, CAD/CAM & glidewell.io · ~30 yrs in dental sales before that: DenMat 1995-2012, Experience Dental Studio, Dental Lab Holdings, VIAX', bio:['Rob Brenneise is Glidewell\'s Chief Growth Officer, in that role since December 2023.']},
@@ -12914,7 +12946,10 @@ const STUDY_MEDIA_BY_TITLE = {
   'STUDY PROGRAM': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_08.mp4', label:'on education'}],
   'CHAIRSIDE PERSPECTIVES': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_06.mp4', label:'on Chairside'}],
   'PLASTIC INJECTION': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_07.mp4', label:'on vertical integration'}],
-  'FIRST DIGITAL CASE': [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2007_patel.mp4', label:'on the digital revolution'}],
+  /* Азерников на странице 2007: это та страница, которую открывает пролёт
+     Digital Revolution, и CAD/CAM — ровно его предмет (Эльдар, 2026-09-23). */
+  'FIRST DIGITAL CASE': [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2007_patel.mp4', label:'on the digital revolution'},
+                         {name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_03.mp4', label:'on CAD/CAM'}],
   'SCREW-RETAINED': [{name:'Dr. Randolph Resnik', img:'resnik', pid:'resnik', src:'media/resnik_01.mp4', label:'on implants leaving the specialty'}],
   'SCANNERS \u00b7 SCALE': [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2010s_patel.mp4', label:'on scanners in every office'}],
   'HAHN TAPERED IMPLANT': [{name:'Dr. Randolph Resnik', img:'resnik', pid:'resnik', src:'media/resnik_01.mp4', label:'on implants leaving the specialty'}],
@@ -15843,6 +15878,19 @@ async function boot(){
   const at = /[?&]at=([-\d.]+)/.exec(location.search);
   if (at){
     cam.x = parseFloat(at[1]); cam.vel = 0; cam.z = 0; cam.zTarget = 0;
+    state.mode = 'live'; state.introHold = false; state.introFade = 0;
+    state.ruleA = 1; state.idle = 0;
+  }
+  /* ?focus=<world x> does what a tap on an exhibit does: stands at it AND
+     dollies in. The focused view is where perspective errors show up — the
+     near plane and the wall plane part company as cam.z grows — and until now
+     it was the one view a script could not photograph (Эльдар, 2026-09-23). */
+  const fz = /[?&]focus=([-\d.]+)/.exec(location.search);
+  if (fz){
+    cam.x = parseFloat(fz[1]); cam.vel = 0;
+    cam.z = cam.zTarget = CFG.focusCamZ;
+    state.focusBeat = nearestBeat(cam.x).i;
+    state.focusAnchor = cam.x;
     state.mode = 'live'; state.introHold = false; state.introFade = 0;
     state.ruleA = 1; state.idle = 0;
   }
