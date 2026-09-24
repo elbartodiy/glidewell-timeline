@@ -1477,7 +1477,12 @@ const BENCH_BREAKS = [1700, 7350, 9250, 13100, 16900, 22280]
 /* 1973: no counter — the two labs stand on their own stones, the way the nine
    do at 1979, and the counters stop short of them on both sides (Eldar,
    2026-09-11). The small joint that used to sit here (3345) is gone with it. */
-const L73_W = 760;   // the pair of plinths, in world units
+/* 900, А НЕ 760. Новый рендер двух лабораторий содержит тумбы целиком, до
+   пола: от линии прилавка вниз в нём 0.665 высоты, а в зале от прилавка (700)
+   до пола (1080) — 380 единиц. Ширина, при которой эти две величины сходятся,
+   и есть 900: 900 × 0.6345 (пропорция кадра) × 0.665 = 380. Рендер не тянут —
+   под него подводят геометрию (Эльдар, 2026-09-24: «прям как есть ставь»). */
+const L73_W = 900;   // the pair of plinths, in world units
 BENCH_BREAKS.push({x: SHIFT(4400), half: L73_W / 2 + 440, l73: true});   // the counters stand well back from the two stones — Eldar hatched their ends away (2026-09-11)   // re-centred on the beat once applyCut has spaced it
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
 /* the counters stop two column-widths clear of the doorway's pilasters — on
@@ -8651,30 +8656,24 @@ function drawLabs73(){
   if (!sp) return;
   if (X73 == null){ const b = BEATS.find(b2 => b2.y === '1973'); X73 = b ? b.x : SHIFT(4400); }
   if (Math.abs(cam.x - X73) > CULL_BAY) return;
-  const kR = k(120), TOP = 0.60;                  // the stones' top, as a fraction of the render's height
+  /* 0.335 — доля высоты кадра над линией прилавка, замерена по самому файлу:
+     тумбы выходят на полную ширину на строке 417 из 1245. */
+  const kR = k(120), TOP = 0.335;
   const wR = L73_W * kR * SS, hR = wR * sp.h / sp.w;
   const yBench = py(CFG.benchY, kR), yFoot = yBench + hR * (1 - TOP);
   const xR = px(X73, kR) - wR / 2;
   if (xR > W + wR || xR + wR < -wR) return;
-  /* the render's stones are cut short of the hall's floor: the bench line to
-     the floor is 380 units here, and the render gives 40% of its height. So
-     each stone is built on down to the floor out of COPIES of its own face —
-     a band of the marble laid under the last one, each overlapping the one
-     above with a feathered edge, so the joins are soft and nothing is
-     stretched. (Eldar: "не растягивать — копировать, с нахлёстом".) */
-  const yFloor = py(1080, kR);
-  const im = spriteMip(sp, wR, hR), iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
-  const SPANS = [[51, 843], [1102, 1875]];    // the two stones, in the render's 1894 columns
-  if (yFloor > yFoot + 1){
-    for (const [a, b] of SPANS){
-      const dx0 = xR + a / 1894 * wR, dw = (b - a) / 1894 * wR;
-      const shaft = stoneShaft(im, a / 1894 * iw, (b - a) / 1894 * iw, ih, dw, yFloor - yFoot + 2);
-      ctx.drawImage(shaft, dx0, yFoot - 1);
-    }
-  }
+  /* ДОСТРОЙКА КАМНЕЙ ВНИЗ СНЯТА. Прежний рендер обрывался выше пола, и каждая
+     тумба наращивалась копиями собственной грани с нахлёстом. Новый содержит
+     их целиком — машинка стала не нужна и пририсовывала бы лишнее
+     (Эльдар, 2026-09-24). */
+  const im = spriteMip(sp, wR, hR);
   ctx.drawImage(im, xR, yFoot - hR, wR, hR);
 }
-/* A SHAFT OF STONE MADE OF ITS OWN BANDS. Takes the marble face of one stone
+/* НЕ ИСПОЛЬЗУЕТСЯ С 2026-09-24: новый рендер 1973-го содержит тумбы целиком.
+   Оставлено как готовый приём на случай следующего кадра, обрывающегося выше
+   пола, — он стоил отдельного захода и описан ниже целиком.
+   A SHAFT OF STONE MADE OF ITS OWN BANDS. Takes the marble face of one stone
    (the render's lower third, below the top lip) and lays copies of it down an
    offscreen canvas until the wanted height is filled; every copy after the
    first overlaps the one above by a quarter of its height with a feathered
@@ -9936,7 +9935,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260923-implant2';
+const ASSET_V = '20260924-labs73';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
