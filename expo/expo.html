@@ -11828,7 +11828,7 @@ function drawBookPyramid(b, t){
   const scale = (wWorld / BOOK_SPRITE.w) * kk * SS;
   const sy = py(CFG.benchY - 11, kk);
   pushHit(sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale, BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale,
-          {type:'photo', sp: BOOK_CARD, wx: b.x + b.pyr.dx, cy: CFG.benchY - 190, z: 0, w: 420,
+          {type:'photo', offer: true, sp: BOOK_CARD, wx: b.x + b.pyr.dx, cy: CFG.benchY - 190, z: 0, w: 420,
            beat: BEATS.indexOf(b)});
   const baseRow = BOOK_SPRITE.base != null ? BOOK_SPRITE.base : BOOK_SPRITE.h;
   ctx.drawImage(BOOK_SPRITE.c, sx - BOOK_SPRITE.w*scale/2, sy - baseRow*scale,
@@ -12948,10 +12948,214 @@ function drawPfmView(){
     ctx.restore();
   }
 }
+/* ═══ КНИГА, КОТОРУЮ МОЖНО ЗАБРАТЬ ═════════════════════════════════════════
+   Стопка «Constant Change» на прилавке 2022-го открывала просто карточку с
+   обложкой. Теперь рядом с карточкой стоит то, ради чего стопка там и лежит:
+   гость подносит бейдж к сканеру, и книга уезжает ему на почту.
+
+   КАК ЭТО РАБОТАЕТ. USB-сканер — это клавиатура: он «печатает» содержимое
+   кода. Поэтому на странице живёт одно невидимое поле, которое держит фокус;
+   всё, что в него прилетает, разбирается. Ловится событие input, а НЕ клавиши:
+   keydown приходит не от всякого ввода, и на стенде это уже стоило круга
+   (expo/lab/badge.html, 2026-09-23). Конец скана — тишина в 220 мс.
+
+   ЧТО УХОДИТ НАРУЖУ: ничего. Запись ложится в localStorage этой машины и
+   выгружается оттуда. Статический сайт письма слать не умеет, а слать
+   персональные данные гостей в чужой сервис без решения Эльдара нельзя. */
+const BOOK = {
+  el: null, field: 'badge', badge: '', name: '', email: '', consent: false,
+  timer: null, taps: [], done: false, hit: {},
+};
+const BOOK_KEY = 'book.queue.v1';
+const BOOK_MAIL = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+function bookQueue(){ try { return JSON.parse(localStorage.getItem(BOOK_KEY) || '[]'); } catch(e){ return []; } }
+function bookInit(){
+  if (BOOK.el) return;
+  const el = document.createElement('textarea');
+  el.setAttribute('aria-hidden', 'true');
+  el.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;width:10px;height:10px';
+  document.body.appendChild(el);
+  BOOK.el = el;
+  el.addEventListener('input', () => {
+    if (BOOK.field === 'badge'){
+      BOOK.taps.push(performance.now());
+      clearTimeout(BOOK.timer);
+      BOOK.timer = setTimeout(bookScanned, 220);
+    } else {
+      BOOK[BOOK.field] = el.value.replace(/[\r\n\t]/g, '');
+    }
+  });
+}
+function bookScanned(){
+  const txt = BOOK.el.value.replace(/[\r\n\t]+$/, '');
+  BOOK.el.value = ''; BOOK.taps = [];
+  if (!txt) return;
+  BOOK.badge = txt;
+  /* В бейдже чаще всего только номер регистрации — это норма, а не сбой:
+     адрес вводит сам гость. Но если визитка принесла имя и почту, берём. */
+  const em = txt.match(BOOK_MAIL);
+  if (em) BOOK.email = em[0];
+  const fn = txt.match(/(?:^|\n)FN:(.+)/i) || txt.match(/MECARD:N:([^;]+)/i);
+  if (fn) BOOK.name = fn[1].split(',').filter(Boolean).reverse().join(' ').trim();
+  bookFocus(BOOK.email ? 'badge' : 'email');
+}
+function bookFocus(f){
+  BOOK.field = f;
+  if (!BOOK.el) return;
+  BOOK.el.value = (f === 'badge') ? '' : (BOOK[f] || '');
+  try { BOOK.el.focus({preventScroll: true}); BOOK.el.setSelectionRange(BOOK.el.value.length, BOOK.el.value.length); } catch(e){}
+}
+function bookReset(){
+  BOOK.badge = ''; BOOK.name = ''; BOOK.email = ''; BOOK.consent = false; BOOK.done = false;
+  bookFocus('badge');
+}
+function bookSend(){
+  const q = bookQueue();
+  q.push({at: new Date().toISOString(), name: BOOK.name, email: BOOK.email,
+          badge: BOOK.badge, consent: true, sent: false});
+  try { localStorage.setItem(BOOK_KEY, JSON.stringify(q)); } catch(e){}
+  BOOK.done = true;
+  setTimeout(() => { if (state.inspect) bookReset(); }, 2600);
+}
+/* полоса предложения: рисуется справа от карточки, когда открыта книга */
+function drawBookOffer(x0, y0, wPan, e){
+  bookInit();
+  const a = Math.max(0, (e - 0.6) / 0.4);
+  if (a < 0.02) return;
+  const u = Math.max(11, Math.round(wPan * 0.030));
+  const FAM = '"Helvetica Neue", Arial, sans-serif';
+  const ink = al => `rgba(236,242,248,${(al * a).toFixed(3)})`;
+  /* каждая строка ужимается измерением — правило R1 линтера */
+  const put = (txt, x, y, size, weight, maxW, align) => {
+    let fs = size;
+    for (let i = 0; i < 6; i++){
+      ctx.font = `${weight ? weight + ' ' : ''}${fs.toFixed(1)}px ${FAM}`;
+      const tw = ctx.measureText(txt).width;
+      if (tw <= maxW) break;
+      fs *= maxW / tw;
+    }
+    ctx.textAlign = align || 'left';
+    ctx.fillText(txt, x, y);
+    return fs;
+  };
+  BOOK.hit = {};
+  /* СВОЯ ПЛИТА ПОД ПОЛОСОЙ. Сперва полоса рисовалась прямо поверх зала, и
+     сквозь неё читались его собственные надписи — «The crossover», «Physical»,
+     «Digital». Высота плиты считается из тех же шагов, что и строки ниже:
+     26.6u — сумма всех интервалов до последней подсказки. */
+  const panH = u * 26.6, panPad = u * 1.6;
+  ctx.fillStyle = `rgba(9,12,16,${(0.965 * a).toFixed(3)})`;
+  ctx.beginPath();
+  ctx.roundRect(x0 - panPad, y0 - panPad * 1.5, wPan + panPad * 2, panH + panPad * 2.2, u * 0.9);
+  ctx.fill();
+  ctx.strokeStyle = `rgba(140,205,250,${(0.20 * a).toFixed(3)})`;
+  ctx.lineWidth = 1.2 * SS;
+  ctx.beginPath();
+  ctx.roundRect(x0 - panPad, y0 - panPad * 1.5, wPan + panPad * 2, panH + panPad * 2.2, u * 0.9);
+  ctx.stroke();
+  let y = y0;
+
+  ctx.fillStyle = ink(0.95);
+  put('Take the book home', x0, y, u * 2.0, '600', wPan);
+  y += u * 2.2;
+  ctx.fillStyle = ink(0.55);
+  put(BOOK.done ? 'Thank you — it is on its way.'
+                : 'Hold your badge up to the scanner, or type your address.',
+      x0, y, u * 1.05, '', wPan);
+  y += u * 2.4;
+
+  // ── строка бейджа ──
+  const fieldH = u * 2.6;
+  const field = (label, value, key, placeholder) => {
+    const on = BOOK.field === key;
+    ctx.fillStyle = ink(0.45);
+    put(label, x0, y, u * 0.86, '600', wPan);
+    y += u * 1.15;
+    ctx.fillStyle = `rgba(255,255,255,${(0.05 * a).toFixed(3)})`;
+    ctx.beginPath(); ctx.roundRect(x0, y, wPan, fieldH, u * 0.5); ctx.fill();
+    ctx.strokeStyle = on ? `rgba(140,205,250,${(0.85*a).toFixed(3)})` : `rgba(236,242,248,${(0.22*a).toFixed(3)})`;
+    ctx.lineWidth = 1.4 * SS;
+    ctx.beginPath(); ctx.roundRect(x0, y, wPan, fieldH, u * 0.5); ctx.stroke();
+    ctx.fillStyle = value ? ink(0.95) : ink(0.35);
+    put(value || placeholder, x0 + u, y + fieldH * 0.66, u * 1.15, '', wPan - u * 2);
+    if (on && ((state.time * 2) | 0) % 2 === 0 && value){
+      ctx.font = `${(u*1.15).toFixed(1)}px ${FAM}`;
+      const cw = ctx.measureText(value).width;
+      ctx.fillStyle = ink(0.8);
+      ctx.fillRect(x0 + u + cw + 2*SS, y + fieldH*0.24, 2*SS, fieldH*0.52);
+    }
+    BOOK.hit[key] = [x0, y, wPan, fieldH];
+    pushHit(x0, y, wPan, fieldH, {type: 'bookfield', key});
+    y += fieldH + u * 1.1;
+  };
+
+  ctx.fillStyle = ink(0.45);
+  put('BADGE', x0, y, u * 0.86, '600', wPan);
+  y += u * 1.15;
+  const bH = u * 2.2;
+  ctx.fillStyle = `rgba(140,205,250,${((BOOK.badge ? 0.10 : 0.05) * a).toFixed(3)})`;
+  ctx.beginPath(); ctx.roundRect(x0, y, wPan, bH, u * 0.5); ctx.fill();
+  ctx.strokeStyle = BOOK.field === 'badge'
+    ? `rgba(140,205,250,${(0.8*a).toFixed(3)})` : `rgba(236,242,248,${(0.18*a).toFixed(3)})`;
+  ctx.setLineDash(BOOK.badge ? [] : [6*SS, 5*SS]);
+  ctx.lineWidth = 1.4 * SS;
+  ctx.beginPath(); ctx.roundRect(x0, y, wPan, bH, u * 0.5); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = BOOK.badge ? ink(0.9) : ink(0.4);
+  put(BOOK.badge || 'waiting for a scan…', x0 + u, y + bH * 0.66, u * 1.0, '', wPan - u * 2);
+  pushHit(x0, y, wPan, bH, {type: 'bookfield', key: 'badge'});
+  y += bH + u * 1.1;
+
+  field('NAME',  BOOK.name,  'name',  'Jane Doe');
+  field('EMAIL', BOOK.email, 'email', 'jane@practice.com');
+
+  // ── согласие ──
+  const boxS = u * 1.3;
+  ctx.strokeStyle = `rgba(236,242,248,${(0.4*a).toFixed(3)})`; ctx.lineWidth = 1.4 * SS;
+  ctx.beginPath(); ctx.roundRect(x0, y, boxS, boxS, u * 0.28); ctx.stroke();
+  if (BOOK.consent){
+    ctx.strokeStyle = `rgba(140,205,250,${(0.95*a).toFixed(3)})`; ctx.lineWidth = 2.4 * SS;
+    ctx.beginPath();
+    ctx.moveTo(x0 + boxS*0.22, y + boxS*0.55);
+    ctx.lineTo(x0 + boxS*0.44, y + boxS*0.76);
+    ctx.lineTo(x0 + boxS*0.80, y + boxS*0.26);
+    ctx.stroke();
+  }
+  ctx.fillStyle = ink(0.6);
+  const CON = 'Send me the book and keep my address for that.';
+  put(CON, x0 + boxS + u * 0.8, y + boxS * 0.82, u * 0.95, '', wPan - boxS - u);
+  pushHit(x0, y - u*0.3, wPan, boxS + u*0.6, {type: 'bookconsent'});
+  y += boxS + u * 1.6;
+
+  // ── кнопка ──
+  const ok = BOOK.consent && BOOK_MAIL.test(BOOK.email) && !BOOK.done;
+  const bw = wPan * 0.62, bh = u * 2.8;
+  ctx.fillStyle = ok ? `rgba(140,205,250,${(0.92*a).toFixed(3)})` : `rgba(236,242,248,${(0.10*a).toFixed(3)})`;
+  ctx.beginPath(); ctx.roundRect(x0, y, bw, bh, bh/2); ctx.fill();
+  ctx.fillStyle = ok ? `rgba(10,16,22,${(0.95*a).toFixed(3)})` : ink(0.35);
+  put(BOOK.done ? 'Sent' : 'Send me the book', x0 + bw/2, y + bh*0.65, u*1.15, '600', bw - u*2, 'center');
+  if (ok) pushHit(x0, y, bw, bh, {type: 'booksend'});
+  y += bh + u * 0.9;
+
+  // ── почему кнопка серая ──
+  if (!ok && !BOOK.done){
+    const need = [];
+    if (!BOOK_MAIL.test(BOOK.email)) need.push(BOOK.email ? 'the address looks wrong' : 'an address is needed');
+    if (!BOOK.consent) need.push('tick the box');
+    ctx.fillStyle = `rgba(232,180,92,${(0.85*a).toFixed(3)})`;
+    put(need.join(' · '), x0, y, u * 0.92, '', wPan);
+  }
+  ctx.textAlign = 'left';
+}
 function drawInspect(){
   const I = state.inspect; if (!I) return;
   I.amt += ((I.closing ? 0 : 1) - I.amt) * Math.min(1, (state.dt || 0.016) * 5);
-  if (I.closing && I.amt < 0.03){ state.inspect = null; return; }
+  if (I.closing && I.amt < 0.03){
+    /* фокус возвращается залу: скрытое поле держит его, пока открыта книга, и
+       иначе проглотило бы клавиши зала (M — музыка и прочее) */
+    if (BOOK.el) try { BOOK.el.blur(); } catch(e){}
+    state.inspect = null; return;
+  }
   const e = I.amt*I.amt*(3-2*I.amt);
   const sp = I.sp;
   // source: where the photo lives in the world right now
@@ -12967,10 +13171,13 @@ function drawInspect(){
     sw0 = sp.w*scale; sh0 = sp.h*scale;
     sx0 = px(I.wx, kk) - sw0/2; sy0 = py(I.cy, kk) - sh0/2;
   }
-  // target: filling the view
-  const th = Math.min(H*0.78, W*0.72*sp.h/sp.w);
+  /* КНИГА ДЕЛИТ ЭКРАН: карточка слева, предложение справа. Без предложения
+     карточка занимает экран целиком, как раньше. */
+  const offer = !!I.offer;
+  const maxW = offer ? W*0.46 : W*0.72, maxH = offer ? H*0.70 : H*0.78;
+  const th = Math.min(maxH, maxW*sp.h/sp.w);
   const tw = th * sp.w/sp.h;
-  const tx = W/2 - tw/2, ty = H*0.46 - th/2;
+  const tx = offer ? W*0.50 - tw : W/2 - tw/2, ty = H*0.46 - th/2;
   ctx.fillStyle = `rgba(3,2,2,${0.62*e})`;
   ctx.fillRect(0, 0, W, H);
   ctx.drawImage(sp.c, mixN(sx0,tx,e), mixN(sy0,ty,e), mixN(sw0,tw,e), mixN(sh0,th,e));
@@ -13006,6 +13213,7 @@ function drawInspect(){
     }
     ctx.restore();
   }
+  if (I.offer) drawBookOffer(W*0.545, ty + 26*SS, Math.min(W*0.33, 430*SS), e);
 }
 
 /* ARTICLES KEYED BY NAME. The map below is keyed by a beat's coordinate, and a
@@ -15078,6 +15286,11 @@ function update(dt){
       if (inp.action && typeof inp.action === 'object'){
         const aimed = hitAt(inp.action.x, inp.action.y);
         if (aimed && aimed.type === 'ext'){ try { window.open(aimed.url, '_blank'); } catch(err){} }
+        /* КНИГА: нажатия внутри предложения НЕ закрывают карточку — иначе
+           гость не успеет ни выбрать поле, ни поставить галочку. */
+        else if (aimed && aimed.type === 'bookfield') bookFocus(aimed.key);
+        else if (aimed && aimed.type === 'bookconsent') BOOK.consent = !BOOK.consent;
+        else if (aimed && aimed.type === 'booksend') bookSend();
         else state.inspect.closing = true;
       } else if (inp.action === true || Math.abs(inp.impulse) > 260) state.inspect.closing = true;
       cam.vel = 0;
@@ -15184,6 +15397,7 @@ function update(dt){
       if (aimed && aimed.type === 'doc'){
         openDoc();
       } else if (aimed && aimed.type === 'photo'){
+        if (aimed.offer){ bookInit(); bookReset(); }
         state.inspect = {sp: aimed.sp, wx: aimed.wx, cy: aimed.cy, z: aimed.z, w: aimed.w,
                          cap: aimed.cap, link: aimed.link, beat: aimed.beat, table: false, amt: 0};
         cam.vel = 0;
@@ -16387,6 +16601,36 @@ async function boot(){
     state.mode = 'live'; state.introHold = false; state.introFade = 0;
     state.ruleA = 1; state.idle = 0;
   }
+  /* ?books=csv выгружает очередь книги с ЭТОЙ машины, ?books=1 печатает её в
+     консоль. Другого выхода у неё нет: данные гостей никуда не отправляются. */
+  if (/[?&]books=/.test(location.search)) setTimeout(() => {
+    const q = bookQueue();
+    if (/books=csv/.test(location.search)){
+      const cols = ['at','name','email','badge','consent','sent'];
+      const csv = [cols.join(',')].concat(q.map(r => cols.map(c => {
+        const v = String(r[c] == null ? '' : r[c]);
+        return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+      }).join(','))).join('\n');
+      const a2 = document.createElement('a');
+      a2.href = URL.createObjectURL(new Blob(['\ufeff' + csv], {type: 'text/csv;charset=utf-8'}));
+      a2.download = 'book_requests_' + new Date().toISOString().slice(0, 10) + '.csv';
+      a2.click();
+    }
+    console.log('book queue on this machine: ' + q.length);
+    console.table ? console.table(q) : console.log(q);
+  }, 800);
+  /* ?book=1 открывает стопку «Constant Change» с полосой предложения — иначе
+     её не сфотографировать скриптом: она открывается пальцем по книге. */
+  if (/[?&]book=1/.test(location.search)) setTimeout(() => {
+    const bb = BEATS.find(x => x.pyr);
+    if (!bb) return;
+    cam.x = bb.x + bb.pyr.dx; cam.vel = 0;
+    state.mode = 'live'; state.introHold = false; state.introFade = 0; state.ruleA = 1; state.idle = 0;
+    bookInit(); bookReset();
+    state.inspect = {sp: BOOK_CARD, offer: true, wx: bb.x + bb.pyr.dx, cy: CFG.benchY - 190,
+                     z: 0, w: 420, beat: BEATS.indexOf(bb), amt: 1,
+                     cap: 'Constant Change \u00b7 Jim Glidewell'};
+  }, 600);
   /* ?film=1 запускает фильм сразу: экраны эпох — проектор, кинескопы, плазма —
      светятся только для «включённого» фильма, и без этого их нельзя ни увидеть,
      ни сфотографировать скриптом (Эльдар, 2026-09-23 — про уехавший проектор). */
