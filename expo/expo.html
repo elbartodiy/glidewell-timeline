@@ -240,7 +240,7 @@ const BEATS = [
      Пропорция проёма взята из самого снимка: 1602×870 стекла между рамами,
      то есть 1.841. */
   {x:12590, y:'1995', t:'OPERATORY · PLAYSAFE', minor:true, yLift:190,
-   win:{dx:0, w:860, top:120, z:1560},
+   win:{dx:0, w:860, top:120, z:1150},
    th:'Test where dentists work — and step beyond the crown.',
    d:'An in-house operatory opens to test materials on real patients; PlaySafe mouthguards launch.',
    wall:[], table:[],
@@ -11712,8 +11712,9 @@ function drawPatentCard(b){
    комната останавливается, и проём всегда закрыт. */
 const WIN_ASPECT = 1602 / 870;      // пропорция самого снимка
 const WIN_OPEN = 1.45;              // пропорция проёма
-const WIN_OVER = 1.32;              // насколько комната выше проёма
+const WIN_OVER = 1.70;              // насколько комната выше проёма — это и есть запас на ход
 const WIN_TH = 58;                  // толщина стены в мировых единицах
+const WIN_LOOK = 0.58;              // какая доля снимка приходится на центр проёма
 function drawWallWindow(b){
   const d = b.win;
   const im = IMGS.operatory;
@@ -11731,24 +11732,54 @@ function drawWallWindow(b){
   const u0 = bx - bw / 2, v0 = py(d.top, ki), u1 = u0 + bw, v1 = v0 + bh;
   rivet('window:' + b.x, ax, k(exhibitZ(b.x)));
 
-  // ── КОМНАТА ЗА ВНУТРЕННЕЙ РАМКОЙ ──
+  /* ПРОСВЕТ — ЭТО ПЕРЕСЕЧЕНИЕ ДВУХ РАМОК, А НЕ ВНУТРЕННЯЯ. Сквозь стену видно
+     только то, что попадает и в наружное отверстие, и во внутреннее. При
+     сильном угле внутренняя рамка уезжает за наружную, и комната, обрезанная
+     по ней одной, оказывалась ЗА рамой — картинка торчала наружу (Эльдар,
+     2026-09-24: «всё ещё торчит сама картинка, когда слишком близко к краю»). */
+  const ap0 = Math.max(x0, u0), ap1 = Math.min(x1, u1);
+  const aq0 = Math.max(y0, v0), aq1 = Math.min(y1, v1);
+  if (ap1 <= ap0 || aq1 <= aq0) return;
+
+  // ── КОМНАТА В ПРОСВЕТЕ ──
   ctx.save();
-  ctx.beginPath(); ctx.rect(u0, v0, u1 - u0, v1 - v0); ctx.clip();
-  ctx.fillStyle = '#20262b'; ctx.fillRect(u0, v0, u1 - u0, v1 - v0);
+  ctx.beginPath(); ctx.rect(ap0, aq0, ap1 - ap0, aq1 - aq0); ctx.clip();
+  ctx.fillStyle = '#20262b'; ctx.fillRect(ap0, aq0, ap1 - ap0, aq1 - aq0);
   if (im && im.el){
+    /* ХОД НЕ ОСТАНАВЛИВАЕТСЯ. Раньше отставание зажималось краем снимка: у
+       края комната замирала, а окно по экрану ещё ехало — и именно это Эльдар
+       назвал «плывёт» (2026-09-24). Остановка хуже неточности: глаз прощает
+       мягкий ход и не прощает рывок.
+
+       Поэтому не зажимаем, а СОРАЗМЕРЯЕМ. Считаем, сколько отставания просит
+       геометрия за всё время, пока проём вообще на экране, сравниваем с тем,
+       сколько запаса даёт ширина снимка, и берём меньший коэффициент. Ход
+       остаётся пропорциональным камере везде — просто чуть мягче, если снимка
+       не хватает. Сейчас хватает почти ровно: запас сделан высотой (1.70), а
+       комната придвинута к окну (z 1150) — маленькая комната и не должна
+       ходить, как далёкий пейзаж. */
     const rh = (v1 - v0) * WIN_OVER, rw = rh * WIN_ASPECT;
-    const lagMax = Math.max(0, (rw - (u1 - u0)) / 2);
-    const lag = Math.max(-lagMax, Math.min(lagMax, px(wx, k(d.z)) - bx));
-    ctx.drawImage(spriteMip({c: im.el}, rw, rh), bx + lag - rw / 2, (v0 + v1) / 2 - rh / 2, rw, rh);
+    const kI = k(wz + WIN_TH), kR = k(d.z);
+    const openW = u1 - u0;
+    const visX = (W / 2 + openW / 2) / Math.max(1e-6, kI * SS);   // пока проём на экране
+    const need = visX * Math.abs(kI - kR) * SS;                   // сколько просит геометрия
+    const slack = Math.max(0, (rw - openW) / 2);                  // сколько даёт снимок
+    const fac = need > 1 ? Math.min(1, slack / need) : 1;
+    const lag = (px(wx, kR) - bx) * fac;
+    ctx.drawImage(spriteMip({c: im.el}, rw, rh),
+                  bx + lag - rw / 2, (v0 + v1) / 2 - rh * WIN_LOOK, rw, rh);
   }
   // тень, которую перемычка кладёт внутрь комнаты
-  const sh = ctx.createLinearGradient(0, v0, 0, v0 + (v1 - v0) * 0.26);
+  const sh = ctx.createLinearGradient(0, aq0, 0, aq0 + (aq1 - aq0) * 0.26);
   sh.addColorStop(0, 'rgba(0,0,0,0.42)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = sh; ctx.fillRect(u0, v0, u1 - u0, (v1 - v0) * 0.26);
+  ctx.fillStyle = sh; ctx.fillRect(ap0, aq0, ap1 - ap0, (aq1 - aq0) * 0.26);
   ctx.restore();
 
   /* ── ОТКОСЫ: четыре трапеции между наружной и внутренней рамками. Их ширина
      считается сама и сама же меняется при ходе камеры — это и есть толщина. */
+  /* откосы тоже не имеют права выйти за наружное отверстие */
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip();
   const quad = (p1, p2, p3, p4, fill) => {
     ctx.beginPath();
     ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]);
@@ -11767,6 +11798,7 @@ function drawWallWindow(b){
   else                     quad([x0,y0],[x0,y1],[u0,v1],[u0,v0], 'rgba(96,103,111,0.92)');
   if ((y0 + y1) / 2 > vpY) quad([x0,y1],[x1,y1],[u1,v1],[u0,v1], 'rgba(150,156,163,0.88)');
   else                     quad([x0,y0],[x1,y0],[u1,v0],[u0,v0], 'rgba(28,32,37,0.92)');
+  ctx.restore();
 
   /* ── ПЕРЕПЛЁТ. На снимке он не одна полоска, а профиль: широкая тёмная
      обвязка, на ней узкая светлая грань, которую ловит свет, и тонкая тёмная
@@ -11793,8 +11825,8 @@ function drawWallWindow(b){
      общий холодный налёт. Эльдар просил его слоем — он и лежит последним, над
      комнатой и над откосами, как и положено отражению в стекле. */
   ctx.save();
-  ctx.beginPath(); ctx.rect(u0, v0, u1 - u0, v1 - v0); ctx.clip();
-  const gl = ctx.createLinearGradient(u0, v0, u0 + (u1 - u0) * 0.75, v1);
+  ctx.beginPath(); ctx.rect(ap0, aq0, ap1 - ap0, aq1 - aq0); ctx.clip();
+  const gl = ctx.createLinearGradient(ap0, aq0, ap0 + (ap1 - ap0) * 0.75, aq1);
   gl.addColorStop(0.00, 'rgba(214,232,248,0.20)');
   gl.addColorStop(0.26, 'rgba(214,232,248,0.05)');
   gl.addColorStop(0.42, 'rgba(236,246,255,0.28)');
@@ -11802,7 +11834,7 @@ function drawWallWindow(b){
   gl.addColorStop(0.58, 'rgba(236,246,255,0.22)');
   gl.addColorStop(0.72, 'rgba(214,232,248,0.03)');
   gl.addColorStop(1.00, 'rgba(214,232,248,0.12)');
-  ctx.fillStyle = gl; ctx.fillRect(u0, v0, u1 - u0, v1 - v0);
+  ctx.fillStyle = gl; ctx.fillRect(ap0, aq0, ap1 - ap0, aq1 - aq0);
   ctx.restore();
 
   pushHit(x0, y0, w, h, {type: 'study', beat: BEATS.indexOf(b)});
