@@ -4353,7 +4353,9 @@ function drawFilmRelays(){
   }
 }
 
-const FIN_X = SHIFT(29750);
+/* Финальный стол придвинут на 450 ближе к ковру: сцену перед ним разобрали, и
+   между ковром и столом остался провал (Эльдар, 2026-09-23). */
+const FIN_X = SHIFT(29750) - 450;
 /* ТАБЛО МЕРОПРИЯТИЙ — как расписание вылетов, на стене финала.
    Зал заканчивается тем, что компания делает прямо сейчас, и это единственный
    объект в нём, который меняется сам: настоящие ближайшие курсы, город, даты,
@@ -4366,7 +4368,7 @@ const FIN_X = SHIFT(29750);
    fetch_events.py) по ночам; зал перечитывает его раз в четверть часа. */
 /* СВОЙ КУСОК СТЕНЫ. На 1560 оно налезало на карточку CrownAI и на строчку
    «An arc the length of one life»; 2400 — пустой участок левее их обоих. */
-const BOARD_X = FIN_X - 3400;      // свой участок стены: правее стеклянного зала, левее карточек
+const BOARD_X = SHIFT(29750) - 3400;   // своё место на стене, от стола не зависит: он подвинулся, табло нет
 /* РАЗМЕРЫ ТАБЛО. Сверху его держит ореховый карниз (низ на −90), снизу —
    столешница (700). Всё, что между ними, — его полоса; залезть на карниз значит
    читаться как наклейка поверх потолка. */
@@ -7512,7 +7514,14 @@ function drawRec2Front(t){
   const kn = k(-90), cw = 148 * kn * SS;
   const nx = px(mid, kn), ny = py(417, kn);
   const spm = PED_SPRITES.crown2, chh = cw * spm.h / spm.w;
-  const plY = ny + chh * 0.5, pw = 150 * kn * SS;
+  /* ТУМБА ОПУСКАЕТСЯ, КОРОНКА ОСТАЁТСЯ. Плита стояла ровно под подошвой
+     коронки, и лента бежала окошком ниже неё. Эльдар просит наоборот: плиту
+     на уровень ленты, а ленту — кольцом сразу под плитой (2026-09-23). 77.6 —
+     тот самый зазор, на котором лента и висела, так что плита садится ровно
+     на её прежнее место. Коронка при этом отрывается от плиты и висит в луче
+     сканера — она и есть файл, о котором написано на панели. */
+  const PL_DROP = 77.6;
+  const plY = ny + chh * 0.5 + PL_DROP * kn * SS, pw = 150 * kn * SS;
   // the scanner works the crown from across the room, so its light is thrown
   // before the column and the crown are painted: they stand in it and stop it
   const bLive = Math.max(0, 1 - Math.max(0, cam.x - mid) / 240);
@@ -7594,8 +7603,12 @@ function drawRec2Front(t){
        центр — постоянный отступ от верха тумбы, в её же масштабе. 77.6 — это
        ровно тот зазор, что был в покое: (py(730,k(970)) − plY)/(kn·SS)
        (Эльдар: «микроэкранчик поплыл вниз», 2026-09-23). */
-    const stripY = plY + 77.6 * kn * SS, sh2 = 19 * kn * SS;
-    const iw = pw - 34 * kn * SS;              // air at both sides: it is set INTO the column
+    /* ЛЕНТА ИДЁТ КОЛЬЦОМ ПО ВСЕЙ ТУМБЕ, а не окошком в её середине: она
+       садится сразу под кромку плиты и занимает всю ширину барабана
+       (Эльдар: «пусть бегает по всему кружочку»). */
+    const sh2 = 19 * kn * SS;
+    const stripY = plY + 17 * kn * SS + sh2 * 0.5 + 3 * kn * SS;
+    const iw = pw;                             // во всю ширину барабана: это кольцо, а не окно
     const R = (iw / 2) * 1.18;                 // the cylinder it is wrapped around
     // the line as it is written on the wall, rendered flat once
     const ow2 = Math.ceil(W), oh2 = Math.ceil(sh2) + 2;
@@ -7842,7 +7855,9 @@ function drawRec2(t){
     ctx.font = eraFont(20 * kk * SS, '700', SEGMENTS[3].font);
     try { ctx.letterSpacing = `${20*TRACK.label*kk*SS}px`; } catch(e){}
     ctx.fillStyle = `rgba(70,110,135,${(0.75 * ease).toFixed(3)})`;
-    ctx.fillText('SCAN \u00b7 DESIGN \u00b7 MILL', cx, py(730, kk));
+    /* НАДПИСЬ НА СТЕНЕ СНЯТА: её теперь несёт кольцо тумбы, и в покое плита
+       вставала ровно на неё — слова читались призраком сквозь стекло. Панель
+       говорит своё, кольцо своё, третьего не нужно (2026-09-23). */
     try { ctx.letterSpacing = '0px'; } catch(e){}
     ctx.restore();
   }
@@ -10058,8 +10073,11 @@ function initDecor(){
      seven rectangles and once as a cabin. Keeping both is what makes a scene
      look assembled rather than built. */
   // the symposium audience at the finale — spaced so the stage stays visible
-  const AUD = [[SHIFT(28960), 390, 640], [SHIFT(29060), 470, 615], [SHIFT(29120), 300, 660]];
-  AUD.forEach(([ax, az, ah], i) => FIGURES.push({x: ax, z: az, h: ah, sprite: makeFigure(60 + i)}));
+  /* зрители ушли вместе со сценой, на которую они смотрели */
+  if (STAGE_ON){
+    const AUD = [[SHIFT(28960), 390, 640], [SHIFT(29060), 470, 615], [SHIFT(29120), 300, 660]];
+    AUD.forEach(([ax, az, ah], i) => FIGURES.push({x: ax, z: az, h: ah, sprite: makeFigure(60 + i)}));
+  }
 
   // ambient props obey gravity too: full footprint on a real table span,
   // or they leave the hall (background décor is optional, levitation is not)
@@ -12479,7 +12497,15 @@ function drawFactory(t, over){
 }
 const STAGE_X = SHIFT(28830);
 let JIM_FIG = null;
+/* СЦЕНА РАЗОБРАНА. Помост, человек на нём, жёлтый прожектор и три зрителя —
+   всё это ушло по просьбе Эльдара (2026-09-23): «убираем, остаётся ковёр. Там
+   придумаем, что там будет». STAGE_X остаётся константой: от него отмеряется
+   правый конец ковра (CARPET_X1) и якорь света, и убирать его — значит рушить
+   то, что к сцене отношения не имеет. Код ниже не удалён, а отключён одним
+   флагом: место ждёт замены, и когда она придёт, будет с чем сравнить. */
+const STAGE_ON = false;
 function drawStage(t){
+  if (!STAGE_ON) return;
   if (Math.abs(cam.x - STAGE_X) > 3900) return;
   // platform
   const kT = k(530), kF = k(430);
