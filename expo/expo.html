@@ -1537,6 +1537,21 @@ function initLights(){
   }
   LIGHT_GRID.push({x: INTRO_X, seg: SEGMENTS[0]});   // the welcome lamp, dead over the inscription
   LIGHT_GRID.push({x: FIN_X, seg: SEGMENTS[3]});     // and its mirror over the finale
+  /* ЛАМПА НАД ДОМАМИ ВЫКЛЮЧЕНА. Светильники расставлены по годам и один из
+     них сел ровно над двумя макетами 1973-го — Эльдар попросил его убрать
+     (2026-09-24). Гаснет и сам плафон, и его пятно на стене; из сетки лампа
+     не удаляется, чтобы не сбить расстановку соседних. */
+  {
+    const b73 = BEATS.find(b => b.y === '1973');
+    if (b73){
+      let best = -1, bd = 1e9;
+      for (let i = 0; i < LIGHT_GRID.length; i++){
+        const d = Math.abs(LIGHT_GRID[i].x - b73.x);
+        if (d < bd){ bd = d; best = i; }
+      }
+      if (best >= 0 && bd < 700) LIGHT_GRID[best].off = true;
+    }
+  }
 }
 function initTables(){
   // every pedestal claims a wide gap of its own, centered on it
@@ -16585,7 +16600,8 @@ function frame(){
   drawRec4(t);
 
   // lamp pools on wall (behind photos) — one per ceiling fixture
-  for (let i = 0; i < LIGHT_GRID.length; i++) drawLampPool(LIGHT_GRID[i].x, lampFlicker(t, i+1));
+  for (let i = 0; i < LIGHT_GRID.length; i++)
+    if (!LIGHT_GRID[i].off) drawLampPool(LIGHT_GRID[i].x, lampFlicker(t, i+1));
 
   drawTallUnits();      // furniture against the wall, before anything hung on it
   drawOutro();
@@ -16731,6 +16747,7 @@ function frame(){
   // lamps + dust + foreground — evenly spaced fixtures per era
   for (let i = 0; i < LIGHT_GRID.length; i++){
     const L = LIGHT_GRID[i];
+    if (L.off) continue;              // выключенная лампа не висит и плафоном
     // a plate brings its own lamp; the hall's fixture would hang in front of it
     if (PLATES.some(p => p.sp && Math.abs(L.x - p.x) < p.w * 0.5)) continue;
     // the cool eras keep their light but lose the fixture: a black slab hung
