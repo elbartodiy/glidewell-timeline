@@ -191,12 +191,14 @@ const BEATS = [
    d:'BioTemps provisional restorations — lab-made PMMA temporaries that doubled as an esthetic “blueprint” the patient could approve before the final.',
    wall:[], table:[]},
 
-  {x:11150, y:'1989', t:'NATIONAL LEADER', tier:1, fly:true, ink:'236,241,247', yLift:130, flyLift:10,
+  {x:11150, y:'1989', t:'NATIONAL LEADER', tier:1, fly:true, ink:'236,241,247', yLift:130, flyLift:70,
    /* the panel behind it is dark steel, so the year is LIGHT here — the era's
       ink is for the pale wall on either side. And it flies to its own lift:
       130 keeps it on the row with 1980\u20131988 while it rests on the wall, but at
-      the apex that puts it through the ceiling, so at full size it comes down
-      to 10 and stands with equal air above it and under the block. */
+      the apex that puts it through the ceiling, so at full size it comes down.
+      10 оказалось слишком низко: на взлёте цифра будто падает, и под ней не
+      остаётся места карте. 70 — ровно половина пути между покоем и прежним
+      апексом (Эльдар, 2026-09-23: «пусть поднимается чуть выше, в половину»). */
    pinZ:728,   // the numeral is riveted to the recreation panel: it grows in place, never drifts
    th:'',
    d:'Still in Orange, California: 175 people now serve more than 3,500 dentists, and 95% of cases arrive by mail. The lab is national without having left the county.',
@@ -3760,7 +3762,14 @@ function initFilmRelays(){
     /* 1988's hanging set: centred in the air between the year's last digit and
        the 1989 bay's pilaster, so it touches neither (Eldar) */
     {kind: 'hang',   x: ((BEATS.find(b => b.y === '1988') || {x: REC3_L - 700}).x + 215 + (REC3_L - 60)) / 2, w: 320, cy: 282, era: 1},
-    {kind: 'crt95',  x: SHIFT(12700), lz: 70, w: 290},            // the nineties set by 1995
+    /* НАБОР ДЕВЯНОСТЫХ САДИТСЯ ОТ ГОДА, А НЕ ОТ ЧИСЛА. Он был написан на
+       SHIFT(12700), а 1995-й переставляет ритм-проход — они сошлись, и два
+       монитора встали один поверх другого: экран с интервью и янтарный CAD
+       (Эльдар, 2026-09-23: «три монитора, они закрывают один другого»).
+       Теперь киноэкран стоит СПРАВА от года, янтарный — слева на своём dx,
+       и между ними всегда полная ширина обоих. */
+    {kind: 'crt95', lz: 70, w: 290,
+     x: (BEATS.find(b => b.t === 'OPERATORY \u00b7 PLAYSAFE') || {x: SHIFT(12700) - 300}).x + 300},
     /* ПРОЕКТОР САДИТСЯ ОТ ЖУРНАЛОВ, А НЕ ОТ СЫРОЙ КООРДИНАТЫ. Он был написан
        на SHIFT(15330) — то есть где-то около 1999 года, — но годы эры
        переставляет ритм-проход, а реле стоит на месте: они сошлись, и картина
@@ -3772,7 +3781,13 @@ function initFilmRelays(){
     {kind: 'proj',
      x: (BEATS.find(b => b.t === 'CHAIRSIDE PERSPECTIVES') || {x: SHIFT(15330) - 1172}).x + 1172,
      w: 1260, cy: 318},
-    {kind: 'lcd05',  x: SHIFT(17620), lz: 16, w: 235},            // the office LCD on the counter before 2005 — moved right, it was standing on the plastic boxes
+    /* И ЭКРАН СЕРЕДИНЫ ДВУХТЫСЯЧНЫХ САДИТСЯ ОТ ГОДА. Написанный числом, он
+       после появления бита 2002 встал ровно на янтарный CAD-монитор — третий
+       случай одной и той же ошибки за день (Эльдар, 2026-09-23: «поставь его
+       хотя бы рядом справа»). 660 = 322 (место монитора) + половина его ширины
+       + половина ширины экрана + воздух. */
+    {kind: 'lcd05', lz: 16, w: 235,
+     x: (BEATS.find(b => b.t === 'CAD/CAM ENTERS THE LAB') || {x: SHIFT(17620) - 660}).x + 660},
     /* 16:9, as a plasma is — larger, and measured on the deep wall (k≈0.39) so
        its top clears the taglines (screen-wise below them) and its bottom stops
        short of the counters' line with a little air */
@@ -8501,13 +8516,22 @@ function makeUsaSprite(){
   g.beginPath(); g.arc(hub[0], hub[1], 11, 0, 7); g.fill();
   g.strokeStyle = '#fdfaf2'; g.lineWidth = 3;
   g.beginPath(); g.arc(hub[0], hub[1], 11, 0, 7); g.stroke();
-  // подпись хаба — с выноской, чтобы не лежала на берегу
+  /* ПОДПИСЬ ХАБА ИДЁТ ВНИЗ-ВПРАВО И ИЗМЕРЯЕТСЯ. Она была прижата вправо от
+     точки и уходила ЗА левый край листа: хаб стоит в Южной Калифорнии, то есть
+     сам почти у кромки, а строка длиннее, чем до неё остаётся (Эльдар,
+     2026-09-23: «слева буквы вылезают из карты»). Теперь выноска уходит
+     вниз-вправо, строка набирается от неё влево-направо, и её правый край
+     зажимается полем карты. */
   g.strokeStyle = 'rgba(80,90,105,0.75)'; g.lineWidth = 2;
-  g.beginPath(); g.moveTo(hub[0] - 12, hub[1] + 8); g.lineTo(hub[0] - 46, hub[1] + 48); g.stroke();
+  g.beginPath(); g.moveTo(hub[0] + 6, hub[1] + 14); g.lineTo(hub[0] + 34, hub[1] + 52); g.stroke();
   g.fillStyle = 'rgba(50,58,70,0.9)';
-  g.textAlign = 'right';
   g.font = '600 26px "Helvetica Neue", Arial, sans-serif';
-  g.fillText('Orange, California', hub[0] - 50, hub[1] + 56);
+  g.textAlign = 'left';
+  {
+    const LAB = 'Orange, California';
+    const lx = Math.min(hub[0] + 40, MX + MW - g.measureText(LAB).width);
+    g.fillText(LAB, Math.max(MX, lx), hub[1] + 60);
+  }
 
   // заголовок и подпись листа
   g.textAlign = 'center';
@@ -8609,10 +8633,12 @@ function drawRec3(t){
   ctx.fillRect(x0, 0, x1 - x0, yBase);
   const sp = USA_SPRITE;
   /* выше и крупнее: 470 на 505 карта тонула за коробкой и читалась пятном */
-  /* 560 на 310 — это верхний предел: ниже карта уходит за коробку, выше её
-     верхний край подходит к подзаголовку «National leader». Замерено на
-     плоскости 728 при k=0.553. */
-  const MAP_W = 560, MAP_CY = 310;
+  /* 700 на 340. Простор дала цифра: на взлёте она поднялась с 10 на 70, и под
+     ней освободилась полоса. Верх карты приходит на 239 экранных при
+     подзаголовке на 210 — двадцать девять пикселей воздуха; низ заходит за
+     коробку примерно на треть высоты, и это нормально: карта висит на стене,
+     экспонат стоит перед ней (Эльдар, 2026-09-23). */
+  const MAP_W = 700, MAP_CY = 340;
   const w = MAP_W * kk * SS, h = w * sp.h / sp.w;
   const cx = px(mid, kk), cyS = py(MAP_CY, kk);
   pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp, wx: mid, cy: MAP_CY, z: 726, w: MAP_W,
@@ -12972,6 +12998,73 @@ const BOOK = {
   keys: 0, lastKey: '',
 };
 const BOOK_KEY = 'book.queue.v1';
+/* ═══ СКАНЕР ЧЕРЕЗ COM-ПОРТ ════════════════════════════════════════════════
+   Сканер MJ-3000 снят с игрового автомата и настроен там под него: интерфейс
+   USB COM и Host mode — он не печатает, он говорит в порт и читает только по
+   команде компьютера. Переключать его обратно нельзя, он вернётся в автомат.
+
+   Поэтому зал читает порт сам, ровно как это делает автомат. Команды, скорость
+   и тайминги взяты из его рабочего кода (07. Games/arcade-cabinet,
+   app/assets/index-*.js) и не выдуманы: 9600 бод, SSI start/stop, повтор start
+   каждые 1800 мс, пока окно открыто, и склейка пришедшего текста с паузой
+   120 мс. Клавиатурный путь при этом остаётся — обычный HID-сканер, если он
+   когда-нибудь появится, будет работать без единой правки.
+
+   Права на порт браузер даёт ОДНИМ ЖЕСТОМ и запоминает их для этого адреса;
+   автомат живёт на другом адресе, так что одно нажатие здесь нужно один раз.
+   Web Serial есть в Chrome и Edge, в Safari его нет (Эльдар, 2026-09-23). */
+const SSI = {start: [4,228,4,0,255,20], stop: [4,229,4,0,255,19]};
+const BOOK_PING = 1800, BOOK_JOIN = 120;
+const SER = {port: null, writer: null, ping: null, state: 'off', buf: '', joiner: null, seen: 0};
+function serOk(){ return typeof navigator !== 'undefined' && 'serial' in navigator; }
+async function serWrite(bytes){
+  if (!SER.writer) return;
+  try { await SER.writer.write(new Uint8Array(bytes)); } catch(e){ SER.state = 'failed'; }
+}
+function serGot(text){
+  SER.buf += text; SER.seen += text.length;
+  clearTimeout(SER.joiner);
+  SER.joiner = setTimeout(() => {
+    const code = SER.buf.replace(/[\r\n\t]+$/, ''); SER.buf = '';
+    if (code) bookFromCode(code);
+  }, BOOK_JOIN);
+}
+async function serRead(){
+  const dec = new TextDecoder();
+  while (SER.port && SER.port.readable){
+    const r = SER.port.readable.getReader();
+    try { for(;;){ const {value, done} = await r.read(); if (done) break; if (value && value.length) serGot(dec.decode(value)); } }
+    catch(e){ break } finally { try { r.releaseLock(); } catch(e){} }
+  }
+}
+async function serOpen(port){
+  try {
+    await port.open({baudRate: 9600});
+    SER.port = port;
+    SER.writer = port.writable ? port.writable.getWriter() : null;
+    SER.state = 'open';
+    serRead();
+    await serWrite(SSI.stop);
+    serPing(true);
+    return true;
+  } catch(e){ SER.state = 'failed'; return false; }
+}
+/* порт, права на который уже выданы, открывается молча — без нажатий */
+async function serAuto(){
+  if (!serOk() || SER.state === 'open') return false;
+  try { for (const p of await navigator.serial.getPorts()) if (await serOpen(p)) return true; } catch(e){}
+  return false;
+}
+async function serPick(){
+  if (!serOk()) return;
+  try { const p = await navigator.serial.requestPort(); await serOpen(p); } catch(e){}
+}
+function serPing(on){
+  clearInterval(SER.ping); SER.ping = null;
+  if (!on || SER.state !== 'open') { serWrite(SSI.stop); return; }
+  serWrite(SSI.start);
+  SER.ping = setInterval(() => serWrite(SSI.start), BOOK_PING);
+}
 const BOOK_MAIL = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 function bookQueue(){ try { return JSON.parse(localStorage.getItem(BOOK_KEY) || '[]'); } catch(e){ return []; } }
 function bookInit(){
@@ -12999,6 +13092,10 @@ function bookInit(){
 function bookScanned(){
   const txt = BOOK.el.value.replace(/[\r\n\t]+$/, '');
   BOOK.el.value = ''; BOOK.taps = [];
+  bookFromCode(txt);
+}
+/* один приёмник на оба пути: клавиатура и COM-порт приносят одну и ту же строку */
+function bookFromCode(txt){
   if (!txt) return;
   BOOK.badge = txt;
   /* В бейдже чаще всего только номер регистрации — это норма, а не сбой:
@@ -13019,6 +13116,10 @@ function bookReset(){
   BOOK.badge = ''; BOOK.name = ''; BOOK.email = ''; BOOK.consent = false; BOOK.done = false;
   BOOK.keys = 0; BOOK.lastKey = '';
   bookFocus('badge');
+  /* порт, права на который уже выданы, поднимается сам; опрос идёт только пока
+     книга открыта — сканер в Host mode читает лишь по команде */
+  serAuto().then(ok => { if (ok || SER.state === 'open') serPing(true); });
+  if (SER.state === 'open') serPing(true);
 }
 function bookSend(){
   const q = bookQueue();
@@ -13061,7 +13162,7 @@ function drawBookOffer(x0, y0, wPan, e){
      сквозь неё читались его собственные надписи — «The crossover», «Physical»,
      «Digital». Высота плиты считается из тех же шагов, что и строки ниже:
      26.6u — сумма всех интервалов до последней подсказки. */
-  const panH = u * 26.6, panPad = u * 1.6;
+  const panH = u * (26.6 + ((serOk() && SER.state !== 'open') ? 3.2 : 0)), panPad = u * 1.6;
   ctx.fillStyle = `rgba(9,12,16,${(0.965 * a).toFixed(3)})`;
   ctx.beginPath();
   ctx.roundRect(x0 - panPad, y0 - panPad * 1.5, wPan + panPad * 2, panH + panPad * 2.2, u * 0.9);
@@ -13122,13 +13223,31 @@ function drawBookOffer(x0, y0, wPan, e){
   ctx.fillStyle = BOOK.badge ? ink(0.9) : ink(0.4);
   put(BOOK.badge || 'waiting for a scan…', x0 + u, y + bH * 0.66, u * 1.0, '', wPan - u * 2);
   /* справа в той же строке — сколько нажатий долетело до страницы */
-  ctx.fillStyle = BOOK.keys ? `rgba(105,211,138,${(0.9*a).toFixed(3)})`
-                            : `rgba(236,242,248,${(0.28*a).toFixed(3)})`;
-  put(BOOK.keys ? BOOK.keys + ' keys · ' + BOOK.lastKey : 'no keys yet',
+  /* справа в той же строке — состояние: либо порт открыт, либо сколько
+     нажатий долетело с клавиатуры. Сканер зала снят с игрового автомата и
+     настроен под COM-порт, поэтому нормальное состояние здесь — «port open». */
+  const ser = SER.state === 'open';
+  ctx.fillStyle = (ser || BOOK.keys) ? `rgba(105,211,138,${(0.9*a).toFixed(3)})`
+                                     : `rgba(236,242,248,${(0.28*a).toFixed(3)})`;
+  put(ser ? 'port open' : (BOOK.keys ? BOOK.keys + ' keys · ' + BOOK.lastKey : 'no keys yet'),
       x0 + wPan - u, y + bH * 0.66, u * 0.82, '', wPan * 0.42, 'right');
   pushHit(x0, y, wPan, bH, {type: 'bookfield', key: 'badge'});
   y += bH + u * 1.1;
 
+  /* ОДНО НАЖАТИЕ НА ВЕСЬ ПОКАЗ. Права на COM-порт браузер выдаёт только по
+     жесту человека и запоминает их для этого адреса — дальше порт поднимается
+     сам при каждом открытии книги. */
+  if (serOk() && SER.state !== 'open'){
+    const cw2 = wPan * 0.66, ch2 = u * 2.2;
+    ctx.fillStyle = `rgba(140,205,250,${(0.16 * a).toFixed(3)})`;
+    ctx.beginPath(); ctx.roundRect(x0, y, cw2, ch2, ch2/2); ctx.fill();
+    ctx.strokeStyle = `rgba(140,205,250,${(0.55 * a).toFixed(3)})`; ctx.lineWidth = 1.3 * SS;
+    ctx.beginPath(); ctx.roundRect(x0, y, cw2, ch2, ch2/2); ctx.stroke();
+    ctx.fillStyle = `rgba(170,220,255,${(0.95 * a).toFixed(3)})`;
+    put('Connect the scanner', x0 + cw2/2, y + ch2 * 0.66, u * 0.95, '600', cw2 - u, 'center');
+    pushHit(x0, y, cw2, ch2, {type: 'bookserial'});
+    y += ch2 + u * 1.0;
+  }
   field('NAME',  BOOK.name,  'name',  'Jane Doe');
   field('EMAIL', BOOK.email, 'email', 'jane@practice.com');
 
@@ -13177,6 +13296,7 @@ function drawInspect(){
     /* фокус возвращается залу: скрытое поле держит его, пока открыта книга, и
        иначе проглотило бы клавиши зала (M — музыка и прочее) */
     if (BOOK.el) try { BOOK.el.blur(); } catch(e){}
+    serPing(false);
     state.inspect = null; return;
   }
   const e = I.amt*I.amt*(3-2*I.amt);
@@ -15324,6 +15444,7 @@ function update(dt){
         else if (aimed && aimed.type === 'bookfield') bookFocus(aimed.key);
         else if (aimed && aimed.type === 'bookconsent') BOOK.consent = !BOOK.consent;
         else if (aimed && aimed.type === 'booksend') bookSend();
+        else if (aimed && aimed.type === 'bookserial') serPick().then(() => serPing(true));
         else state.inspect.closing = true;
       } else if (inp.action === true || Math.abs(inp.impulse) > 260) state.inspect.closing = true;
       cam.vel = 0;
