@@ -240,7 +240,7 @@ const BEATS = [
      Пропорция проёма взята из самого снимка: 1602×870 стекла между рамами,
      то есть 1.841. */
   {x:12590, y:'1995', t:'OPERATORY · PLAYSAFE', minor:true, yLift:190,
-   win:{dx:0, w:860, top:120, z:1150},
+   win:{dx:0, w:960, top:95, z:1330},
    th:'Test where dentists work — and step beyond the crown.',
    d:'An in-house operatory opens to test materials on real patients; PlaySafe mouthguards launch.',
    wall:[], table:[],
@@ -11718,19 +11718,25 @@ const WIN_LOOK = 0.58;              // какая доля снимка прих
 function drawWallWindow(b){
   const d = b.win;
   const im = IMGS.operatory;
-  const wz = (segAt(b.x).tz || wallZAt(b.x)) - 12;
+  /* ОКНО РИВЕТИТСЯ К КЛАДКЕ, А НЕ К ВЫСТАВОЧНОЙ ПЛОСКОСТИ. Закон заклёпки
+     сажает всё настенное на плоскость композиции (tz) и прямо оговаривает, что
+     расхождение с физической стеной допущено сознательно — «там, где стена
+     без черт». Здесь стена с чертами: у неё видны стыки панелей, а окно — дыра
+     В НЕЙ. На разных плоскостях стыки поехали относительно рамы (Эльдар,
+     2026-09-24). Это ровно то исключение, ради которого в законе и оставлена
+     оговорка: проём живёт на wallZAt и меряется px, а не wallSX. */
+  const wz = wallZAt(b.x);
   const kk = k(wz), ki = k(wz + WIN_TH);
   const hWorld = d.w / WIN_OPEN;
   const wx = b.x + d.dx;
-  // наружная рамка — на плоскости стены
-  const ax = wallSX(b.x, d.dx, kk);
+  const ax = px(wx, kk);
   const w = d.w * kk * SS, h = hWorld * kk * SS;
   const x0 = ax - w / 2, y0 = py(d.top, kk), x1 = x0 + w, y1 = y0 + h;
   if (x1 < -w || x0 > W + w) return;
   // внутренняя — на глубине стены: меньше и сдвинута к точке схода
   const bx = px(wx, ki), bw = d.w * ki * SS, bh = hWorld * ki * SS;
   const u0 = bx - bw / 2, v0 = py(d.top, ki), u1 = u0 + bw, v1 = v0 + bh;
-  rivet('window:' + b.x, ax, k(exhibitZ(b.x)));
+  rivet('window:' + b.x, ax, kk);   // проверяется против кладки, а не против композиции
 
   /* ПРОСВЕТ — ЭТО ПЕРЕСЕЧЕНИЕ ДВУХ РАМОК, А НЕ ВНУТРЕННЯЯ. Сквозь стену видно
      только то, что попадает и в наружное отверстие, и во внутреннее. При
