@@ -13994,7 +13994,6 @@ function openStudy(i){
   const b = (i && typeof i === 'object') ? i : BEATS[i];
   const imgs = [];   // reserved: the speaker-video carousel will live here
   state.study = {beat: i, b, imgs, scroll: 0, amt: 0, maxScroll: 1};
-  if (window.VCAM) VCAM.extra('page:' + b.t);   // the counter learns which pages are read
   /* a page that carries voices starts speaking as it opens — but IN the rail,
      small, right where the clip hangs; tapping it expands to the full player.
      The hall film, meanwhile, fades out and holds its place. */
@@ -15575,8 +15574,6 @@ function drawAttractHint(t){
 }
 
 /* ---------------- UPDATE ---------------- */
-const CAM_EMPTY = 12;   // s with nobody near the screen before the tour resumes
-const CAM_STATS = 'expo.visitors.v1';   // the daily visitor counter on this machine
 function update(dt){
   const inp = Input.consume();
   state.time += dt;
@@ -15586,19 +15583,7 @@ function update(dt){
   updateWhoosh();
   updateFilm();
 
-  /* КАМЕРА У ЗАЛА (Эльдар, 2026-09-24). Человек, подошедший к экрану, будит
-     тур так же, как касание: зал перестаёт показывать себя сам и ждёт его.
-     Будит только ПРИХОД — новый человек, пересёкший линию «рядом» (модуль
-     считает их в VCAM.arrivals), а не само присутствие: иначе стоящий у стенда
-     сотрудник держал бы зал вне тура весь день. Пока кто-то стоит рядом, зал
-     считается «читаемым» — часы простоя идут вчетверо медленнее, как над
-     открытой страницей. Никого рядом CAM_EMPTY секунд — тур включается сразу,
-     не дожидаясь 45 с: зритель ушёл, ждать его нечего. Без ?cam= VCAM нет, и
-     всё ниже работает как раньше. */
-  const vc = (window.VCAM && VCAM.state === 'live') ? VCAM : null;
-  const camWake = !!(vc && vc.arrivals > state.camArrivals);
-  if (vc) state.camArrivals = vc.arrivals;
-  if (inp.anyInput || camWake){
+  if (inp.anyInput){
     state.idle = 0;
     if (state.mode === 'attract'){
       state.mode = 'live';
@@ -15610,9 +15595,8 @@ function update(dt){
        with the lid still up. With anything open the clock runs at a quarter
        speed, and when the tour does resume it closes what was open first. */
     const reading = state.openBox || state.inspect || state.study || state.person || state.people || state.docOpen || state.albumView || state.pfmView;
-    state.idle += (reading || (vc && vc.near)) ? dt * 0.25 : dt;
-    const camGone = vc && !vc.near && vc.emptyFor > CAM_EMPTY && state.idle > CAM_EMPTY && !reading;
-    if (state.mode === 'live' && (state.idle > CFG.idleToAttract || camGone)){
+    state.idle += reading ? dt * 0.25 : dt;
+    if (state.mode === 'live' && state.idle > CFG.idleToAttract){
       state.mode = 'attract';
       state.study = null; state.person = null; state.people = null; state.inspect = null;
       state.pfmView = null;
@@ -16952,19 +16936,6 @@ async function boot(){
     state.mode = 'live'; state.introHold = false; state.introFade = 0;
     state.ruleA = 1; state.idle = 0;
   }
-  /* ?cam=webcam|tapo|file:<видео> — камера у зала (cam/visitor-cam.js,
-     cam/bridge/README.md). Источник запоминается на этой машине до ?cam=off,
-     поэтому выставочный компьютер открывает обычный адрес. ?camdbg — окошко
-     с тем, что видит модель; ?camnear=0.1 — где начинается «рядом».
-     ?camstats=csv выгружает дневной счётчик посетителей, ?camstats=1 — в
-     консоль. Кадры никуда не уходят и не хранятся — только числа. */
-  state.camArrivals = 0;
-  import('./cam/visitor-cam.js').then(m => {
-    const o = m.VisitorCam.fromQuery();
-    if (o) m.VisitorCam.start(Object.assign(o, {statsKey: CAM_STATS}));
-    if (/[?&]camstats=csv/.test(location.search)) m.VisitorCam.downloadCSV(CAM_STATS, 'visitors');
-    else if (/[?&]camstats=/.test(location.search)) console.table(m.VisitorCam.stats(CAM_STATS));
-  }).catch(e => console.warn('[cam]', e));
   /* ?books=csv выгружает очередь книги с ЭТОЙ машины, ?books=1 печатает её в
      консоль. Другого выхода у неё нет: данные гостей никуда не отправляются. */
   if (/[?&]books=/.test(location.search)) setTimeout(() => {
