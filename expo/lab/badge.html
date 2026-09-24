@@ -68,6 +68,8 @@
   .note{border-left:2px solid var(--warn);padding:10px 0 10px 14px;margin-top:16px;
         color:var(--dim);font-size:13px;line-height:1.55}
   .trap{position:fixed;left:-9999px;top:0}
+  .want{border-color:var(--warn) !important;animation:pulse 1s ease-in-out 2}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,180,92,0)}50%{box-shadow:0 0 0 4px rgba(232,180,92,.25)}}
   .full{grid-column:1/-1}
 </style>
 </head>
@@ -139,7 +141,7 @@
 
   </div>
 </div>
-<input class="trap" id="trap" autocomplete="off" aria-hidden="true" tabindex="-1">
+<textarea class="trap" id="trap" autocomplete="off" aria-hidden="true" tabindex="-1"></textarea>
 
 <script>
 'use strict';
@@ -147,47 +149,49 @@ const $ = id => document.getElementById(id);
 const KEY = 'badge.queue.v1';
 
 /* ── ЛОВУШКА ВВОДА ────────────────────────────────────────────────────────
-   Сканер печатает символы и жмёт Enter (у некоторых — Tab). Человек печатает
-   медленно: между нажатиями больше 80 мс. Поэтому мы меряем паузы — по ним и
-   видно, сканер это или руки. Ввод ловится на окне, а фокус держит скрытое
-   поле, чтобы символы не сыпались в форму. */
-let buf = [], t0 = 0, tPrev = 0, timer = null;
+   Сканер работает клавиатурой: «печатает» содержимое кода и жмёт Enter.
+
+   ЛОВИМ НЕ КЛАВИШИ, А ТЕКСТ. Сначала было написано на keydown — и это была
+   ошибка: keydown приходит не от всякого ввода (быстрая вставка текста,
+   системный ввод, часть драйверов клавиатуры отдают строку целиком и события
+   клавиш не порождают вовсе). Эльдар пикал сканером в страницу, символы
+   долетали до поля, а обработчик их не видел и журнал оставался пустым
+   (2026-09-23). Событие input срабатывает на ЛЮБОЙ ввод, поэтому ловим его,
+   а keydown оставлен только ради тайминга — по нему видно, сканер это или
+   руки. Ловушка — textarea, чтобы Enter внутри кода (в vCard строки разделены
+   переводами) давал настоящий перевод строки, а не обрывал скан.
+
+   Скан заканчивается ТИШИНОЙ: 220 мс без нового символа. */
+const QUIET = 220;
+let taps = [], timer = null;
 
 function finish(){
-  if (!buf.length) return;
-  const text = buf.map(b => b.ch).join('').replace(/[\r\n\t]+$/, '');
-  const gaps = buf.slice(1).map((b, i) => b.t - buf[i].t);
-  const avg = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
-  const max = gaps.length ? Math.max(...gaps) : 0;
-  buf = [];
-  show(text, {total: Math.round(tPrev - t0), avg: +avg.toFixed(1), max: Math.round(max), n: text.length});
+  const el = $('trap');
+  const text = el.value.replace(/[\r\n\t]+$/, '');
+  el.value = '';
+  const marks = taps; taps = [];
+  if (!text) return;
+  let timing = null;
+  if (marks.length >= 2){
+    const gaps = marks.slice(1).map((t, i) => t - marks[i]);
+    timing = {total: Math.round(marks[marks.length - 1] - marks[0]),
+              avg: +(gaps.reduce((a, b) => a + b, 0) / gaps.length).toFixed(1),
+              max: Math.round(Math.max(...gaps)),
+              n: text.length};
+  }
+  show(text, timing);
 }
 
-addEventListener('keydown', e => {
-  if (e.target === $('manual') || e.target === $('gname') ||
-      e.target === $('gmail')  || e.target === $('consent')) return;   // руками — не мешаем
-  const now = performance.now();
-  /* ENTER ВНУТРИ КОДА — ЭТО ПЕРЕВОД СТРОКИ, А НЕ КОНЕЦ СКАНА. В vCard и в
-     MECARD строки разделены переводами, и сканер шлёт их теми же Enter'ами,
-     что и в конце: если заканчивать скан на первом Enter, визитка разрежется
-     на куски и ни имя, ни почта не соберутся. Поэтому Enter кладётся в буфер
-     как \n, а скан заканчивается ТИШИНОЙ — по ней сканер и отличается от рук. */
-  if (e.key === 'Enter' || e.key === 'Tab'){
-    if (!buf.length) return;
-    e.preventDefault();
-    buf.push({ch: e.key === 'Tab' ? '\t' : '\n', t: now});
-    tPrev = now;
-    clearTimeout(timer);
-    timer = setTimeout(finish, 220);
-    return;
-  }
-  if (e.key.length !== 1) return;              // Shift, Ctrl и прочее пропускаем
-  if (!buf.length) t0 = now;
-  buf.push({ch: e.key, t: now});
-  tPrev = now;
-  /* некоторые сканеры не шлют Enter вообще — добираем по тишине */
+$('trap').addEventListener('input', () => {
+  taps.push(performance.now());
   clearTimeout(timer);
-  timer = setTimeout(finish, 220);
+  timer = setTimeout(finish, QUIET);
+});
+/* keydown нужен только чтобы засечь Enter как конец скана пораньше и чтобы
+   померить темп там, где события клавиш всё-таки приходят */
+addEventListener('keydown', e => {
+  if (e.target !== $('trap')) return;
+  if (e.key && e.key.length === 1) taps.push(performance.now());
 });
 
 $('manual').addEventListener('keydown', e => {
@@ -198,14 +202,16 @@ $('manual').addEventListener('keydown', e => {
   $('manual').value = '';
 });
 
-/* фокус живёт в ловушке, чтобы ввод не попадал в поля формы */
+/* ФОКУС ДОЛЖЕН ЖИТЬ В ЛОВУШКЕ, иначе сканеру некуда печатать. Забирается он
+   назад и по клику, и по таймеру, но только если человек не стоит в поле сам. */
 const keepFocus = () => {
   const a = document.activeElement;
-  if (a && (a.tagName === 'INPUT' || a.tagName === 'BUTTON') && a.id !== 'trap') return;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'BUTTON') && a.id !== 'trap') return;
   try { $('trap').focus({preventScroll: true}); } catch(e){}
 };
 addEventListener('click', keepFocus);
-setInterval(keepFocus, 1200);
+addEventListener('focus', keepFocus);
+setInterval(keepFocus, 900);
 keepFocus();
 
 /* ── РАЗБОР ───────────────────────────────────────────────────────────────
@@ -326,8 +332,13 @@ function show(text, timing){
      вслух и поставить курсор куда надо, иначе выглядит как «не сработало». */
   if (!p.fields.email){
     $('parsehint').innerHTML = '<b style="color:var(--warn)">В этом бейдже почты нет</b> — ' +
-      'только то, что выше. Адрес вводит гость: курсор уже стоит в поле «Почта».';
-    setTimeout(() => { try { $('gmail').focus(); } catch(e){} }, 30);
+      'только то, что выше. Адрес вводит гость сам: поле «Почта» подсвечено.';
+    /* ПОЛЕ ПОДСВЕЧИВАЕТСЯ, А НЕ ЗАБИРАЕТ ФОКУС. Фокус обязан оставаться в
+       ловушке: иначе следующий бейдж напечатается в поле почты предыдущего
+       гостя, а не начнёт новый скан. Гость сам нажимает на поле, когда
+       собирается печатать. */
+    $('gmail').classList.add('want');
+    setTimeout(() => $('gmail').classList.remove('want'), 2600);
   } else {
     $('parsehint').innerHTML = '<b style="color:var(--ok)">Почта пришла из бейджа</b> — ' +
       'гостю остаётся только подтвердить согласие.';
