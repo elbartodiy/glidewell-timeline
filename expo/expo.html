@@ -2248,6 +2248,27 @@ function drawWall(){
         ctx.drawImage(tile(texT, tw2, hW), px(wx, kk), yTopW, tw2, hW);
       }
     }
+    /* СТЕНА УХОДИТ В ТЕМНОТУ НА ТОЛЩИНЕ КАМЕННОЙ КРЫШКИ. Она была освещена
+       ровно до самого низа и встречалась с полом в упор: яркость падала со 130
+       до 40 за три пикселя, и через весь зал шла прямая горизонталь. Эльдар
+       принял её за начало тени на тумбах и сказал, чего он хочет: «чтобы после
+       камня не было ничего ниже» (2026-09-24).
+
+       Теперь от линии прилавка вниз стена гаснет — на высоте каменной крышки,
+       — и к полу приходит уже тёмной. Стыка не видно: сходятся две близкие
+       тональности, а не свет с тенью. В проёмах между тумбами это читается
+       как то, что под столешницей света просто нет. */
+    {
+      const yLip = py(CFG.benchY - 8, kw), yEnd = py(CFG.benchY + 34, kw);
+      if (yEnd > yLip && yFoot > yLip){
+        const dg = ctx.createLinearGradient(0, yLip, 0, yEnd);
+        dg.addColorStop(0,    'rgba(12,11,10,0)');
+        dg.addColorStop(0.45, 'rgba(12,11,10,0.20)');
+        dg.addColorStop(1,    'rgba(12,11,10,0.62)');
+        ctx.fillStyle = dg;
+        ctx.fillRect(sx0, yLip, sx1 - sx0, yFoot - yLip);
+      }
+    }
     if (seg.floor){
       // the blue diode line along the white wall's base
       const kl = k(seg.z0 - 6);
