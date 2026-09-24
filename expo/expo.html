@@ -467,7 +467,7 @@ const BEATS = [
      it carried is parked in STUDY_BY_TITLE under its own title, so nothing is
      lost and no coordinate key is left dangling. */
 
-  {x:28180, y:'2026', sign:'TODAY', t:'', tier:1, fly:true,
+  {x:28180, y:'2026', sign:'TODAY', t:'', tier:1, fly:true, railBelow:true, clipAt:0,
    th:'An arc the length of one life: craft → digital → automation.',
    d:'Automated monolithic milling is the norm; AI + robotics + single-visit define the frontier. The story keeps compounding.',
    wall:[], table:[],
@@ -13363,7 +13363,8 @@ const PEOPLE_MORE = {
            {src:'media/azernikov_03.mp4', label:'on CAD/CAM'},
            {src:'media/azernikov_04.mp4', label:'on full digitalization'},
            {src:'media/azernikov_05.mp4', label:'on monolithic BruxZir'},
-           {src:'media/azernikov_06.mp4', label:'on the case database'}]},   // Eldar: no caption on the first one
+           {src:'media/azernikov_06.mp4', label:'on the case database'},
+           {src:'media/azernikov_07.mp4', label:'on the same-day crown'}]},   // Eldar: no caption on the first one
   farran: {name:'Howard Farran', role:'Founder, Dentaltown; host, “Dentistry Uncensored”', bio:['Dr. Howard Farran, DDS, MBA, is dentistry’s megaphone: founder of Dentaltown (the profession’s town square — 200K+ dentists) and host of “Dentistry Uncensored”, which he has run to 1,700+ episodes and still publishes EVERY WEEKDAY (episodes #1706–1709 in June 2026 alone).']},
   feuerstein: {name:'Paul Feuerstein, DMD', role:'GP (45+ yrs); Editor-in-Chief, Dentistry Today; dental-tech authority', bio:['Added 2026-07-24 (Eric\'s addition, from the planning meeting) — one of the two KOLs who, per Eric, are now free of a practice on the road and can travel to the Irvine campus for an interview — possibly alongside Jim (idea only — NOT yet agreed with Jim; don\'t promise it). Who he is.']},
   brenneise: {name:'Rob Brenneise', role:'Chief Growth Officer, Glidewell — since Dec 2023 · ex-SVP Sales, Marketing & Education · ex-VP Sales, CAD/CAM & glidewell.io · ~30 yrs in dental sales before that: DenMat 1995-2012, Experience Dental Studio, Dental Lab Holdings, VIAX', bio:['Rob Brenneise is Glidewell\'s Chief Growth Officer, in that role since December 2023.']},
@@ -13623,6 +13624,10 @@ const STUDY_MEDIA_BY_TITLE = {
   /* на фабрике стоял azernikov_01 — общий рассказ о себе; Эльдар просит
      поставить новое видео, где он рассказывает эту историю (2026-09-23) */
   'BRUXZIR FACTORY': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_03.mp4', label:'on CAD/CAM'}],
+  /* первый голос страницы TODAY: коронка за один визит — это и есть её тема
+     (Эльдар, 2026-09-23). Ложится в поток после первого абзаца; дальше эта
+     полоса будет наполняться. */
+  '2026': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_07.mp4', label:'on the same-day crown'}],
   'GUIDING LEADERS': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_01.mp4', label:'on teaching as the product'}],
   'THE CROSSOVER': [{name:'Dr. Randolph Resnik', img:'resnik', pid:'resnik', src:'media/resnik_02.mp4', label:'on the scan replacing the impression'}],
   /* the man who automated the crown, on the crown that could not be automated —
