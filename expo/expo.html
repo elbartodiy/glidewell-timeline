@@ -3750,7 +3750,17 @@ function initFilmRelays(){
        the 1989 bay's pilaster, so it touches neither (Eldar) */
     {kind: 'hang',   x: ((BEATS.find(b => b.y === '1988') || {x: REC3_L - 700}).x + 215 + (REC3_L - 60)) / 2, w: 320, cy: 282, era: 1},
     {kind: 'crt95',  x: SHIFT(12700), lz: 70, w: 290},            // the nineties set by 1995
-    {kind: 'proj',   x: SHIFT(15330), w: 1260, cy: 318},          // 1999: high on the wall, air under it
+    /* ПРОЕКТОР САДИТСЯ ОТ ЖУРНАЛОВ, А НЕ ОТ СЫРОЙ КООРДИНАТЫ. Он был написан
+       на SHIFT(15330) — то есть где-то около 1999 года, — но годы эры
+       переставляет ритм-проход, а реле стоит на месте: они сошлись, и картина
+       светила ровно в «R&D is born», будто из-за постамента 2000-го (Эльдар,
+       2026-09-23). Теперь левый край картины отмеряется от правого края
+       обложек Chairside: правая обложка стоит на dx 340 при ширине 285, плюс
+       60 воздуха, плюс полширины картины — и проектор больше никуда не уедет,
+       как бы ни переставляли годы. */
+    {kind: 'proj',
+     x: (BEATS.find(b => b.t === 'CHAIRSIDE PERSPECTIVES') || {x: SHIFT(15330) - 1172}).x + 1172,
+     w: 1260, cy: 318},
     {kind: 'lcd05',  x: SHIFT(17620), lz: 16, w: 235},            // the office LCD on the counter before 2005 — moved right, it was standing on the plastic boxes
     /* 16:9, as a plasma is — larger, and measured on the deep wall (k≈0.39) so
        its top clears the taglines (screen-wise below them) and its bottom stops
@@ -11279,12 +11289,27 @@ function drawPatentCard(b){
   ctx.fillRect(-w/2 + pad, -h/2 + pad, w - pad*2, h - pad*2);
   const ix = -w/2 + pad*2.2, iw = w - pad*4.4;
   // шапка
+  /* ШАПКА ВПИСЫВАЕТСЯ В ЛИСТ, А НЕ ВЫЛЕЗАЕТ ЗА НЕГО. Кегль и разрядка были
+     заданы долями ширины листа на глаз, и при разрядке строка вылезала за
+     оба края (Эльдар, 2026-09-23). Теперь строка МЕРЯЕТСЯ и ужимается до
+     ширины наборного поля: разрядка входит в измерение, поэтому считать надо
+     после того, как она выставлена. */
   ctx.fillStyle = 'rgba(48,52,58,0.80)';
-  ctx.font = `600 ${(w*0.058).toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;
   ctx.textAlign = 'center';
-  try { ctx.letterSpacing = (w*0.020).toFixed(1) + 'px'; } catch(e){}
-  ctx.fillText('UNITED STATES PATENT', 0, -h/2 + pad*3.0);
-  try { ctx.letterSpacing = '0px'; } catch(e){}
+  {
+    const HEAD = 'UNITED STATES PATENT';
+    let fs = w * 0.058, tr = w * 0.020;
+    for (let i = 0; i < 6; i++){
+      ctx.font = `600 ${fs.toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;
+      try { ctx.letterSpacing = tr.toFixed(2) + 'px'; } catch(e){}
+      const tw = ctx.measureText(HEAD).width;
+      if (tw <= iw) break;
+      const f = iw / tw;
+      fs *= f; tr *= f;
+    }
+    ctx.fillText(HEAD, 0, -h/2 + pad*3.0);
+    try { ctx.letterSpacing = '0px'; } catch(e){}
+  }
   ctx.fillStyle = 'rgba(48,52,58,0.45)';
   ctx.fillRect(ix, -h/2 + pad*3.7, iw, Math.max(1, w*0.009));
   // ЧЕРТЁЖ: коронка в разрезе — облицовка снаружи, колпачок внутри
@@ -16152,6 +16177,10 @@ async function boot(){
     state.mode = 'live'; state.introHold = false; state.introFade = 0;
     state.ruleA = 1; state.idle = 0;
   }
+  /* ?film=1 запускает фильм сразу: экраны эпох — проектор, кинескопы, плазма —
+     светятся только для «включённого» фильма, и без этого их нельзя ни увидеть,
+     ни сфотографировать скриптом (Эльдар, 2026-09-23 — про уехавший проектор). */
+  if (/[?&]film=1/.test(location.search)) setTimeout(() => { try { startFilm(); } catch(e){} }, 500);
   /* ?study=<year> opens that beat's reading page, ?person=<id> opens a person's
      page — so both can be photographed from a script instead of by hand. */
   const stu = /[?&]study=([\w\u2013-]+)/.exec(location.search);
