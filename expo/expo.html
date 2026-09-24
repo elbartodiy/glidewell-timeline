@@ -13540,13 +13540,21 @@ function drawStudy(){
            the next line of the same block, or stand as a block of its own */
         const nl = para.indexOf('\n');
         const head = nl < 0 ? para.slice(3) : para.slice(3, nl);
-        y += 3 * u;
+        /* ПОДЗАГОЛОВОК ДОЛЖЕН СТОЯТЬ БЛИЖЕ К СВОЕМУ ТЕКСТУ, ЧЕМ К ЧУЖОМУ — но
+           не ближе, чем строки текста друг к другу. Было 40 сверху и 32 снизу
+           при межстрочном 34: снизу теснее, чем внутри абзаца, поэтому строка
+           читалась не заголовком, а жирным началом абзаца, а сверху разницы
+           почти не было (Эльдар, 2026-09-23: «проверь, нет ли такого ещё»).
+           Стало 64 и 44 — иерархия видна, и под заголовком просторнее, чем
+           между строк. Риска держится у самого заголовка, а не уезжает с
+           отступом. */
+        y += 6 * u;
         ctx.fillStyle = `rgba(${K.accent},0.9)`;
-        if (y > topClip && y < botClip) ctx.fillRect(left, y - 3 * u - 2 * SS, 5 * u, 2 * SS);
+        if (y > topClip && y < botClip) ctx.fillRect(left, y - 2.4 * u - 2 * SS, 5 * u, 2 * SS);
         ctx.font = K.font(PAGE.body, '600');
         ctx.fillStyle = `rgba(${K.ink},0.95)`;
         if (y > topClip && y < botClip) ctx.fillText(sentence(head), left, y);
-        y += 4 * u;
+        y += 5.5 * u;
         if (nl < 0) continue;
         para = para.slice(nl + 1);
       }
