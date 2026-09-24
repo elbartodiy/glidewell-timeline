@@ -400,7 +400,7 @@ const BEATS = [
      bay's own view, 2100×1000: the band's middle is y 70, the numeral's ascent
      65.4 px at 90.1 px of type, so the baseline wants 103 and the lift 267. The
      three share one type plane, so one number serves all three. */
-  {x:24450, y:'2018', t:'', tier:1, yLift:267, railBelow:true, clipAt:0,
+  {x:24450, y:'2018', t:'', tier:1, yLift:267,
    pinZ:1000, descBase:true,   // its line is read off the factory's base, which is the only even surface it has
    th:'',
    d:'1,500 pairs of scans, and the profile between opposing teeth that technicians find hardest. The paper, written with UC Berkeley, is called Learning Beyond Human Expertise.',
@@ -418,7 +418,7 @@ const BEATS = [
   /* видео ложится в поток сразу после первого абзаца, а не в колонку и не в
      конец: страница должна привлекать им (Эльдар, 2026-09-23) */
   {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true, descHide:true, blockDX:145, yLift:120,
-   railBelow:true, clipAt:0,
+  
    th:'The analog→digital climax: robots make crowns.',
    d:'Automated, AI-designed, robotic monolithic production.',
    wall:[], table:[],
@@ -469,7 +469,7 @@ const BEATS = [
      it carried is parked in STUDY_BY_TITLE under its own title, so nothing is
      lost and no coordinate key is left dangling. */
 
-  {x:28180, y:'2026', sign:'TODAY', t:'', tier:1, fly:true, railBelow:true, clipAt:0,
+  {x:28180, y:'2026', sign:'TODAY', t:'', tier:1, fly:true,
    th:'An arc the length of one life: craft → digital → automation.',
    d:'Automated monolithic milling is the norm; AI + robotics + single-visit define the frontier. The story keeps compounding.',
    wall:[], table:[],
@@ -3781,13 +3781,15 @@ function initFilmRelays(){
     {kind: 'proj',
      x: (BEATS.find(b => b.t === 'CHAIRSIDE PERSPECTIVES') || {x: SHIFT(15330) - 1172}).x + 1172,
      w: 1260, cy: 318},
-    /* И ЭКРАН СЕРЕДИНЫ ДВУХТЫСЯЧНЫХ САДИТСЯ ОТ ГОДА. Написанный числом, он
-       после появления бита 2002 встал ровно на янтарный CAD-монитор — третий
-       случай одной и той же ошибки за день (Эльдар, 2026-09-23: «поставь его
-       хотя бы рядом справа»). 660 = 322 (место монитора) + половина его ширины
-       + половина ширины экрана + воздух. */
+    /* ЭКРАН СЕРЕДИНЫ ДВУХТЫСЯЧНЫХ САДИТСЯ ОТ 2005-го, А НЕ ОТ 2002-го. Сперва
+       я отмерил его от 2002-го — и он всё равно налезал на янтарный монитор:
+       эти двое стоят на РАЗНЫХ планах (экран на lz 16, монитор на 130), и
+       ближний кажется куда шире, чем говорит его мировая ширина. Разводить их
+       внутри одного года бессмысленно; экран уходит к своему году — по
+       исходному замыслу он и был «офисный LCD на прилавке перед 2005-м»
+       (Эльдар, 2026-09-23). */
     {kind: 'lcd05', lz: 16, w: 235,
-     x: (BEATS.find(b => b.t === 'CAD/CAM ENTERS THE LAB') || {x: SHIFT(17620) - 660}).x + 660},
+     x: (BEATS.find(b => b.t === 'PRISMATIK') || {x: SHIFT(17620) - 150}).x + 150},
     /* 16:9, as a plasma is — larger, and measured on the deep wall (k≈0.39) so
        its top clears the taglines (screen-wise below them) and its bottom stops
        short of the counters' line with a little air */
@@ -3797,6 +3799,31 @@ function initFilmRelays(){
        wall and the lights share one plane, so the two cannot slide apart */
     {kind: 'vwall',  x: REC4_L + 330 + 660 + 225, w: 900, top: -30, h: 850}   // between 2022 and 2023, where it always stood
   );
+  /* ЗАКОН ТЯГОТЕНИЯ ДЛЯ КИНОЭКРАНОВ. Реквизит зала давно проверяется на то,
+     что стоит на настоящем пролёте прилавка, а киноэкраны — нет: их писали
+     числами, и числа попадали на прилавок случайно. Как только они стали
+     отмеряться от своих годов, экран девяностых встал ровно над РАЗРЫВОМ между
+     двумя прилавками и повис в воздухе (Эльдар, 2026-09-23). Те из них, что
+     стоят на столешнице, теперь зажимаются в ближайший настоящий пролёт — по
+     той же арифметике, что и реквизит: полная ширина внутрь, с полями. */
+  if (typeof TABLES !== 'undefined' && TABLES.length){
+    for (const r of FILM_RELAYS){
+      if (!['crt70', 'crt95', 'lcd05', 'proj'].includes(r.kind)) continue;
+      /* у проектора w — это ширина КАРТИНЫ на стене, а на прилавке стоит
+         машинка шириной 70: считать его по картине значит требовать полтора
+         метра столешницы там, где нужна ладонь */
+      const half = (r.kind === 'proj' ? 70 : (r.w || 300)) * 0.5 + 24;
+      if (TABLES.some(tb => r.x - half >= tb.x0 + 16 && r.x + half <= tb.x1 - 16)) continue;
+      let best = null, bd = 1e9;
+      for (const tb of TABLES){
+        if (tb.x1 - tb.x0 < half * 2 + 48) continue;
+        const cx = Math.max(tb.x0 + 16 + half, Math.min(tb.x1 - 16 - half, r.x));
+        const d = Math.abs(cx - r.x);
+        if (d < bd){ bd = d; best = cx; }
+      }
+      if (best != null) r.x = best;
+    }
+  }
   if (DBG) console.log('film screens:', FILM_RELAYS.map(r => r.kind + '@' + (r.x | 0)).join(', '));
 }
 
@@ -14133,7 +14160,16 @@ function drawStudy(){
   /* what goes in the right-hand column: the exhibit, the voices, the people.
      A page with none of them is one column; a page that hangs its voices in a
      strip under the article (railBelow) keeps them out of the column. */
-  const railMedia = (media && media.length && !b.railBelow) ? media : null;
+  /* ПРАВИЛО СТРАНИЦЫ: ГОЛОС ИДЁТ СРАЗУ ПОСЛЕ ПЕРВОГО АБЗАЦА, КРУПНО.
+     Первый абзац говорит, что это за момент; дальше зритель должен упереться
+     в лицо, а не в ещё три экрана текста. Раньше голоса складывались в правую
+     колонку или в конец страницы, и на «The Crossover» Резник оказывался в
+     самом низу — Эльдар просил это несколько раз, теперь это правило, а не
+     флаг на отдельных битах (2026-09-23). Страница, которой нужна колонка,
+     ставит railSide; место в потоке можно сдвинуть через clipAt. */
+  const inFlow = !b.railSide;
+  const clipAt = b.clipAt != null ? b.clipAt : 0;
+  const railMedia = (media && media.length && !inFlow) ? media : null;
   const photos = (typeof STUDY_PHOTOS_BY_TITLE === 'object' && STUDY_PHOTOS_BY_TITLE[b.t || b.y]) || null;
   const wantSide = !!(obj || railMedia || photos || (ppl && ppl.length));
   ctx.save();
@@ -14425,7 +14461,7 @@ function drawStudy(){
      после которого она ложится. Без clipAt всё как было, в конце. */
   let voicesDone = false;
   const drawVoiceStrip = () => {
-    if (voicesDone || !(media && media.length && b.railBelow)) return;
+    if (voicesDone || !(media && media.length && inFlow)) return;
     voicesDone = true;
     y += 2 * u;
     ctx.fillStyle = K.rule;
@@ -14501,7 +14537,7 @@ function drawStudy(){
         } else flow(rawLine, PAGE.bodyLH * SS, bodyInk);
       }
       y += 2 * u;
-      if (b.clipAt != null && paraN === b.clipAt) drawVoiceStrip();
+      if (paraN === clipAt) drawVoiceStrip();
     }
   }
   drawVoiceStrip();    // страницы, не назвавшие места, получают полосу здесь
