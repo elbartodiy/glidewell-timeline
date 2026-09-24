@@ -8689,11 +8689,19 @@ function labsShaded(im, w, h){
   const g = c.getContext('2d');
   g.drawImage(im, 0, 0, W2, H2);
   g.globalCompositeOperation = 'source-atop';
-  const gr = g.createLinearGradient(0, H2 * 0.30, 0, H2);
+  /* РАМПА БЕЗ НАЧАЛА. Стопы шли почти линейно, и глаз находил точку, где
+     тень «включается». Теперь она набирает силу по кривой: первую треть
+     высоты стойки её практически нет, и только к самому полу она
+     набирает вес — так падает свет в комнате, и точки старта не видно
+     (Эльдар, 2026-09-24: «слишком резко затемнение начинается»). */
+  const gr = g.createLinearGradient(0, H2 * 0.29, 0, H2);
   gr.addColorStop(0,    'rgba(10,7,4,0)');
-  gr.addColorStop(0.45, 'rgba(10,7,4,0.14)');
-  gr.addColorStop(0.80, 'rgba(10,7,4,0.34)');
-  gr.addColorStop(1,    'rgba(10,7,4,0.52)');
+  gr.addColorStop(0.22, 'rgba(10,7,4,0.012)');
+  gr.addColorStop(0.42, 'rgba(10,7,4,0.045)');
+  gr.addColorStop(0.60, 'rgba(10,7,4,0.11)');
+  gr.addColorStop(0.76, 'rgba(10,7,4,0.20)');
+  gr.addColorStop(0.89, 'rgba(10,7,4,0.33)');
+  gr.addColorStop(1,    'rgba(10,7,4,0.48)');
   g.fillStyle = gr; g.fillRect(0, 0, W2, H2);
   while (L73_SHADE.size > 6) L73_SHADE.delete(L73_SHADE.keys().next().value);
   L73_SHADE.set(key, c);
