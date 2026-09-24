@@ -12965,6 +12965,11 @@ function drawPfmView(){
 const BOOK = {
   el: null, field: 'badge', badge: '', name: '', email: '', consent: false,
   timer: null, taps: [], done: false, hit: {},
+  /* СЧЁТЧИК НА ВИДУ. Сканер либо шлёт в браузер нажатия, либо не шлёт — и это
+     надо видеть, не открывая консоль. Пока ноль, дело не в зале: код до
+     страницы не доходит вовсе (Эльдар, 2026-09-23: «я сканирую, ничего не
+     происходит»). */
+  keys: 0, lastKey: '',
 };
 const BOOK_KEY = 'book.queue.v1';
 const BOOK_MAIL = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
@@ -12976,6 +12981,11 @@ function bookInit(){
   el.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;width:10px;height:10px';
   document.body.appendChild(el);
   BOOK.el = el;
+  addEventListener('keydown', ev => {
+    if (!(state.inspect && state.inspect.offer)) return;
+    BOOK.keys++;
+    BOOK.lastKey = ev.key && ev.key.length === 1 ? ev.key : (ev.key || '?');
+  }, true);
   el.addEventListener('input', () => {
     if (BOOK.field === 'badge'){
       BOOK.taps.push(performance.now());
@@ -13007,6 +13017,7 @@ function bookFocus(f){
 }
 function bookReset(){
   BOOK.badge = ''; BOOK.name = ''; BOOK.email = ''; BOOK.consent = false; BOOK.done = false;
+  BOOK.keys = 0; BOOK.lastKey = '';
   bookFocus('badge');
 }
 function bookSend(){
@@ -13020,6 +13031,13 @@ function bookSend(){
 /* полоса предложения: рисуется справа от карточки, когда открыта книга */
 function drawBookOffer(x0, y0, wPan, e){
   bookInit();
+  /* ФОКУС ВОЗВРАЩАЕТСЯ КАЖДЫЙ КАДР. Гость открывает книгу ПАЛЬЦЕМ, и нажатие
+     по холсту уводит фокус на него уже ПОСЛЕ того, как обработчик поставил его
+     в скрытое поле: сканеру становится некуда печатать, и скан молча пропадает.
+     Проверка дешёвая — focus() зовётся только когда поле фокус потеряло. */
+  if (BOOK.el && document.activeElement !== BOOK.el){
+    try { BOOK.el.focus({preventScroll: true}); } catch(err){}
+  }
   const a = Math.max(0, (e - 0.6) / 0.4);
   if (a < 0.02) return;
   const u = Math.max(11, Math.round(wPan * 0.030));
@@ -13103,6 +13121,11 @@ function drawBookOffer(x0, y0, wPan, e){
   ctx.setLineDash([]);
   ctx.fillStyle = BOOK.badge ? ink(0.9) : ink(0.4);
   put(BOOK.badge || 'waiting for a scan…', x0 + u, y + bH * 0.66, u * 1.0, '', wPan - u * 2);
+  /* справа в той же строке — сколько нажатий долетело до страницы */
+  ctx.fillStyle = BOOK.keys ? `rgba(105,211,138,${(0.9*a).toFixed(3)})`
+                            : `rgba(236,242,248,${(0.28*a).toFixed(3)})`;
+  put(BOOK.keys ? BOOK.keys + ' keys · ' + BOOK.lastKey : 'no keys yet',
+      x0 + wPan - u, y + bH * 0.66, u * 0.82, '', wPan * 0.42, 'right');
   pushHit(x0, y, wPan, bH, {type: 'bookfield', key: 'badge'});
   y += bH + u * 1.1;
 
@@ -15403,8 +15426,13 @@ function update(dt){
         openDoc();
       } else if (aimed && aimed.type === 'photo'){
         if (aimed.offer){ bookInit(); bookReset(); }
+        /* offer НАДО ПЕРЕНЕСТИ ЯВНО. Оверлей собирается здесь по полям, а не
+           копированием payload, — и флаг «это книга» терялся по дороге: по
+           нажатию на стопку открывалась голая карточка без полосы сканирования,
+           хотя по ?book=1 всё работало (Эльдар, 2026-09-23). */
         state.inspect = {sp: aimed.sp, wx: aimed.wx, cy: aimed.cy, z: aimed.z, w: aimed.w,
-                         cap: aimed.cap, link: aimed.link, beat: aimed.beat, table: false, amt: 0};
+                         cap: aimed.cap, link: aimed.link, beat: aimed.beat,
+                         offer: !!aimed.offer, table: false, amt: 0};
         cam.vel = 0;
       } else if (aimed && aimed.type === 'photoTable'){
         state.inspect = {sp: aimed.sp, wx: aimed.wx, lz: aimed.lz, w: aimed.w,
