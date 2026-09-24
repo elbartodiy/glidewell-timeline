@@ -1477,14 +1477,18 @@ const BENCH_BREAKS = [1700, 7350, 9250, 13100, 16900, 22280]
 /* 1973: no counter — the two labs stand on their own stones, the way the nine
    do at 1979, and the counters stop short of them on both sides (Eldar,
    2026-09-11). The small joint that used to sit here (3345) is gone with it. */
-/* ШИРИНА СЧИТАЕТСЯ ИЗ КАДРА, А НЕ ПОДБИРАЕТСЯ. Рендер содержит тумбы целиком,
-   до пола; в зале от прилавка (700) до пола (1080) ровно 380 единиц. Значит
-   ширина задана однозначно: L73_W × (H/W) × (доля кадра ниже линии прилавка)
-   = 380. Эльдар удлинил стойки, кадр стал 1962×1452, линия прилавка на строке
-   416 из 1452 — ниже неё 0.7135 высоты, и 380 / (0.7401 × 0.7135) = 720.
-   Пересчитывать при каждой перезаливке: обе величины замеряются по файлу
-   (2026-09-24). */
-const L73_W = 720;   // the pair of plinths, in world units
+/* ШИРИНА ЗАДАЁТ РАЗМЕР, ПОЛ ЗАДАЁТ МЕСТО. Я сперва привязывал столешницы к
+   линии прилавка зала и высчитывал ширину из этого — и тем самым съедал всё,
+   что Эльдар добавлял к стойкам: сколько ни удлиняй, верх всё равно садился
+   на прилавок. А он их и удлинял затем, чтобы столешницы встали ВЫШЕ
+   прилавка (2026-09-24).
+
+   Теперь к полу крепится низ, а верх встаёт сам, по собственным пропорциям
+   кадра. 900 — та ширина, при которой прежний, короткий рендер доставал ровно
+   до линии прилавка; новые стойки на ней поднимают столешницы над прилавком
+   ровно на столько, на сколько они длиннее. Менять её надо только если
+   изменится ШИРИНА экспоната; высота приходит из файла сама. */
+const L73_W = 900;   // the pair of plinths, in world units
 BENCH_BREAKS.push({x: SHIFT(4400), half: L73_W / 2 + 440, l73: true});   // the counters stand well back from the two stones — Eldar hatched their ends away (2026-09-11)   // re-centred on the beat once applyCut has spaced it
 BENCH_BREAKS.push({x: SHIFT(24870), half: 560});   // the BruxZir Factory line replaces the table
 /* the counters stop two column-widths clear of the doorway's pilasters — on
@@ -8658,19 +8662,42 @@ function drawLabs73(){
   if (!sp) return;
   if (X73 == null){ const b = BEATS.find(b2 => b2.y === '1973'); X73 = b ? b.x : SHIFT(4400); }
   if (Math.abs(cam.x - X73) > CULL_BAY) return;
-  /* 0.2865 — доля высоты кадра над линией прилавка, замерена по файлу: тумбы
-     выходят на полную ширину на строке 416 из 1452. */
-  const kR = k(120), TOP = 0.2865;
+  const kR = k(120);
   const wR = L73_W * kR * SS, hR = wR * sp.h / sp.w;
-  const yBench = py(CFG.benchY, kR), yFoot = yBench + hR * (1 - TOP);
+  const yFoot = py(1080, kR);        // ноги на полу — это и есть точка привязки
   const xR = px(X73, kR) - wR / 2;
   if (xR > W + wR || xR + wR < -wR) return;
   /* ДОСТРОЙКА КАМНЕЙ ВНИЗ СНЯТА. Прежний рендер обрывался выше пола, и каждая
      тумба наращивалась копиями собственной грани с нахлёстом. Новый содержит
      их целиком — машинка стала не нужна и пририсовывала бы лишнее
      (Эльдар, 2026-09-24). */
-  const im = spriteMip(sp, wR, hR);
-  ctx.drawImage(im, xR, yFoot - hR, wR, hR);
+  ctx.drawImage(labsShaded(spriteMip(sp, wR, hR), wR, hR), xR, yFoot - hR, wR, hR);
+}
+/* СТОЙКИ ТЕМНЕЮТ К ПОЛУ. Рендер освещён ровно, и обе тумбы читались плоскими
+   досками, приклеенными к полу без всякого низа. Тень кладётся ТОЛЬКО по
+   непрозрачным пикселям (source-atop), иначе она встала бы прямоугольником
+   поверх зала, и начинается ниже столешницы — 0.30 высоты кадра, чуть ниже
+   замеренной линии прилавка 0.2865, — чтобы камень остался чистым.
+   Затенённая копия кладётся в кэш по размеру: зал перерисовывает её иначе
+   каждый кадр (Эльдар, 2026-09-24: «пусть у них немного темнеют стойки»). */
+const L73_SHADE = new Map();
+function labsShaded(im, w, h){
+  const W2 = Math.max(2, Math.round(w)), H2 = Math.max(2, Math.round(h));
+  const key = W2 + 'x' + H2;
+  const had = L73_SHADE.get(key); if (had) return had;
+  const c = document.createElement('canvas'); c.width = W2; c.height = H2;
+  const g = c.getContext('2d');
+  g.drawImage(im, 0, 0, W2, H2);
+  g.globalCompositeOperation = 'source-atop';
+  const gr = g.createLinearGradient(0, H2 * 0.30, 0, H2);
+  gr.addColorStop(0,    'rgba(10,7,4,0)');
+  gr.addColorStop(0.45, 'rgba(10,7,4,0.14)');
+  gr.addColorStop(0.80, 'rgba(10,7,4,0.34)');
+  gr.addColorStop(1,    'rgba(10,7,4,0.52)');
+  g.fillStyle = gr; g.fillRect(0, 0, W2, H2);
+  while (L73_SHADE.size > 6) L73_SHADE.delete(L73_SHADE.keys().next().value);
+  L73_SHADE.set(key, c);
+  return c;
 }
 /* НЕ ИСПОЛЬЗУЕТСЯ С 2026-09-24: новый рендер 1973-го содержит тумбы целиком.
    Оставлено как готовый приём на случай следующего кадра, обрывающегося выше
