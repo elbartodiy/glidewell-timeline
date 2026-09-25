@@ -182,10 +182,52 @@ function drawBayWallAndColumns(){
   }
 }
 
+/* ── ОДНА ПЛОСКОСТЬ ПЕРПЕНДИКУЛЯРНО, С ОКНОМ ─────────────────────────────
+   Эльдар, 2026-09-25: «добавь одну такую плоскость перпендикулярно ровно.
+   Там дырка — окно». На его кадре она закрашена зелёным и идёт от правого
+   края блока вправо и НА НАС, а в ней белый проём.
+
+   Что значит «перпендикулярно» в нашей проекции: это плоскость постоянного
+   x, уходящая по z. Каждая её точка — (y, z) при одном и том же x, и k
+   берётся по собственному z точки. Дальний край стоит на плоскости бухты
+   (680), ближний вынесен к нам; поэтому на экране она раскрывается клином
+   вправо и вниз — ровно как на его кадре.
+
+   Дырка сделана вторым, обратным контуром и заливкой 'evenodd': так проём
+   вырезан В САМОЙ плоскости, а не нарисован поверх неё, и сквозь него видно
+   то, что лежит дальше. */
+const WALL = {
+  x: REC3_R + STEP_PAD,   // от правого края блока — там, где кончился белый пол
+  zFar: R89_BAY_Z,        // дальний край: на плоскости бухты
+  zNear: -400,            // ближний: вынесен к нам
+  top: -520,              // потолок зала
+  bot: 1080,              // пол
+  winZ0: 560, winZ1: 60,  // окно по глубине
+  winTop: -260, winBot: 700,   // и по высоте: низ на линии прилавка
+};
+function drawSideWall(){
+  const Wl = WALL;
+  const P = (y, z) => [px(Wl.x, k(z)), py(y, k(z))];
+  const outer = [P(Wl.top, Wl.zFar), P(Wl.top, Wl.zNear), P(Wl.bot, Wl.zNear), P(Wl.bot, Wl.zFar)];
+  const hole  = [P(Wl.winTop, Wl.winZ0), P(Wl.winBot, Wl.winZ0),
+                 P(Wl.winBot, Wl.winZ1), P(Wl.winTop, Wl.winZ1)];   // обратный обход
+  /* грань под прямым углом к свету теряет часть его — берём тон панели бухты
+     и гасим, иначе плоскость читается продолжением стены, а не поворотом */
+  const g = ctx.createLinearGradient(...outer[0], ...outer[1]);
+  g.addColorStop(0, '#6c7681'); g.addColorStop(1, '#8b95a0');
+  ctx.beginPath();
+  outer.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+  ctx.closePath();
+  hole.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+  ctx.closePath();
+  ctx.fillStyle = g; ctx.fill('evenodd');
+}
+
 /* порядок тот же, что в зале: пол → панель с пилястрами → блок поверх их подошв */
 function draw(){
   if (!W) return;
   ctx.fillStyle = '#0e1114'; ctx.fillRect(0, 0, W, H);
+  drawSideWall();
   drawBayFloor();
   drawBayWallAndColumns();
   drawBayStep(REC3_L, REC3_R, STEP_TONE_STEEL, R89_BAY_Z, noseOf(R89_BAY_Z));
