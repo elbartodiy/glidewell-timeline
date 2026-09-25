@@ -10042,7 +10042,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260924-labs73b';
+const ASSET_V = '20260924-mill-v1';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -10101,6 +10101,10 @@ async function loadPhotoSkin(){
     ph_casebox: 'case_box.png',       // the mailed case, open — the real photograph
     ph_scanner: 'scanner.png',        // fastscan.io, the instrument itself, not a drawing of it
     ph_mill: 'mill_io.png',           // fastmill.io, the same — cut out of its studio render
+    /* ПЕРВАЯ ВЕРСИЯ ФРЕЗЫ — отдельным файлом. На столе 2017-го стоит именно
+       она, а на финальном столе остаётся прежний кадр: Эльдар просил заменить
+       ту, что «не на последнем самом финале, а чуть раньше» (2026-09-24). */
+    ph_mill_v1: 'mill_io_v1.png',
     ph_scanbay: 'scan_bay.jpg',       // the 2022 bay: the whole render, rectangle and all
     ph_hall_wall: 'hall_wall.png',    // the glass hall: the room's long side, frontal, fitted to the wall's height
     ph_hall_floor: 'hall_floor.png',  // its polished floor and reflections, laid under the whole late stretch
@@ -10219,7 +10223,7 @@ function initDecor(){
     const b17 = BEATS.find(b => b.y === '2017');
     /* LEFT of the numerals, not right: the 2018 bay opens 74 units past this
        year, and clearPlateBays sweeps anything standing inside a cut's bay. */
-    if (b17) PROPS.push({x: b17.x - 175, z: 70, kind: 'ph_mill', w: 230});
+    if (b17) PROPS.push({x: b17.x - 175, z: 70, kind: 'ph_mill_v1', w: 230});
     /* the plastic-injection division's own product, on the counter at its own
        tick — right of the CAD screen, which it must not cover */
     const bpl = BEATS.find(b => b.t === 'PLASTIC INJECTION');
