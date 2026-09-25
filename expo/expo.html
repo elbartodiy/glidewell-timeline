@@ -8941,7 +8941,7 @@ function drawDust(t){
 function lampFlicker(t, seed){
   return 0.86 + 0.10*Math.sin(t*11 + seed*7) * Math.sin(t*2.7 + seed*3) + 0.04*Math.sin(t*23 + seed);
 }
-function drawLamp(x, t, seed){
+function drawLamp(x, t, seed, fadeAtStone){
   const kk = k(240);
   let sx = px(x, kk);
   if (sx < -300 || sx > W + 300) return 0;
@@ -8991,14 +8991,23 @@ function drawLamp(x, t, seed){
   const r = 34*kk*SS;
   if (modern) drawGlow('248,243,228', sx, bulbY + 8*kk*SS, 108*kk*SS, 0.7*inten, 0.32);
   else drawGlow('255,225,155', sx, bulbY + r*0.5, r*2.2, 0.85*inten);
-  // light cone — soft-shouldered, and it dies out rather than being cut
-  softBeam(sx, px(x, k(120)), bulbY, py(CFG.benchY + 80, k(120)),
+  /* ЛУЧ КОНЧАЕТСЯ НА ТОЛЩИНЕ КАМНЯ, ЕСЛИ ЛАМПА ТАК ПОМЕЧЕНА. Он шёл до 80
+     единиц НИЖЕ прилавка и ложился на дерево тумб — это и есть тот свет ниже
+     камня, который Эльдар показал стрелкой, и которого я трижды искал не там
+     (2026-09-24). Для помеченной лампы луч гаснет на 34 единицах ниже линии
+     прилавка — это и есть толщина каменной крышки, — и ниже камня от него не
+     остаётся ничего. У остальных ламп луч идёт как шёл. */
+  const beamEnd = fadeAtStone ? CFG.benchY + 34 : CFG.benchY + 80;
+  softBeam(sx, px(x, k(120)), bulbY, py(beamEnd, k(120)),
            (modern ? 84 : 40)*kk*SS, 355*kk*SS, modern ? '250,246,232' : '255,205,125', 0.075*inten,
            [[0, 1], [0.58, 0.55], [0.85, 0.16], [1, 0]]);
-  // pool on the table
-  const kf = k(160);
-  drawGlow(modern ? '248,242,226' : '255,205,120',
-           px(x,kf), py(CFG.benchY - 4, kf), 300*kf*SS, 0.16*inten, 0.28);
+  // pool on the table — у помеченной лампы его нет: он лежит НА столешнице,
+  // то есть ниже камня, а туда свет доходить не должен
+  if (!fadeAtStone){
+    const kf = k(160);
+    drawGlow(modern ? '248,242,226' : '255,205,120',
+             px(x,kf), py(CFG.benchY - 4, kf), 300*kf*SS, 0.16*inten, 0.28);
+  }
   return inten;
 }
 
@@ -16760,7 +16769,7 @@ function frame(){
     // the cool eras keep their light but lose the fixture: a black slab hung
     // over the numerals was reading as a bar across the composition
     if (L.seg.lamp === 'tube') continue;
-    drawLamp(L.x, t, i+1);
+    drawLamp(L.x, t, i+1, L.fadeAtStone);
   }
   drawDust(t);
 
