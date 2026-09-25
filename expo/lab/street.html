@@ -150,6 +150,240 @@ function drawBayStep(L, R, tone, zBack, zNose){
   ctx.restore();
 }
 
+const SEGMENTS = [{font:''},{font:''},{font:'Verdana, Tahoma, "DejaVu Sans", sans-serif'}];
+function eraFont(sz, style, fam){ return `${style||''} ${(+sz.toFixed(2))}px ${fam || SEGMENTS[2].font}`.trim(); }
+function pushHit(){}
+function nearestBeat(){ return {i: 0}; }
+
+function m93(p, mx, my, mz){
+  return [p.ox + (mx - mz * 0.50) * p.s, p.oy - (my - mz * 0.34) * p.s];
+}
+function quad93(p, pts, tone){
+  ctx.fillStyle = tone;
+  ctx.beginPath();
+  pts.forEach((v, i) => {
+    const q = m93(p, v[0], v[1], v[2]);
+    i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]);
+  });
+  ctx.closePath(); ctx.fill();
+}
+const T93 = ['#f6f4ef', '#dedad2', '#b3aea6', '#8e8a83'];   // roof, front, side, shade
+function box93(p, x0, x1, y0, y1, z0, z1, bands){
+  quad93(p, [[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]], T93[0]);   // roof
+  quad93(p, [[x1,y1,z0],[x1,y1,z1],[x1,y0,z1],[x1,y0,z0]], T93[2]);   // the side that turns away
+  quad93(p, [[x0,y1,z1],[x1,y1,z1],[x1,y0,z1],[x0,y0,z1]], T93[1]);   // the face
+  if (!bands) return;
+  // three ribbon windows, recessed between the spandrels
+  const h = (y1 - y0) / 2;
+  for (let i = 0; i < 2; i++){
+    const a = y0 + i * h + h * 0.30, b2 = y0 + i * h + h * 0.78;
+    quad93(p, [[x0+3,b2,z1],[x1-3,b2,z1],[x1-3,a,z1],[x0+3,a,z1]], T93[3]);
+    quad93(p, [[x1,b2,z0+3],[x1,b2,z1-3],[x1,a,z1-3],[x1,a,z0+3]], '#6f6c66');
+  }
+}
+function roundPoly93(pts, rr){
+  ctx.beginPath();
+  for (let i = 0; i < pts.length; i++){
+    const a = pts[i], b = pts[(i + 1) % pts.length], c = pts[(i + 2) % pts.length];
+    const d1 = Math.hypot(b[0]-a[0], b[1]-a[1]) || 1, t1 = Math.min(rr / d1, 0.45);
+    const d2 = Math.hypot(c[0]-b[0], c[1]-b[1]) || 1, t2 = Math.min(rr / d2, 0.45);
+    const s1 = [a[0] + (b[0]-a[0]) * t1, a[1] + (b[1]-a[1]) * t1];
+    const e1 = [b[0] - (b[0]-a[0]) * t1, b[1] - (b[1]-a[1]) * t1];
+    if (i === 0) ctx.moveTo(s1[0], s1[1]); else ctx.lineTo(s1[0], s1[1]);
+    ctx.lineTo(e1[0], e1[1]);
+    ctx.quadraticCurveTo(b[0], b[1], b[0] + (c[0]-b[0]) * t2, b[1] + (c[1]-b[1]) * t2);
+  }
+  ctx.closePath();
+}
+
+/* The stand. A soft white slab with a fat rounded edge — the way a model of a
+   place is presented when the place is the point, lifted off the floor so you
+   look down onto it the way the flythrough looks down onto the building. */
+let MODEL93 = null;
+function drawModel93(wx, lz, wWorld, topWorldY){
+  const kk = k(lz);
+  const sx = px(wx, kk);
+  const foot = py(topWorldY, kk);
+  const XM = 132, ZM = 76;
+  const s = wWorld * kk * SS / (XM + ZM * 0.50);
+  const p = {s, ox: sx - (XM - ZM * 0.50) * s / 2, oy: foot - ZM * 0.34 * s};
+  /* the site is stashed BEFORE the cull: the aeroplane now starts its approach
+     while the building is still off the frame to the right, and it needs the
+     site's coordinates to fly towards — a stale stash from the last time the
+     model was on screen put its parking place in the wrong spot */
+  MODEL93 = {p, s, XM, ZM, sx, kk};   // the plane parks on this site, in these units
+  if (sx < -500 || sx > W + 500) return;
+
+  // the plinth: the ground plane of the model, oversailed and extruded down
+  /* One surface. The site used to be a separate slab laid on top of a separate
+     box, and the two never looked like one thing — the card overhung the stand
+     on one side and left it bare on the other, which is exactly the cut-and-
+     paste look. The stand's top face IS the ground the site is laid out on now,
+     so there is no seam between them to misalign. */
+  const OV = 0, H = py(1080, kk) - foot;
+  const A = m93(p, -2, 0, -2), B = m93(p, XM+2, 0, -2);
+  const C = m93(p, XM+2, 0, ZM+2), D = m93(p, -2, 0, ZM+2);
+  const rr = 14 * s;
+  ctx.save();
+  ctx.translate(sx, py(1080, kk)); ctx.scale(1, 0.16); ctx.translate(-sx, -py(1080, kk));
+  const gsh = ctx.createRadialGradient(sx, py(1080, kk), 0, sx, py(1080, kk), (XM+2*OV) * s * 0.7);
+  gsh.addColorStop(0, 'rgba(0,0,0,0.45)'); gsh.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gsh;
+  ctx.beginPath(); ctx.arc(sx, py(1080, kk), (XM+2*OV) * s * 0.7, 0, 7); ctx.fill();
+  ctx.restore();
+  const wallG = ctx.createLinearGradient(0, foot, 0, foot + H);
+  wallG.addColorStop(0, '#f0f2f4'); wallG.addColorStop(0.35, '#dfe3e7'); wallG.addColorStop(1, '#a9b0b7');
+  ctx.fillStyle = wallG;
+  ctx.beginPath();
+  ctx.moveTo(D[0], D[1]); ctx.lineTo(C[0], C[1]); ctx.lineTo(B[0], B[1]);
+  ctx.lineTo(B[0], B[1] + H); ctx.lineTo(C[0], C[1] + H); ctx.lineTo(D[0], D[1] + H);
+  ctx.closePath(); ctx.fill();
+  roundPoly93([[A[0], A[1]+H], [B[0], B[1]+H], [C[0], C[1]+H], [D[0], D[1]+H]], rr);
+  ctx.fillStyle = '#9ba2a9'; ctx.fill();
+  roundPoly93([A, B, C, D], rr);
+  const topG = ctx.createLinearGradient(A[0], A[1], C[0], C[1]);
+  topG.addColorStop(0, '#ffffff'); topG.addColorStop(1, '#e4e8ec');
+  ctx.fillStyle = topG; ctx.fill();
+
+
+  /* The grounds. A building alone on a plate is a massing study; what the film
+     shows is a place — asphalt, a lot with the stalls painted on it, young
+     trees that have not filled out yet, and the walk up to the door. Painted
+     flat on the ground plane in the same oblique, so it lies down properly. */
+  const flat = (x0, x1, z0, z1, tone) => quad93(p, [[x0,0.4,z0],[x1,0.4,z0],[x1,0.4,z1],[x0,0.4,z1]], tone);
+  const oval = (mx, mz, ax, az, tone, kerb) => {
+    ctx.beginPath();
+    for (let i = 0; i <= 30; i++){
+      const th = Math.PI * 2 * i / 30;
+      const q = m93(p, mx + Math.cos(th) * ax, 0.4, mz + Math.sin(th) * az);
+      i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]);
+    }
+    ctx.closePath();
+    ctx.fillStyle = tone; ctx.fill();
+    if (kerb){ ctx.strokeStyle = kerb; ctx.lineWidth = Math.max(0.8, 1.1 * s); ctx.stroke(); }
+  };
+
+  /* The grounds, read off the live footage: a broad pale drive sweeping past
+     the entrance around an oval of lawn in a concrete kerb, raised beds of dark
+     planting hugging the building, a row of bollards along the walk, and young
+     trees everywhere — slender ones, the year they went in. */
+  flat(4, XM-4, 4, ZM-4, '#dcded9');                      // lawn
+  flat(6, 44, 40, 56, '#a8adb2');                         // the lot, off to one side
+  ctx.lineWidth = Math.max(0.6, 0.7 * s);
+  ctx.strokeStyle = 'rgba(250,250,248,0.7)';
+  for (let i = 0; i < 6; i++){
+    const xx = 10 + i * 5.6;
+    const a = m93(p, xx, 0.6, 42), b2 = m93(p, xx, 0.6, 54);
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b2[0], b2[1]); ctx.stroke();
+  }
+  for (let i = 0; i < 4; i++)
+    box93(p, 9 + i * 8.2, 15 + i * 8.2, 0.4, 4.4, 43 + (i % 2) * 6, 52 + (i % 2) * 6, false);
+  flat(6, XM-6, 58, ZM-4, '#b7bcc1');                     // the drive across the front
+  oval(66, 66, 24, 5.2, '#c6cfc2', 'rgba(245,246,242,0.85)');   // the lawn island in it
+  flat(56, 76, 58, 66, '#ced2ce');                        // the walk to the door
+  flat(6, 46, 34, 39, '#8e9a8a');                         // beds along the rear bar
+  flat(86, XM-6, 34, 39, '#8e9a8a');
+  flat(46, 86, 62, 67, '#8e9a8a');                        // and in front of the wing
+
+  /* The building: a long bar with a wing brought forward out of its middle, two
+     ribbons of glass, white pilasters at the ends and where the wing meets it,
+     a plant room on the rear roof, and two octagonal columns standing free in
+     the plaza either side of the wing. */
+  box93(p, 6, 126, 0, 30, 10, 34, true);                  // the rear bar
+  box93(p, 46, 86, 0, 30, 34, 62, true);                  // the wing, forward
+  box93(p, 54, 78, 30, 36, 14, 26, false);                // the plant on the roof
+  for (const [px2, zf] of [[5, 34], [39, 34], [86, 34], [119, 34], [45, 62], [79, 62]])
+    box93(p, px2, px2 + 7, 0, 32, zf, zf + 5, false);     // pilasters
+  // the two octagons out in front
+  for (const ox2 of [32, 100]){
+    const [ux, uy] = m93(p, ox2, 26, 52), [, ly] = m93(p, ox2, 0, 52);
+    const r2 = 6 * s;
+    const og = ctx.createLinearGradient(ux - r2, 0, ux + r2, 0);
+    og.addColorStop(0, T93[1]); og.addColorStop(0.36, T93[0]); og.addColorStop(1, T93[2]);
+    ctx.fillStyle = og;
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++){
+      const th = Math.PI * 2 * i / 8 + Math.PI / 8;
+      const X = ux + Math.cos(th) * r2, Y = uy + Math.sin(th) * r2 * 0.34;
+      i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
+    }
+    ctx.closePath();
+    ctx.lineTo(ux + Math.cos(Math.PI/8) * r2, ly);
+    ctx.fillRect(ux - r2, uy, r2 * 2, ly - uy);
+    ctx.fill();
+    ctx.fillStyle = T93[0];
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++){
+      const th = Math.PI * 2 * i / 8 + Math.PI / 8;
+      const X = ux + Math.cos(th) * r2, Y = uy + Math.sin(th) * r2 * 0.34;
+      i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
+    }
+    ctx.closePath(); ctx.fill();
+  }
+  // bollards along the walk
+  for (let i = 0; i < 6; i++){
+    const bx2 = 57 + i * 3.7;
+    const [ux, uy] = m93(p, bx2, 3.6, 64), [, ly] = m93(p, bx2, 0, 64);
+    ctx.fillStyle = T93[1];
+    ctx.fillRect(ux - 1.2 * s, uy, 2.4 * s, ly - uy);
+    ctx.fillStyle = T93[0];
+    ctx.beginPath(); ctx.ellipse(ux, uy, 1.2 * s, 0.42 * s, 0, 0, 7); ctx.fill();
+  }
+  // young trees: slender, high-crowned, the year they went in
+  for (const [tx2, tz2, r2] of [[10, 62, 3.6], [24, 70, 3.2], [40, 62, 3.8], [52, 72, 3.0],
+                                [80, 72, 3.4], [92, 62, 3.6], [108, 70, 3.2], [124, 62, 3.4],
+                                [24, 38, 3.0], [66, 8, 3.4], [104, 38, 3.2], [6, 30, 3.4],
+                                [128, 30, 3.2], [46, 30, 2.8]]){
+    const [ux, uy] = m93(p, tx2, 0.4, tz2);
+    const [, cy2] = m93(p, tx2, r2 * 3.2, tz2);
+    ctx.strokeStyle = '#8b8880'; ctx.lineWidth = Math.max(0.7, 0.9 * s);
+    ctx.beginPath(); ctx.moveTo(ux, uy); ctx.lineTo(ux, cy2 + r2 * 0.6 * s); ctx.stroke();
+    ctx.fillStyle = '#a4b59c';
+    ctx.beginPath(); ctx.ellipse(ux, cy2, r2 * 0.92 * s, r2 * 1.05 * s, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(228,238,222,0.5)';
+    ctx.beginPath(); ctx.ellipse(ux - r2 * 0.28 * s, cy2 - r2 * 0.34 * s, r2 * 0.42 * s, r2 * 0.44 * s, 0, 0, 7); ctx.fill();
+  }
+  // the number, where it is on the building
+  const [nx2, ny2] = m93(p, 92, 21, 34);
+  ctx.fillStyle = 'rgba(70,68,64,0.85)';
+  ctx.font = eraFont(Math.max(5, 4.6 * s), '700', SEGMENTS[2].font);
+  ctx.textAlign = 'left';
+  ctx.fillText('4141', nx2, ny2);
+
+  pushHit(sx - XM * s * 0.5, foot - 46 * s, XM * s, 46 * s,
+          {type: 'focus', beat: nearestBeat(wx).i, anchor: wx});
+}
+
+const R93 = {
+  z: 728,
+  left: 0, width: REC3_R - REC3_L,
+  tone: ['#c9ccd1', '#82868d'],
+};
+function drawRec93(){
+  const kk = k(R93.z), kNear = k(-40);
+  const mid = R93.left + R93.width / 2;
+  const half = R93.width / 2 * (CFG.F + R93.z) / (CFG.F + 340);
+  const BL = mid - half, BR = mid + half;
+  const yBase = py(700 + 240, k(340));
+  const wg = ctx.createLinearGradient(0, 0, 0, yBase);
+  wg.addColorStop(0, '#c3cad0');
+  wg.addColorStop(0.42, '#dee4e9');
+  wg.addColorStop(1, '#979ea5');
+  ctx.fillStyle = wg;
+  ctx.fillRect(px(BL, kk), 0, px(BR, kk) - px(BL, kk), yBase);
+  const g = ctx.createLinearGradient(0, yBase, 0, H);
+  g.addColorStop(0, R93.tone[0]); g.addColorStop(1, R93.tone[1]);
+  const edge = (wx) => {
+    const xf = px(wx, kk), xn = px(wx, kNear), yn = py(CFG.floor, kNear);
+    return xf + (xn - xf) * ((H - yBase) / (yn - yBase || 1));
+  };
+  ctx.beginPath();
+  ctx.moveTo(px(BL, kk), yBase); ctx.lineTo(px(BR, kk), yBase);
+  ctx.lineTo(edge(BR), H);       ctx.lineTo(edge(BL), H);
+  ctx.closePath(); ctx.fillStyle = g; ctx.fill();
+  drawModel93(mid, 240, 330, 700 + 20);
+}
+
 function bayOutline(){
   const kBay = k(R89_BAY_Z), kStep = k(noseOf(R89_BAY_Z)), kNear = k(-40);
   const wx0 = REC3_L - STEP_PAD, wx1 = REC3_R + STEP_PAD;
@@ -237,6 +471,8 @@ function draw(){
   drawFloor();
   drawWallAndColumns();
   drawBayStep(REC3_L, REC3_R, STEP_STEEL, R89_BAY_Z, noseOf(R89_BAY_Z));
+  R93.left = PAIRS[1].b;
+  drawRec93();
   const dist = p => Math.min(Math.abs(p.a - cam.x), Math.abs(p.b - cam.x));
   for (const p of [...PAIRS].sort((u, v) => dist(v) - dist(u))){
     const xs = [p.a, p.b].sort((u, v) => Math.abs(v - cam.x) - Math.abs(u - cam.x));
