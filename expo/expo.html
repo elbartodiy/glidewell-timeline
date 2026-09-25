@@ -7817,23 +7817,20 @@ function drawRec2Front(t){
     ctx.stroke();
     drawGlow('120,215,255', nx, stripY, pw * 1.5, 0.08 + 0.18 * lit);
   }
-  /* КОРОНКИ НЕТ, ПОКА ЕЁ НЕ ОТСКАНИРУЮТ. Она стояла на постаменте всегда, и
+  /* КОРОНКИ НЕТ, ПОКА СЛОИ НЕ СОВПАЛИ. Она стояла на постаменте всегда, и
      сканирующий луч работал по уже готовому предмету — то есть по предмету,
-     который не из чего было получить. Теперь до подхода на постаменте пусто:
-     луч сходится, и ровно в тот миг, когда коронка встаёт на экран, она
-     вспыхивает и появляется, а дальше идёт вместе с ней (Эльдар, 2026-09-23:
-     «коронки нету до тех пор, пока не появляется вспышка»).
-     scanPhase латчится на единице — раз родившись, она больше не исчезает. */
-  const born = scanPhase(mid);
-  /* НИКАКОГО ПРОЯВЛЕНИЯ. Сперва коронка набирала непрозрачность на подходе —
-     и была видна ЗАДОЛГО до вспышки, то есть появлялась сама по себе, а
-     вспышка лишь сопровождала уже случившееся (Эльдар, 2026-09-24: «коронка
-     становится видна только во время вспышки и далее»). Теперь это порог:
-     до BORN_AT на постаменте пусто, ровно на нём бьёт вспышка и в тот же кадр
-     коронка стоит целиком. Ослабевает потом только вспышка. */
-  const BORN_AT = 0.86;
-  if (born >= BORN_AT){
-    const f = Math.min(1, (born - BORN_AT) / (1 - BORN_AT));   // 0 в миг вспышки → 1 после
+     который не из чего было получить (2026-09-23). Потом она рождалась своей
+     вспышкой на 0.86 фазы сканирования, то есть за 127 единиц до центра
+     бухты, — и зал бил две вспышки подряд на один смысл: сперва эту, следом
+     вспышку совпадения слоёв на самом центре. Эльдар (2026-09-25): «первую
+     сдвинем вместе со всеми вытекающими ко второй». Теперь миг рождения — это
+     и есть совпадение: его ставит drawRec2 (state.rec2.bornT), здесь он
+     только читается. Латч навсегда: раз родившись, коронка не исчезает, когда
+     ты уходишь. Вспышка гаснет по времени — те же 0.75 с, что и вспышка на
+     панели, так что обе затухают вместе. */
+  const bornT = state.rec2 ? state.rec2.bornT : null;
+  if (bornT != null){
+    const f = Math.min(1, Math.max(0, (t - bornT) / 0.75));    // 0 в миг вспышки → 1 после
     const flash = (1 - f) * (1 - f);
     if (flash > 0.01) drawGlow('235,250,255', nx, ny, cw * (2.0 + 2.2 * flash), 0.62 * flash);
     drawGlow('225,245,255', nx, ny, cw * 1.5, 0.12 + 0.13 * ease);
@@ -7871,7 +7868,6 @@ function paneDrop(mid){
   return u * u;
 }
 
-let DR_SCAN_RUNG = false;
 function drawRec2(t){
   const mid = (REC2_L + REC2_R) / 2;
   if (Math.abs(cam.x - mid) > CULL_BAY) return;
@@ -7978,12 +7974,29 @@ function drawRec2(t){
   // THE MOMENT OF ALIGNMENT: when the three states lock, the form the points
   // have only been describing flares into being for an instant — the data
   // becomes the object, once, and then the room settles back
-  if (!state.rec2) state.rec2 = {fired: false, t0: -9, prev: null};
+  if (!state.rec2) state.rec2 = {fired: false, t0: -9, prev: null, bornT: null};
   const dxm = cam.x - mid;
   const crossed = state.rec2.prev != null && state.rec2.prev !== 0 &&
                   Math.sign(state.rec2.prev) !== Math.sign(dxm);
   if (!state.rec2.fired && (crossed || Math.abs(dxm) < 6)){
     state.rec2.fired = true; state.rec2.t0 = t;
+    /* ЗВУК ПРИНАДЛЕЖИТ ЭТОМУ МИГУ, А НЕ ЛУЧУ. Он бил, когда луч доходил до
+       подножия коронки — на 22 единицы раньше совпадения, — и получалось два
+       события подряд. Теперь одно: слои совпали, вспыхнуло, прозвучало
+       (Эльдар, 2026-09-25). Перезаряжается тем же |dxm| > 320, так что ходьба
+       туда-обратно звонит снова. */
+    pingOnce('ws08', 0.5, 620);
+  }
+  /* И КОРОНКА РОЖДАЕТСЯ ЗДЕСЬ ЖЕ. Раньше она вспыхивала на постаменте своей
+     отдельной вспышкой, на 127 единиц раньше этой, — две вспышки подряд на
+     один смысл. Эльдар (2026-09-25): «первую сдвинем вместе со всеми
+     вытекающими ко второй». Миг рождения латчится навсегда: раз появившись,
+     коронка не исчезает, когда ты уходишь, — в отличие от самой вспышки,
+     которая перезаряжается. Если в бухту вошли уже справа от центра, коронка
+     просто стоит, без вспышки (миг рождения уводится в прошлое). */
+  if (state.rec2.bornT == null){
+    if (crossed || Math.abs(dxm) < 6) state.rec2.bornT = t;
+    else if (dxm > 6) state.rec2.bornT = -9;
   }
   if (Math.abs(dxm) > 320) state.rec2.fired = false;   // re-armed once you leave
   state.rec2.prev = dxm;
@@ -8096,12 +8109,9 @@ function drawRec2(t){
     // and now the mesh, on its face
     ctx.save();
     ctx.beginPath(); ctx.rect(gx, gy, gw, gh); ctx.clip();
-    /* the beam reaching the foot of the crown is an event, and it gets a
-       sound: the head of one bright whoosh, cut short. It re-arms once the bay
-       is well behind you, so walking back and forth rings it again. */
+    /* звук луча снят: он звучит теперь в миг совпадения слоёв, вместе со
+       вспышкой и рождением коронки — см. drawRec2 */
     const sph = scanPhase(mid);
-    if (sph > 0.985){ if (!DR_SCAN_RUNG){ DR_SCAN_RUNG = true; pingOnce('ws08', 0.5, 620); } }
-    else if (sph < 0.5) DR_SCAN_RUNG = false;
     drawCrownFile(fx, fy, fw, 0.25 + 0.75 * drop, sph);
     ctx.restore();
   }
@@ -10236,7 +10246,14 @@ function initDecor(){
     /* ВДВОЕ БОЛЬШЕ, ЧЕМ БЫЛО: 230 → 460 (Эльдар, 2026-09-24). Это машина на
        прилавок, а не настольный прибор, и в прежнем размере она читалась
        как игрушка. */
-    if (b17) PROPS.push({x: b17.x - 175, z: 70, kind: 'ph_mill_v1', w: 460});
+    /* ВПРАВО НА 100 И ВНИЗ НА 36. Эльдар (2026-09-25) нарисовал у нижнего
+       правого угла машины зелёный угольник — длину и высоту сдвига — и
+       написал: подвинуть на них. Мерил по его кадру: горизонталь угольника
+       102 px, вертикаль 37 px при ширине машины 470 px, а машина рисуется
+       шириной 460 единиц, так что 102/470*460 = 100 и 37/470*460 = 36.
+       Вниз — это drop: столешница на фотографии лежит ниже линии, на которой
+       зал ставит предмет глубины z=70, и фреза висела над ней. */
+    if (b17) PROPS.push({x: b17.x - 75, z: 70, kind: 'ph_mill_v1', w: 460, drop: 36});
     /* the plastic-injection division's own product, on the counter at its own
        tick — right of the CAD screen, which it must not cover */
     const bpl = BEATS.find(b => b.t === 'PLASTIC INJECTION');
@@ -10581,7 +10598,11 @@ function drawProps(midPass){
     const sx = px(p.x, kk);
     if (sx < -260 || sx > W + 260) continue;
     const scale = (p.w / sp.w) * kk * SS;
-    const syFoot = (p.mid && midPass !== 'late') ? py(1080, kk) : py(CFG.benchY - 2 - p._lifted, kk);
+    /* p.drop — насколько предмет садится НИЖЕ линии прилавка, в единицах мира.
+       Нужен там, где столешница на фотографии лежит не там, где её считает
+       геометрия зала, и предмет читается висящим над ней. По умолчанию нуля,
+       то есть для всех остальных ничего не меняется. */
+    const syFoot = (p.mid && midPass !== 'late') ? py(1080, kk) : py(CFG.benchY - 2 - p._lifted + (p.drop || 0), kk);
     /* The join. Every one of these was a single drawImage with nothing under
        it, so fifty objects hovered a hair above the counter in every frame —
        while a mere pinned photograph got a proper contact shadow. An object
