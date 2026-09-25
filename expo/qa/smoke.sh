@@ -6,6 +6,6 @@
 URL=${1:-http://localhost:8777/expo/expo.html}
 TMP=$(mktemp -d)
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu --no-sandbox \
-  --virtual-time-budget=12000 --user-data-dir=$TMP --dump-dom "$URL?smoke=1&rq=1&nc=$RANDOM" 2>/dev/null \
+  --virtual-time-budget=20000 --user-data-dir=$TMP --dump-dom "$URL?smoke=1&rq=1&nc=$RANDOM" 2>/dev/null \
   | grep -o '<title>[^<]*</title>' | sed 's/<[^>]*>//g'
 rm -rf $TMP

@@ -1472,6 +1472,12 @@ function nearestBeat(x){
 /* 17900 landed 470 units from the 2007 plinth and left a 405-wide scrap of
    counter marooned between the two gaps — the little island. Moved back to
    16900, where it divides a long run instead of stranding a piece of one. */
+/* ТОЛЩИНА КАМЕННОЙ КРЫШКИ ПРИЛАВКА, В ЕДИНИЦАХ МИРА. Измерена по листу
+   bench_b1_long.png: светлая грань столешницы — ряды 39–41 из 480, дерево
+   начинается с 42-го; 380 единиц на (480−39) рядов даёт 0.862 единицы на ряд,
+   то есть 2.6. Число живёт здесь, потому что им пользуется свет, а не мебель:
+   помеченная лампа гаснет ровно на этой толщине (Эльдар, 2026-09-24). */
+const BENCH_STONE_TH = 2.6;
 const BENCH_BREAKS = [1700, 7350, 9250, 13100, 16900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
 /* 1973: no counter — the two labs stand on their own stones, the way the nine
@@ -2631,7 +2637,7 @@ function drawLampPool(x, intensity, fadeAtStone){
   const S2 = Math.max(2, Math.round(size / 8) * 8);
   const sc = S2 / size;                                   // местные координаты холста
   const t  = Math.round((py(CFG.benchY - 8,  kk) - yTop) * sc / 4) * 4;
-  const b2 = Math.round((py(CFG.benchY + 34, kk) - yTop) * sc / 4) * 4;
+  const b2 = Math.round((py(CFG.benchY + BENCH_STONE_TH, kk) - yTop) * sc / 4) * 4;
   const prev = ctx.globalAlpha;
   ctx.globalAlpha = Math.min(1, a);
   ctx.drawImage(lampCut(pool, S2, t, b2), cx - r, yTop, size, size);
@@ -8993,11 +8999,15 @@ function drawLamp(x, t, seed, fadeAtStone){
   else drawGlow('255,225,155', sx, bulbY + r*0.5, r*2.2, 0.85*inten);
   /* ЛУЧ КОНЧАЕТСЯ НА ТОЛЩИНЕ КАМНЯ, ЕСЛИ ЛАМПА ТАК ПОМЕЧЕНА. Он шёл до 80
      единиц НИЖЕ прилавка и ложился на дерево тумб — это и есть тот свет ниже
-     камня, который Эльдар показал стрелкой, и которого я трижды искал не там
-     (2026-09-24). Для помеченной лампы луч гаснет на 34 единицах ниже линии
-     прилавка — это и есть толщина каменной крышки, — и ниже камня от него не
-     остаётся ничего. У остальных ламп луч идёт как шёл. */
-  const beamEnd = fadeAtStone ? CFG.benchY + 34 : CFG.benchY + 80;
+     камня, который Эльдар показал стрелкой (2026-09-24). Сначала я обрезал его
+     на 34 единицах ниже линии прилавка, решив на глаз, что столько и есть
+     камень; Эльдар провёл зелёную черту ровно по этой границе и сказал
+     подрезать. Теперь число не с глаза, а с рендера: в листе bench_b1 (989×480,
+     `top`=39) светлая грань столешницы занимает ряды 39–41, а с ряда 42 идёт
+     дерево; при 380/(480−39)=0.862 единицы на ряд это 2.6 единицы. Луч гаснет в
+     ноль на них — `BENCH_STONE_TH`, — и ниже камня от него не остаётся ничего.
+     У остальных ламп луч идёт как шёл. */
+  const beamEnd = fadeAtStone ? CFG.benchY + BENCH_STONE_TH : CFG.benchY + 80;
   softBeam(sx, px(x, k(120)), bulbY, py(beamEnd, k(120)),
            (modern ? 84 : 40)*kk*SS, 355*kk*SS, modern ? '250,246,232' : '255,205,125', 0.075*inten,
            [[0, 1], [0.58, 0.55], [0.85, 0.16], [1, 0]]);
@@ -10223,7 +10233,10 @@ function initDecor(){
     const b17 = BEATS.find(b => b.y === '2017');
     /* LEFT of the numerals, not right: the 2018 bay opens 74 units past this
        year, and clearPlateBays sweeps anything standing inside a cut's bay. */
-    if (b17) PROPS.push({x: b17.x - 175, z: 70, kind: 'ph_mill_v1', w: 230});
+    /* ВДВОЕ БОЛЬШЕ, ЧЕМ БЫЛО: 230 → 460 (Эльдар, 2026-09-24). Это машина на
+       прилавок, а не настольный прибор, и в прежнем размере она читалась
+       как игрушка. */
+    if (b17) PROPS.push({x: b17.x - 175, z: 70, kind: 'ph_mill_v1', w: 460});
     /* the plastic-injection division's own product, on the counter at its own
        tick — right of the CAD screen, which it must not cover */
     const bpl = BEATS.find(b => b.t === 'PLASTIC INJECTION');
