@@ -12063,6 +12063,7 @@ function drawWallWindow(b){
    Участок выключен, пока в адресе нет ?street=1 — зал не меняется.      */
 const STREET = {
   on: false,
+  refDz: 1400, refApp: 520, refHz: 0.33,   // общий кадр: глубина, кажущаяся ширина, горизонт
   th: 58,            // толщина стены в проёме — как у окна 1995-го
   top: -120,         // верх проёма в мировых единицах (выше линии года)
   bot: 1080,         // и низ: проём идёт до пола
@@ -12156,13 +12157,24 @@ function streetPlaceholder(key){
   STREET_PH[key] = {c, w: Wp, h: Hp};
   return STREET_PH[key];
 }
-function streetLayer(key){
-  const ph = PHOTO_TEX['street_' + key];
-  return (ph && ph.el) ? {c: ph.el, w: ph.w || ph.el.naturalWidth, h: ph.h || ph.el.naturalHeight}
-                       : streetPlaceholder(key);
+/* СВОЯ ЗАГРУЗКА, ОТДЕЛЬНО ОТ ЗАЛА. Участок сырой и живёт за флагом, поэтому
+   его картинки не идут через loadPhotoSkin: пропавший файл здесь не должен
+   ронять загрузку зала. Чего нет — рисуется заглушкой. */
+const STREET_IMG = {};
+let STREET_LOADED = false;
+function streetLoad(){
+  if (STREET_LOADED) return; STREET_LOADED = true;
+  for (const key of ['ref', ...STREET.layers.map(L => L.key)]){
+    const im = new Image();
+    im.onload = () => { STREET_IMG[key] = {c: im, w: im.naturalWidth, h: im.naturalHeight}; };
+    im.onerror = () => {};
+    im.src = vurl('assets/street/' + key + '.png');
+  }
 }
+function streetLayer(key){ return STREET_IMG[key] || streetPlaceholder(key); }
 function drawStreet(){
   if (!STREET.on) return;
+  streetLoad();
   const S = streetSpan(); if (!S) return;
   const wz = wallZAt(S.mid);
   const kk = k(wz), ki = k(wz + STREET.th);
@@ -12178,14 +12190,38 @@ function drawStreet(){
 
   ctx.save();
   ctx.beginPath(); ctx.rect(p0, q0, p1 - p0, q1 - q0); ctx.clip();
-  for (const L of STREET.layers){
-    const im = streetLayer(L.key); if (!im) continue;
-    const kz = k(wz + L.dz);
-    const wWorld = L.app / kz * k(0);        // «казаться шириной app» на любой глубине
-    const wS = wWorld * kz * SS, hS = wS * im.h / im.w;
-    const cxS = px(S.mid, kz), cyS = py(CFG.horizon, kz);   // горизонт слоя = горизонт зала
-    ctx.drawImage(im.c, cxS - wS / 2, cyS - hS / 2, wS, hS);
+  /* СЛОЙ САДИТСЯ ПО СВОЕМУ ГОРИЗОНТУ, А НЕ ПО СЕРЕДИНЕ. py(430, kk) даёт
+     линию горизонта при любом kk, поэтому совместить горизонты всех слоёв —
+     значит совместить их с 430. У сгенерированных слоёв горизонт просят ровно
+     по центру кадра (hz 0.5), а у кадра, снятого не нами, он где придётся —
+     у референса Эльдара на 0.33 высоты. Отсюда сдвиг центра. */
+  /* У СЛОЯ ПОСТОЯННЫЙ ВИДИМЫЙ РАЗМЕР И ПЕРЕМЕННОЕ МЕСТО. Это и есть многоплановая
+     съёмка: дальний план не мельче ближнего — он просто МЕДЛЕННЕЕ едет. Размер
+     задан в экранных единицах (app), а глубина входит только в px(), то есть в
+     боковой ход. По высоте слой сажается на линию горизонта: она у нас на
+     CFG.horizon при любом kk, а hz говорит, на какой доле высоты горизонт лежит
+     в самой картинке. */
+  const lay = (im, dz, appS, hz) => {
+    const kz = k(wz + dz);
+    const wS = appS, hS = wS * im.h / im.w;
+    ctx.drawImage(im.c, px(S.mid, kz) - wS / 2,
+                  CFG.horizon * SS - (hz == null ? 0.5 : hz) * hS, wS, hS);
+  };
+  /* ПОКА ЕСТЬ ОБЩИЙ КАДР — РИСУЕМ ЕГО. Эльдар прислал рендер всей сцены, и
+     улица из него вырезана целиком (assets/street/ref.png, 265x872 — полоса
+     между углами двух корпусов). Перспектива в нём уже есть, разбирать его на
+     слои незачем, пока не понадобится ход между планами. Как появятся слои —
+     ref убирается, и дальше работает лесенка глубин. */
+  if (STREET_IMG.ref){
+    /* ОДИН КАДР ДОЛЖЕН ЗАКРЫТЬ ПРОЁМ ЦЕЛИКОМ, иначе сквозь него видно стену
+       зала — так и было в первом заходе. Размер считается от самого проёма:
+       по ширине с запасом на ход камеры, по высоте впритык, — и берётся
+       больший из двух. */
+    const im = STREET_IMG.ref;
+    const needW = (ax1 - ax0) * 1.25, needH = (ay1 - ay0) * 1.04;
+    lay(im, STREET.refDz, Math.max(needW, needH * im.w / im.h), STREET.refHz);
   }
+  else for (const L of STREET.layers) lay(streetLayer(L.key), L.dz, L.app * k(0) * SS, L.hz);
   ctx.restore();
 
   /* ОТКОСЫ — ТОЛЬКО ДАЛЬНИЕ. Толщина стены видна с той стороны проёма, от
