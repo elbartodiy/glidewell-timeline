@@ -18,7 +18,11 @@ const CFG = {F: 900, horizon: 430, floor: 1080, refH: 1080, dprCap: 2};
 const REC3_L = 13620, REC3_R = 14720;
 const R89_BAY_Z = 680;
 const STEP_PAD = 60;
+const STEP_DEPTH = 88;
+const noseOf = zBay => zBay - STEP_DEPTH;
 const FLOOR_89 = ['#d3d1c9', '#8b897f'];
+const STEP_STEEL = {tread: ['#b9bcbb', '#d2d5d3'], riser: ['#9ea2a2', '#787c7d', '#4e5254'],
+                    nosing: 'rgba(238,244,246,0.9)', glow: '214,236,246'};
 
 const camQ = /[?&]x=(-?\d+)/.exec(location.search);
 const cam = {x: camQ ? +camQ[1] : (REC3_L + REC3_R) / 2, z: 0};
@@ -81,11 +85,62 @@ function drawWallAndColumns(){
   }
 }
 
+function drawBayStep(L, R, tone, zBack, zNose){
+  const zB = zBack != null ? zBack : 590;
+  const zF = zNose != null ? zNose : (zBack != null ? zBack - 82 : 520);
+  const kFar = k(zB), kStep = k(zF), zTread = 1040;
+  const yTreadBack = py(zTread, kFar);
+  const yNose = py(zTread, kStep), yStepFoot = py(1080, kStep);
+  const yBackFoot = py(1080, kFar);
+  const wx0 = L - STEP_PAD, wx1 = R + STEP_PAD;
+  const bx0 = px(wx0, kFar), bx1 = px(wx1, kFar);
+  const nx0 = px(wx0, kStep), nx1 = px(wx1, kStep);
+  if (nx1 < -200 || nx0 > W + 200) return;
+  const T = tone;
+  const tg = ctx.createLinearGradient(0, yTreadBack, 0, yNose);
+  tg.addColorStop(0, T.tread[0]); tg.addColorStop(1, T.tread[1]);
+  ctx.fillStyle = tg;
+  ctx.beginPath(); ctx.moveTo(bx0, yTreadBack); ctx.lineTo(bx1, yTreadBack);
+  ctx.lineTo(nx1, yNose); ctx.lineTo(nx0, yNose); ctx.closePath(); ctx.fill();
+  const rg = ctx.createLinearGradient(0, yNose, 0, yStepFoot);
+  rg.addColorStop(0, T.riser[0]); rg.addColorStop(0.5, T.riser[1]); rg.addColorStop(1, T.riser[2]);
+  ctx.fillStyle = rg;
+  ctx.fillRect(nx0, yNose, nx1 - nx0, yStepFoot - yNose);
+  ctx.fillStyle = T.nosing;
+  ctx.fillRect(nx0, Math.round(yNose), nx1 - nx0, Math.max(1, 1.4 * SS));
+  const eg = ctx.createLinearGradient(0, yNose, 0, yStepFoot);
+  eg.addColorStop(0, T.riser[0]); eg.addColorStop(0.5, T.riser[1]); eg.addColorStop(1, T.riser[2]);
+  const endFace = (xb, xn) => {
+    if (Math.abs(xn - xb) < 0.5) return;
+    const path = () => { ctx.beginPath(); ctx.moveTo(xb, yTreadBack); ctx.lineTo(xn, yNose);
+                         ctx.lineTo(xn, yStepFoot); ctx.lineTo(xb, yBackFoot); ctx.closePath(); };
+    ctx.fillStyle = eg; path(); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.06)'; ctx.fill();
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const eglow = ctx.createLinearGradient(0, yNose + 2 * SS, 0, yStepFoot);
+    eglow.addColorStop(0, `rgba(${T.glow},0.62)`); eglow.addColorStop(0.4, `rgba(${T.glow},0.24)`);
+    eglow.addColorStop(1, `rgba(${T.glow},0.03)`);
+    ctx.fillStyle = eglow; path(); ctx.fill();
+    ctx.restore();
+  };
+  if (nx1 < bx1) endFace(bx1, nx1);
+  if (nx0 > bx0) endFace(bx0, nx0);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const lg = ctx.createLinearGradient(0, yNose + 2 * SS, 0, yStepFoot);
+  lg.addColorStop(0, `rgba(${T.glow},0.80)`); lg.addColorStop(0.4, `rgba(${T.glow},0.30)`);
+  lg.addColorStop(1, `rgba(${T.glow},0.04)`);
+  ctx.fillStyle = lg; ctx.fillRect(nx0, yNose + 2 * SS, nx1 - nx0, yStepFoot - yNose - 2 * SS);
+  ctx.restore();
+}
+
 function draw(){
   if (!W) return;
   ctx.fillStyle = '#0e1114'; ctx.fillRect(0, 0, W, H);
   drawFloor();
   drawWallAndColumns();
+  drawBayStep(REC3_L, REC3_R, STEP_STEEL, R89_BAY_Z, noseOf(R89_BAY_Z));
 }
 
 let drag = null;
