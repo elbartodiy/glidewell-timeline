@@ -14158,6 +14158,10 @@ const STUDY_MEDIA_BY_TITLE = {
   'STUDY PROGRAM': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_08.mp4', label:'on education'}],
   'CHAIRSIDE PERSPECTIVES': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_06.mp4', label:'on Chairside'}],
   'PLASTIC INJECTION': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_07.mp4', label:'on vertical integration'}],
+  /* Лабао про первую коронку, сделанную машиной, — на странице, где компания
+     решает завести собственную науку: следующий абзац той же страницы и
+     говорит, что первым эта решимость купила станок (Эльдар, 2026-09-25). */
+  'RESEARCH AND DEVELOPMENT': [{name:'Edsel Labao', img:'labao', pid:'labao', src:'media/labao_02.mp4', label:'on the first computer-made crown'}],
   'FIRST DIGITAL CASE': [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2007_patel.mp4', label:'on the digital revolution'}],
   /* Азерников про CAD/CAM — голос страницы пролёта, а не года: 2007 про скан,
      пролёт про всю революцию (Эльдар, 2026-09-23). */
@@ -14190,6 +14194,23 @@ const STUDY_MEDIA_BY_TITLE = {
      his own words at 00:13:51 of the 17 July interview (Eldar, 2026-09-23) */
   'PFM ERA': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_02.mp4', label:'on why the PFM could not be machined'}],
 };
+/* ГОЛОС СО СТРАНИЦЫ САМ ЛОЖИТСЯ НА ЛИЧНУЮ СТРАНИЦУ ЧЕЛОВЕКА. Эльдар
+   (2026-09-25): «можно по умолчанию ты сам будешь видео их личные складывать
+   к личным страницам, чтобы я не повторял». До сих пор это был мой навык:
+   клип вписывался в две таблицы руками, и достаточно было один раз забыть —
+   человек говорил бы в зале, но на своей странице молчал. Теперь связь
+   выводится: всё, у чего в STUDY_MEDIA_BY_TITLE есть pid, дописывается в
+   PEOPLE[pid].clips, если такого src там ещё нет. Порядок — порядок страниц
+   по стене. В PEOPLE остаются вписанными только те клипы, которых нет ни на
+   одной странице (azernikov_01, jim_trailer_2), и те, чей порядок задан
+   нарочно. */
+for (const list of Object.values(STUDY_MEDIA_BY_TITLE)){
+  for (const m of list){
+    const P = m.pid && PEOPLE[m.pid]; if (!P) continue;
+    if (!P.clips) P.clips = [];
+    if (!P.clips.some(c => c.src === m.src)) P.clips.push({src: m.src, label: m.label || ''});
+  }
+}
 const STUDY_MEDIA = {};   // filled at boot from STUDY_MEDIA_BY_TITLE
 /* БИТ, КОТОРОГО НЕТ НА СТЕНЕ. Страница читается из объекта бита — год, титул,
    координата, — но у пролёта Digital Revolution бита нет: он единственная
