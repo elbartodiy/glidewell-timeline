@@ -1,0 +1,258 @@
+<!doctype html>
+<!--
+  УЛИЦА 1989 → 1993 — МАСТЕРСКАЯ. СБОРКА ПО СХЕМЕ ЭЛЬДАРА.
+
+  Эльдар, 2026-09-25: «всё, что ты построил, неверно. Начни с моей схемы».
+  Поэтому здесь ничего не сочинено: восемь пронумерованных плоскостей — это
+  восемь номеров с его листа, каждая нарисована отдельно и подписана своим
+  номером прямо на себе. Если номер прочитан неправильно, его видно и можно
+  назвать: «3 не то».
+
+  ГЛАВНОЕ, ЧТО ВЫЯСНИЛОСЬ ПО ДОРОГЕ. Наши px/py — это полноценная
+  перспективная проекция, если считать k для КАЖДОЙ вершины:
+      k(z) = F / (F + z - cam.z)
+      px(x, z) = W/2 + (x - cam.x) * k(z) * SS
+      py(y, z) = (horizon + (y - horizon) * k(z)) * SS
+  Значит зал умеет рисовать любую плоскую фигуру в пространстве — надо просто
+  спроецировать её четыре угла. Никакого второго движка не нужно. Всё ниже
+  построено ровно так: каждая плоскость это четыре точки (x, y, z).
+
+  ОСИ. x — вдоль ленты зала (куда идёт гость). y — вниз (пол зала 1080,
+  потолок около -520, горизонт 430). z — вглубь, от нас.
+
+  Масштаб зала: 380 единиц от пола до столешницы при настоящих 900 мм, то
+  есть 422 единицы на метр.
+-->
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Улица 1989 → 1993 · сборка по схеме</title>
+<style>
+  :root{ --bg:#14171b; --panel:#1b1f24; --line:#2b3138; --ink:#e8ecf0; --dim:#8b949e; --accent:#7cc4ff; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+            font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  #stage{position:fixed;inset:0 0 0 300px;background:#0e1114;cursor:grab}
+  #stage.drag{cursor:grabbing}
+  canvas{display:block;width:100%;height:100%}
+  #panel{position:fixed;left:0;top:0;bottom:0;width:300px;overflow-y:auto;
+         background:var(--panel);border-right:1px solid var(--line);padding:16px 14px 24px}
+  h1{font-size:14px;font-weight:650;margin:0 0 2px}
+  .sub{color:var(--dim);font-size:12px;margin:0 0 14px}
+  fieldset{border:0;border-top:1px solid var(--line);margin:0 0 4px;padding:11px 0 3px}
+  legend{color:var(--dim);font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:0 6px 0 0}
+  .pl{display:flex;align-items:center;gap:9px;margin-bottom:6px;cursor:pointer}
+  .pl input{accent-color:var(--accent)}
+  .pl b{display:inline-block;width:17px;height:17px;border-radius:50%;background:#2c3views;
+        background:#2c3a46;color:var(--accent);font-size:11px;line-height:17px;text-align:center;font-weight:700}
+  .pl span{font-size:12px;color:var(--dim)}
+  .row{display:grid;grid-template-columns:1fr 66px;gap:8px;align-items:center;margin-bottom:8px}
+  .row label{color:var(--dim);font-size:12px}
+  .row label b{color:var(--ink);font-weight:500;display:block}
+  .row label i{font-style:normal;font-size:11px;color:var(--dim)}
+  input[type=number]{width:100%;background:#12151a;border:1px solid var(--line);color:var(--ink);
+                     border-radius:6px;padding:4px 6px;font:inherit;font-size:12px}
+  #hud{position:fixed;left:314px;top:12px;color:var(--dim);font-size:12px;
+       text-shadow:0 1px 6px #000;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="panel">
+  <h1>Улица 1989 → 1993</h1>
+  <p class="sub">Восемь плоскостей со схемы. Галочкой — что показывать.</p>
+  <fieldset id="planes"><legend>Плоскости со схемы</legend></fieldset>
+  <fieldset><legend>Размеры</legend>
+    <div class="row"><label><b>Между фасадами</b><i id="l_gap"></i></label><input type="number" id="n_gap"></div>
+    <div class="row"><label><b>Толщина стены</b><i id="l_th"></i></label><input type="number" id="n_th"></div>
+    <div class="row"><label><b>Окно: начало</b><i>по z</i></label><input type="number" id="n_z0"></div>
+    <div class="row"><label><b>Окно: конец</b><i>по z</i></label><input type="number" id="n_z1"></div>
+    <div class="row"><label><b>Верх окна</b><i>мировая высота</i></label><input type="number" id="n_wt"></div>
+    <div class="row"><label><b>Низ окна</b><i>подоконник</i></label><input type="number" id="n_wb"></div>
+    <div class="row"><label><b>Верх стены</b><i>парапет</i></label><input type="number" id="n_pt"></div>
+    <div class="row"><label><b>Уровень улицы</b><i id="l_gr"></i></label><input type="number" id="n_gr"></div>
+    <div class="row"><label><b>Длина фасада</b><i id="l_dep"></i></label><input type="number" id="n_dep"></div>
+  </fieldset>
+  <fieldset><legend>Камера</legend>
+    <div class="row"><label><b>x</b><i>вдоль ленты</i></label><input type="number" id="n_cx"></div>
+    <div class="row"><label><b>z</b><i>ближе / дальше</i></label><input type="number" id="n_cz"></div>
+  </fieldset>
+</div>
+<div id="stage"><canvas id="c"></canvas></div>
+<div id="hud"></div>
+
+<script>
+(() => {
+/* ── ЧИСЛА ЗАЛА, менять нельзя: они должны совпадать с expo.html ───────── */
+const CFG = {F: 900, horizon: 430, benchY: 700, floor: 1080, ceil: -520};
+const PER_M = 422;
+const cam = {x: 0, z: 0};
+let W = 0, H = 0, SS = 1;
+
+const kz = z => CFG.F / (CFG.F + z - cam.z);
+/* проекция ТОЧКИ пространства — та же, что в зале, только k берётся для
+   каждой вершины отдельно. Этого достаточно, чтобы рисовать любые плоскости. */
+const PX = (x, z) => W / 2 + (x - cam.x) * kz(z) * SS;
+const PY = (y, z) => (CFG.horizon + (y - CFG.horizon) * kz(z)) * SS;
+
+/* ── РАЗМЕРЫ. Всё, что подбирается. ────────────────────────────────────── */
+const P = {
+  gap: 8400,        // между фасадами двух корпусов: 8400 = 20 м
+  th: 58,           // толщина стены — как у окна 1995-го в зале
+  z0: 1400,         // окно галереи: начало по глубине
+  z1: 6200,         // и конец
+  wt: -300,         // верх окна
+  wb: 700,          // низ окна — линия прилавка
+  pt: -1500,        // верх стены, парапет
+  gr: 2560,         // уровень улицы: этажом ниже пола зала
+  dep: 16000,       // насколько далеко уходит фасад
+};
+
+/* ── ВОСЕМЬ ПЛОСКОСТЕЙ СО СХЕМЫ ────────────────────────────────────────────
+   Номера — с листа Эльдара. side = -1 левый корпус (1989), +1 правый (1993);
+   xf — плоскость фасада, xi — та же стена изнутри, на толщину глубже. */
+function planes(side){
+  const xf = side * P.gap / 2;            // наружная грань фасада
+  const xi = xf - side * P.th;            // внутренняя грань той же стены
+  const Z0 = P.z0, Z1 = P.z1, D = P.dep;
+  return [
+    {n: 1, name: 'парапет · стена выше окна', fill: '208,208,202',
+     pts: [[xf, P.pt, 0], [xf, P.pt, D], [xf, P.wt, D], [xf, P.wt, 0]]},
+    {n: 2, name: 'притолока · толщина сверху', fill: '150,153,150',
+     pts: [[xf, P.wt, Z0], [xf, P.wt, Z1], [xi, P.wt, Z1], [xi, P.wt, Z0]]},
+    {n: 3, name: 'откос · толщина сбоку', fill: '176,178,174',
+     pts: [[xf, P.wt, Z0], [xi, P.wt, Z0], [xi, P.wb, Z0], [xf, P.wb, Z0]]},
+    {n: 4, name: 'подоконник · толщина снизу', fill: '196,198,192',
+     pts: [[xf, P.wb, Z0], [xf, P.wb, Z1], [xi, P.wb, Z1], [xi, P.wb, Z0]]},
+    {n: 5, name: 'низ подоконника · возврат', fill: '128,132,130',
+     pts: [[xf, P.wb, Z0], [xi, P.wb, Z0], [xi, P.wb + 90, Z0], [xf, P.wb + 90, Z0]]},
+    {n: 6, name: 'простенок · стена ниже окна', fill: '198,198,192',
+     pts: [[xf, P.wb, 0], [xf, P.wb, D], [xf, P.gr, D], [xf, P.gr, 0]]},
+    {n: 7, name: 'прилавок в галерее', fill: '216,214,206',
+     pts: [[xi, CFG.benchY, Z0], [xi, CFG.benchY, Z1],
+           [xi - side * 340, CFG.benchY, Z1], [xi - side * 340, CFG.benchY, Z0]]},
+    {n: 8, name: 'потолок галереи', fill: '120,128,138',
+     pts: [[xi, CFG.ceil, Z0], [xi, CFG.ceil, Z1],
+           [xi - side * 1600, CFG.ceil, Z1], [xi - side * 1600, CFG.ceil, Z0]]},
+  ];
+}
+const SHOW = {1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true};
+
+/* ── РИСОВАНИЕ ─────────────────────────────────────────────────────────── */
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const stage = document.getElementById('stage');
+
+function resize(){
+  SS = Math.min(devicePixelRatio || 1, 2);
+  W = cv.width  = Math.max(2, Math.round(stage.clientWidth  * SS));
+  H = cv.height = Math.max(2, Math.round(stage.clientHeight * SS));
+  draw();
+}
+function poly(pts, fill){
+  ctx.beginPath();
+  pts.forEach(([x, y, z], i) => {
+    const sx = PX(x, z), sy = PY(y, z);
+    i ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy);
+  });
+  ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.strokeStyle = 'rgba(20,24,28,0.35)'; ctx.lineWidth = 1 * SS; ctx.stroke();
+}
+function label(n, pts){
+  let sx = 0, sy = 0;
+  for (const [x, y, z] of pts){ sx += PX(x, z); sy += PY(y, z); }
+  sx /= pts.length; sy /= pts.length;
+  if (sx < 0 || sx > W || sy < 0 || sy > H) return;
+  ctx.beginPath(); ctx.arc(sx, sy, 13 * SS, 0, 7);
+  ctx.fillStyle = 'rgba(10,14,18,0.82)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(124,196,255,0.8)'; ctx.lineWidth = 1.2 * SS; ctx.stroke();
+  ctx.fillStyle = '#7cc4ff';
+  ctx.font = (14 * SS) + 'px -apple-system, Helvetica, Arial, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(String(n), sx, sy);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+function draw(){
+  if (!W) return;
+  // небо и мостовая — только чтобы читалась глубина, это не часть схемы
+  ctx.fillStyle = '#9fb2c0'; ctx.fillRect(0, 0, W, PY(CFG.horizon, 0));
+  ctx.fillStyle = '#6d7379'; ctx.fillRect(0, PY(CFG.horizon, 0), W, H);
+  const all = [];
+  for (const side of [-1, 1]) for (const p of planes(side)) all.push({...p, side});
+  /* порядок — от дальних к ближним, по самой дальней точке фигуры: так
+     ближние плоскости закрывают дальние без всякого буфера глубины */
+  all.sort((a, b) => Math.max(...b.pts.map(p => p[2])) - Math.max(...a.pts.map(p => p[2])));
+  for (const p of all) if (SHOW[p.n]) poly(p.pts, 'rgb(' + p.fill + ')');
+  for (const p of all) if (SHOW[p.n] && p.side < 0) label(p.n, p.pts);
+  ctx.strokeStyle = 'rgba(124,196,255,0.30)'; ctx.lineWidth = 1 * SS;
+  ctx.beginPath(); ctx.moveTo(0, CFG.horizon * SS); ctx.lineTo(W, CFG.horizon * SS); ctx.stroke();
+  document.getElementById('hud').textContent =
+    'камера x ' + Math.round(cam.x) + ', z ' + Math.round(cam.z) +
+    '  ·  между фасадами ' + (P.gap / PER_M).toFixed(0) + ' м' +
+    '  ·  окно ' + ((P.wb - P.wt) / PER_M).toFixed(2) + ' м по высоте, ' +
+    ((P.z1 - P.z0) / PER_M).toFixed(1) + ' м по длине';
+}
+
+/* ── ПАНЕЛЬ ────────────────────────────────────────────────────────────── */
+const box = document.getElementById('planes');
+for (const p of planes(-1)){
+  const el = document.createElement('label');
+  el.className = 'pl';
+  el.innerHTML = '<input type="checkbox" checked><b>' + p.n + '</b><span>' + p.name + '</span>';
+  el.querySelector('input').addEventListener('change', e => { SHOW[p.n] = e.target.checked; draw(); });
+  box.appendChild(el);
+}
+const NUM = [
+  ['gap', 'n_gap', 'l_gap', v => (v / PER_M).toFixed(0) + ' м'],
+  ['th',  'n_th',  'l_th',  v => (v / PER_M * 100).toFixed(0) + ' см'],
+  ['z0',  'n_z0',  null,    null],
+  ['z1',  'n_z1',  null,    null],
+  ['wt',  'n_wt',  null,    null],
+  ['wb',  'n_wb',  null,    null],
+  ['pt',  'n_pt',  null,    null],
+  ['gr',  'n_gr',  'l_gr',  v => 'на ' + ((v - CFG.floor) / PER_M).toFixed(1) + ' м ниже пола зала'],
+  ['dep', 'n_dep', 'l_dep', v => (v / PER_M).toFixed(0) + ' м'],
+];
+for (const [key, id, lab, fmt] of NUM){
+  const el = document.getElementById(id);
+  el.value = P[key];
+  if (lab && fmt) document.getElementById(lab).textContent = fmt(P[key]);
+  el.addEventListener('input', () => {
+    const v = parseFloat(el.value); if (!isFinite(v)) return;
+    P[key] = v;
+    if (lab && fmt) document.getElementById(lab).textContent = fmt(v);
+    draw();
+  });
+}
+const cx = document.getElementById('n_cx'), cz = document.getElementById('n_cz');
+cx.value = 0; cz.value = 0;
+cx.addEventListener('input', () => { cam.x = parseFloat(cx.value) || 0; draw(); });
+cz.addEventListener('input', () => { cam.z = parseFloat(cz.value) || 0; draw(); });
+
+/* ── КАМЕРА ────────────────────────────────────────────────────────────── */
+let drag = null;
+stage.addEventListener('pointerdown', e => {
+  drag = {x: e.clientX, y: e.clientY, cx: cam.x, cz: cam.z};
+  stage.classList.add('drag'); stage.setPointerCapture(e.pointerId);
+});
+stage.addEventListener('pointermove', e => {
+  if (!drag) return;
+  cam.x = drag.cx - (e.clientX - drag.x) * 6;
+  cam.z = drag.cz + (e.clientY - drag.y) * 6;
+  cx.value = Math.round(cam.x); cz.value = Math.round(cam.z);
+  draw();
+});
+const stop = () => { drag = null; stage.classList.remove('drag'); };
+stage.addEventListener('pointerup', stop);
+stage.addEventListener('pointercancel', stop);
+stage.addEventListener('wheel', e => {
+  e.preventDefault();
+  cam.z += (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * 5;
+  cz.value = Math.round(cam.z); draw();
+}, {passive: false});
+addEventListener('resize', resize);
+resize();
+})();
+</script>
+</body>
+</html>
