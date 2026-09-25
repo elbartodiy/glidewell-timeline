@@ -35,8 +35,8 @@ const WALL = {
   tone: ['#6c7681', '#8b95a0'],
 };
 const PAIRS = [
-  {a: WALL.x, b: WALL.x + WALL.dx2, clip: true,  zFar: R89_BAY_Z},
-  {a: WALL.x + WALL.dx2 + WALL.gap, b: WALL.x + WALL.dx2 + WALL.gap + WALL.dx2, clip: false, zFar: 728},
+  {a: WALL.x, b: WALL.x + WALL.dx2, zFar: R89_BAY_Z, occl: () => bayOutline(), side: -1},
+  {a: WALL.x + WALL.dx2 + WALL.gap, b: WALL.x + WALL.dx2 + WALL.gap + WALL.dx2, zFar: 728, occl: () => r93Outline(), side: 1},
 ];
 
 const camQ = /[?&]x=(-?\d+)/.exec(location.search);
@@ -400,18 +400,35 @@ function bayOutline(){
   ];
 }
 
-function clipToBay(xRef){
-  if (cam.x >= xRef) return;
+function r93Outline(){
+  const kk = k(R93.z), kNear = k(-40);
+  const half = R93.width / 2 * (CFG.F + R93.z) / (CFG.F + 340);
+  const BL = R93.left, BR = BL + half * 2;
+  const yBase = py(700 + 240, k(340));
+  const edge = (wx) => {
+    const xf = px(wx, kk), xn = px(wx, kNear), yn = py(CFG.floor, kNear);
+    return xf + (xn - xf) * ((H - yBase) / (yn - yBase || 1));
+  };
+  return [[px(BL, kk), yBase], [px(BR, kk), yBase], [edge(BR), H], [edge(BL), H]];
+}
+function clipOut(outline){
   ctx.beginPath();
   ctx.rect(0, 0, W, H);
-  bayOutline().forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+  outline.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
   ctx.closePath();
   ctx.clip('evenodd');
 }
 
-function drawJamb(x1, x2, clip){
+function clipByOccluder(xw, p){
+  if (!p || !p.occl) return;
+  const eyeOnBaySide = p.side < 0 ? (cam.x < xw) : (cam.x > xw);
+  if (!eyeOnBaySide) return;
+  clipOut(p.occl());
+}
+
+function drawJamb(x1, x2, p){
   const Wl = WALL, kz = k(Wl.winZ0);
-  ctx.save(); if (clip) clipToBay(x1);
+  ctx.save(); clipByOccluder(x1, p);
   ctx.beginPath();
   ctx.moveTo(px(x1, kz), py(Wl.winTop, kz));
   ctx.lineTo(px(x2, kz), py(Wl.winTop, kz));
@@ -422,11 +439,11 @@ function drawJamb(x1, x2, clip){
   ctx.restore();
 }
 
-function drawBand(x1, x2, yWorld, c0, c1, clip){
+function drawBand(x1, x2, yWorld, c0, c1, p){
   const Wl = WALL;
   const zA = Wl.winZ0, zB = Wl.winZ1 != null ? Wl.winZ1 : Wl.zNear;
   const kA = k(zA), kB = k(zB);
-  ctx.save(); if (clip) clipToBay(x1);
+  ctx.save(); clipByOccluder(x1, p);
   const g = ctx.createLinearGradient(0, py(yWorld, kA), 0, py(yWorld, kB));
   g.addColorStop(0, c0); g.addColorStop(1, c1);
   ctx.beginPath();
@@ -439,7 +456,7 @@ function drawBand(x1, x2, yWorld, c0, c1, clip){
   ctx.restore();
 }
 
-function drawSideWall(xw, clip, zFar){
+function drawSideWall(xw, p, zFar){
   const Wl = WALL;
   const P = (y, z) => [px(xw, k(z)), py(y, k(z))];
   const wz1 = Wl.winZ1 != null ? Wl.winZ1 : Wl.zNear;
@@ -447,13 +464,7 @@ function drawSideWall(xw, clip, zFar){
   const outer = [P(Wl.top, zF), P(Wl.top, Wl.zNear), P(Wl.bot, Wl.zNear), P(Wl.bot, zF)];
   const hole  = [P(Wl.winTop, Wl.winZ0), P(Wl.winBot, Wl.winZ0), P(Wl.winBot, wz1), P(Wl.winTop, wz1)];
   ctx.save();
-  if (clip && cam.x < xw){
-    ctx.beginPath();
-    ctx.rect(0, 0, W, H);
-    bayOutline().forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
-    ctx.closePath();
-    ctx.clip('evenodd');
-  }
+  clipByOccluder(xw, p);
   const g = ctx.createLinearGradient(...outer[0], ...outer[1]);
   g.addColorStop(0, Wl.tone[0]); g.addColorStop(1, Wl.tone[1]);
   ctx.beginPath();
@@ -476,11 +487,11 @@ function draw(){
   const dist = p => Math.min(Math.abs(p.a - cam.x), Math.abs(p.b - cam.x));
   for (const p of [...PAIRS].sort((u, v) => dist(v) - dist(u))){
     const xs = [p.a, p.b].sort((u, v) => Math.abs(v - cam.x) - Math.abs(u - cam.x));
-    drawSideWall(xs[0], p.clip, p.zFar);
-    drawJamb(p.a, p.b, p.clip);
-    drawBand(p.a, p.b, WALL.winTop, '#4e565f', '#646d77', p.clip);
-    drawBand(p.a, p.b, WALL.winBot, '#9aa4ad', '#b6bfc7', p.clip);
-    drawSideWall(xs[1], p.clip, p.zFar);
+    drawSideWall(xs[0], p, p.zFar);
+    drawJamb(p.a, p.b, p);
+    drawBand(p.a, p.b, WALL.winTop, '#4e565f', '#646d77', p);
+    drawBand(p.a, p.b, WALL.winBot, '#9aa4ad', '#b6bfc7', p);
+    drawSideWall(xs[1], p, p.zFar);
   }
 }
 
