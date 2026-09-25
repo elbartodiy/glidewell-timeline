@@ -14469,13 +14469,17 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
     ctx.fillStyle = pg; ctx.fillRect(mx, ty, tw, th);
     // play badge — not over a tape that is already speaking
     if (!(useV && !S.railV.paused)){
+    /* значок растёт вместе с плиткой: 25 было задано под плитку с колонку, и
+       на видео во всю ширину абзаца тот же кружок читался пылинкой. Доля
+       высоты, но не меньше прежних 25 — маленькие плитки не меняются. */
+    const br = Math.max(25 * SS, th * 0.145), bcy = ty + th/2 - br * 0.32;
     ctx.fillStyle = 'rgba(250,252,255,0.92)';
-    ctx.beginPath(); ctx.arc(mx + tw/2, ty + th/2 - 8*SS, 25*SS, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(mx + tw/2, bcy, br, 0, 7); ctx.fill();
     ctx.fillStyle = '#1a2027';
     ctx.beginPath();
-    ctx.moveTo(mx + tw/2 - 7*SS, ty + th/2 - 21*SS);
-    ctx.lineTo(mx + tw/2 + 13*SS, ty + th/2 - 8*SS);
-    ctx.lineTo(mx + tw/2 - 7*SS, ty + th/2 + 5*SS);
+    ctx.moveTo(mx + tw/2 - br*0.28, bcy - br*0.52);
+    ctx.lineTo(mx + tw/2 + br*0.52, bcy);
+    ctx.lineTo(mx + tw/2 - br*0.28, bcy + br*0.52);
     ctx.closePath(); ctx.fill();
     }
     ctx.fillStyle = 'rgba(240,244,248,0.95)';
@@ -14832,14 +14836,24 @@ function drawStudy(){
     if (y > topClip && y < botClip) ctx.fillText(media.length > 1 ? 'The voices' : 'Watch', left, y);
     try { ctx.letterSpacing = '0px'; } catch(err){}
     y += 3 * u;
+    /* ПЕРВЫЙ КЛИП В ПОТОКЕ ИДЁТ ВО ВСЮ ШИРИНУ АБЗАЦА. Полоса ставила все
+       плитки одного размера — с колонку на поле, — и видео сразу после
+       первого абзаца читалось превьюшкой, а не экраном: «сделай его видео
+       большим на размер абзаца» (Эльдар, 2026-09-25, про 1993; правило он
+       задал ещё для фабрики — первое видео на странице идёт большим).
+       Остальные клипы на странице остаются плитками и ложатся рядом под ним.
+       Полоса, вынесенная на поле (railSide), не меняется. */
     const tw4 = Math.min(PAGE.side * SS, textW), th4 = Math.round(tw4 * 170 / 300), gap4 = 3 * u;
-    let rx4 = left;
+    const twB = textW, thB = Math.round(twB * 170 / 300);
+    let rx4 = left, rowH = 0;
     for (let mi = 0; mi < media.length; mi++){
-      if (rx4 + tw4 > left + textW + 1){ rx4 = left; y += th4 + gap4; }
-      studyClipTile(media[mi], rx4, y, tw4, th4, S, K, b, topClip, botClip);
-      rx4 += tw4 + gap4;
+      const big = inFlow && mi === 0;
+      const tw5 = big ? twB : tw4, th5 = big ? thB : th4;
+      if (rx4 > left && rx4 + tw5 > left + textW + 1){ rx4 = left; y += rowH + gap4; rowH = 0; }
+      studyClipTile(media[mi], rx4, y, tw5, th5, S, K, b, topClip, botClip);
+      rx4 += tw5 + gap4; rowH = Math.max(rowH, th5);
     }
-    y += th4 + 4 * u;
+    y += rowH + 4 * u;
   };
   if (inl && inl.boxTop) drawInlineBox();
   const bodyInk = `rgba(${K.ink},0.88)`;
