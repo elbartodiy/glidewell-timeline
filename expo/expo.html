@@ -9002,6 +9002,21 @@ function stFace(xw, p){
   ctx.fillStyle = g; ctx.fill('evenodd');
   ctx.restore();
 }
+/* ТОРЕЦ СТЕНЫ НА ДАЛЬНЕМ КРАЮ. Стена видна почти с ребра, и между силуэтами
+   двух её граней виден её собственный торец — иначе там дыра во всю высоту,
+   кроме полоски окна. */
+function stEnd(p){
+  const kz = k(p.zFar);
+  ctx.save(); stClip(p.a, p);
+  ctx.beginPath();
+  ctx.moveTo(px(p.a, kz), py(ST.top, kz));
+  ctx.lineTo(px(p.b, kz), py(ST.top, kz));
+  ctx.lineTo(px(p.b, kz), py(ST.bot, kz));
+  ctx.lineTo(px(p.a, kz), py(ST.bot, kz));
+  ctx.closePath();
+  ctx.fillStyle = ST.jamb; ctx.fill();
+  ctx.restore();
+}
 function stJamb(p){
   const kz = k(ST.winZ0);
   ctx.save(); stClip(p.a, p);
@@ -9038,8 +9053,13 @@ function stBand(p, yWorld, c0, c1){
    четырёхугольник: от дальней линии пола на плоскости стены до низа кадра по
    ближней плоскости. */
 function stOpenSpan(){
+  /* ЗАЛА НЕТ НЕ ТОЛЬКО В ПРОСВЕТЕ, НО И В ТОЛЩЕ КОРПУСОВ. Сперва я вырезал
+     его между наружными гранями (14900…17100), и в кадре остались две яркие
+     полоски стены зала шириной с толщину стены — она светила изнутри самих
+     корпусов, где никакой галерейной стены нет. Вырез идёт от ближней грани
+     левого корпуса до дальней грани правого. */
   const P = stPairs();
-  return [P[0].b, P[1].a];          // наружные грани корпусов
+  return [P[0].a, P[1].b];
 }
 function stCutHall(kind){
   const [x0, x1] = stOpenSpan();
@@ -9069,6 +9089,7 @@ function drawStreet(){
   for (const p of pairs.sort((u, v) => dist(v) - dist(u))){
     const xs = [p.a, p.b].sort((u, v) => Math.abs(v - cam.x) - Math.abs(u - cam.x));
     stFace(xs[0], p);
+    stEnd(p);
     stJamb(p);
     stBand(p, ST.winTop, ST.head[0], ST.head[1]);
     stBand(p, ST.winBot, ST.sill[0], ST.sill[1]);
