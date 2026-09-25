@@ -56,7 +56,10 @@ const STEP_TONE_STEEL = {tread: ['#b9bcbb', '#d2d5d3'], riser: ['#9ea2a2', '#787
                          nosing: 'rgba(238,244,246,0.9)', glow: '214,236,246'};
 const FLOOR_89 = ['#d3d1c9', '#8b897f'];
 
-const cam = {x: (REC3_L + REC3_R) / 2, z: 0};
+/* ?x=<единиц> ставит камеру сразу — нужно, чтобы снимать одно и то же место
+   и сверять его с залом, а не ловить перетаскиванием */
+const camQ = /[?&]x=(-?\d+)/.exec(location.search);
+const cam = {x: camQ ? +camQ[1] : (REC3_L + REC3_R) / 2, z: 0};
 let W = 0, H = 0, SS = 1;
 const k  = z => CFG.F / (CFG.F + z - cam.z);
 const px = (x, kk) => W / 2 + (x - cam.x) * kk * SS;
@@ -233,10 +236,18 @@ function drawSideWall(){
 function draw(){
   if (!W) return;
   ctx.fillStyle = '#0e1114'; ctx.fillRect(0, 0, W, H);
-  drawSideWall();
   drawBayFloor();
   drawBayWallAndColumns();
   drawBayStep(REC3_L, REC3_R, STEP_TONE_STEEL, R89_BAY_Z, noseOf(R89_BAY_Z));
+  /* ПЛОСКОСТЬ РИСУЕТСЯ ПОСЛЕ БУХТЫ, А НЕ ДО. Она стоит на x правого края
+     блока и уходит ОТ плоскости бухты К НАМ (z от 680 до −400), то есть она
+     ближе всего, что есть в бухте. Пока камера левее её, она раскрывается
+     вправо и ни на что не налезает — и первый заход, где она рисовалась
+     первой, этого не показывал. Стоит камере пройти её, как плоскость
+     раскрывается ВЛЕВО, ложится на панель бухты — и панель, нарисованная
+     позже, стирала её целиком. Эльдар: «когда стена проходит свой катарсис,
+     она пропадает» (2026-09-25). Ближнее рисуется последним. */
+  drawSideWall();
   document.getElementById('hud').textContent =
     'блок 1989 · ' + REC3_L + '…' + REC3_R + ' · плоскость ' + R89_BAY_Z +
     ' · нос ' + noseOf(R89_BAY_Z) + ' · SS ' + SS.toFixed(3) + ' · камера ' + Math.round(cam.x);
