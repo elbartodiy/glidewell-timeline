@@ -9063,8 +9063,18 @@ function stOpenSpan(){
 }
 function stCutHall(kind){
   const [x0, x1] = stOpenSpan();
-  const wz = wallZAt((x0 + x1) / 2), kw = k(wz), kNear = k(-40);
-  const a = px(x0, kw), b = px(x1, kw);
+  /* СТЕНА ЗАЛА НА УЧАСТКЕ МОЖЕТ ИДТИ НА РАЗНЫХ ГЛУБИНАХ — улица приходится
+     на стык сегментов, и полоса, посчитанная по одной глубине, оставляла по
+     краям узкую щепку старой стены (Эльдар, 2026-09-25, два кадра). Берём
+     самую широкую полосу по всем глубинам, какие на участке встречаются. */
+  const kNear = k(-40);
+  const zs = [wallZAt(x0), wallZAt((x0 + x1) / 2), wallZAt(x1)];
+  const kw = k(zs[1]);
+  let a = Infinity, b = -Infinity;
+  for (const z of zs){
+    const kz = k(z);
+    a = Math.min(a, px(x0, kz)); b = Math.max(b, px(x1, kz));
+  }
   if (b < -40 || a > W + 40) return false;
   ctx.beginPath();
   ctx.rect(0, 0, W, H);
@@ -16992,7 +17002,6 @@ function frame(){
   drawLabs73();
   drawRec3(t);
   drawRec93(t);
-  drawStreet();       // улица между 1989 и 1993
   drawRec2(t);
   drawRec17(t);
   drawRec18(t);
@@ -17140,6 +17149,11 @@ function frame(){
   drawProps('late');   // things meant to lie in front of a beat's own objects
   drawPlane93();       // the freighter puts down on the model's own site — behind the building
   drawRec93Front(t);   // the model stands on its own plinth, on the floor
+  /* СТЕНЫ УЛИЦЫ — ПОСЛЕ МАКЕТА. Подиум с макетом стоит ВНУТРИ галереи 1993,
+     за правым корпусом, и корпус должен его закрывать. drawRec93Front идёт
+     в ближнем проходе, позже улицы, и макет налезал на подоконник (Эльдар,
+     2026-09-25). Второй вызов рисует только стены, поверх. */
+  drawStreet();
   drawFlybys();        // the two passes that never touch down
   drawDataRelay07(t);  // the first file, leaving 2007 for the digital revolution's screen
 
