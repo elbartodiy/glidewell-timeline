@@ -23,6 +23,14 @@ const noseOf = zBay => zBay - STEP_DEPTH;
 const FLOOR_89 = ['#d3d1c9', '#8b897f'];
 const STEP_STEEL = {tread: ['#b9bcbb', '#d2d5d3'], riser: ['#9ea2a2', '#787c7d', '#4e5254'],
                     nosing: 'rgba(238,244,246,0.9)', glow: '214,236,246'};
+const WALL = {
+  x: REC3_R + STEP_PAD,
+  zFar: R89_BAY_Z, zNear: -400,
+  top: -520, bot: 2560,
+  winZ0: 560, winZ1: null,
+  winTop: -260, winBot: 700,
+  tone: ['#6c7681', '#8b95a0'],
+};
 
 const camQ = /[?&]x=(-?\d+)/.exec(location.search);
 const cam = {x: camQ ? +camQ[1] : (REC3_L + REC3_R) / 2, z: 0};
@@ -135,12 +143,55 @@ function drawBayStep(L, R, tone, zBack, zNose){
   ctx.restore();
 }
 
+function bayOutline(){
+  const kBay = k(R89_BAY_Z), kStep = k(noseOf(R89_BAY_Z)), kNear = k(-40);
+  const wx0 = REC3_L - STEP_PAD, wx1 = REC3_R + STEP_PAD;
+  const yTreadBack = py(1040, kBay), yNose = py(1040, kStep), yStepFoot = py(1080, kStep);
+  const yFar = py(CFG.floor, kBay), yNearF = py(CFG.floor, kNear);
+  const edge = (wx) => {
+    const xf = px(wx, kBay), xn = px(wx, kNear);
+    return xf + (xn - xf) * ((H - yFar) / (yNearF - yFar || 1));
+  };
+  return [
+    [px(wx0, kBay), yTreadBack], [px(wx1, kBay), yTreadBack],
+    [px(wx1, kStep), yNose],     [px(wx1, kStep), yStepFoot],
+    [edge(wx1), H],              [edge(wx0), H],
+    [px(wx0, kStep), yStepFoot], [px(wx0, kStep), yNose],
+  ];
+}
+
+function drawSideWall(){
+  const Wl = WALL;
+  const P = (y, z) => [px(Wl.x, k(z)), py(y, k(z))];
+  const wz1 = Wl.winZ1 != null ? Wl.winZ1 : Wl.zNear;
+  const outer = [P(Wl.top, Wl.zFar), P(Wl.top, Wl.zNear), P(Wl.bot, Wl.zNear), P(Wl.bot, Wl.zFar)];
+  const hole  = [P(Wl.winTop, Wl.winZ0), P(Wl.winBot, Wl.winZ0), P(Wl.winBot, wz1), P(Wl.winTop, wz1)];
+  ctx.save();
+  if (cam.x < Wl.x){
+    ctx.beginPath();
+    ctx.rect(0, 0, W, H);
+    bayOutline().forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.closePath();
+    ctx.clip('evenodd');
+  }
+  const g = ctx.createLinearGradient(...outer[0], ...outer[1]);
+  g.addColorStop(0, Wl.tone[0]); g.addColorStop(1, Wl.tone[1]);
+  ctx.beginPath();
+  outer.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+  ctx.closePath();
+  hole.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+  ctx.closePath();
+  ctx.fillStyle = g; ctx.fill('evenodd');
+  ctx.restore();
+}
+
 function draw(){
   if (!W) return;
   ctx.fillStyle = '#0e1114'; ctx.fillRect(0, 0, W, H);
   drawFloor();
   drawWallAndColumns();
   drawBayStep(REC3_L, REC3_R, STEP_STEEL, R89_BAY_Z, noseOf(R89_BAY_Z));
+  drawSideWall();
 }
 
 let drag = null;
