@@ -1537,10 +1537,12 @@ function initLights(){
   }
   LIGHT_GRID.push({x: INTRO_X, seg: SEGMENTS[0]});   // the welcome lamp, dead over the inscription
   LIGHT_GRID.push({x: FIN_X, seg: SEGMENTS[3]});     // and its mirror over the finale
-  /* ЛАМПА НАД ДОМАМИ ВЫКЛЮЧЕНА. Светильники расставлены по годам и один из
-     них сел ровно над двумя макетами 1973-го — Эльдар попросил его убрать
-     (2026-09-24). Гаснет и сам плафон, и его пятно на стене; из сетки лампа
-     не удаляется, чтобы не сбить расстановку соседних. */
+  /* ЛАМПА НАД ДОМАМИ 1973-го ГАСНЕТ У КАМНЯ. Её пятно доходило по стене вниз
+     и обрывалось — Эльдар просил ровно одного: чтобы ЭТО свечение плавно
+     уходило в полную прозрачность на толщине каменной крышки, и ниже камня от
+     него не оставалось ничего. Лучи остальных ламп не трогаются (2026-09-24).
+     Помечается одна запись сетки; расстановка соседних считается от неё, и
+     удалять её нельзя. */
   {
     const b73 = BEATS.find(b => b.y === '1973');
     if (b73){
@@ -1549,7 +1551,7 @@ function initLights(){
         const d = Math.abs(LIGHT_GRID[i].x - b73.x);
         if (d < bd){ bd = d; best = i; }
       }
-      if (best >= 0 && bd < 700) LIGHT_GRID[best].off = true;
+      if (best >= 0 && bd < 700) LIGHT_GRID[best].fadeAtStone = true;
     }
   }
 }
@@ -2608,7 +2610,7 @@ function lampCut(col, S2, t, b2){
   LAMP_CUT.set(key, c);
   return c;
 }
-function drawLampPool(x, intensity){
+function drawLampPool(x, intensity, fadeAtStone){
   // pool of light on the wall behind a beat, colored by its era — and from
   // 1970 on, by its NEW wiring: white light, not the pioneer amber
   const seg = segAt(x);
@@ -2618,6 +2620,12 @@ function drawLampPool(x, intensity){
   if (cx < -r || cx > W + r) return;
   const pool = (segIdx(x) === 0 && x >= SHIFT(2200)) ? '244,240,228' : seg.light.pool;
   const a = seg.light.poolA * intensity;
+  /* ОСТАЛЬНЫЕ ЛАМПЫ — КАК БЫЛИ. Гашение включается только для помеченной:
+     Эльдар просил изменить одну и прямо сказал не трогать остальные. */
+  if (!fadeAtStone){
+    drawGlow(pool, cx, cy - r * 0.12, r, a);
+    return;
+  }
   if (a <= 0.004 || r <= 0) return;
   const yTop = cy - r * 0.12 - r, size = r * 2;
   const S2 = Math.max(2, Math.round(size / 8) * 8);
@@ -16601,7 +16609,7 @@ function frame(){
 
   // lamp pools on wall (behind photos) — one per ceiling fixture
   for (let i = 0; i < LIGHT_GRID.length; i++)
-    if (!LIGHT_GRID[i].off) drawLampPool(LIGHT_GRID[i].x, lampFlicker(t, i+1));
+    drawLampPool(LIGHT_GRID[i].x, lampFlicker(t, i+1), LIGHT_GRID[i].fadeAtStone);
 
   drawTallUnits();      // furniture against the wall, before anything hung on it
   drawOutro();
@@ -16747,7 +16755,6 @@ function frame(){
   // lamps + dust + foreground — evenly spaced fixtures per era
   for (let i = 0; i < LIGHT_GRID.length; i++){
     const L = LIGHT_GRID[i];
-    if (L.off) continue;              // выключенная лампа не висит и плафоном
     // a plate brings its own lamp; the hall's fixture would hang in front of it
     if (PLATES.some(p => p.sp && Math.abs(L.x - p.x) < p.w * 0.5)) continue;
     // the cool eras keep their light but lose the fixture: a black slab hung
