@@ -12147,79 +12147,127 @@ function makeBookPyramid(){
 }
 /* the book card: cover, story, code — a product card without the price tag */
 let BOOK_CARD = null;
+/* ОДНА КАРТОЧКА, А НЕ ДВЕ. Предложение забрать книгу жило отдельной тёмной
+   плитой справа от карточки: две разные вещи рядом, два фона, два языка.
+   Эльдар (2026-09-25): «правое должно быть внутри левого — всё стильно,
+   красиво, минималистично». Теперь карточка — это и есть весь оверлей:
+   слева обложка и код, справа книга и, ниже тонкой линейки, поля. Форма
+   живая, её рисует drawBookOffer каждый кадр, поэтому карточка возвращает
+   СВОЁ место под неё — `form` в координатах холста карточки, — а зал
+   переводит его в экранные. Так вёрстка остаётся в одном месте.
+
+   ВЫСОТА КАРТОЧКИ СЧИТАЕТСЯ, А НЕ НАЗНАЧАЕТСЯ. Сперва я задал её числом, и
+   между аннотацией и линейкой встала пустая полоса в полтораста пикселей —
+   вёрстка, в которой текст кончается раньше, чем кончается отведённое ему
+   место. Теперь порядок обратный: меряем аннотацию, от неё ведём линейку,
+   под линейку кладём форму (ей нужно 0.62 ширины колонки — это те же 19.4
+   её единиц, а единица равна 0.0305 ширины), и высота холста получается
+   суммой. Левая колонка проверяется отдельно: если обложка с кодом длиннее
+   правой, холст растёт под неё. */
 function makeBookCard(){
-  const c = document.createElement('canvas'); c.width = 1240; c.height = 720;
+  const W0 = 1300, M = 20, padL = 60, qrS = 150;
+  const FAM = '"Helvetica Neue", Arial, sans-serif';
+  const mc = document.createElement('canvas').getContext('2d');
+  const wrapWith = (ctx2, str, maxW) => {
+    const out = []; let ln = '';
+    for (const wd of str.split(' ')){
+      const test = ln ? ln + ' ' + wd : wd;
+      if (ctx2.measureText(test).width > maxW && ln){ out.push(ln); ln = wd; }
+      else ln = test;
+    }
+    if (ln) out.push(ln);
+    return out;
+  };
+  const blurb = 'The memoir: from a kitchen-table lab in 1970 to the largest dental laboratory in the world. A latchkey kid from Kentucky bets that affordable can be a business model - and spends fifty years proving it.';
+  const qrL1 = 'Scan the code \u2014 the book is free to take home';
+  const qrL2 = 'Paper copies live right here at the booth.';
+
+  /* ДВЕ КОЛОНКИ КОНЧАЮТСЯ ВМЕСТЕ. Высоту задаёт правая — там текст и форма,
+     их длину не выбирают; обложка же тянется, и её высота подгоняется под
+     полученную. Считаем трижды: обложка меняет свою ширину, ширина — правую
+     колонку, та — высоту. Три прохода сходятся с точностью до строки. */
+  const ratio = IMGS.bookfront ? IMGS.bookfront.w / IMGS.bookfront.h : 0.67;
+  const botPad = 46, blurbTop = 294;
+  let coverH = 620, coverW = coverH * ratio, tx = 0, colW = 0;
+  let blurbLines = [], ruleY = 0, formTop = 0, formH = 0, H0 = 0, qrC = 2, qrC2 = 1;
+  for (let pass = 0; pass < 3; pass++){
+    coverW = coverH * ratio;
+    tx = padL + coverW + 56; colW = W0 - padL - tx;
+    mc.font = '26px ' + FAM;
+    blurbLines = wrapWith(mc, blurb, colW);
+    ruleY = blurbTop + (blurbLines.length - 1) * 38 + 36;
+    formTop = ruleY + 40;
+    formH = Math.round(colW * 0.62);
+    H0 = formTop + formH + botPad + M;
+    mc.font = '600 23px ' + FAM; qrC  = wrapWith(mc, qrL1, coverW).length;
+    mc.font = '22px ' + FAM;     qrC2 = wrapWith(mc, qrL2, coverW).length;
+    // высота обложки — всё, что осталось левой колонке до того же низа
+    const rest = 40 + qrS + 34 + qrC * 30 + 8 + qrC2 * 28;
+    coverH = Math.max(420, H0 - M - botPad - 62 - rest);
+  }
+  coverW = coverH * ratio;
+  tx = padL + coverW + 56; colW = W0 - padL - tx;
+  mc.font = '26px ' + FAM; blurbLines = wrapWith(mc, blurb, colW);
+  const qrY = 62 + coverH + 40;
+
+  const c = document.createElement('canvas'); c.width = W0; c.height = H0;
   const g = c.getContext('2d');
   g.save();
   g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 26; g.shadowOffsetY = 12;
-  g.fillStyle = '#fbfcfd'; g.fillRect(20, 20, 1200, 680);
+  g.fillStyle = '#fbfcfd'; g.fillRect(M, M, W0 - M*2, H0 - M*2);
   g.restore();
-  g.strokeStyle = 'rgba(90,200,250,0.5)'; g.lineWidth = 3;
-  g.strokeRect(20, 20, 1200, 680);
+  /* рамка стала волоском: тройная голубая обводка спорила с самой карточкой */
+  g.strokeStyle = 'rgba(34,38,44,0.14)'; g.lineWidth = 1.5;
+  g.strokeRect(M + 0.75, M + 0.75, W0 - M*2 - 1.5, H0 - M*2 - 1.5);
+
   if (IMGS.bookfront){
-    const im = IMGS.bookfront;
-    const dh = 600, dw = dh * im.w / im.h;
     g.save();
     g.shadowColor = 'rgba(0,0,0,0.4)'; g.shadowBlur = 18; g.shadowOffsetY = 8;
-    g.fillStyle = '#111'; g.fillRect(60, 60, dw, dh);
+    g.fillStyle = '#111'; g.fillRect(padL, 62, coverW, coverH);
     g.restore();
-    g.drawImage(im.el, 60, 60, dw, dh);
+    g.drawImage(IMGS.bookfront.el, padL, 62, coverW, coverH);
   }
-  const tx = 540;
+
   g.fillStyle = '#22262c';
   g.font = '700 58px Georgia, serif';
-  g.fillText('Constant Change', tx, 130);
+  g.fillText('Constant Change', tx, 128);
   g.fillStyle = '#5a616a';
   g.font = 'italic 28px Georgia, serif';
-  g.fillText('Adventures in Business and Life', tx, 175);
-  g.font = '24px "Helvetica Neue", Arial, sans-serif';
-  g.fillText('Jim Glidewell · 2020', tx, 215);
-  g.strokeStyle = 'rgba(0,0,0,0.15)'; g.lineWidth = 1.5;
-  g.beginPath(); g.moveTo(tx, 245); g.lineTo(1160, 245); g.stroke();
+  g.fillText('Adventures in Business and Life', tx, 172);
+  g.font = '24px ' + FAM;
+  g.fillText('Jim Glidewell \u00b7 2020', tx, 212);
+  g.strokeStyle = 'rgba(34,38,44,0.14)'; g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(tx, 244); g.lineTo(tx + colW, 244); g.stroke();
+
   g.fillStyle = '#3c434c';
-  g.font = '26px "Helvetica Neue", Arial, sans-serif';
-  const blurb = 'The memoir: from a kitchen-table lab in 1970 to the largest dental laboratory in the world. A latchkey kid from Kentucky bets that affordable can be a business model - and spends fifty years proving it.';
-  let line = '', yy = 295;
-  for (const wrd of blurb.split(' ')){
-    const test = line ? line + ' ' + wrd : wrd;
-    if (g.measureText(test).width > 590 && line){ g.fillText(line, tx, yy); yy += 38; line = wrd; }
-    else line = test;
-  }
-  if (line) g.fillText(line, tx, yy);
+  g.font = '26px ' + FAM;
+  let yy = blurbTop;
+  for (const ln of blurbLines){ g.fillText(ln, tx, yy); yy += 38; }
+
+  /* КОД — ПОД ОБЛОЖКОЙ, В СВОЕЙ КОЛОНКЕ. Он второй путь к той же книге, и
+     стоять ему рядом с полями незачем: тот, кто снимает код, поля не трогает. */
   if (IMGS.qr){
     g.save();
-    g.shadowColor = 'rgba(0,0,0,0.25)'; g.shadowBlur = 10; g.shadowOffsetY = 4;
-    g.fillStyle = '#f4f4ef'; g.fillRect(tx, 480, 180, 180);
+    g.shadowColor = 'rgba(0,0,0,0.22)'; g.shadowBlur = 10; g.shadowOffsetY = 4;
+    g.fillStyle = '#f4f4ef'; g.fillRect(padL, qrY, qrS, qrS);
     g.restore();
-    g.drawImage(IMGS.qr.el, tx + 10, 490, 160, 160);
-    /* IT WRAPS. Both of these were single fillTexts beside the code, and the
-       first ran a good sixty pixels past the card's own border — the sentence
-       simply walked off the edge. They are laid out inside the column the code
-       leaves them, and take as many lines as they need. */
-    const cx0 = tx + 210, colW = 1160 - cx0;
-    const wrapTo = (str, maxW) => {
-      const out = []; let ln = '';
-      for (const wd of str.split(' ')){
-        const test = ln ? ln + ' ' + wd : wd;
-        if (g.measureText(test).width > maxW && ln){ out.push(ln); ln = wd; }
-        else ln = test;
-      }
-      if (ln) out.push(ln);
-      return out;
-    };
-    g.fillStyle = '#5a616a';
-    g.font = '600 24px "Helvetica Neue", Arial, sans-serif';
-    const l1 = wrapTo('Scan the code — the book is free to take home', colW);
-    g.font = '22px "Helvetica Neue", Arial, sans-serif';
-    const l2 = wrapTo('Paper copies live right here at the booth.', colW);
-    let ly = 660 - (l1.length * 32 + l2.length * 28) + 24;   // the block sits on the code's own foot
-    g.font = '600 24px "Helvetica Neue", Arial, sans-serif';
-    for (const ln of l1){ g.fillText(ln, cx0, ly); ly += 32; }
-    ly += 6;
-    g.font = '22px "Helvetica Neue", Arial, sans-serif';
-    for (const ln of l2){ g.fillText(ln, cx0, ly); ly += 28; }
+    g.drawImage(IMGS.qr.el, padL + 9, qrY + 9, qrS - 18, qrS - 18);
+    let ly = qrY + qrS + 34;
+    g.fillStyle = '#3c434c';
+    g.font = '600 23px ' + FAM;
+    for (const ln of wrapWith(g, qrL1, coverW)){ g.fillText(ln, padL, ly); ly += 30; }
+    g.fillStyle = '#7b828b';
+    g.font = '22px ' + FAM;
+    ly += 8;
+    for (const ln of wrapWith(g, qrL2, coverW)){ g.fillText(ln, padL, ly); ly += 28; }
   }
-  return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
+
+  /* линейка, за которой начинается живая часть: всё ниже неё рисует зал */
+  g.strokeStyle = 'rgba(34,38,44,0.14)'; g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(tx, ruleY); g.lineTo(tx + colW, ruleY); g.stroke();
+
+  return {c, w: W0, h: H0, inner: {w: W0, h: H0},
+          form: {x: tx, y: formTop, w: colW, h: formH}};
 }
 function drawBookPyramid(b, t){
   /* near the front plane: at 155 deep the pile slid against the counter's
@@ -13533,7 +13581,7 @@ function bookSend(){
   setTimeout(() => { if (state.inspect) bookReset(); }, 2600);
 }
 /* полоса предложения: рисуется справа от карточки, когда открыта книга */
-function drawBookOffer(x0, y0, wPan, e){
+function drawBookOffer(r, e){
   bookInit();
   /* ФОКУС ВОЗВРАЩАЕТСЯ КАЖДЫЙ КАДР. Гость открывает книгу ПАЛЬЦЕМ, и нажатие
      по холсту уводит фокус на него уже ПОСЛЕ того, как обработчик поставил его
@@ -13544,151 +13592,150 @@ function drawBookOffer(x0, y0, wPan, e){
   }
   const a = Math.max(0, (e - 0.6) / 0.4);
   if (a < 0.02) return;
-  const u = Math.max(11, Math.round(wPan * 0.030));
+  /* ФОРМА ЖИВЁТ НА БУМАГЕ КАРТОЧКИ. Раньше у неё была своя тёмная плита —
+     второй фон поверх первого; теперь тёмного нет вовсе, и весь оверлей
+     читается одним предметом (Эльдар, 2026-09-25). Отсюда и краски: тёмные
+     чернила по светлому, одна линия толщиной в волос, один заполненный
+     элемент — кнопка. */
+  const u = Math.max(9, r.w * 0.0305);
   const FAM = '"Helvetica Neue", Arial, sans-serif';
-  const ink = al => `rgba(236,242,248,${(al * a).toFixed(3)})`;
+  const ink = al => `rgba(34,38,44,${(al * a).toFixed(3)})`;
+  const dim = al => `rgba(90,97,106,${(al * a).toFixed(3)})`;
+  const LINE = al => `rgba(34,38,44,${(al * a).toFixed(3)})`;
+  const FOCUS = al => `rgba(24,118,176,${(al * a).toFixed(3)})`;
   /* каждая строка ужимается измерением — правило R1 линтера */
-  const put = (txt, x, y, size, weight, maxW, align) => {
+  const put = (txt, x, y, size, weight, maxW, align, italic) => {
     let fs = size;
     for (let i = 0; i < 6; i++){
-      ctx.font = `${weight ? weight + ' ' : ''}${fs.toFixed(1)}px ${FAM}`;
+      ctx.font = `${italic ? 'italic ' : ''}${weight ? weight + ' ' : ''}${fs.toFixed(1)}px ${FAM}`;
       const tw = ctx.measureText(txt).width;
       if (tw <= maxW) break;
       fs *= maxW / tw;
     }
     ctx.textAlign = align || 'left';
     ctx.fillText(txt, x, y);
+    ctx.textAlign = 'left';
     return fs;
   };
   BOOK.hit = {};
-  /* СВОЯ ПЛИТА ПОД ПОЛОСОЙ. Сперва полоса рисовалась прямо поверх зала, и
-     сквозь неё читались его собственные надписи — «The crossover», «Physical»,
-     «Digital». Высота плиты считается из тех же шагов, что и строки ниже:
-     26.6u — сумма всех интервалов до последней подсказки. */
-  const panH = u * (26.6 + ((serOk() && SER.state !== 'open') ? 3.2 : 0)), panPad = u * 1.6;
-  ctx.fillStyle = `rgba(9,12,16,${(0.965 * a).toFixed(3)})`;
-  ctx.beginPath();
-  ctx.roundRect(x0 - panPad, y0 - panPad * 1.5, wPan + panPad * 2, panH + panPad * 2.2, u * 0.9);
-  ctx.fill();
-  ctx.strokeStyle = `rgba(140,205,250,${(0.20 * a).toFixed(3)})`;
-  ctx.lineWidth = 1.2 * SS;
-  ctx.beginPath();
-  ctx.roundRect(x0 - panPad, y0 - panPad * 1.5, wPan + panPad * 2, panH + panPad * 2.2, u * 0.9);
-  ctx.stroke();
-  let y = y0;
+  let y = r.y;
 
   ctx.fillStyle = ink(0.95);
-  put('Take the book home', x0, y, u * 2.0, '600', wPan);
-  y += u * 2.2;
-  ctx.fillStyle = ink(0.55);
-  put(BOOK.done ? 'Thank you — it is on its way.'
+  put('Take the book home', r.x, y + u * 1.45, u * 1.62, '600', r.w);
+  y += u * 2.35;
+  ctx.fillStyle = dim(0.95);
+  put(BOOK.done ? 'Thank you \u2014 it is on its way.'
                 : 'Hold your badge up to the scanner, or type your address.',
-      x0, y, u * 1.05, '', wPan);
-  y += u * 2.4;
+      r.x, y + u * 0.9, u * 1.02, '', r.w);
+  y += u * 2.0;
 
-  // ── строка бейджа ──
-  const fieldH = u * 2.6;
-  const field = (label, value, key, placeholder) => {
+  const label = (txt, x, w) => {
+    ctx.fillStyle = dim(0.85);
+    try { ctx.letterSpacing = `${u * 0.09}px`; } catch(err){}
+    put(txt, x, y + u * 0.8, u * 0.8, '600', w);
+    try { ctx.letterSpacing = '0px'; } catch(err){}
+  };
+  /* поле рисуется по своему прямоугольнику, а не по бегущему y: имя и почта
+     стоят в одной строке в две колонки — так форма влезает в карточку без
+     мелкого кегля */
+  const field = (key, value, placeholder, x, w, h) => {
     const on = BOOK.field === key;
-    ctx.fillStyle = ink(0.45);
-    put(label, x0, y, u * 0.86, '600', wPan);
-    y += u * 1.15;
-    ctx.fillStyle = `rgba(255,255,255,${(0.05 * a).toFixed(3)})`;
-    ctx.beginPath(); ctx.roundRect(x0, y, wPan, fieldH, u * 0.5); ctx.fill();
-    ctx.strokeStyle = on ? `rgba(140,205,250,${(0.85*a).toFixed(3)})` : `rgba(236,242,248,${(0.22*a).toFixed(3)})`;
-    ctx.lineWidth = 1.4 * SS;
-    ctx.beginPath(); ctx.roundRect(x0, y, wPan, fieldH, u * 0.5); ctx.stroke();
-    ctx.fillStyle = value ? ink(0.95) : ink(0.35);
-    put(value || placeholder, x0 + u, y + fieldH * 0.66, u * 1.15, '', wPan - u * 2);
-    if (on && ((state.time * 2) | 0) % 2 === 0 && value){
-      ctx.font = `${(u*1.15).toFixed(1)}px ${FAM}`;
-      const cw = ctx.measureText(value).width;
+    ctx.fillStyle = `rgba(34,38,44,${(0.035 * a).toFixed(3)})`;
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, u * 0.45); ctx.fill();
+    ctx.strokeStyle = on ? FOCUS(0.85) : LINE(0.20);
+    ctx.lineWidth = (on ? 1.6 : 1.2) * SS;
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, u * 0.45); ctx.stroke();
+    ctx.fillStyle = value ? ink(0.95) : dim(0.55);
+    const fs = put(value || placeholder, x + u * 0.85, y + h * 0.66, u * 1.08, '', w - u * 1.7);
+    if (on && ((state.time * 2) | 0) % 2 === 0){
+      ctx.font = `${fs.toFixed(1)}px ${FAM}`;
+      const cw = value ? ctx.measureText(value).width : 0;
       ctx.fillStyle = ink(0.8);
-      ctx.fillRect(x0 + u + cw + 2*SS, y + fieldH*0.24, 2*SS, fieldH*0.52);
+      ctx.fillRect(x + u * 0.85 + cw + 2 * SS, y + h * 0.26, 2 * SS, h * 0.48);
     }
-    BOOK.hit[key] = [x0, y, wPan, fieldH];
-    pushHit(x0, y, wPan, fieldH, {type: 'bookfield', key});
-    y += fieldH + u * 1.1;
+    BOOK.hit[key] = [x, y, w, h];
+    pushHit(x, y, w, h, {type: 'bookfield', key});
   };
 
-  ctx.fillStyle = ink(0.45);
-  put('BADGE', x0, y, u * 0.86, '600', wPan);
-  y += u * 1.15;
-  const bH = u * 2.2;
-  ctx.fillStyle = `rgba(140,205,250,${((BOOK.badge ? 0.10 : 0.05) * a).toFixed(3)})`;
-  ctx.beginPath(); ctx.roundRect(x0, y, wPan, bH, u * 0.5); ctx.fill();
-  ctx.strokeStyle = BOOK.field === 'badge'
-    ? `rgba(140,205,250,${(0.8*a).toFixed(3)})` : `rgba(236,242,248,${(0.18*a).toFixed(3)})`;
-  ctx.setLineDash(BOOK.badge ? [] : [6*SS, 5*SS]);
-  ctx.lineWidth = 1.4 * SS;
-  ctx.beginPath(); ctx.roundRect(x0, y, wPan, bH, u * 0.5); ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle = BOOK.badge ? ink(0.9) : ink(0.4);
-  put(BOOK.badge || 'waiting for a scan…', x0 + u, y + bH * 0.66, u * 1.0, '', wPan - u * 2);
-  /* справа в той же строке — сколько нажатий долетело до страницы */
-  /* справа в той же строке — состояние: либо порт открыт, либо сколько
-     нажатий долетело с клавиатуры. Сканер зала снят с игрового автомата и
-     настроен под COM-порт, поэтому нормальное состояние здесь — «port open». */
+  // ── бейдж ──
+  label('BADGE', r.x, r.w * 0.5);
+  /* справа в той же строке — состояние порта или сколько нажатий долетело */
   const ser = SER.state === 'open';
-  ctx.fillStyle = (ser || BOOK.keys) ? `rgba(105,211,138,${(0.9*a).toFixed(3)})`
-                                     : `rgba(236,242,248,${(0.28*a).toFixed(3)})`;
-  put(ser ? 'port open' : (BOOK.keys ? BOOK.keys + ' keys · ' + BOOK.lastKey : 'no keys yet'),
-      x0 + wPan - u, y + bH * 0.66, u * 0.82, '', wPan * 0.42, 'right');
-  pushHit(x0, y, wPan, bH, {type: 'bookfield', key: 'badge'});
-  y += bH + u * 1.1;
+  ctx.fillStyle = (ser || BOOK.keys) ? `rgba(30,132,72,${(0.9*a).toFixed(3)})` : dim(0.55);
+  put(ser ? 'port open' : (BOOK.keys ? BOOK.keys + ' keys \u00b7 ' + BOOK.lastKey : 'no scan yet'),
+      r.x + r.w, y + u * 0.8, u * 0.8, '', r.w * 0.45, 'right');
+  y += u * 1.3;
+  const bH = u * 2.25;
+  ctx.fillStyle = `rgba(24,118,176,${((BOOK.badge ? 0.07 : 0.025) * a).toFixed(3)})`;
+  ctx.beginPath(); ctx.roundRect(r.x, y, r.w, bH, u * 0.45); ctx.fill();
+  ctx.strokeStyle = BOOK.field === 'badge' ? FOCUS(0.85) : LINE(0.22);
+  ctx.setLineDash(BOOK.badge ? [] : [5 * SS, 4.5 * SS]);
+  ctx.lineWidth = 1.3 * SS;
+  ctx.beginPath(); ctx.roundRect(r.x, y, r.w, bH, u * 0.45); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = BOOK.badge ? ink(0.95) : dim(0.55);
+  put(BOOK.badge || 'waiting for a scan\u2026', r.x + u * 0.85, y + bH * 0.66, u * 1.0, '', r.w - u * 1.7, '', !BOOK.badge);
+  BOOK.hit.badge = [r.x, y, r.w, bH];
+  pushHit(r.x, y, r.w, bH, {type: 'bookfield', key: 'badge'});
+  y += bH + u * 1.15;
 
   /* ОДНО НАЖАТИЕ НА ВЕСЬ ПОКАЗ. Права на COM-порт браузер выдаёт только по
      жесту человека и запоминает их для этого адреса — дальше порт поднимается
-     сам при каждом открытии книги. */
+     сам при каждом открытии книги. Ссылка, а не кнопка: это наладка зала, а
+     не то, что делает гость. */
   if (serOk() && SER.state !== 'open'){
-    const cw2 = wPan * 0.66, ch2 = u * 2.2;
-    ctx.fillStyle = `rgba(140,205,250,${(0.16 * a).toFixed(3)})`;
-    ctx.beginPath(); ctx.roundRect(x0, y, cw2, ch2, ch2/2); ctx.fill();
-    ctx.strokeStyle = `rgba(140,205,250,${(0.55 * a).toFixed(3)})`; ctx.lineWidth = 1.3 * SS;
-    ctx.beginPath(); ctx.roundRect(x0, y, cw2, ch2, ch2/2); ctx.stroke();
-    ctx.fillStyle = `rgba(170,220,255,${(0.95 * a).toFixed(3)})`;
-    put('Connect the scanner', x0 + cw2/2, y + ch2 * 0.66, u * 0.95, '600', cw2 - u, 'center');
-    pushHit(x0, y, cw2, ch2, {type: 'bookserial'});
-    y += ch2 + u * 1.0;
+    ctx.fillStyle = FOCUS(0.7);
+    const fs = put('Connect the scanner', r.x, y + u * 0.8, u * 0.85, '', r.w * 0.6);
+    ctx.font = `${fs.toFixed(1)}px ${FAM}`;
+    const lw = ctx.measureText('Connect the scanner').width;
+    ctx.fillStyle = FOCUS(0.3);
+    ctx.fillRect(r.x, y + u * 1.02, lw, 1.2 * SS);
+    pushHit(r.x, y - u * 0.4, lw, u * 1.8, {type: 'bookserial'});
+    y += u * 1.9;
   }
-  field('NAME',  BOOK.name,  'name',  'Jane Doe');
-  field('EMAIL', BOOK.email, 'email', 'jane@practice.com');
+
+  // ── имя и почта, в две колонки ──
+  const gap = u * 1.1, colW = (r.w - gap) / 2;
+  label('NAME', r.x, colW);
+  label('EMAIL', r.x + colW + gap, colW);
+  y += u * 1.3;
+  const fH = u * 2.45;
+  field('name',  BOOK.name,  'Jane Doe',          r.x, colW, fH);
+  field('email', BOOK.email, 'jane@practice.com', r.x + colW + gap, colW, fH);
+  y += fH + u * 1.25;
 
   // ── согласие ──
-  const boxS = u * 1.3;
-  ctx.strokeStyle = `rgba(236,242,248,${(0.4*a).toFixed(3)})`; ctx.lineWidth = 1.4 * SS;
-  ctx.beginPath(); ctx.roundRect(x0, y, boxS, boxS, u * 0.28); ctx.stroke();
+  const boxS = u * 1.2;
+  ctx.strokeStyle = LINE(0.32); ctx.lineWidth = 1.3 * SS;
+  ctx.beginPath(); ctx.roundRect(r.x, y, boxS, boxS, u * 0.25); ctx.stroke();
   if (BOOK.consent){
-    ctx.strokeStyle = `rgba(140,205,250,${(0.95*a).toFixed(3)})`; ctx.lineWidth = 2.4 * SS;
+    ctx.strokeStyle = FOCUS(0.95); ctx.lineWidth = 2.2 * SS;
     ctx.beginPath();
-    ctx.moveTo(x0 + boxS*0.22, y + boxS*0.55);
-    ctx.lineTo(x0 + boxS*0.44, y + boxS*0.76);
-    ctx.lineTo(x0 + boxS*0.80, y + boxS*0.26);
+    ctx.moveTo(r.x + boxS*0.22, y + boxS*0.55);
+    ctx.lineTo(r.x + boxS*0.44, y + boxS*0.76);
+    ctx.lineTo(r.x + boxS*0.80, y + boxS*0.26);
     ctx.stroke();
   }
-  ctx.fillStyle = ink(0.6);
-  const CON = 'Send me the book and keep my address for that.';
-  put(CON, x0 + boxS + u * 0.8, y + boxS * 0.82, u * 0.95, '', wPan - boxS - u);
-  pushHit(x0, y - u*0.3, wPan, boxS + u*0.6, {type: 'bookconsent'});
-  y += boxS + u * 1.6;
+  ctx.fillStyle = dim(0.95);
+  put('Send me the book and keep my address for that.',
+      r.x + boxS + u * 0.7, y + boxS * 0.82, u * 0.95, '', r.w - boxS - u);
+  pushHit(r.x - u*0.3, y - u*0.3, r.w, boxS + u*0.6, {type: 'bookconsent'});
+  y += boxS + u * 1.35;
 
-  // ── кнопка ──
+  // ── кнопка, и рядом с ней причина, если она серая ──
   const ok = BOOK.consent && BOOK_MAIL.test(BOOK.email) && !BOOK.done;
-  const bw = wPan * 0.62, bh = u * 2.8;
-  ctx.fillStyle = ok ? `rgba(140,205,250,${(0.92*a).toFixed(3)})` : `rgba(236,242,248,${(0.10*a).toFixed(3)})`;
-  ctx.beginPath(); ctx.roundRect(x0, y, bw, bh, bh/2); ctx.fill();
-  ctx.fillStyle = ok ? `rgba(10,16,22,${(0.95*a).toFixed(3)})` : ink(0.35);
-  put(BOOK.done ? 'Sent' : 'Send me the book', x0 + bw/2, y + bh*0.65, u*1.15, '600', bw - u*2, 'center');
-  if (ok) pushHit(x0, y, bw, bh, {type: 'booksend'});
-  y += bh + u * 0.9;
-
-  // ── почему кнопка серая ──
+  const bw = Math.min(r.w * 0.52, u * 14), bh = u * 2.6;
+  ctx.fillStyle = ok ? ink(0.92) : `rgba(34,38,44,${(0.07 * a).toFixed(3)})`;
+  ctx.beginPath(); ctx.roundRect(r.x, y, bw, bh, bh/2); ctx.fill();
+  ctx.fillStyle = ok ? `rgba(251,252,253,${(0.98*a).toFixed(3)})` : dim(0.45);
+  put(BOOK.done ? 'Sent' : 'Send me the book', r.x + bw/2, y + bh*0.64, u*1.1, '600', bw - u*1.6, 'center');
+  if (ok) pushHit(r.x, y, bw, bh, {type: 'booksend'});
   if (!ok && !BOOK.done){
     const need = [];
     if (!BOOK_MAIL.test(BOOK.email)) need.push(BOOK.email ? 'the address looks wrong' : 'an address is needed');
     if (!BOOK.consent) need.push('tick the box');
-    ctx.fillStyle = `rgba(232,180,92,${(0.85*a).toFixed(3)})`;
-    put(need.join(' · '), x0, y, u * 0.92, '', wPan);
+    ctx.fillStyle = dim(0.75);
+    put(need.join(' \u00b7 '), r.x + bw + u * 0.9, y + bh * 0.64, u * 0.9, '', r.w - bw - u * 1.2);
   }
   ctx.textAlign = 'left';
 }
@@ -13717,13 +13764,15 @@ function drawInspect(){
     sw0 = sp.w*scale; sh0 = sp.h*scale;
     sx0 = px(I.wx, kk) - sw0/2; sy0 = py(I.cy, kk) - sh0/2;
   }
-  /* КНИГА ДЕЛИТ ЭКРАН: карточка слева, предложение справа. Без предложения
-     карточка занимает экран целиком, как раньше. */
+  /* ПРЕДЛОЖЕНИЕ ВНУТРИ КАРТОЧКИ. Экран больше не делится надвое: карточка
+     стоит по центру, а поля лежат в её правой колонке, на её же бумаге
+     (Эльдар, 2026-09-25). Поэтому и размер у неё теперь почти как у любой
+     другой картинки — чуть уже, чтобы под ней осталось место подписи. */
   const offer = !!I.offer;
-  const maxW = offer ? W*0.46 : W*0.72, maxH = offer ? H*0.70 : H*0.78;
+  const maxW = offer ? W*0.60 : W*0.72, maxH = offer ? H*0.82 : H*0.78;
   const th = Math.min(maxH, maxW*sp.h/sp.w);
   const tw = th * sp.w/sp.h;
-  const tx = offer ? W*0.50 - tw : W/2 - tw/2, ty = H*0.46 - th/2;
+  const tx = W/2 - tw/2, ty = H*0.46 - th/2;
   ctx.fillStyle = `rgba(3,2,2,${0.62*e})`;
   ctx.fillRect(0, 0, W, H);
   ctx.drawImage(sp.c, mixN(sx0,tx,e), mixN(sy0,ty,e), mixN(sw0,tw,e), mixN(sh0,th,e));
@@ -13759,7 +13808,13 @@ function drawInspect(){
     }
     ctx.restore();
   }
-  if (I.offer) drawBookOffer(W*0.545, ty + 26*SS, Math.min(W*0.33, 430*SS), e);
+  /* место формы карточка задаёт сама, в своих координатах: переводим его в
+     экранные тем же масштабом, каким нарисована она сама */
+  if (I.offer && sp.form){
+    const sc = tw / sp.w;
+    drawBookOffer({x: tx + sp.form.x * sc, y: ty + sp.form.y * sc,
+                   w: sp.form.w * sc, h: sp.form.h * sc}, e);
+  }
 }
 
 /* ARTICLES KEYED BY NAME. The map below is keyed by a beat's coordinate, and a
