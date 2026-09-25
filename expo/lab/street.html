@@ -25,6 +25,7 @@ const STEP_STEEL = {tread: ['#b9bcbb', '#d2d5d3'], riser: ['#9ea2a2', '#787c7d',
                     nosing: 'rgba(238,244,246,0.9)', glow: '214,236,246'};
 const WALL = {
   x: REC3_R + STEP_PAD,
+  dx2: 120,
   zFar: R89_BAY_Z, zNear: -400,
   top: -520, bot: 2560,
   winZ0: 560, winZ1: null,
@@ -160,14 +161,14 @@ function bayOutline(){
   ];
 }
 
-function drawSideWall(){
+function drawSideWall(xw){
   const Wl = WALL;
-  const P = (y, z) => [px(Wl.x, k(z)), py(y, k(z))];
+  const P = (y, z) => [px(xw, k(z)), py(y, k(z))];
   const wz1 = Wl.winZ1 != null ? Wl.winZ1 : Wl.zNear;
   const outer = [P(Wl.top, Wl.zFar), P(Wl.top, Wl.zNear), P(Wl.bot, Wl.zNear), P(Wl.bot, Wl.zFar)];
   const hole  = [P(Wl.winTop, Wl.winZ0), P(Wl.winBot, Wl.winZ0), P(Wl.winBot, wz1), P(Wl.winTop, wz1)];
   ctx.save();
-  if (cam.x < Wl.x){
+  if (cam.x < xw){
     ctx.beginPath();
     ctx.rect(0, 0, W, H);
     bayOutline().forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
@@ -191,7 +192,8 @@ function draw(){
   drawFloor();
   drawWallAndColumns();
   drawBayStep(REC3_L, REC3_R, STEP_STEEL, R89_BAY_Z, noseOf(R89_BAY_Z));
-  drawSideWall();
+  for (const xw of [WALL.x, WALL.x + WALL.dx2].sort((a, b) => Math.abs(b - cam.x) - Math.abs(a - cam.x)))
+    drawSideWall(xw);
 }
 
 let drag = null;
