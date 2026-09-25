@@ -10062,7 +10062,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260924-mill-v1';
+const ASSET_V = '20260925-labao-v2';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -14206,7 +14206,11 @@ function thumbFor(m){
   if (THUMBS[m.src] === null) return null;
   THUMBS[m.src] = null;
   const v = document.createElement('video');
-  v.src = m.src; v.preload = 'auto'; v.muted = true; v.playsInline = true;
+  /* КЛИП ТОЖЕ ЧЕРЕЗ vurl. Эльдар перевыкладывает готовые куски интервью под
+     тем же именем файла, и у того, кто уже смотрел, браузер отдавал старую
+     версию — новый монтаж просто не доезжал (2026-09-25). Ключи кэша здесь
+     остаются сырым путём, меняется только адрес запроса. */
+  v.src = vurl(m.src); v.preload = 'auto'; v.muted = true; v.playsInline = true;
   v.addEventListener('loadeddata', () => { try { v.currentTime = Math.min(6, (v.duration || 8) * 0.25); } catch(e){} });
   v.addEventListener('seeked', () => {
     const c = document.createElement('canvas');
@@ -14253,7 +14257,7 @@ function playPageClip(src){
   let v = VIDEO_EL[src];
   if (!v){
     v = document.createElement('video');
-    v.src = src; v.preload = 'auto'; v.playsInline = true;
+    v.src = vurl(src); v.preload = 'auto'; v.playsInline = true;   // см. thumbFor: имя файла у клипов не меняется
     VIDEO_EL[src] = v;
   }
   v.muted = SOUND.off;
