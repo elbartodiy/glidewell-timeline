@@ -12027,6 +12027,182 @@ function drawWallWindow(b){
 
   pushHit(x0, y0, w, h, {type: 'study', beat: BEATS.indexOf(b)});
 }
+/* ════════════════════════════════════════════════════════════════════════
+   УЛИЦА МЕЖДУ КОРПУСАМИ — 1989 → 1993.
+
+   Зачем. В 1993-м компания переехала на MacArthur Boulevard, и Эльдар хочет,
+   чтобы лента в этом месте вышла наружу: между бухтой 1989 и бухтой 1993 в
+   стене стоит проём во всю высоту, а за ним улица, уходящая в точку схода.
+   Референс — рендер, который он прислал 2026-09-25; прототип на WebGL от
+   ChatGPT показал ту же мысль коробками.
+
+   Почему так, а не трёхмерной сценой. Наш зал — двумерный холст с одной
+   точкой схода: k(z) сводит всё в центр экрана. Значит плоскость,
+   параллельная стене, рисуется без искажения, а фотография, снятая ВДОЛЬ
+   улицы, уже несёт в себе всю перспективу — её не надо ни на что натягивать.
+   Поэтому улица здесь набрана слоями-сечениями: небо, дальний конец, средний
+   план, ближние деревья, полотно. Каждый слой — одна картинка на своей
+   глубине, и параллакс получается сам: дальние едут медленно, ближние
+   быстро. Пять drawImage за кадр вместо сотен граней.
+
+   Масштаб. От пола (1080) до столешницы (700) — 380 единиц при настоящих
+   900 мм, то есть метр ≈ 422 единицы. Промежуток между бухтами — 725 единиц,
+   это 1.7 м: проём, а не улица. Улица (20 м между фасадами) в масштаб зала
+   не влезает и не должна: она ЗА проёмом и далеко, как в настоящем окне.
+
+   Высота слоёв. py(430, kk) даёт линию горизонта при ЛЮБОМ kk, поэтому
+   каждый слой сажается центром ровно на 430 — и горизонт всех пяти
+   совпадает сам, без подгонки. Ради этого у картинок и просят горизонт
+   ровно по центру кадра.
+
+   Пока картинок нет, слои рисуются заглушками (streetPlaceholder): они
+   держат ту же семантику — что на каком плане лежит, — чтобы можно было
+   проверить саму конструкцию. Как только в assets/street/ появятся файлы,
+   заглушка заменяется снимком без единой правки здесь.
+
+   Участок выключен, пока в адресе нет ?street=1 — зал не меняется.      */
+const STREET = {
+  on: false,
+  th: 58,            // толщина стены в проёме — как у окна 1995-го
+  top: -120,         // верх проёма в мировых единицах (выше линии года)
+  bot: 1080,         // и низ: проём идёт до пола
+  pad: 0,            // на сколько проём уже промежутка между бухтами
+  /* слои от дальнего к ближнему. dz — сколько ЗА стеной лежит слой;
+     app — какой ширины он должен КАЗАТЬСЯ (в единицах передней плоскости),
+     из неё считается настоящая ширина, чтобы дальнее не съёживалось.
+     Порядок в списке — порядок рисования, от дальнего к ближнему, и он обязан
+     совпадать с порядком глубин: полотно улицы лежит ЗА ближними деревьями
+     (1950 против 1550), иначе крона окажется под асфальтом. Проверено ходом:
+     за 800 единиц шага слои уезжают относительно стены на 306 / 266 / 199 /
+     107 / 95 пикселей — лесенка и есть глубина. */
+  layers: [
+    {key: 'sky',  dz: 20000, app: 3000, solid: true},
+    {key: 'far',  dz:  7000, app: 2800},
+    {key: 'mid',  dz:  2600, app: 2600},
+    {key: 'road', dz:  1100, app: 2600},
+    {key: 'near', dz:   700, app: 2600},
+  ],
+};
+function streetSpan(){
+  /* пролёт берётся ОТ САМИХ БУХТ, а не числом: если ритм их разведёт, проём
+     поедет за ними, а не останется там, где его однажды записали */
+  const x0 = REC3_R + STREET.pad, x1 = REC93_L - STREET.pad;
+  return x1 - x0 > 120 ? {x0, x1, mid: (x0 + x1) / 2} : null;
+}
+/* ЗАГЛУШКИ. Каждая повторяет то, что просит от генератора её промпт: небо
+   непрозрачное, у остальных прозрачная середина, у полотна прозрачно всё
+   выше горизонта. Горизонт у всех ровно по центру холста. */
+const STREET_PH = {};
+function streetPlaceholder(key){
+  if (STREET_PH[key]) return STREET_PH[key];
+  const Wp = 1200, Hp = 600, c = document.createElement('canvas');
+  c.width = Wp; c.height = Hp;
+  const g = c.getContext('2d'), hz = Hp / 2;
+  if (key === 'sky'){
+    const sg = g.createLinearGradient(0, 0, 0, Hp);
+    sg.addColorStop(0, '#8fb6d4'); sg.addColorStop(0.62, '#c6d8e4'); sg.addColorStop(1, '#d9e3ea');
+    g.fillStyle = sg; g.fillRect(0, 0, Wp, Hp);
+    g.fillStyle = 'rgba(150,168,182,0.55)';
+    g.beginPath(); g.moveTo(0, hz);
+    for (let x = 0; x <= Wp; x += 40)
+      g.lineTo(x, hz - 26 - 18 * Math.sin(x * 0.011) - 10 * Math.sin(x * 0.037));
+    g.lineTo(Wp, hz); g.closePath(); g.fill();
+  } else if (key === 'far'){
+    g.fillStyle = 'rgba(176,188,198,0.95)';
+    for (let i = 0; i < 7; i++){
+      const bw = 70 + (i % 3) * 34, bh = 60 + (i % 4) * 26;
+      const bx = Wp / 2 - 250 + i * 76;
+      g.fillRect(bx, hz - bh, bw * 0.8, bh);
+    }
+  } else if (key === 'mid'){
+    for (const side of [-1, 1]){
+      g.fillStyle = 'rgba(196,203,209,0.96)';
+      g.beginPath();
+      g.moveTo(Wp / 2 + side * 120, hz - 70);
+      g.lineTo(Wp / 2 + side * Wp / 2, hz - 260);
+      g.lineTo(Wp / 2 + side * Wp / 2, hz + 190);
+      g.lineTo(Wp / 2 + side * 120, hz + 52);
+      g.closePath(); g.fill();
+      g.fillStyle = 'rgba(96,124,96,0.92)';
+      for (let i = 0; i < 5; i++){
+        const t2 = i / 5, cx2 = Wp / 2 + side * (130 + t2 * 430), r2 = 26 + t2 * 52;
+        g.beginPath(); g.ellipse(cx2, hz - 24 - r2 * 0.7, r2 * 0.8, r2, 0, 0, 7); g.fill();
+      }
+    }
+  } else if (key === 'near'){
+    g.fillStyle = 'rgba(74,104,76,0.95)';
+    for (const side of [-1, 1]){
+      const cx2 = Wp / 2 + side * (Wp / 2 - 40);
+      g.beginPath(); g.ellipse(cx2, hz - 150, 190, 250, 0, 0, 7); g.fill();
+      g.fillStyle = 'rgba(58,62,66,0.9)';
+      g.fillRect(cx2 - side * 150, hz + 52, 120, 40);
+      g.fillStyle = 'rgba(74,104,76,0.95)';
+    }
+  } else if (key === 'road'){
+    g.fillStyle = '#6f757a';
+    g.beginPath();
+    g.moveTo(Wp / 2 - 24, hz); g.lineTo(Wp / 2 + 24, hz);
+    g.lineTo(Wp, Hp); g.lineTo(0, Hp); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(205,205,196,0.9)';
+    for (const side of [-1, 1]){
+      g.beginPath();
+      g.moveTo(Wp / 2 + side * 24, hz);
+      g.lineTo(Wp / 2 + side * 210, Hp);
+      g.lineTo(Wp / 2 + side * 330, Hp);
+      g.lineTo(Wp / 2 + side * 36, hz);
+      g.closePath(); g.fill();
+    }
+  }
+  STREET_PH[key] = {c, w: Wp, h: Hp};
+  return STREET_PH[key];
+}
+function streetLayer(key){
+  const ph = PHOTO_TEX['street_' + key];
+  return (ph && ph.el) ? {c: ph.el, w: ph.w || ph.el.naturalWidth, h: ph.h || ph.el.naturalHeight}
+                       : streetPlaceholder(key);
+}
+function drawStreet(){
+  if (!STREET.on) return;
+  const S = streetSpan(); if (!S) return;
+  const wz = wallZAt(S.mid);
+  const kk = k(wz), ki = k(wz + STREET.th);
+  /* ПРОСВЕТ — ПЕРЕСЕЧЕНИЕ ДВУХ РАМОК, как у окна 1995-го: сквозь стену видно
+     только то, что попало и в наружное отверстие, и во внутреннее. */
+  const ax0 = px(S.x0, kk), ax1 = px(S.x1, kk), ay0 = py(STREET.top, kk), ay1 = py(STREET.bot, kk);
+  const bx0 = px(S.x0, ki), bx1 = px(S.x1, ki), by0 = py(STREET.top, ki), by1 = py(STREET.bot, ki);
+  if (ax1 < -40 || ax0 > W + 40) return;
+  const p0 = Math.max(ax0, bx0), p1 = Math.min(ax1, bx1);
+  const q0 = Math.max(ay0, by0), q1 = Math.min(ay1, by1);
+  if (p1 <= p0 || q1 <= q0) return;
+  rivet('street', (ax0 + ax1) / 2, kk);
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(p0, q0, p1 - p0, q1 - q0); ctx.clip();
+  for (const L of STREET.layers){
+    const im = streetLayer(L.key); if (!im) continue;
+    const kz = k(wz + L.dz);
+    const wWorld = L.app / kz * k(0);        // «казаться шириной app» на любой глубине
+    const wS = wWorld * kz * SS, hS = wS * im.h / im.w;
+    const cxS = px(S.mid, kz), cyS = py(CFG.horizon, kz);   // горизонт слоя = горизонт зала
+    ctx.drawImage(im.c, cxS - wS / 2, cyS - hS / 2, wS, hS);
+  }
+  ctx.restore();
+
+  /* ОТКОСЫ — ТОЛЬКО ДАЛЬНИЕ. Толщина стены видна с той стороны проёма, от
+     которой камера ушла; ближняя щека закрыта самой стеной. Те же четыре
+     четырёхугольника, что у окна: две щеки, притолока и порог. */
+  const face = (x1a, y1a, x2a, y2a, x2b, y2b, x1b, y1b, tone) => {
+    ctx.fillStyle = tone;
+    ctx.beginPath();
+    ctx.moveTo(x1a, y1a); ctx.lineTo(x2a, y2a); ctx.lineTo(x2b, y2b); ctx.lineTo(x1b, y1b);
+    ctx.closePath(); ctx.fill();
+  };
+  const camS = px(S.mid, kk);
+  if (camS > W / 2)  face(ax0, ay0, bx0, by0, bx0, by1, ax0, ay1, 'rgba(150,152,150,0.92)');
+  if (camS < W / 2)  face(ax1, ay0, bx1, by0, bx1, by1, ax1, ay1, 'rgba(150,152,150,0.92)');
+  if (ay0 < by0)     face(ax0, ay0, ax1, ay0, bx1, by0, bx0, by0, 'rgba(120,124,126,0.92)');
+  if (ay1 > by1)     face(ax0, ay1, ax1, ay1, bx1, by1, bx0, by1, 'rgba(178,180,178,0.92)');
+}
 function drawDocCard(b, bi){
   const d = b.doc;
   const wz = (segAt(b.x).tz || wallZAt(b.x)) - 12, kk = k(wz);
@@ -16750,6 +16926,7 @@ function frame(){
 
   drawFloor();
   drawWall();
+  drawStreet();   // проём между 1989 и 1993: улица лежит слоями за стеной
   drawFilmVideoWall();   // the film backdrop sits directly on the deep wall
   drawFilmProjectorWall();   // and the 1999 throw washes over the plaster
   drawFilmWallPlasma();      // the 2009 plasma hangs on the wall, behind the counters
@@ -17341,6 +17518,19 @@ async function boot(){
   }, 3000);
   /* ?book=1 открывает стопку «Constant Change» с полосой предложения — иначе
      её не сфотографировать скриптом: она открывается пальцем по книге. */
+  /* ?street=1 — участок улицы между 1989 и 1993. Пока это сборка структуры,
+     и в зале его нет: без флага drawStreet() возвращается сразу, и стена на
+     этом промежутке идёт как шла (Эльдар: «собирай пока структуру»). */
+  if (/[?&]street=1/.test(location.search)){
+    STREET.on = true;
+    const S = streetSpan();
+    if (S){
+      cam.x = S.mid; cam.vel = 0;
+      console.log('street: проём ' + (S.x0|0) + '..' + (S.x1|0) +
+                  ' (' + ((S.x1 - S.x0)|0) + ' единиц, ' + ((S.x1 - S.x0)/422).toFixed(2) + ' м)' +
+                  ', стена на ' + wallZAt(S.mid) + ', слоёв ' + STREET.layers.length);
+    } else console.warn('street: между бухтами нет места для проёма');
+  }
   if (/[?&]book=1/.test(location.search)) setTimeout(() => {
     const bb = BEATS.find(x => x.pyr);
     if (!bb) return;
