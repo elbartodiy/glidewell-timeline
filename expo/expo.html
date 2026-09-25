@@ -520,6 +520,16 @@ const CUTS = [
      did not reach the edges of the frame. The cut starts 550 earlier and is 600
      wider, and the panel takes almost the whole of it. */
   {at: 27050, w: 3600, on: true},
+  /* УЛИЦА МЕЖДУ 1989 И 1993. Между этими бухтами было 725 единиц — проём, а
+     не улица. Врезка раздвигает промежуток так, чтобы между двумя корпусами
+     встало ровно 2200 (две ширины просвета между колоннами бухты).
+     Откуда 1924: левая грань улицы стоит на REC3_R + STEP_PAD + 120 = 14900,
+     правая должна встать на 14900 + 2200 = 17100, а её дальняя грань — на
+     17220, где начинается панель 1993. Панель без врезки начиналась на
+     15296.4 (REC93_MID − REC93_HALF), значит сдвиг 17220 − 15296.4 = 1923.6.
+     Стоит ПОСЛЕ остальных в списке, а не по порядку at — поэтому bayStart()
+     считает по самому at. */
+  {at: 11750, w: 1924, on: true},
 ];
 function SHIFT(x){
   let s = 0;
@@ -529,8 +539,13 @@ function SHIFT(x){
 /* where a cut's own bay begins on the final line: its position carries the
    cuts BEFORE it, but not its own */
 function bayStart(i){
+  /* ПО at, А НЕ ПО ИНДЕКСУ. Сумма бралась по всем врезкам левее в СПИСКЕ, что
+     верно, только пока список отсортирован по at. Врезка улицы дописана в
+     конец, а её at меньше половины остальных — по индексу она выпала бы из
+     счёта, хотя SHIFT её учитывает, и бухта 1993 разъехалась бы со своим же
+     годом. */
   let s = 0;
-  for (let j = 0; j < i; j++) if (CUTS[j].on) s += CUTS[j].w;
+  for (const c of CUTS) if (c.on && c.at < CUTS[i].at) s += c.w;
   return CUTS[i].at + s;
 }
 const GAP = CUTS[1];
@@ -2414,6 +2429,10 @@ const FAR93_L = bayFoot(REC93_BL, REC93_Z), FAR93_R = bayFoot(REC93_BR, REC93_Z)
 const R89_BAY_Z = SEGMENTS[1].z0;      // 680
 const STEP_89_L = stepEdge(REC3_L - STEP_PAD, R89_BAY_Z), STEP_89_R = stepEdge(REC3_R + STEP_PAD, R89_BAY_Z);
 const FSTP_89_L = stepFoot(REC3_L - STEP_PAD, R89_BAY_Z), FSTP_89_R = stepFoot(REC3_R + STEP_PAD, R89_BAY_Z);
+/* прилавок не идёт сквозь улицу: разрыв от дальней грани левого корпуса до
+   дальней грани правого */
+BENCH_BREAKS.push({x: (REC3_R + STEP_PAD + REC93_BL) / 2,
+                   half: (REC93_BL - REC3_R - STEP_PAD) / 2 + 40});
 /* 1979 HAS A BLOCK TOO — it had the first one, and it was taken away with the
    runner. Without it the bay's panel and the models' plinth stop at the
    counter's foot line and nothing stands under them: through the slot between
@@ -8895,6 +8914,136 @@ function drawRec3(t){
 }
 
 /* doorways between eras — near-camera portals you pass through */
+/* ════════ УЛИЦА МЕЖДУ 1989 И 1993 ════════════════════════════════════════
+   Два корпуса лицом друг к другу: слева тот, в котором стоит бухта 1989,
+   справа тот, в котором стоит бухта 1993. У каждого по две грани, между ними
+   толщина стены с окном — откос, притолока, подоконник. Между корпусами 2200
+   единиц: две ширины просвета между колоннами бухты.
+
+   Собрано в мастерской expo/lab/street.html и перенесено оттуда числами.
+
+   ГЛАВНОЕ ПРАВИЛО ЭТОГО УЗЛА. Грань стены лежит в той же плоскости, что край
+   плиты пола и торец блока ступени (x = REC3_R + STEP_PAD слева, x = REC93_BL
+   справа). Вещи в одной плоскости порядком рисования не разводятся: на общей
+   плоскости нет ближнего и дальнего. Они разделяются ОБРЕЗКОЙ — стена
+   вырезается силуэтом бухты, — и обрезка включается только тогда, когда бухта
+   стоит МЕЖДУ глазом и стеной. Слева бухта левее стены, справа правее, отсюда
+   знак стороны. */
+const ST = {
+  th: 120,            // толщина стены — ширина пилястры бухты
+  gap: 2200,          // между корпусами: две ширины просвета между колоннами
+  zNear: -860,        // ближний край: за спиной у камеры, торца не видно
+  top: -520, bot: 2560,
+  winZ0: 560, winTop: -260, winBot: CFG.benchY,
+  tone: ['#6c7681', '#8b95a0'],
+  jamb: '#5a636d',
+  head: ['#4e565f', '#646d77'],
+  sill: ['#9aa4ad', '#b6bfc7'],
+};
+function stPairs(){
+  const aL = REC3_R + STEP_PAD;
+  const bR = REC93_BL;
+  return [
+    {a: aL, b: aL + ST.th, zFar: R89_BAY_Z, occl: stOutline89, side: -1},
+    {a: bR - ST.th, b: bR, zFar: REC93_Z,   occl: stOutline93, side:  1},
+  ];
+}
+/* силуэт бухты 1989: задняя кромка проступи → нос → подошва подступёнка → и
+   дальше вниз по краю плиты пола до низа кадра. Подошва ступени и край пола
+   лежат на одной пространственной прямой, поэтому это одна ломаная. */
+function stOutline89(){
+  const kBay = k(R89_BAY_Z), kStep = k(noseOf(R89_BAY_Z)), kNear = k(-40);
+  const wx0 = REC3_L - STEP_PAD, wx1 = REC3_R + STEP_PAD;
+  const yTreadBack = py(1040, kBay), yNose = py(1040, kStep), yStepFoot = py(1080, kStep);
+  const yFar = py(1080, kBay), yNearF = py(1080, kNear);
+  const edge = wx => {
+    const xf = px(wx, kBay), xn = px(wx, kNear);
+    return xf + (xn - xf) * ((H - yFar) / (yNearF - yFar || 1));
+  };
+  return [
+    [px(wx0, kBay), yTreadBack], [px(wx1, kBay), yTreadBack],
+    [px(wx1, kStep), yNose],     [px(wx1, kStep), yStepFoot],
+    [edge(wx1), H],              [edge(wx0), H],
+    [px(wx0, kStep), yStepFoot], [px(wx0, kStep), yNose],
+  ];
+}
+/* силуэт бухты 1993: её плита пола, теми же углами, какими её рисует
+   drawFloor (FAR93_L/R — дальние, ближние на плоскости −40) */
+function stOutline93(){
+  const kBay = k(REC93_Z), kNear = k(-40);
+  const yFar = py(CFG.benchY + 240, k(CFG.benchDepth));
+  return [
+    [px(REC93_BL, kBay), yFar], [px(REC93_BR, kBay), yFar],
+    [px(REC93_R, kNear), H],    [px(REC93_L, kNear), H],
+  ];
+}
+function stClip(xw, p){
+  const eyeOnBaySide = p.side < 0 ? (cam.x < xw) : (cam.x > xw);
+  if (!eyeOnBaySide) return;
+  ctx.beginPath();
+  ctx.rect(0, 0, W, H);
+  p.occl().forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+  ctx.closePath();
+  ctx.clip('evenodd');
+}
+function stFace(xw, p){
+  const P = (y, z) => [px(xw, k(z)), py(y, k(z))];
+  const outer = [P(ST.top, p.zFar), P(ST.top, ST.zNear), P(ST.bot, ST.zNear), P(ST.bot, p.zFar)];
+  const hole  = [P(ST.winTop, ST.winZ0), P(ST.winBot, ST.winZ0),
+                 P(ST.winBot, ST.zNear), P(ST.winTop, ST.zNear)];
+  ctx.save(); stClip(xw, p);
+  const g = ctx.createLinearGradient(outer[0][0], outer[0][1], outer[1][0], outer[1][1]);
+  g.addColorStop(0, ST.tone[0]); g.addColorStop(1, ST.tone[1]);
+  ctx.beginPath();
+  outer.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+  ctx.closePath();
+  hole.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+  ctx.closePath();
+  ctx.fillStyle = g; ctx.fill('evenodd');
+  ctx.restore();
+}
+function stJamb(p){
+  const kz = k(ST.winZ0);
+  ctx.save(); stClip(p.a, p);
+  ctx.beginPath();
+  ctx.moveTo(px(p.a, kz), py(ST.winTop, kz));
+  ctx.lineTo(px(p.b, kz), py(ST.winTop, kz));
+  ctx.lineTo(px(p.b, kz), py(ST.winBot, kz));
+  ctx.lineTo(px(p.a, kz), py(ST.winBot, kz));
+  ctx.closePath();
+  ctx.fillStyle = ST.jamb; ctx.fill();
+  ctx.restore();
+}
+function stBand(p, yWorld, c0, c1){
+  const kA = k(ST.winZ0), kB = k(ST.zNear);
+  ctx.save(); stClip(p.a, p);
+  const g = ctx.createLinearGradient(0, py(yWorld, kA), 0, py(yWorld, kB));
+  g.addColorStop(0, c0); g.addColorStop(1, c1);
+  ctx.beginPath();
+  ctx.moveTo(px(p.a, kA), py(yWorld, kA));
+  ctx.lineTo(px(p.b, kA), py(yWorld, kA));
+  ctx.lineTo(px(p.b, kB), py(yWorld, kB));
+  ctx.lineTo(px(p.a, kB), py(yWorld, kB));
+  ctx.closePath();
+  ctx.fillStyle = g; ctx.fill();
+  ctx.restore();
+}
+function drawStreet(){
+  const pairs = stPairs();
+  if (Math.abs(cam.x - (pairs[0].b + pairs[1].a) / 2) > 5200) return;
+  /* пары — по расстоянию от камеры, дальняя первой; внутри пары грани тоже,
+     а между ними откос, притолока и подоконник. Это разные плоскости на
+     разных x, поэтому здесь порядок законен. */
+  const dist = p => Math.min(Math.abs(p.a - cam.x), Math.abs(p.b - cam.x));
+  for (const p of pairs.sort((u, v) => dist(v) - dist(u))){
+    const xs = [p.a, p.b].sort((u, v) => Math.abs(v - cam.x) - Math.abs(u - cam.x));
+    stFace(xs[0], p);
+    stJamb(p);
+    stBand(p, ST.winTop, ST.head[0], ST.head[1]);
+    stBand(p, ST.winBot, ST.sill[0], ST.sill[1]);
+    stFace(xs[1], p);
+  }
+}
 function drawDoorway(){
   const z = -460, kk = k(z);
   for (const seam of SEAMS){
@@ -16770,6 +16919,7 @@ function frame(){
   drawLabs73();
   drawRec3(t);
   drawRec93(t);
+  drawStreet();       // улица между 1989 и 1993
   drawRec2(t);
   drawRec17(t);
   drawRec18(t);
