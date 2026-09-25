@@ -1,33 +1,40 @@
 <!doctype html>
 <!--
-  УЛИЦА 1989 → 1993 — МАСТЕРСКАЯ. СБОРКА ПО СХЕМЕ ЭЛЬДАРА.
+  УЛИЦА 1989 → 1993 — МАСТЕРСКАЯ.
 
-  Эльдар, 2026-09-25: «всё, что ты построил, неверно. Начни с моей схемы».
-  Поэтому здесь ничего не сочинено: восемь пронумерованных плоскостей — это
-  восемь номеров с его листа, каждая нарисована отдельно и подписана своим
-  номером прямо на себе. Если номер прочитан неправильно, его видно и можно
-  назвать: «3 не то».
+  Эльдар, 2026-09-25: «работаем в отдельном пространстве»; «начни с моей
+  схемы»; «скопируй пол, ступеньку, колонны — всё так же как на 1989, один в
+  один, всю структуру перенеси туда. Но там, где кончается белый пол справа,
+  пол больше направо не идёт».
 
-  ГЛАВНОЕ, ЧТО ВЫЯСНИЛОСЬ ПО ДОРОГЕ. Наши px/py — это полноценная
-  перспективная проекция, если считать k для КАЖДОЙ вершины:
-      k(z) = F / (F + z - cam.z)
-      px(x, z) = W/2 + (x - cam.x) * k(z) * SS
-      py(y, z) = (horizon + (y - horizon) * k(z)) * SS
-  Значит зал умеет рисовать любую плоскую фигуру в пространстве — надо просто
-  спроецировать её четыре угла. Никакого второго движка не нужно. Всё ниже
-  построено ровно так: каждая плоскость это четыре точки (x, y, z).
+  Поэтому здесь ДВЕ части:
 
-  ОСИ. x — вдоль ленты зала (куда идёт гость). y — вниз (пол зала 1080,
-  потолок около -520, горизонт 430). z — вглубь, от нас.
+  1. БУХТА 1989, перенесённая из зала один в один. Не «похожая», а с теми же
+     числами и тем же порядком рисования, что в expo.html: координаты бухты,
+     плоскость её пилястр, вынос ступени, тона пола и камня. Всё, что ниже
+     помечено «из зала», скопировано оттуда и должно меняться только вместе
+     с ним. Белый пол бухты кончается на её правом краю и дальше вправо не
+     идёт — там начинается улица.
 
-  Масштаб зала: 380 единиц от пола до столешницы при настоящих 900 мм, то
-  есть 422 единицы на метр.
+  2. ВОСЕМЬ ПЛОСКОСТЕЙ СО СХЕМЫ Эльдара, пронумерованных его номерами.
+
+  ЧЕМ ЭТО РИСУЕТСЯ. Наши px/py — полноценная перспективная проекция, если
+  брать k для КАЖДОЙ вершины, а не один на всю фигуру:
+      k(z)  = F / (F + z - cam.z)
+      px(x) = W/2 + (x - cam.x) * k(z) * SS
+      py(y) = (horizon + (y - horizon) * k(z)) * SS
+  Значит любая плоскость в пространстве — это четыре спроецированные точки.
+  Никакого второго движка не нужно, и перенос обратно в зал будет
+  механическим.
+
+  ОСИ. x — вдоль ленты (куда идёт гость), y — вниз (пол 1080, потолок −520,
+  горизонт 430), z — вглубь от нас. Масштаб: 422 единицы на метр.
 -->
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Улица 1989 → 1993 · сборка по схеме</title>
+<title>Улица 1989 → 1993 · мастерская</title>
 <style>
   :root{ --bg:#14171b; --panel:#1b1f24; --line:#2b3138; --ink:#e8ecf0; --dim:#8b949e; --accent:#7cc4ff; }
   *{box-sizing:border-box}
@@ -44,7 +51,7 @@
   legend{color:var(--dim);font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:0 6px 0 0}
   .pl{display:flex;align-items:center;gap:9px;margin-bottom:6px;cursor:pointer}
   .pl input{accent-color:var(--accent)}
-  .pl b{display:inline-block;width:17px;height:17px;border-radius:50%;background:#2c3views;
+  .pl b{display:inline-block;width:17px;height:17px;border-radius:50%;
         background:#2c3a46;color:var(--accent);font-size:11px;line-height:17px;text-align:center;font-weight:700}
   .pl span{font-size:12px;color:var(--dim)}
   .row{display:grid;grid-template-columns:1fr 66px;gap:8px;align-items:center;margin-bottom:8px}
@@ -53,16 +60,19 @@
   .row label i{font-style:normal;font-size:11px;color:var(--dim)}
   input[type=number]{width:100%;background:#12151a;border:1px solid var(--line);color:var(--ink);
                      border-radius:6px;padding:4px 6px;font:inherit;font-size:12px}
-  #hud{position:fixed;left:314px;top:12px;color:var(--dim);font-size:12px;
+  #hud{position:fixed;left:314px;top:12px;color:rgba(255,255,255,.62);font-size:12px;
        text-shadow:0 1px 6px #000;pointer-events:none}
 </style>
 </head>
 <body>
 <div id="panel">
   <h1>Улица 1989 → 1993</h1>
-  <p class="sub">Восемь плоскостей со схемы. Галочкой — что показывать.</p>
+  <p class="sub">Бухта 1989 перенесена из зала. Улица строится справа от неё.</p>
+  <fieldset><legend>Бухта 1989 · из зала</legend>
+    <label class="pl"><input type="checkbox" id="s_bay" checked><b>Б</b><span>панель, пилястры, ступень, пол</span></label>
+  </fieldset>
   <fieldset id="planes"><legend>Плоскости со схемы</legend></fieldset>
-  <fieldset><legend>Размеры</legend>
+  <fieldset><legend>Размеры улицы</legend>
     <div class="row"><label><b>Между фасадами</b><i id="l_gap"></i></label><input type="number" id="n_gap"></div>
     <div class="row"><label><b>Толщина стены</b><i id="l_th"></i></label><input type="number" id="n_th"></div>
     <div class="row"><label><b>Окно: начало</b><i>по z</i></label><input type="number" id="n_z0"></div>
@@ -83,38 +93,130 @@
 
 <script>
 (() => {
-/* ── ЧИСЛА ЗАЛА, менять нельзя: они должны совпадать с expo.html ───────── */
-const CFG = {F: 900, horizon: 430, benchY: 700, floor: 1080, ceil: -520};
-const PER_M = 422;
-const cam = {x: 0, z: 0};
+/* ══ ЧИСЛА ЗАЛА. Скопированы из expo.html и меняться здесь не должны ══════ */
+const CFG = {F: 900, horizon: 430, benchY: 700, benchDepth: 340, floor: 1080, ceil: -520};
+const PER_M = 422;                       // 380 единиц от пола до столешницы = 900 мм
+const REC3_L = 13620, REC3_R = 14720;    // бухта 1989 на готовой ленте
+const R89_BAY_Z = 680;                   // SEGMENTS[1].z0 — плоскость её пилястр
+const STEP_PAD = 60;                     // насколько блок выходит за пилястры
+const STEP_DEPTH = 88;                   // вынос носа ступени вперёд от плоскости бухты
+const WALL_E2_Z = 850;                   // стена эры 2, правее бухты
+const TONE = {
+  floor89: ['#d3d1c9', '#8b897f'],       // FLOOR_TONES.rec.r1989
+  floorE1: ['#485042', '#1e2119'],       // FLOOR_TONES.era[1] — пол слева от бухты
+  stepTread: ['#b9bcbb', '#d2d5d3'],     // STEP_TONE.steel
+  stepRiser: ['#9ea2a2', '#787c7d', '#4e5254'],
+  stepNose: 'rgba(238,244,246,0.9)',
+  panel: ['#7d8894', '#9aa5b0', '#5f6873'],
+  pilaster: ['#23262b', '#5c636b', '#1b1e22'],
+};
+const cam = {x: (REC3_L + REC3_R) / 2, z: 0};
 let W = 0, H = 0, SS = 1;
 
-const kz = z => CFG.F / (CFG.F + z - cam.z);
-/* проекция ТОЧКИ пространства — та же, что в зале, только k берётся для
-   каждой вершины отдельно. Этого достаточно, чтобы рисовать любые плоскости. */
-const PX = (x, z) => W / 2 + (x - cam.x) * kz(z) * SS;
-const PY = (y, z) => (CFG.horizon + (y - CFG.horizon) * kz(z)) * SS;
+const k  = z => CFG.F / (CFG.F + z - cam.z);
+const px = (x, kk) => W / 2 + (x - cam.x) * kk * SS;
+const py = (y, kk) => (CFG.horizon + (y - CFG.horizon) * kk) * SS;
+/* та же проекция, но для точки пространства: k берётся по её собственному z */
+const PX = (x, z) => px(x, k(z));
+const PY = (y, z) => py(y, k(z));
 
-/* ── РАЗМЕРЫ. Всё, что подбирается. ────────────────────────────────────── */
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const stage = document.getElementById('stage');
+function resize(){
+  SS = Math.min(devicePixelRatio || 1, 2);
+  W = cv.width  = Math.max(2, Math.round(stage.clientWidth  * SS));
+  H = cv.height = Math.max(2, Math.round(stage.clientHeight * SS));
+  draw();
+}
+function poly(pts, fill, stroke){
+  ctx.beginPath();
+  pts.forEach(([x, y, z], i) => { const sx = PX(x, z), sy = PY(y, z); i ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy); });
+  ctx.closePath();
+  if (fill){ ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = 1 * SS; ctx.stroke(); }
+}
+
+/* ══ ЧАСТЬ 1 · БУХТА 1989, ПЕРЕНЕСЁННАЯ ИЗ ЗАЛА ═══════════════════════════
+   Порядок рисования тот же, что в зале: пол, потом панель с пилястрами,
+   потом блок ступени поверх их подошв. */
+function drawBay(){
+  const kBay = k(R89_BAY_Z), kNear = k(-40);
+  const wx0 = REC3_L - STEP_PAD, wx1 = REC3_R + STEP_PAD;
+
+  /* ── ПОЛ ──────────────────────────────────────────────────────────────
+     В зале плита бухты идёт от дальних углов (на плоскости самой бухты, на
+     её линии пола 1080) к ближнему краю и дальше вниз за кадр. Слева от неё
+     — пол эры, справа НИЧЕГО: Эльдар просил, чтобы за правым краем белой
+     плиты пол дальше не шёл, там начинается улица. */
+  const slab = (a, b, tone) => {
+    const yFar = py(1080, kBay);
+    const g = ctx.createLinearGradient(0, yFar, 0, H);
+    g.addColorStop(0, tone[0]); g.addColorStop(1, tone[1]);
+    ctx.beginPath();
+    ctx.moveTo(px(a, kBay), yFar); ctx.lineTo(px(b, kBay), yFar);
+    ctx.lineTo(px(b, kNear), H);   ctx.lineTo(px(a, kNear), H);
+    ctx.closePath(); ctx.fillStyle = g; ctx.fill();
+  };
+  slab(wx0 - 4200, wx0, TONE.floorE1);   // пол эры слева
+  slab(wx0, wx1, TONE.floor89);          // белая плита бухты
+  // справа пола нет — дальше улица
+
+  /* ── ПАНЕЛЬ БУХТЫ ─────────────────────────────────────────────────────
+     В зале это прямоугольник от верха кадра до линии 1040 на плоскости
+     бухты, шириной от пилястры до пилястры с тем же выносом. */
+  const yBase = py(1040, kBay);
+  const x0 = px(wx0, kBay), x1 = px(wx1, kBay);
+  const wg = ctx.createLinearGradient(0, 0, 0, yBase);
+  wg.addColorStop(0, TONE.panel[0]); wg.addColorStop(0.4, TONE.panel[1]); wg.addColorStop(1, TONE.panel[2]);
+  ctx.fillStyle = wg; ctx.fillRect(x0, 0, x1 - x0, yBase);
+
+  /* ── ПИЛЯСТРЫ ─────────────────────────────────────────────────────────
+     Две стальные колонны шириной 120 единиц на плоскости бухты, от верха
+     кадра до линии пола. Полоски — тот же брашированный металл, что в зале. */
+  for (const wxc of [REC3_L, REC3_R]){
+    const sxc = px(wxc, kBay), cw = 120 * kBay * SS, yFootC = py(1080, kBay);
+    const cg = ctx.createLinearGradient(sxc - cw / 2, 0, sxc + cw / 2, 0);
+    cg.addColorStop(0, TONE.pilaster[0]); cg.addColorStop(0.45, TONE.pilaster[1]); cg.addColorStop(1, TONE.pilaster[2]);
+    ctx.fillStyle = cg; ctx.fillRect(sxc - cw / 2, 0, cw, yFootC);
+    ctx.fillStyle = 'rgba(198,210,220,0.5)';
+    ctx.fillRect(sxc - cw / 2 + 2 * SS, 0, 2.2 * SS, yFootC);
+    ctx.fillRect(sxc + cw / 2 - 4.2 * SS, 0, 2.2 * SS, yFootC);
+    ctx.fillStyle = 'rgba(210,235,255,0.14)';
+    ctx.fillRect(sxc - cw / 2 + 6 * SS, 0, 3 * SS, yFootC);
+  }
+
+  /* ── СТУПЕНЬ ──────────────────────────────────────────────────────────
+     Блок у входа в бухту: задняя кромка на подошве стены бухты, нос на
+     88 единиц ближе. Проступь — четырёхугольник между этими двумя линиями,
+     подступёнок — от носа до пола на его же плоскости. */
+  const zF = R89_BAY_Z - STEP_DEPTH, kStep = k(zF);
+  const yTreadBack = py(1040, kBay), yNose = py(1040, kStep), yStepFoot = py(1080, kStep);
+  const bx0 = px(wx0, kBay), bx1 = px(wx1, kBay);
+  const nx0 = px(wx0, kStep), nx1 = px(wx1, kStep);
+  const tg = ctx.createLinearGradient(0, yTreadBack, 0, yNose);
+  tg.addColorStop(0, TONE.stepTread[0]); tg.addColorStop(1, TONE.stepTread[1]);
+  ctx.fillStyle = tg;
+  ctx.beginPath(); ctx.moveTo(bx0, yTreadBack); ctx.lineTo(bx1, yTreadBack);
+  ctx.lineTo(nx1, yNose); ctx.lineTo(nx0, yNose); ctx.closePath(); ctx.fill();
+  const rg = ctx.createLinearGradient(0, yNose, 0, yStepFoot);
+  rg.addColorStop(0, TONE.stepRiser[0]); rg.addColorStop(0.5, TONE.stepRiser[1]); rg.addColorStop(1, TONE.stepRiser[2]);
+  ctx.fillStyle = rg; ctx.fillRect(nx0, yNose, nx1 - nx0, yStepFoot - yNose);
+  ctx.fillStyle = TONE.stepNose;
+  ctx.fillRect(nx0, yNose - 1.6 * SS, nx1 - nx0, 2.2 * SS);
+}
+
+/* ══ ЧАСТЬ 2 · ВОСЕМЬ ПЛОСКОСТЕЙ СО СХЕМЫ ════════════════════════════════
+   Номера — с листа Эльдара. Улица начинается сразу за правым краем бухты:
+   её ближний корпус — это стена, идущая от бухты вглубь. */
 const P = {
-  gap: 8400,        // между фасадами двух корпусов: 8400 = 20 м
-  th: 58,           // толщина стены — как у окна 1995-го в зале
-  z0: 1400,         // окно галереи: начало по глубине
-  z1: 6200,         // и конец
-  wt: -300,         // верх окна
-  wb: 700,          // низ окна — линия прилавка
-  pt: -1500,        // верх стены, парапет
-  gr: 2560,         // уровень улицы: этажом ниже пола зала
-  dep: 16000,       // насколько далеко уходит фасад
+  gap: 8400, th: 58, z0: 1400, z1: 6200,
+  wt: -300, wb: CFG.benchY, pt: -1500, gr: 2560, dep: 16000,
 };
-
-/* ── ВОСЕМЬ ПЛОСКОСТЕЙ СО СХЕМЫ ────────────────────────────────────────────
-   Номера — с листа Эльдара. side = -1 левый корпус (1989), +1 правый (1993);
-   xf — плоскость фасада, xi — та же стена изнутри, на толщину глубже. */
+const STREET_X = REC3_R + STEP_PAD;      // улица начинается там, где кончился пол
 function planes(side){
-  const xf = side * P.gap / 2;            // наружная грань фасада
-  const xi = xf - side * P.th;            // внутренняя грань той же стены
-  const Z0 = P.z0, Z1 = P.z1, D = P.dep;
+  const xf = STREET_X + (side < 0 ? 0 : P.gap);   // наружные грани двух фасадов
+  const xi = xf + (side < 0 ? -P.th : P.th);      // та же стена изнутри
+  const Z0 = P.z0, Z1 = P.z1, D = P.dep, s = side < 0 ? -1 : 1;
   return [
     {n: 1, name: 'парапет · стена выше окна', fill: '208,208,202',
      pts: [[xf, P.pt, 0], [xf, P.pt, D], [xf, P.wt, D], [xf, P.wt, 0]]},
@@ -130,34 +232,14 @@ function planes(side){
      pts: [[xf, P.wb, 0], [xf, P.wb, D], [xf, P.gr, D], [xf, P.gr, 0]]},
     {n: 7, name: 'прилавок в галерее', fill: '216,214,206',
      pts: [[xi, CFG.benchY, Z0], [xi, CFG.benchY, Z1],
-           [xi - side * 340, CFG.benchY, Z1], [xi - side * 340, CFG.benchY, Z0]]},
+           [xi + s * 340, CFG.benchY, Z1], [xi + s * 340, CFG.benchY, Z0]]},
     {n: 8, name: 'потолок галереи', fill: '120,128,138',
      pts: [[xi, CFG.ceil, Z0], [xi, CFG.ceil, Z1],
-           [xi - side * 1600, CFG.ceil, Z1], [xi - side * 1600, CFG.ceil, Z0]]},
+           [xi + s * 1600, CFG.ceil, Z1], [xi + s * 1600, CFG.ceil, Z0]]},
   ];
 }
-const SHOW = {1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true};
+const SHOW = {1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true, bay: true};
 
-/* ── РИСОВАНИЕ ─────────────────────────────────────────────────────────── */
-const cv = document.getElementById('c'), ctx = cv.getContext('2d');
-const stage = document.getElementById('stage');
-
-function resize(){
-  SS = Math.min(devicePixelRatio || 1, 2);
-  W = cv.width  = Math.max(2, Math.round(stage.clientWidth  * SS));
-  H = cv.height = Math.max(2, Math.round(stage.clientHeight * SS));
-  draw();
-}
-function poly(pts, fill){
-  ctx.beginPath();
-  pts.forEach(([x, y, z], i) => {
-    const sx = PX(x, z), sy = PY(y, z);
-    i ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy);
-  });
-  ctx.closePath();
-  ctx.fillStyle = fill; ctx.fill();
-  ctx.strokeStyle = 'rgba(20,24,28,0.35)'; ctx.lineWidth = 1 * SS; ctx.stroke();
-}
 function label(n, pts){
   let sx = 0, sy = 0;
   for (const [x, y, z] of pts){ sx += PX(x, z); sy += PY(y, z); }
@@ -172,28 +254,28 @@ function label(n, pts){
   ctx.fillText(String(n), sx, sy);
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 }
+
 function draw(){
   if (!W) return;
-  // небо и мостовая — только чтобы читалась глубина, это не часть схемы
-  ctx.fillStyle = '#9fb2c0'; ctx.fillRect(0, 0, W, PY(CFG.horizon, 0));
-  ctx.fillStyle = '#6d7379'; ctx.fillRect(0, PY(CFG.horizon, 0), W, H);
+  ctx.fillStyle = '#9fb2c0'; ctx.fillRect(0, 0, W, py(CFG.horizon, 1));
+  ctx.fillStyle = '#5e646a'; ctx.fillRect(0, py(CFG.horizon, 1), W, H);
+  /* улица рисуется ПЕРВОЙ, бухта поверх: она ближе к нам и должна её закрыть */
   const all = [];
   for (const side of [-1, 1]) for (const p of planes(side)) all.push({...p, side});
-  /* порядок — от дальних к ближним, по самой дальней точке фигуры: так
-     ближние плоскости закрывают дальние без всякого буфера глубины */
   all.sort((a, b) => Math.max(...b.pts.map(p => p[2])) - Math.max(...a.pts.map(p => p[2])));
-  for (const p of all) if (SHOW[p.n]) poly(p.pts, 'rgb(' + p.fill + ')');
+  for (const p of all) if (SHOW[p.n]) poly(p.pts, 'rgb(' + p.fill + ')', 'rgba(20,24,28,0.35)');
   for (const p of all) if (SHOW[p.n] && p.side < 0) label(p.n, p.pts);
-  ctx.strokeStyle = 'rgba(124,196,255,0.30)'; ctx.lineWidth = 1 * SS;
+  if (SHOW.bay) drawBay();
+  ctx.strokeStyle = 'rgba(124,196,255,0.26)'; ctx.lineWidth = 1 * SS;
   ctx.beginPath(); ctx.moveTo(0, CFG.horizon * SS); ctx.lineTo(W, CFG.horizon * SS); ctx.stroke();
   document.getElementById('hud').textContent =
     'камера x ' + Math.round(cam.x) + ', z ' + Math.round(cam.z) +
-    '  ·  между фасадами ' + (P.gap / PER_M).toFixed(0) + ' м' +
-    '  ·  окно ' + ((P.wb - P.wt) / PER_M).toFixed(2) + ' м по высоте, ' +
-    ((P.z1 - P.z0) / PER_M).toFixed(1) + ' м по длине';
+    '  ·  бухта 1989: ' + REC3_L + '…' + REC3_R +
+    '  ·  улица от ' + STREET_X + ', между фасадами ' + (P.gap / PER_M).toFixed(0) + ' м';
 }
 
-/* ── ПАНЕЛЬ ────────────────────────────────────────────────────────────── */
+/* ══ ПАНЕЛЬ ══════════════════════════════════════════════════════════════ */
+document.getElementById('s_bay').addEventListener('change', e => { SHOW.bay = e.target.checked; draw(); });
 const box = document.getElementById('planes');
 for (const p of planes(-1)){
   const el = document.createElement('label');
@@ -224,12 +306,12 @@ for (const [key, id, lab, fmt] of NUM){
     draw();
   });
 }
-const cx = document.getElementById('n_cx'), cz = document.getElementById('n_cz');
-cx.value = 0; cz.value = 0;
-cx.addEventListener('input', () => { cam.x = parseFloat(cx.value) || 0; draw(); });
-cz.addEventListener('input', () => { cam.z = parseFloat(cz.value) || 0; draw(); });
+const cxEl = document.getElementById('n_cx'), czEl = document.getElementById('n_cz');
+cxEl.value = Math.round(cam.x); czEl.value = 0;
+cxEl.addEventListener('input', () => { cam.x = parseFloat(cxEl.value) || 0; draw(); });
+czEl.addEventListener('input', () => { cam.z = parseFloat(czEl.value) || 0; draw(); });
 
-/* ── КАМЕРА ────────────────────────────────────────────────────────────── */
+/* ══ КАМЕРА ══════════════════════════════════════════════════════════════ */
 let drag = null;
 stage.addEventListener('pointerdown', e => {
   drag = {x: e.clientX, y: e.clientY, cx: cam.x, cz: cam.z};
@@ -239,7 +321,7 @@ stage.addEventListener('pointermove', e => {
   if (!drag) return;
   cam.x = drag.cx - (e.clientX - drag.x) * 6;
   cam.z = drag.cz + (e.clientY - drag.y) * 6;
-  cx.value = Math.round(cam.x); cz.value = Math.round(cam.z);
+  cxEl.value = Math.round(cam.x); czEl.value = Math.round(cam.z);
   draw();
 });
 const stop = () => { drag = null; stage.classList.remove('drag'); };
@@ -247,9 +329,17 @@ stage.addEventListener('pointerup', stop);
 stage.addEventListener('pointercancel', stop);
 stage.addEventListener('wheel', e => {
   e.preventDefault();
-  cam.z += (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * 5;
-  cz.value = Math.round(cam.z); draw();
+  cam.x += (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * 4;
+  cxEl.value = Math.round(cam.x); draw();
 }, {passive: false});
+addEventListener('keydown', e => {
+  const step = e.shiftKey ? 600 : 150;
+  if (e.key === 'ArrowRight') cam.x += step;
+  else if (e.key === 'ArrowLeft') cam.x -= step;
+  else if (e.key === 'Home') cam.x = (REC3_L + REC3_R) / 2;
+  else return;
+  cxEl.value = Math.round(cam.x); draw();
+});
 addEventListener('resize', resize);
 resize();
 })();
