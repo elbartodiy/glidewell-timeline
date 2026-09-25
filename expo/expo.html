@@ -7963,6 +7963,10 @@ function drawRec2(t){
                  ax0 + 12*kk*SS, by0 + hh/2 + 5*kk*SS);
     ctx.textAlign = 'center';
   }
+  /* та же проверка, что у карты 1989-го: экран и панель, на которой он висит,
+     считаются на одной глубине — если кто-то разведёт их числа, аудит
+     (?audit=1) скажет об этом на загрузке */
+  rivet('dr:screen', cx, kk);
   const ng = ctx.createLinearGradient(0, cyS - nh/2, 0, cyS + nh/2);
   ng.addColorStop(0, '#1f242b'); ng.addColorStop(1, '#2c333c');
   ctx.fillStyle = ng;
@@ -8846,10 +8850,24 @@ function drawRec3(t){
      подзаголовке на 210 — двадцать девять пикселей воздуха; низ заходит за
      коробку примерно на треть высоты, и это нормально: карта висит на стене,
      экспонат стоит перед ней (Эльдар, 2026-09-23). */
-  const MAP_W = 700, MAP_CY = 340;
-  const w = MAP_W * kk * SS, h = w * sp.h / sp.w;
-  const cx = px(mid, kk), cyS = py(MAP_CY, kk);
-  pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp, wx: mid, cy: MAP_CY, z: 726, w: MAP_W,
+  /* КАРТА ВИСИТ НА ЭТОЙ СТЕНЕ, А НЕ В СОРОКА ВОСЬМИ ЕДИНИЦАХ ЗА НЕЙ. Она
+     рисовалась на глубине 728, тогда как сама панель бухты — на 680, и на
+     ходу карта уезжала относительно стены: сорок восемь единиц разницы дают
+     два пикселя на каждые сто двадцать шагов камеры, то есть пару десятков на
+     проход мимо (Эльдар, 2026-09-25). Теперь она на плоскости стены, на
+     ровно на плоскости стены — не на волосок впереди, а на ней самой: волосок
+     оставляет ещё три пикселя хода на проход, а порядок рисования и так
+     кладёт карту после панели, так что прятаться ей не от чего. Числа
+     пересчитаны так, чтобы в покое карта осталась там же и того же размера:
+     700 * k(728)/k(680) = 679 по ширине, а центр решает
+     430 + (cy-430)*k(680) = 430 + (340-430)*k(728) → 342.7. */
+  const MAP_Z = R89_BAY_Z;
+  const kM = k(MAP_Z);
+  const MAP_W = 679, MAP_CY = 342.7;
+  const w = MAP_W * kM * SS, h = w * sp.h / sp.w;
+  const cx = px(mid, kM), cyS = py(MAP_CY, kM);
+  rivet('map89', cx, k(R89_BAY_Z));
+  pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp, wx: mid, cy: MAP_CY, z: MAP_Z, w: MAP_W,
           cap: '1989 · 95% of cases arrive by mail', beat: BEATS.findIndex(b => b.y === '1989')});
   ctx.drawImage(sp.c, cx - w/2, cyS - h/2, w, h);
   for (const wxc of [REC3_L, REC3_R]){
@@ -10253,7 +10271,7 @@ function initDecor(){
        шириной 460 единиц, так что 102/470*460 = 100 и 37/470*460 = 36.
        Вниз — это drop: столешница на фотографии лежит ниже линии, на которой
        зал ставит предмет глубины z=70, и фреза висела над ней. */
-    if (b17) PROPS.push({x: b17.x - 75, z: 70, kind: 'ph_mill_v1', w: 460, drop: 36});
+    if (b17) PROPS.push({x: b17.x - 75, z: 70, kind: 'ph_mill_v1', w: 460, drop: 36, noShadow: true});
     /* the plastic-injection division's own product, on the counter at its own
        tick — right of the CAD screen, which it must not cover */
     const bpl = BEATS.find(b => b.t === 'PLASTIC INJECTION');
@@ -10623,10 +10641,15 @@ function drawProps(midPass){
       }
       continue;
     }
-    contactShadow(sx, syFoot, pw2, 0.42);
-    // and the dark line where it actually meets the surface
-    ctx.fillStyle = 'rgba(0,0,0,0.22)';
-    ctx.fillRect(sx - pw2 * 0.30, syFoot - 1.4 * SS, pw2 * 0.60, 2.4 * SS);
+    /* p.noShadow — предмет, который несёт свою тень в самом рендере. Общая
+       тень зала кладёт под него вторую, и она читается отдельной чертой на
+       камне (Эльдар, 2026-09-25, про фрезу 2017). */
+    if (!p.noShadow){
+      contactShadow(sx, syFoot, pw2, 0.42);
+      // and the dark line where it actually meets the surface
+      ctx.fillStyle = 'rgba(0,0,0,0.22)';
+      ctx.fillRect(sx - pw2 * 0.30, syFoot - 1.4 * SS, pw2 * 0.60, 2.4 * SS);
+    }
     ctx.save();
     if (p.flip){ ctx.translate(sx, 0); ctx.scale(-1, 1); ctx.translate(-sx, 0); }
     /* A THING IS NOT TRANSLUCENT. Every prop was laid at 95%, which nobody
