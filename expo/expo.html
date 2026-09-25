@@ -9028,6 +9028,37 @@ function stBand(p, yWorld, c0, c1){
   ctx.fillStyle = g; ctx.fill();
   ctx.restore();
 }
+/* ── ЗАЛА В ПРОСВЕТЕ НЕТ ──────────────────────────────────────────────────
+   Между наружными гранями двух корпусов (14900 и 17100) стены зала и его пола
+   быть не должно: там улица. Вырезаем их обрезкой — той же, что и везде в
+   этом узле: прямоугольник кадра плюс контур просвета, заливка evenodd.
+
+   У стены зала одна глубина, поэтому её просвет — вертикальная полоса между
+   двумя x на этой глубине. У пола глубина меняется, поэтому его просвет —
+   четырёхугольник: от дальней линии пола на плоскости стены до низа кадра по
+   ближней плоскости. */
+function stOpenSpan(){
+  const P = stPairs();
+  return [P[0].b, P[1].a];          // наружные грани корпусов
+}
+function stCutHall(kind){
+  const [x0, x1] = stOpenSpan();
+  const wz = wallZAt((x0 + x1) / 2), kw = k(wz), kNear = k(-40);
+  const a = px(x0, kw), b = px(x1, kw);
+  if (b < -40 || a > W + 40) return false;
+  ctx.beginPath();
+  ctx.rect(0, 0, W, H);
+  if (kind === 'wall'){
+    ctx.rect(a, 0, b - a, H);
+  } else {
+    const yFar = py(CFG.floor, kw);
+    ctx.moveTo(a, yFar); ctx.lineTo(b, yFar);
+    ctx.lineTo(px(x1, kNear), H); ctx.lineTo(px(x0, kNear), H);
+    ctx.closePath();
+  }
+  ctx.clip('evenodd');
+  return true;
+}
 function drawStreet(){
   const pairs = stPairs();
   if (Math.abs(cam.x - (pairs[0].b + pairs[1].a) / 2) > 5200) return;
@@ -16897,8 +16928,8 @@ function frame(){
   ctx.fillStyle = `rgb(${amb.bg[0]|0},${amb.bg[1]|0},${amb.bg[2]|0})`;
   ctx.fillRect(0, 0, W, H);
 
-  drawFloor();
-  drawWall();
+  ctx.save(); stCutHall('floor'); drawFloor(); ctx.restore();
+  ctx.save(); stCutHall('wall');  drawWall();  ctx.restore();
   drawFilmVideoWall();   // the film backdrop sits directly on the deep wall
   drawFilmProjectorWall();   // and the 1999 throw washes over the plaster
   drawFilmWallPlasma();      // the 2009 plasma hangs on the wall, behind the counters
