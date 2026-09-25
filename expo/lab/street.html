@@ -35,8 +35,8 @@ const WALL = {
   tone: ['#6c7681', '#8b95a0'],
 };
 const PAIRS = [
-  {a: WALL.x, b: WALL.x + WALL.dx2, clip: true},
-  {a: WALL.x + WALL.dx2 + WALL.gap, b: WALL.x + WALL.dx2 + WALL.gap + WALL.dx2, clip: false},
+  {a: WALL.x, b: WALL.x + WALL.dx2, clip: true,  zFar: R89_BAY_Z},
+  {a: WALL.x + WALL.dx2 + WALL.gap, b: WALL.x + WALL.dx2 + WALL.gap + WALL.dx2, clip: false, zFar: 728},
 ];
 
 const camQ = /[?&]x=(-?\d+)/.exec(location.search);
@@ -440,11 +440,12 @@ function drawBand(x1, x2, yWorld, c0, c1, clip){
   ctx.restore();
 }
 
-function drawSideWall(xw, clip){
+function drawSideWall(xw, clip, zFar){
   const Wl = WALL;
   const P = (y, z) => [px(xw, k(z)), py(y, k(z))];
   const wz1 = Wl.winZ1 != null ? Wl.winZ1 : Wl.zNear;
-  const outer = [P(Wl.top, Wl.zFar), P(Wl.top, Wl.zNear), P(Wl.bot, Wl.zNear), P(Wl.bot, Wl.zFar)];
+  const zF = zFar != null ? zFar : Wl.zFar;
+  const outer = [P(Wl.top, zF), P(Wl.top, Wl.zNear), P(Wl.bot, Wl.zNear), P(Wl.bot, zF)];
   const hole  = [P(Wl.winTop, Wl.winZ0), P(Wl.winBot, Wl.winZ0), P(Wl.winBot, wz1), P(Wl.winTop, wz1)];
   ctx.save();
   if (clip && cam.x < xw){
@@ -476,11 +477,11 @@ function draw(){
   const dist = p => Math.min(Math.abs(p.a - cam.x), Math.abs(p.b - cam.x));
   for (const p of [...PAIRS].sort((u, v) => dist(v) - dist(u))){
     const xs = [p.a, p.b].sort((u, v) => Math.abs(v - cam.x) - Math.abs(u - cam.x));
-    drawSideWall(xs[0], p.clip);
+    drawSideWall(xs[0], p.clip, p.zFar);
     drawJamb(p.a, p.b, p.clip);
     drawBand(p.a, p.b, WALL.winTop, '#4e565f', '#646d77', p.clip);
     drawBand(p.a, p.b, WALL.winBot, '#9aa4ad', '#b6bfc7', p.clip);
-    drawSideWall(xs[1], p.clip);
+    drawSideWall(xs[1], p.clip, p.zFar);
   }
 }
 
