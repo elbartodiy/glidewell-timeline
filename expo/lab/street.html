@@ -23,15 +23,21 @@ const noseOf = zBay => zBay - STEP_DEPTH;
 const FLOOR_89 = ['#d3d1c9', '#8b897f'];
 const STEP_STEEL = {tread: ['#b9bcbb', '#d2d5d3'], riser: ['#9ea2a2', '#787c7d', '#4e5254'],
                     nosing: 'rgba(238,244,246,0.9)', glow: '214,236,246'};
+const COL_GAP = REC3_R - REC3_L;          // просвет между колоннами бухты
 const WALL = {
   x: REC3_R + STEP_PAD,
   dx2: 120,
+  gap: COL_GAP * 2,                       // между двумя конструкциями
   zFar: R89_BAY_Z, zNear: -860,
   top: -520, bot: 2560,
   winZ0: 560, winZ1: null,
   winTop: -260, winBot: 700,
   tone: ['#6c7681', '#8b95a0'],
 };
+const PAIRS = [
+  {a: WALL.x, b: WALL.x + WALL.dx2, clip: true},
+  {a: WALL.x + WALL.dx2 + WALL.gap, b: WALL.x + WALL.dx2 + WALL.gap + WALL.dx2, clip: false},
+];
 
 const camQ = /[?&]x=(-?\d+)/.exec(location.search);
 const cam = {x: camQ ? +camQ[1] : (REC3_L + REC3_R) / 2, z: 0};
@@ -170,9 +176,9 @@ function clipToBay(xRef){
   ctx.clip('evenodd');
 }
 
-function drawJamb(){
-  const Wl = WALL, x1 = Wl.x, x2 = Wl.x + Wl.dx2, kz = k(Wl.winZ0);
-  ctx.save(); clipToBay(x1);
+function drawJamb(x1, x2, clip){
+  const Wl = WALL, kz = k(Wl.winZ0);
+  ctx.save(); if (clip) clipToBay(x1);
   ctx.beginPath();
   ctx.moveTo(px(x1, kz), py(Wl.winTop, kz));
   ctx.lineTo(px(x2, kz), py(Wl.winTop, kz));
@@ -183,11 +189,11 @@ function drawJamb(){
   ctx.restore();
 }
 
-function drawBand(yWorld, c0, c1){
-  const Wl = WALL, x1 = Wl.x, x2 = Wl.x + Wl.dx2;
+function drawBand(x1, x2, yWorld, c0, c1, clip){
+  const Wl = WALL;
   const zA = Wl.winZ0, zB = Wl.winZ1 != null ? Wl.winZ1 : Wl.zNear;
   const kA = k(zA), kB = k(zB);
-  ctx.save(); clipToBay(x1);
+  ctx.save(); if (clip) clipToBay(x1);
   const g = ctx.createLinearGradient(0, py(yWorld, kA), 0, py(yWorld, kB));
   g.addColorStop(0, c0); g.addColorStop(1, c1);
   ctx.beginPath();
@@ -200,14 +206,14 @@ function drawBand(yWorld, c0, c1){
   ctx.restore();
 }
 
-function drawSideWall(xw){
+function drawSideWall(xw, clip){
   const Wl = WALL;
   const P = (y, z) => [px(xw, k(z)), py(y, k(z))];
   const wz1 = Wl.winZ1 != null ? Wl.winZ1 : Wl.zNear;
   const outer = [P(Wl.top, Wl.zFar), P(Wl.top, Wl.zNear), P(Wl.bot, Wl.zNear), P(Wl.bot, Wl.zFar)];
   const hole  = [P(Wl.winTop, Wl.winZ0), P(Wl.winBot, Wl.winZ0), P(Wl.winBot, wz1), P(Wl.winTop, wz1)];
   ctx.save();
-  if (cam.x < xw){
+  if (clip && cam.x < xw){
     ctx.beginPath();
     ctx.rect(0, 0, W, H);
     bayOutline().forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
@@ -231,12 +237,15 @@ function draw(){
   drawFloor();
   drawWallAndColumns();
   drawBayStep(REC3_L, REC3_R, STEP_STEEL, R89_BAY_Z, noseOf(R89_BAY_Z));
-  const xs = [WALL.x, WALL.x + WALL.dx2].sort((a, b) => Math.abs(b - cam.x) - Math.abs(a - cam.x));
-  drawSideWall(xs[0]);
-  drawJamb();
-  drawBand(WALL.winTop, '#4e565f', '#646d77');
-  drawBand(WALL.winBot, '#9aa4ad', '#b6bfc7');
-  drawSideWall(xs[1]);
+  const dist = p => Math.min(Math.abs(p.a - cam.x), Math.abs(p.b - cam.x));
+  for (const p of [...PAIRS].sort((u, v) => dist(v) - dist(u))){
+    const xs = [p.a, p.b].sort((u, v) => Math.abs(v - cam.x) - Math.abs(u - cam.x));
+    drawSideWall(xs[0], p.clip);
+    drawJamb(p.a, p.b, p.clip);
+    drawBand(p.a, p.b, WALL.winTop, '#4e565f', '#646d77', p.clip);
+    drawBand(p.a, p.b, WALL.winBot, '#9aa4ad', '#b6bfc7', p.clip);
+    drawSideWall(xs[1], p.clip);
+  }
 }
 
 let drag = null;
