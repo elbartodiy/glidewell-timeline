@@ -161,6 +161,45 @@ function bayOutline(){
   ];
 }
 
+function clipToBay(xRef){
+  if (cam.x >= xRef) return;
+  ctx.beginPath();
+  ctx.rect(0, 0, W, H);
+  bayOutline().forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+  ctx.closePath();
+  ctx.clip('evenodd');
+}
+
+function drawJamb(){
+  const Wl = WALL, x1 = Wl.x, x2 = Wl.x + Wl.dx2, kz = k(Wl.winZ0);
+  ctx.save(); clipToBay(x1);
+  ctx.beginPath();
+  ctx.moveTo(px(x1, kz), py(Wl.winTop, kz));
+  ctx.lineTo(px(x2, kz), py(Wl.winTop, kz));
+  ctx.lineTo(px(x2, kz), py(Wl.winBot, kz));
+  ctx.lineTo(px(x1, kz), py(Wl.winBot, kz));
+  ctx.closePath();
+  ctx.fillStyle = '#5a636d'; ctx.fill();
+  ctx.restore();
+}
+
+function drawBand(yWorld, c0, c1){
+  const Wl = WALL, x1 = Wl.x, x2 = Wl.x + Wl.dx2;
+  const zA = Wl.winZ0, zB = Wl.winZ1 != null ? Wl.winZ1 : Wl.zNear;
+  const kA = k(zA), kB = k(zB);
+  ctx.save(); clipToBay(x1);
+  const g = ctx.createLinearGradient(0, py(yWorld, kA), 0, py(yWorld, kB));
+  g.addColorStop(0, c0); g.addColorStop(1, c1);
+  ctx.beginPath();
+  ctx.moveTo(px(x1, kA), py(yWorld, kA));
+  ctx.lineTo(px(x2, kA), py(yWorld, kA));
+  ctx.lineTo(px(x2, kB), py(yWorld, kB));
+  ctx.lineTo(px(x1, kB), py(yWorld, kB));
+  ctx.closePath();
+  ctx.fillStyle = g; ctx.fill();
+  ctx.restore();
+}
+
 function drawSideWall(xw){
   const Wl = WALL;
   const P = (y, z) => [px(xw, k(z)), py(y, k(z))];
@@ -192,8 +231,12 @@ function draw(){
   drawFloor();
   drawWallAndColumns();
   drawBayStep(REC3_L, REC3_R, STEP_STEEL, R89_BAY_Z, noseOf(R89_BAY_Z));
-  for (const xw of [WALL.x, WALL.x + WALL.dx2].sort((a, b) => Math.abs(b - cam.x) - Math.abs(a - cam.x)))
-    drawSideWall(xw);
+  const xs = [WALL.x, WALL.x + WALL.dx2].sort((a, b) => Math.abs(b - cam.x) - Math.abs(a - cam.x));
+  drawSideWall(xs[0]);
+  drawJamb();
+  drawBand(WALL.winTop, '#4e565f', '#646d77');
+  drawBand(WALL.winBot, '#9aa4ad', '#b6bfc7');
+  drawSideWall(xs[1]);
 }
 
 let drag = null;
