@@ -237,6 +237,44 @@ function drawSideWall(xw){
   ctx.fillStyle = g; ctx.fill('evenodd');
 }
 
+/* ── ОТКОС И ПОДОКОННИК — ТОЛЩИНА СТЕНЫ В ПРОЁМЕ ────────────────────────
+   Эльдар нарисовал их поверх кадра двумя цветами: зелёным вертикальную
+   полосу в щели между стенами, малиновым горизонтальную вдоль низа проёма
+   (2026-09-25). Обе лежат МЕЖДУ двумя гранями, то есть занимают ту самую
+   ширину колонны, на которую вторая стена сдвинута.
+
+   Откос — плоскость постоянного z, на дальнем краю окна: x от одной грани до
+   другой, y на всю высоту проёма.
+   Подоконник — плоскость постоянного y, на низу окна: x так же, z от дальнего
+   края окна до ближнего края стены, где окно и кончается.
+
+   Тона: откос — грань под прямым углом к свету, она темнее; подоконник лежит
+   горизонтально и ловит свет, он светлее обеих граней. */
+function drawReveal(){
+  const Wl = WALL, x1 = Wl.x, x2 = Wl.x + Wl.dx2, kz = k(Wl.winZ0);
+  ctx.beginPath();
+  ctx.moveTo(px(x1, kz), py(Wl.winTop, kz));
+  ctx.lineTo(px(x2, kz), py(Wl.winTop, kz));
+  ctx.lineTo(px(x2, kz), py(Wl.winBot, kz));
+  ctx.lineTo(px(x1, kz), py(Wl.winBot, kz));
+  ctx.closePath();
+  ctx.fillStyle = '#5a636d'; ctx.fill();
+}
+function drawSill(){
+  const Wl = WALL, x1 = Wl.x, x2 = Wl.x + Wl.dx2;
+  const zA = Wl.winZ0, zB = Wl.winZ1 != null ? Wl.winZ1 : Wl.zNear;
+  const kA = k(zA), kB = k(zB);
+  const g = ctx.createLinearGradient(0, py(Wl.winBot, kA), 0, py(Wl.winBot, kB));
+  g.addColorStop(0, '#9aa4ad'); g.addColorStop(1, '#b6bfc7');
+  ctx.beginPath();
+  ctx.moveTo(px(x1, kA), py(Wl.winBot, kA));
+  ctx.lineTo(px(x2, kA), py(Wl.winBot, kA));
+  ctx.lineTo(px(x2, kB), py(Wl.winBot, kB));
+  ctx.lineTo(px(x1, kB), py(Wl.winBot, kB));
+  ctx.closePath();
+  ctx.fillStyle = g; ctx.fill();
+}
+
 /* порядок тот же, что в зале: пол → панель с пилястрами → блок поверх их подошв */
 function draw(){
   if (!W) return;
@@ -252,13 +290,16 @@ function draw(){
      раскрывается ВЛЕВО, ложится на панель бухты — и панель, нарисованная
      позже, стирала её целиком. Эльдар: «когда стена проходит свой катарсис,
      она пропадает» (2026-09-25). Ближнее рисуется последним. */
-  /* ДАЛЬНЯЯ ОТ КАМЕРЫ — ПЕРВОЙ. Две параллельные стены в 120 единицах друг
-     от друга перекрываются на экране; порядок решает, какая из них видна
-     сквозь окно другой. Считаем по |x − cam.x|: та, что дальше вбок, ложится
-     раньше. Иначе, пройдя их, зал показал бы изнанку — ту же ошибку, что с
-     пропадавшей стеной. */
-  for (const xw of [WALL.x, WALL.x + WALL.dx2].sort((a, b) => Math.abs(b - cam.x) - Math.abs(a - cam.x)))
-    drawSideWall(xw);
+  /* ДАЛЬНЯЯ ОТ КАМЕРЫ — ПЕРВОЙ, а между ними откос и подоконник.
+     Порядок: дальняя грань → откос → подоконник → ближняя грань. Две стены в
+     120 единицах перекрываются на экране, и порядок решает, какая видна
+     сквозь окно другой; считаем по |x − cam.x|, поэтому при проходе мимо они
+     меняются местами сами. */
+  const xs = [WALL.x, WALL.x + WALL.dx2].sort((a, b) => Math.abs(b - cam.x) - Math.abs(a - cam.x));
+  drawSideWall(xs[0]);
+  drawReveal();
+  drawSill();
+  drawSideWall(xs[1]);
   document.getElementById('hud').textContent =
     'блок 1989 · ' + REC3_L + '…' + REC3_R + ' · плоскость ' + R89_BAY_Z +
     ' · нос ' + noseOf(R89_BAY_Z) + ' · SS ' + SS.toFixed(3) + ' · камера ' + Math.round(cam.x);
