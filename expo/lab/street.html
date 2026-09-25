@@ -361,9 +361,8 @@ const R93 = {
 };
 function drawRec93(){
   const kk = k(R93.z), kNear = k(-40);
-  const mid = R93.left + R93.width / 2;
   const half = R93.width / 2 * (CFG.F + R93.z) / (CFG.F + 340);
-  const BL = mid - half, BR = mid + half;
+  const BL = R93.left, BR = BL + half * 2, mid = BL + half;
   const yBase = py(700 + 240, k(340));
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#c3cad0');
