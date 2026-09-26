@@ -2415,6 +2415,7 @@ const stepFoot = (x, zBay) => bayFoot(x, zBay, 1080, zBay);
 const bayFoot = (x, z, y, yz) => ({x, z, y: y != null ? y : CFG.benchY + 240,
                                    yz: yz != null ? yz : CFG.benchDepth});
 const FAR93_L = bayFoot(REC93_BL, REC93_Z), FAR93_R = bayFoot(REC93_BR, REC93_Z);
+FAR93_L.edge = true;   // слева от бухты 1993 стоит корпус улицы: край идёт по его подошве
 /* 1989's panel is drawn down to the floor line on its OWN plane, not to the
    counter's — so its feet are read there (drawRec3). */
 /* 1989 HAS A STEP TOO, and its slab was still cut to the panel: the light floor
@@ -2466,6 +2467,7 @@ const FAR23_L = bayFoot(REC23_L, 1000), FAR23_R = bayFoot(REC23_R, 1000);
 /* the same points, seen from the neighbour's side — it walks the wall's foot
    line to this x and then steps down to meet the bay here */
 const EDG93_L = bayDrop(REC93_BL, REC93_Z), EDG93_R = bayDrop(REC93_BR, REC93_Z);
+EDG93_L.edge = true;   // тот же стык с другой стороны — пол эпохи в просвете улицы
 const EDG23_L = bayDrop(REC23_L, 1000), EDG23_R = bayDrop(REC23_R, 1000);
 /* the floor: each era has its own material tone; the change lands exactly
    on the recreation line — the ground is part of the aging, not a black hole */
@@ -2585,8 +2587,18 @@ function drawFloor(){
               y: o.y != null ? py(o.y, k(o.yz)) : yTop};
     };
     const cL = corner(fa, a), cR = corner(fb, b);
+    let xBL = px(a, kNear), xBR = px(b, kNear);
+    /* КРАЙ, КОТОРЫЙ УПИРАЕТСЯ В СТЕНУ УЛИЦЫ, ИДЁТ ПО НАСТОЯЩЕЙ ПРЯМОЙ. Обычный
+       край плиты — хорда от дальнего угла бухты к ближнему углу на плоскости
+       −40, и это НЕ проекция прямой x = const: дальний угол взят по правилу
+       бухты (y = 940 на глубине прилавка). Пока справа стоял только сосед, это
+       было незаметно. С корпусом улицы рядом хорда пересекала подошву стены
+       примерно посередине кадра: выше пол отходил от стены и в зазор было
+       видно дорогу, ниже налезал. Помеченный край считается floorLineAt —
+       той же линией, по которой режется пол и обрезается стена. */
+    if (fa && fa.edge){ const ln = floorLineAt(fa.x); cL.x = ln(cL.y); xBL = ln(H); }
+    if (fb && fb.edge){ const ln = floorLineAt(fb.x); cR.x = ln(cR.y); xBR = ln(H); }
     const xTL = cL.x, xTR = cR.x;
-    const xBL = px(a, kNear), xBR = px(b, kNear);
     if (Math.max(xTR, xBR) < 0 || Math.min(xTL, xBL) > W) continue;
     const g = ctx.createLinearGradient(0, Math.min(cL.y, cR.y, yTop), 0, H);
     g.addColorStop(0, tone[0]);
@@ -7057,6 +7069,14 @@ function drawModel93(wx, lz, wWorld, topWorldY){
   const A = m93(p, -2, 0, -2), B = m93(p, XM+2, 0, -2);
   const C = m93(p, XM+2, 0, ZM+2), D = m93(p, -2, 0, ZM+2);
   const rr = 14 * s;
+  /* СИЛУЭТ ПОДИУМА — ДЛЯ УЛИЦЫ. Подиум стоит в галерее 1993, между глазом и
+     стеной правого корпуса, значит корпус не может его закрывать. Порядком
+     рисования это не решается (стену то двигали за макет, то макет за стену),
+     поэтому стена обрезается по силуэту подиума — тем же приёмом, каким она
+     обрезается по плите пола бухты. Контур коробки: дальний угол, правый,
+     вниз по трём нижним углам и обратно вверх по левому; ближний верхний
+     угол C лежит внутри и в контур не входит. Эльдар, 2026-09-25. */
+  REC93_BOX = [A, B, [B[0], B[1] + H], [C[0], C[1] + H], [D[0], D[1] + H], D];
   ctx.save();
   ctx.translate(sx, py(1080, kk)); ctx.scale(1, 0.16); ctx.translate(-sx, -py(1080, kk));
   const gsh = ctx.createRadialGradient(sx, py(1080, kk), 0, sx, py(1080, kk), (XM+2*OV) * s * 0.7);
@@ -8951,9 +8971,18 @@ const ST = {
 function stPairs(){
   const aL = REC3_R + STEP_PAD;
   const bR = REC93_BL;
+  /* ДАЛЬНИЙ КОНЕЦ КОРПУСА — ПЛОСКОСТЬ СТЕНЫ ЗАЛА, А НЕ ПЛОСКОСТЬ БУХТЫ.
+     Корпуса кончались на плоскости соседней бухты (680 слева, 728 справа), а
+     стена зала стоит глубже, на 850. Пол зала в просвете вырезан до самого
+     горизонта, то есть на все глубины, — и полоса пола между 728 и 850 у
+     подошвы стены оказывалась вырезана, а корпус туда уже не доставал: в этот
+     волосок смотрел снимок улицы (Эльдар, 2026-09-25, щель у подошвы стены в
+     1993). Теперь корпус начинается ровно на плоскости стены зала и закрывает
+     стык; бухта стоит ближе и рисуется поверх. */
+  const zHall = x => Math.max(wallZAt(x), 0);
   return [
-    {a: aL, b: aL + ST.th, zFar: R89_BAY_Z, occl: stOutline89, side: -1},
-    {a: bR - ST.th, b: bR, zFar: REC93_Z,   occl: stOutline93, side:  1},
+    {a: aL, b: aL + ST.th, zFar: Math.max(R89_BAY_Z, zHall(aL)), occl: stOutline89, side: -1},
+    {a: bR - ST.th, b: bR, zFar: Math.max(REC93_Z,   zHall(bR)), occl: stOutline93, side:  1},
   ];
 }
 /* силуэт бухты 1989: задняя кромка проступи → нос → подошва подступёнка → и
@@ -8981,19 +9010,33 @@ function stOutline89(){
 function stOutline93(){
   const kBay = k(REC93_Z), kNear = k(-40);
   const yFar = py(CFG.benchY + 240, k(CFG.benchDepth));
+  /* ЛЕВЫЙ КРАЙ СИЛУЭТА — ТА ЖЕ ПРЯМАЯ, ЧТО И ВЫРЕЗ ПОЛА. Иначе стена
+     обрезается по одной линии, а пол вырезается по другой, они пересекаются —
+     и между ними открывается щель на дорогу. */
+  const ln = floorLineAt(REC93_BL);
   return [
-    [px(REC93_BL, kBay), yFar], [px(REC93_BR, kBay), yFar],
-    [px(REC93_R, kNear), H],    [px(REC93_BL, kNear), H],
+    [ln(yFar), yFar],        [px(REC93_BR, kBay), yFar],
+    [px(REC93_R, kNear), H], [ln(H), H],
   ];
 }
+/* силуэт подиума с макетом 1993, каким его нарисовал этот кадр (drawModel93
+   кладёт его сюда, drawStreet забирает и обнуляет) */
+let REC93_BOX = null;
 function stClip(xw, p){
   const eyeOnBaySide = p.side < 0 ? (cam.x < xw) : (cam.x > xw);
   if (!eyeOnBaySide) return;
-  ctx.beginPath();
-  ctx.rect(0, 0, W, H);
-  p.occl().forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
-  ctx.closePath();
-  ctx.clip('evenodd');
+  /* НЕСКОЛЬКО ЗАСЛОНОК — НЕСКОЛЬКО ОБРЕЗОК ПОДРЯД. Два контура в одном пути с
+     evenodd не сложить: там, где они перекрываются (подиум стоит НА плите),
+     чётность вернула бы стену назад. Обрезки же пересекаются, а пересечение
+     дополнений — это дополнение объединения, то есть «везде, кроме плиты и
+     кроме подиума». */
+  for (const poly of [p.occl(), ...(p.side > 0 && REC93_BOX ? [REC93_BOX] : [])]){
+    ctx.beginPath();
+    ctx.rect(0, 0, W, H);
+    poly.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.closePath();
+    ctx.clip('evenodd');
+  }
 }
 function stFace(xw, p){
   const P = (y, z) => [px(xw, k(z)), py(y, k(z))];
@@ -9061,6 +9104,22 @@ function stBand(p, yWorld, c0, c1){
    двумя x на этой глубине. У пола глубина меняется, поэтому его просвет —
    четырёхугольник: от дальней линии пола на плоскости стены до низа кадра по
    ближней плоскости. */
+/* ПРЯМАЯ x = const НА ПОЛУ — одна на всех. Пол, вырез пола и силуэт бухты
+   обязаны кончаться по ОДНОЙ линии: это подошва стены корпуса, плоскость
+   x = wx. Прямая в пространстве проецируется в прямую, поэтому её хватает
+   задать двумя точками (wx, 1080) на разных глубинах и дальше идти по y
+   линейно. Хорда «дальний угол бухты → ближний угол плиты» такой прямой НЕ
+   является: дальний угол взят по правилу бухты (y = 940 на глубине прилавка),
+   и хорда пересекает настоящую линию примерно посередине кадра — отсюда излом
+   пола и щель над ним, в которую видно дорогу (Эльдар, 2026-09-25, зелёный
+   крест на его кадре — как раз точка пересечения). */
+function floorLineAt(wx){
+  const kF = k(550), kN = k(-40);
+  const x1p = px(wx, kF), y1p = py(1080, kF);
+  const x2p = px(wx, kN), y2p = py(1080, kN);
+  const dy = (y2p - y1p) || 1;
+  return yy => x1p + (x2p - x1p) * ((yy - y1p) / dy);
+}
 function stOpenSpan(){
   /* ЗАЛА НЕТ НЕ ТОЛЬКО В ПРОСВЕТЕ, НО И В ТОЛЩЕ КОРПУСОВ. Сперва я вырезал
      его между наружными гранями (14900…17100), и в кадре остались две яркие
@@ -9104,15 +9163,10 @@ function stCutHall(kind){
        Грань корпуса — прямая x = const в пространстве, её проекция прямая,
        и она одна для всех глубин. Считаем её по двум точкам и продолжаем на
        всю высоту кадра: тогда вырез идёт ровно по грани на любой глубине. */
-    const line = wx => {
-      /* 1080, а не CFG.floor: у зала в CFG такого поля нет, и py(undefined, k)
-         давала NaN — контур выреза получался невалидным, обрезка молча не
-         срабатывала, и пол закрывал улицу. */
-      const x1p = px(wx, kw), y1p = py(1080, kw);
-      const x2p = px(wx, kNear), y2p = py(1080, kNear);
-      const dy = (y2p - y1p) || 1;
-      return yy => x1p + (x2p - x1p) * ((yy - y1p) / dy);
-    };
+    /* 1080, а не CFG.floor: у зала в CFG такого поля нет, и py(undefined, k)
+       давала NaN — контур выреза получался невалидным, обрезка молча не
+       срабатывала, и пол закрывал улицу. Линия одна на всех: floorLineAt. */
+    const line = floorLineAt;
     /* ВЕРХ ВЫРЕЗА — ЛИНИЯ ГОРИЗОНТА, А НЕ ВЕРХ КАДРА. Две прямые x = const
        сходятся в точке схода, и выше горизонта они ПЕРЕСЕКАЮТСЯ: четырёхугольник
        выворачивался бабочкой и обрезка переставала работать вовсе — пол шёл
@@ -9145,18 +9199,22 @@ function stCutHall(kind){
    линию горизонта при любом kk, поэтому совместить их — значит совместить
    кадр с 430. hz — доля высоты, на которой горизонт лежит в самом снимке. */
 const ST_BACK = {dz: 5200, hz: 0.55, wide: 1.0};   // hz — доля высоты, на которой в снимке лежит горизонт
-let ST_IMG = null, ST_TRIED = false;
-function streetImg(){
-  if (!ST_TRIED){
-    ST_TRIED = true;
+/* один загрузчик на всё, что лежит в assets/street: webp, а если браузер его
+   не берёт — png тем же именем */
+const ST_PIC = {};
+function stPic(name){
+  let s = ST_PIC[name];
+  if (!s){
+    s = ST_PIC[name] = {img: null};
     const im = new Image();
     let tried = false;
-    im.onload = () => { ST_IMG = im; };
-    im.onerror = () => { if (!tried){ tried = true; im.src = vurl('assets/street/street.png'); } };
-    im.src = vurl('assets/street/street.webp');
+    im.onload = () => { s.img = im; };
+    im.onerror = () => { if (!tried){ tried = true; im.src = vurl('assets/street/' + name + '.png'); } };
+    im.src = vurl('assets/street/' + name + '.webp');
   }
-  return ST_IMG;
+  return s.img;
 }
+function streetImg(){ return stPic('street'); }
 function drawStreetBack(){
   const im = streetImg(); if (!im) return;
   const [x0, x1] = stOpenSpan();
@@ -9175,10 +9233,57 @@ function drawStreetBack(){
   const wS = H * (im.naturalWidth / im.naturalHeight) * ST_BACK.wide;
   const cx = px((x0 + x1) / 2, kz);
   ctx.drawImage(im, cx - wS / 2, 0, wS, H);
+  drawStreetTrucks(a, b);
+}
+/* ── ТРИ ГРУЗОВИКА ПО УЛИЦЕ ───────────────────────────────────────────────
+   Эльдар (2026-09-25): «три трака, один за другим, справа до конца налево,
+   пока мы крутим переезд». Поэтому они едут не по часам, а по камере: весь
+   проезд зала мимо просвета — это ровно три пересечения, раз, два, три. Едешь
+   назад — они сдают назад, как и всё в этом зале.
+   Путь считается по ЭКРАННОМУ просвету (a…b), а не по снимку: снимок втрое
+   шире кадра, и грузовик, идущий по всей панораме, почти всё время был бы за
+   косяком. Так каждый входит справа от проёма и уходит влево за него целиком.
+   Рисуются сразу за фоном — значит их, как и улицу, обрежут стена и пол.
+   ЕДУТ СЛЕВА НАПРАВО (Эльдар поправил, 2026-09-25) — на снимке кабина справа,
+   значит машина смотрит туда же, куда едет, и зеркалить ничего не надо: с
+   зеркалом на борту читалось бы обратное «GLIDEWELL DENTAL». */
+const ST_CARS = {
+  lead: 1200,        // сколько мира до просвета и после него занимает весь проезд
+  margin: 0.55,      // насколько машина отъезжает за косяк — долями своей длины
+  /* ПОЛОСЫ. at — доли проезда, на которых машина трогается; cross — сколько
+     проезда занимает её путь от края до края. Сперва три машины шли строго
+     одна за другой (cross = 1/3), и между ними получалась пауза в целую треть
+     проезда: «первая едет, пока её закрывает подоконник, потом пауза, пауза».
+     Теперь пути наложены — старт каждые 0,25, путь 0,5, — и в кадре почти
+     всегда кто-то есть, а сама машина успевает пройти середину просвета.
+     Вторая полоса — дальняя (Эльдар, 2026-09-25: «поставь второй трак на
+     верхнюю линию, между двумя, посмотреть угол»): свой снимок сверху, меньше
+     ростом и выше по кадру. */
+  lanes: [
+    {pic: 'truck',  y: 0.865, h: 0.125, cross: 0.5, at: [0, 0.25, 0.5]},
+    {pic: 'truck2', y: 0.792, h: 0.100, cross: 0.5, at: [0.375]},
+  ],
+};
+function drawStreetTrucks(a, b){
+  const [x0, x1] = stOpenSpan();
+  const from = x0 - ST_CARS.lead, to = x1 + ST_CARS.lead;
+  const p = (cam.x - from) / (to - from);
+  if (p <= 0 || p >= 1) return;
+  for (const L of ST_CARS.lanes){
+    const im = stPic(L.pic); if (!im) continue;
+    const hT = L.h * H, wT = hT * (im.naturalWidth / im.naturalHeight);
+    const xL = a - wT * ST_CARS.margin, xR = b + wT * ST_CARS.margin;
+    const yB = L.y * H;
+    for (const at of L.at){
+      const q = (p - at) / L.cross;
+      if (q <= 0 || q >= 1) continue;
+      ctx.drawImage(im, xL + (xR - xL) * q - wT / 2, yB - hT, wT, hT);
+    }
+  }
 }
 function drawStreet(){
   const pairs = stPairs();
-  if (Math.abs(cam.x - (pairs[0].b + pairs[1].a) / 2) > 5200) return;
+  if (Math.abs(cam.x - (pairs[0].b + pairs[1].a) / 2) > 5200){ REC93_BOX = null; return; }
   /* пары — по расстоянию от камеры, дальняя первой; внутри пары грани тоже,
      а между ними откос, притолока и подоконник. Это разные плоскости на
      разных x, поэтому здесь порядок законен. */
@@ -9205,6 +9310,7 @@ function drawStreet(){
     stBand(p, ST.winTop, ST.head[0], ST.head[1]);
     stBand(p, ST.winBot, ST.sill[0], ST.sill[1]);
   }
+  REC93_BOX = null;   // силуэт годен только для своего кадра
 }
 function drawDoorway(){
   const z = -460, kk = k(z);
@@ -10391,7 +10497,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260925-street-v4';
+const ASSET_V = '20260925-street-v6';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
