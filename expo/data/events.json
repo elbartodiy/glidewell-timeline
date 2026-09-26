@@ -1,75 +1,8 @@
 {
- "updated": "2026-09-25T21:37:11+00:00",
+ "updated": "2026-09-26T04:59:43+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 34,
+ "count": 30,
  "events": [
-  {
-   "title": "Dental Sleep Medicine: Snoring and Sleep Apnea Treatment Made Easy",
-   "from": "2026-09-25",
-   "to": "2026-09-26",
-   "city": "Irvine, CA",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Jamison Spencer"
-   ],
-   "duration": "Two Days",
-   "price": "795.00",
-   "open": false,
-   "url": "https://glidewelldirect.com/products/dental-sleep-medicine-treating-patients-with-sleep-related-disordered-breathing?variant=52802100560236"
-  },
-  {
-   "title": "All-on-X FP3 Fundamentals: Modern Full-Arch Workflow",
-   "from": "2026-09-25",
-   "to": "2026-09-26",
-   "city": "Louisville, KY",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Bushra Imam",
-    "Dr. Paresh B. Patel",
-    "Dr. Taylor Manalili"
-   ],
-   "duration": "Two Days",
-   "price": "1295.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/all-on-x-fp3-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=52849324917100"
-  },
-  {
-   "title": "Techniques for Predictable Implant Surgery",
-   "from": "2026-09-25",
-   "to": "2026-09-25",
-   "city": "New York, NY",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Paresh B. Patel",
-    "Dr. Timothy Kosinski"
-   ],
-   "duration": "One Day",
-   "price": "595.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/techniques-for-predictable-implant-surgery?variant=52759772529004"
-  },
-  {
-   "title": "Implant Surgery, Aligner Therapy and CAD/CAM Dentistry",
-   "from": "2026-09-25",
-   "to": "2026-09-26",
-   "city": "New York, NY",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Arvind Petrie",
-    "Dr. Ben Miraglia",
-    "Dr. Danielle Brown",
-    "Dr. Darshan Patel",
-    "Dr. Jinny Bender",
-    "Dr. Justin Chi",
-    "Dr. Louis Kaufman",
-    "Dr. Paresh B. Patel",
-    "Dr. Timothy Kosinski"
-   ],
-   "duration": "Two Days",
-   "price": "1190.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/implant-surgery-aligner-therapy-and-cad-cam-dentistry?variant=52748773556588"
-  },
   {
    "title": "Incorporating Digital Dentistry and Aligner Therapy",
    "from": "2026-09-26",
