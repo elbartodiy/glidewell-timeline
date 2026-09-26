@@ -10271,7 +10271,10 @@ function initDecor(){
        шириной 460 единиц, так что 102/470*460 = 100 и 37/470*460 = 36.
        Вниз — это drop: столешница на фотографии лежит ниже линии, на которой
        зал ставит предмет глубины z=70, и фреза висела над ней. */
-    if (b17) PROPS.push({x: b17.x - 75, z: 70, kind: 'ph_mill_v1', w: 460, drop: 36, noShadow: true});
+    /* И ЕЩЁ ВПРАВО НА 0,4 ДЛИНЫ. Эльдар (2026-09-25): «правее и ещё правее,
+       примерно на 0,4, почти половину от её длины». Длина машины — её ширина
+       на прилавке, 460 единиц, значит 0,4 × 460 = 184: x −75 → +109. */
+    if (b17) PROPS.push({x: b17.x + 109, z: 70, kind: 'ph_mill_v1', w: 460, drop: 36, noShadow: true});
     /* the plastic-injection division's own product, on the counter at its own
        tick — right of the CAD screen, which it must not cover */
     const bpl = BEATS.find(b => b.t === 'PLASTIC INJECTION');
