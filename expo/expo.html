@@ -9110,6 +9110,44 @@ function stCutHall(kind){
   ctx.clip('evenodd');
   return true;
 }
+/* ── ФОН УЛИЦЫ ───────────────────────────────────────────────────────────
+   Пока это один снимок офисного парка, поставленный за проёмом: Эльдар
+   (2026-09-25) попросил «пока просто фоном позади, чтобы улица была видна».
+   Стоит на глубине ЗА стеной зала, поэтому на ходу едет медленнее её — это и
+   есть глубина. Горизонт снимка сажается на горизонт зала: py(430, kk) даёт
+   линию горизонта при любом kk, поэтому совместить их — значит совместить
+   кадр с 430. hz — доля высоты, на которой горизонт лежит в самом снимке. */
+const ST_BACK = {dz: 5200, hz: 0.42, wide: 1.9};
+let ST_IMG = null, ST_TRIED = false;
+function streetImg(){
+  if (!ST_TRIED){
+    ST_TRIED = true;
+    const im = new Image();
+    let tried = false;
+    im.onload = () => { ST_IMG = im; };
+    im.onerror = () => { if (!tried){ tried = true; im.src = vurl('assets/street/street.png'); } };
+    im.src = vurl('assets/street/street.webp');
+  }
+  return ST_IMG;
+}
+function drawStreetBack(){
+  const im = streetImg(); if (!im) return;
+  const [x0, x1] = stOpenSpan();
+  const kz = k(wallZAt((x0 + x1) / 2) + ST_BACK.dz);
+  const kw = k(wallZAt((x0 + x1) / 2));
+  const a = px(x0, kw), b = px(x1, kw);
+  if (b < -40 || a > W + 40) return;
+  /* снимок закрывает просвет ЦЕЛИКОМ: по ширине с запасом на ход камеры, по
+     высоте — от верха кадра до низа, считая от линии горизонта вниз и вверх;
+     иначе под ним оставалась серая полоса */
+  const ar = im.naturalHeight / im.naturalWidth;
+  const need = Math.max((b - a) * ST_BACK.wide,
+                        (CFG.horizon * SS) / (ST_BACK.hz * ar),
+                        (H - CFG.horizon * SS) / ((1 - ST_BACK.hz) * ar));
+  const wS = need, hS = wS * ar;
+  const cx = px((x0 + x1) / 2, kz);
+  ctx.drawImage(im, cx - wS / 2, CFG.horizon * SS - ST_BACK.hz * hS, wS, hS);
+}
 function drawStreet(){
   const pairs = stPairs();
   if (Math.abs(cam.x - (pairs[0].b + pairs[1].a) / 2) > 5200) return;
@@ -16980,6 +17018,7 @@ function frame(){
   ctx.fillStyle = `rgb(${amb.bg[0]|0},${amb.bg[1]|0},${amb.bg[2]|0})`;
   ctx.fillRect(0, 0, W, H);
 
+  drawStreetBack();   // улица за проёмом — до пола и стены, они её обрежут
   ctx.save(); stCutHall('floor'); drawFloor(); ctx.restore();
   ctx.save(); stCutHall('wall');  drawWall();  ctx.restore();
   drawFilmVideoWall();   // the film backdrop sits directly on the deep wall
@@ -17075,7 +17114,7 @@ function frame(){
      the speaker's plinth and the silhouettes — a veil across the people rather
      than a shine beneath them. It reflects the wall band, which is already
      drawn, and everything standing on the floor now covers it in turn. */
-  drawFloorSheen();
+  ctx.save(); stCutHall('floor'); drawFloorSheen(); ctx.restore();
   drawHallPortalColumns(true);  // its metal shoe stays above the reflected floor
   /* AND THE 2022 PORTAL'S SHOE WITH IT. This pass exists to cover the column's
      own reflection, nothing else, so it belongs here — with the sheen it
