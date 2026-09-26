@@ -9140,7 +9140,7 @@ function stCutHall(kind){
    линию горизонта при любом kk, поэтому совместить их — значит совместить
    кадр с 430. hz — доля высоты, на которой горизонт лежит в самом снимке. */
 const ST_BACK = {dz: 5200, hz: 0.55, wide: 1.0};   // hz — доля высоты, на которой в снимке лежит горизонт
-let ST_IMG = null, ST_TRIED = false, ST_FOOT = null;
+let ST_IMG = null, ST_TRIED = false;
 function streetImg(){
   if (!ST_TRIED){
     ST_TRIED = true;
@@ -9159,47 +9159,15 @@ function drawStreetBack(){
   const kw = k(wallZAt((x0 + x1) / 2));
   const a = px(x0, kw), b = px(x1, kw);
   if (b < -40 || a > W + 40) return;
-  /* СНИМОК ВИДЕН ЦЕЛИКОМ, А НЕ ОБРЕЗАН СВЕРХУ. Раньше он масштабировался
-     так, чтобы ЗАКРЫТЬ просвет и сверху, и снизу. Просвет у нас куда выше
-     своей ширины (около 1.16 против 1.78 у снимка), и «закрыть» означало
-     раздуть кадр и срезать ему небо — Эльдар это и увидел.
-     Теперь наоборот: снимок ставится во всю ширину просвета и показывается
-     ЦЕЛИКОМ, а то, чего ему не хватает сверху и снизу, дотягивается его же
-     крайними рядами — небо тянется вверх, полотно дороги вниз. Шва не видно,
-     потому что и там и там ряд почти однороден. */
-  const ar = im.naturalHeight / im.naturalWidth;
-  const wS = (b - a) * ST_BACK.wide, hS = wS * ar;
+  /* СНИМОК РАСТЯНУТ НА ВСЮ ВЫСОТУ КАДРА. Эльдар (2026-09-25): «верхний край
+     ровно по верхнему краю страницы, нижний ровно по нижнему; ничего не резать
+     и ничего не дорисовывать». Поэтому ни обрезки, ни доводки крайними рядами:
+     по ширине снимок занимает просвет, по высоте — от 0 до H. Пропорция при
+     этом не сохраняется, и это сознательно: важнее, чтобы улица стояла в
+     проёме без полей и без швов. */
+  const wS = (b - a) * ST_BACK.wide;
   const cx = px((x0 + x1) / 2, kz);
-  const xS = cx - wS / 2, yS = CFG.horizon * SS - ST_BACK.hz * hS;
-  const IW = im.naturalWidth, IH = im.naturalHeight;
-  const edge = Math.max(2, Math.round(IH * 0.03));
-  if (yS > 0) ctx.drawImage(im, 0, 0, IW, edge, xS, 0, wS, yS + 1);
-  /* ВНИЗ — РОВНЫЙ ТОН, А НЕ РАСТЯНУТЫЙ РЯД. Небо сверху однородно, и растянуть
-     его верхний ряд можно. Снизу у снимка живая изгородь: растянутый ряд дал
-     вертикальные полосы, как расчёска. Поэтому низ дотягивается СРЕДНИМ цветом
-     нижней полосы — он считается один раз через холст 1x1, — и стыкуется с
-     кадром короткой растяжкой, чтобы шва не было. */
-  const yBot = yS + hS;
-  if (yBot < H){
-    if (!ST_FOOT){
-      const c1 = document.createElement('canvas'); c1.width = c1.height = 1;
-      const g1 = c1.getContext('2d', {willReadFrequently: true});
-      g1.drawImage(im, 0, IH - edge, IW, edge, 0, 0, 1, 1);
-      const d = g1.getImageData(0, 0, 1, 1).data;
-      ST_FOOT = `rgb(${d[0]},${d[1]},${d[2]})`;
-    }
-    const blend = Math.min(H - yBot, hS * 0.06);
-    ctx.fillStyle = ST_FOOT;
-    ctx.fillRect(xS, yBot + blend - 1, wS, H - yBot - blend + 1);
-    if (blend > 1){
-      const gg = ctx.createLinearGradient(0, yBot - 1, 0, yBot + blend);
-      gg.addColorStop(0, ST_FOOT.replace('rgb', 'rgba').replace(')', ',0)'));
-      gg.addColorStop(1, ST_FOOT);
-      ctx.fillStyle = gg;
-      ctx.fillRect(xS, yBot - 1, wS, blend + 1);
-    }
-  }
-  ctx.drawImage(im, xS, yS, wS, hS);
+  ctx.drawImage(im, cx - wS / 2, 0, wS, H);
 }
 function drawStreet(){
   const pairs = stPairs();
@@ -10403,7 +10371,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260925-street-v2';
+const ASSET_V = '20260925-street-v3';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
