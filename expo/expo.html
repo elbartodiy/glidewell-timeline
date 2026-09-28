@@ -9376,8 +9376,22 @@ function drawStreet(){
       a = Math.min(a, px(sx0, kz)); b = Math.max(b, px(sx1, kz));
     }
     if (b < -40 || a > W + 40){ REC93_BOX = null; return; }
+    /* ДЫРА — ЭТО НЕ ПРЯМОУГОЛЬНИК. Выше линии пола зал вырезает стену полосой
+       на её глубине (a…b), а пол режется КЛИНОМ между двумя прямыми x = const,
+       и к низу кадра клин расходится далеко за эту полосу. Обрезав улицу одной
+       полосой, я оставил внизу справа ничью землю: пол там вырезан, а стены
+       улицы туда уже не доставали — в прореху смотрели дорога и грузовик
+       (Эльдар, 2026-09-28). Обрезка — объединение полосы и клина, то есть
+       ровно то, чего не закрывают стена и пол. Оба контура намотаны в одну
+       сторону, поэтому nonzero даёт объединение, а не дырку. */
+    const Lln = floorLineAt(sx0), Rln = floorLineAt(sx1), yTc = CFG.horizon * SS + 1;
     ctx.save();
-    ctx.beginPath(); ctx.rect(a, 0, b - a, H); ctx.clip();
+    ctx.beginPath();
+    ctx.rect(a, 0, b - a, H);
+    ctx.moveTo(Lln(yTc), yTc); ctx.lineTo(Rln(yTc), yTc);
+    ctx.lineTo(Rln(H), H);     ctx.lineTo(Lln(H), H);
+    ctx.closePath();
+    ctx.clip();
   }
   const dist = p => Math.min(Math.abs(p.a - cam.x), Math.abs(p.b - cam.x));
   for (const p of pairs.sort((u, v) => dist(v) - dist(u))){
