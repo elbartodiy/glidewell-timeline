@@ -5011,7 +5011,10 @@ function drawProjectors(t, phase){
     g2.fillRect(0, 0, ow, oh);
     if (live){
       const sw0 = p.v.videoWidth || 1280, sh0 = p.v.videoHeight || 720;
-      g2.globalAlpha = 0.95 * lamp;
+      /* «мб чуть погаси, буквально, не так сильно как 1999» — у 1999-го кадр
+         кладётся на 0.65, здесь было 0.95; 0.86 снимает десятую часть и
+         оставляет 1993-й заметно ярче соседа. */
+      g2.globalAlpha = 0.86 * lamp;
       g2.drawImage(p.v, sw0 * c0.x0, 0, sw0 * (c0.x1 - c0.x0), sh0, 0, 0, ow, oh);
       g2.globalAlpha = 1;
     }
@@ -5023,7 +5026,13 @@ function drawProjectors(t, phase){
     // the edges run out into transparency ON THE SHEET, where erasing is free
     g2.save();
     g2.globalCompositeOperation = 'destination-out';
-    const F = Math.max(2, 11 * kk * SS);
+    /* РАСТУШЁВКА — ДОЛЯ КАРТИНЫ, А НЕ ЧИСЛО МИРА. Здесь она была 11 единиц
+       мира, то есть около процента ширины картины, и край читался как экран, а
+       не как свет на штукатурке. У проектора 1999-го (drawFilmProjectorWall)
+       она с самого начала считается от ширины: 6% на все четыре стороны.
+       Эльдар (2026-09-28): «мне больше нравится, как растушёваны края в 1999 —
+       стандартизируй и 1993». Та же доля, та же формула. */
+    const F = Math.max(2, ow * 0.06);
     for (const [ex, ey, ew, eh, vert, near] of [
       [0, 0, ow, F, 1, 1], [0, oh - F, ow, F, 1, 0],
       [0, 0, F, oh, 0, 1], [ow - F, 0, F, oh, 0, 0]]){
@@ -5045,7 +5054,7 @@ function drawProjectors(t, phase){
         const g3 = p.gnd.getContext('2d');
         g3.fillStyle = '#12171c'; g3.fillRect(0, 0, ow, oh);
         g3.globalCompositeOperation = 'destination-out';
-        const F2 = Math.max(2, 11 * kk * SS);
+        const F2 = Math.max(2, ow * 0.06);   // тёмная подложка растушёвана ровно так же, иначе её край вылезет из-под света
         for (const [ex, ey, ew, eh, vert, nr] of [
           [0, 0, ow, F2, 1, 1], [0, oh - F2, ow, F2, 1, 0],
           [0, 0, F2, oh, 0, 1], [ow - F2, 0, F2, oh, 0, 0]]){
