@@ -250,10 +250,7 @@ const BEATS = [
       координату — см. FILM_RELAYS, crt95. */
    props:[]},
 
-  /* ГОД СО СТЕНЫ СНЯТ: на прилавке лежит подушка с каппой, и она же открывает
-     страницу. Год остаётся данностью — он есть на рейке, в ?study= и в плане,
-     но на штукатурке не написан ничего (Эльдар, 2026-09-28). */
-  {x:13370, y:'1996', t:'SILENT NITE', minor:true, yLift:190, noWall:true,
+  {x:13370, y:'1996', t:'SILENT NITE', minor:true, yLift:190,
    th:'Dentistry beyond repair: keeping problems from starting.',
    d:'Silent Nite anti-snoring appliances launch — Glidewell’s signature move into sleep and prevention.',
    wall:[], table:[]},
@@ -3022,10 +3019,6 @@ function paintNumeral(str, cx, yBase, sizePx, fam){
 }
 function drawBeatText(b, focusAmt){
   if (b.under) return;   // this fact lives under the tabletop, on the bench face
-  /* noWall — бит, у которого на стене нет ничего: ни числа, ни названия, ни
-     тезиса. Его несёт предмет на прилавке, он же открывает страницу. Подпись
-     под столешницей при этом остаётся: её рисует другой проход. */
-  if (b.noWall) return;
   if (b.plaque){
     // no numeral, no lines — just a small engraved plate on the wall
     const segP = segAt(b.x);
@@ -8993,12 +8986,6 @@ const ST = {
   gap: 2200,          // между корпусами: две ширины просвета между колоннами
   zNear: -860,        // ближний край: за спиной у камеры, торца не видно
   top: -520, bot: 2560,
-  /* ОКНО ИДЁТ ВО ВСЮ ДЛИНУ СТЕНЫ — от 560 до самого ближнего края. Я пробовал
-     дать ему ближний откос, чтобы подоконник не уезжал к глазу: стена от того
-     откоса становилась глухой и закрывала улицу, а сам откос вставал серым
-     столбом посреди вида (Эльдар, 2026-09-28: «ты сломал улицу всю»). Уезжание
-     лечится не этим, а тем, что вся улица обрезана своим проёмом — см.
-     drawStreet. */
   winZ0: 560, winTop: -260, winBot: CFG.benchY,
   tone: ['#6c7681', '#8b95a0'],
   jamb: '#5a636d',
@@ -9050,12 +9037,7 @@ function stOutline93(){
   /* ЛЕВЫЙ КРАЙ СИЛУЭТА — ТА ЖЕ ПРЯМАЯ, ЧТО И ВЫРЕЗ ПОЛА. Иначе стена
      обрезается по одной линии, а пол вырезается по другой, они пересекаются —
      и между ними открывается щель на дорогу. */
-  /* ВОЛОСОК НАХЛЁСТА. Заслонка и вырез пола идут по ОДНОЙ прямой, и на общем
-     крае сглаживание съедает по половине пикселя с каждой стороны — в этот
-     волосок видно улицу (Эльдар, 2026-09-28: «на стыке и в углу видна улица»).
-     Сдвигаем край заслонки на пиксель вправо: стена ложится на пол внахлёст,
-     а пол её и так не перекрывает — он рисуется раньше. */
-  const ln0 = floorLineAt(REC93_BL), ln = y => ln0(y) + 1.2 * SS;
+  const ln = floorLineAt(REC93_BL);
   /* ВЕРХНИЙ ЛЕВЫЙ УГОЛ СИЛУЭТА — ПОДОШВА СТЕНЫ, А НЕ ДАЛЬНИЙ КРАЙ ПЛИТЫ.
      Грань корпуса стоит на x = 17220 и уходит вниз до 2560, то есть НИЖЕ пола.
      В зале эту часть закрывает сам пол — глаз выше него. Но силуэт начинался
@@ -9111,34 +9093,18 @@ function stFace(xw, p){
    кроме полоски окна. */
 function stEnd(p){
   const kz = k(p.zFar);
-  /* ТОРЕЦ КОНЧАЕТСЯ НА ПОЛУ, А НЕ НА 2560. Грани корпуса уходят ниже пола
-     нарочно — они идут вперёд, в просвет, где пола нет. Торец же стоит на
-     плоскости стены зала: ниже линии пола он под землёй, и в зале его
-     закрывает сам пол. Но пол в просвете вырезан по наклонной линии
-     x = REC93_BL, а торец — прямоугольник с вертикальным краем: к низу кадра
-     между ними расходился серый клин, который то появлялся, то пропадал
-     (Эльдар, 2026-09-28, обвёл красным). Низ торца — линия пола на его
-     собственной глубине. */
-  /* ...но не выше подошвы соседней бухты: её плита и её панель сходятся на
-     СВОЕЙ линии (y = 940 на глубине прилавка), а она на десяток единиц ниже
-     линии пола на плоскости стены. Торец, кончавшийся строго на своей линии,
-     оставлял между собой и этим углом волосок, в который было видно улицу
-     (Эльдар, 2026-09-28: «на стыке и в углу видна улица»). Берём нижнюю из
-     двух линий и добавляем полпикселя нахлёста — сглаживание краёв съедает
-     ровно столько. */
-  const yBot = Math.max(py(1080, kz), py(CFG.benchY + 240, k(CFG.benchDepth))) + 1.5 * SS;
   ctx.save(); stClip(p.a, p);
   ctx.beginPath();
   ctx.moveTo(px(p.a, kz), py(ST.top, kz));
   ctx.lineTo(px(p.b, kz), py(ST.top, kz));
-  ctx.lineTo(px(p.b, kz), yBot);
-  ctx.lineTo(px(p.a, kz), yBot);
+  ctx.lineTo(px(p.b, kz), py(ST.bot, kz));
+  ctx.lineTo(px(p.a, kz), py(ST.bot, kz));
   ctx.closePath();
   ctx.fillStyle = ST.jamb; ctx.fill();
   ctx.restore();
 }
-function stJamb(p, zAt){
-  const kz = k(zAt != null ? zAt : ST.winZ0);
+function stJamb(p){
+  const kz = k(ST.winZ0);
   ctx.save(); stClip(p.a, p);
   ctx.beginPath();
   ctx.moveTo(px(p.a, kz), py(ST.winTop, kz));
@@ -9360,45 +9326,12 @@ function drawStreet(){
   /* пары — по расстоянию от камеры, дальняя первой; внутри пары грани тоже,
      а между ними откос, притолока и подоконник. Это разные плоскости на
      разных x, поэтому здесь порядок законен. */
-  /* ВСЯ УЛИЦА ЖИВЁТ ВНУТРИ ПРОЁМА. Корпуса идут вперёд, в зал, и у самой
-     камеры их грани и подоконник разрастаются и ложатся на пол и на стену
-     зала — хоть это и честная проекция, читается это как серый клин на полу,
-     который «то появляется, то пропадает» (Эльдар обводил его красным дважды).
-     Зал видит улицу через дыру в своей стене, поэтому всё, что рисует улица,
-     обрезается этой дырой: полоса между наружной гранью левого корпуса и
-     дальней гранью правого, взятая на глубине стены зала — та же пара чисел,
-     какой вырезается сама стена. */
-  {
-    const [sx0, sx1] = stOpenSpan();
-    let a = Infinity, b = -Infinity;
-    for (const z of [wallZAt(sx0), wallZAt((sx0 + sx1) / 2), wallZAt(sx1)]){
-      const kz = k(z);
-      a = Math.min(a, px(sx0, kz)); b = Math.max(b, px(sx1, kz));
-    }
-    if (b < -40 || a > W + 40){ REC93_BOX = null; return; }
-    /* ДЫРА — ЭТО НЕ ПРЯМОУГОЛЬНИК. Выше линии пола зал вырезает стену полосой
-       на её глубине (a…b), а пол режется КЛИНОМ между двумя прямыми x = const,
-       и к низу кадра клин расходится далеко за эту полосу. Обрезав улицу одной
-       полосой, я оставил внизу справа ничью землю: пол там вырезан, а стены
-       улицы туда уже не доставали — в прореху смотрели дорога и грузовик
-       (Эльдар, 2026-09-28). Обрезка — объединение полосы и клина, то есть
-       ровно то, чего не закрывают стена и пол. Оба контура намотаны в одну
-       сторону, поэтому nonzero даёт объединение, а не дырку. */
-    const Lln = floorLineAt(sx0), Rln = floorLineAt(sx1), yTc = CFG.horizon * SS + 1;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(a, 0, b - a, H);
-    ctx.moveTo(Lln(yTc), yTc); ctx.lineTo(Rln(yTc), yTc);
-    ctx.lineTo(Rln(H), H);     ctx.lineTo(Lln(H), H);
-    ctx.closePath();
-    ctx.clip();
-  }
   const dist = p => Math.min(Math.abs(p.a - cam.x), Math.abs(p.b - cam.x));
   for (const p of pairs.sort((u, v) => dist(v) - dist(u))){
     const xs = [p.a, p.b].sort((u, v) => Math.abs(v - cam.x) - Math.abs(u - cam.x));
     stFace(xs[0], p);
     stEnd(p);
-    stJamb(p, ST.winZ0);
+    stJamb(p);
     stFace(xs[1], p);
     /* ПОДОКОННИК И ПРИТОЛОКА — ПОСЛЕ ОБЕИХ ГРАНЕЙ. Грань стены и подоконник
        не параллельны: они ПЕРЕСЕКАЮТСЯ по линии (x = грань, y = 700), и по
@@ -9416,7 +9349,6 @@ function drawStreet(){
     stBand(p, ST.winTop, ST.head[0], ST.head[1]);
     stBand(p, ST.winBot, ST.sill[0], ST.sill[1]);
   }
-  ctx.restore();
   REC93_BOX = null;   // силуэт годен только для своего кадра
 }
 function drawDoorway(){
@@ -10604,7 +10536,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260928-pillow-street-v6';
+const ASSET_V = '20260925-street-v6';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -10672,7 +10604,6 @@ async function loadPhotoSkin(){
     ph_hall_floor: 'hall_floor.png',  // its polished floor and reflections, laid under the whole late stretch
     ph_hall_plinth: 'hall_plinth.png',// the low stone the turning crown stands on
     ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
-    ph_pillow: 'pillow.png',          // 1996: подушка с каппой Silent Nite — год уходит со стены, предмет остаётся
     ph_pfm1: 'pfm_1.png', ph_pfm2: 'pfm_2.png', ph_pfm3: 'pfm_3.png',   // the six PFM stages, cut apart
     ph_pfm4: 'pfm_4.png', ph_pfm5: 'pfm_5.png', ph_pfm6: 'pfm_6.png',
     ph_pfmrow: 'pfm_row.png',         // and the whole line, for the screen-filling look
@@ -10827,27 +10758,6 @@ function initDecor(){
        about seven screw-widths wide, which puts it at 115. It sits 120 units
        left of the assembly, at the front of the worktop. */
     if (bsr) PROPS.push({x: bsr.x - 120, z: 18, kind: 'ph_implant2', w: 115, lay: true, study: 'SCREW-RETAINED'});
-  }
-
-  /* 1996 — ПОДУШКА ВМЕСТО ГОДА. Silent Nite — первое, что компания сделала не
-     для починки сломанного, а чтобы проблема не начиналась; показывать это
-     числом на стене — то же, что показывать числом сон. Эльдар (2026-09-28)
-     прислал рендер подушки с каппой и сказал: положить на прилавок, год со
-     стены убрать, а по клику открывать ту же страницу 1996-го. Ширина 380 —
-     наволочка 90 см при 422 единицах на метр; z 70 — подушка занимает почти
-     всю глубину столешницы, поэтому стоит чуть дальше мелкого реквизита.
-     study ведёт на страницу по НАЗВАНИЮ бита, как у импланта 2009-13.
-     Ширина 520 и z 26: подушка лежит у переднего края столешницы, как на
-     кадре Эльдара, — она крупная вещь, и отодвинутая вглубь читалась мелкой
-     и висящей у стены. drop 24: столешница на фотографии лежит ниже линии,
-     по которой зал сажает предмет этой глубины, — тот же случай, что у фрезы
-     2017 (там 36 на z 70). Сперва поставил 24 по замеру зазора, но Эльдар
-     (2026-09-28) сказал «слишком высоко» — 60: подушка садится в столешницу,
-     как лежит мягкая вещь, а не стоит на ней ребром. noShadow: у рендера своя
-     тень, а зал рисовал под ним вторую — ту самую «тень одной линией». */
-  {
-    const bsn = BEATS.find(b => b.t === 'SILENT NITE');
-    if (bsn) PROPS.push({x: bsn.x, z: 26, kind: 'ph_pillow', w: 520, drop: 60, noShadow: true, study: 'SILENT NITE'});
   }
 
   /* The welcome still life is gone: the film plays where the heirlooms stood.
