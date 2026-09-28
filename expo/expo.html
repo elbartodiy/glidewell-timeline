@@ -8984,7 +8984,13 @@ const ST = {
   gap: 2200,          // между корпусами: две ширины просвета между колоннами
   zNear: -860,        // ближний край: за спиной у камеры, торца не видно
   top: -520, bot: 2560,
-  winZ0: 560, winTop: -260, winBot: CFG.benchY,
+  /* ОКНО ИМЕЕТ ДВА КОНЦА. Оно шло от 560 до самого zNear, то есть за спину
+     камере, и подоконник — горизонтальная плоскость — уезжал вместе с ним:
+     у самого глаза он разрастался и ложился светлым клином поперёк улицы и
+     пола зала (Эльдар обводил его красным дважды, 2026-09-25 и 2026-09-28).
+     Теперь у окна есть ближний откос на 120, дальше стена глухая: подоконник
+     кончается там же, где окно, и ничего никуда не уезжает. */
+  winZ0: 560, winZ1: -300, winTop: -260, winBot: CFG.benchY,
   tone: ['#6c7681', '#8b95a0'],
   jamb: '#5a636d',
   head: ['#4e565f', '#646d77'],
@@ -9035,7 +9041,12 @@ function stOutline93(){
   /* ЛЕВЫЙ КРАЙ СИЛУЭТА — ТА ЖЕ ПРЯМАЯ, ЧТО И ВЫРЕЗ ПОЛА. Иначе стена
      обрезается по одной линии, а пол вырезается по другой, они пересекаются —
      и между ними открывается щель на дорогу. */
-  const ln = floorLineAt(REC93_BL);
+  /* ВОЛОСОК НАХЛЁСТА. Заслонка и вырез пола идут по ОДНОЙ прямой, и на общем
+     крае сглаживание съедает по половине пикселя с каждой стороны — в этот
+     волосок видно улицу (Эльдар, 2026-09-28: «на стыке и в углу видна улица»).
+     Сдвигаем край заслонки на пиксель вправо: стена ложится на пол внахлёст,
+     а пол её и так не перекрывает — он рисуется раньше. */
+  const ln0 = floorLineAt(REC93_BL), ln = y => ln0(y) + 1.2 * SS;
   /* ВЕРХНИЙ ЛЕВЫЙ УГОЛ СИЛУЭТА — ПОДОШВА СТЕНЫ, А НЕ ДАЛЬНИЙ КРАЙ ПЛИТЫ.
      Грань корпуса стоит на x = 17220 и уходит вниз до 2560, то есть НИЖЕ пола.
      В зале эту часть закрывает сам пол — глаз выше него. Но силуэт начинался
@@ -9074,7 +9085,7 @@ function stFace(xw, p){
   const P = (y, z) => [px(xw, k(z)), py(y, k(z))];
   const outer = [P(ST.top, p.zFar), P(ST.top, ST.zNear), P(ST.bot, ST.zNear), P(ST.bot, p.zFar)];
   const hole  = [P(ST.winTop, ST.winZ0), P(ST.winBot, ST.winZ0),
-                 P(ST.winBot, ST.zNear), P(ST.winTop, ST.zNear)];
+                 P(ST.winBot, ST.winZ1), P(ST.winTop, ST.winZ1)];
   ctx.save(); stClip(xw, p);
   const g = ctx.createLinearGradient(outer[0][0], outer[0][1], outer[1][0], outer[1][1]);
   g.addColorStop(0, ST.tone[0]); g.addColorStop(1, ST.tone[1]);
@@ -9099,7 +9110,14 @@ function stEnd(p){
      между ними расходился серый клин, который то появлялся, то пропадал
      (Эльдар, 2026-09-28, обвёл красным). Низ торца — линия пола на его
      собственной глубине. */
-  const yBot = py(1080, kz);
+  /* ...но не выше подошвы соседней бухты: её плита и её панель сходятся на
+     СВОЕЙ линии (y = 940 на глубине прилавка), а она на десяток единиц ниже
+     линии пола на плоскости стены. Торец, кончавшийся строго на своей линии,
+     оставлял между собой и этим углом волосок, в который было видно улицу
+     (Эльдар, 2026-09-28: «на стыке и в углу видна улица»). Берём нижнюю из
+     двух линий и добавляем полпикселя нахлёста — сглаживание краёв съедает
+     ровно столько. */
+  const yBot = Math.max(py(1080, kz), py(CFG.benchY + 240, k(CFG.benchDepth))) + 1.5 * SS;
   ctx.save(); stClip(p.a, p);
   ctx.beginPath();
   ctx.moveTo(px(p.a, kz), py(ST.top, kz));
@@ -9110,8 +9128,8 @@ function stEnd(p){
   ctx.fillStyle = ST.jamb; ctx.fill();
   ctx.restore();
 }
-function stJamb(p){
-  const kz = k(ST.winZ0);
+function stJamb(p, zAt){
+  const kz = k(zAt != null ? zAt : ST.winZ0);
   ctx.save(); stClip(p.a, p);
   ctx.beginPath();
   ctx.moveTo(px(p.a, kz), py(ST.winTop, kz));
@@ -9123,7 +9141,7 @@ function stJamb(p){
   ctx.restore();
 }
 function stBand(p, yWorld, c0, c1){
-  const kA = k(ST.winZ0), kB = k(ST.zNear);
+  const kA = k(ST.winZ0), kB = k(ST.winZ1);
   ctx.save(); stClip(p.a, p);
   const g = ctx.createLinearGradient(0, py(yWorld, kA), 0, py(yWorld, kB));
   g.addColorStop(0, c0); g.addColorStop(1, c1);
@@ -9333,12 +9351,32 @@ function drawStreet(){
   /* пары — по расстоянию от камеры, дальняя первой; внутри пары грани тоже,
      а между ними откос, притолока и подоконник. Это разные плоскости на
      разных x, поэтому здесь порядок законен. */
+  /* ВСЯ УЛИЦА ЖИВЁТ ВНУТРИ ПРОЁМА. Корпуса идут вперёд, в зал, и у самой
+     камеры их грани и подоконник разрастаются и ложатся на пол и на стену
+     зала — хоть это и честная проекция, читается это как серый клин на полу,
+     который «то появляется, то пропадает» (Эльдар обводил его красным дважды).
+     Зал видит улицу через дыру в своей стене, поэтому всё, что рисует улица,
+     обрезается этой дырой: полоса между наружной гранью левого корпуса и
+     дальней гранью правого, взятая на глубине стены зала — та же пара чисел,
+     какой вырезается сама стена. */
+  {
+    const [sx0, sx1] = stOpenSpan();
+    let a = Infinity, b = -Infinity;
+    for (const z of [wallZAt(sx0), wallZAt((sx0 + sx1) / 2), wallZAt(sx1)]){
+      const kz = k(z);
+      a = Math.min(a, px(sx0, kz)); b = Math.max(b, px(sx1, kz));
+    }
+    if (b < -40 || a > W + 40){ REC93_BOX = null; return; }
+    ctx.save();
+    ctx.beginPath(); ctx.rect(a, 0, b - a, H); ctx.clip();
+  }
   const dist = p => Math.min(Math.abs(p.a - cam.x), Math.abs(p.b - cam.x));
   for (const p of pairs.sort((u, v) => dist(v) - dist(u))){
     const xs = [p.a, p.b].sort((u, v) => Math.abs(v - cam.x) - Math.abs(u - cam.x));
     stFace(xs[0], p);
     stEnd(p);
-    stJamb(p);
+    stJamb(p, ST.winZ0);
+    stJamb(p, ST.winZ1);   // ближний откос: окно кончается, дальше стена глухая
     stFace(xs[1], p);
     /* ПОДОКОННИК И ПРИТОЛОКА — ПОСЛЕ ОБЕИХ ГРАНЕЙ. Грань стены и подоконник
        не параллельны: они ПЕРЕСЕКАЮТСЯ по линии (x = грань, y = 700), и по
@@ -9356,6 +9394,7 @@ function drawStreet(){
     stBand(p, ST.winTop, ST.head[0], ST.head[1]);
     stBand(p, ST.winBot, ST.sill[0], ST.sill[1]);
   }
+  ctx.restore();
   REC93_BOX = null;   // силуэт годен только для своего кадра
 }
 function drawDoorway(){
