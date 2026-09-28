@@ -4538,9 +4538,22 @@ function drawDeskScreens(){
       const sc = Math.max(scw / vw0, sch / vh0);
       ctx.drawImage(d.v, x0 + pad + scw / 2 - vw0 * sc / 2,
                          y0 + pad + sch / 2 - vh0 * sc / 2, vw0 * sc, vh0 * sc);
+      /* КИНЕСКОП СВЕТИТ, А НЕ ОТРАЖАЕТ. Запись — это съёмка экрана: её средняя
+         яркость около 140 из 255, и положенная как есть, на светлой стене зала
+         она читается тёмной дырой. Тот же кадр кладётся вторым слоем в режиме
+         screen: чёрное остаётся чёрным, а полутона поднимаются — ровно то, что
+         делает лампа за стеклом. Эльдар, 2026-09-28: «почему видео такое
+         тёмное». Стекло сверху осталось, тёмного низа больше нет: он отнимал
+         последнее у и без того тусклой записи. */
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = 0.42;
+      ctx.drawImage(d.v, x0 + pad + scw / 2 - vw0 * sc / 2,
+                         y0 + pad + sch / 2 - vh0 * sc / 2, vw0 * sc, vh0 * sc);
+      ctx.restore();
       const gl = ctx.createLinearGradient(0, y0 + pad, 0, y0 + pad + sch);
-      gl.addColorStop(0, 'rgba(255,255,255,0.10)'); gl.addColorStop(0.35, 'rgba(255,255,255,0.02)');
-      gl.addColorStop(1, 'rgba(0,0,0,0.10)');
+      gl.addColorStop(0, 'rgba(255,255,255,0.12)'); gl.addColorStop(0.4, 'rgba(255,255,255,0.03)');
+      gl.addColorStop(1, 'rgba(255,255,255,0.01)');
       ctx.fillStyle = gl; ctx.fillRect(x0 + pad, y0 + pad, scw, sch);
     }
     ctx.restore();
