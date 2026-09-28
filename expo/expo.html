@@ -250,7 +250,10 @@ const BEATS = [
       координату — см. FILM_RELAYS, crt95. */
    props:[]},
 
-  {x:13370, y:'1996', t:'SILENT NITE', minor:true, yLift:190,
+  /* ГОД СО СТЕНЫ СНЯТ: на прилавке лежит подушка с каппой, и она же открывает
+     страницу. Год остаётся данностью — он есть на рейке, в ?study= и в плане,
+     но на штукатурке не написан ничего (Эльдар, 2026-09-28). */
+  {x:13370, y:'1996', t:'SILENT NITE', minor:true, yLift:190, noWall:true,
    th:'Dentistry beyond repair: keeping problems from starting.',
    d:'Silent Nite anti-snoring appliances launch — Glidewell’s signature move into sleep and prevention.',
    wall:[], table:[]},
@@ -3019,6 +3022,10 @@ function paintNumeral(str, cx, yBase, sizePx, fam){
 }
 function drawBeatText(b, focusAmt){
   if (b.under) return;   // this fact lives under the tabletop, on the bench face
+  /* noWall — бит, у которого на стене нет ничего: ни числа, ни названия, ни
+     тезиса. Его несёт предмет на прилавке, он же открывает страницу. Подпись
+     под столешницей при этом остаётся: её рисует другой проход. */
+  if (b.noWall) return;
   if (b.plaque){
     // no numeral, no lines — just a small engraved plate on the wall
     const segP = segAt(b.x);
@@ -10536,7 +10543,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260925-street-v6';
+const ASSET_V = '20260928-pillow-street';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -10604,6 +10611,7 @@ async function loadPhotoSkin(){
     ph_hall_floor: 'hall_floor.png',  // its polished floor and reflections, laid under the whole late stretch
     ph_hall_plinth: 'hall_plinth.png',// the low stone the turning crown stands on
     ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
+    ph_pillow: 'pillow.png',          // 1996: подушка с каппой Silent Nite — год уходит со стены, предмет остаётся
     ph_pfm1: 'pfm_1.png', ph_pfm2: 'pfm_2.png', ph_pfm3: 'pfm_3.png',   // the six PFM stages, cut apart
     ph_pfm4: 'pfm_4.png', ph_pfm5: 'pfm_5.png', ph_pfm6: 'pfm_6.png',
     ph_pfmrow: 'pfm_row.png',         // and the whole line, for the screen-filling look
@@ -10758,6 +10766,27 @@ function initDecor(){
        about seven screw-widths wide, which puts it at 115. It sits 120 units
        left of the assembly, at the front of the worktop. */
     if (bsr) PROPS.push({x: bsr.x - 120, z: 18, kind: 'ph_implant2', w: 115, lay: true, study: 'SCREW-RETAINED'});
+  }
+
+  /* 1996 — ПОДУШКА ВМЕСТО ГОДА. Silent Nite — первое, что компания сделала не
+     для починки сломанного, а чтобы проблема не начиналась; показывать это
+     числом на стене — то же, что показывать числом сон. Эльдар (2026-09-28)
+     прислал рендер подушки с каппой и сказал: положить на прилавок, год со
+     стены убрать, а по клику открывать ту же страницу 1996-го. Ширина 380 —
+     наволочка 90 см при 422 единицах на метр; z 70 — подушка занимает почти
+     всю глубину столешницы, поэтому стоит чуть дальше мелкого реквизита.
+     study ведёт на страницу по НАЗВАНИЮ бита, как у импланта 2009-13.
+     Ширина 520 и z 26: подушка лежит у переднего края столешницы, как на
+     кадре Эльдара, — она крупная вещь, и отодвинутая вглубь читалась мелкой
+     и висящей у стены. drop 24: столешница на фотографии лежит ниже линии,
+     по которой зал сажает предмет этой глубины, — тот же случай, что у фрезы
+     2017 (там 36 на z 70). Сперва поставил 24 по замеру зазора, но Эльдар
+     (2026-09-28) сказал «слишком высоко» — 60: подушка садится в столешницу,
+     как лежит мягкая вещь, а не стоит на ней ребром. noShadow: у рендера своя
+     тень, а зал рисовал под ним вторую — ту самую «тень одной линией». */
+  {
+    const bsn = BEATS.find(b => b.t === 'SILENT NITE');
+    if (bsn) PROPS.push({x: bsn.x, z: 26, kind: 'ph_pillow', w: 520, drop: 60, noShadow: true, study: 'SILENT NITE'});
   }
 
   /* The welcome still life is gone: the film plays where the heirlooms stood.
