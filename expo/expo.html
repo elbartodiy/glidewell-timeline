@@ -303,7 +303,9 @@ const BEATS = [
    table:[]},
 
   {x:16520, y:'2001', capDX:-430,   // its line steps left of the plastic-injection block written on the bench face
-   t:'WEB · CLINICAL VOICE', minor:true, yLift:190,
+   /* ГОД СО СТЕНЫ СНЯТ: на прилавке стоит монитор с записью первого сайта, и
+      он же открывает страницу (Эльдар, 2026-09-28) — как подушка в 1996-м. */
+   t:'WEB · CLINICAL VOICE', minor:true, yLift:190, noWall:true,
    th:'The lab learns to publish — online and on camera.',
    d:'The first Glidewell Laboratories website goes live; the brand gains its clinical-education voice on camera.',
    wall:[], table:[]},
@@ -4518,6 +4520,84 @@ function drawFilmVideoWall(){
   for (let i = 1; i < 4; i++){ ctx.moveTo(x0 + vw*i/4, y0); ctx.lineTo(x0 + vw*i/4, y1); }
   for (let i = 1; i < 3; i++){ ctx.moveTo(x0, y0 + hgt*i/3); ctx.lineTo(x0 + vw, y0 + hgt*i/3); }
   ctx.stroke();
+}
+/* ── ЭКРАН НА ПРИЛАВКЕ, СО СВОЕЙ ПЕТЛЁЙ ───────────────────────────────────
+   Это не киноэкран и не проектор: монитор эпохи, в котором бесконечно крутится
+   СВОЙ ролик. Первый такой — 2001-й: архивная запись сайта glidewell-lab.com
+   в браузере того времени (18,8 с, 640×428). Эльдар (2026-09-28): «монитор на
+   прилавок, и убрать со стены год — страничка по нажатию на моник». То же
+   решение, что и с подушкой 1996-го: год остаётся данностью, а говорит предмет.
+   Корпус — тот же, что у киноэкрана девяностых (drawFilmCRT95): 2001-й ещё
+   вполне ЭЛТ, и две железки одной породы на соседних прилавках читаются как
+   одна эпоха. Немой, как все экраны зала, кроме фильма. */
+const DESK_SCREENS = [
+  {beat: 'WEB · CLINICAL VOICE', dx: 0, lz: 70, w: 290, src: 'media/website_2001.mp4'},
+];
+function initDeskScreens(){
+  for (const d of DESK_SCREENS){
+    const b = BEATS.find(x => x.t === d.beat);
+    if (!b){ d.x = null; continue; }
+    d.x = b.x + (d.dx || 0);
+    const v = document.createElement('video');
+    v.src = vurl(d.src); v.muted = true; v.loop = true; v.playsInline = true;
+    v.preload = 'auto';
+    v.addEventListener('loadeddata', () => { d.ready = true; });
+    v.load();
+    d.v = v;
+  }
+}
+function drawDeskScreens(){
+  for (const d of DESK_SCREENS){
+    if (d.x == null) continue;
+    const near = Math.abs(d.x - cam.x) < 3200;
+    if (d.v){
+      const wanted = near && !state.clip;      // говорящий клип забирает экран себе
+      if (wanted && d.v.paused) d.v.play().catch(()=>{});
+      else if (!wanted && !d.v.paused) d.v.pause();
+    }
+    if (!near) continue;
+    const kk = k(d.lz), sx = px(d.x, kk);
+    const scw = d.w * kk * SS, sch = scw * 3/4;
+    const pad = 10 * kk * SS, chin = 26 * kk * SS;
+    const bw = scw + pad * 2, bh = sch + pad + chin;
+    if (sx < -bw || sx > W + bw) continue;
+    const footY = py(CFG.benchY - 2, kk);
+    const x0 = sx - bw / 2, y0 = footY - bh;
+    contactShadow(sx, footY, bw * 0.55, 0.28);
+    const pg = ctx.createLinearGradient(0, y0, 0, y0 + bh);
+    pg.addColorStop(0, '#8e8b82'); pg.addColorStop(0.6, '#6d6a62'); pg.addColorStop(1, '#4a4740');
+    ctx.fillStyle = pg;
+    ctx.beginPath(); ctx.roundRect(x0, y0, bw, bh, 7 * kk * SS); ctx.fill();
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect(x0 + pad, y0 + pad, scw, sch, 9 * kk * SS); ctx.clip();
+    ctx.fillStyle = '#0d1014'; ctx.fillRect(x0 + pad, y0 + pad, scw, sch);
+    if (d.ready && d.v.readyState >= 2){
+      /* запись 640×428 шире экранного 4:3 — берём её по ширине и срезаем поля
+         сверху и снизу, а не мнём кадр */
+      const vw0 = d.v.videoWidth || 640, vh0 = d.v.videoHeight || 428;
+      const sc = Math.max(scw / vw0, sch / vh0);
+      ctx.drawImage(d.v, x0 + pad + scw / 2 - vw0 * sc / 2,
+                         y0 + pad + sch / 2 - vh0 * sc / 2, vw0 * sc, vh0 * sc);
+      const gl = ctx.createLinearGradient(0, y0 + pad, 0, y0 + pad + sch);
+      gl.addColorStop(0, 'rgba(255,255,255,0.10)'); gl.addColorStop(0.35, 'rgba(255,255,255,0.02)');
+      gl.addColorStop(1, 'rgba(0,0,0,0.10)');
+      ctx.fillStyle = gl; ctx.fillRect(x0 + pad, y0 + pad, scw, sch);
+    }
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(30,28,24,0.55)'; ctx.lineWidth = 1.4 * kk * SS;
+    for (let i = 0; i < 3; i++){
+      const gy = y0 + pad + sch + chin * 0.3 + i * 4.4 * kk * SS;
+      ctx.beginPath(); ctx.moveTo(x0 + bw * 0.08, gy); ctx.lineTo(x0 + bw * 0.4, gy); ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(140,220,120,0.9)';
+    ctx.beginPath(); ctx.arc(x0 + bw * 0.9, y0 + pad + sch + chin * 0.5, 2 * kk * SS, 0, 7); ctx.fill();
+    /* тап по монитору открывает страницу года — тот же вход, что даёт предмет
+       на прилавке в 1996-м. Бит ищется ПО НАЗВАНИЮ и прямо здесь: индекс,
+       взятый на старте, сдвигался вместе с BEATS, и монитор открывал соседний
+       2002-й. */
+    const bi = BEATS.findIndex(bb => bb.t === d.beat);
+    if (bi >= 0) pushHit(x0, y0, bw, bh, {type: 'study', beat: bi});
+  }
 }
 function drawFilmRelays(){
   const v = WELCOME_TV.v;
@@ -10552,7 +10632,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260928-pillow-v2-street';
+const ASSET_V = '20260928-web2001-street';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -14741,6 +14821,13 @@ const STUDY_MEDIA_BY_TITLE = {
      решает завести собственную науку: следующий абзац той же страницы и
      говорит, что первым эта решимость купила станок (Эльдар, 2026-09-25). */
   'RESEARCH AND DEVELOPMENT': [{name:'Edsel Labao', img:'labao', pid:'labao', src:'media/labao_02.mp4', label:'on the first computer-made crown'}],
+  /* 2001: не голос, а кадр эпохи — запись первого сайта glidewell-lab.com в
+     браузере того времени. Первым в списке, значит ляжет во всю ширину абзаца
+     сразу после первого абзаца: правило Эльдара для первого видео страницы.
+     Ни pid, ни портрета — это не человек, поэтому и в PEOPLE ничего не
+     сворачивается, и имени-ссылки на карточке нет. */
+  'WEB \u00b7 CLINICAL VOICE': [
+    {name: 'glidewell-lab.com', label: 'the first website, as it was', src: 'media/website_2001.mp4'}],
   'FIRST DIGITAL CASE': [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2007_patel.mp4', label:'on the digital revolution'}],
   /* Азерников про CAD/CAM — голос страницы пролёта, а не года: 2007 про скан,
      пролёт про всю революцию (Эльдар, 2026-09-23). */
@@ -17393,6 +17480,7 @@ function frame(){
   drawProps(false);
   drawWelcomeTV();    // the film stands on the welcome bench
   drawFilmRelays();   // and its relays pick it up down the rail
+  drawDeskScreens();  // монитор 2001-го со своей петлёй — стоит на прилавке, как реквизит
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
     if (Math.abs(b.x - cam.x) > CULL_BEAT) continue;
@@ -17639,6 +17727,7 @@ async function boot(){
   SECTIONS.neu = makeSection('neu');
   initSeamVideo();
   initProjectors();
+  initDeskScreens();
   initWelcomeTV();
   // reseat the film relays once everything (skin, props) has settled
   setTimeout(initFilmRelays, 2500);
