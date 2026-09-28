@@ -9091,12 +9091,21 @@ function stFace(xw, p){
    кроме полоски окна. */
 function stEnd(p){
   const kz = k(p.zFar);
+  /* ТОРЕЦ КОНЧАЕТСЯ НА ПОЛУ, А НЕ НА 2560. Грани корпуса уходят ниже пола
+     нарочно — они идут вперёд, в просвет, где пола нет. Торец же стоит на
+     плоскости стены зала: ниже линии пола он под землёй, и в зале его
+     закрывает сам пол. Но пол в просвете вырезан по наклонной линии
+     x = REC93_BL, а торец — прямоугольник с вертикальным краем: к низу кадра
+     между ними расходился серый клин, который то появлялся, то пропадал
+     (Эльдар, 2026-09-28, обвёл красным). Низ торца — линия пола на его
+     собственной глубине. */
+  const yBot = py(1080, kz);
   ctx.save(); stClip(p.a, p);
   ctx.beginPath();
   ctx.moveTo(px(p.a, kz), py(ST.top, kz));
   ctx.lineTo(px(p.b, kz), py(ST.top, kz));
-  ctx.lineTo(px(p.b, kz), py(ST.bot, kz));
-  ctx.lineTo(px(p.a, kz), py(ST.bot, kz));
+  ctx.lineTo(px(p.b, kz), yBot);
+  ctx.lineTo(px(p.a, kz), yBot);
   ctx.closePath();
   ctx.fillStyle = ST.jamb; ctx.fill();
   ctx.restore();
