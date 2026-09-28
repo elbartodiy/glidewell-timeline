@@ -8993,13 +8993,13 @@ const ST = {
   gap: 2200,          // между корпусами: две ширины просвета между колоннами
   zNear: -860,        // ближний край: за спиной у камеры, торца не видно
   top: -520, bot: 2560,
-  /* ОКНО ИМЕЕТ ДВА КОНЦА. Оно шло от 560 до самого zNear, то есть за спину
-     камере, и подоконник — горизонтальная плоскость — уезжал вместе с ним:
-     у самого глаза он разрастался и ложился светлым клином поперёк улицы и
-     пола зала (Эльдар обводил его красным дважды, 2026-09-25 и 2026-09-28).
-     Теперь у окна есть ближний откос на 120, дальше стена глухая: подоконник
-     кончается там же, где окно, и ничего никуда не уезжает. */
-  winZ0: 560, winZ1: -300, winTop: -260, winBot: CFG.benchY,
+  /* ОКНО ИДЁТ ВО ВСЮ ДЛИНУ СТЕНЫ — от 560 до самого ближнего края. Я пробовал
+     дать ему ближний откос, чтобы подоконник не уезжал к глазу: стена от того
+     откоса становилась глухой и закрывала улицу, а сам откос вставал серым
+     столбом посреди вида (Эльдар, 2026-09-28: «ты сломал улицу всю»). Уезжание
+     лечится не этим, а тем, что вся улица обрезана своим проёмом — см.
+     drawStreet. */
+  winZ0: 560, winTop: -260, winBot: CFG.benchY,
   tone: ['#6c7681', '#8b95a0'],
   jamb: '#5a636d',
   head: ['#4e565f', '#646d77'],
@@ -9094,7 +9094,7 @@ function stFace(xw, p){
   const P = (y, z) => [px(xw, k(z)), py(y, k(z))];
   const outer = [P(ST.top, p.zFar), P(ST.top, ST.zNear), P(ST.bot, ST.zNear), P(ST.bot, p.zFar)];
   const hole  = [P(ST.winTop, ST.winZ0), P(ST.winBot, ST.winZ0),
-                 P(ST.winBot, ST.winZ1), P(ST.winTop, ST.winZ1)];
+                 P(ST.winBot, ST.zNear), P(ST.winTop, ST.zNear)];
   ctx.save(); stClip(xw, p);
   const g = ctx.createLinearGradient(outer[0][0], outer[0][1], outer[1][0], outer[1][1]);
   g.addColorStop(0, ST.tone[0]); g.addColorStop(1, ST.tone[1]);
@@ -9150,7 +9150,7 @@ function stJamb(p, zAt){
   ctx.restore();
 }
 function stBand(p, yWorld, c0, c1){
-  const kA = k(ST.winZ0), kB = k(ST.winZ1);
+  const kA = k(ST.winZ0), kB = k(ST.zNear);
   ctx.save(); stClip(p.a, p);
   const g = ctx.createLinearGradient(0, py(yWorld, kA), 0, py(yWorld, kB));
   g.addColorStop(0, c0); g.addColorStop(1, c1);
@@ -9385,7 +9385,6 @@ function drawStreet(){
     stFace(xs[0], p);
     stEnd(p);
     stJamb(p, ST.winZ0);
-    stJamb(p, ST.winZ1);   // ближний откос: окно кончается, дальше стена глухая
     stFace(xs[1], p);
     /* ПОДОКОННИК И ПРИТОЛОКА — ПОСЛЕ ОБЕИХ ГРАНЕЙ. Грань стены и подоконник
        не параллельны: они ПЕРЕСЕКАЮТСЯ по линии (x = грань, y = 700), и по
