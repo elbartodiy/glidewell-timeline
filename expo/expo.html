@@ -10456,10 +10456,13 @@ function initDecor(){
      28 сентября Эльдар перезалил рендер: теперь в нём есть собственная мягкая
      тень, и она уходит на 79 px спрайта (27 единиц при ширине 520) ниже самой
      наволочки. Предмет висит НИЖНИМ КРАЕМ СПРАЙТА, поэтому drop 60 → 88:
-     наволочка остаётся там, где он её принял, а тень ложится на столешницу. */
+     наволочка остаётся там, где он её принял, а тень ложится на столешницу.
+     29 сентября: «чуть уменьшить на 15 процентов» — 520 × 0,85 = 442. drop не
+     трогаю: он в единицах мира и от ширины предмета не зависит, посадка
+     остаётся прежней. */
   {
     const bsn = BEATS.find(b => b.t === 'SILENT NITE');
-    if (bsn) PROPS.push({x: bsn.x, z: 26, kind: 'ph_pillow', w: 520, drop: 88, noShadow: true, study: 'SILENT NITE'});
+    if (bsn) PROPS.push({x: bsn.x, z: 26, kind: 'ph_pillow', w: 442, drop: 88, noShadow: true, study: 'SILENT NITE'});
   }
 
   /* The welcome still life is gone: the film plays where the heirlooms stood.
