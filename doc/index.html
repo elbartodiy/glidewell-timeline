@@ -640,6 +640,16 @@
   #scroller .stage{background:transparent;position:relative}
   /* rail = soft engraved channel */
   #scroller .mainrail{stroke:#C4CDDA;stroke-width:3;filter:drop-shadow(0 1px 0 rgba(255,255,255,.95))}
+/* ПОЛОСА ПРОЦЕССА — коронка в разрезе вдоль линии: верхняя ленточка это поверхность,
+   нижняя — ядро, цвет говорит кто их делает. Точки переключения взяты от существующих
+   битов «CAD revolution» и «BruxZir»: ровно так эти два перелома описаны в документе
+   официальных дат — «zirconia copings, still hand-layered» и «no hand-layered porcelain». */
+#scroller{--hand:#A8631F;--mach:#137C7C}
+#scroller .pb-hand{fill:var(--hand)}
+#scroller .pb-mach{fill:var(--mach)}
+#scroller .pb-tick{stroke:#8A929B;stroke-width:1;stroke-dasharray:2 3}
+#scroller .lgnd-sw.pbsw{border-radius:2px;width:16px;height:6px}
+#scroller .lgnd-row.pbk{cursor:default}
   /* nodes = soft embossed white beads */
   #scroller .nd{stroke:#EEF2F8;stroke-width:3px;filter:drop-shadow(1.5px 1.5px 3px rgba(174,186,206,.75)) drop-shadow(-1.5px -1.5px 2px rgba(255,255,255,.9))}
   #scroller .nd.t-g,#scroller .nd.t-i,#scroller .nd.t-m{fill:#FBFDFF}
@@ -731,7 +741,9 @@ const UI = {
   eyebrow:{en:"Working map · horizontal timeline", ru:"Рабочая карта · горизонтальный таймлайн"},
   hint:{en:"Five layers, one timeline. Above the line — speakers. On the line — company facts. Below — a storyboard line (scenes 1–14, placed near the moment they reveal): hover a scene to arrow it to its facts and light up its pillars. Then the pillars themselves (Accessibility runs through; Experience / Innovation / Integration / Support surface in fragments), Jim's life in parallel. Drag sideways ←→. Click anything for its card.",
         ru:"Пять слоёв, одна линия. Над линией — спикеры. На линии — факты компании. Ниже — линия раскадровки (сцены 1–14, поставлены ближе к раскрываемому моменту): наведи на сцену — протянутся стрелки к фактам и загорятся её пилоны. Далее сами пилоны (Доступность — сквозная; Experience / Innovation / Integration / Support всплывают фрагментами) и жизнь Джима параллельно. Тяни вбок ←→. Клик — карточка."},
-  legGlide:{en:"Glidewell", ru:"Glidewell"}, legInd:{en:"Industry", ru:"Industry"}, legMat:{en:"Materials/Tech", ru:"Materials/Tech"},
+  legGlide:{en:"Glidewell", ru:"Glidewell"}, legInd:{en:"Industry", ru:"Industry"},
+  legHand:{en:"By hand", ru:"Делают руки"},
+  legMach:{en:"By machine", ru:"Делает машина"}, legMat:{en:"Materials/Tech", ru:"Materials/Tech"},
   legSpk:{en:"speaker → milestone", ru:"спикер → веха"},
   capFuture:{en:"future →", ru:"будущее →"},
   speaksTo:{en:"speaks to", ru:"говорит о вехе"},
@@ -1423,6 +1435,22 @@ function buildSVG(){
   })();
   s+='<defs><marker id="ah" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--red)"/></marker><filter id="rough" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4"/></filter></defs>';
   // era bands/labels removed — they cluttered the top; eras still drive nothing visual now
+  (function(){
+    const bx=n=>{const k=BEATS.findIndex(b=>b.t&&b.t.en===n);return k<0?null:BEATS[k].x;};
+    const xCad=bx('CAD revolution'), xMrg=bx('BruxZir');
+    if(xCad!=null&&xMrg!=null){
+      const L0=84, R=STAGEW-70, yT=LINEY+10, yC=LINEY+18, h=6, hM=14;
+      const r=(x,y,w,hh,c)=>'<rect class="'+c+'" x="'+x.toFixed(1)+'" y="'+y+'" width="'+Math.max(0,w).toFixed(1)+'" height="'+hh+'" rx="2"/>';
+      s+='<g class="procband">';
+      s+=r(L0,  yT, xMrg-L0,  h,  'pb-hand');
+      s+=r(L0,  yC, xCad-L0,  h,  'pb-hand');
+      s+=r(xCad,yC, xMrg-xCad,h,  'pb-mach');
+      s+=r(xMrg,yT, R-xMrg,   hM, 'pb-mach');
+      s+='<line class="pb-tick" x1="'+xCad+'" y1="'+(LINEY+6)+'" x2="'+xCad+'" y2="'+(LINEY+28)+'"/>';
+      s+='<line class="pb-tick" x1="'+xMrg+'" y1="'+(LINEY+6)+'" x2="'+xMrg+'" y2="'+(LINEY+28)+'"/>';
+      s+='</g>';
+    }
+  })();
   s+='<g>';
   s+='<line class="mainrail" x1="84" y1="'+LINEY+'" x2="'+(STAGEW-70)+'" y2="'+LINEY+'" stroke="var(--navy)" stroke-width="1.5" stroke-linecap="round"/>';
   s+='<polyline points="'+(STAGEW-86)+','+(LINEY-9)+' '+(STAGEW-66)+','+LINEY+' '+(STAGEW-86)+','+(LINEY+9)+'" fill="none" stroke="#1C2024" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
@@ -1562,6 +1590,8 @@ function buildLayer(){
     +'<div class="lgnd-row" data-metric="territory"><span class="lgnd-sw terr"></span>'+L(UI.legTerr)+'</div>'
     +'<div class="lgnd-row" data-metric="employees"><span class="lgnd-sw emp"></span>'+L(UI.legEmp)+'</div>'
     +'<div class="lgnd-sep"></div>'
+         +'<div class="lgnd-row pbk"><span class="lgnd-sw pbsw" style="background:var(--hand)"></span>'+L(UI.legHand)+'</div>'
+         +'<div class="lgnd-row pbk"><span class="lgnd-sw pbsw" style="background:var(--mach)"></span>'+L(UI.legMach)+'</div>'
     +'<div class="lgnd-row catrow"><span class="catsw" style="background:var(--red)"></span>'+L(UI.legGlide)+'</div>'
     +'<div class="lgnd-row catrow"><span class="catsw" style="background:#3E7BD6"></span>'+L(UI.legInd)+'</div>'
     +'</div>';
