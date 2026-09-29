@@ -14814,7 +14814,7 @@ function drawStudy(){
   let y = G.top - S.scroll * SS;
   const seen = new Set();
   const flow = (txt, lh, ink) => {
-    y = flowText(txt, left, y, textW, lh, {seen, top: topClip, bot: botClip, accent: `rgba(${K.accent},0.95)`, ink: ink || ctx.fillStyle});
+    y = flowText(txt, left, y, textW, lh, {seen, top: topClip, bot: G.textBot, accent: `rgba(${K.accent},0.95)`, ink: ink || ctx.fillStyle});
   };
   ctx.textAlign = 'left';
 
@@ -14859,7 +14859,7 @@ function drawStudy(){
     while (ctx.measureText(capLine).width > textW && cSz > 14){ cSz -= 0.5; ctx.font = K.font(cSz); }
     ctx.fillStyle = `rgba(${K.dim},0.95)`;
     y += PAGE.leadLH * SS * 0.72;
-    if (y > topClip && y < botClip) ctx.fillText(capLine, left, y);
+    if (y > topClip && y < G.textBot) ctx.fillText(capLine, left, y);
   }
   if (noRule){
     y += 0.9 * u;                       // the caption and its picture, and nothing between them
@@ -15640,22 +15640,39 @@ function pageFrame(K, a, side, meta, fitH){
   drawCloseX(wx0 + ww - pad * 0.5, closeY, 10 * SS, a, closeInk || K.ink);
   // content clips inside the sheet, below its band
   ctx.beginPath(); ctx.roundRect(wx0 + 2 * SS, wy0 + 2 * SS + bandH, ww - 4 * SS, wh - 4 * SS - bandH, r); ctx.clip();
+  /* ПОЛОСА ПОД ПОДСКАЗКОЙ — НЕ ДЛЯ ТЕКСТА. Строки шли до самого низа листа, и
+     последняя оказывалась и срезана краем, и под надписью «scroll to read on»:
+     на непрозрачной бумаге её съедала дымка, а на полупрозрачной (бухты
+     2009-13) дымка бессильна, и текст читался прямо сквозь подсказку (Эльдар,
+     2026-09-29: «самая нижняя строка»). textBot — граница для СТРОК: строка,
+     которая в эту полосу заезжает, не рисуется вовсе, а не срезается наполовину.
+     Плитки и фотографии по-прежнему живут по botClip: у них своя обрезка листом,
+     и пропадать целиком на половине прокрутки им нельзя. */
+  const footPad = 46 * SS;
   return {wx0, wy0, ww, wh, pad, left: wx0 + pad, textW, sideX: wx0 + pad + textW + gutter, side: sideW,
-          top: wy0 + bandH + PAGE.top * SS, bandH, topClip: wy0 - 80 * SS, botClip: wy0 + wh + 80 * SS};
+          top: wy0 + bandH + PAGE.top * SS, bandH, topClip: wy0 - 80 * SS, botClip: wy0 + wh + 80 * SS,
+          footPad, textBot: wy0 + wh - footPad};
 }
 /* THE FOOT OF THE SHEET. When the text runs past the window it does not stop
    dead on a half-line: the last strip fades into the paper, and a quiet line
    in it says the page goes on. A page that fits says nothing. */
 function pageFoot(K, G, yEnd, a, hint){
-  const over = yEnd > G.wy0 + G.wh - 40 * SS;
+  /* дымка кончается там же, где кончаются строки: ниже — чистая бумага под
+     подсказку, и ей больше не с чем спорить */
+  const bot = G.textBot != null ? G.textBot : G.wy0 + G.wh;
+  const over = yEnd > bot - 40 * SS;
   if (over){
-    const fh = 84 * SS, y0 = G.wy0 + G.wh - fh;
+    const fh = 84 * SS, y0 = bot - fh;
     const m = /rgba?\(([^)]+)\)/.exec(K.bg);
     const parts = m ? m[1].split(',').map(v => v.trim()) : ['240', '240', '240', '1'];
     const rgb = parts.slice(0, 3).join(','), al = parts[3] != null ? +parts[3] : 1;
-    const g = ctx.createLinearGradient(0, y0, 0, G.wy0 + G.wh);
+    const g = ctx.createLinearGradient(0, y0, 0, bot);
     g.addColorStop(0, `rgba(${rgb},0)`); g.addColorStop(0.55, `rgba(${rgb},${(al * 0.92).toFixed(3)})`); g.addColorStop(1, `rgba(${rgb},${al})`);
     ctx.fillStyle = g; ctx.fillRect(G.wx0, y0, G.ww, fh);
+    /* и сама полоса под подсказку — сплошной бумагой, чтобы на полупрозрачном
+       листе сквозь неё не читалось то, что под ним */
+    ctx.fillStyle = `rgba(${rgb},${al})`;
+    ctx.fillRect(G.wx0, bot, G.ww, G.wy0 + G.wh - bot);
     ctx.font = K.font(PAGE.small);
     try { ctx.letterSpacing = `${PAGE.small * TRACK.label * SS}px`; } catch(err){}
     ctx.textAlign = 'center';
