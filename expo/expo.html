@@ -550,7 +550,9 @@ const CUTS = [
      15296.4 (REC93_MID − REC93_HALF), значит сдвиг 17220 − 15296.4 = 1923.6.
      Стоит ПОСЛЕ остальных в списке, а не по порядку at — поэтому bayStart()
      считает по самому at. */
-  {at: 11750, w: 1924, on: true},
+  /* ширина врезки выросла с 1924 на 2348: столько нужно, чтобы при стене 1100
+     слева и 1248 справа сам просвет остался прежним, 2440 (Эльдар, 2026-09-29) */
+  {at: 11750, w: 4272, on: true},
 ];
 function SHIFT(x){
   let s = 0;
@@ -891,6 +893,19 @@ const REC93_L = bayStart(2) + 275, REC93_R = bayStart(2) + 1225;
    2026-09-22: «чтобы она в точности соединялась с линией на полу... чтобы она не
    распадалась во время проезда»). */
 const REC93_Z = 728;
+/* блок бухты выступает за свои пилястры на столько с каждой стороны; объявлен
+   здесь, а не ниже с прочей геометрией бухт, потому что от него считается шов
+   эпох на корпусе улицы (ST_WALL_L) */
+const STEP_PAD = 60;
+/* СТЕНА ПО ОБЕ СТОРОНЫ УЛИЦЫ. Просвет стоял впритык к обеим бухтам: 60 единиц
+   от колонны 1989 и ноль до панели 1993 — дальняя грань правого корпуса и была
+   кромкой панели. Эльдар (2026-09-29): слева пусть будет стена шириной со
+   стену между колоннами 1989 (REC3_R − REC3_L = 1100), справа — шириной с саму
+   панель 1993 (REC93_BR − REC93_BL = 1248), и тогда панель слева кончается, а
+   за ней видна стена, как и справа от неё. Объявлены ДО SEGMENTS: шов эпох
+   ложится на левый корпус улицы и считается отсюда. */
+const ST_PAD_L = 1100, ST_PAD_R = 1248;
+const ST_WALL_L = REC3_R + STEP_PAD + ST_PAD_L;   // левый корпус улицы: его ближняя грань
 const REC93_MID = (REC93_L + REC93_R) / 2;
 const REC93_HALF = (REC93_R - REC93_L) / 2 * (CFG.F + REC93_Z) / (CFG.F + CFG.benchDepth);
 const REC93_BL = REC93_MID - REC93_HALF, REC93_BR = REC93_MID + REC93_HALF;
@@ -925,7 +940,14 @@ const SEGMENTS = [
    rail:'rgba(190,150,80,0.55)', railInk:'rgba(230,195,130,0.7)',
    light:{pool:'255,186,96', poolR:640, poolA:0.44},
    bgc:[13,9,6], grain:0.055},
-  {x0:REC_R, x1:REC3_L, z0:680, z1:680, tz:680, wall:'wall2', bench:'bench2', front:'front2',
+  /* КОНЕЦ ЭТОЙ СТЕНЫ УЕХАЛ ЗА БУХТУ 1989 — К ЛЕВОМУ КОРПУСУ УЛИЦЫ. Он стоял на
+     левой кромке бухты, а стена следующей эпохи начиналась сразу за правой
+     колонной — на 170 глубже. Две плоскости впритык идут с разной скоростью, и
+     колонна «ездила» относительно стены за ней при каждой прокрутке (Эльдар,
+     2026-09-29). Теперь справа от колонны идут 1100 единиц её собственной
+     стены, а шов двух эпох приходится на корпус улицы: он стоит поперёк и
+     закрывает ступеньку, как её закрывает бухта в других местах. */
+  {x0:REC_R, x1:ST_WALL_L + 120, z0:680, z1:680, tz:680, wall:'wall2', bench:'bench2', front:'front2',
    font:'"Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'223,226,214', lamp:'tube', dust:false,
    rail:'rgba(24,16,10,0.26)', railInk:'rgba(198,208,202,0.7)', railTop: true,
@@ -942,7 +964,7 @@ const SEGMENTS = [
      ради того, чтобы стык не вставал линией у пилястры. Возвращаю прежнее
      значение и жду, когда Эльдар покажет на кадре, какие именно два стыка он
      имеет в виду (2026-09-24). */
-  {x0:REC3_R, x1:REC2_L, z0:850, z1:850, tz:680, wall:'wall3', bench:'bench3', front:'front3', wPhase:0.5,
+  {x0:ST_WALL_L, x1:REC2_L, z0:850, z1:850, tz:680, wall:'wall3', bench:'bench3', front:'front3', wPhase:0.5,
    font:'Verdana, Tahoma, "DejaVu Sans", sans-serif',
    /* the YEARS of this stretch are set in a wide, heavy grotesk (Eldar: "очень
       широкий, тяжёлый, как Helvetica, но широкий — девяностые"); the titles and
@@ -2396,7 +2418,6 @@ const bayDrop = (x, z, y, yz) => ({x, z, drop: true, y: y != null ? y : CFG.benc
    the wall's foot, the step's back-bottom corner, the step's front-bottom
    corner — and from there the shared side runs to the near plane. Drawn from
    one descriptor by both sides, it cannot open at any angle. */
-const STEP_PAD = 60;        // how far the block runs past its pilasters, each side
 /* AND HOW DEEP IT IS. Every block used to name its own nose plane, and the two
    white bays ended up four hundred units deep — a platform sticking out into
    the room rather than a step at the mouth of a bay (Eldar, 2026-09-23:
@@ -2453,8 +2474,9 @@ const STEP_89_L = stepEdge(REC3_L - STEP_PAD, R89_BAY_Z), STEP_89_R = stepEdge(R
 const FSTP_89_L = stepFoot(REC3_L - STEP_PAD, R89_BAY_Z), FSTP_89_R = stepFoot(REC3_R + STEP_PAD, R89_BAY_Z);
 /* прилавок не идёт сквозь улицу: разрыв от дальней грани левого корпуса до
    дальней грани правого */
-BENCH_BREAKS.push({x: (REC3_R + STEP_PAD + REC93_BL) / 2,
-                   half: (REC93_BL - REC3_R - STEP_PAD) / 2 + 40});
+/* Разрыв прилавка на просвете улицы отдельно НЕ нужен: прилавок и так убран
+   от портала 1989 до макета 1993 — «модель места стоит на полу комнаты, а не
+   на столешнице». Добавленные куски стены попадают внутрь того же разрыва. */
 /* 1979 HAS A BLOCK TOO — it had the first one, and it was taken away with the
    runner. Without it the bay's panel and the models' plinth stop at the
    counter's foot line and nothing stands under them: through the slot between
@@ -9109,8 +9131,8 @@ const ST = {
   sill: ['#9aa4ad', '#b6bfc7'],
 };
 function stPairs(){
-  const aL = REC3_R + STEP_PAD;
-  const bR = REC93_BL;
+  const aL = ST_WALL_L;
+  const bR = REC93_BL - ST_PAD_R;
   /* ДАЛЬНИЙ КОНЕЦ КОРПУСА — ПЛОСКОСТЬ СТЕНЫ ЗАЛА, А НЕ ПЛОСКОСТЬ БУХТЫ.
      Корпуса кончались на плоскости соседней бухты (680 слева, 728 справа), а
      стена зала стоит глубже, на 850. Пол зала в просвете вырезан до самого
