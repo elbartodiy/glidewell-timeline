@@ -9238,20 +9238,55 @@ function stClip(xw, p){
     ctx.clip('evenodd');
   }
 }
+/* ЮБКА ГРАНИ — ОТДЕЛЬНЫЙ ПРЯМОУГОЛЬНИК, И ОН ВИДЕН ТОЛЬКО ИЗ ПРОЁМА.
+   Ниже пола настоящей стены нет: там вырезан пол зала, и кусок «стены» под
+   полом — это заслонка, чтобы улица не лезла туда, где стоит человек.
+   Заслонка нужна, когда смотришь в проём прямо: тогда она уходит в два нижних
+   угла кадра (Эльдар нарисовал их фломастером, 2026-09-30). И она же мешает,
+   когда стоишь сбоку: смотришь вдоль той же плоскости, и она ложится клином
+   поверх дороги. Плоскость одна, развести её геометрией нельзя — поэтому
+   юбка гасится по месту зрителя: она в полную силу, пока ты между косяками,
+   и сходит в ноль, пока ты выходишь наружу. Приём сцены, предложенный
+   Эльдаром; длина гашения подобрана так, чтобы переход пришёлся на сам косяк
+   и не читался дымкой. */
+/* Гашение считается ВНУТРЬ от косяка, а не наружу. Первая проба гасила юбку,
+   уже выйдя из проёма, — и на подходе к косяку серый клин лежал поверх дороги
+   в полсилы: хуже, чем совсем без юбки. Теперь юбка в полную силу только в
+   середине просвета и сходит в ноль К САМОМУ КОСЯКУ: снаружи её нет вовсе, а
+   внутри недобор прячется за корпусом, мимо которого как раз проходишь. */
+const ST_SKIRT_FADE = 420;   // на сколько единиц внутрь от косяка набирает юбка
+function stSkirtAlpha(){
+  const P = stPairs();
+  const inL = P[0].b, inR = P[1].a;          // между косяками — смотришь в проём
+  const d = Math.min(cam.x - inL, inR - cam.x);
+  return Math.max(0, Math.min(1, d / ST_SKIRT_FADE));
+}
 function stFace(xw, p){
   const P = (y, z) => [px(xw, k(z)), py(y, k(z))];
-  const outer = [P(ST.top, p.zFar), P(ST.top, ST.zNear), P(ST.bot, ST.zNear), P(ST.bot, p.zFar)];
+  const FLOOR = 1080;
+  const outer = [P(ST.top, p.zFar), P(ST.top, ST.zNear), P(FLOOR, ST.zNear), P(FLOOR, p.zFar)];
+  const skirt = [P(FLOOR, p.zFar), P(FLOOR, ST.zNear), P(ST.bot, ST.zNear), P(ST.bot, p.zFar)];
   const hole  = [P(ST.winTop, ST.winZ0), P(ST.winBot, ST.winZ0),
                  P(ST.winBot, ST.zNear), P(ST.winTop, ST.zNear)];
   ctx.save(); stClip(xw, p);
   const g = ctx.createLinearGradient(outer[0][0], outer[0][1], outer[1][0], outer[1][1]);
   g.addColorStop(0, ST.tone[0]); g.addColorStop(1, ST.tone[1]);
+  ctx.fillStyle = g;
   ctx.beginPath();
   outer.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
   ctx.closePath();
   hole.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
   ctx.closePath();
-  ctx.fillStyle = g; ctx.fill('evenodd');
+  ctx.fill('evenodd');
+  const al = stSkirtAlpha();
+  if (al > 0.004){
+    ctx.globalAlpha = al;
+    ctx.beginPath();
+    skirt.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
   ctx.restore();
 }
 /* ТОРЕЦ СТЕНЫ НА ДАЛЬНЕМ КРАЮ. Стена видна почти с ребра, и между силуэтами
