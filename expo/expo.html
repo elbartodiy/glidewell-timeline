@@ -2456,7 +2456,18 @@ const stepEdge = (x, zBay) => bayDrop(x, zBay, 1080, zBay);
 const stepFoot = (x, zBay) => bayFoot(x, zBay, 1080, zBay);
 const bayFoot = (x, z, y, yz) => ({x, z, y: y != null ? y : CFG.benchY + 240,
                                    yz: yz != null ? yz : CFG.benchDepth});
-const FAR93_L = bayFoot(REC93_BL, REC93_Z), FAR93_R = bayFoot(REC93_BR, REC93_Z);
+/* ЭКРАН 1993 СТОИТ НА ПОЛУ, А НЕ НА УСЛОВНОЙ ПОДОШВЕ БУХТЫ. Дальний край
+   плиты брался «по-бухтински»: мировая точка y = 940 на плоскости прилавка
+   (z = 340). Настоящая линия пола под экраном — y = 1080 на его собственной
+   плоскости (z = 728), и это ДРУГАЯ линия: на камере 19400 одна даёт 294.1,
+   другая 290.2, и разница гуляет с камерой. Экран кончался на первой, плита
+   начиналась на ней же, а её левый край строился floorLineAt — прямой,
+   проведённой по полу. Две линии сходились не в одной точке, и в угол под
+   экраном лез клин серого пола ступенькой (Эльдар, 2026-09-30, скриншот:
+   «я всё ещё вижу там дырку, значит структура неправильная»).
+   Теперь плита берёт те же две точки, на которых стоит сам экран — тем же
+   stepFoot, каким стоят блоки 1979, 1989, DR и 2018. */
+const FAR93_L = stepFoot(REC93_BL, REC93_Z), FAR93_R = stepFoot(REC93_BR, REC93_Z);
 FAR93_L.edge = true;   // слева от бухты 1993 стоит корпус улицы: край идёт по его подошве
 /* 1989's panel is drawn down to the floor line on its OWN plane, not to the
    counter's — so its feet are read there (drawRec3). */
@@ -2509,7 +2520,9 @@ const FSTP_18_L = stepFoot(REC18_L - STEP_PAD, R18_BAY_Z), FSTP_18_R = stepFoot(
 const FAR23_L = bayFoot(REC23_L, 1000), FAR23_R = bayFoot(REC23_R, 1000);
 /* the same points, seen from the neighbour's side — it walks the wall's foot
    line to this x and then steps down to meet the bay here */
-const EDG93_L = bayDrop(REC93_BL, REC93_Z), EDG93_R = bayDrop(REC93_BR, REC93_Z);
+/* те же две точки со стороны соседних плит — иначе ступенька просто
+   переезжает на соседа (Эльдар, 2026-09-30) */
+const EDG93_L = stepEdge(REC93_BL, REC93_Z), EDG93_R = stepEdge(REC93_BR, REC93_Z);
 EDG93_L.edge = true;   // тот же стык с другой стороны — пол эпохи в просвете улицы
 const EDG23_L = bayDrop(REC23_L, 1000), EDG23_R = bayDrop(REC23_R, 1000);
 /* the floor: each era has its own material tone; the change lands exactly
@@ -7133,7 +7146,12 @@ function drawRec93(t){
      вертикально, и так и должно быть; вертикальную линию не надо было
      трогать»). The join is made on the floor's side instead: the floor's far
      corners are drawn at THESE two points (FAR93_L/R in drawFloor). */
-  const yBase = py(CFG.benchY + 240, k(CFG.benchDepth));
+  /* НИЗ ЭКРАНА — ЛИНИЯ ПОЛА НА ЕГО СОБСТВЕННОЙ ПЛОСКОСТИ. Он кончался на
+     подошве бухты (940 на плоскости прилавка), то есть висел на линии,
+     которой в комнате нет; плита пола начиналась там же и уходила вперёд по
+     настоящему полу — стык расходился. Обе стороны теперь считают от
+     y = 1080 на z = REC93_Z (Эльдар, 2026-09-30). */
+  const yBase = py(1080, kk);
   const x0 = px(REC93_BL, kk), x1 = px(REC93_BR, kk);
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#c3cad0');
@@ -9171,7 +9189,10 @@ function stOutline89(){
    2026-09-25 стоит на REC93_BL — плита пришла к ребру стены улицы) */
 function stOutline93(){
   const kBay = k(REC93_Z), kNear = k(-40);
-  const yFar = py(CFG.benchY + 240, k(CFG.benchDepth));
+  /* дальний край плиты переехал на настоящую линию пола (stepFoot выше) —
+     силуэт обязан идти по нему же, иначе стена обрежется по одной линии,
+     а пол по другой, и между ними откроется щель на дорогу */
+  const yFar = py(1080, k(REC93_Z));
   /* ЛЕВЫЙ КРАЙ СИЛУЭТА — ТА ЖЕ ПРЯМАЯ, ЧТО И ВЫРЕЗ ПОЛА. Иначе стена
      обрезается по одной линии, а пол вырезается по другой, они пересекаются —
      и между ними открывается щель на дорогу. */
