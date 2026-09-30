@@ -9904,9 +9904,20 @@ function drawSheetBenches(){
        reads as a butterfly and no cabinetmaker ever did that. */
     const a0 = tb.x0 + wL, a1 = tb.x1 - wR, mid = a1 - a0;
     if (mid > 0.5){
-      const n = Math.min(24, Math.max(1, Math.ceil(mid / wG - 1e-6)));
-      const step = n > 1 ? (mid - wG) / (n - 1) : 0;
-      const fade = Math.min(wG - step, 150);
+      /* НАХЛЁСТ ПОСТОЯННЫЙ, А ОСТАТОК УХОДИТ ПОД КОНЦЕВОЙ КУСОК. Раньше панели
+         раскладывались на равные шаги, и ВЕСЬ остаток длины прогона уходил в
+         нахлёст: на белом прогоне 2160 он выходил 632 при панели 917 — две
+         трети панели лежало на панели, растворение при этом шло всего на 150,
+         и на ходу текстура двоилась и мерцала (Эльдар, 2026-09-29: «на одном и
+         том же месте несколько изображений, они мелькают»). Теперь шаг один и
+         тот же везде: панель минус 120 единиц на растворение. Последняя панель
+         вылезает за a1, и её срезает обрезка прогона — ровно там, где начинается
+         концевой кусок и где у рендера свой собственный стык. */
+      const OVER = 120;
+      const adv = Math.max(1, wG - OVER);
+      const n = Math.min(24, Math.max(1, Math.ceil((mid - OVER) / adv)));
+      const step = adv;
+      const fade = Math.min(wG - 1, OVER);
       /* THE MIDDLE NEVER RUNS UNDER AN END. A run whose middle is shorter than
          one panel still gets one whole panel — it is never scaled — so it runs
          PAST a1 and out to the end of the table, and the end piece is then laid
@@ -9921,11 +9932,20 @@ function drawSheetBenches(){
         const x = a0 + i * step;
         if (i === 0 || fade < 1){ put(G, x, wG); continue; }
         ctx.save(); clipTo(x + fade, x + wG); put(G, x, wG); ctx.restore();
-        const K = 8;
+        /* ЛЕСЕНКА РАСТВОРЕНИЯ СТОИТ НА ЦЕЛЫХ ПИКСЕЛЯХ. Полосы резались по
+           мировым координатам, их границы падали на доли пикселя и на каждом
+           кадре округлялись по-разному — ступеньки ползли, и это читалось как
+           мерцание вдоль стыка. Границы округляются до пикселя экрана, и шагов
+           вдвое больше: ступенька мельче собственного зерна текстуры. */
+        const K = 16;
+        const xs0 = px(x, kf), xs1 = px(x + fade, kf);
         for (let j = 1; j <= K; j++){
+          const b0 = Math.round(xs0 + (xs1 - xs0) * (j - 1) / K);
+          const b1 = Math.round(xs0 + (xs1 - xs0) * j / K);
+          if (b1 <= b0) continue;
           ctx.save();
           ctx.globalAlpha = j / (K + 1);
-          clipTo(x + fade * (j - 1) / K, x + fade * j / K);
+          ctx.beginPath(); ctx.rect(b0, yBack, b1 - b0, yFloor - yBack + 4); ctx.clip();
           put(G, x, wG);
           ctx.restore();
         }
