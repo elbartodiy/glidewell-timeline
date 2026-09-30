@@ -299,6 +299,8 @@ const BEATS = [
    /* ЛИСТ СТОИТ РОВНО ПО МЕТКЕ ГОДА — dx 0. Он больше не украшение сбоку, он
       сам экспонат: название изобретения на нём и есть тезис станции. */
    patent:{dx:0, w:420, cy:400, rot:-0.5, cap:'thirty issued, thirty pending'},
+   /* машина, которая ломает коронки: стоит под листом патента, на прилавке */
+   rig:{kind:'tester', dx:0, lz:150, w:460},
    table:[], capDX:-540,
    table:[]},
 
@@ -11010,6 +11012,178 @@ function drawCrownBlob(x, y, r, a){
 
 /* A counter machine is a data row, not an edit inside the frame loop. */
 const RIGS = {};
+/* ── СТАНЦИЯ R&D · МАШИНА, КОТОРАЯ ЛОМАЕТ КОРОНКИ ─────────────────────────
+   В лаборатории стоит Shimadzu: коронку кладут под пресс и давят, пока она не
+   лопнет. Три четверти образцов не доживают до нормы — на этом и стоит весь
+   R&D: прежде чем материал попадёт в рот пациенту, его ломают тысячу раз у
+   себя. Эльдар (2026-09-29) прислал раскадровку на девять шагов и фотографию
+   самой машины: «из левого окошка выезжает коронка, едет по ленте до пресса,
+   пресс давит, стрелка идёт вправо, 75 процентов разлетаются в осколки, целые
+   уезжают в правое окошко, и створка закрывается».
+
+   Пока всё нарисовано вектором — он просил так, рендер придёт позже.
+
+   ИСХОД РЕШАЕТСЯ НА ВХОДЕ В ЦИКЛ И ТОЛЬКО ОДИН РАЗ. Если тянуть случайное
+   число каждый кадр, коронка будет мигать между «цела» и «в осколки» прямо
+   под прессом. Номер цикла прогоняется через хэш, и 75 из 100 идут в осколки.
+   Осколки тоже не случайны: их разлёт считается от номера цикла, поэтому
+   картинка повторяема и её можно снять на скриншот дважды подряд. */
+const TESTER = {
+  T: 8.4,              // весь цикл, секунды
+  outUp: 0.5,          // створка поднялась
+  outFwd: 1.1,         // коронка вышла на переднюю ленту
+  atPress: 2.6,        // доехала до пресса
+  down: 3.3,           // голова опустилась
+  load: 4.1,           // нагрузка добрана — миг исхода
+  up: 4.9,             // голова поднялась
+  toRight: 6.4,        // целая доехала до правого окошка
+  inRight: 6.9,        // ушла вглубь
+  shut: 7.3,           // створка закрылась
+};
+const testerHash = n => {
+  let x = (n * 2654435761 + 1013904223) >>> 0;
+  x ^= x >>> 15; x = (x * 2246822519) >>> 0; x ^= x >>> 13;
+  return (x >>> 8) / 16777216;
+};
+function drawCrownTester(b, t){
+  const g = b.rig, kk = k(bz(g.lz ?? 150));
+  const sx = px(b.x + (g.dx || 0), kk);
+  const S1 = (g.w || 520) * kk * SS / 520;          // единица чертежа = 1/520 ширины
+  const foot = py(CFG.benchY - 2, kk);
+  if (sx < -W * 0.6 - 520 * S1 || sx > W + 520 * S1) return;
+  const X = u => sx + u * S1, Y = v => foot - v * S1;   // v — вверх от столешницы
+  const cyc = Math.floor(t / TESTER.T), ph = t - cyc * TESTER.T;
+  const pass = testerHash(cyc) < 0.25;
+  const seg = (a, b2) => Math.max(0, Math.min(1, (ph - a) / (b2 - a)));
+  const ease = u => u * u * (3 - 2 * u);
+
+  /* ── станина и лента ── */
+  const grey = (y0, y1, c0, c1) => { const gr = ctx.createLinearGradient(0, Y(y1), 0, Y(y0));
+    gr.addColorStop(0, c0); gr.addColorStop(1, c1); return gr; };
+  ctx.fillStyle = grey(0, 34, '#dfe3e7', '#a9b0b7');
+  ctx.fillRect(X(-260), Y(34), 520 * S1, 34 * S1);
+  // синяя лента с планками — она идёт всегда, машина живая и между циклами
+  ctx.save();
+  ctx.beginPath(); ctx.rect(X(-250), Y(28), 500 * S1, 20 * S1); ctx.clip();
+  ctx.fillStyle = '#2f6fb5'; ctx.fillRect(X(-250), Y(28), 500 * S1, 20 * S1);
+  ctx.strokeStyle = 'rgba(12,28,48,0.55)'; ctx.lineWidth = Math.max(1, 1.6 * S1);
+  const slat = 26, off = (t * 34) % slat;
+  for (let u = -250 - slat + off; u < 250; u += slat){
+    ctx.beginPath(); ctx.moveTo(X(u), Y(28)); ctx.lineTo(X(u), Y(8)); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(255,255,255,0.10)';
+  ctx.fillRect(X(-250), Y(28), 500 * S1, 5 * S1);
+  ctx.restore();
+
+  /* ── два окошка по краям: короб, тёмный проём, створка ── */
+  const port = (side) => {
+    const x0 = side < 0 ? -260 : 150, x1 = side < 0 ? -150 : 260;
+    ctx.fillStyle = grey(34, 128, '#e7ebee', '#aeb5bb');
+    ctx.fillRect(X(x0), Y(128), (x1 - x0) * S1, 94 * S1);
+    ctx.fillStyle = '#14181c';
+    ctx.fillRect(X(x0 + 10), Y(118), (x1 - x0 - 20) * S1, 74 * S1);
+    // створка: вверх на выходе коронки, вниз в конце цикла
+    let openAmt = 0;
+    if (side < 0) openAmt = ease(seg(0, TESTER.outUp)) * (1 - ease(seg(TESTER.outFwd, TESTER.atPress)));
+    else if (pass) openAmt = ease(seg(TESTER.up, TESTER.toRight)) * (1 - ease(seg(TESTER.inRight, TESTER.shut)));
+    const hSh = 74 * (1 - openAmt);
+    ctx.fillStyle = grey(34, 128, '#cfd5da', '#9aa1a8');
+    ctx.fillRect(X(x0 + 10), Y(118), (x1 - x0 - 20) * S1, hSh * S1);
+    ctx.strokeStyle = 'rgba(30,36,42,0.5)'; ctx.lineWidth = Math.max(1, 1.4 * S1);
+    ctx.strokeRect(X(x0 + 10), Y(118), (x1 - x0 - 20) * S1, 74 * S1);
+  };
+  port(-1); port(1);
+
+  /* ── колонна, голова, шток ── */
+  const headUp = 118, headDown = 74;
+  const hv = headUp - (headUp - headDown) * (ease(seg(TESTER.atPress, TESTER.down)) - ease(seg(TESTER.load, TESTER.up)));
+  ctx.fillStyle = grey(34, 214, '#eef1f4', '#b9c0c6');
+  ctx.fillRect(X(-30), Y(214), 60 * S1, 180 * S1);
+  ctx.fillStyle = '#1b1f24';                       // ходовой винт
+  ctx.fillRect(X(-8), Y(208), 16 * S1, 168 * S1);
+  ctx.fillStyle = '#9fb6d8';                       // траверса
+  ctx.fillRect(X(-56), Y(hv + 24), 112 * S1, 24 * S1);
+  ctx.fillStyle = grey(0, 60, '#cfd6dd', '#8f979f');
+  ctx.fillRect(X(-13), Y(hv), 26 * S1, 26 * S1);   // шток
+  ctx.fillStyle = '#b9c1c8';
+  ctx.fillRect(X(-27), Y(hv - 10), 54 * S1, 10 * S1);   // пятка пресса
+  // столик под коронкой
+  ctx.fillStyle = grey(34, 46, '#d7dde2', '#9aa2aa');
+  ctx.fillRect(X(-42), Y(46), 84 * S1, 12 * S1);
+
+  /* ── пульт со стрелочным прибором ── */
+  ctx.fillStyle = '#8f979f';
+  ctx.fillRect(X(52), Y(118), 6 * S1, 84 * S1);
+  ctx.fillStyle = grey(118, 168, '#e9edf0', '#b4bbc1');
+  ctx.fillRect(X(44), Y(168), 56 * S1, 50 * S1);
+  ctx.fillStyle = '#c02b22';                        // грибок аварийного стопа
+  ctx.beginPath(); ctx.arc(X(72), Y(160), 7 * S1, 0, 7); ctx.fill();
+  // стрелка: ползёт вправо, пока набирается нагрузка, и падает в ноль на сломе
+  const load = ease(seg(TESTER.down, TESTER.load)) * (1 - (pass ? ease(seg(TESTER.load + 0.5, TESTER.up)) : ease(seg(TESTER.load, TESTER.load + 0.25))));
+  const gx = X(72), gy = Y(138), gr2 = 20 * S1;
+  ctx.fillStyle = '#12161a';
+  ctx.beginPath(); ctx.arc(gx, gy, gr2, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(190,200,210,0.55)'; ctx.lineWidth = Math.max(1, 1.2 * S1);
+  ctx.beginPath(); ctx.arc(gx, gy, gr2 * 0.78, Math.PI * 0.85, Math.PI * 0.15); ctx.stroke();
+  const ang = Math.PI * 0.85 + (Math.PI * 1.30) * load;
+  ctx.strokeStyle = '#ff5a3c'; ctx.lineWidth = Math.max(1.4, 3 * S1);
+  ctx.beginPath(); ctx.moveTo(gx, gy);
+  ctx.lineTo(gx + Math.cos(ang) * gr2 * 0.72, gy + Math.sin(ang) * gr2 * 0.72);
+  ctx.stroke();
+
+  /* ── коронка и её судьба ── */
+  /* КОРОНКА — ТА ЖЕ, ЧТО В БУХТЕ DIGITAL REVOLUTION. Своя, нарисованная двумя
+     безье, читалась зубной пломбой из букваря (Эльдар: «а можно зуб
+     покрасивше?»). Зал уже умеет рисовать коронку — PED_SPRITES.crown2, тот
+     самый спечённый спрайт, что висит в луче сканера, — и здесь берётся он же.
+     Одна коронка на весь зал: где бы она ни появилась, это одна и та же вещь. */
+  const spC = PED_SPRITES.crown2;
+  const crown = (cu, cv, sc, al) => {
+    if (!spC || !spC.c) return;
+    const h2 = 34 * sc * S1, w2 = h2 * spC.w / spC.h;
+    ctx.save(); ctx.globalAlpha = al;
+    ctx.drawImage(spC.c, X(cu) - w2 / 2, Y(cv) - h2 * 0.82, w2, h2);
+    ctx.restore();
+  };
+  const broke = !pass && ph >= TESTER.load;
+  if (!broke){
+    let cu = -205, cv = 46, sc = 1, al = 1;
+    if (ph < TESTER.outUp){ cu = -205; cv = 86; sc = 0.72; al = ease(seg(0.15, TESTER.outUp)); }
+    else if (ph < TESTER.outFwd){ const u = ease(seg(TESTER.outUp, TESTER.outFwd)); cv = 86 - 40 * u; sc = 0.72 + 0.28 * u; }
+    else if (ph < TESTER.atPress){ cu = -205 + 205 * ease(seg(TESTER.outFwd, TESTER.atPress)); }
+    else if (ph < TESTER.toRight){ cu = 0; }
+    else if (ph < TESTER.inRight){ cu = 205 * ease(seg(TESTER.toRight, TESTER.inRight)); }
+    else { const u = ease(seg(TESTER.inRight, TESTER.shut)); cu = 205; cv = 46 + 40 * u; sc = 1 - 0.28 * u; al = 1 - u; }
+    if (!(pass === false && ph > TESTER.load)) crown(cu, cv, sc, al);
+  } else {
+    /* осколки: разлетаются от точки удара и гаснут на ленте */
+    const u = seg(TESTER.load, TESTER.load + 1.5);
+    if (u < 1){
+      /* вспышка в миг слома — глаз ловит её раньше, чем осколки */
+      const fl = Math.max(0, 1 - seg(TESTER.load, TESTER.load + 0.18));
+      if (fl > 0.01){
+        const gfl = ctx.createRadialGradient(X(0), Y(52), 0, X(0), Y(52), 70 * S1);
+        gfl.addColorStop(0, `rgba(255,252,242,${(0.55 * fl).toFixed(3)})`);
+        gfl.addColorStop(1, 'rgba(255,252,242,0)');
+        ctx.fillStyle = gfl;
+        ctx.beginPath(); ctx.arc(X(0), Y(52), 70 * S1, 0, 7); ctx.fill();
+      }
+      for (let i = 0; i < 18; i++){
+        const r1 = testerHash(cyc * 97 + i), r2 = testerHash(cyc * 131 + i * 7);
+        const a2 = Math.PI * (1.02 + 0.96 * r1);
+        const v = 70 + 130 * r2;
+        const cu = Math.cos(a2) * v * u, cv = 48 + Math.sin(a2) * v * u + 130 * u * u;
+        ctx.globalAlpha = Math.max(0, 1 - u * 1.05);
+        ctx.fillStyle = i % 3 ? '#f3ece0' : '#d9cfbb';
+        const s2 = (3.2 + 6 * r1) * S1;
+        ctx.beginPath(); ctx.ellipse(X(cu), Y(Math.max(38, cv)), s2, s2 * 0.66, a2, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+  /* тап по машине открывает страницу года */
+  pushHit(X(-260), Y(214), 520 * S1, 214 * S1, {type: 'study', beat: BEATS.indexOf(b)});
+}
 function drawDiscMill(b, t){
   const g = b.rig, kk = k(bz(g.lz ?? 150));
   const sx = px(b.x + (g.dx || 0), kk);
@@ -17877,7 +18051,7 @@ async function boot(){
   initBanners();
   initCapLanes();
   initTables();
-  Object.assign(RIGS, {disc: drawDiscMill, boxes: drawBoxPile, design: drawDesignStation});
+  Object.assign(RIGS, {disc: drawDiscMill, boxes: drawBoxPile, design: drawDesignStation, tester: drawCrownTester});
   initLights();
   initAttractStops();
   initDust();
