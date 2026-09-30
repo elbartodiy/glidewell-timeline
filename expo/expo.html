@@ -15236,10 +15236,18 @@ const STUDY_MEDIA_BY_TITLE = {
   'STUDY PROGRAM': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_08.mp4', label:'on education'}],
   'CHAIRSIDE PERSPECTIVES': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_06.mp4', label:'on Chairside'}],
   'PLASTIC INJECTION': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_07.mp4', label:'on vertical integration'}],
-  /* Лабао про первую коронку, сделанную машиной, — на странице, где компания
+  /* Два голоса на одной странице — ОДИН ключ, не два: в литерале объекта
+     второй одинаковый ключ молча затирает первый, и так уже случилось.
+     Лабао про первую коронку, сделанную машиной, — на странице, где компания
      решает завести собственную науку: следующий абзац той же страницы и
-     говорит, что первым эта решимость купила станок (Эльдар, 2026-09-25). */
-  'RESEARCH AND DEVELOPMENT': [{name:'Edsel Labao', img:'labao', pid:'labao', src:'media/labao_02.mp4', label:'on the first computer-made crown'}],
+     говорит, что первым эта решимость купила станок (Эльдар, 2026-09-25).
+     Парк — отдельный монтаж под R&D, только здесь: на его личной странице
+     стоит park_07, другая версия того же разговора, дублировать не надо
+     (Эльдар, 2026-09-30). */
+  'RESEARCH AND DEVELOPMENT': [
+    {name:'Edsel Labao',    img:'labao', pid:'labao', src:'media/labao_02.mp4',  label:'on the first computer-made crown'},
+    {name:'Dr. Neil Park',  img:'park',  pid:'park',  src:'media/park_07a.mp4',  label:'on research and vertical integration', solo:1}
+  ],
   /* 2001: не голос, а кадр эпохи — запись первого сайта glidewell-lab.com в
      браузере того времени. Первым в списке, значит ляжет во всю ширину абзаца
      сразу после первого абзаца: правило Эльдара для первого видео страницы.
@@ -15292,6 +15300,12 @@ const STUDY_MEDIA_BY_TITLE = {
 for (const list of Object.values(STUDY_MEDIA_BY_TITLE)){
   for (const m of list){
     const P = m.pid && PEOPLE[m.pid]; if (!P) continue;
+    /* solo:1 — клип остаётся только на своей странице. Исключение из правила
+       выше, и оно нужно ровно тогда, когда у человека уже висит другая версия
+       того же разговора: park_07a смонтирован под R&D, а на личной странице
+       Парка стоит park_07 — тот же разговор, другой монтаж, и рядом они
+       выглядели бы как повтор (Эльдар, 2026-09-30). */
+    if (m.solo) continue;
     if (!P.clips) P.clips = [];
     if (!P.clips.some(c => c.src === m.src)) P.clips.push({src: m.src, label: m.label || ''});
   }
