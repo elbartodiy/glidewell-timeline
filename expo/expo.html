@@ -10635,6 +10635,28 @@ function drawCrownTester(b, t){
   const box = (u0, v0, u1, v1, fill) => { ctx.fillStyle = fill;
     ctx.fillRect(X(u0), Y(v1), (u1 - u0) * S1, (v1 - v0) * S1); };
 
+  /* ── СОСТОЯНИЕ КОРОНКИ СЧИТАЕТСЯ ДО МАШИНЫ. Рисуется она в два прохода:
+     в тоннелях — ПЕРЕД коробами, чтобы створка её накрывала, а не она
+     растворялась поверх створки (Эльдар, 2026-09-29); на настиле и под
+     прессом — после всего, чтобы её не закрыла колонна. Граница проходов —
+     устье тоннеля, там же, где край короба, поэтому шва не видно. ── */
+  const vDeckC = 52;
+  const brokeC = !pass && ph >= TESTER.load;
+  let cu = -180, cv = vDeckC, sc = 1, al = 1;
+  if (ph < TESTER.outUp){ cu = -180; cv = vDeckC; sc = 0.86; al = ease(seg(0.15, TESTER.outUp)); }
+  else if (ph < TESTER.outFwd){ const u = ease(seg(TESTER.outUp, TESTER.outFwd)); sc = 0.86 + 0.14 * u; }
+  else if (ph < TESTER.atPress){ cu = -180 + 180 * ease(seg(TESTER.outFwd, TESTER.atPress)); }
+  else if (ph < TESTER.toRight){ cu = 0; }
+  else if (ph < TESTER.inRight){ cu = 180 * ease(seg(TESTER.toRight, TESTER.inRight)); }
+  else { const u = ease(seg(TESTER.inRight, TESTER.shut)); cu = 180; sc = 1 - 0.14 * u; }
+  const spC = PED_SPRITES.crown2;
+  const crown = (al2) => {
+    if (!spC || !spC.c) return;
+    const h2 = 46 * sc * S1, w2 = h2 * spC.w / spC.h;
+    ctx.save(); ctx.globalAlpha = al2;
+    ctx.drawImage(spC.c, X(cu) - w2 / 2, Y(cv) - h2, w2, h2);
+    ctx.restore();
+  };
   /* ── ПОДДОН. У машины на кадре Эльдара это толстый стальной лоток: видна его
      верхняя плоскость, по ней идут планки, спереди бортик с заклёпками. Верх
      рисуется трапецией — так читается глубина, а не плоская полоска. ── */
@@ -10710,6 +10732,16 @@ function drawCrownTester(b, t){
     ctx.strokeStyle = 'rgba(24,30,36,0.55)'; ctx.lineWidth = Math.max(1, 1.4 * S1);
     ctx.strokeRect(X(o0), Y(oT), (o1 - o0) * S1, (oT - oB) * S1);
   };
+  /* проход А: то, что уже в тоннеле, уходит ПОД короб и створку */
+  if (!brokeC && (cu < -100 || cu > 100)){
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(X(-260), Y(400), 160 * S1, 400 * S1);
+    ctx.rect(X(100), Y(400), 160 * S1, 400 * S1);
+    ctx.clip();
+    crown(al);
+    ctx.restore();
+  }
   port(-1); port(1);
 
   /* ── КОЛОННА. Светлый корпус, внутри чёрная рифлёная направляющая, сверху
@@ -10740,23 +10772,24 @@ function drawCrownTester(b, t){
   ctx.fillRect(X(-70), Y(hv + 37), 140 * S1, 3 * S1);
   // хромированный шток с кольцами и конусом
   ctx.fillStyle = hg(-19, 19, '#f4f7fa', '#8e979f');
-  ctx.fillRect(X(-19), Y(hv), 38 * S1, (hv - (hv - ramLen + 26)) * S1);
+  ctx.fillRect(X(-19), Y(hv), 38 * S1, (ramLen - 14) * S1);
   ctx.fillStyle = 'rgba(40,48,56,0.35)';
   for (let n = 1; n <= 3; n++) ctx.fillRect(X(-19), Y(hv - n * 13), 38 * S1, 2.6 * S1);
-  ctx.fillStyle = hg(-14, 14, '#eef2f6', '#7f888f');
-  ctx.beginPath();
-  ctx.moveTo(X(-19), Y(hv - ramLen + 26)); ctx.lineTo(X(19), Y(hv - ramLen + 26));
-  ctx.lineTo(X(7), Y(hv - ramLen)); ctx.lineTo(X(-7), Y(hv - ramLen));
-  ctx.closePath(); ctx.fill();
-  // столик под образцом
-  ctx.fillStyle = vg(dTopB, dTopB + 12, '#c8d0d8', '#8b939b');
-  ctx.beginPath(); ctx.roundRect(X(-56), Y(dTopB + 12), 112 * S1, 12 * S1, 3 * S1); ctx.fill();
+  /* НАКОНЕЧНИК — ПЛОСКИЙ БОЁК, А НЕ КОНУС. Конус на конце штока читался
+     ровно так, как Эльдар и написал; на его референсе шток кончается плоской
+     шайбой чуть шире себя — ею и давят образец. */
+  ctx.fillStyle = hg(-30, 30, '#e8edf2', '#8b949c');
+  ctx.beginPath(); ctx.roundRect(X(-30), Y(hv - ramLen + 14), 60 * S1, 14 * S1, 3 * S1); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillRect(X(-26), Y(hv - ramLen + 13), 52 * S1, 2 * S1);
+  ctx.fillStyle = 'rgba(30,36,42,0.35)';
+  ctx.fillRect(X(-30), Y(hv - ramLen), 60 * S1, 2.4 * S1);
 
   /* ── ПУЛЬТ: стойка, наклонная коробка, грибок и круглый прибор со стрелкой ── */
   ctx.fillStyle = '#6d757d';
   ctx.fillRect(X(96), Y(214), 7 * S1, 150 * S1);
   ctx.save();
-  ctx.translate(X(112), Y(250)); ctx.rotate(-0.12);
+  ctx.translate(X(112), Y(250));   // пульт стоит ровно: наклон читался перекосом, а не живой рукой (Эльдар, 2026-09-29)
   const pw = 62 * S1, phh = 84 * S1;
   const pgr = ctx.createLinearGradient(0, -phh, 0, 0);
   pgr.addColorStop(0, '#eef1f4'); pgr.addColorStop(1, '#aab2b9');
@@ -10800,27 +10833,17 @@ function drawCrownTester(b, t){
   ctx.fillStyle = '#6d757d';
   ctx.fillRect(X(-115), Y(186), 6 * S1, 130 * S1);
 
-  /* ── КОРОНКА И ЕЁ СУДЬБА. Коронка — та же, что в бухте Digital Revolution
-     (PED_SPRITES.crown2): одна вещь на весь зал. ── */
-  const spC = PED_SPRITES.crown2;
-  const crown = (cu, cv, sc, al) => {
-    if (!spC || !spC.c) return;
-    const h2 = 46 * sc * S1, w2 = h2 * spC.w / spC.h;
-    ctx.save(); ctx.globalAlpha = al;
-    ctx.drawImage(spC.c, X(cu) - w2 / 2, Y(cv) - h2, w2, h2);
+  /* КОРОНКА СТОИТ НА НАСТИЛЕ. Она ехала на высоте столика под прессом и
+     оттого висела над лентой всю дорогу (Эльдар: «коронки летают по воздуху, а
+     нужно чтобы были на ленте»). Столика больше нет вовсе — на референсе его и
+     не было, — и вся дорога идёт по одной высоте: по верху настила. */
+  /* проход Б: на настиле и под прессом — поверх машины, кроме тоннелей */
+  const vDeck = vDeckC;
+  if (!brokeC){
+    ctx.save();
+    ctx.beginPath(); ctx.rect(X(-100), Y(400), 200 * S1, 400 * S1); ctx.clip();
+    crown(al);
     ctx.restore();
-  };
-  const vDeck = dTopB + 12;
-  const broke = !pass && ph >= TESTER.load;
-  if (!broke){
-    let cu = -180, cv = vDeck, sc = 1, al = 1;
-    if (ph < TESTER.outUp){ cu = -180; cv = vDeck + 34; sc = 0.72; al = ease(seg(0.15, TESTER.outUp)); }
-    else if (ph < TESTER.outFwd){ const u = ease(seg(TESTER.outUp, TESTER.outFwd)); cv = vDeck + 34 * (1 - u); sc = 0.72 + 0.28 * u; }
-    else if (ph < TESTER.atPress){ cu = -180 + 180 * ease(seg(TESTER.outFwd, TESTER.atPress)); }
-    else if (ph < TESTER.toRight){ cu = 0; }
-    else if (ph < TESTER.inRight){ cu = 180 * ease(seg(TESTER.toRight, TESTER.inRight)); }
-    else { const u = ease(seg(TESTER.inRight, TESTER.shut)); cu = 180; cv = vDeck + 34 * u; sc = 1 - 0.28 * u; al = 1 - u; }
-    crown(cu, cv, sc, al);
   } else {
     const u = seg(TESTER.load, TESTER.load + 1.5);
     if (u < 1){
@@ -10832,15 +10855,15 @@ function drawCrownTester(b, t){
         ctx.fillStyle = gfl;
         ctx.beginPath(); ctx.arc(X(0), Y(vDeck + 16), 84 * S1, 0, 7); ctx.fill();
       }
-      for (let i = 0; i < 18; i++){
-        const r1 = testerHash(cyc * 97 + i), r2 = testerHash(cyc * 131 + i * 7);
+      for (let i2 = 0; i2 < 18; i2++){
+        const r1 = testerHash(cyc * 97 + i2), r2 = testerHash(cyc * 131 + i2 * 7);
         const a2 = Math.PI * (1.02 + 0.96 * r1);
         const v = 70 + 130 * r2;
-        const cu = Math.cos(a2) * v * u, cv = vDeck + 6 + Math.sin(a2) * v * u + 130 * u * u;
+        const fx = Math.cos(a2) * v * u, fy = vDeck + 6 + Math.sin(a2) * v * u + 130 * u * u;
         ctx.globalAlpha = Math.max(0, 1 - u * 1.05);
-        ctx.fillStyle = i % 3 ? '#f3ece0' : '#d9cfbb';
+        ctx.fillStyle = i2 % 3 ? '#f3ece0' : '#d9cfbb';
         const s2 = (3.2 + 6 * r1) * S1;
-        ctx.beginPath(); ctx.ellipse(X(cu), Y(Math.max(vDeck - 6, cv)), s2, s2 * 0.66, a2, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(X(fx), Y(Math.max(vDeck - 4, fy)), s2, s2 * 0.66, a2, 0, 7); ctx.fill();
       }
       ctx.globalAlpha = 1;
     }
