@@ -10337,9 +10337,20 @@ function drawSheetBenches(){
        reads as a butterfly and no cabinetmaker ever did that. */
     const a0 = tb.x0 + wL, a1 = tb.x1 - wR, mid = a1 - a0;
     if (mid > 0.5){
-      const n = Math.min(24, Math.max(1, Math.ceil(mid / wG - 1e-6)));
-      const step = n > 1 ? (mid - wG) / (n - 1) : 0;
-      const fade = Math.min(wG - step, 150);
+      /* НАХЛЁСТ ПОСТОЯННЫЙ, А ОСТАТОК УХОДИТ ПОД КОНЦЕВОЙ КУСОК. Раньше панели
+         раскладывались на равные шаги, и ВЕСЬ остаток длины прогона уходил в
+         нахлёст: на белом прогоне 2160 он выходил 632 при панели 917 — две
+         трети панели лежало на панели, растворение при этом шло всего на 150,
+         и на ходу текстура двоилась и мерцала (Эльдар, 2026-09-29: «на одном и
+         том же месте несколько изображений, они мелькают»). Теперь шаг один и
+         тот же везде: панель минус 120 единиц на растворение. Последняя панель
+         вылезает за a1, и её срезает обрезка прогона — ровно там, где начинается
+         концевой кусок и где у рендера свой собственный стык. */
+      const OVER = 120;
+      const adv = Math.max(1, wG - OVER);
+      const n = Math.min(24, Math.max(1, Math.ceil((mid - OVER) / adv)));
+      const step = adv;
+      const fade = Math.min(wG - 1, OVER);
       /* THE MIDDLE NEVER RUNS UNDER AN END. A run whose middle is shorter than
          one panel still gets one whole panel — it is never scaled — so it runs
          PAST a1 and out to the end of the table, and the end piece is then laid
@@ -10354,11 +10365,20 @@ function drawSheetBenches(){
         const x = a0 + i * step;
         if (i === 0 || fade < 1){ put(G, x, wG); continue; }
         ctx.save(); clipTo(x + fade, x + wG); put(G, x, wG); ctx.restore();
-        const K = 8;
+        /* ЛЕСЕНКА РАСТВОРЕНИЯ СТОИТ НА ЦЕЛЫХ ПИКСЕЛЯХ. Полосы резались по
+           мировым координатам, их границы падали на доли пикселя и на каждом
+           кадре округлялись по-разному — ступеньки ползли, и это читалось как
+           мерцание вдоль стыка. Границы округляются до пикселя экрана, и шагов
+           вдвое больше: ступенька мельче собственного зерна текстуры. */
+        const K = 16;
+        const xs0 = px(x, kf), xs1 = px(x + fade, kf);
         for (let j = 1; j <= K; j++){
+          const b0 = Math.round(xs0 + (xs1 - xs0) * (j - 1) / K);
+          const b1 = Math.round(xs0 + (xs1 - xs0) * j / K);
+          if (b1 <= b0) continue;
           ctx.save();
           ctx.globalAlpha = j / (K + 1);
-          clipTo(x + fade * (j - 1) / K, x + fade * j / K);
+          ctx.beginPath(); ctx.rect(b0, yBack, b1 - b0, yFloor - yBack + 4); ctx.clip();
           put(G, x, wG);
           ctx.restore();
         }
@@ -15247,7 +15267,7 @@ function drawStudy(){
   let y = G.top - S.scroll * SS;
   const seen = new Set();
   const flow = (txt, lh, ink) => {
-    y = flowText(txt, left, y, textW, lh, {seen, top: topClip, bot: botClip, accent: `rgba(${K.accent},0.95)`, ink: ink || ctx.fillStyle});
+    y = flowText(txt, left, y, textW, lh, {seen, top: topClip, bot: G.textBot, accent: `rgba(${K.accent},0.95)`, ink: ink || ctx.fillStyle});
   };
   ctx.textAlign = 'left';
 
@@ -15292,7 +15312,7 @@ function drawStudy(){
     while (ctx.measureText(capLine).width > textW && cSz > 14){ cSz -= 0.5; ctx.font = K.font(cSz); }
     ctx.fillStyle = `rgba(${K.dim},0.95)`;
     y += PAGE.leadLH * SS * 0.72;
-    if (y > topClip && y < botClip) ctx.fillText(capLine, left, y);
+    if (y > topClip && y < G.textBot) ctx.fillText(capLine, left, y);
   }
   if (noRule){
     y += 0.9 * u;                       // the caption and its picture, and nothing between them
@@ -16073,22 +16093,39 @@ function pageFrame(K, a, side, meta, fitH){
   drawCloseX(wx0 + ww - pad * 0.5, closeY, 10 * SS, a, closeInk || K.ink);
   // content clips inside the sheet, below its band
   ctx.beginPath(); ctx.roundRect(wx0 + 2 * SS, wy0 + 2 * SS + bandH, ww - 4 * SS, wh - 4 * SS - bandH, r); ctx.clip();
+  /* ПОЛОСА ПОД ПОДСКАЗКОЙ — НЕ ДЛЯ ТЕКСТА. Строки шли до самого низа листа, и
+     последняя оказывалась и срезана краем, и под надписью «scroll to read on»:
+     на непрозрачной бумаге её съедала дымка, а на полупрозрачной (бухты
+     2009-13) дымка бессильна, и текст читался прямо сквозь подсказку (Эльдар,
+     2026-09-29: «самая нижняя строка»). textBot — граница для СТРОК: строка,
+     которая в эту полосу заезжает, не рисуется вовсе, а не срезается наполовину.
+     Плитки и фотографии по-прежнему живут по botClip: у них своя обрезка листом,
+     и пропадать целиком на половине прокрутки им нельзя. */
+  const footPad = 46 * SS;
   return {wx0, wy0, ww, wh, pad, left: wx0 + pad, textW, sideX: wx0 + pad + textW + gutter, side: sideW,
-          top: wy0 + bandH + PAGE.top * SS, bandH, topClip: wy0 - 80 * SS, botClip: wy0 + wh + 80 * SS};
+          top: wy0 + bandH + PAGE.top * SS, bandH, topClip: wy0 - 80 * SS, botClip: wy0 + wh + 80 * SS,
+          footPad, textBot: wy0 + wh - footPad};
 }
 /* THE FOOT OF THE SHEET. When the text runs past the window it does not stop
    dead on a half-line: the last strip fades into the paper, and a quiet line
    in it says the page goes on. A page that fits says nothing. */
 function pageFoot(K, G, yEnd, a, hint){
-  const over = yEnd > G.wy0 + G.wh - 40 * SS;
+  /* дымка кончается там же, где кончаются строки: ниже — чистая бумага под
+     подсказку, и ей больше не с чем спорить */
+  const bot = G.textBot != null ? G.textBot : G.wy0 + G.wh;
+  const over = yEnd > bot - 40 * SS;
   if (over){
-    const fh = 84 * SS, y0 = G.wy0 + G.wh - fh;
+    const fh = 84 * SS, y0 = bot - fh;
     const m = /rgba?\(([^)]+)\)/.exec(K.bg);
     const parts = m ? m[1].split(',').map(v => v.trim()) : ['240', '240', '240', '1'];
     const rgb = parts.slice(0, 3).join(','), al = parts[3] != null ? +parts[3] : 1;
-    const g = ctx.createLinearGradient(0, y0, 0, G.wy0 + G.wh);
+    const g = ctx.createLinearGradient(0, y0, 0, bot);
     g.addColorStop(0, `rgba(${rgb},0)`); g.addColorStop(0.55, `rgba(${rgb},${(al * 0.92).toFixed(3)})`); g.addColorStop(1, `rgba(${rgb},${al})`);
     ctx.fillStyle = g; ctx.fillRect(G.wx0, y0, G.ww, fh);
+    /* и сама полоса под подсказку — сплошной бумагой, чтобы на полупрозрачном
+       листе сквозь неё не читалось то, что под ним */
+    ctx.fillStyle = `rgba(${rgb},${al})`;
+    ctx.fillRect(G.wx0, bot, G.ww, G.wy0 + G.wh - bot);
     ctx.font = K.font(PAGE.small);
     try { ctx.letterSpacing = `${PAGE.small * TRACK.label * SS}px`; } catch(err){}
     ctx.textAlign = 'center';
