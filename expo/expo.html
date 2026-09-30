@@ -298,9 +298,14 @@ const BEATS = [
    wall:[],
    /* ЛИСТ СТОИТ РОВНО ПО МЕТКЕ ГОДА — dx 0. Он больше не украшение сбоку, он
       сам экспонат: название изобретения на нём и есть тезис станции. */
-   patent:{dx:0, w:420, cy:400, rot:-0.5, cap:'thirty issued, thirty pending'},
+   /* ЛИСТ УШЁЛ ВПРАВО, МАШИНА ВЛЕВО — ОНИ НЕ ПЕРЕКРЫВАЮТСЯ. Машина ростом с
+      полтора прилавка, и стоя по центру она закрывала патент ровно по тексту
+      (Эльдар, 2026-09-29: «сделай так, чтобы патент не перекрывался прибором»).
+      Опустить её до просвета под листом — это сделать её игрушечной; на его же
+      референсе они стоят рядом: лист справа, машина слева. */
+   patent:{dx:210, w:420, cy:400, rot:-0.5, cap:'thirty issued, thirty pending'},
    /* машина, которая ломает коронки: стоит под листом патента, на прилавке */
-   rig:{kind:'tester', dx:0, lz:150, w:460},
+   rig:{kind:'tester', dx:-250, lz:150, w:460},
    table:[], capDX:-540,
    table:[]},
 
@@ -10615,7 +10620,7 @@ const testerHash = n => {
 function drawCrownTester(b, t){
   const g = b.rig, kk = k(bz(g.lz ?? 150));
   const sx = px(b.x + (g.dx || 0), kk);
-  const S1 = (g.w || 520) * kk * SS / 520;          // единица чертежа = 1/520 ширины
+  const S1 = (g.w || 460) * kk * SS / 520;          // единица чертежа = 1/520 ширины
   const foot = py(CFG.benchY - 2, kk);
   if (sx < -W * 0.6 - 520 * S1 || sx > W + 520 * S1) return;
   const X = u => sx + u * S1, Y = v => foot - v * S1;   // v — вверх от столешницы
@@ -10623,133 +10628,225 @@ function drawCrownTester(b, t){
   const pass = testerHash(cyc) < 0.25;
   const seg = (a, b2) => Math.max(0, Math.min(1, (ph - a) / (b2 - a)));
   const ease = u => u * u * (3 - 2 * u);
-
-  /* ── станина и лента ── */
-  const grey = (y0, y1, c0, c1) => { const gr = ctx.createLinearGradient(0, Y(y1), 0, Y(y0));
+  const vg = (v0, v1, c0, c1) => { const gr = ctx.createLinearGradient(0, Y(v1), 0, Y(v0));
     gr.addColorStop(0, c0); gr.addColorStop(1, c1); return gr; };
-  ctx.fillStyle = grey(0, 34, '#dfe3e7', '#a9b0b7');
-  ctx.fillRect(X(-260), Y(34), 520 * S1, 34 * S1);
-  // синяя лента с планками — она идёт всегда, машина живая и между циклами
-  ctx.save();
-  ctx.beginPath(); ctx.rect(X(-250), Y(28), 500 * S1, 20 * S1); ctx.clip();
-  ctx.fillStyle = '#2f6fb5'; ctx.fillRect(X(-250), Y(28), 500 * S1, 20 * S1);
-  ctx.strokeStyle = 'rgba(12,28,48,0.55)'; ctx.lineWidth = Math.max(1, 1.6 * S1);
-  const slat = 26, off = (t * 34) % slat;
-  for (let u = -250 - slat + off; u < 250; u += slat){
-    ctx.beginPath(); ctx.moveTo(X(u), Y(28)); ctx.lineTo(X(u), Y(8)); ctx.stroke();
-  }
-  ctx.fillStyle = 'rgba(255,255,255,0.10)';
-  ctx.fillRect(X(-250), Y(28), 500 * S1, 5 * S1);
-  ctx.restore();
+  const hg = (u0, u1, c0, c1) => { const gr = ctx.createLinearGradient(X(u0), 0, X(u1), 0);
+    gr.addColorStop(0, c0); gr.addColorStop(1, c1); return gr; };
+  const box = (u0, v0, u1, v1, fill) => { ctx.fillStyle = fill;
+    ctx.fillRect(X(u0), Y(v1), (u1 - u0) * S1, (v1 - v0) * S1); };
 
-  /* ── два окошка по краям: короб, тёмный проём, створка ── */
+  /* ── ПОДДОН. У машины на кадре Эльдара это толстый стальной лоток: видна его
+     верхняя плоскость, по ней идут планки, спереди бортик с заклёпками. Верх
+     рисуется трапецией — так читается глубина, а не плоская полоска. ── */
+  const dTopB = 58, dTopF = 40;                      // задняя и передняя кромки верха
+  ctx.fillStyle = vg(dTopF, dTopB, '#6f7883', '#59616b');
+  ctx.beginPath();
+  ctx.moveTo(X(-236), Y(dTopB)); ctx.lineTo(X(236), Y(dTopB));
+  ctx.lineTo(X(252), Y(dTopF)); ctx.lineTo(X(-252), Y(dTopF));
+  ctx.closePath(); ctx.fill();
+  // планки настила
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(X(-236), Y(dTopB)); ctx.lineTo(X(236), Y(dTopB));
+  ctx.lineTo(X(252), Y(dTopF)); ctx.lineTo(X(-252), Y(dTopF));
+  ctx.closePath(); ctx.clip();
+  ctx.strokeStyle = 'rgba(20,26,32,0.45)'; ctx.lineWidth = Math.max(1, 1.3 * S1);
+  const slat = 30, off = (t * 26) % slat;
+  for (let u = -260 + off; u < 260; u += slat){
+    ctx.beginPath(); ctx.moveTo(X(u), Y(dTopB)); ctx.lineTo(X(u * 1.07), Y(dTopF)); ctx.stroke();
+  }
+  ctx.restore();
+  // бортик и тень под ним
+  ctx.fillStyle = vg(18, dTopF, '#4a515a', '#343a42');
+  ctx.fillRect(X(-252), Y(dTopF), 504 * S1, (dTopF - 18) * S1);
+  ctx.fillStyle = 'rgba(255,255,255,0.14)';
+  ctx.fillRect(X(-252), Y(dTopF), 504 * S1, 2 * S1);
+  ctx.fillStyle = vg(8, 18, '#2b3037', '#1d2127');
+  ctx.fillRect(X(-246), Y(18), 492 * S1, 10 * S1);
+  ctx.fillStyle = 'rgba(200,214,228,0.30)';
+  for (let u = -232; u <= 232; u += 58){
+    ctx.beginPath(); ctx.arc(X(u), Y(28), 2.4 * S1, 0, 7); ctx.fill();
+  }
+
+  /* ── ДВА ТОННЕЛЯ. Короб со скошенной верхней гранью, тёмный проём, тёплый
+     свет внутри и створка, которая ходит вверх-вниз. ── */
   const port = (side) => {
-    const x0 = side < 0 ? -260 : 150, x1 = side < 0 ? -150 : 260;
-    ctx.fillStyle = grey(34, 128, '#e7ebee', '#aeb5bb');
-    ctx.fillRect(X(x0), Y(128), (x1 - x0) * S1, 94 * S1);
-    ctx.fillStyle = '#14181c';
-    ctx.fillRect(X(x0 + 10), Y(118), (x1 - x0 - 20) * S1, 74 * S1);
-    // створка: вверх на выходе коронки, вниз в конце цикла
+    const u0 = side < 0 ? -246 : 108, u1 = side < 0 ? -108 : 246;
+    const vTop = 168;
+    // корпус
+    ctx.fillStyle = vg(dTopB, vTop, '#8b949e', '#616a74');
+    ctx.beginPath();
+    ctx.moveTo(X(u0), Y(dTopB)); ctx.lineTo(X(u0 + 10), Y(vTop));
+    ctx.lineTo(X(u1 - 10), Y(vTop)); ctx.lineTo(X(u1), Y(dTopB));
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.fillRect(X(u0 + 10), Y(vTop), (u1 - u0 - 20) * S1, 3 * S1);
+    // проём и свет в нём
+    const o0 = u0 + 18, o1 = u1 - 18, oT = vTop - 22, oB = dTopB + 4;
+    ctx.fillStyle = '#0e1216';
+    ctx.fillRect(X(o0), Y(oT), (o1 - o0) * S1, (oT - oB) * S1);
+    const glow = ctx.createRadialGradient(X((o0 + o1) / 2), Y(oB + 18), 0,
+                                          X((o0 + o1) / 2), Y(oB + 18), (o1 - o0) * 0.62 * S1);
+    glow.addColorStop(0, 'rgba(255,226,170,0.55)'); glow.addColorStop(1, 'rgba(255,226,170,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(X(o0), Y(oT), (o1 - o0) * S1, (oT - oB) * S1);
+    // лента, уходящая вглубь
+    ctx.strokeStyle = 'rgba(180,190,200,0.28)'; ctx.lineWidth = Math.max(1, 1.2 * S1);
+    for (let n = 1; n <= 4; n++){
+      const v = oB + n * (oT - oB) / 5.5;
+      ctx.beginPath(); ctx.moveTo(X(o0 + n * 3), Y(v)); ctx.lineTo(X(o1 - n * 3), Y(v)); ctx.stroke();
+    }
+    // створка
     let openAmt = 0;
     if (side < 0) openAmt = ease(seg(0, TESTER.outUp)) * (1 - ease(seg(TESTER.outFwd, TESTER.atPress)));
     else if (pass) openAmt = ease(seg(TESTER.up, TESTER.toRight)) * (1 - ease(seg(TESTER.inRight, TESTER.shut)));
-    const hSh = 74 * (1 - openAmt);
-    ctx.fillStyle = grey(34, 128, '#cfd5da', '#9aa1a8');
-    ctx.fillRect(X(x0 + 10), Y(118), (x1 - x0 - 20) * S1, hSh * S1);
-    ctx.strokeStyle = 'rgba(30,36,42,0.5)'; ctx.lineWidth = Math.max(1, 1.4 * S1);
-    ctx.strokeRect(X(x0 + 10), Y(118), (x1 - x0 - 20) * S1, 74 * S1);
+    const hSh = (oT - oB) * (1 - openAmt);
+    if (hSh > 0.5){
+      ctx.fillStyle = vg(oT - hSh, oT, '#aeb7c0', '#7d868f');
+      ctx.fillRect(X(o0), Y(oT), (o1 - o0) * S1, hSh * S1);
+      ctx.fillStyle = 'rgba(30,36,42,0.55)';
+      ctx.fillRect(X(o0), Y(oT - hSh), (o1 - o0) * S1, 2.4 * S1);
+    }
+    ctx.strokeStyle = 'rgba(24,30,36,0.55)'; ctx.lineWidth = Math.max(1, 1.4 * S1);
+    ctx.strokeRect(X(o0), Y(oT), (o1 - o0) * S1, (oT - oB) * S1);
   };
   port(-1); port(1);
 
-  /* ── колонна, голова, шток ── */
-  const headUp = 118, headDown = 74;
-  const hv = headUp - (headUp - headDown) * (ease(seg(TESTER.atPress, TESTER.down)) - ease(seg(TESTER.load, TESTER.up)));
-  ctx.fillStyle = grey(34, 214, '#eef1f4', '#b9c0c6');
-  ctx.fillRect(X(-30), Y(214), 60 * S1, 180 * S1);
-  ctx.fillStyle = '#1b1f24';                       // ходовой винт
-  ctx.fillRect(X(-8), Y(208), 16 * S1, 168 * S1);
-  ctx.fillStyle = '#9fb6d8';                       // траверса
-  ctx.fillRect(X(-56), Y(hv + 24), 112 * S1, 24 * S1);
-  ctx.fillStyle = grey(0, 60, '#cfd6dd', '#8f979f');
-  ctx.fillRect(X(-13), Y(hv), 26 * S1, 26 * S1);   // шток
-  ctx.fillStyle = '#b9c1c8';
-  ctx.fillRect(X(-27), Y(hv - 10), 54 * S1, 10 * S1);   // пятка пресса
-  // столик под коронкой
-  ctx.fillStyle = grey(34, 46, '#d7dde2', '#9aa2aa');
-  ctx.fillRect(X(-42), Y(46), 84 * S1, 12 * S1);
+  /* ── КОЛОННА. Светлый корпус, внутри чёрная рифлёная направляющая, сверху
+     скруглённая шапка — как на снимке Shimadzu. ── */
+  const colTop = 356;
+  ctx.fillStyle = hg(-52, 52, '#f2f5f8', '#aeb6be');
+  ctx.beginPath();
+  ctx.moveTo(X(-52), Y(dTopB)); ctx.lineTo(X(-52), Y(colTop - 16));
+  ctx.quadraticCurveTo(X(-52), Y(colTop), X(-36), Y(colTop));
+  ctx.lineTo(X(36), Y(colTop));
+  ctx.quadraticCurveTo(X(52), Y(colTop), X(52), Y(colTop - 16));
+  ctx.lineTo(X(52), Y(dTopB));
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.fillRect(X(-46), Y(colTop - 20), 7 * S1, (colTop - 20 - dTopB) * S1);
+  box(-26, dTopB + 6, 26, colTop - 22, '#171b20');            // направляющая
+  ctx.strokeStyle = 'rgba(150,160,172,0.35)'; ctx.lineWidth = Math.max(1, 1.1 * S1);
+  for (let v = dTopB + 14; v < colTop - 26; v += 11){
+    ctx.beginPath(); ctx.moveTo(X(-24), Y(v)); ctx.lineTo(X(24), Y(v)); ctx.stroke();
+  }
 
-  /* ── пульт со стрелочным прибором ── */
-  ctx.fillStyle = '#8f979f';
-  ctx.fillRect(X(52), Y(118), 6 * S1, 84 * S1);
-  ctx.fillStyle = grey(118, 168, '#e9edf0', '#b4bbc1');
-  ctx.fillRect(X(44), Y(168), 56 * S1, 50 * S1);
-  ctx.fillStyle = '#c02b22';                        // грибок аварийного стопа
-  ctx.beginPath(); ctx.arc(X(72), Y(160), 7 * S1, 0, 7); ctx.fill();
-  // стрелка: ползёт вправо, пока набирается нагрузка, и падает в ноль на сломе
-  const load = ease(seg(TESTER.down, TESTER.load)) * (1 - (pass ? ease(seg(TESTER.load + 0.5, TESTER.up)) : ease(seg(TESTER.load, TESTER.load + 0.25))));
-  const gx = X(72), gy = Y(138), gr2 = 20 * S1;
+  /* ── ТРАВЕРСА И ШТОК ── */
+  const headUp = 244, headDown = 182, ramLen = 82;
+  const hv = headUp - (headUp - headDown) * (ease(seg(TESTER.atPress, TESTER.down)) - ease(seg(TESTER.load, TESTER.up)));
+  ctx.fillStyle = vg(hv, hv + 40, '#cfe0f2', '#8fa8c6');       // голубая траверса
+  ctx.beginPath(); ctx.roundRect(X(-74), Y(hv + 40), 148 * S1, 40 * S1, 5 * S1); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillRect(X(-70), Y(hv + 37), 140 * S1, 3 * S1);
+  // хромированный шток с кольцами и конусом
+  ctx.fillStyle = hg(-19, 19, '#f4f7fa', '#8e979f');
+  ctx.fillRect(X(-19), Y(hv), 38 * S1, (hv - (hv - ramLen + 26)) * S1);
+  ctx.fillStyle = 'rgba(40,48,56,0.35)';
+  for (let n = 1; n <= 3; n++) ctx.fillRect(X(-19), Y(hv - n * 13), 38 * S1, 2.6 * S1);
+  ctx.fillStyle = hg(-14, 14, '#eef2f6', '#7f888f');
+  ctx.beginPath();
+  ctx.moveTo(X(-19), Y(hv - ramLen + 26)); ctx.lineTo(X(19), Y(hv - ramLen + 26));
+  ctx.lineTo(X(7), Y(hv - ramLen)); ctx.lineTo(X(-7), Y(hv - ramLen));
+  ctx.closePath(); ctx.fill();
+  // столик под образцом
+  ctx.fillStyle = vg(dTopB, dTopB + 12, '#c8d0d8', '#8b939b');
+  ctx.beginPath(); ctx.roundRect(X(-56), Y(dTopB + 12), 112 * S1, 12 * S1, 3 * S1); ctx.fill();
+
+  /* ── ПУЛЬТ: стойка, наклонная коробка, грибок и круглый прибор со стрелкой ── */
+  ctx.fillStyle = '#6d757d';
+  ctx.fillRect(X(96), Y(214), 7 * S1, 150 * S1);
+  ctx.save();
+  ctx.translate(X(112), Y(250)); ctx.rotate(-0.12);
+  const pw = 62 * S1, phh = 84 * S1;
+  const pgr = ctx.createLinearGradient(0, -phh, 0, 0);
+  pgr.addColorStop(0, '#eef1f4'); pgr.addColorStop(1, '#aab2b9');
+  ctx.fillStyle = pgr;
+  ctx.beginPath(); ctx.roundRect(-pw / 2, -phh, pw, phh, 6 * S1); ctx.fill();
   ctx.fillStyle = '#12161a';
+  ctx.beginPath(); ctx.roundRect(-pw * 0.36, -phh * 0.86, pw * 0.72, phh * 0.34, 3 * S1); ctx.fill();
+  ctx.fillStyle = 'rgba(120,200,140,0.75)';
+  ctx.fillRect(-pw * 0.30, -phh * 0.70, pw * 0.44, 2.2 * S1);
+  ctx.fillStyle = 'rgba(40,48,56,0.45)';
+  for (let r = 0; r < 3; r++) for (let c2 = 0; c2 < 3; c2++){
+    ctx.beginPath(); ctx.arc(-pw * 0.22 + c2 * pw * 0.22, -phh * 0.34 + r * phh * 0.12, 2.6 * S1, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+  ctx.fillStyle = '#c0281f';                                   // грибок аварийного стопа
+  ctx.beginPath(); ctx.ellipse(X(112), Y(268), 11 * S1, 7 * S1, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.beginPath(); ctx.ellipse(X(109), Y(270), 4 * S1, 2.2 * S1, 0, 0, 7); ctx.fill();
+  // прибор со стрелкой: она ползёт вправо, пока набирается нагрузка
+  const load = ease(seg(TESTER.down, TESTER.load)) * (1 - (pass ? ease(seg(TESTER.load + 0.5, TESTER.up)) : ease(seg(TESTER.load, TESTER.load + 0.25))));
+  const gx = X(-112), gy = Y(212), gr2 = 26 * S1;
+  ctx.fillStyle = '#e9edf1';
   ctx.beginPath(); ctx.arc(gx, gy, gr2, 0, 7); ctx.fill();
-  ctx.strokeStyle = 'rgba(190,200,210,0.55)'; ctx.lineWidth = Math.max(1, 1.2 * S1);
-  ctx.beginPath(); ctx.arc(gx, gy, gr2 * 0.78, Math.PI * 0.85, Math.PI * 0.15); ctx.stroke();
-  const ang = Math.PI * 0.85 + (Math.PI * 1.30) * load;
+  ctx.fillStyle = '#1a1f24';
+  ctx.beginPath(); ctx.arc(gx, gy, gr2 * 0.86, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(190,200,210,0.6)'; ctx.lineWidth = Math.max(1, 1.2 * S1);
+  ctx.beginPath(); ctx.arc(gx, gy, gr2 * 0.66, Math.PI * 0.82, Math.PI * 0.18); ctx.stroke();
+  for (let n = 0; n <= 5; n++){
+    const a3 = Math.PI * 0.82 + Math.PI * 1.36 * n / 5;
+    ctx.beginPath();
+    ctx.moveTo(gx + Math.cos(a3) * gr2 * 0.74, gy + Math.sin(a3) * gr2 * 0.74);
+    ctx.lineTo(gx + Math.cos(a3) * gr2 * 0.60, gy + Math.sin(a3) * gr2 * 0.60);
+    ctx.stroke();
+  }
+  const ang = Math.PI * 0.82 + Math.PI * 1.36 * load;
   ctx.strokeStyle = '#ff5a3c'; ctx.lineWidth = Math.max(1.4, 3 * S1);
   ctx.beginPath(); ctx.moveTo(gx, gy);
-  ctx.lineTo(gx + Math.cos(ang) * gr2 * 0.72, gy + Math.sin(ang) * gr2 * 0.72);
-  ctx.stroke();
+  ctx.lineTo(gx + Math.cos(ang) * gr2 * 0.70, gy + Math.sin(ang) * gr2 * 0.70); ctx.stroke();
+  ctx.fillStyle = '#d7dde3';
+  ctx.beginPath(); ctx.arc(gx, gy, gr2 * 0.1, 0, 7); ctx.fill();
+  ctx.fillStyle = '#6d757d';
+  ctx.fillRect(X(-115), Y(186), 6 * S1, 130 * S1);
 
-  /* ── коронка и её судьба ── */
-  /* КОРОНКА — ТА ЖЕ, ЧТО В БУХТЕ DIGITAL REVOLUTION. Своя, нарисованная двумя
-     безье, читалась зубной пломбой из букваря (Эльдар: «а можно зуб
-     покрасивше?»). Зал уже умеет рисовать коронку — PED_SPRITES.crown2, тот
-     самый спечённый спрайт, что висит в луче сканера, — и здесь берётся он же.
-     Одна коронка на весь зал: где бы она ни появилась, это одна и та же вещь. */
+  /* ── КОРОНКА И ЕЁ СУДЬБА. Коронка — та же, что в бухте Digital Revolution
+     (PED_SPRITES.crown2): одна вещь на весь зал. ── */
   const spC = PED_SPRITES.crown2;
   const crown = (cu, cv, sc, al) => {
     if (!spC || !spC.c) return;
-    const h2 = 34 * sc * S1, w2 = h2 * spC.w / spC.h;
+    const h2 = 46 * sc * S1, w2 = h2 * spC.w / spC.h;
     ctx.save(); ctx.globalAlpha = al;
-    ctx.drawImage(spC.c, X(cu) - w2 / 2, Y(cv) - h2 * 0.82, w2, h2);
+    ctx.drawImage(spC.c, X(cu) - w2 / 2, Y(cv) - h2, w2, h2);
     ctx.restore();
   };
+  const vDeck = dTopB + 12;
   const broke = !pass && ph >= TESTER.load;
   if (!broke){
-    let cu = -205, cv = 46, sc = 1, al = 1;
-    if (ph < TESTER.outUp){ cu = -205; cv = 86; sc = 0.72; al = ease(seg(0.15, TESTER.outUp)); }
-    else if (ph < TESTER.outFwd){ const u = ease(seg(TESTER.outUp, TESTER.outFwd)); cv = 86 - 40 * u; sc = 0.72 + 0.28 * u; }
-    else if (ph < TESTER.atPress){ cu = -205 + 205 * ease(seg(TESTER.outFwd, TESTER.atPress)); }
+    let cu = -180, cv = vDeck, sc = 1, al = 1;
+    if (ph < TESTER.outUp){ cu = -180; cv = vDeck + 34; sc = 0.72; al = ease(seg(0.15, TESTER.outUp)); }
+    else if (ph < TESTER.outFwd){ const u = ease(seg(TESTER.outUp, TESTER.outFwd)); cv = vDeck + 34 * (1 - u); sc = 0.72 + 0.28 * u; }
+    else if (ph < TESTER.atPress){ cu = -180 + 180 * ease(seg(TESTER.outFwd, TESTER.atPress)); }
     else if (ph < TESTER.toRight){ cu = 0; }
-    else if (ph < TESTER.inRight){ cu = 205 * ease(seg(TESTER.toRight, TESTER.inRight)); }
-    else { const u = ease(seg(TESTER.inRight, TESTER.shut)); cu = 205; cv = 46 + 40 * u; sc = 1 - 0.28 * u; al = 1 - u; }
-    if (!(pass === false && ph > TESTER.load)) crown(cu, cv, sc, al);
+    else if (ph < TESTER.inRight){ cu = 180 * ease(seg(TESTER.toRight, TESTER.inRight)); }
+    else { const u = ease(seg(TESTER.inRight, TESTER.shut)); cu = 180; cv = vDeck + 34 * u; sc = 1 - 0.28 * u; al = 1 - u; }
+    crown(cu, cv, sc, al);
   } else {
-    /* осколки: разлетаются от точки удара и гаснут на ленте */
     const u = seg(TESTER.load, TESTER.load + 1.5);
     if (u < 1){
-      /* вспышка в миг слома — глаз ловит её раньше, чем осколки */
       const fl = Math.max(0, 1 - seg(TESTER.load, TESTER.load + 0.18));
       if (fl > 0.01){
-        const gfl = ctx.createRadialGradient(X(0), Y(52), 0, X(0), Y(52), 70 * S1);
-        gfl.addColorStop(0, `rgba(255,252,242,${(0.55 * fl).toFixed(3)})`);
+        const gfl = ctx.createRadialGradient(X(0), Y(vDeck + 16), 0, X(0), Y(vDeck + 16), 84 * S1);
+        gfl.addColorStop(0, `rgba(255,252,242,${(0.6 * fl).toFixed(3)})`);
         gfl.addColorStop(1, 'rgba(255,252,242,0)');
         ctx.fillStyle = gfl;
-        ctx.beginPath(); ctx.arc(X(0), Y(52), 70 * S1, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.arc(X(0), Y(vDeck + 16), 84 * S1, 0, 7); ctx.fill();
       }
       for (let i = 0; i < 18; i++){
         const r1 = testerHash(cyc * 97 + i), r2 = testerHash(cyc * 131 + i * 7);
         const a2 = Math.PI * (1.02 + 0.96 * r1);
         const v = 70 + 130 * r2;
-        const cu = Math.cos(a2) * v * u, cv = 48 + Math.sin(a2) * v * u + 130 * u * u;
+        const cu = Math.cos(a2) * v * u, cv = vDeck + 6 + Math.sin(a2) * v * u + 130 * u * u;
         ctx.globalAlpha = Math.max(0, 1 - u * 1.05);
         ctx.fillStyle = i % 3 ? '#f3ece0' : '#d9cfbb';
         const s2 = (3.2 + 6 * r1) * S1;
-        ctx.beginPath(); ctx.ellipse(X(cu), Y(Math.max(38, cv)), s2, s2 * 0.66, a2, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(X(cu), Y(Math.max(vDeck - 6, cv)), s2, s2 * 0.66, a2, 0, 7); ctx.fill();
       }
       ctx.globalAlpha = 1;
     }
   }
   /* тап по машине открывает страницу года */
-  pushHit(X(-260), Y(214), 520 * S1, 214 * S1, {type: 'study', beat: BEATS.indexOf(b)});
+  pushHit(X(-252), Y(colTop), 504 * S1, colTop * S1, {type: 'study', beat: BEATS.indexOf(b)});
 }
 function drawDiscMill(b, t){
   const g = b.rig, kk = k(bz(g.lz ?? 150));
