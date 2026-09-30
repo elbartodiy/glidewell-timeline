@@ -9132,7 +9132,13 @@ const ST = {
   th: 120,            // толщина стены — ширина пилястры бухты
   gap: 2200,          // между корпусами: две ширины просвета между колоннами
   zNear: -860,        // ближний край: за спиной у камеры, торца не видно
-  top: -520, bot: 2560,
+  top: -520,
+  /* НИЗ СТЕН — ЛИНИЯ ПОЛА, А НЕ ПОДЗЕМЕЛЬЕ. Корпуса уходили до 2560, заметно
+     ниже пола: в просвете пол был вырезан, и им было куда идти. По схеме
+     Эльдара (2026-09-30) серый пол — одна сплошная плоскость, резать его
+     нечем и незачем, а стены стоят НА нём и кончаются ребром на линии пола:
+     «там должно быть ребро, по которому она соединяется с полом». */
+  bot: 1080,
   winZ0: 560, winTop: -260, winBot: CFG.benchY,
   tone: ['#6c7681', '#8b95a0'],
   jamb: '#5a636d',
@@ -9411,10 +9417,18 @@ function drawStreetBack(){
      сторон самого файла, то есть ничего не тянется. Панорама втрое шире кадра
      и много шире просвета — за косяки она уходит сама, и это не обрезка, а
      запас, из которого проём показывает свой кусок. */
-  const wS = H * (im.naturalWidth / im.naturalHeight) * ST_BACK.wide;
+  /* ЗЕМЛЯ УЛИЦЫ ВСТРЕЧАЕТ ПОЛ ЗАЛА. Снимок клался во всю высоту кадра — это
+     было верно, пока пол в просвете вырезали и дорога доходила до низа экрана.
+     С 30 сентября пол сплошной и закрывает низ кадра, поэтому снимок садится
+     на линию пола: низ снимка — подошва стены зала на её собственной глубине,
+     ширина — по соотношению сторон файла, так что ничего не тянется. Дорога
+     панорамы приходится ровно над этой линией, как и должно быть: пол зала
+     кончается, за ним начинается земля улицы. */
+  const hS = py(1080, kw);
+  const wS = hS * (im.naturalWidth / im.naturalHeight) * ST_BACK.wide;
   const cx = px((x0 + x1) / 2, kz);
-  ctx.drawImage(im, cx - wS / 2, 0, wS, H);
-  drawStreetTrucks(a, b);
+  ctx.drawImage(im, cx - wS / 2, 0, wS, hS);
+  drawStreetTrucks(a, b, hS);
 }
 /* ── ТРИ ГРУЗОВИКА ПО УЛИЦЕ ───────────────────────────────────────────────
    Эльдар (2026-09-25): «три трака, один за другим, справа до конца налево,
@@ -9450,16 +9464,16 @@ const ST_CARS = {
        Эльдара убрана в тот же день — сам снимок лежит в assets/street/truck2 */
   ],
 };
-function drawStreetTrucks(a, b){
+function drawStreetTrucks(a, b, hS){
   const [x0, x1] = stOpenSpan();
   const from = x0 - ST_CARS.lead, to = x1 + ST_CARS.lead;
   const p = (cam.x - from) / (to - from);
   if (p <= 0 || p >= 1) return;
   for (const L of ST_CARS.lanes){
     const im = stPic(L.pic); if (!im) continue;
-    const hT = L.h * H, wT = hT * (im.naturalWidth / im.naturalHeight);
+    const hT = L.h * hS, wT = hT * (im.naturalWidth / im.naturalHeight);   // доли — от высоты СНИМКА
     const xL = a - wT * ST_CARS.margin, xR = b + wT * ST_CARS.margin;
-    const yB = L.y * H;
+    const yB = L.y * hS;
     for (const at of L.at){
       const q = (p - at) / L.cross;
       if (q <= 0 || q >= 1) continue;
@@ -17715,7 +17729,13 @@ function frame(){
   ctx.fillRect(0, 0, W, H);
 
   drawStreetBack();   // улица за проёмом — до пола и стены, они её обрежут
-  ctx.save(); stCutHall('floor'); drawFloor(); ctx.restore();
+  /* ПОЛ НЕ РЕЖЕТСЯ ВОВСЕ. Он шёл сквозь просвет вырезанным клином, и к низу
+     кадра клин расходился: стены корпусов лежали серым треугольником на полу,
+     плита 1993 не сходилась с панелью, у плинтуса открывались щели. Эльдар
+     нарисовал структуру (2026-09-30): серый пол — одна сплошная плоскость,
+     улица видна НАД ней, как вид в дверной проём. Резать нечего — и весь этот
+     класс щелей уходит вместе с вырезом. */
+  drawFloor();
   ctx.save(); stCutHall('wall');  drawWall();  ctx.restore();
   drawFilmVideoWall();   // the film backdrop sits directly on the deep wall
   drawFilmProjectorWall();   // and the 1999 throw washes over the plaster
@@ -17810,7 +17830,7 @@ function frame(){
      the speaker's plinth and the silhouettes — a veil across the people rather
      than a shine beneath them. It reflects the wall band, which is already
      drawn, and everything standing on the floor now covers it in turn. */
-  ctx.save(); stCutHall('floor'); drawFloorSheen(); ctx.restore();
+  drawFloorSheen();   // тот же сплошной пол, что и выше
   drawHallPortalColumns(true);  // its metal shoe stays above the reflected floor
   /* AND THE 2022 PORTAL'S SHOE WITH IT. This pass exists to cover the column's
      own reflection, nothing else, so it belongs here — with the sheen it
