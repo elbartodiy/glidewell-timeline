@@ -550,9 +550,7 @@ const CUTS = [
      15296.4 (REC93_MID − REC93_HALF), значит сдвиг 17220 − 15296.4 = 1923.6.
      Стоит ПОСЛЕ остальных в списке, а не по порядку at — поэтому bayStart()
      считает по самому at. */
-  /* ширина врезки выросла с 1924 на 2348: столько нужно, чтобы при стене 1100
-     слева и 1248 справа сам просвет остался прежним, 2440 (Эльдар, 2026-09-29) */
-  {at: 11750, w: 4272, on: true},
+  {at: 11750, w: 1924, on: true},
 ];
 function SHIFT(x){
   let s = 0;
@@ -893,19 +891,6 @@ const REC93_L = bayStart(2) + 275, REC93_R = bayStart(2) + 1225;
    2026-09-22: «чтобы она в точности соединялась с линией на полу... чтобы она не
    распадалась во время проезда»). */
 const REC93_Z = 728;
-/* блок бухты выступает за свои пилястры на столько с каждой стороны; объявлен
-   здесь, а не ниже с прочей геометрией бухт, потому что от него считается шов
-   эпох на корпусе улицы (ST_WALL_L) */
-const STEP_PAD = 60;
-/* СТЕНА ПО ОБЕ СТОРОНЫ УЛИЦЫ. Просвет стоял впритык к обеим бухтам: 60 единиц
-   от колонны 1989 и ноль до панели 1993 — дальняя грань правого корпуса и была
-   кромкой панели. Эльдар (2026-09-29): слева пусть будет стена шириной со
-   стену между колоннами 1989 (REC3_R − REC3_L = 1100), справа — шириной с саму
-   панель 1993 (REC93_BR − REC93_BL = 1248), и тогда панель слева кончается, а
-   за ней видна стена, как и справа от неё. Объявлены ДО SEGMENTS: шов эпох
-   ложится на левый корпус улицы и считается отсюда. */
-const ST_PAD_L = 1100, ST_PAD_R = 1248;
-const ST_WALL_L = REC3_R + STEP_PAD + ST_PAD_L;   // левый корпус улицы: его ближняя грань
 const REC93_MID = (REC93_L + REC93_R) / 2;
 const REC93_HALF = (REC93_R - REC93_L) / 2 * (CFG.F + REC93_Z) / (CFG.F + CFG.benchDepth);
 const REC93_BL = REC93_MID - REC93_HALF, REC93_BR = REC93_MID + REC93_HALF;
@@ -940,14 +925,7 @@ const SEGMENTS = [
    rail:'rgba(190,150,80,0.55)', railInk:'rgba(230,195,130,0.7)',
    light:{pool:'255,186,96', poolR:640, poolA:0.44},
    bgc:[13,9,6], grain:0.055},
-  /* КОНЕЦ ЭТОЙ СТЕНЫ УЕХАЛ ЗА БУХТУ 1989 — К ЛЕВОМУ КОРПУСУ УЛИЦЫ. Он стоял на
-     левой кромке бухты, а стена следующей эпохи начиналась сразу за правой
-     колонной — на 170 глубже. Две плоскости впритык идут с разной скоростью, и
-     колонна «ездила» относительно стены за ней при каждой прокрутке (Эльдар,
-     2026-09-29). Теперь справа от колонны идут 1100 единиц её собственной
-     стены, а шов двух эпох приходится на корпус улицы: он стоит поперёк и
-     закрывает ступеньку, как её закрывает бухта в других местах. */
-  {x0:REC_R, x1:ST_WALL_L + 120, z0:680, z1:680, tz:680, wall:'wall2', bench:'bench2', front:'front2',
+  {x0:REC_R, x1:REC3_L, z0:680, z1:680, tz:680, wall:'wall2', bench:'bench2', front:'front2',
    font:'"Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'223,226,214', lamp:'tube', dust:false,
    rail:'rgba(24,16,10,0.26)', railInk:'rgba(198,208,202,0.7)', railTop: true,
@@ -964,7 +942,7 @@ const SEGMENTS = [
      ради того, чтобы стык не вставал линией у пилястры. Возвращаю прежнее
      значение и жду, когда Эльдар покажет на кадре, какие именно два стыка он
      имеет в виду (2026-09-24). */
-  {x0:ST_WALL_L, x1:REC2_L, z0:850, z1:850, tz:680, wall:'wall3', bench:'bench3', front:'front3', wPhase:0.5,
+  {x0:REC3_R, x1:REC2_L, z0:850, z1:850, tz:680, wall:'wall3', bench:'bench3', front:'front3', wPhase:0.5,
    font:'Verdana, Tahoma, "DejaVu Sans", sans-serif',
    /* the YEARS of this stretch are set in a wide, heavy grotesk (Eldar: "очень
       широкий, тяжёлый, как Helvetica, но широкий — девяностые"); the titles and
@@ -2418,6 +2396,7 @@ const bayDrop = (x, z, y, yz) => ({x, z, drop: true, y: y != null ? y : CFG.benc
    the wall's foot, the step's back-bottom corner, the step's front-bottom
    corner — and from there the shared side runs to the near plane. Drawn from
    one descriptor by both sides, it cannot open at any angle. */
+const STEP_PAD = 60;        // how far the block runs past its pilasters, each side
 /* AND HOW DEEP IT IS. Every block used to name its own nose plane, and the two
    white bays ended up four hundred units deep — a platform sticking out into
    the room rather than a step at the mouth of a bay (Eldar, 2026-09-23:
@@ -2474,9 +2453,8 @@ const STEP_89_L = stepEdge(REC3_L - STEP_PAD, R89_BAY_Z), STEP_89_R = stepEdge(R
 const FSTP_89_L = stepFoot(REC3_L - STEP_PAD, R89_BAY_Z), FSTP_89_R = stepFoot(REC3_R + STEP_PAD, R89_BAY_Z);
 /* прилавок не идёт сквозь улицу: разрыв от дальней грани левого корпуса до
    дальней грани правого */
-/* Разрыв прилавка на просвете улицы отдельно НЕ нужен: прилавок и так убран
-   от портала 1989 до макета 1993 — «модель места стоит на полу комнаты, а не
-   на столешнице». Добавленные куски стены попадают внутрь того же разрыва. */
+BENCH_BREAKS.push({x: (REC3_R + STEP_PAD + REC93_BL) / 2,
+                   half: (REC93_BL - REC3_R - STEP_PAD) / 2 + 40});
 /* 1979 HAS A BLOCK TOO — it had the first one, and it was taken away with the
    runner. Without it the bay's panel and the models' plinth stop at the
    counter's foot line and nothing stands under them: through the slot between
@@ -2575,16 +2553,7 @@ function drawFloor(){
        the near plane, exactly where it always was (Eldar, 2026-09-22: «дальняя
        часть прикреплена ровно к точкам края белой стенки, передняя — как
        была»). */
-    /* ПОЛ РЕЖЕТСЯ НА ШВЕ ЭПОХ, ИНАЧЕ У СТЕНЫ ОТКРЫВАЕТСЯ ДЫРА. Пролёт пола
-       считает свою дальнюю кромку по ОДНОЙ глубине — по той эпохе, в которой
-       лежит его середина. Пока пролёт от бухты 1989 до бухты 1993 целиком
-       лежал во второй эпохе, это совпадало. С 29 сентября слева от улицы идут
-       1100 единиц стены ПЕРВОЙ эпохи (z 680), а середина пролёта попадает уже
-       во вторую (850): кромка пола вставала по 850, подошва стены — по 680, и
-       между ними зияла щель в фоне (Эльдар, 2026-09-30, зелёный овал). Пролёт
-       разрезан ровно на шве, каждая половина берёт кромку своей стены. */
-    [REC3_R + STEP_PAD, ST_WALL_L, T.era[1], STEP_89_R, null],
-    [ST_WALL_L, REC93_L, T.era[2], null, EDG93_L],
+    [REC3_R + STEP_PAD, REC93_L, T.era[2], STEP_89_R, EDG93_L],
     /* ЛЕВЫЙ КРАЙ ПЛИТЫ 1993 ИДЁТ ПО РЕБРУ СТЕНЫ УЛИЦЫ, А НЕ ПО ШИРИНЕ БУХТЫ.
        Ширина бухты меряется на плоскости панели, поэтому ближние углы плиты
        стоят уже дальних (17369 против 17220) и её край к зрителю уезжает
@@ -9132,13 +9101,7 @@ const ST = {
   th: 120,            // толщина стены — ширина пилястры бухты
   gap: 2200,          // между корпусами: две ширины просвета между колоннами
   zNear: -860,        // ближний край: за спиной у камеры, торца не видно
-  top: -520,
-  /* НИЗ СТЕН — ЛИНИЯ ПОЛА, А НЕ ПОДЗЕМЕЛЬЕ. Корпуса уходили до 2560, заметно
-     ниже пола: в просвете пол был вырезан, и им было куда идти. По схеме
-     Эльдара (2026-09-30) серый пол — одна сплошная плоскость, резать его
-     нечем и незачем, а стены стоят НА нём и кончаются ребром на линии пола:
-     «там должно быть ребро, по которому она соединяется с полом». */
-  bot: 1080,
+  top: -520, bot: 2560,
   winZ0: 560, winTop: -260, winBot: CFG.benchY,
   tone: ['#6c7681', '#8b95a0'],
   jamb: '#5a636d',
@@ -9146,8 +9109,8 @@ const ST = {
   sill: ['#9aa4ad', '#b6bfc7'],
 };
 function stPairs(){
-  const aL = ST_WALL_L;
-  const bR = REC93_BL - ST_PAD_R;
+  const aL = REC3_R + STEP_PAD;
+  const bR = REC93_BL;
   /* ДАЛЬНИЙ КОНЕЦ КОРПУСА — ПЛОСКОСТЬ СТЕНЫ ЗАЛА, А НЕ ПЛОСКОСТЬ БУХТЫ.
      Корпуса кончались на плоскости соседней бухты (680 слева, 728 справа), а
      стена зала стоит глубже, на 850. Пол зала в просвете вырезан до самого
@@ -9417,18 +9380,10 @@ function drawStreetBack(){
      сторон самого файла, то есть ничего не тянется. Панорама втрое шире кадра
      и много шире просвета — за косяки она уходит сама, и это не обрезка, а
      запас, из которого проём показывает свой кусок. */
-  /* ЗЕМЛЯ УЛИЦЫ ВСТРЕЧАЕТ ПОЛ ЗАЛА. Снимок клался во всю высоту кадра — это
-     было верно, пока пол в просвете вырезали и дорога доходила до низа экрана.
-     С 30 сентября пол сплошной и закрывает низ кадра, поэтому снимок садится
-     на линию пола: низ снимка — подошва стены зала на её собственной глубине,
-     ширина — по соотношению сторон файла, так что ничего не тянется. Дорога
-     панорамы приходится ровно над этой линией, как и должно быть: пол зала
-     кончается, за ним начинается земля улицы. */
-  const hS = py(1080, kw);
-  const wS = hS * (im.naturalWidth / im.naturalHeight) * ST_BACK.wide;
+  const wS = H * (im.naturalWidth / im.naturalHeight) * ST_BACK.wide;
   const cx = px((x0 + x1) / 2, kz);
-  ctx.drawImage(im, cx - wS / 2, 0, wS, hS);
-  drawStreetTrucks(a, b, hS);
+  ctx.drawImage(im, cx - wS / 2, 0, wS, H);
+  drawStreetTrucks(a, b);
 }
 /* ── ТРИ ГРУЗОВИКА ПО УЛИЦЕ ───────────────────────────────────────────────
    Эльдар (2026-09-25): «три трака, один за другим, справа до конца налево,
@@ -9464,16 +9419,16 @@ const ST_CARS = {
        Эльдара убрана в тот же день — сам снимок лежит в assets/street/truck2 */
   ],
 };
-function drawStreetTrucks(a, b, hS){
+function drawStreetTrucks(a, b){
   const [x0, x1] = stOpenSpan();
   const from = x0 - ST_CARS.lead, to = x1 + ST_CARS.lead;
   const p = (cam.x - from) / (to - from);
   if (p <= 0 || p >= 1) return;
   for (const L of ST_CARS.lanes){
     const im = stPic(L.pic); if (!im) continue;
-    const hT = L.h * hS, wT = hT * (im.naturalWidth / im.naturalHeight);   // доли — от высоты СНИМКА
+    const hT = L.h * H, wT = hT * (im.naturalWidth / im.naturalHeight);
     const xL = a - wT * ST_CARS.margin, xR = b + wT * ST_CARS.margin;
-    const yB = L.y * hS;
+    const yB = L.y * H;
     for (const at of L.at){
       const q = (p - at) / L.cross;
       if (q <= 0 || q >= 1) continue;
@@ -17729,13 +17684,7 @@ function frame(){
   ctx.fillRect(0, 0, W, H);
 
   drawStreetBack();   // улица за проёмом — до пола и стены, они её обрежут
-  /* ПОЛ НЕ РЕЖЕТСЯ ВОВСЕ. Он шёл сквозь просвет вырезанным клином, и к низу
-     кадра клин расходился: стены корпусов лежали серым треугольником на полу,
-     плита 1993 не сходилась с панелью, у плинтуса открывались щели. Эльдар
-     нарисовал структуру (2026-09-30): серый пол — одна сплошная плоскость,
-     улица видна НАД ней, как вид в дверной проём. Резать нечего — и весь этот
-     класс щелей уходит вместе с вырезом. */
-  drawFloor();
+  ctx.save(); stCutHall('floor'); drawFloor(); ctx.restore();
   ctx.save(); stCutHall('wall');  drawWall();  ctx.restore();
   drawFilmVideoWall();   // the film backdrop sits directly on the deep wall
   drawFilmProjectorWall();   // and the 1999 throw washes over the plaster
@@ -17830,7 +17779,7 @@ function frame(){
      the speaker's plinth and the silhouettes — a veil across the people rather
      than a shine beneath them. It reflects the wall band, which is already
      drawn, and everything standing on the floor now covers it in turn. */
-  drawFloorSheen();   // тот же сплошной пол, что и выше
+  ctx.save(); stCutHall('floor'); drawFloorSheen(); ctx.restore();
   drawHallPortalColumns(true);  // its metal shoe stays above the reflected floor
   /* AND THE 2022 PORTAL'S SHOE WITH IT. This pass exists to cover the column's
      own reflection, nothing else, so it belongs here — with the sheen it
