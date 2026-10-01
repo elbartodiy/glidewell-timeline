@@ -9360,12 +9360,19 @@ function stFace(xw, p){
   ctx.fill('evenodd');
   const al = stSkirtAlpha();
   if (al > 0.004){
+    /* ЮБКА НЕ ВЫХОДИТ НА ПОЛ ЗАЛА. Она лежала поперёк пола серой полосой
+       справа и слева от проёма — «надо этот элемент убрать: либо отрежь
+       лишнее, либо переведи слой ниже» (Эльдар, 2026-10-01, две стрелки).
+       Отрезано: ниже пола стена есть только внутри клина, где пола нет. */
+    ctx.save();
+    ctx.beginPath(); stFloorGapPath(); ctx.clip();
     ctx.globalAlpha = al;
     ctx.beginPath();
     skirt.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
     ctx.closePath();
     ctx.fill();
     ctx.globalAlpha = 1;
+    ctx.restore();
   }
   ctx.restore();
 }
@@ -9374,12 +9381,21 @@ function stFace(xw, p){
    кроме полоски окна. */
 function stEnd(p){
   const kz = k(p.zFar);
+  /* ТОРЕЦ ТОЖЕ КОНЧАЕТСЯ НА ПОЛУ, А НИЖЕ ЖИВЁТ ТОЛЬКО В КЛИНЕ. Он уходил до
+     2560 без всякой обрезки и стоял серой полосой поперёк пола зала рядом с
+     проёмом (Эльдар, 2026-10-01). Ниже пола рисуется отдельным куском, внутри
+     клина, где пола нет. */
+  stEndBand(p, kz, ST.top, 1080, false);
+  stEndBand(p, kz, 1080, ST.bot, true);
+}
+function stEndBand(p, kz, yTop, yBot, inGap){
   ctx.save(); stClip(p.a, p);
+  if (inGap){ ctx.beginPath(); stFloorGapPath(); ctx.clip(); }
   ctx.beginPath();
-  ctx.moveTo(px(p.a, kz), py(ST.top, kz));
-  ctx.lineTo(px(p.b, kz), py(ST.top, kz));
-  ctx.lineTo(px(p.b, kz), py(ST.bot, kz));
-  ctx.lineTo(px(p.a, kz), py(ST.bot, kz));
+  ctx.moveTo(px(p.a, kz), py(yTop, kz));
+  ctx.lineTo(px(p.b, kz), py(yTop, kz));
+  ctx.lineTo(px(p.b, kz), py(yBot, kz));
+  ctx.lineTo(px(p.a, kz), py(yBot, kz));
   ctx.closePath();
   ctx.fillStyle = ST.jamb; ctx.fill();
   ctx.restore();
@@ -9444,6 +9460,17 @@ function stOpenSpan(){
   const P = stPairs();
   return [P[0].a, P[1].b];
 }
+/* КЛИН, В КОТОРОМ ПОЛА ЗАЛА НЕТ — контур, а не вырез. Им режется пол
+   (stCutHall) и им же обрезается юбка стен: ниже пола стена существует только
+   там, где пола не нарисовано, и ни на единицу дальше. */
+function stFloorGapPath(yTop){
+  const [x0, x1] = stOpenSpan();
+  const yT = yTop != null ? yTop : CFG.horizon * SS + 1;
+  const L = floorLineAt(x0), R = floorLineAt(x1);
+  ctx.moveTo(L(yT), yT); ctx.lineTo(R(yT), yT);
+  ctx.lineTo(R(H), H);   ctx.lineTo(L(H), H);
+  ctx.closePath();
+}
 function stCutHall(kind){
   const [x0, x1] = stOpenSpan();
   /* СТЕНА ЗАЛА НА УЧАСТКЕ МОЖЕТ ИДТИ НА РАЗНЫХ ГЛУБИНАХ — улица приходится
@@ -9497,11 +9524,7 @@ function stCutHall(kind){
        относительно стены и белого пола»). Пол зала доходит до подошвы стены,
        а узкий клин серого пола между стеной и белой плитой — это и есть пол
        у стены, он там и должен быть. */
-    const L = line(x0);
-    const R = line(x1);
-    ctx.moveTo(L(yT), yT); ctx.lineTo(R(yT), yT);
-    ctx.lineTo(R(H), H);   ctx.lineTo(L(H), H);
-    ctx.closePath();
+    stFloorGapPath(yT);
   }
   ctx.clip('evenodd');
   return true;
