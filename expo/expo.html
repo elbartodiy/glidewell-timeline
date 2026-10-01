@@ -11400,6 +11400,13 @@ function drawCrownTester(b, t){
         ctx.beginPath(); ctx.moveTo(X(o0 + n * 3), Y(v)); ctx.lineTo(X(o1 - n * 3), Y(v)); ctx.stroke();
       }
     }
+    /* РАМКА УСТЬЯ — СЗАДИ, А НЕ СПЕРЕДИ. Она шла последней и перечёркивала
+       коронку, стоящую в устье: «коронка всё ещё перекрывается некоторыми
+       элементами, а именно — контуром» (Эльдар, 2026-10-01). Контур проёма —
+       это его край, коронка перед ним, значит и рисуется он до неё. Впереди
+       из всего короба остаётся только створка: ей и положено её накрывать. */
+    ctx.strokeStyle = 'rgba(24,30,36,0.55)'; ctx.lineWidth = Math.max(1, 1.4 * S1);
+    ctx.strokeRect(X(o0), Y(oT), (o1 - o0) * S1, (oT - oB) * S1);
   };
   const portFront = (side) => {
     const G = portGeo(side), {o0, o1, oT, oB} = G;
@@ -11440,8 +11447,6 @@ function drawCrownTester(b, t){
       ctx.fillStyle = 'rgba(30,36,42,0.55)';
       ctx.fillRect(X(o0), Y(oT - hSh), (o1 - o0) * S1, 2.4 * S1);
     }
-    ctx.strokeStyle = 'rgba(24,30,36,0.55)'; ctx.lineWidth = Math.max(1, 1.4 * S1);
-    ctx.strokeRect(X(o0), Y(oT), (o1 - o0) * S1, (oT - oB) * S1);
   };
   portBack(-1); portBack(1);
   /* проход А: коронка внутри тоннеля — ПОСЛЕ нутра, но ДО створки. Обрезка
