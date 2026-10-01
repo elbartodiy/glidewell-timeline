@@ -201,7 +201,9 @@ const BEATS = [
       апексом (Эльдар, 2026-09-23: «пусть поднимается чуть выше, в половину»). */
    pinZ:728,   // the numeral is riveted to the recreation panel: it grows in place, never drifts
    th:'',
-   d:'Still in Orange, California: 175 people now serve more than 3,500 dentists, and 95% of cases arrive by mail. The lab is national without having left the county.',
+   /* Эльдар вычеркнул «Still» в начале и всю последнюю фразу (2026-10-01):
+      остаётся один факт без комментария к нему. */
+   d:'In Orange, California: 175 people now serve more than 3,500 dentists, and 95% of cases arrive by mail.',
    /* the move photo came off the wall and stands on the counter instead —
       the 1988 hanging set needed that stretch of wall */
    wall:[],
@@ -964,7 +966,14 @@ const SEGMENTS = [
      ради того, чтобы стык не вставал линией у пилястры. Возвращаю прежнее
      значение и жду, когда Эльдар покажет на кадре, какие именно два стыка он
      имеет в виду (2026-09-24). */
-  {x0:ST_WALL_L, x1:REC2_L, z0:850, z1:850, tz:680, wall:'wall3', bench:'bench3', front:'front3', wPhase:0.5,
+  /* ШОВ ЭПОХ — НА ДАЛЬНЕЙ ГРАНИ КОРПУСА, А НЕ НА БЛИЖНЕЙ. Он стоял на ST_WALL_L,
+     то есть на той грани корпуса, что смотрит в зал 1989: стена эпохи 3 (светлая,
+     на 850) начиналась прямо там и её проекция вылезала ЛЕВЕЕ синей стены эпохи 2
+     (680) — между синей стеной и корпусом светилась полоска «стены из другого
+     здания» (Эльдар, 2026-10-01). Шов уехал на 120 единиц вправо, на дальнюю грань:
+     все эти 120 единиц теперь — синяя стена 1989, корпус стоит на ней и накрывает
+     ступеньку целиком, а светлая стена начинается уже внутри просвета и вырезана. */
+  {x0:ST_WALL_L + 120, x1:REC2_L, z0:850, z1:850, tz:680, wall:'wall3', bench:'bench3', front:'front3', wPhase:0.5,
    font:'Verdana, Tahoma, "DejaVu Sans", sans-serif',
    /* the YEARS of this stretch are set in a wide, heavy grotesk (Eldar: "очень
       широкий, тяжёлый, как Helvetica, но широкий — девяностые"); the titles and
@@ -1128,6 +1137,14 @@ function auditStatics(){
         if (Math.abs(zp - seg.z0) < 1) continue;      // same plane, nothing to bridge
         continue;                                      // declared: drawWall bridges it
       }
+      /* ШОВ НА ДАЛЬНЕЙ ГРАНИ КОРПУСА УЛИЦЫ ОБЪЯВЛЕН. Эпохи 2 и 3 сходятся на
+         x = ST_WALL_L + 120 — это дальняя грань левого корпуса улицы. Щель
+         открыться не может: весь этот участок лежит внутри проёма, обе стены
+         там вырезаны (каждая на своей глубине, drawWall), а поперёк стоит сам
+         корпус. Раньше шов молчал только потому, что сегменты не сходились в
+         одной точке — перекрывались на 120 единиц, и ровно в этот нахлёст
+         светлая стена вылезала слева от корпуса (Эльдар, 2026-10-01). */
+      if (Math.abs(wx - (ST_WALL_L + 120)) < 1) continue;
       const nb = SEGMENTS.find(o => o !== seg &&
         (Math.abs(o.x0 - wx) < 1 || Math.abs(o.x1 - wx) < 1));
       if (nb && Math.abs(nb.z0 - seg.z0) > 1)
@@ -2256,7 +2273,17 @@ function drawWall(){
        meets the floor and a strip of naked room opened between the two. */
     const yFoot = py(1080, kw);
     ctx.save();
-    ctx.beginPath(); ctx.rect(sx0, 0, sx1 - sx0, yFoot); ctx.clip();
+    ctx.beginPath(); ctx.rect(sx0, 0, sx1 - sx0, yFoot);
+    /* ПРОЁМ УЛИЦЫ ВЫЧИТАЕТСЯ НА ГЛУБИНЕ ЭТОЙ ЖЕ ПОЛОСЫ — и обязательно
+       ОБРЕЗАННЫЙ ПО НЕЙ. evenodd оставляет то, что накрыто нечётное число раз:
+       хвост выреза, торчащий за полосу, он считает «накрытым один раз» и
+       оставляет — светлая стена эпохи 3 проступала полоской слева от корпуса
+       ровно на этом хвосте (Эльдар, 2026-10-01: «каким боком там стена из
+       другого здания»). Зажимаем вырез в [sx0, sx1]. */
+    const stGap = stWallGapAt(kw);
+    const g0 = stGap ? Math.max(stGap[0], sx0) : 0, g1 = stGap ? Math.min(stGap[1], sx1) : 0;
+    if (stGap && g1 > g0){ ctx.rect(g0, 0, g1 - g0, yFoot); ctx.clip('evenodd'); }
+    else ctx.clip();
     // Belt and braces: paint the era's own average tone across the whole span
     // first. Tiling can miss by a pixel at a seam for a dozen reasons; when it
     // does you should see wall, not the room's black background.
@@ -9480,32 +9507,24 @@ function stFloorGapPath(yTop){
   ctx.lineTo(R(H), H);   ctx.lineTo(L(H), H);
   ctx.closePath();
 }
+/* ПРОЁМ НА ЗАДАННОЙ ГЛУБИНЕ — для стены зала. Стена идёт на РАЗНЫХ глубинах
+   (слева от улицы эпоха 2 на 680, справа эпоха 3 на 850), и у каждой полосы
+   свой экранный интервал проёма. Мерить их одной глубиной нельзя ни так, ни
+   эдак: по дальней — срезается синяя стена и она «становится уже»; по ближней
+   — светлая стена соседней эпохи вылезает слева от корпуса полоской «из
+   другого здания», и видно это не в лоб, а когда отъедешь в сторону (Эльдар,
+   2026-10-01, два кадра). Поэтому каждая полоса стены вырезает проём САМА, на
+   своей глубине — см. drawWall. */
+function stWallGapAt(kz){
+  const [x0, x1] = stOpenSpan();
+  const a = px(x0, kz), b = px(x1, kz);
+  if (b < -40 || a > W + 40) return null;
+  return [a, b];
+}
 function stCutHall(kind){
   const [x0, x1] = stOpenSpan();
-  /* КАЖДЫЙ КРАЙ ВЫРЕЗА — НА ГЛУБИНЕ СВОЕЙ СТЕНЫ. Улица приходится на стык
-     сегментов: слева стена эпохи 2 на 680, справа эпохи 3 на 850. Полоса,
-     посчитанная по одной глубине, оставляла по краям щепку старой стены
-     (Эльдар, 2026-09-25); взятая по самой широкой из всех глубин — наоборот,
-     срезала стену дальше, чем доставал корпус, и в зазор смотрел снимок улицы
-     (2026-10-01). Верно одно: левый край считается по стене СЛЕВА от проёма,
-     правый — по стене СПРАВА, и ровно на тех же глубинах стоят грани корпусов
-     (stPairs), так что кромка выреза и грань — одна линия. */
   const kNear = k(-40);
-  const zL = Math.max(wallZAt(x0 - 1), 0), zR = Math.max(wallZAt(x1 + 1), 0);
-  const kw = k(wallZAt((x0 + x1) / 2));
-  const a = px(x0, k(zL)), b = px(x1, k(zR));
-  /* ОТСЕЧКА «УЛИЦА ЗА КАДРОМ» — ТОЛЬКО ДЛЯ СТЕНЫ. У стены одна глубина, и её
-     полоса a…b действительно говорит, видно её или нет. У пола вырез — клин,
-     который ниже горизонта расходится далеко за края кадра, и по той же паре
-     чисел он считался «за кадром» даже тогда, когда занимал пол-экрана: пол
-     переставал вырезаться и закрывал улицу (Эльдар, 2026-09-25). */
-  if (kind === 'wall' && (b < -40 || a > W + 40)) return false;
-  ctx.beginPath();
-  ctx.rect(0, 0, W, H);
-  if (kind === 'wall'){
-    /* стена зала на одной глубине — её просвет вертикальная полоса */
-    ctx.rect(a, 0, b - a, H);
-  } else {
+  {
     /* ПОЛ РЕЖЕТСЯ ПО САМИМ ГРАНЯМ КОРПУСОВ, А НЕ ПО ЛИНИИ НА ОДНОЙ ГЛУБИНЕ.
        Сперва верх выреза стоял на линии пола плоскости СТЕНЫ, а у плит пола
        дальние углы лежат на своих глубинах (680 у 1989, 728 у 1993) — и выше
@@ -17999,7 +18018,7 @@ function frame(){
      2026-09-30). В проходе пола нет: там улица. Вырез — клин между двумя
      мировыми прямыми x = const, теми самыми, на которых стоят откосы. */
   ctx.save(); stCutHall('floor'); drawFloor(); ctx.restore();
-  ctx.save(); stCutHall('wall');  drawWall();  ctx.restore();
+  drawWall();   // проём улицы каждая полоса стены вырезает сама, на своей глубине
   drawFilmVideoWall();   // the film backdrop sits directly on the deep wall
   drawFilmProjectorWall();   // and the 1999 throw washes over the plaster
   drawFilmWallPlasma();      // the 2009 plasma hangs on the wall, behind the counters
