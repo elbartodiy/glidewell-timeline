@@ -11276,11 +11276,25 @@ function drawCrownTester(b, t){
   else if (ph < TESTER.inRight){ cu = 180 * ease(seg(TESTER.toRight, TESTER.inRight)); }
   else { const u = ease(seg(TESTER.inRight, TESTER.shut)); cu = 180; sc = 1 - 0.14 * u; }
   const spC = PED_SPRITES.crown2;
+  /* КОРОНКА ВЫЕЗЖАЕТ ИЗ ПЕЧИ РАСКАЛЁННОЙ и остывает по дороге к прессу:
+     пока она в печи и на выходе — hot = 1, к прессу сходит в ноль. */
+  const cHot = ph < TESTER.outFwd ? 1 : 1 - ease(seg(TESTER.outFwd, TESTER.atPress));
   const crown = (al2) => {
     if (!spC || !spC.c) return;
     const h2 = 46 * sc * S1, w2 = h2 * spC.w / spC.h;
     ctx.save(); ctx.globalAlpha = al2;
     ctx.drawImage(spC.c, X(cu) - w2 / 2, Y(cv) - h2, w2, h2);
+    if (cHot > 0.01){
+      ctx.globalCompositeOperation = 'lighter';
+      const gh = ctx.createRadialGradient(X(cu), Y(cv) - h2 * 0.5, 0, X(cu), Y(cv) - h2 * 0.5, w2 * 0.86);
+      /* ореол держим тихим: на пробе коронка тонула в собственном свете и
+         читалась белым пятном, а не коронкой */
+      gh.addColorStop(0, 'rgba(255,196,120,' + (0.34 * cHot).toFixed(3) + ')');
+      gh.addColorStop(0.5, 'rgba(255,128,48,' + (0.20 * cHot).toFixed(3) + ')');
+      gh.addColorStop(1, 'rgba(255,90,30,0)');
+      ctx.fillStyle = gh;
+      ctx.beginPath(); ctx.arc(X(cu), Y(cv) - h2 * 0.5, w2 * 0.95, 0, 7); ctx.fill();
+    }
     ctx.restore();
   };
   /* ── ПОДДОН. У машины на кадре Эльдара это толстый стальной лоток: видна его
@@ -11316,11 +11330,26 @@ function drawCrownTester(b, t){
     ctx.beginPath(); ctx.arc(X(u), Y(28), 2.4 * S1, 0, 7); ctx.fill();
   }
 
-  /* ── ДВА ТОННЕЛЯ. Короб со скошенной верхней гранью, тёмный проём, тёплый
-     свет внутри и створка, которая ходит вверх-вниз. ── */
-  const port = (side) => {
+  /* ── ДВА ТОННЕЛЯ. Слева ПЕЧЬ: раскалённое нутро, жар валит из устья, когда
+     створка поднята, и коронка выезжает оттуда горячей. Справа обычный приёмный
+     тоннель. Короб со скошенной верхней гранью, проём, створка вверх-вниз.
+
+     РИСУЮТСЯ В ДВА ПРОХОДА, И КОРОНКА МЕЖДУ НИМИ. Раньше короб со створкой шёл
+     целиком ПОСЛЕ коронки, и она пропадала внутри тоннеля — «находится за слоем
+     стенки и не видна, пока не выглянет, уезжая» (Эльдар, 2026-10-01). Теперь
+     сперва короб и нутро, потом коронка (обрезанная по самому устью), потом
+     створка и рамка: в открытом устье её видно, опускающаяся створка её
+     накрывает. ── */
+  const portGeo = (side) => {
     const u0 = side < 0 ? -246 : 108, u1 = side < 0 ? -108 : 246;
     const vTop = 168;
+    return {u0, u1, vTop, o0: u0 + 18, o1: u1 - 18, oT: vTop - 22, oB: dTopB + 4};
+  };
+  const portOpen = (side) => side < 0
+    ? ease(seg(0, TESTER.outUp)) * (1 - ease(seg(TESTER.outFwd, TESTER.atPress)))
+    : (pass ? ease(seg(TESTER.up, TESTER.toRight)) * (1 - ease(seg(TESTER.inRight, TESTER.shut))) : 0);
+  const portBack = (side) => {
+    const G = portGeo(side), {u0, u1, vTop, o0, o1, oT, oB} = G;
     // корпус
     ctx.fillStyle = vg(dTopB, vTop, '#8b949e', '#616a74');
     ctx.beginPath();
@@ -11329,25 +11358,72 @@ function drawCrownTester(b, t){
     ctx.closePath(); ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,0.18)';
     ctx.fillRect(X(u0 + 10), Y(vTop), (u1 - u0 - 20) * S1, 3 * S1);
-    // проём и свет в нём
-    const o0 = u0 + 18, o1 = u1 - 18, oT = vTop - 22, oB = dTopB + 4;
+    // нутро
+    const cxm = X((o0 + o1) / 2), wIn = (o1 - o0) * S1, hIn = (oT - oB) * S1;
     ctx.fillStyle = '#0e1216';
-    ctx.fillRect(X(o0), Y(oT), (o1 - o0) * S1, (oT - oB) * S1);
-    const glow = ctx.createRadialGradient(X((o0 + o1) / 2), Y(oB + 18), 0,
-                                          X((o0 + o1) / 2), Y(oB + 18), (o1 - o0) * 0.62 * S1);
-    glow.addColorStop(0, 'rgba(255,226,170,0.55)'); glow.addColorStop(1, 'rgba(255,226,170,0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(X(o0), Y(oT), (o1 - o0) * S1, (oT - oB) * S1);
-    // лента, уходящая вглубь
-    ctx.strokeStyle = 'rgba(180,190,200,0.28)'; ctx.lineWidth = Math.max(1, 1.2 * S1);
-    for (let n = 1; n <= 4; n++){
-      const v = oB + n * (oT - oB) / 5.5;
-      ctx.beginPath(); ctx.moveTo(X(o0 + n * 3), Y(v)); ctx.lineTo(X(o1 - n * 3), Y(v)); ctx.stroke();
+    ctx.fillRect(X(o0), Y(oT), wIn, hIn);
+    if (side < 0){
+      /* ПЕЧЬ. Раскалённое нутро: белое у пода, оранжевое выше, тёмно-красное
+         по углам. Дышит — медленная пульсация, как у настоящего муфеля. */
+      const puls = 0.86 + 0.14 * Math.sin(t * 1.7) * Math.sin(t * 0.63 + 1.1);
+      const hot = ctx.createRadialGradient(cxm, Y(oB + 14), 0, cxm, Y(oB + 14), (o1 - o0) * 0.78 * S1);
+      hot.addColorStop(0,    'rgba(255,248,224,' + (0.95 * puls).toFixed(3) + ')');
+      hot.addColorStop(0.28, 'rgba(255,190,96,'  + (0.92 * puls).toFixed(3) + ')');
+      hot.addColorStop(0.62, 'rgba(236,112,34,'  + (0.78 * puls).toFixed(3) + ')');
+      hot.addColorStop(1,    'rgba(120,28,10,0.72)');
+      ctx.fillStyle = hot;
+      ctx.fillRect(X(o0), Y(oT), wIn, hIn);
+      // спирали нагревателя по задней стенке — тонкие светлые дуги
+      ctx.strokeStyle = 'rgba(255,236,190,0.35)'; ctx.lineWidth = Math.max(1, 1.1 * S1);
+      for (let n = 1; n <= 3; n++){
+        const v = oB + n * (oT - oB) / 4.2;
+        ctx.beginPath(); ctx.moveTo(X(o0 + 6), Y(v)); ctx.lineTo(X(o1 - 6), Y(v)); ctx.stroke();
+      }
+    } else {
+      const glow = ctx.createRadialGradient(cxm, Y(oB + 18), 0, cxm, Y(oB + 18), (o1 - o0) * 0.62 * S1);
+      glow.addColorStop(0, 'rgba(255,226,170,0.55)'); glow.addColorStop(1, 'rgba(255,226,170,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(X(o0), Y(oT), wIn, hIn);
+      // лента, уходящая вглубь
+      ctx.strokeStyle = 'rgba(180,190,200,0.28)'; ctx.lineWidth = Math.max(1, 1.2 * S1);
+      for (let n = 1; n <= 4; n++){
+        const v = oB + n * (oT - oB) / 5.5;
+        ctx.beginPath(); ctx.moveTo(X(o0 + n * 3), Y(v)); ctx.lineTo(X(o1 - n * 3), Y(v)); ctx.stroke();
+      }
+    }
+  };
+  const portFront = (side) => {
+    const G = portGeo(side), {o0, o1, oT, oB} = G;
+    const openAmt = portOpen(side);
+    /* ЖАР ИЗ ПЕЧИ. Пока створка поднята, из устья валит горячий воздух: тёплое
+       пятно на настиле перед печью и три восходящих струи, которые дрожат и
+       тают. Рисуется ПОСЛЕ коронки — жар идёт поверх неё, не из-под. */
+    if (side < 0 && openAmt > 0.02){
+      const cxm = X((o0 + o1) / 2), wIn = (o1 - o0) * S1;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const spill = ctx.createRadialGradient(cxm, Y(oB), 0, cxm, Y(oB), wIn * 0.95);
+      spill.addColorStop(0, 'rgba(255,176,86,' + (0.52 * openAmt).toFixed(3) + ')');
+      spill.addColorStop(1, 'rgba(255,120,40,0)');
+      ctx.fillStyle = spill;
+      ctx.beginPath(); ctx.arc(cxm, Y(oB), wIn * 0.95, 0, 7); ctx.fill();
+      for (let n = 0; n < 3; n++){
+        const ph2 = (t * 0.55 + n * 0.37) % 1;
+        const rise = ph2 * 88 * S1;
+        const sway = Math.sin(t * 1.9 + n * 2.1) * 9 * S1;
+        const a2 = 0.30 * openAmt * Math.sin(Math.PI * ph2);
+        if (a2 <= 0.004) continue;
+        const r2 = (14 + 16 * ph2) * S1;
+        const pl = ctx.createRadialGradient(cxm + sway + (n - 1) * wIn * 0.26, Y(oB) - rise, 0,
+                                            cxm + sway + (n - 1) * wIn * 0.26, Y(oB) - rise, r2);
+        pl.addColorStop(0, 'rgba(255,186,110,' + a2.toFixed(3) + ')');
+        pl.addColorStop(1, 'rgba(255,140,60,0)');
+        ctx.fillStyle = pl;
+        ctx.beginPath(); ctx.arc(cxm + sway + (n - 1) * wIn * 0.26, Y(oB) - rise, r2, 0, 7); ctx.fill();
+      }
+      ctx.restore();
     }
     // створка
-    let openAmt = 0;
-    if (side < 0) openAmt = ease(seg(0, TESTER.outUp)) * (1 - ease(seg(TESTER.outFwd, TESTER.atPress)));
-    else if (pass) openAmt = ease(seg(TESTER.up, TESTER.toRight)) * (1 - ease(seg(TESTER.inRight, TESTER.shut)));
     const hSh = (oT - oB) * (1 - openAmt);
     if (hSh > 0.5){
       ctx.fillStyle = vg(oT - hSh, oT, '#aeb7c0', '#7d868f');
@@ -11358,7 +11434,11 @@ function drawCrownTester(b, t){
     ctx.strokeStyle = 'rgba(24,30,36,0.55)'; ctx.lineWidth = Math.max(1, 1.4 * S1);
     ctx.strokeRect(X(o0), Y(oT), (o1 - o0) * S1, (oT - oB) * S1);
   };
-  /* проход А: то, что уже в тоннеле, уходит ПОД короб и створку */
+  portBack(-1); portBack(1);
+  /* проход А: коронка внутри тоннеля — ПОСЛЕ нутра, но ДО створки. Обрезка
+     идёт по той же паре полос, что и раньше (−260…−100 и 100…260): по устью
+     её резать нельзя — коронка стоит на настиле, то есть НИЖЕ нижней кромки
+     устья, и на выходе её срезало ровно там, где она должна выезжать. */
   if (!brokeC && (cu < -100 || cu > 100)){
     ctx.save();
     ctx.beginPath();
@@ -11368,7 +11448,7 @@ function drawCrownTester(b, t){
     crown(al);
     ctx.restore();
   }
-  port(-1); port(1);
+  portFront(-1); portFront(1);
 
   /* ── КОЛОННА. Светлый корпус, внутри чёрная рифлёная направляющая, сверху
      скруглённая шапка — как на снимке Shimadzu. ── */
