@@ -4809,7 +4809,19 @@ function drawTodayTV(){
   const yTop = py(vCen - TODAY_TV.h / 2, kw), yBot = py(vCen + TODAY_TV.h / 2, kw);
   const w = x1 - x0, h = yBot - yTop;
   rivet('today_tv', (x0 + x1) / 2, kw);
+  /* ПЛАЗМА КОНЧАЕТСЯ ТАМ, ГДЕ КОНЧАЕТСЯ СТЕНА. Левее портала стеклянного холла
+     стены финала нет — там фотография другой комнаты, и экран, занесённый туда
+     параллаксом, висел прямо в холле (Эльдар, 2026-10-01, кадр из-за колонны).
+     Колонна портала стоит ближе стены, поэтому при взгляде слева проекция
+     глубокой стены уходит ЛЕВЕЕ неё: обрезаем экран по правой кромке колонны —
+     она и есть видимый край этой стены. */
+  const kc = k(HALL_PORTAL_Z);
+  const colR = px(HALL_FRAME_R, kc) + 120 * kc * SS / 2;
   ctx.save();
+  if (colR > x0){
+    if (colR >= x1){ ctx.restore(); return; }
+    ctx.beginPath(); ctx.rect(colR, 0, W - colR, H); ctx.clip();
+  }
   /* корпус — та же тёмная оправа, что у табло: это два экрана одной стены */
   ctx.shadowColor = 'rgba(16,22,30,0.30)'; ctx.shadowBlur = 30 * u; ctx.shadowOffsetY = 10 * u;
   ctx.fillStyle = '#12161b';
