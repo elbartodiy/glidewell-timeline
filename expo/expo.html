@@ -7457,6 +7457,33 @@ function drawPlane93(){
   if (back){ ctx.translate(pt[0], 0); ctx.scale(-1, 1); ctx.translate(-pt[0], 0); }
   ctx.drawImage(spriteMip(sp, wPx, hPx), pt[0] - wPx / 2, pt[1] - hPx, wPx, hPx);
   ctx.restore();
+  /* ЗАПОМНИЛИ КАДР САМОЛЁТА — ЕГО ПОВТОРЯТ ПОВЕРХ УЛИЦЫ. Он рисуется ДО макета,
+     потому что паркуется за зданием; улица рисуется ещё позже, и на подлёте
+     самолёт уходил за корпус — «летит как бы сквозь стену» (Эльдар,
+     2026-09-30). Второй проход кладёт ту же картинку ещё раз, но только внутри
+     просвета: за пределами просвета его по-прежнему закрывает стена зала, а
+     макета второй проход не касается — макет стоит правее просвета. */
+  PLANE93_OVER = {sp, pt, wPx, hPx, back};
+}
+let PLANE93_OVER = null;
+/* полоса просвета на экране — та же, по которой вырезается стена зала */
+function stOpenStrip(){
+  const [x0, x1] = stOpenSpan();
+  const zs = [wallZAt(x0), wallZAt((x0 + x1) / 2), wallZAt(x1)];
+  let a = Infinity, b = -Infinity;
+  for (const z of zs){ const kz = k(z); a = Math.min(a, px(x0, kz)); b = Math.max(b, px(x1, kz)); }
+  return [a, b];
+}
+function drawPlane93OverStreet(){
+  const P = PLANE93_OVER; PLANE93_OVER = null;
+  if (!P) return;
+  const [a, b] = stOpenStrip();
+  if (b < -40 || a > W + 40) return;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(a, 0, b - a, H); ctx.clip();
+  if (P.back){ ctx.translate(P.pt[0], 0); ctx.scale(-1, 1); ctx.translate(-P.pt[0], 0); }
+  ctx.drawImage(spriteMip(P.sp, P.wPx, P.hPx), P.pt[0] - P.wPx / 2, P.pt[1] - P.hPx, P.wPx, P.hPx);
+  ctx.restore();
 }
 /* -------- AND TWO PASSES THAT DO NOT LAND --------
    These are not tied to the scroll. Reaching the year is the cue; after that
@@ -17975,6 +18002,7 @@ function frame(){
      в ближнем проходе, позже улицы, и макет налезал на подоконник (Эльдар,
      2026-09-25). Второй вызов рисует только стены, поверх. */
   drawStreet();
+  drawPlane93OverStreet();   // самолёт летит ПЕРЕД проёмом, а не сквозь его стену
   drawFlybys();        // the two passes that never touch down
   drawDataRelay07(t);  // the first file, leaving 2007 for the digital revolution's screen
 
