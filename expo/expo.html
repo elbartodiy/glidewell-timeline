@@ -7130,6 +7130,62 @@ function drawAIRelay(t){
   ctx.restore();
 }
 
+/* ТАБЛИЧКА «BRUXZIR COMING SOON» — ВРЕМЕННАЯ, И ЭТО ВИДНО.
+   Эльдар (2026-09-30) прислал неоновую вывеску и попросил повесить её на
+   2009-й «как under construction, криво, будто на ниточке»: сам BruxZir он
+   будет делать большим объектом и, скорее всего, связанным с Digital
+   Revolution. Значит щит не должен выглядеть законченной частью стены — он
+   висит на одном гвозде, на нитке, с перекосом, и этим говорит «здесь ещё не
+   сделано». Висит на плоскости стены (wallSX — закон заклёпки), размер в
+   мировых единицах, перекос — поворот вокруг точки подвеса. */
+const BZ_SOON = {
+  /* Висит ЛЕВЕЕ такта — там, где BruxZir ещё не появился, — и настолько
+     крупная, что заходит на колонну слева и на нижний край цифр «2009». */
+  dx: -545,     // точка подвеса, в мировых единицах от середины такта
+  top: 60,      // мировая высота точки подвеса: у самых цифр, чуть ниже их верха
+  w: 1180,      // ширина щита в мировых единицах — вдвое против первой пробы
+  tilt: -0.07,  // перекос, радианы — около 4°
+  hang: 0.34,   // где нитка держит щит: доля ширины от левого края
+  cord: 160,    // длина нитки в мировых единицах
+};
+function drawBruxZirSoon(){
+  const sp = PROP_SPRITES.ph_bz_soon; if (!sp) return;
+  const b = BEATS.find(q => q.t === 'BRUXZIR'); if (!b) return;
+  const kk = k(exhibitZ(b.x));
+  const sx = wallSX(b.x, BZ_SOON.dx);
+  const w = BZ_SOON.w * kk * SS, h = w * sp.h / sp.w;
+  if (sx < -w * 2 || sx > W + w * 2) return;
+  const yHang = py(BZ_SOON.top, kk);
+  const yNail = py(BZ_SOON.top - BZ_SOON.cord, kk);
+  rivet('bz_soon', sx, kk);
+  // гвоздь и нитка
+  ctx.save();
+  ctx.strokeStyle = 'rgba(28,32,38,0.55)';
+  ctx.lineWidth = Math.max(1, 2.2 * kk * SS);
+  ctx.beginPath(); ctx.moveTo(sx, yNail); ctx.lineTo(sx, yHang); ctx.stroke();
+  ctx.fillStyle = 'rgba(32,36,42,0.8)';
+  ctx.beginPath(); ctx.arc(sx, yNail, Math.max(1.2, 4 * kk * SS), 0, 7); ctx.fill();
+  ctx.restore();
+  // щит: поворот вокруг точки подвеса
+  ctx.save();
+  ctx.translate(sx, yHang);
+  ctx.rotate(BZ_SOON.tilt);
+  const x0 = -w * BZ_SOON.hang;
+  // мягкая тень на стене — щит висит в сантиметрах от неё, а не наклеен
+  ctx.save();
+  ctx.shadowColor = 'rgba(10,14,20,0.42)';
+  ctx.shadowBlur = 22 * kk * SS;
+  ctx.shadowOffsetX = 6 * kk * SS;
+  ctx.shadowOffsetY = 9 * kk * SS;
+  ctx.fillStyle = 'rgba(0,0,0,1)';
+  ctx.fillRect(x0, 0, w, h);
+  ctx.restore();
+  ctx.drawImage(spriteMip(sp, w, h), x0, 0, w, h);
+  ctx.restore();
+  // свечение неона ложится на стену вокруг щита
+  drawGlow('90,160,255', sx + w * (0.5 - BZ_SOON.hang), yHang + h * 0.5, w * 0.72, 0.13);
+}
+
 /* 1993 · NEWPORT BEACH. The one bay in the hall whose film the company shot
    itself: an architect's computer flythrough of a building that did not exist
    yet, cutting — same angle, single cut — to the same building finished. So the
@@ -7456,6 +7512,30 @@ function drawPlane93(){
   ctx.save();
   if (back){ ctx.translate(pt[0], 0); ctx.scale(-1, 1); ctx.translate(-pt[0], 0); }
   ctx.drawImage(spriteMip(sp, wPx, hPx), pt[0] - wPx / 2, pt[1] - hPx, wPx, hPx);
+  ctx.restore();
+  /* ЗАПОМНИЛИ КАДР САМОЛЁТА — ЕГО ПОВТОРЯТ ПОВЕРХ УЛИЦЫ. Он рисуется ДО макета,
+     потому что паркуется за зданием; улица рисуется ещё позже, и на подлёте
+     самолёт уходил за корпус — «летит как бы сквозь стену» (Эльдар,
+     2026-09-30). Второй проход кладёт ту же картинку ещё раз, поверх улицы.
+     ГРАНИЦА ВТОРОГО ПРОХОДА — ЛЕВЫЙ КРАЙ БУХТЫ 1993, а не просвет. Сперва я
+     обрезал его просветом, и самолёт по-прежнему прятался за корпусом: «он за
+     стеной, он не должен быть там, он как бы из окна в окно летит, поэтому он
+     перед этой стеной» (Эльдар, 2026-09-30, поймал кадр). Улица вся левее
+     бухты, макет — правее: обрезка по этой линии пускает самолёт поверх обоих
+     корпусов и не даёт ему залезть на макет, за которым он паркуется. */
+  PLANE93_OVER = {sp, pt, wPx, hPx, back};
+}
+let PLANE93_OVER = null;
+function drawPlane93OverStreet(){
+  const P = PLANE93_OVER; PLANE93_OVER = null;
+  if (!P) return;
+  /* вся улица левее бухты 1993, макет — правее: граница ровно здесь */
+  const xR = px(REC93_BL, k(REC93_Z));
+  if (P.pt[0] - P.wPx > xR) return;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(-W, 0, xR + W, H); ctx.clip();
+  if (P.back){ ctx.translate(P.pt[0], 0); ctx.scale(-1, 1); ctx.translate(-P.pt[0], 0); }
+  ctx.drawImage(spriteMip(P.sp, P.wPx, P.hPx), P.pt[0] - P.wPx / 2, P.pt[1] - P.hPx, P.wPx, P.hPx);
   ctx.restore();
 }
 /* -------- AND TWO PASSES THAT DO NOT LAND --------
@@ -9280,12 +9360,19 @@ function stFace(xw, p){
   ctx.fill('evenodd');
   const al = stSkirtAlpha();
   if (al > 0.004){
+    /* ЮБКА НЕ ВЫХОДИТ НА ПОЛ ЗАЛА. Она лежала поперёк пола серой полосой
+       справа и слева от проёма — «надо этот элемент убрать: либо отрежь
+       лишнее, либо переведи слой ниже» (Эльдар, 2026-10-01, две стрелки).
+       Отрезано: ниже пола стена есть только внутри клина, где пола нет. */
+    ctx.save();
+    ctx.beginPath(); stFloorGapPath(); ctx.clip();
     ctx.globalAlpha = al;
     ctx.beginPath();
     skirt.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
     ctx.closePath();
     ctx.fill();
     ctx.globalAlpha = 1;
+    ctx.restore();
   }
   ctx.restore();
 }
@@ -9294,12 +9381,21 @@ function stFace(xw, p){
    кроме полоски окна. */
 function stEnd(p){
   const kz = k(p.zFar);
+  /* ТОРЕЦ ТОЖЕ КОНЧАЕТСЯ НА ПОЛУ, А НИЖЕ ЖИВЁТ ТОЛЬКО В КЛИНЕ. Он уходил до
+     2560 без всякой обрезки и стоял серой полосой поперёк пола зала рядом с
+     проёмом (Эльдар, 2026-10-01). Ниже пола рисуется отдельным куском, внутри
+     клина, где пола нет. */
+  stEndBand(p, kz, ST.top, 1080, false);
+  stEndBand(p, kz, 1080, ST.bot, true);
+}
+function stEndBand(p, kz, yTop, yBot, inGap){
   ctx.save(); stClip(p.a, p);
+  if (inGap){ ctx.beginPath(); stFloorGapPath(); ctx.clip(); }
   ctx.beginPath();
-  ctx.moveTo(px(p.a, kz), py(ST.top, kz));
-  ctx.lineTo(px(p.b, kz), py(ST.top, kz));
-  ctx.lineTo(px(p.b, kz), py(ST.bot, kz));
-  ctx.lineTo(px(p.a, kz), py(ST.bot, kz));
+  ctx.moveTo(px(p.a, kz), py(yTop, kz));
+  ctx.lineTo(px(p.b, kz), py(yTop, kz));
+  ctx.lineTo(px(p.b, kz), py(yBot, kz));
+  ctx.lineTo(px(p.a, kz), py(yBot, kz));
   ctx.closePath();
   ctx.fillStyle = ST.jamb; ctx.fill();
   ctx.restore();
@@ -9364,6 +9460,17 @@ function stOpenSpan(){
   const P = stPairs();
   return [P[0].a, P[1].b];
 }
+/* КЛИН, В КОТОРОМ ПОЛА ЗАЛА НЕТ — контур, а не вырез. Им режется пол
+   (stCutHall) и им же обрезается юбка стен: ниже пола стена существует только
+   там, где пола не нарисовано, и ни на единицу дальше. */
+function stFloorGapPath(yTop){
+  const [x0, x1] = stOpenSpan();
+  const yT = yTop != null ? yTop : CFG.horizon * SS + 1;
+  const L = floorLineAt(x0), R = floorLineAt(x1);
+  ctx.moveTo(L(yT), yT); ctx.lineTo(R(yT), yT);
+  ctx.lineTo(R(H), H);   ctx.lineTo(L(H), H);
+  ctx.closePath();
+}
 function stCutHall(kind){
   const [x0, x1] = stOpenSpan();
   /* СТЕНА ЗАЛА НА УЧАСТКЕ МОЖЕТ ИДТИ НА РАЗНЫХ ГЛУБИНАХ — улица приходится
@@ -9417,11 +9524,7 @@ function stCutHall(kind){
        относительно стены и белого пола»). Пол зала доходит до подошвы стены,
        а узкий клин серого пола между стеной и белой плитой — это и есть пол
        у стены, он там и должен быть. */
-    const L = line(x0);
-    const R = line(x1);
-    ctx.moveTo(L(yT), yT); ctx.lineTo(R(yT), yT);
-    ctx.lineTo(R(H), H);   ctx.lineTo(L(H), H);
-    ctx.closePath();
+    stFloorGapPath(yT);
   }
   ctx.clip('evenodd');
   return true;
@@ -10761,7 +10864,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260928-web2001-street';
+const ASSET_V = '20260930-bruxzir-soon';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -10830,6 +10933,7 @@ async function loadPhotoSkin(){
     ph_hall_plinth: 'hall_plinth.png',// the low stone the turning crown stands on
     ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
     ph_pillow: 'pillow.png',          // 1996: подушка с каппой Silent Nite — год уходит со стены, предмет остаётся
+    ph_bz_soon: 'bruxzir_soon.png',   // 2009: неоновая табличка BruxZir COMING SOON — временная, висит на ниточке
     ph_pfm1: 'pfm_1.png', ph_pfm2: 'pfm_2.png', ph_pfm3: 'pfm_3.png',   // the six PFM stages, cut apart
     ph_pfm4: 'pfm_4.png', ph_pfm5: 'pfm_5.png', ph_pfm6: 'pfm_6.png',
     ph_pfmrow: 'pfm_row.png',         // and the whole line, for the screen-filling look
@@ -11172,11 +11276,25 @@ function drawCrownTester(b, t){
   else if (ph < TESTER.inRight){ cu = 180 * ease(seg(TESTER.toRight, TESTER.inRight)); }
   else { const u = ease(seg(TESTER.inRight, TESTER.shut)); cu = 180; sc = 1 - 0.14 * u; }
   const spC = PED_SPRITES.crown2;
+  /* КОРОНКА ВЫЕЗЖАЕТ ИЗ ПЕЧИ РАСКАЛЁННОЙ и остывает по дороге к прессу:
+     пока она в печи и на выходе — hot = 1, к прессу сходит в ноль. */
+  const cHot = ph < TESTER.outFwd ? 1 : 1 - ease(seg(TESTER.outFwd, TESTER.atPress));
   const crown = (al2) => {
     if (!spC || !spC.c) return;
     const h2 = 46 * sc * S1, w2 = h2 * spC.w / spC.h;
     ctx.save(); ctx.globalAlpha = al2;
     ctx.drawImage(spC.c, X(cu) - w2 / 2, Y(cv) - h2, w2, h2);
+    if (cHot > 0.01){
+      ctx.globalCompositeOperation = 'lighter';
+      const gh = ctx.createRadialGradient(X(cu), Y(cv) - h2 * 0.5, 0, X(cu), Y(cv) - h2 * 0.5, w2 * 0.86);
+      /* ореол держим тихим: на пробе коронка тонула в собственном свете и
+         читалась белым пятном, а не коронкой */
+      gh.addColorStop(0, 'rgba(255,196,120,' + (0.34 * cHot).toFixed(3) + ')');
+      gh.addColorStop(0.5, 'rgba(255,128,48,' + (0.20 * cHot).toFixed(3) + ')');
+      gh.addColorStop(1, 'rgba(255,90,30,0)');
+      ctx.fillStyle = gh;
+      ctx.beginPath(); ctx.arc(X(cu), Y(cv) - h2 * 0.5, w2 * 0.95, 0, 7); ctx.fill();
+    }
     ctx.restore();
   };
   /* ── ПОДДОН. У машины на кадре Эльдара это толстый стальной лоток: видна его
@@ -11212,11 +11330,26 @@ function drawCrownTester(b, t){
     ctx.beginPath(); ctx.arc(X(u), Y(28), 2.4 * S1, 0, 7); ctx.fill();
   }
 
-  /* ── ДВА ТОННЕЛЯ. Короб со скошенной верхней гранью, тёмный проём, тёплый
-     свет внутри и створка, которая ходит вверх-вниз. ── */
-  const port = (side) => {
+  /* ── ДВА ТОННЕЛЯ. Слева ПЕЧЬ: раскалённое нутро, жар валит из устья, когда
+     створка поднята, и коронка выезжает оттуда горячей. Справа обычный приёмный
+     тоннель. Короб со скошенной верхней гранью, проём, створка вверх-вниз.
+
+     РИСУЮТСЯ В ДВА ПРОХОДА, И КОРОНКА МЕЖДУ НИМИ. Раньше короб со створкой шёл
+     целиком ПОСЛЕ коронки, и она пропадала внутри тоннеля — «находится за слоем
+     стенки и не видна, пока не выглянет, уезжая» (Эльдар, 2026-10-01). Теперь
+     сперва короб и нутро, потом коронка (обрезанная по самому устью), потом
+     створка и рамка: в открытом устье её видно, опускающаяся створка её
+     накрывает. ── */
+  const portGeo = (side) => {
     const u0 = side < 0 ? -246 : 108, u1 = side < 0 ? -108 : 246;
     const vTop = 168;
+    return {u0, u1, vTop, o0: u0 + 18, o1: u1 - 18, oT: vTop - 22, oB: dTopB + 4};
+  };
+  const portOpen = (side) => side < 0
+    ? ease(seg(0, TESTER.outUp)) * (1 - ease(seg(TESTER.outFwd, TESTER.atPress)))
+    : (pass ? ease(seg(TESTER.up, TESTER.toRight)) * (1 - ease(seg(TESTER.inRight, TESTER.shut))) : 0);
+  const portBack = (side) => {
+    const G = portGeo(side), {u0, u1, vTop, o0, o1, oT, oB} = G;
     // корпус
     ctx.fillStyle = vg(dTopB, vTop, '#8b949e', '#616a74');
     ctx.beginPath();
@@ -11225,25 +11358,72 @@ function drawCrownTester(b, t){
     ctx.closePath(); ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,0.18)';
     ctx.fillRect(X(u0 + 10), Y(vTop), (u1 - u0 - 20) * S1, 3 * S1);
-    // проём и свет в нём
-    const o0 = u0 + 18, o1 = u1 - 18, oT = vTop - 22, oB = dTopB + 4;
+    // нутро
+    const cxm = X((o0 + o1) / 2), wIn = (o1 - o0) * S1, hIn = (oT - oB) * S1;
     ctx.fillStyle = '#0e1216';
-    ctx.fillRect(X(o0), Y(oT), (o1 - o0) * S1, (oT - oB) * S1);
-    const glow = ctx.createRadialGradient(X((o0 + o1) / 2), Y(oB + 18), 0,
-                                          X((o0 + o1) / 2), Y(oB + 18), (o1 - o0) * 0.62 * S1);
-    glow.addColorStop(0, 'rgba(255,226,170,0.55)'); glow.addColorStop(1, 'rgba(255,226,170,0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(X(o0), Y(oT), (o1 - o0) * S1, (oT - oB) * S1);
-    // лента, уходящая вглубь
-    ctx.strokeStyle = 'rgba(180,190,200,0.28)'; ctx.lineWidth = Math.max(1, 1.2 * S1);
-    for (let n = 1; n <= 4; n++){
-      const v = oB + n * (oT - oB) / 5.5;
-      ctx.beginPath(); ctx.moveTo(X(o0 + n * 3), Y(v)); ctx.lineTo(X(o1 - n * 3), Y(v)); ctx.stroke();
+    ctx.fillRect(X(o0), Y(oT), wIn, hIn);
+    if (side < 0){
+      /* ПЕЧЬ. Раскалённое нутро: белое у пода, оранжевое выше, тёмно-красное
+         по углам. Дышит — медленная пульсация, как у настоящего муфеля. */
+      const puls = 0.86 + 0.14 * Math.sin(t * 1.7) * Math.sin(t * 0.63 + 1.1);
+      const hot = ctx.createRadialGradient(cxm, Y(oB + 14), 0, cxm, Y(oB + 14), (o1 - o0) * 0.78 * S1);
+      hot.addColorStop(0,    'rgba(255,248,224,' + (0.95 * puls).toFixed(3) + ')');
+      hot.addColorStop(0.28, 'rgba(255,190,96,'  + (0.92 * puls).toFixed(3) + ')');
+      hot.addColorStop(0.62, 'rgba(236,112,34,'  + (0.78 * puls).toFixed(3) + ')');
+      hot.addColorStop(1,    'rgba(120,28,10,0.72)');
+      ctx.fillStyle = hot;
+      ctx.fillRect(X(o0), Y(oT), wIn, hIn);
+      // спирали нагревателя по задней стенке — тонкие светлые дуги
+      ctx.strokeStyle = 'rgba(255,236,190,0.35)'; ctx.lineWidth = Math.max(1, 1.1 * S1);
+      for (let n = 1; n <= 3; n++){
+        const v = oB + n * (oT - oB) / 4.2;
+        ctx.beginPath(); ctx.moveTo(X(o0 + 6), Y(v)); ctx.lineTo(X(o1 - 6), Y(v)); ctx.stroke();
+      }
+    } else {
+      const glow = ctx.createRadialGradient(cxm, Y(oB + 18), 0, cxm, Y(oB + 18), (o1 - o0) * 0.62 * S1);
+      glow.addColorStop(0, 'rgba(255,226,170,0.55)'); glow.addColorStop(1, 'rgba(255,226,170,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(X(o0), Y(oT), wIn, hIn);
+      // лента, уходящая вглубь
+      ctx.strokeStyle = 'rgba(180,190,200,0.28)'; ctx.lineWidth = Math.max(1, 1.2 * S1);
+      for (let n = 1; n <= 4; n++){
+        const v = oB + n * (oT - oB) / 5.5;
+        ctx.beginPath(); ctx.moveTo(X(o0 + n * 3), Y(v)); ctx.lineTo(X(o1 - n * 3), Y(v)); ctx.stroke();
+      }
+    }
+  };
+  const portFront = (side) => {
+    const G = portGeo(side), {o0, o1, oT, oB} = G;
+    const openAmt = portOpen(side);
+    /* ЖАР ИЗ ПЕЧИ. Пока створка поднята, из устья валит горячий воздух: тёплое
+       пятно на настиле перед печью и три восходящих струи, которые дрожат и
+       тают. Рисуется ПОСЛЕ коронки — жар идёт поверх неё, не из-под. */
+    if (side < 0 && openAmt > 0.02){
+      const cxm = X((o0 + o1) / 2), wIn = (o1 - o0) * S1;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const spill = ctx.createRadialGradient(cxm, Y(oB), 0, cxm, Y(oB), wIn * 0.95);
+      spill.addColorStop(0, 'rgba(255,176,86,' + (0.52 * openAmt).toFixed(3) + ')');
+      spill.addColorStop(1, 'rgba(255,120,40,0)');
+      ctx.fillStyle = spill;
+      ctx.beginPath(); ctx.arc(cxm, Y(oB), wIn * 0.95, 0, 7); ctx.fill();
+      for (let n = 0; n < 3; n++){
+        const ph2 = (t * 0.55 + n * 0.37) % 1;
+        const rise = ph2 * 88 * S1;
+        const sway = Math.sin(t * 1.9 + n * 2.1) * 9 * S1;
+        const a2 = 0.30 * openAmt * Math.sin(Math.PI * ph2);
+        if (a2 <= 0.004) continue;
+        const r2 = (14 + 16 * ph2) * S1;
+        const pl = ctx.createRadialGradient(cxm + sway + (n - 1) * wIn * 0.26, Y(oB) - rise, 0,
+                                            cxm + sway + (n - 1) * wIn * 0.26, Y(oB) - rise, r2);
+        pl.addColorStop(0, 'rgba(255,186,110,' + a2.toFixed(3) + ')');
+        pl.addColorStop(1, 'rgba(255,140,60,0)');
+        ctx.fillStyle = pl;
+        ctx.beginPath(); ctx.arc(cxm + sway + (n - 1) * wIn * 0.26, Y(oB) - rise, r2, 0, 7); ctx.fill();
+      }
+      ctx.restore();
     }
     // створка
-    let openAmt = 0;
-    if (side < 0) openAmt = ease(seg(0, TESTER.outUp)) * (1 - ease(seg(TESTER.outFwd, TESTER.atPress)));
-    else if (pass) openAmt = ease(seg(TESTER.up, TESTER.toRight)) * (1 - ease(seg(TESTER.inRight, TESTER.shut)));
     const hSh = (oT - oB) * (1 - openAmt);
     if (hSh > 0.5){
       ctx.fillStyle = vg(oT - hSh, oT, '#aeb7c0', '#7d868f');
@@ -11254,7 +11434,11 @@ function drawCrownTester(b, t){
     ctx.strokeStyle = 'rgba(24,30,36,0.55)'; ctx.lineWidth = Math.max(1, 1.4 * S1);
     ctx.strokeRect(X(o0), Y(oT), (o1 - o0) * S1, (oT - oB) * S1);
   };
-  /* проход А: то, что уже в тоннеле, уходит ПОД короб и створку */
+  portBack(-1); portBack(1);
+  /* проход А: коронка внутри тоннеля — ПОСЛЕ нутра, но ДО створки. Обрезка
+     идёт по той же паре полос, что и раньше (−260…−100 и 100…260): по устью
+     её резать нельзя — коронка стоит на настиле, то есть НИЖЕ нижней кромки
+     устья, и на выходе её срезало ровно там, где она должна выезжать. */
   if (!brokeC && (cu < -100 || cu > 100)){
     ctx.save();
     ctx.beginPath();
@@ -11264,7 +11448,7 @@ function drawCrownTester(b, t){
     crown(al);
     ctx.restore();
   }
-  port(-1); port(1);
+  portFront(-1); portFront(1);
 
   /* ── КОЛОННА. Светлый корпус, внутри чёрная рифлёная направляющая, сверху
      скруглённая шапка — как на снимке Shimadzu. ── */
@@ -17975,6 +18159,7 @@ function frame(){
      в ближнем проходе, позже улицы, и макет налезал на подоконник (Эльдар,
      2026-09-25). Второй вызов рисует только стены, поверх. */
   drawStreet();
+  drawPlane93OverStreet();   // самолёт летит ПЕРЕД проёмом, а не сквозь его стену
   drawFlybys();        // the two passes that never touch down
   drawDataRelay07(t);  // the first file, leaving 2007 for the digital revolution's screen
 
@@ -18006,6 +18191,13 @@ function frame(){
     const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
     if (b.fly || focusAmt > 0.01) drawBeatText(b, focusAmt);
   }
+  /* ТАБЛИЧКА «COMING SOON» — ПОВЕРХ ВСЕГО, И В ЭТОМ ВЕСЬ СМЫСЛ. Она висела
+     раньше стен и текста, то есть аккуратно вписывалась в такт. Эльдар
+     (2026-09-30): нужно левее — ДО того, как BruxZir появился, — и крупнее,
+     «чтобы немножечко поверх колонны, немножечко поверх года 2009, поверх
+     ещё всего: это задаёт такой беспорядок, показывающий, что объект ещё
+     под конструкцией». Значит и рисуется она последней из стеновых вещей. */
+  drawBruxZirSoon();
 
   // hero pass: as you pass a landmark stand, the world dims and a spotlight takes it
   let hero = 0;
