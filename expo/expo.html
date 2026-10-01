@@ -7130,6 +7130,63 @@ function drawAIRelay(t){
   ctx.restore();
 }
 
+/* ТАБЛИЧКА «BRUXZIR COMING SOON» — ВРЕМЕННАЯ, И ЭТО ВИДНО.
+   Эльдар (2026-09-30) прислал неоновую вывеску и попросил повесить её на
+   2009-й «как under construction, криво, будто на ниточке»: сам BruxZir он
+   будет делать большим объектом и, скорее всего, связанным с Digital
+   Revolution. Значит щит не должен выглядеть законченной частью стены — он
+   висит на одном гвозде, на нитке, с перекосом, и этим говорит «здесь ещё не
+   сделано». Висит на плоскости стены (wallSX — закон заклёпки), размер в
+   мировых единицах, перекос — поворот вокруг точки подвеса. */
+const BZ_SOON = {
+  /* Место выбрано кадром: левее и ниже щит наезжает на тезис такта и на угол
+     белой карточки BruxZir, выше — нитка перечёркивает заголовок 2010-х.
+     Здесь он висит на свободной стене между тезисом и следующим тактом. */
+  dx: 470,      // правее середины такта: слева уже стоит белая карточка BruxZir
+  top: 150,     // мировая высота точки подвеса на стене
+  w: 620,       // ширина щита в мировых единицах
+  tilt: -0.062, // перекос, радианы — чуть меньше 4°
+  hang: 0.34,   // где нитка держит щит: доля ширины от левого края
+  cord: 140,    // длина нитки в мировых единицах
+};
+function drawBruxZirSoon(){
+  const sp = PROP_SPRITES.ph_bz_soon; if (!sp) return;
+  const b = BEATS.find(q => q.t === 'BRUXZIR'); if (!b) return;
+  const kk = k(exhibitZ(b.x));
+  const sx = wallSX(b.x, BZ_SOON.dx);
+  const w = BZ_SOON.w * kk * SS, h = w * sp.h / sp.w;
+  if (sx < -w * 2 || sx > W + w * 2) return;
+  const yHang = py(BZ_SOON.top, kk);
+  const yNail = py(BZ_SOON.top - BZ_SOON.cord, kk);
+  rivet('bz_soon', sx, kk);
+  // гвоздь и нитка
+  ctx.save();
+  ctx.strokeStyle = 'rgba(28,32,38,0.55)';
+  ctx.lineWidth = Math.max(1, 2.2 * kk * SS);
+  ctx.beginPath(); ctx.moveTo(sx, yNail); ctx.lineTo(sx, yHang); ctx.stroke();
+  ctx.fillStyle = 'rgba(32,36,42,0.8)';
+  ctx.beginPath(); ctx.arc(sx, yNail, Math.max(1.2, 4 * kk * SS), 0, 7); ctx.fill();
+  ctx.restore();
+  // щит: поворот вокруг точки подвеса
+  ctx.save();
+  ctx.translate(sx, yHang);
+  ctx.rotate(BZ_SOON.tilt);
+  const x0 = -w * BZ_SOON.hang;
+  // мягкая тень на стене — щит висит в сантиметрах от неё, а не наклеен
+  ctx.save();
+  ctx.shadowColor = 'rgba(10,14,20,0.42)';
+  ctx.shadowBlur = 22 * kk * SS;
+  ctx.shadowOffsetX = 6 * kk * SS;
+  ctx.shadowOffsetY = 9 * kk * SS;
+  ctx.fillStyle = 'rgba(0,0,0,1)';
+  ctx.fillRect(x0, 0, w, h);
+  ctx.restore();
+  ctx.drawImage(spriteMip(sp, w, h), x0, 0, w, h);
+  ctx.restore();
+  // свечение неона ложится на стену вокруг щита
+  drawGlow('90,160,255', sx + w * (0.5 - BZ_SOON.hang), yHang + h * 0.5, w * 0.72, 0.13);
+}
+
 /* 1993 · NEWPORT BEACH. The one bay in the hall whose film the company shot
    itself: an architect's computer flythrough of a building that did not exist
    yet, cutting — same angle, single cut — to the same building finished. So the
@@ -7460,27 +7517,24 @@ function drawPlane93(){
   /* ЗАПОМНИЛИ КАДР САМОЛЁТА — ЕГО ПОВТОРЯТ ПОВЕРХ УЛИЦЫ. Он рисуется ДО макета,
      потому что паркуется за зданием; улица рисуется ещё позже, и на подлёте
      самолёт уходил за корпус — «летит как бы сквозь стену» (Эльдар,
-     2026-09-30). Второй проход кладёт ту же картинку ещё раз, но только внутри
-     просвета: за пределами просвета его по-прежнему закрывает стена зала, а
-     макета второй проход не касается — макет стоит правее просвета. */
+     2026-09-30). Второй проход кладёт ту же картинку ещё раз, поверх улицы.
+     ГРАНИЦА ВТОРОГО ПРОХОДА — ЛЕВЫЙ КРАЙ БУХТЫ 1993, а не просвет. Сперва я
+     обрезал его просветом, и самолёт по-прежнему прятался за корпусом: «он за
+     стеной, он не должен быть там, он как бы из окна в окно летит, поэтому он
+     перед этой стеной» (Эльдар, 2026-09-30, поймал кадр). Улица вся левее
+     бухты, макет — правее: обрезка по этой линии пускает самолёт поверх обоих
+     корпусов и не даёт ему залезть на макет, за которым он паркуется. */
   PLANE93_OVER = {sp, pt, wPx, hPx, back};
 }
 let PLANE93_OVER = null;
-/* полоса просвета на экране — та же, по которой вырезается стена зала */
-function stOpenStrip(){
-  const [x0, x1] = stOpenSpan();
-  const zs = [wallZAt(x0), wallZAt((x0 + x1) / 2), wallZAt(x1)];
-  let a = Infinity, b = -Infinity;
-  for (const z of zs){ const kz = k(z); a = Math.min(a, px(x0, kz)); b = Math.max(b, px(x1, kz)); }
-  return [a, b];
-}
 function drawPlane93OverStreet(){
   const P = PLANE93_OVER; PLANE93_OVER = null;
   if (!P) return;
-  const [a, b] = stOpenStrip();
-  if (b < -40 || a > W + 40) return;
+  /* вся улица левее бухты 1993, макет — правее: граница ровно здесь */
+  const xR = px(REC93_BL, k(REC93_Z));
+  if (P.pt[0] - P.wPx > xR) return;
   ctx.save();
-  ctx.beginPath(); ctx.rect(a, 0, b - a, H); ctx.clip();
+  ctx.beginPath(); ctx.rect(-W, 0, xR + W, H); ctx.clip();
   if (P.back){ ctx.translate(P.pt[0], 0); ctx.scale(-1, 1); ctx.translate(-P.pt[0], 0); }
   ctx.drawImage(spriteMip(P.sp, P.wPx, P.hPx), P.pt[0] - P.wPx / 2, P.pt[1] - P.hPx, P.wPx, P.hPx);
   ctx.restore();
@@ -10788,7 +10842,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20260928-web2001-street';
+const ASSET_V = '20260930-bruxzir-soon';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -10857,6 +10911,7 @@ async function loadPhotoSkin(){
     ph_hall_plinth: 'hall_plinth.png',// the low stone the turning crown stands on
     ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
     ph_pillow: 'pillow.png',          // 1996: подушка с каппой Silent Nite — год уходит со стены, предмет остаётся
+    ph_bz_soon: 'bruxzir_soon.png',   // 2009: неоновая табличка BruxZir COMING SOON — временная, висит на ниточке
     ph_pfm1: 'pfm_1.png', ph_pfm2: 'pfm_2.png', ph_pfm3: 'pfm_3.png',   // the six PFM stages, cut apart
     ph_pfm4: 'pfm_4.png', ph_pfm5: 'pfm_5.png', ph_pfm6: 'pfm_6.png',
     ph_pfmrow: 'pfm_row.png',         // and the whole line, for the screen-filling look
@@ -17846,6 +17901,7 @@ function frame(){
      its tread, so there is nothing of them left for it to cover. */
   drawBayStep(REC_L, REC_R, STEP_TONE.warm, R79_BAY_Z, noseOf(R79_BAY_Z));
   drawMapWall(t);
+  drawBruxZirSoon();   // временная табличка на 2009-м — висит на нитке, с перекосом
   drawLabs73();
   drawRec3(t);
   drawRec93(t);
