@@ -4711,7 +4711,11 @@ const FIN_X = SHIFT(29750) - 450;
    fetch_events.py) по ночам; зал перечитывает его раз в четверть часа. */
 /* СВОЙ КУСОК СТЕНЫ. На 1560 оно налезало на карточку CrownAI и на строчку
    «An arc the length of one life»; 2400 — пустой участок левее их обоих. */
-const BOARD_X = SHIFT(29750) - 3400;   // своё место на стене, от стола не зависит: он подвинулся, табло нет
+/* ТАБЛО ОТЪЕХАЛО ВПРАВО, СЛЕВА ВСТАЛА ПЛАЗМА. Эльдар (2026-10-01) обвёл табло,
+   провёл стрелку вправо и нарисовал слева от него экран с подписью «Vid».
+   Сдвиг 580 — ровно столько, сколько он отмерил на кадре (255 px при 2000 px
+   ширины, 0.44 px на мировую единицу). */
+const BOARD_X = SHIFT(29750) - 3400 + 580;   // своё место на стене, от стола не зависит: он подвинулся, табло нет
 /* РАЗМЕРЫ ТАБЛО. Сверху его держит ореховый карниз (низ на −90), снизу —
    столешница (700). Всё, что между ними, — его полоса; залезть на карниз значит
    читаться как наклейка поверх потолка. */
@@ -4755,6 +4759,75 @@ const BOARD_MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','
    сам (Эльдар, 2026-09-23). Данные лежат СВОИМ файлом в data/events.json: витрина,
    откуда они берутся, не отдаёт CORS, а зал может стоять на машине в здании без
    интернета — табло, зависящее от запроса наружу, однажды погаснет на людях. */
+/* ── ПЛАЗМА «СЕГОДНЯ» · ВИДЕО НА СТЕНЕ ФИНАЛА ──────────────────────────────
+   Эльдар (2026-10-01): «табло подвинь вправо, и влево вставь плазму по центру
+   с видео» — файл FASTMILL2_MASTER_V6_SEP24.mp4 из expo/src/Video, лежит в
+   зале как media/fastmill_today.mp4 (30.6 c).
+   Висит на той же стене и той же глубине, что и табло, 16:9, по центру между
+   ними. Размеры — в мировых единицах; по высоте стоит серединой на середине
+   табло, так что два экрана читаются одной линией, а не лесенкой.
+   Видео крутится без звука и само, но только пока зритель рядом и пока экран
+   не забрал говорящий клип — то же правило, что у монитора 2001-го. */
+const TODAY_TV = {
+  dx: -1703,          // от центра табло влево: столько он отмерил на кадре
+  w: 996, h: 560,     // 16:9
+  src: 'media/fastmill_today.mp4',
+  v: null, ready: false,
+};
+function initTodayTV(){
+  const v = document.createElement('video');
+  v.src = vurl(TODAY_TV.src); v.muted = true; v.loop = true; v.playsInline = true;
+  /* metadata, а не auto: файл 50 МБ, и качать его при каждом заходе в зал,
+     когда до стены финала ещё половина истории, незачем — он подтянется, когда
+     зритель подойдёт и плазма сама вызовет play() */
+  v.preload = 'metadata';
+  v.addEventListener('loadeddata', () => { TODAY_TV.ready = true; });
+  v.load();
+  TODAY_TV.v = v;
+}
+function drawTodayTV(){
+  const cx = BOARD_X + TODAY_TV.dx;
+  const near = Math.abs(cam.x - cx) < CULL_BAY;
+  const V = TODAY_TV.v;
+  if (V){
+    const wanted = near && !state.clip;
+    if (wanted && V.paused) V.play().catch(()=>{});
+    else if (!wanted && !V.paused) V.pause();
+  }
+  if (!near) return;
+  const seg = SEGMENTS[3];
+  const kw = k((seg.z0 || 1400) - 6);
+  const u = kw * SS;
+  const vCen = BOARD_TOP + BOARD_H / 2;                 // одна линия с табло
+  const x0 = px(cx - TODAY_TV.w / 2, kw), x1 = px(cx + TODAY_TV.w / 2, kw);
+  if (x1 < -40 || x0 > W + 40) return;
+  const yTop = py(vCen - TODAY_TV.h / 2, kw), yBot = py(vCen + TODAY_TV.h / 2, kw);
+  const w = x1 - x0, h = yBot - yTop;
+  rivet('today_tv', (x0 + x1) / 2, kw);
+  ctx.save();
+  /* корпус — та же тёмная оправа, что у табло: это два экрана одной стены */
+  ctx.shadowColor = 'rgba(16,22,30,0.30)'; ctx.shadowBlur = 30 * u; ctx.shadowOffsetY = 10 * u;
+  ctx.fillStyle = '#12161b';
+  ctx.beginPath(); ctx.roundRect(x0, yTop, w, h, 10 * u); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  const bez = 9 * u;
+  ctx.beginPath(); ctx.roundRect(x0 + bez, yTop + bez, w - bez * 2, h - bez * 2, 5 * u); ctx.clip();
+  ctx.fillStyle = '#05070a'; ctx.fillRect(x0 + bez, yTop + bez, w - bez * 2, h - bez * 2);
+  if (TODAY_TV.ready && V && V.videoWidth){
+    /* кадр вписывается ПО ВЫСОТЕ и режется по бокам: вытягивать чужую
+       пропорцию по экрану нельзя — закон для любого снимка в этом зале */
+    const iw = w - bez * 2, ih = h - bez * 2;
+    const r = V.videoWidth / V.videoHeight;
+    let dw = ih * r, dh = ih;
+    if (dw < iw){ dw = iw; dh = iw / r; }
+    ctx.drawImage(V, x0 + bez + (iw - dw) / 2, yTop + bez + (ih - dh) / 2, dw, dh);
+  }
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(180,195,210,0.45)'; ctx.lineWidth = 1.4 * SS;
+  ctx.beginPath(); ctx.roundRect(x0, yTop, w, h, 10 * u); ctx.stroke();
+}
+
 function drawEventBoard(t){
   if (Math.abs(cam.x - BOARD_X) > CULL_BAY) return;
   boardLoad();
@@ -18081,6 +18154,7 @@ function frame(){
 
   drawTallUnits();      // furniture against the wall, before anything hung on it
   drawOutro();
+  drawTodayTV();       // плазма с видео, слева от табло
   drawEventBoard(t);   // расписание курсов на стене финала
   drawSheets();
 
@@ -18446,6 +18520,7 @@ async function boot(){
   initSeamVideo();
   initProjectors();
   initDeskScreens();
+  initTodayTV();
   initWelcomeTV();
   // reseat the film relays once everything (skin, props) has settled
   setTimeout(initFilmRelays, 2500);
