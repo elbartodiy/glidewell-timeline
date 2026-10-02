@@ -362,11 +362,12 @@ const BEATS = [
       пластикового цеха (ph_plastic на 21680, шириной 110), а закон тяготения
       не пускает монитор левее начала пролёта прилавка — он ровно на неё и
       садился. Монитор встаёт справа от коробки, с воздухом от неё. */
-   props:[{kind:'crt', dx:322, lz:130, w:320, label:'CAD revolution'}],
-   /* На постаменте стоит фрезерованный колпачок на гипсовой культе. Диск
-      циркония, стоявший тут раньше, — предмет 2009-го: тем же спрайтом набита
-      заготовка BruxZir в витрине того года. */
-   ped:{obj:'coping', dx:0},
+   props:[{kind:'crt', dx:322, lz:130, w:320, label:'CAD revolution', mesh:'coping'}],   // экран считает каркас, который стоит на постаменте
+   /* На постаменте — коронка, разрезанная на станок и руку: слева голый
+      фрезерованный каркас, справа он же под керамикой. Диск циркония, стоявший
+      тут раньше, — предмет 2009-го: тем же спрайтом набита заготовка BruxZir в
+      витрине того года. */
+   ped:{obj:'halfcrown', dx:0},
    th:'The mill arrives at the bench — the lab’s half of the crown goes digital.',
    d:'Glidewell takes up the outside milling systems — Cercon, Wol-Ceram — and four years later has its own: scan the model, design the coping on screen, mill it from a block.',
    wall:[], table:[]},
@@ -823,6 +824,7 @@ function applyCut(){
      moves the seventies, and the counters must part around the stones, not
      around the raw coordinate */
   { const br = BENCH_BREAKS.find(v => v.l73), b73 = BEATS.find(b => b.y === '1973'); if (br && b73) br.x = b73.x; }
+  { const br = BENCH_BREAKS.find(v => v.p84), b84 = BEATS.find(b => b.y === '1984'); if (br && b84) br.x = b84.x + (699 + 884) / 2; }
 }
 const INTRO_X = -650;
 const WORLD_END = SHIFT(29680);
@@ -970,7 +972,15 @@ const SEGMENTS = [
      2026-09-29). Теперь справа от колонны идут 1100 единиц её собственной
      стены, а шов двух эпох приходится на корпус улицы: он стоит поперёк и
      закрывает ступеньку, как её закрывает бухта в других местах. */
+  /* ОДИН СТОЛ НА СИНЮЮ КОМНАТУ. Края — по рамке, которую Эльдар обвёл на кадре
+     (02.10.2026): начинается сразу за левой пилястрой, кончается не доходя до
+     правой, с воздухом с обеих сторон. Отсчёт от 1984-го, а не числом: годы
+     пересчитываются при загрузке, и стол должен ехать вместе с комнатой.
+     Начало задаёт benchBeat, конец — разрыв p84 у правой пилястры: за ней
+     светлый отсек 1989-го, и у него остаётся свой кусок стола — на нём стоит
+     групповое фото 1988-го; срежь его, и фото падает на снимки 1984-го. */
   {x0:REC_R, x1:ST_WALL_L + 120, z0:680, z1:680, tz:680, wall:'wall2', bench:'bench2', front:'front2',
+   benchBeat:{y:'1984', from:-1019},
    font:'"Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'223,226,214', lamp:'tube', dust:false,
    rail:'rgba(24,16,10,0.26)', railInk:'rgba(198,208,202,0.7)', railTop: true,
@@ -1628,7 +1638,11 @@ function nearestBeat(x){
    то есть 2.6. Число живёт здесь, потому что им пользуется свет, а не мебель:
    помеченная лампа гаснет ровно на этой толщине (Эльдар, 2026-09-24). */
 const BENCH_STONE_TH = 2.6;
-const BENCH_BREAKS = [1700, 7350, 9250, 13100, 16900, 22280]
+/* 9250 — стык посреди синей комнаты, у 1984-го — убран: эпоха 1980–1988
+   помещается в один экран, и два стола с просветом посередине выглядели
+   неуклюже. Там теперь один стол, см. benchBeat у второго сегмента
+   (Эльдар, 02.10.2026). */
+const BENCH_BREAKS = [1700, 7350, 13100, 16900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
 /* 1973: no counter — the two labs stand on their own stones, the way the nine
    do at 1979, and the counters stop short of them on both sides (Eldar,
@@ -1665,6 +1679,10 @@ BENCH_BREAKS.push({x: (REC_L + REC_R) / 2, half: G8_W / 2 + 80});
    Эльдар: «надо подрезать столик… чтобы столешницы не конфликтовали»
    (02.10.2026). */
 BENCH_BREAKS.push({x: SHIFT(5400), half: T76_W / 2 + 90, t76: true});
+/* правая пилястра синей комнаты: здесь кончается её единственный стол и
+   начинается кусок стола отсека 1989-го. 699…884 от 1984-го — по рамке Эльдара;
+   x ставится на место, когда годы встанут — рядом с камнями 1973-го (l73). */
+BENCH_BREAKS.push({x: SHIFT(9250), half: (884 - 699) / 2, p84: true});
 // the counter clears out from the 1989 portal all the way past the 1993 stand:
 // a model of a place should stand on the floor of a room, not on a worktop
 BENCH_BREAKS.push({x: (REC3_R + REC93_R + 65) / 2, half: (REC93_R + 65 - REC3_R) / 2});
@@ -1807,7 +1825,14 @@ function initTables(){
   for (const seg of SEGMENTS){
     let bx0 = (seg.x0 <= -2500 && !seg.bInsetL) ? seg.x0 : seg.x0 + (seg.bInsetL != null ? seg.bInsetL : -110);
     if (seg.benchFrom != null) bx0 = Math.max(bx0, seg.benchFrom);
-    const bx1 = (seg.x1 >= WORLD_END + 800 && !seg.bInsetR) ? seg.x1 : seg.x1 - (seg.bInsetR != null ? seg.bInsetR : -110);
+    let bx1 = (seg.x1 >= WORLD_END + 800 && !seg.bInsetR) ? seg.x1 : seg.x1 - (seg.bInsetR != null ? seg.bInsetR : -110);
+    if (seg.benchBeat){
+      const bb = BEATS.find(b => b.y === seg.benchBeat.y);
+      if (bb){
+        if (seg.benchBeat.from != null) bx0 = Math.max(bx0, bb.x + seg.benchBeat.from);
+        if (seg.benchBeat.to != null)   bx1 = Math.min(bx1, bb.x + seg.benchBeat.to);
+      }
+    }
     let start = bx0;
     for (const br of BENCH_BREAKS.filter(v => v.x + v.half > bx0 && v.x - v.half < bx1).sort((a,b)=>a.x-b.x)){
       const L = br.x - br.half, R = br.x + br.half;
@@ -10248,10 +10273,29 @@ const MESH = (() => {
   }
   return {rings, M, P: prof.length};
 })();
-function projMesh(rot){
+/* КАРКАС, А НЕ КОРОНКА — для экрана 2002 года. Станки того года считали не
+   зуб, а опору под него: гладкий колпачок без бугров, открытый снизу, по краю
+   препарирования. Анатомию потом лепила рука. Экран должен считать ровно то,
+   что стоит на постаменте рядом, — иначе сцена спорит сама с собой. */
+const COPING_MESH = (() => {
+  const prof = [[0,36],[18,35],[32,30],[42,18],[45,0],[44,-18],[41,-36]];
+  const M = 16, rings = [];
+  for (let m = 0; m < M; m++){
+    const a = m/M * Math.PI*2;
+    const sq = 1 / Math.pow(Math.pow(Math.abs(Math.cos(a)), 3) + Math.pow(Math.abs(Math.sin(a)), 3), 1/3);
+    const ring = [];
+    for (const [r0, y] of prof){
+      const r = r0 * (0.88 + 0.14*sq);
+      ring.push([r*Math.cos(a), -y, r*Math.sin(a)]);
+    }
+    rings.push(ring);
+  }
+  return {rings, M, P: prof.length};
+})();
+function projMesh(rot, mesh = MESH){
   const out = [];
   const ca = Math.cos(rot), sa = Math.sin(rot);
-  for (const ring of MESH.rings){
+  for (const ring of mesh.rings){
     const pr = [];
     for (const [x,y,z] of ring){
       const rx = x*ca - z*sa, rz = x*sa + z*ca;
@@ -10275,7 +10319,7 @@ function screenRead(g, r, s, tone, txt){
   g.textAlign = 'left';
   g.fillText(txt, r.x + 8 * s, r.y + r.h - 8 * s);
 }
-function drawScreenCAD(g, r, t, amber, prog){
+function drawScreenCAD(g, r, t, amber, prog, mesh = MESH, what = 'crown'){
   // phosphor wireframe crown, slowly turning — green or amber
   const dim = amber ? 'rgba(160,120,40,0.25)' : 'rgba(70,160,110,0.25)';
   g.fillStyle = amber ? '#130d04' : '#06130a'; g.fillRect(r.x, r.y, r.w, r.h);
@@ -10285,14 +10329,14 @@ function drawScreenCAD(g, r, t, amber, prog){
     g.beginPath(); g.moveTo(r.x + r.w*i/6, r.y); g.lineTo(r.x + r.w*i/6, r.y + r.h); g.stroke();
   }
   const cx = r.x + r.w/2, cy = r.y + r.h/2 + r.h*0.04, s = r.h/170;
-  const pts = projMesh(t*0.5);
+  const pts = projMesh(t*0.5, mesh);
   g.lineWidth = Math.max(1, s*1.1);
-  for (let m = 0; m < MESH.M; m++){
-    const a = pts[m], b = pts[(m+1) % MESH.M];
-    for (let p = 0; p < MESH.P; p++){
+  for (let m = 0; m < mesh.M; m++){
+    const a = pts[m], b = pts[(m+1) % mesh.M];
+    for (let p = 0; p < mesh.P; p++){
       const depth = (a[p][2] + 70) / 140;   // 0 near .. 1 far
       g.strokeStyle = `rgba(${amber ? '255,190,90' : '120,235,160'},${(0.75 - 0.55*depth).toFixed(2)})`;
-      if (p < MESH.P-1){
+      if (p < mesh.P-1){
         g.beginPath(); g.moveTo(cx + a[p][0]*s, cy + a[p][1]*s);
         g.lineTo(cx + a[p+1][0]*s, cy + a[p+1][1]*s); g.stroke();
       }
@@ -10313,7 +10357,7 @@ function drawScreenCAD(g, r, t, amber, prog){
      фразы одна поверх другой, и это читалось шумом. Видно стало, когда экран
      встал на уровень глаз (Эльдар, 2026-09-23). Название очереди — строкой
      выше, живая строка прогресса — внизу. */
-  g.fillText(amber ? 'Glidewell · chairside' : 'CAD · crown 14 · milling queue',
+  g.fillText(amber ? 'Glidewell · chairside' : `CAD · ${what} 14 · milling queue`,
              r.x + 8*s, r.y + r.h - 8*s - Math.max(11, 12*s));
   // scanlines
   g.fillStyle = 'rgba(0,0,0,0.16)';
@@ -10367,7 +10411,9 @@ function drawMonitor(p, x, z, wWorld, t){
   ctx.save();
   ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.clip();
   const prog = screenProgress(x);
-  if (p.kind === 'crt') drawScreenCAD(ctx, r, t, p.col === 'amber', prog);
+  if (p.kind === 'crt') drawScreenCAD(ctx, r, t, p.col === 'amber', prog,
+                                       p.mesh === 'coping' ? COPING_MESH : MESH,
+                                       p.mesh === 'coping' ? 'coping' : 'crown');
   else drawScreenScan(ctx, r, t, prog);
   ctx.restore();
   // screen light spills into the room
@@ -12656,64 +12702,97 @@ function makePedObj(kind){
     }
     g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 1.5;
     g.beginPath(); g.roundRect(15.5, 15.5, 189, 117, 5); g.stroke();
-  } else if (kind === 'coping'){
-    /* КОЛПАЧОК НА КУЛЬТЕ — экспонат 2002 года. Раньше здесь стоял диск
-       циркония, но диск — это BruxZir 2009-го, тем же спрайтом набита
-       заготовка в витрине того года, и на CAD/CAM он читался не из своего
-       времени (Эльдар, 02.10.2026). В 2002-м фреза выдавала не коронку, а
-       КАРКАС: белый колпачок, который садится на культю, а керамику на него
-       потом наслаивает рука. Это буквально то, что написано в тезисе года —
-       «половина коронки, которая принадлежит лаборатории, стала цифровой».
-       Два материала рядом говорят это без подписи: меловой колпачок станка
-       и гипсовая культя с модели. */
-    size(200, 150);
-    g.save(); g.translate(100, 70);
-    /* ШИРЕ, ЧЕМ ВЫШЕ. Первая проба вышла напёрстком на пробке: колпачок стоял
-       столбиком, культя торчала ножкой. У моляра и его каркаса пропорция
-       обратная — ширина больше высоты, и культя под ним короткая и толстая. */
-    // гипсовая культя: тёплый мел, конус с плеча
+  } else if (kind === 'halfcrown'){
+    /* ПОЛОВИНА — СТАНОК, ПОЛОВИНА — РУКА. Экспонат 2002 года. Смысл года —
+       первый шов между машиной и человеком, проведённый прямо через зуб:
+       сердцевину коронки теперь считает компьютер и режет фреза, а поверхность
+       — цвет, прозрачность, анатомию — по-прежнему наслаивает керамист. Поэтому
+       одна коронка показана в двух состояниях сразу (так делают учебные
+       модели в лабораториях): слева голый каркас, справа он же под керамикой.
+
+       Главное здесь — силуэт. Бугры есть ТОЛЬКО справа: у каркаса анатомии нет,
+       жевательную поверхность лепит рука. Половина предмета — зуб, половина —
+       опора под зуб. Каркас матовый, керамика глазурованная: мел против
+       стекла. На шве керамика стоит выше каркаса на свою толщину и бросает на
+       него тень — видно, сколько добавила рука.
+
+       Первый вариант (Эльдар, 02.10.2026) был просто колпачком на культе —
+       предмет верный, но смысла года он не раскрывал: колпачок без коронки
+       рядом ничего не говорит о том, где кончается машина. */
+    size(200, 160);
+    g.save(); g.translate(100, 86);
+    const copingPath = () => {
+      g.beginPath();
+      g.moveTo(-50, 14);
+      g.bezierCurveTo(-54, -8, -48, -30, -34, -38);
+      g.quadraticCurveTo(0, -48, 34, -38);
+      g.bezierCurveTo(48, -30, 54, -8, 50, 14);
+      g.quadraticCurveTo(0, 27, -50, 14);
+      g.closePath();
+    };
+    // правая половина под керамикой: бугры, ямка, борозда — анатомия руки
+    const porcelainPath = () => {
+      g.beginPath();
+      g.moveTo(0, -48);                              // центральная ямка
+      g.quadraticCurveTo(6, -58, 14, -58);           // медиальный бугор
+      g.quadraticCurveTo(21, -58, 26, -51);          // борозда
+      g.quadraticCurveTo(32, -56, 40, -54);          // дистальный бугор
+      g.bezierCurveTo(52, -50, 58, -32, 58, -10);
+      g.bezierCurveTo(58, 1, 55, 9, 51, 14);
+      g.quadraticCurveTo(25.5, 20.5, 0, 20.5);       // край, по той же линии, что у каркаса
+      g.closePath();
+    };
+    // гипсовая культя
     const die = g.createLinearGradient(-38, 0, 38, 0);
     die.addColorStop(0, '#9d8e70'); die.addColorStop(.42, '#ded3b8'); die.addColorStop(1, '#8f8266');
     g.fillStyle = die;
     g.beginPath();
-    g.moveTo(-36, 14);
-    g.lineTo(-30, 50);
-    g.quadraticCurveTo(0, 60, 30, 50);
-    g.lineTo(36, 14);
-    g.quadraticCurveTo(0, 26, -36, 14);
-    g.closePath(); g.fill();
-    // колпачок: неглазурованный цирконий — мел, а не стекло
+    g.moveTo(-36, 14); g.lineTo(-30, 50); g.quadraticCurveTo(0, 60, 30, 50); g.lineTo(36, 14);
+    g.quadraticCurveTo(0, 26, -36, 14); g.closePath(); g.fill();
+    // каркас — целиком; справа его накроет керамика
     const cop = g.createLinearGradient(-50, -46, 50, 24);
-    cop.addColorStop(0, '#ffffff'); cop.addColorStop(.5, '#edf0ef'); cop.addColorStop(1, '#bcc4c2');
-    g.fillStyle = cop;
-    g.beginPath();
-    g.moveTo(-50, 14);
-    g.bezierCurveTo(-54, -8, -48, -30, -34, -38);
-    g.quadraticCurveTo(0, -48, 34, -38);
-    g.bezierCurveTo(48, -30, 54, -8, 50, 14);
-    g.quadraticCurveTo(0, 27, -50, 14);
-    g.closePath(); g.fill();
-    // след фрезы — только по жевательной площадке, и едва заметный
-    g.save();
-    g.beginPath();
-    g.moveTo(-50, 14);
-    g.bezierCurveTo(-54, -8, -48, -30, -34, -38);
-    g.quadraticCurveTo(0, -48, 34, -38);
-    g.bezierCurveTo(48, -30, 54, -8, 50, 14);
-    g.quadraticCurveTo(0, 27, -50, 14);
-    g.clip();
-    /* две короткие дуги по макушке, не на всю ширину: на всю — колпачок
-       читается обмотанным бинтом, а не фрезерованным */
-    g.strokeStyle = 'rgba(126,140,138,0.13)'; g.lineWidth = 1;
-    for (const yv of [-30, -20]){
-      g.beginPath(); g.moveTo(-30, yv); g.quadraticCurveTo(0, yv + 4, 30, yv); g.stroke();
+    cop.addColorStop(0, '#fbfcfb'); cop.addColorStop(.5, '#e9eceb'); cop.addColorStop(1, '#b9c1bf');
+    g.fillStyle = cop; copingPath(); g.fill();
+    g.save(); copingPath(); g.clip();
+    g.strokeStyle = 'rgba(126,140,138,0.14)'; g.lineWidth = 1;    // след фрезы
+    for (const yv of [-34, -25, -16]){
+      g.beginPath(); g.moveTo(-40, yv); g.quadraticCurveTo(-20, yv + 4, -3, yv + 2); g.stroke();
     }
+    // тень, которую керамика бросает на каркас у шва
+    const ts = g.createLinearGradient(0, 0, -9, 0);
+    ts.addColorStop(0, 'rgba(40,46,44,0.30)'); ts.addColorStop(1, 'rgba(40,46,44,0)');
+    g.fillStyle = ts; g.fillRect(-9, -60, 9, 90);
+    // матовый блик: широкий и тусклый — мел не блестит
+    g.fillStyle = 'rgba(255,255,255,0.32)';
+    g.beginPath(); g.ellipse(-28, -20, 11, 15, -0.45, 0, 7); g.fill();
     g.restore();
-    // край препарирования: где колпачок садится на культю
+    // керамика: эмаль у бугров холоднее и прозрачнее, у шейки дентин теплее
+    const por = g.createLinearGradient(0, -58, 0, 16);
+    por.addColorStop(0, '#e4e9e8'); por.addColorStop(.28, '#efe5cf');
+    por.addColorStop(.7, '#e6d4b1'); por.addColorStop(1, '#d4bc93');
+    g.fillStyle = por; porcelainPath(); g.fill();
+    g.save(); porcelainPath(); g.clip();
+    const rnd = g.createLinearGradient(0, 0, 58, 0);              // объём: к краю темнее
+    rnd.addColorStop(0, 'rgba(0,0,0,0)'); rnd.addColorStop(.65, 'rgba(0,0,0,0.02)');
+    rnd.addColorStop(1, 'rgba(70,52,26,0.26)');
+    g.fillStyle = rnd; g.fillRect(0, -60, 60, 82);
+    for (const [cx0, cy0] of [[14, -55], [40, -51]]){             // прозрачная эмаль на кончиках
+      const en = g.createRadialGradient(cx0, cy0, 0, cx0, cy0, 13);
+      en.addColorStop(0, 'rgba(176,196,210,0.45)'); en.addColorStop(1, 'rgba(176,196,210,0)');
+      g.fillStyle = en; g.fillRect(cx0 - 14, cy0 - 14, 28, 28);
+    }
+    // глазурь: узкий яркий блик — стекло блестит, мел нет
+    g.fillStyle = 'rgba(255,255,255,0.82)';
+    g.beginPath(); g.ellipse(36, -28, 4.5, 12, 0.35, 0, 7); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.65)';
+    g.beginPath(); g.ellipse(15, -53, 3.2, 2, 0, 0, 7); g.fill();
+    g.restore();
+    // срез керамики: светлая кромка по шву, где видно её толщину
+    g.strokeStyle = 'rgba(255,250,238,0.85)'; g.lineWidth = 1.4;
+    g.beginPath(); g.moveTo(0.7, -48); g.lineTo(0.7, 20); g.stroke();
+    // край препарирования — общий для обеих половин
     g.strokeStyle = 'rgba(66,74,72,0.6)'; g.lineWidth = 1.8;
     g.beginPath(); g.moveTo(-50, 14); g.quadraticCurveTo(0, 27, 50, 14); g.stroke();
-    g.fillStyle = 'rgba(255,255,255,0.72)';
-    g.beginPath(); g.ellipse(-25, -22, 9, 13, -0.5, 0, 7); g.fill();
     g.restore();
   } else if (kind === 'crown2'){
     size(170, 150);
@@ -19209,7 +19288,7 @@ async function boot(){
   PED_SPRITES.logo1970 = makePedObj('logo1970');
   PED_SPRITES.bizcard = makePedObj('bizcard');
   PED_SPRITES.puck = makePedObj('puck');
-  PED_SPRITES.coping = makePedObj('coping');
+  PED_SPRITES.halfcrown = makePedObj('halfcrown');
   PED_SPRITES.artglass = makePedObj('artglass');
   /* the wand comes with its own dock in the photograph, so it needs no drawn
      cradle to lean on — it stands, the way it stands in the 2022 vitrine */
