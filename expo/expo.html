@@ -147,7 +147,10 @@ const BEATS = [
    pfmRow:{dx:118, lz:88, w:450, lift:17}, capDX:202},   // 1.9x smaller on the counter — they are objects laid out, not an exhibit; the tap is what makes them big
 
   {x:4400, y:'1973', t:'SECOND LAB', yLift:95, fly:true, flyZ:380, flyLift:52,   // the seventies all come forward, the way 1970 does
-   th:'Growth by addition — before growth by system.',
+   /* ТЕЗИС СНЯТ, как и у 1976-го: на стене он не читался (Эльдар, 02.10.2026).
+      Пустая строка, не удаление ключа: th прогоняют через wrapCalc до первого
+      кадра, и undefined роняет зал в чёрный экран. */
+   th:'',
    d:'Jim opens a second lab, on the third floor at 172 N. Tustin Avenue in Orange — the one-man bench starts to multiply.',   // the memoir's own caption; the earlier line said El Toro, which appears nowhere in the book
    /* the two labs stand as models on their own stones where the counter used
       to run (drawLabs73); the photograph of the second lab hangs on the wall
@@ -156,10 +159,26 @@ const BEATS = [
    table:[], st:[]},
 
   {x:5400, y:'1976', t:'DIRECT-MAIL', yLift:95, fly:true, flyZ:380, flyLift:52,   // on 1973's line — Eldar: the years after 1973 hung low
-   th:'Reach is the lever — the flywheel’s first turn.',
+   /* ТЕЗИС СНЯТ. «Reach is the lever» висел под Direct-mail и всё равно не читался —
+      Эльдар (02.10.2026): «её все равно не видно». Табличка с цитатой поднята на
+      освободившееся место. Ключ оставлен пустой строкой, а не удалён: th прогоняют
+      через wrapCalc до первого кадра, и undefined роняет весь зал в чёрный экран. */
+   th:'',
    d:'The first direct-mail campaign rewrites the model: reach dentists anywhere, not just nearby.',
-   wall:[{img:'jim76', w:360, dx:-10, cy:380, rot:0.8},   // both moved right, away from the 1973 models (Eldar's sketch, 2026-09-11)
-         {img:'lab4int', w:400, dx:660, cy:380, rot:-1.0}],
+   /* СТЕНА ОСВОБОЖДЕНА ПОД ЦИТАТУ. Здесь висели два снимка, и оба были не о том:
+      jim76 — это «Джим в 1976-м, президент клуба 20/30 в Санта-Ане и начинающий
+      пилот», то есть биография, а lab4int — «внутри лаборатории на Вест-Палм-авеню»,
+      и он уже висит в альбоме 1973 года. Ни один не про рассылку. Эльдар на стене
+      их и увидел: «там эти фотки вообще не к месту висят» (02.10.2026).
+      Из альбомов битов оба никуда не делись — ушли только со стены.
+      Теперь под годом висит деревянная табличка с золотом: фраза, с которой
+      началась почтовая модель. Эп.12 «Lasting Impressions», 00:14:16. */
+   wall:[],
+   capDY:-26,   // под каменный лоб плиты, где дерево темнее всего и светлый шрифт читается
+   quote:{dx:0, cy:318, w:760,
+          lines:['\u201CThose guys mail anyway.',
+                 'I think I\u2019m gonna mail them a letter.\u201D'],
+          by:'Jim Glidewell'},
    table:[]},
 
   /* ---- ERA 2 · the mail-order workshop, 1979–1989 ---- */
@@ -813,6 +832,7 @@ const REC2_L = SEAM_3 - 540, REC2_R = SEAM_3 + 540;   // the Digital Revolution 
 const CULL_BAY = 4100, CULL_BEAT = 4900;
 const REC_L = SHIFT(6350), REC_R = SHIFT(7450);   // era 1 ends; the 1979 recreation; era 2 begins
 const G8_W = 1400;   // the 1979 models' plinth, in world units — the counters are trimmed to it
+const T76_W = 1400;   // 1976: городок + почта + просвет между ними; объявлен здесь, а не у отрисовки, потому что им пользуется разрыв прилавка выше по файлу
 /* the eight signs on that plinth, as fractions of the render's width, nudged a
    touch right so the van pulls up at the building rather than at its logo */
 const G8_DOORS = [0.062, 0.180, 0.295, 0.417, 0.554, 0.660, 0.776, 0.901].map(v => v + 0.030);
@@ -1443,7 +1463,11 @@ function attachMouseDriver(el){
         return;
       }
     }
-    if (ruleHit(pt)){
+    /* ЛИНЕЙКА МОЛЧИТ ПРИ ОТКРЫТОМ ОВЕРЛЕЕ. Витрина закрывается нажатием «мимо»,
+       но нажатие по нижней полосе уходило линейке: зал за полупрозрачной
+       карточкой уезжал на другой год, а сама карточка оставалась открытой
+       (Эльдар, 02.10.2026). */
+    if (ruleHit(pt) && !overlayOpen()){
       const g = ruleGeom();
       const grabbed = Math.abs(g.at(cam.x) - pt.x) < Math.max(18 * SS, (g.at(cam.x + g.half) - g.at(cam.x - g.half)) / 2);
       state.ruleDrag = {off: grabbed ? cam.x - g.toWorld(pt.x) : 0};
@@ -1582,6 +1606,14 @@ BENCH_BREAKS.push({x: (HALL_FRAME_L + HALL_FRAME_R) / 2,
 /* 1979: the counters stop short of the models' plinth, the same distance on
    both sides, so the block stands clear instead of being swallowed by them. */
 BENCH_BREAKS.push({x: (REC_L + REC_R) / 2, half: G8_W / 2 + 80});
+/* 1976: то же самое. Рендеры городка и почты приходят с коротким постаментом —
+   он у них всего 38% высоты, и поставить их от пола до прилавка нельзя, модель
+   пришлось бы раздуть вчетверо. Поэтому прилавок расступается, постамент
+   достраивается вниз до пола копией собственной грани (так же, как когда-то
+   делали стойки 1973-го), и пара стоит на своём камне с воздухом по бокам —
+   Эльдар: «надо подрезать столик… чтобы столешницы не конфликтовали»
+   (02.10.2026). */
+BENCH_BREAKS.push({x: SHIFT(5400), half: T76_W / 2 + 90, t76: true});
 // the counter clears out from the 1989 portal all the way past the 1993 stand:
 // a model of a place should stand on the floor of a room, not on a worktop
 BENCH_BREAKS.push({x: (REC3_R + REC93_R + 65) / 2, half: (REC93_R + 65 - REC3_R) / 2});
@@ -3752,6 +3784,11 @@ function drawBenchDescs(){
       shadow = onModels; slabDrop = onModels ? -22*SS : 130*SS;   // two rows higher again: on the counter's own lip
     }
     if (b.y === '1973'){ ink = '58,46,30'; shadow = false; }   // its line lies across the two pale stones: dark ink, as on the pale slabs
+    /* 1976 НЕ ПЕРЕКРАШИВАЕМ. Я пробовал тёмные чернила, как у 1973-го, и подъём
+       на камень — но камень по лицу здесь всего пара десятков пикселей, двум
+       строкам там не поместиться, а выше дороги строку закрывают сами дома.
+       Поэтому ink и тень остаются родными, светлыми по тёмному дереву, а строка
+       просто садится под каменный лоб — тем же приёмом, что у 1979-го. */
     ctx.save();
     ctx.textAlign = 'center';
     ctx.font = eraFont(23 * SS, '', seg.font);
@@ -5893,6 +5930,11 @@ function ruleHit(pt){
   return pt.y > g.y - 26 * SS && pt.y < g.y + 26 * SS &&
          pt.x > g.x0 - 40 * SS && pt.x < g.x1 + 40 * SS;
 }
+/* Что считается «зал закрыт оверлеем»: всё, что перехватывает нажатие на себя. */
+function overlayOpen(){
+  return !!(state.caseView || state.albumView || state.inspect || state.study ||
+            state.person || state.people || state.openBox || state.pfmView);
+}
 function ruleSeek(pt, instant, grabOff){
   const g = ruleGeom();
   const to = g.toWorld(pt.x) + (grabOff || 0);
@@ -6006,6 +6048,21 @@ function drawTallUnits(){
       for (const f of [-0.47, 0.47])
         softFootShadow(sx + sw2 * f, foot, sw2 * 0.028, sh2 * 0.005, 0.60);
       ctx.drawImage(im, sx - sw2 / 2, foot - sh2, sw2, sh2);
+      /* ШКАФ НАЖИМАЕТСЯ. Внутри него, за рифлёным стеклом, стоят предметы с
+         первого верстака Джима — но разглядеть их там нельзя и не нужно:
+         стекло на то и рифлёное. Нажатие открывает витрину, где каждый предмет
+         показан отдельно и подписан (Эльдар, 02.10.2026).
+         Хит кладётся только на стеклянную половину — ящики и нижние дверцы
+         ничего не открывают, иначе весь шкаф превращается в одну кнопку. */
+      pushHit(sx - sw2 / 2, foot - sh2, sw2, sh2 * 0.54, {type: 'opencase'});
+      if (Input.hover && Input.hover.x > sx - sw2 / 2 && Input.hover.x < sx + sw2 / 2 &&
+          Input.hover.y > foot - sh2 && Input.hover.y < foot - sh2 * 0.46){
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.10;
+        ctx.drawImage(im, sx - sw2 / 2, foot - sh2, sw2, sh2);
+        ctx.restore();
+      }
       continue;
     }
     const yTop = py(u.top, kk), yBot = py(CFG.benchY + 90, kk);
@@ -9188,6 +9245,101 @@ function drawLabs73(){
      (Эльдар, 2026-09-24). */
   ctx.drawImage(labsShaded(spriteMip(sp, wR, hR), wR, hR), xR, yFoot - hR, wR, hR);
 }
+
+/* 1976 · ГОРОДОК И ПОЧТА. Эльдар (02.10.2026): «на стойку кинем сейчас два
+   здания — слева городок, справа почта». Это и есть та самая западная
+   Пенсильвания: городок на два-три дантиста без лаборатории поблизости — на
+   втором доме вывеска D.D.S. — и почтовое отделение, через которое коробка
+   уходила за три тысячи километров.
+
+   УРОВЕНЬ ДОРОГИ. Оба рендера приходят со своим кремовым постаментом, но
+   обрезаны по-разному и с прозрачными полями, так что «поставить по низу
+   картинки» дало бы две разные высоты тротуара. Поэтому привязка не по краю
+   кадра, а по ЗАМЕРЕННОЙ линии верха постамента: у городка она на 0.5898
+   высоты файла, у почты на 0.6482 (qa-замер по разбросу цвета в строке,
+   02.10.2026). Эта линия сажается на линию стойки — ту же, на которой стоят
+   девять лабораторий 1979-го справа. Дорога у всех трёх сходится.
+
+   ШИРИНА считается по ВИДИМОМУ содержимому, а не по файлу: у почты по бокам
+   22% прозрачного поля, и если мерить файлом, здание выйдет мельче городка
+   при одинаковом числе. */
+/* plinth — доля высоты файла до верха постамента (замер), cont — доля ширины
+   файла, занятая видимым содержимым, bot — доля высоты до низа содержимого
+   (ниже прозрачное поле), flat — пара долей, откуда берётся ровный кусок
+   грани постамента для достройки вниз. */
+const T76 = {
+  /* dx подобраны так, чтобы постаменты СОМКНУЛИСЬ в одну плиту: городок
+     занимает -790..-10, почта -10..610. Порознь между ними зиял тёмный провал
+     подрезанного прилавка, и пара читалась двумя тумбами, а не одним экспонатом.
+     Теперь это один камень — улица и её почта, как девять лабораторий 1979-го
+     на одной длинной плите. */
+  town: {key:'ph_town76', wVis:780, dx:-400, plinth:0.5898, cont:0.9791, bot:0.8894, flat:[0.76,0.80]},
+  post: {key:'ph_post76', wVis:620, dx: 300, plinth:0.6482, cont:0.7793, bot:0.9033, flat:[0.76,0.80]},
+};
+let X76 = null;
+function drawTown76(){
+  if (X76 == null){ const b = BEATS.find(b2 => b2.y === '1976'); X76 = b ? b.x : SHIFT(5400); }
+  if (Math.abs(cam.x - X76) > CULL_BAY) return;
+  const kR = k(120);
+  const yBench = py(CFG.benchY, kR);   // дорога на линии стойки — та же, что у девяти лабораторий 1979-го
+
+  /* ТЕЛО ТУМБЫ ОСТАЁТСЯ РОДНЫМ. Прежде я растягивал бледную грань самого
+     рендера до пола, и под улицей вырастал светлый блок вчетверо выше домов —
+     Эльдар: «нижняя часть должна быть аналогична другой тумбе справа». Поэтому
+     прилавок распилен только по СТОЛЕШНИЦЕ: тело рисуется той же текстурой
+     эпохи и тем же benchTiles, что и соседние тумбы, а крышкой ему служит
+     собственный камень модели. Рисуется до моделей — они лягут сверху. */
+  {
+    const seg = segAt(X76), kf = k(0);
+    const texF = TEX[seg.front];
+    if (texF){
+      const bx0 = X76 - T76_W / 2, bx1 = X76 + T76_W / 2;
+      const fx0 = Math.max(0, px(bx0, kf)), fx1 = Math.min(W, px(bx1, kf));
+      const yTopF = py(CFG.benchY, kf), yBotF = py(1080, kf);
+      if (fx1 > fx0 && yBotF > yTopF){
+        ctx.save();
+        ctx.beginPath(); ctx.rect(fx0, yTopF, fx1 - fx0, Math.min(H, yBotF) - yTopF); ctx.clip();
+        benchTiles(texF, kf, 0, texF.height, yTopF, yBotF - yTopF, bx0, bx1);
+        const shF = seg.shade != null ? seg.shade : 1;
+        const gr = ctx.createLinearGradient(0, yTopF, 0, yBotF);
+        gr.addColorStop(0, 'rgba(255,220,160,0.10)');
+        gr.addColorStop(0.08, 'rgba(0,0,0,0)');
+        gr.addColorStop(1, `rgba(0,0,0,${0.75 * shF})`);
+        ctx.fillStyle = gr; ctx.fillRect(fx0, yTopF, fx1 - fx0, yBotF - yTopF);
+        ctx.restore();
+      }
+    }
+  }
+  for (const m of [T76.town, T76.post]){
+    const sp = PROP_SPRITES[m.key]; if (!sp) continue;
+    const wR = (m.wVis / m.cont) * kR * SS;      // полная ширина файла, чтобы видимое вышло ровно wVis
+    const hR = wR * sp.h / sp.w;
+    const yFoot = yBench + hR * (1 - m.plinth);  // верх постамента ложится на линию стойки
+    const xR = px(X76 + m.dx, kR) - wR / 2;
+    if (xR > W + wR || xR + wR < -wR) continue;
+    /* НЕ labsShaded: её кэш ключуется только «ширина x высота», а оба рендера
+       1672x941 и при одинаковой видимой ширине дают один ключ — почта получала
+       из кэша городок. Здесь кэш свой, с именем спрайта в ключе. */
+    ctx.drawImage(shade76(spriteMip(sp, wR, hR), wR, hR, m.key), xR, yFoot - hR, wR, hR);
+  }
+}
+const S76 = new Map();
+function shade76(im, w, h, key){
+  const W2 = Math.max(2, Math.round(w)), H2 = Math.max(2, Math.round(h));
+  const kk = key + ':' + W2 + 'x' + H2;
+  const had = S76.get(kk); if (had) return had;
+  const c = document.createElement('canvas'); c.width = W2; c.height = H2;
+  const g = c.getContext('2d');
+  g.drawImage(im, 0, 0, W2, H2);
+  g.globalCompositeOperation = 'source-atop';
+  const gr = g.createLinearGradient(0, H2 * 0.55, 0, H2);
+  gr.addColorStop(0, 'rgba(0,0,0,0)');
+  gr.addColorStop(1, 'rgba(0,0,0,0.26)');
+  g.fillStyle = gr; g.fillRect(0, 0, W2, H2);
+  if (S76.size > 24) S76.clear();
+  S76.set(kk, c);
+  return c;
+}
 /* СТОЙКИ ТЕМНЕЮТ К ПОЛУ. Рендер освещён ровно, и обе тумбы читались плоскими
    досками, приклеенными к полу без всякого низа. Тень кладётся ТОЛЬКО по
    непрозрачным пикселям (source-atop), иначе она встала бы прямоугольником
@@ -11099,6 +11251,14 @@ async function loadPhotoSkin(){
     ph_tv70: 'tv_1970.png',           // the seventies set, cut out with its tube knocked through
     ph_prj93: 'proj_1993.png',        // the 1993 LCD data projector on its stand, photographed
     ph_g8: 'g8_1979.png',             // 1979: the nine labs, as models on one long plinth
+    ph_obj1: 'obj_furnace.png',     // шкаф 1970: шесть предметов с первого верстака Джима
+    ph_obj2: 'obj_engine.png',
+    ph_obj3: 'obj_lamp.png',
+    ph_obj4: 'obj_surveyor.png',
+    ph_obj5: 'obj_burner.png',
+    ph_obj6: 'obj_tools.png',
+    ph_town76: 'town_1976.png',      // 1976: городок западной Пенсильвании — там, куда ушли письма
+    ph_post76: 'post_1976.png',      // и почта, через которую они шли
     ph_labs73: 'labs_1973.png',       // 1973: the first two labs, each on its own stone — the counter gives way to them
     ph_gmain: 'gmain_1979.png',       // and the plant they were consolidated into, on its own
     ph_car79: 'car_1979.png',         // and the mail van that drives its platform as you scroll
@@ -13441,6 +13601,83 @@ function drawDocCard(b, bi){
 }
 
 /* ---------------- PLASMAS · living wall screens of the white room ---------------- */
+/* ДЕРЕВЯННАЯ ТАБЛИЧКА С ЗОЛОТОМ. Эльдар (02.10.2026): «цитату в золото и на
+   табличку деревянную на стену под тот год». Это не plaque-бит: там плашка
+   ЗАМЕНЯЕТ год и несёт название. Здесь год остаётся на месте, а под ним висит
+   отдельный предмет с чужой прямой речью.
+
+   Почему дерево и золото, а не бронза, как у 1970-х: бронзовая плашка в этом
+   зале обозначает ЭПОХУ — безличную, музейную. Цитата принадлежит человеку, и
+   дерево с резаным золотом — это язык наградной доски, а не музейной этикетки.
+
+   Текст живёт в b.quote.lines; высота считается от числа строк, ширина — от
+   самой длинной, так что длинная цитата не влезает в табличку, сделанную под
+   короткую. by — подпись, она мельче и тусклее самой цитаты. */
+function drawQuotePlate(b, i){
+  const q = b.quote; if (!q) return;
+  const seg = segAt(b.x);
+  const wz  = q.pz != null ? q.pz : (seg.tz || wallZAt(b.x)) - 12;
+  const kk  = k(wz);
+  const cx  = wallSX(b.x, q.dx || 0, kk);
+  if (cx < -900 || cx > W + 900) return;
+  rivet('quote:' + b.x, cx, k(exhibitZ(b.x)));
+
+  const fs   = (q.size || 27) * kk * SS;        // кегль цитаты
+  const lead = fs * 1.42;
+  const pad  = 46 * kk * SS;
+  const byFs = fs * 0.62;
+
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = eraFont(fs, 'italic', seg.font);
+  let wTx = 0;
+  for (const ln of q.lines) wTx = Math.max(wTx, ctx.measureText(ln).width);
+  const wP = Math.max((q.w || 700) * kk * SS * 0.5, wTx + pad * 2);
+  const hP = pad * 1.5 + lead * q.lines.length + (q.by ? byFs * 2.1 : 0);
+  const x0 = cx - wP / 2, y0 = py(q.cy || 390, kk) - hP / 2;
+
+  // доска: тёплое дерево, светлее сверху — как падает свет в зале
+  const wood = ctx.createLinearGradient(0, y0, 0, y0 + hP);
+  wood.addColorStop(0,    'rgba(104,72,42,0.97)');
+  wood.addColorStop(0.55, 'rgba(78,52,30,0.97)');
+  wood.addColorStop(1,    'rgba(52,34,19,0.97)');
+  ctx.fillStyle = wood;
+  ctx.beginPath(); ctx.roundRect(x0, y0, wP, hP, 7 * kk * SS); ctx.fill();
+
+  // фаска: светлая линия сверху, тёмная снизу — доска читается объёмной
+  ctx.lineWidth = 1.4 * SS;
+  ctx.strokeStyle = 'rgba(176,138,92,0.55)';
+  ctx.beginPath(); ctx.moveTo(x0 + 6*kk*SS, y0 + 1); ctx.lineTo(x0 + wP - 6*kk*SS, y0 + 1); ctx.stroke();
+  ctx.strokeStyle = 'rgba(20,12,6,0.6)';
+  ctx.beginPath(); ctx.moveTo(x0 + 6*kk*SS, y0 + hP - 1); ctx.lineTo(x0 + wP - 6*kk*SS, y0 + hP - 1); ctx.stroke();
+
+  // золотой кант внутрь от края
+  const inset = 13 * kk * SS;
+  ctx.strokeStyle = 'rgba(198,160,74,0.5)';
+  ctx.lineWidth = 1.2 * SS;
+  ctx.strokeRect(x0 + inset, y0 + inset, wP - inset*2, hP - inset*2);
+
+  // золото: градиент сверху вниз, иначе буквы читаются плоской краской
+  const gold = ctx.createLinearGradient(0, y0 + pad, 0, y0 + hP - pad);
+  gold.addColorStop(0,   '#F0DCA0');
+  gold.addColorStop(0.5, '#D4AF52');
+  gold.addColorStop(1,   '#A8832C');
+  ctx.fillStyle = gold;
+  ctx.font = eraFont(fs, 'italic', seg.font);
+  let ty = y0 + pad * 1.05 + fs * 0.86;
+  for (const ln of q.lines){ ctx.fillText(ln, cx, ty); ty += lead; }
+
+  if (q.by){
+    ctx.font = eraFont(byFs, '', seg.font);
+    ctx.fillStyle = 'rgba(186,150,78,0.78)';
+    try { ctx.letterSpacing = `${byFs*0.09}px`; } catch(e){}
+    ctx.fillText('\u2014 ' + q.by, cx, ty + byFs * 0.5);
+    try { ctx.letterSpacing = '0px'; } catch(e){}
+  }
+  ctx.restore();
+  pushHit(x0, y0, wP, hP, {type:'study', beat: i});
+}
+
 function drawPlasmaPanel(b, t){
   const p = b.plasma;
   const kk = k((segAt(b.x).tz || wallZAt(b.x)) - 14);
@@ -15577,10 +15814,18 @@ let PERSON_SPRITES = {};
    (Constant Change, 2020). Keyed like the articles. */
 const STUDY_PHOTOS_BY_TITLE = {
   'FOUNDED': [{img: 'jim1970', cap: 'Working as a ceramist in the early days'}],
-  'SECOND LAB': [{img: 'rose', cap: 'The first marketing promotion, at the 1722 E. Rose laboratory, Orange'},
-                 {img: 'lab4ext', cap: 'The fourth lab, 303 West Palm Avenue, Orange — 4,000 sq ft, 1975–1984'},
-                 {img: 'lab4int', cap: 'Inside the lab on West Palm Avenue'}],
-  'DIRECT-MAIL': [{img: 'jim76', cap: 'Jim in 1976 — president of the Santa Ana 20/30 Club, and a new pilot'}],
+  /* ЧЕТВЁРТЫЙ ЛАБ ЛЕЖАЛ В АЛЬБОМЕ ВТОРОГО. Здесь стояли два снимка лаборатории
+     на 303 West Palm Avenue — а второй лаб по фотовклейке книги это 172 N. Tustin
+     Avenue, другой адрес и другие годы. Четвёртый жил 1975–1984; его место у
+     1976-го: это физически тот цех, из которого ушли те триста писем в западную
+     Пенсильванию. Переложено 02.10.2026, подписи выправлены по книге дословно.
+     ⚠️ В самой книге нумерация лабораторий противоречива: четвёртый значится
+     1975–1984, третий 1983–1984 — перекрытие и инверсия. Это её ошибка, не наша;
+     закрывать вопросом Джиму, а не догадкой. */
+  'SECOND LAB': [{img: 'rose', cap: 'The first marketing promotion, at the 1722 E. Rose laboratory, Orange'}],
+  'DIRECT-MAIL': [{img: 'jim76', cap: 'President of the Santa Ana 20/30 Club, 1976'},
+                  {img: 'lab4ext', cap: 'The fourth lab, 303 West Palm Avenue, Orange — 4,000 sq ft, 1975–1984'},
+                  {img: 'lab4int', cap: 'Inside the fourth lab, 303 West Palm Avenue — the floor the letters went out from'}],
   'CONSOLIDATION': [{img: 'lab3ext', cap: 'The third lab, 1983–1984'},
                     {img: 'lab3ben', cap: 'The benches, 1983–1984'},
                     {img: 'lab3rec', cap: 'Reception, 1983–1984'}],
@@ -15873,6 +16118,187 @@ function openAlbumView(i){
   }
   state.albumView = {i, page: 0, amt: 0, closing: false, turn: 0, wheel: 0};
 }
+/* ШКАФ 1970 ГОДА ОТКРЫВАЕТСЯ. Эльдар (02.10.2026): «положить предметы в шкаф,
+   чтобы по нажатию можно было посмотреть и прочитать описание — галерея с
+   возможностью полистать». Шесть предметов — это то, что стоит на снимке его
+   первого верстака: печь, мотор, лампа, параллелометр, горелка, инструменты.
+   Порядок карточек его, не файловый: в файлах параллелометр лежит шестым.
+
+   Текст намеренно разделяет ПОДТВЕРЖДЁННУЮ функцию и ПРЕДПОЛОЖИТЕЛЬНУЮ модель:
+   по фотографии шильдик не читается, и выдавать догадку за определение в зале,
+   где всё остальное подписано точно, нельзя. Отсюда «Probable identification». */
+const CASE_ITEMS = [
+  {k:'ph_obj1', t:'Analog porcelain furnace',
+   meta:['Probable identification: J.M. Ney Mark III or Model 660 family',
+         'Date: late 1960s – 1970s',
+         'Use: firing dental porcelain and metal-ceramic restorations'],
+   body:['Before programmable furnaces became standard, technicians controlled porcelain firing by hand. Temperature, vacuum and heating rate were read off mechanical gauges and set with rotary controls.',
+         'The technician’s experience was the instrument: small adjustments changed the colour, translucency, fit and strength of the finished restoration.',
+         'The furnace on the bench in the photograph of Jim’s first laboratory resembles early Ney manual firing systems. Its maker’s plate is not legible, so the model stays unconfirmed.']},
+  {k:'ph_obj2', t:'Belt-driven laboratory engine',
+   meta:['Probable identification: Buffalo No. 16 or a comparable Emesco bench engine',
+         'Date: 1960s – 1970s',
+         'Use: shaping, grinding and finishing restorations'],
+   body:['An electric bench engine drove a handheld rotary instrument through belts, pulleys and an articulated arm. Repositioning the arm brought the handpiece to the work without losing freedom of movement.',
+         'Interchangeable burs, stones and polishing points shaped wax patterns, refined metal frameworks and finished crowns and bridges.',
+         'Belt-driven engines were the workhorses of the analog laboratory, long before compact electronic micromotors arrived.']},
+  {k:'ph_obj3', t:'Laboratory task lamp',
+   meta:['Object type: adjustable enamel bench lamp',
+         'Date: mid-20th century',
+         'Use: concentrated light on detailed work'],
+   body:['The broad metal shade threw a tight pool of light onto a small area and kept the glare off the rest of the bench — which mattered when carving wax, judging contours, layering porcelain or reading a margin.',
+         'How low it hangs over the bench says everything about the scale of the work.',
+         'The maker cannot be identified from the historical photograph; heavy enamel task lamps of this kind were common in technical workshops of the period.']},
+  {k:'ph_obj4', t:'Dental surveyor',
+   meta:['Probable identification: Ney-type laboratory surveyor',
+         'Date: 1960s – 1970s',
+         'Use: analysing casts, undercuts and paths of insertion'],
+   body:['A surveyor lets the technician examine a model against a fixed vertical reference. The adjustable spindle and tilting table find undercuts, establish parallel surfaces and decide how a restoration enters and leaves the mouth.',
+         'It mattered most in removable prosthodontics and in precision work with attachments.',
+         'The compact instrument under the lamp looks consistent with a Ney-type surveyor; the exact model is not yet confirmed.']},
+  {k:'ph_obj5', t:'Bench burner',
+   meta:['Object type: compact alcohol or gas burner',
+         'Date: 1960s – 1970s',
+         'Use: heating waxing instruments'],
+   body:['Technicians warmed knives and spatulas briefly over a controlled flame, then used them to add, soften or carve modelling wax — building a pattern up gradually into the anatomy of a crown.',
+         'Its small metal body suited continuous use on a crowded bench.',
+         'The photograph does not show enough to say who made it, or whether this one burned alcohol or ran off a laboratory gas supply.']},
+  {k:'ph_obj6', t:'Waxing tools, burs and rotary points',
+   meta:['Date: circa 1970',
+         'Use: modelling, carving, contouring and finishing'],
+   body:['The metal cup held what the hand reached for all day: carvers, spatulas, knives, tweezers, scissors, small pliers — the instruments that built and refined a wax pattern before it was cast.',
+         'The rack beside it ordered burs, mounted stones and abrasive points for the bench engine.',
+         'Between them these modest tools are the whole of traditional dental technology. Before digital design and automated milling, the accuracy and the character of every restoration came out of the technician’s eyes, judgement and touch.']},
+];
+function openCaseView(){
+  hushClips();
+  state.caseView = {page: 0, amt: 0, closing: false, turn: 0, wheel: 0};
+}
+function drawCaseView(){
+  const V = state.caseView; if (!V) return;
+  const dt = state.dt || 0.016;
+  V.amt += ((V.closing ? 0 : 1) - V.amt) * Math.min(1, dt * 5);
+  if (V.closing && V.amt < 0.03){ state.caseView = null; return; }
+  const e = V.amt * V.amt * (3 - 2 * V.amt);
+  ctx.save();
+  /* плотнее, чем у альбома: там разворот занимает весь кадр и зал всё равно не
+     виден, а здесь половина экрана — текст, и зал просвечивал сквозь него */
+  ctx.fillStyle = `rgba(8,6,4,${(0.95 * e).toFixed(3)})`;
+  ctx.fillRect(0, 0, W, H);
+  if (e < 0.25){ ctx.restore(); return; }
+  const a = (e - 0.25) / 0.75;
+  ctx.globalAlpha = a;
+  const it = CASE_ITEMS[Math.max(0, Math.min(CASE_ITEMS.length - 1, V.page))];
+  const sp = PROP_SPRITES[it.k];
+  const seg = SEGMENTS[0];
+
+  /* ДВЕ КОЛОНКИ: предмет слева, карточка справа. На узком экране картинка
+     ужимается, но колонки не схлопываются — читать подпись под фотографией
+     в тёмном зале хуже, чем рядом с ней. */
+  const padX = Math.max(40 * SS, W * 0.07);
+  const colW = Math.min(520 * SS, (W - padX * 2) * 0.46);
+  const imgW = (W - padX * 2) - colW - 44 * SS;
+  const imgH = Math.min(H * 0.60, imgW * 0.62);
+  const cyM = H / 2 + (1 - a) * 26 * SS;
+  const ix = padX, iy = cyM - imgH / 2;
+  if (sp){
+    const sc = Math.min(imgW / sp.w, imgH / sp.h);
+    const dw = sp.w * sc, dh = sp.h * sc;
+    const dx = ix + (imgW - dw) / 2, dy = cyM - dh / 2;
+    /* СНИМКИ СНЯТЫ НА БЕЛОМ. В тёмном зале необработанный белый фон бьёт по
+       глазам прямоугольником; поэтому предмет подаётся так же, как разворот в
+       альбоме, — отпечатком: мягкая тень снизу, белое притушено до слоновой
+       кости, по краю волосяной кант, чтобы плита не висела в пустоте
+       (Эльдар, 02.10.2026). */
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 46 * SS; ctx.shadowOffsetY = 14 * SS;
+    ctx.drawImage(sp.c || sp, dx, dy, dw, dh);
+    ctx.restore();
+    ctx.save();
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = a * 0.13;
+    ctx.fillStyle = '#6b5a3c';                 // тёплый, а не серый: бумага, не пыль
+    ctx.fillRect(dx, dy, dw, dh);
+    ctx.restore();
+    ctx.save();
+    ctx.globalAlpha = a * 0.5;
+    ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+    ctx.lineWidth = Math.max(1, SS);
+    ctx.strokeRect(dx + 0.5, dy + 0.5, dw - 1, dh - 1);
+    ctx.restore();
+    ctx.globalAlpha = a;
+  }
+  const tx = padX + imgW + 44 * SS;
+  let ty = cyM - imgH / 2 + 10 * SS;
+  ctx.textAlign = 'left';
+  const maxW = colW;
+  /* ПЕРЕНОС ОДИН НА ВСЕ СТРОКИ — и на заголовок тоже. Раньше переносился
+     только основной текст, а заголовок и строки «Probable identification: …»
+     печатались как есть и на узкой колонке уезжали за край кадра
+     (Эльдар, 02.10.2026). */
+  const put = (txt, lh) => {
+    let line = '';
+    for (const w2 of txt.split(' ')){
+      const test = line ? line + ' ' + w2 : w2;
+      if (ctx.measureText(test).width > maxW && line){ ctx.fillText(line, tx, ty); ty += lh; line = w2; }
+      else line = test;
+    }
+    if (line){ ctx.fillText(line, tx, ty); ty += lh; }
+  };
+  ctx.font = eraFont(27 * SS, '', seg.font);
+  ctx.fillStyle = 'rgba(240,222,184,0.95)';
+  put(it.t, 36 * SS);
+  ty += 6 * SS;
+  ctx.font = eraFont(15 * SS, '', seg.font);
+  ctx.fillStyle = 'rgba(206,184,146,0.72)';
+  for (const m of it.meta) put(m, 21 * SS);
+  ty += 16 * SS;
+  ctx.font = eraFont(16.5 * SS, '', seg.font);
+  ctx.fillStyle = 'rgba(226,214,192,0.88)';
+  for (const para of it.body){ put(para, 23 * SS); ty += 11 * SS; }
+
+  // крестик, счётчик, подсказка, стрелки — тем же языком, что у альбома
+  ctx.save();
+  ctx.lineWidth = Math.max(1.4, 2 * SS); ctx.lineCap = 'round';
+  const cxX = W - padX, cyX = Math.max(34 * SS, cyM - imgH / 2 - 34 * SS), rX = 11 * SS;
+  const hotX = Input.hover && Math.hypot(Input.hover.x - cxX, Input.hover.y - cyX) < rX * 1.8;
+  ctx.strokeStyle = hotX ? 'rgba(255,236,200,0.98)' : 'rgba(226,206,168,0.7)';
+  ctx.beginPath();
+  ctx.moveTo(cxX - rX * 0.6, cyX - rX * 0.6); ctx.lineTo(cxX + rX * 0.6, cyX + rX * 0.6);
+  ctx.moveTo(cxX + rX * 0.6, cyX - rX * 0.6); ctx.lineTo(cxX - rX * 0.6, cyX + rX * 0.6);
+  ctx.stroke();
+  pushHit(cxX - rX * 1.8, cyX - rX * 1.8, rX * 3.6, rX * 3.6, {type: 'closepage'});
+  ctx.restore();
+
+  ctx.textAlign = 'center';
+  ctx.font = eraFont(16 * SS, '', seg.font);
+  ctx.fillStyle = 'rgba(214,192,152,0.6)';
+  /* подпись садится под ту колонку, что длиннее: на узком окне текст уходит
+     ниже снимка, и счётчик ложился прямо на него */
+  const yFoot = Math.min(H - 30 * SS, Math.max(cyM + imgH / 2, ty) + 40 * SS);
+  ctx.fillText(`${V.page + 1} / ${CASE_ITEMS.length}`, W / 2, yFoot);
+  ctx.font = eraFont(14 * SS, '', seg.font);
+  ctx.fillStyle = 'rgba(206,184,146,0.42)';
+  ctx.fillText('· turn for the next object · tap anywhere else to close ·', W / 2, yFoot + 26 * SS);
+  for (const s2 of [-1, 1]){
+    const at = V.page + s2;
+    if (at < 0 || at >= CASE_ITEMS.length) continue;
+    const cxA = W / 2 + s2 * (W / 2 - padX * 0.45), cyA = cyM;
+    const hot = Input.hover && Math.abs(Input.hover.x - cxA) < 44 * SS && Math.abs(Input.hover.y - cyA) < 44 * SS;
+    ctx.strokeStyle = `rgba(238,220,182,${hot ? 0.95 : 0.5})`;
+    ctx.lineWidth = 3 * SS; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    /* ОСТРИЁ НАРУЖУ. Было наоборот: правый шеврон рисовался как «‹» и звал
+       назад, хотя листает вперёд (Эльдар, 02.10.2026). */
+    ctx.moveTo(cxA - s2 * 9 * SS, cyA - 17 * SS);
+    ctx.lineTo(cxA + s2 * 9 * SS, cyA);
+    ctx.lineTo(cxA - s2 * 9 * SS, cyA + 17 * SS);
+    ctx.stroke();
+    pushHit(cxA - 40 * SS, cyA - 46 * SS, 80 * SS, 92 * SS, {type: 'casepage', d: s2});
+  }
+  pushHit(ix, iy, imgW, imgH, {type: 'casepage', d: 1});   // сам предмет листает вперёд
+  ctx.restore();
+}
 function drawAlbumView(){
   const V = state.albumView; if (!V) return;
   const dt = state.dt || 0.016;
@@ -15932,9 +16358,11 @@ function drawAlbumView(){
     ctx.strokeStyle = `rgba(238,220,182,${hot ? 0.95 : 0.55})`;
     ctx.lineWidth = 3 * SS; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.beginPath();
-    ctx.moveTo(cxA + s2 * 9 * SS, cyA - 17 * SS);
-    ctx.lineTo(cxA - s2 * 9 * SS, cyA);
-    ctx.lineTo(cxA + s2 * 9 * SS, cyA + 17 * SS);
+    /* ОСТРИЁ НАРУЖУ. Было наоборот: правый шеврон рисовался как «‹» и звал
+       назад, хотя листает вперёд (Эльдар, 02.10.2026). */
+    ctx.moveTo(cxA - s2 * 9 * SS, cyA - 17 * SS);
+    ctx.lineTo(cxA + s2 * 9 * SS, cyA);
+    ctx.lineTo(cxA - s2 * 9 * SS, cyA + 17 * SS);
     ctx.stroke();
     pushHit(cxA - 40 * SS, cyA - 46 * SS, 80 * SS, 92 * SS, {type: 'albumpage', d: s2});
   }
@@ -17422,6 +17850,26 @@ function update(dt){
         else S.closing = true;
       } else if (inp.action === true) S.closing = true;   // scrolling past the top does NOT close it
       cam.vel = 0;
+    } else if (state.caseView){
+      const V = state.caseView;
+      const turn = d2 => {
+        const to = Math.max(0, Math.min(CASE_ITEMS.length - 1, V.page + d2));
+        if (to !== V.page){ V.page = to; V.turn = d2 > 0 ? 1 : -1; }
+      };
+      V.wheel += inp.impulse;
+      if (Math.abs(V.wheel) > 120){ turn(V.wheel > 0 ? 1 : -1); V.wheel = 0; }
+      else V.wheel *= 0.86;
+      if (inp.action && typeof inp.action === 'object'){
+        const aimed = hitAt(inp.action.x, inp.action.y);
+        if (aimed && aimed.type === 'closepage'){ V.closing = true; }
+        else if (aimed && aimed.type === 'casepage'){
+          /* за последним предметом витрина НЕ закрывается сама, в отличие от
+             альбома: здесь шесть карточек с текстом, и дочитавшего до конца
+             выкидывать из зала невежливо — он сам решит, когда уйти */
+          turn(aimed.d);
+        } else V.closing = true;
+      } else if (inp.action === true) V.closing = true;
+      cam.vel = 0;
     } else if (state.albumView){
       const V = state.albumView;
       const A2 = ALBUM_SPRITES[V.i];
@@ -17500,10 +17948,12 @@ function update(dt){
       state.pfmView.closing = true;
     } else if (inp.action && state.openBox && !state.openBox.closing){
       state.openBox.closing = true;
-    } else if (inp.action && !state.inspect && !state.study && !state.person && !state.people && !state.openBox){
+    } else if (inp.action && !state.inspect && !state.study && !state.person && !state.people && !state.openBox && !state.caseView){
       const aimed = (typeof inp.action === 'object') ? hitAt(inp.action.x, inp.action.y) : null;
       if (aimed && aimed.type === 'doc'){
         openDoc();
+      } else if (aimed && aimed.type === 'opencase'){
+        openCaseView();                     // витрина 1970-го: шесть предметов с первого верстака
       } else if (aimed && aimed.type === 'photo'){
         if (aimed.offer){ bookInit(); bookReset(); }
         /* offer НАДО ПЕРЕНЕСТИ ЯВНО. Оверлей собирается здесь по полям, а не
@@ -18200,6 +18650,7 @@ function frame(){
   drawBayStep(REC_L, REC_R, STEP_TONE.warm, R79_BAY_Z, noseOf(R79_BAY_Z));
   drawMapWall(t);
   drawLabs73();
+  drawTown76();
   drawRec3(t);
   drawRec93(t);
   drawRec2(t);
@@ -18247,6 +18698,7 @@ function frame(){
         ctx.restore();
       }
     }
+    if (b.quote) drawQuotePlate(b, i);
     if (b.plasma) drawPlasmaPanel(b, t);
   }
   drawBanners(t);
@@ -18465,6 +18917,7 @@ function frame(){
   drawMusicMark();
   drawDebug();
   drawAlbumView();   // the album, open on the table in front of you
+  drawCaseView();    // и витрина 1970-го, когда её открыли
   drawStudy();
   drawPeople();    // the wall of voices
   drawPerson();    // one voice's own page, over whatever sent you to it
