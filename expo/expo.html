@@ -11666,7 +11666,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261002-finprod';
+const ASSET_V = '20261002-scanwand';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -11719,6 +11719,8 @@ async function loadPhotoSkin(){
     st_wall_brick: 'st_wall_brick.jpg', st_wall_4141b: 'st_wall_4141b.jpg',
     /* финальная витрина: весь сегодняшний ряд одним рендером (Эльдар, 02.10.2026) */
     ph_finprod: 'final_products.png',
+    /* сканер-курсор для страницы «The crossover» (Эльдар, 02.10.2026) */
+    ph_scanwand: 'scan_wand.png',
     bench_top_e1: 'bench_top_e1.jpg', bench_face_e1: 'bench_face_e1.jpg',
     ph_furnace: 'furnace_0.png',
     ph_articulator: 'articulator_0.png',
@@ -19298,6 +19300,46 @@ function auditFrames(){
   if (!spill.length && !clash.length) console.log('FRAME AUDIT: clean — nothing off the edge, no target claimed twice');
 }
 
+/* СКАНЕР ВМЕСТО КУРСОРА НА «THE CROSSOVER». Эльдар (02.10.2026): «что если в
+   момент, когда открывается этот кроссовер, там курсор превращается в сканер…
+   когда нажимается digit, когда закрывается этот кроссовер — сканер тоже исчезает,
+   например через прозрачность, постепенно». Системный курсор на это время
+   убирается совсем — Эльдар попросил отдельно.
+
+   На тач-экране стенда мыши нет и наведения тоже, так что там этого просто не
+   будет: Input.hover ставится только указателем. Это знают оба, и сделано именно
+   для того, кто смотрит зал с компьютера.
+
+   Кончик сканера — в точке курсора, сам он наклонён на 25° и уходит вниз-вправо,
+   как его держала бы правая рука. Высота — доля кадра, а не мировая величина: это
+   курсор, а не предмет в зале. */
+const SCANCUR = {a: 0, hidden: false};
+function drawScanCursor(){
+  const S = state.study;
+  const b = S && (S.b || BEATS[S.beat]);
+  const onPage = !!(S && b && b.t === 'THE CROSSOVER' && S.amt > 0.6);
+  const want = (onPage && Input.hover && !S.dissing) ? 1 : 0;
+  SCANCUR.a += (want - SCANCUR.a) * 0.18;          // затухание и появление — одно и то же
+  if (SCANCUR.a < 0.004){ SCANCUR.a = 0; }
+  /* системный курсор прячется, пока жив свой; возвращается ровно один раз */
+  const hide = SCANCUR.a > 0.02;
+  if (hide !== SCANCUR.hidden){
+    SCANCUR.hidden = hide;
+    try { document.body.style.cursor = hide ? 'none' : ''; } catch(e){}
+  }
+  if (!SCANCUR.a || !Input.hover) return;
+  const im = PHOTO_TEX.ph_scanwand;
+  if (!im || !im.naturalWidth) return;
+  const h = 0.30 * H, w = h * im.naturalWidth / im.naturalHeight;
+  ctx.save();
+  ctx.globalAlpha = SCANCUR.a;
+  ctx.translate(Input.hover.x, Input.hover.y);
+  ctx.rotate(-25 * Math.PI / 180);   // вниз-вправо, как у обычной стрелки: кончик вверху-слева, тело уходит от руки
+  ctx.shadowColor = 'rgba(10,14,20,0.35)';
+  ctx.shadowBlur = 18 * SS; ctx.shadowOffsetY = 8 * SS;
+  ctx.drawImage(im, -w / 2, 0, w, h);             // кончик файла — его верхний край, то есть y = 0
+  ctx.restore();
+}
 function frame(){
   const t = state.time;
   HITS = [];
@@ -19633,6 +19675,7 @@ function frame(){
   drawOpenBox();   // one carton off the pile, opened
   drawAttractHint(t);
   // pointer affordance
+  drawScanCursor();
   if (Input.hover && state.mode === 'live'){
     const aimHover = (!state.inspect && hitAt(Input.hover.x, Input.hover.y)) || null;
     state.docHot = !!(aimHover && aimHover.type === 'doc');
