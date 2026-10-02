@@ -11961,6 +11961,45 @@ function drawCrownBlob(x, y, r, a){
   ctx.beginPath(); ctx.ellipse(x + r * 0.30, y - r * 0.24, r * 0.22, r * 0.18, 0, 0, 7); ctx.fill();
 }
 
+/* ГДЕ У СПРАЙТА КОРОНКИ САМА КОРОНКА. Спрайт crown2 — 510×450, а непрозрачные
+   пиксели в нём только строки 78…398 и столбцы 88…421: сверху 17,3 % пустоты,
+   снизу 11,6 %. Пока коронку вписывали в коробку 46 единиц ЦЕЛИКОМ, её видимый
+   верх оказывался на восемь единиц ниже верха коробки: боёк доходил до
+   коробки и останавливался в воздухе (Эльдар, 02.10.2026: «пресс давит коронку —
+   он её не касается»), а низ висел на пять единиц над лентой.
+   Читается ОДИН РАЗ и кэшируется на самом спрайте: чтение пикселей канвы —
+   барьер для видеокарты, и в кадре ему места нет. */
+function crownAlphaBox(sp){
+  const FALLBACK = {t0: 0.1733, fh: 0.7133, cx: 0.5, fw: 0.6549};
+  if (!sp || !sp.c) return FALLBACK;
+  if (sp._abox) return sp._abox;
+  const c = sp.c, cw = c.width || c.naturalWidth, ch = c.height || c.naturalHeight;
+  if (!cw || !ch) return FALLBACK;
+  let d;
+  try {
+    const off = document.createElement('canvas');
+    off.width = cw; off.height = ch;
+    const g2 = off.getContext('2d', {willReadFrequently: true});
+    g2.drawImage(c, 0, 0);
+    d = g2.getImageData(0, 0, cw, ch).data;
+  } catch(e){ return (sp._abox = FALLBACK); }
+  let top = -1, bot = -1, left = cw, right = -1;
+  for (let y = 0; y < ch; y++){
+    let any = false;
+    for (let x = 0; x < cw; x++) if (d[(y*cw + x)*4 + 3] > 8){
+      any = true; if (x < left) left = x; if (x > right) right = x;
+    }
+    if (any){ if (top < 0) top = y; bot = y; }
+  }
+  if (top < 0 || right < 0) return (sp._abox = FALLBACK);
+  const box = {
+    t0: top / ch,                       // пустота сверху, доля высоты файла
+    fh: (bot - top + 1) / ch,           // доля высоты, занятая коронкой
+    cx: (left + right + 1) / 2 / cw,    // где её середина по горизонтали
+    fw: (right - left + 1) / cw,        // и доля ширины
+  };
+  return (sp._abox = box);
+}
 /* A counter machine is a data row, not an edit inside the frame loop. */
 const RIGS = {};
 /* ── СТАНЦИЯ R&D · МАШИНА, КОТОРАЯ ЛОМАЕТ КОРОНКИ ─────────────────────────
@@ -12047,12 +12086,21 @@ function drawCrownTester(b, t){
      материал распрямляется сразу, как только с него сняли нагрузку. */
   const sqz = (cu === 0 && !brokeC)
     ? PRESS_BITE * biteU * (1 - ease(seg(TESTER.load, TESTER.load + 0.25))) / 46 : 0;
+  const CB = crownAlphaBox(spC);
   const crown = (al2) => {
     if (!spC || !spC.c) return;
-    const hBase = 46 * sc * S1;
-    const h2 = hBase * (1 - sqz), w2 = hBase * (spC.w / spC.h) * (1 + sqz * 0.45);
+    /* 46 единиц — ЭТО ВИДИМАЯ ВЫСОТА КОРОНКИ, а не высота файла с его
+       пустыми полями. Картинка вокруг считается от альфы: видимый низ ложится
+       на ленту, видимый верх — ровно туда, куда приходит боёк. */
+    const hVis = 46 * sc * S1 * (1 - sqz);
+    const wide = 1 + sqz * 0.45;
+    const imgH = hVis / CB.fh, imgW = imgH * (spC.w / spC.h) * wide;
+    const yVisBot = Y(cv), yVisTop = yVisBot - hVis;
+    const ix = X(cu) - imgW * CB.cx, iy = yVisTop - imgH * CB.t0;
+    const w2 = imgW * CB.fw;                      // видимая ширина — для ореола
+    const h2 = hVis;
     ctx.save(); ctx.globalAlpha = al2;
-    ctx.drawImage(spC.c, X(cu) - w2 / 2, Y(cv) - h2, w2, h2);
+    ctx.drawImage(spC.c, ix, iy, imgW, imgH);
     if (cHot > 0.01){
       ctx.globalCompositeOperation = 'lighter';
       const gh = ctx.createRadialGradient(X(cu), Y(cv) - h2 * 0.5, 0, X(cu), Y(cv) - h2 * 0.5, w2 * 0.86);
@@ -12246,7 +12294,7 @@ function drawCrownTester(b, t){
      короба, её берёт проход Б, поверх всей машины. Переключение приходится на
      момент, когда створка ещё распахнута и коронку всё равно ничто не
      закрывает, поэтому шва нет ни в кадре, ни на ходу. */
-  const halfC = 46 * sc * S1 * (spC ? spC.w / spC.h : 0.9) / 2 / S1;   // полуширина в единицах чертежа
+  const halfC = 46 * sc * (spC ? spC.w / spC.h : 0.9) * CB.fw / CB.fh / 2;   // полуширина ВИДИМОЙ коронки, в единицах чертежа
   const crownInPort = (cu + halfC < -108) || (cu - halfC > 108);
   if (!brokeC && crownInPort) crown(al);
   portFront(-1); portFront(1);
