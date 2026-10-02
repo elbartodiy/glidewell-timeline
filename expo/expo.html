@@ -5277,6 +5277,12 @@ const FIN_FACE_H = 380;                    // высота лицевой гра
    (benchY…1080 = 380). Значит кромка ложится на линию прилавков на ЛЮБОЙ камере
    и при любом cam.z — не подогнана, а совпадает по построению. */
 const FIN_DEPTH = CFG.benchDepth;          // след — ровно как у прилавков
+/* ШИРИНА. 900 единиц стойка носила с тех пор, когда стояла глубже и дальше
+   от камеры. Когда она встала на след прилавков — ближняя грань на 0, глубина 340 —
+   та же ширина стала занимать почти весь кадр: «стол слишком большой так»
+   (Эльдар, 02.10.2026). Глубину трогать нельзя — это и есть то, что ставит её
+   на одну линию со всеми прочими; честная ручка здесь одна — ширина. */
+const FIN_W = 700;
 const FIN_Z_FACE = 0;                      // и ближняя грань тоже на их плоскости
 function drawFinaleLogo(){
   const im = IMGS.logo2026; if (!im) return;
@@ -5332,7 +5338,7 @@ function drawFinaleTable(t){
      радиус у настоящей стойки — это закругление В ПЛАНЕ, угол самой
      стойки заворачивается плавно. Я скруглил верхние углы в ФАСАДЕ, и под
      свесом открылся клин фона (Эльдар увидел его сразу). */
-  drawYawedTable(FIN_X, FIN_Z_FACE + FIN_DEPTH / 2, 0, 900, FIN_DEPTH, 700, FIN_FACE_H,
+  drawYawedTable(FIN_X, FIN_Z_FACE + FIN_DEPTH / 2, 0, FIN_W, FIN_DEPTH, 700, FIN_FACE_H,
     {side0:'#eef1f4', side1:'#c6ccd2', top:'#f7f9fb', edge:'rgba(120,130,140,0.5)',
      lip: FIN_LIP, ov: 6, lip0:'#fdfeff', lip1:'#dfe4e9'});
 
@@ -5347,7 +5353,7 @@ function drawFinaleTable(t){
      пятном на ковёр (IMG_2666: подсветка цоколя 172,199,249 против грани 161,142,153).
      Прежняя полоска была только сверху, под столешницей — низ уходил в темноту. */
   {
-    const yF = py(1080, ke), xA = px(FIN_X - 450, ke), xB = px(FIN_X + 450, ke);
+    const yF = py(1080, ke), xA = px(FIN_X - FIN_W / 2, ke), xB = px(FIN_X + FIN_W / 2, ke);
     const up = 120 * ke * SS;               // насколько свет поднимается по грани
     const gUp = ctx.createLinearGradient(0, yF, 0, yF - up);
     gUp.addColorStop(0, `rgba(176,214,255,${(0.52 + 0.08*Math.sin(t*1.6)).toFixed(3)})`);
@@ -5378,7 +5384,7 @@ function drawFinaleTable(t){
     const fp = PHOTO_TEX.ph_finprod;
     if (fp && fp.naturalWidth){
       const kF = k(FIN_Z_FACE), kB = k(FIN_Z_FACE + FIN_DEPTH);
-      const wBack = px(FIN_X + 450, kB) - px(FIN_X - 450, kB);
+      const wBack = px(FIN_X + FIN_W / 2, kB) - px(FIN_X - FIN_W / 2, kB);
       const wDraw = wBack * 0.96;
       const hDraw = wDraw * fp.naturalHeight / fp.naturalWidth;
       const yBot = py(700, kF);                 // передняя кромка нашей столешницы
