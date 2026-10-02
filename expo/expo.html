@@ -11666,7 +11666,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261002-scanwand';
+const ASSET_V = '20261002-donuts';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -11721,6 +11721,7 @@ async function loadPhotoSkin(){
     ph_finprod: 'final_products.png',
     /* сканер-курсор для страницы «The crossover» (Эльдар, 02.10.2026) */
     ph_scanwand: 'scan_wand.png',
+    ph_donuts: 'donuts.png',          // пятничные пончики на прилавок 1984-го (Эльдар, 02.10.2026)
     bench_top_e1: 'bench_top_e1.jpg', bench_face_e1: 'bench_face_e1.jpg',
     ph_furnace: 'furnace_0.png',
     ph_articulator: 'articulator_0.png',
@@ -11933,6 +11934,21 @@ function initDecor(){
   {
     const bsn = BEATS.find(b => b.t === 'SILENT NITE');
     if (bsn) PROPS.push({x: bsn.x, z: 26, kind: 'ph_pillow', w: 442, drop: 88, noShadow: true, study: 'SILENT NITE'});
+  }
+
+  /* ПЯТНИЧНЫЕ ПОНЧИКИ НА ПРИЛАВКЕ 1984-ГО (Эльдар, 02.10.2026: «пончики тоже
+     надо поставить… на линию, на стол, на 1984 год»). Ширина 150: коробка
+     шестёрки — около 35 см, а в зале 422 единицы на метр. z 30 — мелкая вещь у
+     переднего края столешницы. +280 от года, чтобы не стоять под самой строкой.
+     У спрайта своя мягкая тень в альфе (плотная часть доходит до 499-й строки из 501),
+     поэтому noShadow — иначе зал дорисует вторую.
+     ПОДПИСЬ НЕ ВЫДУМАНА И НЕ ПРИВЯЗАНА К ЭТОМУ ГОДУ: саму историю про то, как
+     пончики отменили и что из этого вышло, зал рассказывает на странице 2009 года
+     (раздел «The year the donuts stopped»), и там же стоит ролик Джима. */
+  {
+    const b84 = BEATS.find(b => b.y === '1984');
+    if (b84) PROPS.push({x: b84.x + 280, z: 30, kind: 'ph_donuts', w: 150, noShadow: true,
+      cap: 'Friday donuts \u2014 a Glidewell institution. What happened the year they were cancelled is told at 2009.'});
   }
 
   /* The welcome still life is gone: the film plays where the heirlooms stood.
@@ -16589,7 +16605,12 @@ const STUDY_MEDIA_BY_TITLE = {
      страницы остались без голоса — это осознанно и ждёт его решения. */
   'CAD/CAM ENTERS THE LAB': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_03.mp4', label:'on CAD/CAM'}],
   /* его рассказ про монолит — на странице самого монолита (Эльдар, 2026-09-23) */
-  'BRUXZIR': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_05.mp4', label:'on monolithic BruxZir'}],
+  /* ролик Джима про пончики стоит там, где зал рассказывает эту историю: в статье 2009
+     года есть раздел «The year the donuts stopped» — единственный год, когда продажи
+     упали, два менеджера сэкономили восемьдесят тысяч на пятничных пончиках, и чем это
+     кончилось. Сама коробка по просьбе Эльдара лежит на прилавке 1984-го. */
+  'BRUXZIR': [{name:'Jim Glidewell', img:'jimnow', pid:'jim', src:'media/jim_03.mp4', label:'on the Friday donuts'},
+              {name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_05.mp4', label:'on monolithic BruxZir'}],
   'SCREW-RETAINED': [{name:'Dr. Randolph Resnik', img:'resnik', pid:'resnik', src:'media/resnik_01.mp4', label:'on implants leaving the specialty'}],
   'SCANNERS \u00b7 SCALE': [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2010s_patel.mp4', label:'on scanners in every office'}],
   'HAHN TAPERED IMPLANT': [{name:'Dr. Randolph Resnik', img:'resnik', pid:'resnik', src:'media/resnik_01.mp4', label:'on implants leaving the specialty'}],
