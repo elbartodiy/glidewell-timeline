@@ -10020,11 +10020,36 @@ function stWallTex(p){
   const im = PHOTO_TEX[key];
   return (im && im.naturalWidth) ? {im, th: ST_TILE_H[key] || 800} : null;
 }
+/* УРОВНИ ТЕКСТУРЫ. Та же болезнь, что и у предметов на прилавках, только здесь
+   она злее: у стены, уходящей вглубь почти с ребра, дальний конец сжат в десятки
+   раз и по высоте, и по глубине. drawImage берёт на каждый пиксель результата
+   четыре соседних пикселя источника и выбрасывает сотни остальных — швы кладки
+   рассыпаются в крупу, и на движении крупа кипит: «пикселизация жуткая, это
+   пиксель на пикселе» (Эльдар, 02.10.2026, скрин кирпича в глубине).
+   Держим у текстуры пирамиду вдвое меньших копий и берём ту, что ближе всего
+   к 1:1 с тем, куда рисуем. Строится один раз и живёт на самой картинке. */
+function texLevel(im, lvl){
+  if (lvl <= 0) return im;
+  let lv = im._lv;
+  if (!lv) lv = im._lv = [im];
+  for (let n = lv.length; n <= lvl; n++){
+    const prev = lv[n - 1];
+    const pw = prev.naturalWidth || prev.width, ph2 = prev.naturalHeight || prev.height;
+    const w2 = Math.max(1, pw >> 1), h2 = Math.max(1, ph2 >> 1);
+    const c = document.createElement('canvas'); c.width = w2; c.height = h2;
+    const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+    g.drawImage(prev, 0, 0, w2, h2);
+    lv.push(c);
+    if (w2 <= 2 || h2 <= 2) break;
+  }
+  return lv[Math.min(lvl, lv.length - 1)];
+}
 /* один столбик: по вертикали проходит ряды кафеля, попавшие в [yA,yB] */
 function stTexColumn(tex, kk, xL, xR, yA, yB, u0, u1){
   const {im, th} = tex, iw = im.naturalWidth, ih = im.naturalHeight;
   const r0 = Math.floor((yA - ST.top) / th), r1 = Math.ceil((yB - ST.top) / th);
   const sx = u0 * iw, sw = (u1 - u0) * iw;
+  const dw = (xR - xL) + 1;
   for (let r = r0; r < r1; r++){
     const top = ST.top + r * th;
     const a = Math.max(yA, top), b = Math.min(yB, top + th);
@@ -10032,7 +10057,11 @@ function stTexColumn(tex, kk, xL, xR, yA, yB, u0, u1){
     const sy = (a - top) / th * ih, sh = (b - a) / th * ih;
     const dy = py(a, kk), dh = py(b, kk) - dy;
     if (dh <= 0) continue;
-    ctx.drawImage(im, sx, sy, sw, sh, xL - 0.5, dy, (xR - xL) + 1, dh);
+    /* во сколько раз сжимаем — по той оси, по которой сильнее */
+    const need = Math.max(sw / Math.max(1, dw), sh / Math.max(1, dh));
+    const lvl = need > 1.25 ? Math.min(5, Math.round(Math.log2(need))) : 0;
+    const f = 1 / (1 << lvl);
+    ctx.drawImage(texLevel(im, lvl), sx * f, sy * f, sw * f, sh * f, xL - 0.5, dy, dw, dh);
   }
 }
 function stTexBand(xw, p, tex, yA, yB){
@@ -10050,8 +10079,15 @@ function stTexBand(xw, p, tex, yA, yB){
     const za = p.zFar - t * tw, zb = Math.max(zEnd, p.zFar - (t + 1) * tw);
     if (zb >= za) continue;
     const kA = k(za), kB = k(zb);
+    /* ШАГ СТОЛБИКА РЕШАЕТ НЕ РЕЗКОСТЬ, А ЛЕСЕНКУ. Внутри столбика вертикальный
+       масштаб постоянен (берётся на его дальней кромке), а между столбиками он
+       скачет. Шов кладки — тонкая тёмная линия, и на шаге в четыре пикселя она
+       рассыпалась на четырёхпиксельные ступеньки — тот самый «пиксель на пикселе»
+       (Эльдар, 02.10.2026). Замерено перехватом drawImage: выборка шла почти 1:1
+       (8 пикселей источника на 5 экранных), то есть дело было не в мелкости текстуры,
+       а именно в ширине ступени. 1,5 пикселя — ступень ниже порога заметности. */
     const span = Math.abs(px(xw, kB) - px(xw, kA));
-    const N = Math.max(2, Math.min(400, Math.round(span / 4)));
+    const N = Math.max(2, Math.min(1400, Math.round(span / 1.5)));
     for (let i = 0; i < N; i++){
       const ka = kA + (kB - kA) * (i / N), kb = kA + (kB - kA) * ((i + 1) / N);
       const zi = CFG.F / ka - CFG.F + cam.z, zj = CFG.F / kb - CFG.F + cam.z;
