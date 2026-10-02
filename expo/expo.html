@@ -5241,7 +5241,18 @@ function drawOutro(){
    пропорция со снимка важнее того, каким кеглем это вышло у конкретного шрифта. */
 const FIN_LIP = 22;                        // толщина плиты столешницы, единицы мира
 const FIN_FACE_H = 380;                    // высота лицевой грани, единицы мира
-const FIN_Z_FACE = 150 - 240/2;            // ближняя грань стола: cz − полглубины
+/* ФИНАЛЬНАЯ СТОЙКА СТОИТ НА СЛЕДУ ПРИЛАВКОВ, А НЕ СВОЮ СОБСТВЕННУЮ.
+   Эльдар (02.10.2026): «посмотри, как здесь дико перспектива нарушена; стол последний
+   давай как-то сделаем едино со столами до него». Она стояла на своём
+   основании: центр 150, глубина 240 — ближняя грань на 30, дальняя на 270. А все
+   прилавки зала стоят от 0 до CFG.benchDepth = 340. Разная глубина — разное k, а
+   значит py(700) у них разный: кромка последнего стола шла выше кромки соседнего
+   прилавка, и два предмета на одной линии читались как два разных помещения.
+   Теперь у неё ТОТ ЖЕ СЛЕД: ближняя грань на 0, глубина 340, высота та же
+   (benchY…1080 = 380). Значит кромка ложится на линию прилавков на ЛЮБОЙ камере
+   и при любом cam.z — не подогнана, а совпадает по построению. */
+const FIN_DEPTH = CFG.benchDepth;          // след — ровно как у прилавков
+const FIN_Z_FACE = 0;                      // и ближняя грань тоже на их плоскости
 function drawFinaleLogo(){
   const im = IMGS.logo2026; if (!im) return;
   const kf = k(FIN_Z_FACE), H = FIN_FACE_H;
@@ -5296,11 +5307,11 @@ function drawFinaleTable(t){
      радиус у настоящей стойки — это закругление В ПЛАНЕ, угол самой
      стойки заворачивается плавно. Я скруглил верхние углы в ФАСАДЕ, и под
      свесом открылся клин фона (Эльдар увидел его сразу). */
-  drawYawedTable(FIN_X, 150, 0, 900, 240, 700, FIN_FACE_H,
+  drawYawedTable(FIN_X, FIN_Z_FACE + FIN_DEPTH / 2, 0, 900, FIN_DEPTH, 700, FIN_FACE_H,
     {side0:'#eef1f4', side1:'#c6ccd2', top:'#f7f9fb', edge:'rgba(120,130,140,0.5)',
      lip: FIN_LIP, ov: 6, lip0:'#fdfeff', lip1:'#dfe4e9'});
 
-  const ke = k(32);
+  const ke = k(FIN_Z_FACE);
   /* СИНЯЯ ПОЛОСА ПОД СТОЛЕШНИЦЕЙ СНЯТА. Она изображала «дыхание света» в то
      время, когда столешница была листом без толщины и под ней не было ничего.
      Теперь там ребро плиты, и полоса ложилась ровно на него, читаясь синим скотчем
@@ -15264,6 +15275,7 @@ function layGrain(tile){
   for (let y = 0; y < H; y += s)
     for (let x = 0; x < W; x += s) ctx.drawImage(tile, x, y);
 }
+const VIGNETTE_ON = false;   // виньетирование снято по просьбе Эльдара, 02.10.2026
 let VIG = null;
 function makeVignette(){
   VIG = document.createElement('canvas'); VIG.width = Math.max(2, W>>1); VIG.height = Math.max(2, H>>1);
@@ -15292,15 +15304,22 @@ function drawGrade(t){
      darkness of the whole frame, landing on one world coordinate at the edge of
      the recreation. That is the lightening you can see from across the room. It
      is anchored to the portal itself now, and eased across 2280 units. */
-  let sh = segAt(cam.x).shade != null ? segAt(cam.x).shade : 1;
-  if (SEGMENTS[3].shade != null){
-    const a0 = REC2_L - 300, a1 = REC2_R + 900;
-    const tt = Math.max(0, Math.min(1, (cam.x - a0) / (a1 - a0)));
-    sh = 1 + (SEGMENTS[3].shade - 1) * (tt*tt*(3-2*tt));
+  /* ВИНЬЕТИРОВАНИЕ СНЯТО ЦЕЛИКОМ (Эльдар, 02.10.2026: «давай полностью
+     уберём виньетирование»). Оно затемняло углы кадра до 0,46 и съедало то,
+     что к ним приходится — особенно финальную стойку и низ уличного проёма.
+     Сама заготовка и весь счёт затенения по эпохам остаются на месте: вернуть —
+     одно слово здесь, числа никто не трогал. Зерно плёнки ниже не затронуто. */
+  if (VIGNETTE_ON){
+    let sh = segAt(cam.x).shade != null ? segAt(cam.x).shade : 1;
+    if (SEGMENTS[3].shade != null){
+      const a0 = REC2_L - 300, a1 = REC2_R + 900;
+      const tt = Math.max(0, Math.min(1, (cam.x - a0) / (a1 - a0)));
+      sh = 1 + (SEGMENTS[3].shade - 1) * (tt*tt*(3-2*tt));
+    }
+    ctx.globalAlpha = 0.35 + 0.65*sh;
+    ctx.drawImage(VIG, 0, 0, W, H);
+    ctx.globalAlpha = 1;
   }
-  ctx.globalAlpha = 0.35 + 0.65*sh;
-  ctx.drawImage(VIG, 0, 0, W, H);
-  ctx.globalAlpha = 1;
   // film grain — settles down as time moves forward, and already eases off
   // through the late seventies, before the era even turns
   const g = grains[(t*10|0) % grains.length];
