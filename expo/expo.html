@@ -4797,7 +4797,9 @@ const FIN_X = SHIFT(29750) - 450;
    погаснет на глазах у посетителей. Файл обновляет скрипт (expo/tools/
    fetch_events.py) по ночам; зал перечитывает его раз в четверть часа. */
 /* СВОЙ КУСОК СТЕНЫ. На 1560 оно налезало на карточку CrownAI и на строчку
-   «An arc the length of one life»; 2400 — пустой участок левее их обоих. */
+   «An arc the length of one life»; 2400 — пустой участок левее их обоих.
+   Оба они с тех пор сняты (02.10.2026), место осталось свободным с запасом —
+   ширину меняем только если что-то новое туда повесят. */
 /* ТАБЛО ОТЪЕХАЛО ВПРАВО, СЛЕВА ВСТАЛА ПЛАЗМА. Эльдар (2026-10-01) обвёл табло,
    провёл стрелку вправо и нарисовал слева от него экран с подписью «Vid».
    Сдвиг 580 — ровно столько, сколько он отмерил на кадре (255 px при 2000 px
@@ -14149,7 +14151,13 @@ function initBanners(){
     {x: bx('2009', 178), w: 550, sp: makeBanner('BruxZir\u00ae', 'The best dentistry \u2014 made affordable', 'The #1 crown')},
     {x: bx('2015', -122), w: 550, sp: makeBanner('Glidewell HT\u2122', 'Premium implant, a fraction of the price', 'Premium \u00b7 affordable')},
     {x: bx('2017', -453), w: 240, cy: 455, sp: makeBannerVert('glidewell.io', 'The lab moves\ninto your office', 'Single-visit', 'fastmill')},
-    {x: SHIFT(27700), w: 480, sp: makeBanner('CrownAI', 'Designed by intelligence, milled by robots', 'AI in every crown', 'todayai')},
+    /* КАРТОЧКА CrownAI СНЯТА (Эльдар, 02.10.2026). Продукт настоящий — май
+       2021, — но слоган «Designed by intelligence, milled by robots» и плашка
+       «AI in every crown» были написаны здесь, у Glidewell таких слов нет, а
+       на снимке todayai.jpg вообще настольная фреза, не CrownAI. Соседние
+       карточки стоят на настоящих слоганах компании, эта стояла на выдуманном.
+       И главное: ту же мысль зал уже держит настоящим экспонатом — первой
+       коронкой, которую спроектировала сеть, на 2018 годе. */
   ];
 }
 function drawBanners(t){
