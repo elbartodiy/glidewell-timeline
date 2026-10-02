@@ -9740,12 +9740,33 @@ const ST_CARS = {
      Вторая полоса — дальняя (Эльдар, 2026-09-25: «поставь второй трак на
      верхнюю линию, между двумя, посмотреть угол»): свой снимок сверху, меньше
      ростом и выше по кадру. */
+  /* 0,1875 × 1,15 = 0,2156 — Эльдар (2026-10-01) просил ещё на 15 % крупнее */
   lanes: [
-    {pic: 'truck',  y: 0.865, h: 0.1875, cross: 0.5, at: [0, 0.25, 0.5]},
+    {pic: 'truck',  y: 0.865, h: 0.2156, cross: 0.5, at: [0, 0.25, 0.5]},
     /* дальняя полоса (Truck2, снимок сверху) была пробой ракурса и по просьбе
        Эльдара убрана в тот же день — сам снимок лежит в assets/street/truck2 */
   ],
 };
+/* ГРУЗОВИК ТЕПЛЕЕ, ЧЕМ ВЫШЕЛ ИЗ РЕНДЕРА. Снимок улицы снят в тёплом свете —
+   кирпич, газон, солнце, — а белый борт машины рядом с ним читается холодным
+   и чужим: «там на улице цвета теплее, чем грузовик» (Эльдар, 2026-10-01).
+   Тонируем сам снимок машины один раз и кладём в кэш: заливка source-atop
+   красит только непрозрачные пиксели, то есть борт и кабину, и не трогает
+   вырезанный фон. */
+const ST_WARM = {};
+function warmPic(im, key){
+  let c = ST_WARM[key];
+  if (c) return c;
+  c = document.createElement('canvas');
+  c.width = im.naturalWidth; c.height = im.naturalHeight;
+  const g = c.getContext('2d');
+  g.drawImage(im, 0, 0);
+  g.globalCompositeOperation = 'source-atop';
+  g.fillStyle = 'rgba(255,186,116,0.13)';     // янтарь, ровно настолько, чтобы сошлось со снимком
+  g.fillRect(0, 0, c.width, c.height);
+  ST_WARM[key] = c;
+  return c;
+}
 function drawStreetTrucks(a, b){
   const [x0, x1] = stOpenSpan();
   const from = x0 - ST_CARS.lead, to = x1 + ST_CARS.lead;
@@ -9759,7 +9780,7 @@ function drawStreetTrucks(a, b){
     for (const at of L.at){
       const q = (p - at) / L.cross;
       if (q <= 0 || q >= 1) continue;
-      ctx.drawImage(im, xL + (xR - xL) * q - wT / 2, yB - hT, wT, hT);
+      ctx.drawImage(warmPic(im, L.pic), xL + (xR - xL) * q - wT / 2, yB - hT, wT, hT);
     }
   }
 }
