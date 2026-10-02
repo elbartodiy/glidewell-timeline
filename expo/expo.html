@@ -363,9 +363,10 @@ const BEATS = [
       не пускает монитор левее начала пролёта прилавка — он ровно на неё и
       садился. Монитор встаёт справа от коробки, с воздухом от неё. */
    props:[{kind:'crt', dx:322, lz:130, w:320, label:'CAD revolution'}],
-   /* заготовка переехала сюда с 2000-го: диск — предмет станка, а не отдела.
-      Его и грызёт фреза на экране рядом. */
-   ped:{obj:'puck', dx:0},
+   /* На постаменте стоит фрезерованный колпачок на гипсовой культе. Диск
+      циркония, стоявший тут раньше, — предмет 2009-го: тем же спрайтом набита
+      заготовка BruxZir в витрине того года. */
+   ped:{obj:'coping', dx:0},
    th:'The mill arrives at the bench — the lab’s half of the crown goes digital.',
    d:'Glidewell takes up the outside milling systems — Cercon, Wol-Ceram — and four years later has its own: scan the model, design the coping on screen, mill it from a block.',
    wall:[], table:[]},
@@ -12655,6 +12656,65 @@ function makePedObj(kind){
     }
     g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 1.5;
     g.beginPath(); g.roundRect(15.5, 15.5, 189, 117, 5); g.stroke();
+  } else if (kind === 'coping'){
+    /* КОЛПАЧОК НА КУЛЬТЕ — экспонат 2002 года. Раньше здесь стоял диск
+       циркония, но диск — это BruxZir 2009-го, тем же спрайтом набита
+       заготовка в витрине того года, и на CAD/CAM он читался не из своего
+       времени (Эльдар, 02.10.2026). В 2002-м фреза выдавала не коронку, а
+       КАРКАС: белый колпачок, который садится на культю, а керамику на него
+       потом наслаивает рука. Это буквально то, что написано в тезисе года —
+       «половина коронки, которая принадлежит лаборатории, стала цифровой».
+       Два материала рядом говорят это без подписи: меловой колпачок станка
+       и гипсовая культя с модели. */
+    size(200, 150);
+    g.save(); g.translate(100, 70);
+    /* ШИРЕ, ЧЕМ ВЫШЕ. Первая проба вышла напёрстком на пробке: колпачок стоял
+       столбиком, культя торчала ножкой. У моляра и его каркаса пропорция
+       обратная — ширина больше высоты, и культя под ним короткая и толстая. */
+    // гипсовая культя: тёплый мел, конус с плеча
+    const die = g.createLinearGradient(-38, 0, 38, 0);
+    die.addColorStop(0, '#9d8e70'); die.addColorStop(.42, '#ded3b8'); die.addColorStop(1, '#8f8266');
+    g.fillStyle = die;
+    g.beginPath();
+    g.moveTo(-36, 14);
+    g.lineTo(-30, 50);
+    g.quadraticCurveTo(0, 60, 30, 50);
+    g.lineTo(36, 14);
+    g.quadraticCurveTo(0, 26, -36, 14);
+    g.closePath(); g.fill();
+    // колпачок: неглазурованный цирконий — мел, а не стекло
+    const cop = g.createLinearGradient(-50, -46, 50, 24);
+    cop.addColorStop(0, '#ffffff'); cop.addColorStop(.5, '#edf0ef'); cop.addColorStop(1, '#bcc4c2');
+    g.fillStyle = cop;
+    g.beginPath();
+    g.moveTo(-50, 14);
+    g.bezierCurveTo(-54, -8, -48, -30, -34, -38);
+    g.quadraticCurveTo(0, -48, 34, -38);
+    g.bezierCurveTo(48, -30, 54, -8, 50, 14);
+    g.quadraticCurveTo(0, 27, -50, 14);
+    g.closePath(); g.fill();
+    // след фрезы — только по жевательной площадке, и едва заметный
+    g.save();
+    g.beginPath();
+    g.moveTo(-50, 14);
+    g.bezierCurveTo(-54, -8, -48, -30, -34, -38);
+    g.quadraticCurveTo(0, -48, 34, -38);
+    g.bezierCurveTo(48, -30, 54, -8, 50, 14);
+    g.quadraticCurveTo(0, 27, -50, 14);
+    g.clip();
+    /* две короткие дуги по макушке, не на всю ширину: на всю — колпачок
+       читается обмотанным бинтом, а не фрезерованным */
+    g.strokeStyle = 'rgba(126,140,138,0.13)'; g.lineWidth = 1;
+    for (const yv of [-30, -20]){
+      g.beginPath(); g.moveTo(-30, yv); g.quadraticCurveTo(0, yv + 4, 30, yv); g.stroke();
+    }
+    g.restore();
+    // край препарирования: где колпачок садится на культю
+    g.strokeStyle = 'rgba(66,74,72,0.6)'; g.lineWidth = 1.8;
+    g.beginPath(); g.moveTo(-50, 14); g.quadraticCurveTo(0, 27, 50, 14); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,0.72)';
+    g.beginPath(); g.ellipse(-25, -22, 9, 13, -0.5, 0, 7); g.fill();
+    g.restore();
   } else if (kind === 'crown2'){
     size(170, 150);
     g.save(); g.translate(85, 78);
@@ -19149,6 +19209,7 @@ async function boot(){
   PED_SPRITES.logo1970 = makePedObj('logo1970');
   PED_SPRITES.bizcard = makePedObj('bizcard');
   PED_SPRITES.puck = makePedObj('puck');
+  PED_SPRITES.coping = makePedObj('coping');
   PED_SPRITES.artglass = makePedObj('artglass');
   /* the wand comes with its own dock in the photograph, so it needs no drawn
      cradle to lean on — it stands, the way it stands in the 2022 vitrine */
