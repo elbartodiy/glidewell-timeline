@@ -287,9 +287,9 @@ const BEATS = [
       the issue line and the counter, so the block comes down 60 px — 125 units
       of the wall's own plane (Eldar, 2026-09-22: «чтобы этот воздух был
       одинаковым») */
-   wall:[{img:'chairv1', w:285, dx:-340, top:275, rot:-0.4, style:'white', cap:'Vol 1, Issue 1 · 2006', link:'https://glidewelldental.com/education/chairside-magazine'},
-         {img:'chairv12', w:285, dx:0, top:275, style:'white', cap:'Vol 12 · 2017', link:'https://glidewelldental.com/education/chairside-magazine'},
-         {img:'chairv21', w:285, dx:340, top:275, rot:0.4, style:'white', cap:'Vol 21 · 2026', link:'https://glidewelldental.com/education/chairside-magazine'}], table:[]},
+   wall:[{img:'chairtrio', w:731, dx:0, top:258, style:'white',
+          cap:'Chairside \u00b7 Vol 1, 2006 \u00b7 Vol 12, 2017 \u00b7 Vol 21, 2026',
+          link:'https://glidewelldental.com/education/chairside-magazine'}], table:[]},
 
   {x:14925, y:'1999', t:'IN-CERAM ZIRCONIA', minor:true, yLift:190,
    th:'The zirconia story starts quietly, long before the revolution.',
@@ -326,7 +326,7 @@ const BEATS = [
       референсе они стоят рядом: лист справа, машина слева. */
    patent:{dx:210, w:420, cy:400, rot:-0.5},   // без подписи: Эльдар снял её 02.10.2026
    /* машина, которая ломает коронки: стоит под листом патента, на прилавке */
-   rig:{kind:'tester', dx:-250, lz:150, w:460},
+   rig:{kind:'tester', dx:-250, lz:150, w:460, dv:8},   // dv: посажена ниже, к переднему ребру столешницы (Эльдар, 02.10.2026)
    table:[], capDX:-540,
    table:[]},
 
@@ -522,7 +522,7 @@ const BEATS = [
      lost and no coordinate key is left dangling. */
 
   {x:28180, y:'2026', sign:'TODAY', t:'', tier:1, fly:true,
-   th:'An arc the length of one life: craft → digital → automation.',
+   th:'',   // тезис снят: Эльдар 02.10.2026
    d:'Automated monolithic milling is the norm; AI + robotics + single-visit define the frontier. The story keeps compounding.',
    wall:[], table:[],
    ped:{obj:'crown2', dx:0, big:true, spin:true}},   // the one crown you can turn in your hand
@@ -1300,6 +1300,56 @@ function makePrint(name, opts){
   const sheen = g.createLinearGradient(sh, sh, sh+w*0.7, sh+h);
   sheen.addColorStop(0, 'rgba(255,235,190,0.10)'); sheen.addColorStop(.4, 'rgba(255,235,190,0.0)');
   g.fillStyle = sheen; g.fillRect(sh+pad, sh+pad, src.w, src.h);
+  return {c, w: c.width, h: c.height, inner: {x: sh, y: sh, w, h}};
+}
+
+/* ТРИ НОМЕРА В ОДНОЙ РАМЕ. Раньше каждый журнал висел отдельно, и три рамы
+   подряд читались забором: 964 единицы в ширину при 340 в высоту. Теперь это
+   одна длинная рама с ОДНИМ паспарту на все три обложки, и поля сверху и снизу
+   нарочно щедрые — вертикаль стала длиннее относительно горизонтали, как и
+   просил Эльдар (02.10.2026). Низ поля тяжелее верха: так паспарту режут в
+   багетной мастерской, иначе картина смотрится съехавшей вниз. */
+function makeTriptych(names, opts){
+  const srcs = names.map(n => IMGS[n]);
+  if (srcs.some(s => !s)) return null;
+  const H  = Math.max(...srcs.map(s => s.h));            // обложки по общей высоте
+  const ws = srcs.map(s => Math.round(s.w * H / s.h));
+  const gut  = Math.round(H * 0.075);                    // просвет между номерами
+  const rowW = ws.reduce((a, b) => a + b, 0) + gut * (srcs.length - 1);
+  const matX = Math.round(H * 0.17);
+  const matT = Math.round(H * 0.26), matB = Math.round(H * 0.34);
+  const mo   = Math.round(H * 0.055);                    // багет
+  const w = rowW + (matX + mo) * 2;
+  const h = H + matT + matB + mo * 2;
+  const sh = 30;
+  const c = document.createElement('canvas');
+  c.width = w + sh * 2; c.height = h + sh * 2;
+  const g = c.getContext('2d');
+  g.save();
+  g.shadowColor = 'rgba(0,0,0,0.55)'; g.shadowBlur = 22; g.shadowOffsetY = 10;
+  g.fillStyle = '#000'; g.fillRect(sh, sh, w, h);
+  g.restore();
+  g.fillStyle = '#eceae3'; g.fillRect(sh, sh, w, h);     // белый багет
+  g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 2;
+  g.strokeRect(sh + 1, sh + 1, w - 2, h - 2);
+  g.strokeStyle = 'rgba(0,0,0,0.10)';
+  g.strokeRect(sh + mo * 0.5, sh + mo * 0.5, w - mo, h - mo);
+  g.fillStyle = '#faf9f5';                                // общее паспарту
+  g.fillRect(sh + mo, sh + mo, w - mo * 2, h - mo * 2);
+  let x = sh + mo + matX;
+  const y = sh + mo + matT;
+  for (let i = 0; i < srcs.length; i++){
+    g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 1.5;
+    g.strokeRect(x - 3, y - 3, ws[i] + 6, H + 6);
+    g.save();
+    g.filter = (opts && opts.tone) || 'saturate(0.96) contrast(1.02)';
+    g.drawImage(srcs[i].el, x, y, ws[i], H);
+    g.restore();
+    x += ws[i] + gut;
+  }
+  const sheen = g.createLinearGradient(sh, sh, sh + w * 0.7, sh + h);
+  sheen.addColorStop(0, 'rgba(255,235,190,0.10)'); sheen.addColorStop(.4, 'rgba(255,235,190,0.0)');
+  g.fillStyle = sheen; g.fillRect(sh + mo, sh + mo, w - mo * 2, h - mo * 2);
   return {c, w: c.width, h: c.height, inner: {x: sh, y: sh, w, h}};
 }
 
@@ -11563,7 +11613,9 @@ function drawCrownTester(b, t){
   const g = b.rig, kk = k(bz(g.lz ?? 150));
   const sx = px(b.x + (g.dx || 0), kk);
   const S1 = (g.w || 460) * kk * SS / 520;          // единица чертежа = 1/520 ширины
-  const foot = py(CFG.benchY - 2, kk);
+  /* dv — посадка машины по высоте, в делениях чертежа, вниз: Эльдар просил
+     опустить её ближе к переднему верхнему ребру столешницы, не касаясь его. */
+  const foot = py(CFG.benchY - 2 + (g.dv || 0), kk);
   if (sx < -W * 0.6 - 520 * S1 || sx > W + 520 * S1) return;
   const X = u => sx + u * S1, Y = v => foot - v * S1;   // v — вверх от столешницы
   const cyc = Math.floor(t / TESTER.T), ph = t - cyc * TESTER.T;
@@ -19078,6 +19130,12 @@ async function boot(){
   for (const [n, o] of Object.entries(spec)){
     const sp = makePrint(n, o);
     if (sp) SPRITES[n] = sp;
+  }
+  /* составной спрайт: у него нет своей картинки в IMGS, поэтому makePrint его
+     пропускает — собираем отдельно и обязательно ДО раскладки по стене */
+  {
+    const sp = makeTriptych(['chairv1', 'chairv12', 'chairv21'], {tone: eraStyle[3].tone});
+    if (sp) SPRITES.chairtrio = sp;
   }
   PED_SPRITES.crown = makePedObj('crown');
   PED_SPRITES.logo1970 = makePedObj('logo1970');
