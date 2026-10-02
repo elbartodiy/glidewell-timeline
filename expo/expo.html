@@ -194,15 +194,33 @@ const BEATS = [
   {x:7990, y:'1980', t:'STUDY PROGRAM', yLift:130,   // era 2's type plane is deeper: 130 here is 1973's 95
    th:'Education as a bond — long before it was a marketing channel.',
    d:'An International Study Program brings dentists in from Japan and abroad to train in the US — the root of Jim’s lifelong belief in teaching and symposia.',
-   wall:[{img:'joeha', w:280, dx:-240, cy:350},
-         {img:'lab3ext', w:380, dx:430, cy:380}],
+   /* ФОТО СНЯТЫ — ни одно не из 1980-го (Эльдар, 02.10.2026: «проверь по смыслу
+      и датам»). lab3ext — «Our 3rd lab: 1983–1984» по книге, переехал к 1984-му,
+      к двум своим интерьерам. joeha — гольф в Пебл-Бич, и подписи у него НЕТ:
+      при извлечении из книги подписи съехали на один снимок, и строка «Working
+      on Anterior Signature series with Joe Hattouni» досталась гольфу, а
+      настоящий снимок с Хаттуни — следующий, современный. Ни года, ни второго
+      человека; вопрос Джиму в файле вопросов. */
+   wall:[],
    table:[]},
 
   {x:8750, y:'1984', t:'CONSOLIDATION', yLift:130,
    th:'One machine, fed nationally — the model that scales.',
    d:'Nine labs merge into one centralized plant in Orange (15,000 sq ft, 42 staff); mail now brings the majority of cases.',
-   wall:[{img:'lab3ben', w:400, dx:-440, cy:380},
-         {img:'lab3rec', w:380, dx:440, cy:380}],
+   /* ОДНА ЛАБОРАТОРИЯ, СНАРУЖИ И ВНУТРИ — «Our 3rd lab: 1983–1984», все три
+      снимка по книге. Блок стоит целиком в своей панели стены, под своим годом:
+      здание сверху, верстаки и приёмная под ним; просвет между рамами один и
+      тот же — 40 по горизонтали и по вертикали, — и воздух над блоком (до
+      строки года) равен воздуху под ним (до прилавка). Рамы не заходят на
+      швы. Рама здания 456 → высота 260, интерьеры по 342 → 260, просвет 38;
+      блок поставлен посередине между строкой года (низ на 250 px при обзоре
+      2000×965) и задней кромкой прилавка (607 px) — по 37 px воздуха.
+      top — верх спрайта, в нём ещё его тень (11–15 единиц). maxB — свой
+      нижний предел: общий 690 рассчитан на одну линию и ужимал нижний ряд,
+      хотя прилавок в этой комнате начинается только на ~876. */
+   wall:[{img:'lab3ext', w:456, dx:0,    top:231, maxB:860},
+         {img:'lab3ben', w:342, dx:-190, top:532, maxB:860},
+         {img:'lab3rec', w:342, dx:190,  top:532, maxB:860}],
    table:[]},
 
   {x:9850, y:'1988', t:'BIOTEMPS', yLift:130,
@@ -226,7 +244,10 @@ const BEATS = [
    /* the move photo came off the wall and stands on the counter instead —
       the 1988 hanging set needed that stretch of wall */
    wall:[],
-   table:[], st:[{img:'lab5move', w:250, dx:-750, lz:12, lift:34}],
+   /* lab5move снят отсюда: это «Move in day to my 5th lab at 4141 MacArthur
+      Boulevard» — 15 апреля 1993 года, и он уже лежит в альбоме 1993-го
+      (Эльдар, 02.10.2026: проверка по датам). */
+   table:[], st:[],
    /* THE EXHIBIT IS THE PHOTOGRAPH, PLINTH AND ALL. A business card said
       nothing about a lab that lives by post; this is the case itself — the
       carton, the postmark, the impressions in their bubble wrap — and it comes
@@ -981,6 +1002,13 @@ const SEGMENTS = [
      групповое фото 1988-го; срежь его, и фото падает на снимки 1984-го. */
   {x0:REC_R, x1:ST_WALL_L + 120, z0:680, z1:680, tz:680, wall:'wall2', bench:'bench2', front:'front2',
    benchBeat:{y:'1984', from:-1019},
+   /* РАВНЫЕ ПАНЕЛИ, ПО ОДНОЙ НА ГОД. В фото-текстуре три панели разной ширины
+      (1034 / 651 / 1072), а годы стоят через равные 971 — швы резали 1984-й и
+      1988-й посередине, а 1980-й висел не по центру своей (Эльдар, 02.10.2026:
+      «годы относительно друг друга и других объектов висят неоднородно»).
+      Теперь из текстуры берётся одна панель с подсветкой посередине, и она
+      кладётся с шагом годов, швом ровно между ними. См. regularPanel(). */
+   panel:{beats:['1980', '1984', '1988'], light:1442, erase:[770, 1255], railTop:1145},
    font:'"Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'223,226,214', lamp:'tube', dust:false,
    rail:'rgba(24,16,10,0.26)', railInk:'rgba(198,208,202,0.7)', railTop: true,
@@ -2352,6 +2380,36 @@ function abutPanelZ(wx){
     if (Math.abs(wx - l) < 1 || Math.abs(wx - r) < 1) return z;
   return null;
 }
+/* Одна панель стены, вырезанная из фото-текстуры: ширина — шаг годов, подсветка
+   — посередине, по левому краю — шов того же профиля, что в текстуре (снят по
+   пикселям: тёмная сердцевина ~4 px, по бокам едва заметный блик). Швы
+   текстуры, попавшие в вырез, затираются соседней полосой. Шов стоит на
+   стыке плиток, поэтому стык двух несовпадающих по тону краёв не виден. */
+function regularPanel(seg, tex, natW){
+  const P = seg.panel;
+  const bs = P.beats.map(y => BEATS.find(b => b.y === y)).filter(Boolean);
+  if (bs.length < 2 || !tex.width) return null;
+  const w = (bs[bs.length - 1].x - bs[0].x) / (bs.length - 1);
+  const pxW = tex.width / natW;                      // пикселей текстуры на единицу мира
+  const cw = Math.round(w * 1.03 * pxW), ch = tex.height;   // 1.03 — нахлёст, с которым рисуются плитки
+  /* подсветка — в середине ВИДИМОЙ части плитки: следующая плитка накрывает
+     последние 3 %, так что середина видимого — на 0.485 ширины выреза */
+  const sx = Math.max(0, Math.min(tex.width - cw, Math.round(P.light - 0.485 * cw)));
+  const c = document.createElement('canvas'); c.width = cw; c.height = ch;
+  const g = c.getContext('2d');
+  g.drawImage(tex, sx, 0, cw, ch, 0, 0, cw, ch);
+  for (const ex of P.erase){
+    const x = ex - sx; if (x < -12 || x > cw + 12) continue;
+    g.drawImage(c, x - 44, 0, 26, P.railTop, x - 12, 0, 26, P.railTop);
+  }
+  // шов: [смещение px, тень, блик] — по профилю шва текстуры
+  for (const [dx, dark, lite] of [[0,.10,0],[1,.40,0],[2,.68,0],[3,.73,0],[4,.53,0],[5,.05,0],[6,0,.07],[7,0,.08],[8,0,.04]]){
+    if (dark){ g.fillStyle = `rgba(0,0,0,${dark})`; g.fillRect(dx, 0, 1, P.railTop); }
+    if (lite){ g.fillStyle = `rgba(255,255,255,${lite})`; g.fillRect(dx, 0, 1, P.railTop); }
+  }
+  const mid = bs[Math.floor(bs.length / 2)].x;
+  return {c, w, anchor: mid - w / 2};               // шов — ровно посередине между годами
+}
 function drawWall(){
   for (const seg of SEGMENTS){
     const wx0 = seg.x0 + (seg.wInsetL || 0), wx1 = seg.x1 - (seg.wInsetR || 0);
@@ -2371,10 +2429,15 @@ function drawWall(){
     if (zR != null) ex1 = Math.max(ex1, cam.x + (px(wx1, k(zR)) - W/2) / (kw * SS)) + ABUT_TUCK;
     const sx0 = Math.max(0, px(ex0, kw)), sx1 = Math.min(W, px(ex1, kw));
     if (sx1 <= 0 || sx0 >= W || sx1 <= sx0) continue;
-    const tex = TEX[seg.wall];
+    const texSrc = TEX[seg.wall];
     /* world units per tile: a photographed wall says how wide it really is
        (its panels keep their proportions); the drawn tiles keep the old rule */
-    const tileW = tex.worldW || tex.width * 0.9;
+    let tileW = texSrc.worldW || texSrc.width * 0.9;
+    let tex = texSrc, panelAnchor = null;
+    if (seg.panel){
+      const RP = seg._panel || (seg._panel = regularPanel(seg, texSrc, tileW));
+      if (RP){ tex = RP.c; tileW = RP.w; panelAnchor = RP.anchor; }
+    }
     /* THE WALL'S FOOT, at the wall's own depth. Everything below — the clip, the
        backstop tone, the shading — used to be measured to a line taken at the
        COUNTER's depth, so they all stopped short of where the wall actually
@@ -2395,7 +2458,7 @@ function drawWall(){
     // Belt and braces: paint the era's own average tone across the whole span
     // first. Tiling can miss by a pixel at a seam for a dozen reasons; when it
     // does you should see wall, not the room's black background.
-    ctx.fillStyle = wallTone(tex);
+    ctx.fillStyle = wallTone(texSrc);
     ctx.fillRect(sx0, 0, sx1 - sx0, yFoot);
     const worldLeft = cam.x - (W/2) / (k(seg.z0) * SS);
     /* A SEGMENT MAY SHIFT ITS OWN TILING. The panel joins fall a whole tile
@@ -2405,7 +2468,9 @@ function drawWall(){
        join in that era by a fraction of a tile without touching anything else;
        the wall is a repeating panel, so there is no right place for a join,
        only places where it is not read. */
-    const phase = (seg.wPhase || 0) * tileW;
+    const phase = panelAnchor != null
+      ? (((panelAnchor - wx0) % tileW) + tileW) % tileW
+      : (seg.wPhase || 0) * tileW;
     let wx = wx0 + phase + Math.floor((Math.min(worldLeft, ex0) - wx0 - phase) / tileW) * tileW;
     /* the panelled white wall of 2019 runs on to the doorway's column — to the
        column as you SEE it. The column stands 400 units nearer than the wall,
@@ -19315,7 +19380,7 @@ async function boot(){
       /* the ceiling on height is the room the picture actually has: hung from
          the default line it may run to 690, and a picture that names a higher
          line of its own may grow down to the same place */
-      const maxH = Math.max(120, 690 - (it.top != null ? it.top : 360));
+      const maxH = Math.max(120, (it.maxB != null ? it.maxB : 690) - (it.top != null ? it.top : 360));
       let h = sp.h * (it.w / sp.inner.w);
       if (h > maxH){ it.w *= maxH / h; h = maxH; }
       it.cy = (it.top != null ? it.top : 360) + h/2;
@@ -19333,13 +19398,18 @@ async function boot(){
       for (const it of b.wall){
         const sp = SPRITES[it.img]; if (!sp) continue;
         const half = sp.w * (it.w / sp.inner.w) / 2 + 30;
+        const hh = sp.h * (it.w / sp.inner.w) / 2;
         const seg = segAt(b.x);
-        items.push({b, it, half,
+        items.push({b, it, half, top: it.cy - hh, bot: it.cy + hh,
                     wallL: seg.x0 + (seg.wInsetL || 0), wallR: seg.x1 - (seg.wInsetR || 0)});
       }
     items.sort((p, q) => (p.b.x + p.it.dx) - (q.b.x + q.it.dx));
     for (let i = 1; i < items.length; i++){
       const a = items[i-1], c = items[i];
+      /* рамы, которые висят одна над другой, друг другу не мешают: разводить
+         по горизонтали можно только тех, кто на одной высоте. Иначе блок из
+         двух рядов (1984-й) растаскивало в линию. */
+      if (c.top >= a.bot || a.top >= c.bot) continue;
       const gap = (c.b.x + c.it.dx - c.half) - (a.b.x + a.it.dx + a.half);
       if (gap >= 24) continue;
       const need = 24 - gap;
