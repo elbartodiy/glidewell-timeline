@@ -5239,6 +5239,7 @@ function drawOutro(){
      слово выше середины плашки на 32/665 = 0,048
    Слово набирается шрифтом эпохи и ПОДГОНЯЕТСЯ по ширине одним замером:
    пропорция со снимка важнее того, каким кеглем это вышло у конкретного шрифта. */
+const FIN_LIP = 22;                        // толщина плиты столешницы, единицы мира
 const FIN_FACE_H = 380;                    // высота лицевой грани, единицы мира
 const FIN_Z_FACE = 150 - 240/2;            // ближняя грань стола: cz − полглубины
 function drawFinaleLogo(){
@@ -5249,17 +5250,18 @@ function drawFinaleLogo(){
      зале камера у финала стоит вплотную: k там 1,8, и нижний край кадра режет
      грань на мировом y = 430 + 650/k = 791 — из 380 единиц грани видна 91.
      Это не зависит от окна: SS = H/1080, и низ кадра всегда приходится на одну
-     и ту же мировую линию. Плашка поэтому 56 единиц и стоит на 20 ниже
-     столешницы: 720…776, с запасом 15 до края кадра. Всё остальное — доли ОТ
+     и ту же мировую линию. Грань начинается под плитой, на 722,
+     то есть видно её 69 единиц. Плашка поэтому 48 и стоит на 8 ниже плиты:
+     730…778, с запасом 13 до края кадра. Всё остальное — доли ОТ
      ПЛАШКИ, снятые с IMG_2666 (231 px плашка, 42 просвет, 645 слово, 90 прописная,
      32 подъём слова над серединой плашки) — так что пропорции вывески сохранены. */
-  const PL = 56;                            // сторона красной плашки, единицы мира
+  const PL = 48;                            // сторона красной плашки, единицы мира
   const plaq = PL * u;
   const gap  = PL * (42 / 231) * u;
   const wordW = PL * (645 / 231) * u;
   const capH = PL * (90 / 231) * u;
   const rise = PL * (32 / 231) * u;         // слово выше середины плашки
-  const yTop = py(700, kf) + 20 * u;
+  const yTop = py(700 + FIN_LIP, kf) + 8 * u;   // от грани, а не от верха плиты
   const blockW = plaq + gap + wordW;
   const x0 = px(FIN_X, kf) - blockW / 2;
   ctx.save();
@@ -5287,18 +5289,23 @@ function drawFinaleLogo(){
 function drawFinaleTable(t){
   if (Math.abs(cam.x - FIN_X) > 3800) return;
   // the modern lit table
+  /* СТОЛЕШНИЦА ИМЕЕТ ТОЛЩИНУ. Был лист в ноль толщины со свесом над
+     корпусом — бумага, положенная на коробку. Замерено на IMG_2666: ребро
+     плиты 38 px при грани 665 → 0,057 × 380 = 22 единицы; свес 10 px → 6.
+     СКРУГЛЕНИЕ УБРАНО — это было моё неверное чтение снимка: крупный
+     радиус у настоящей стойки — это закругление В ПЛАНЕ, угол самой
+     стойки заворачивается плавно. Я скруглил верхние углы в ФАСАДЕ, и под
+     свесом открылся клин фона (Эльдар увидел его сразу). */
   drawYawedTable(FIN_X, 150, 0, 900, 240, 700, FIN_FACE_H,
     {side0:'#eef1f4', side1:'#c6ccd2', top:'#f7f9fb', edge:'rgba(120,130,140,0.5)',
-     r: 0.158 * FIN_FACE_H});
+     lip: FIN_LIP, ov: 6, lip0:'#fdfeff', lip1:'#dfe4e9'});
 
-  // light breathing under the tabletop edge
   const ke = k(32);
-  const y0 = py(700, ke) + 6*SS;
-  const g2 = ctx.createLinearGradient(0, y0, 0, y0 + 26*SS);
-  g2.addColorStop(0, `rgba(150,215,255,${(0.45 + 0.15*Math.sin(t*1.6)).toFixed(3)})`);
-  g2.addColorStop(1, 'rgba(150,215,255,0)');
-  ctx.fillStyle = g2;
-  ctx.fillRect(px(FIN_X - 450, ke), y0, 900*ke*SS, 26*SS);
+  /* СИНЯЯ ПОЛОСА ПОД СТОЛЕШНИЦЕЙ СНЯТА. Она изображала «дыхание света» в то
+     время, когда столешница была листом без толщины и под ней не было ничего.
+     Теперь там ребро плиты, и полоса ложилась ровно на него, читаясь синим скотчем
+     поверх всей стойки. На стенде под столешницей света нет вообще — он снизу,
+     у цоколя, и там он теперь и есть. */
   /* ЦОКОЛЬ СВЕТИТСЯ. На стенде стойка не стоит на полу, а висит над ним:
      по низу идёт холодная подсветка, которая моет грань снизу и выходит
      пятном на ковёр (IMG_2666: подсветка цоколя 172,199,249 против грани 161,142,153).
@@ -5317,13 +5324,17 @@ function drawFinaleTable(t){
     ctx.fillStyle = gDn; ctx.fillRect(xA, yF, xB - xA, up * 0.8);
   }
   drawFinaleLogo();
+  /* СТОЛ ПОКА ПУСТ. Эльдар (02.10.2026): «убери вообще всё со стола сейчас
+     сверху — только нормальную столешницу сделай». Сам натюрморт со всеми
+     своими мерами остаётся здесь и включается одной строкой — ничего не удалено. */
+  const FIN_GOODS_ON = false;
   // the products, composed as a still life
-  const GOODS = [
+  const GOODS = FIN_GOODS_ON ? [
     {sp:'puck',    dx:-330, z:95, w:110, cap:'BruxZir\u00ae solid zirconia'},
     {sp:'scanner', dx:-165, z:70, w:52,  cap:'fastscan.io\u2122'},   // a slim wand standing in its dock
     {sp:'crown2',  dx:10,   z:45, w:175, cap:'BruxZir\u00ae crown'},
     {sp:'millSt',  dx:225,  z:75, w:250, cap:'fastmill.io\u2122'},   // a wide machine, not a card
-  ];
+  ] : [];
   for (const gd of GOODS){
     const sp = PED_SPRITES[gd.sp]; if (!sp) continue;
     const kk = k(gd.z);
@@ -14334,8 +14345,13 @@ function drawYawedTable(cx, cz, yawDeg, wW, dW, topY, hW, tone){
     const wx = cx + lx*ca - lz*sa, wz = cz + lx*sa + lz*ca;
     return {x: px(wx, k(wz)), kt: k(wz), z: wz};
   };
+  /* СТОЛЕШНИЦА — ПЛИТА, А НЕ ЛИСТ. tone.lip — её толщина, tone.ov — свес
+     над корпусом, оба в единицах мира. Без них всё как раньше. */
+  const lip = tone.lip || 0, ov = tone.ov || 0;
   const c1 = P(-wW/2, -dW/2), c2 = P(wW/2, -dW/2), c3 = P(wW/2, dW/2), c4 = P(-wW/2, dW/2);
-  const top = (p) => py(topY, p.kt), bot = (p) => py(topY + hW, p.kt);
+  const d1 = P(-wW/2 - ov, -dW/2 - ov), d2 = P(wW/2 + ov, -dW/2 - ov),
+        d3 = P(wW/2 + ov, dW/2 + ov), d4 = P(-wW/2 - ov, dW/2 + ov);
+  const top = (p) => py(topY + lip, p.kt), bot = (p) => py(topY + hW, p.kt);
   // legs/skirt: the two faces whose outer edge is nearest the camera
   const faces = [[c1, c2], [c2, c3], [c3, c4], [c4, c1]]
     .filter(([p, q]) => (p.z + q.z)/2 <= cz)       // faces angled toward us
@@ -14344,39 +14360,37 @@ function drawYawedTable(cx, cz, yawDeg, wW, dW, topY, hW, tone){
      стойки Glidewell корпус — один белый объём с крупным закруглением, а не коробка
      с острыми рёбрами (IMG_2666: радиус ≈ 0,16 высоты лицевой грани —
      105 px на 665). Без tone.r всё рисуется как раньше. */
-  const rr = tone.r ? tone.r : 0;
-  /* только БЛИЖНЯЯ грань. Скруглённый верх торцевых граней открывал столешницу
-     за ними — по краям стола торчали белые «крылья» (02.10.2026) */
-  const zNear = Math.min(...faces.map(([p, q]) => (p.z + q.z) / 2));
   for (const [p, q] of faces){
-    const roundThis = rr > 0 && Math.abs((p.z + q.z) / 2 - zNear) < 1;
     const g = ctx.createLinearGradient(0, top(p), 0, bot(p));
     g.addColorStop(0, tone.side0); g.addColorStop(1, tone.side1);
     ctx.fillStyle = g;
-    /* радиус в пикселях — на глубине СВОЕЙ грани, поэтому ближняя скруглена
-       крупнее дальней, как и положено; и никогда больше половины грани */
-    const rp = Math.min(rr * p.kt * SS, Math.abs(q.x - p.x) / 2, (bot(p) - top(p)) / 2);
-    const rq = Math.min(rr * q.kt * SS, Math.abs(q.x - p.x) / 2, (bot(q) - top(q)) / 2);
-    const sgn = q.x >= p.x ? 1 : -1;
     ctx.beginPath();
-    if (roundThis){
-      ctx.moveTo(p.x + sgn * rp, top(p));
-      ctx.lineTo(q.x - sgn * rq, top(q));
-      ctx.quadraticCurveTo(q.x, top(q), q.x, top(q) + rq);
-      ctx.lineTo(q.x, bot(q)); ctx.lineTo(p.x, bot(p));
-      ctx.lineTo(p.x, top(p) + rp);
-      ctx.quadraticCurveTo(p.x, top(p), p.x + sgn * rp, top(p));
-    } else {
-      ctx.moveTo(p.x, top(p)); ctx.lineTo(q.x, top(q));
-      ctx.lineTo(q.x, bot(q)); ctx.lineTo(p.x, bot(p));
-    }
+    ctx.moveTo(p.x, top(p)); ctx.lineTo(q.x, top(q));
+    ctx.lineTo(q.x, bot(q)); ctx.lineTo(p.x, bot(p));
     ctx.closePath(); ctx.fill();
+  }
+  /* рёбра плиты — на своём, более широком контуре, и теми же гранями */
+  if (lip > 0){
+    const dmap = new Map([[c1, d1], [c2, d2], [c3, d3], [c4, d4]]);
+    for (const [p, q] of faces){
+      const P2 = dmap.get(p) || p, Q2 = dmap.get(q) || q;
+      const yA = py(topY, P2.kt), yB = py(topY + lip, P2.kt);
+      const yC = py(topY, Q2.kt), yD = py(topY + lip, Q2.kt);
+      const g = ctx.createLinearGradient(0, yA, 0, yB);
+      g.addColorStop(0, tone.lip0 || tone.top);
+      g.addColorStop(1, tone.lip1 || tone.side0);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(P2.x, yA); ctx.lineTo(Q2.x, yC);
+      ctx.lineTo(Q2.x, yD); ctx.lineTo(P2.x, yB);
+      ctx.closePath(); ctx.fill();
+    }
   }
   // the top plane
   ctx.fillStyle = tone.top;
   ctx.beginPath();
-  ctx.moveTo(c1.x, top(c1)); ctx.lineTo(c2.x, top(c2));
-  ctx.lineTo(c3.x, top(c3)); ctx.lineTo(c4.x, top(c4));
+  ctx.moveTo(d1.x, py(topY, d1.kt)); ctx.lineTo(d2.x, py(topY, d2.kt));
+  ctx.lineTo(d3.x, py(topY, d3.kt)); ctx.lineTo(d4.x, py(topY, d4.kt));
   ctx.closePath(); ctx.fill();
   ctx.strokeStyle = tone.edge; ctx.lineWidth = 1.5*SS;
   ctx.stroke();
