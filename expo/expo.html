@@ -5363,6 +5363,28 @@ function drawFinaleTable(t){
   /* СТОЛ ПОКА ПУСТ. Эльдар (02.10.2026): «убери вообще всё со стола сейчас
      сверху — только нормальную столешницу сделай». Сам натюрморт со всеми
      своими мерами остаётся здесь и включается одной строкой — ничего не удалено. */
+  /* ВЕСЬ РЯД ОДНИМ РЕНДЕРОМ. Эльдар (02.10.2026) прислал «final products» —
+     fastscan.io, fastmill.io, fastprint.io, заготовки, боры и коронка, всё вместе.
+     Рендер пришёл со своей стойкой: верхняя плоскость с 662-го ряда по 873-й, ниже —
+     её лицевая грань. Грань отрезана (у нас своя, с логотипом), верхняя плоскость
+     оставлена: она белая, как и наша столешница, и несёт собственные тени
+     предметов — без них ряд бы парил.
+     ШИРИНА — ПО ДАЛЬНЕЙ КРОМКЕ СТОЛА, а не по ближней: стол — остров и
+     сужается вглубь, а стойка в рендере длиннее кадра и идёт от края до края.
+     По ближней кромке её белая полоса вышла бы за силуэт стола двумя треугольниками
+     в воздухе. По дальней — всё ложится внутрь, а спереди остаётся наша же
+     белая столешница — белое на белом, шва нет. */
+  {
+    const fp = PHOTO_TEX.ph_finprod;
+    if (fp && fp.naturalWidth){
+      const kF = k(FIN_Z_FACE), kB = k(FIN_Z_FACE + FIN_DEPTH);
+      const wBack = px(FIN_X + 450, kB) - px(FIN_X - 450, kB);
+      const wDraw = wBack * 0.96;
+      const hDraw = wDraw * fp.naturalHeight / fp.naturalWidth;
+      const yBot = py(700, kF);                 // передняя кромка нашей столешницы
+      ctx.drawImage(fp, px(FIN_X, kF) - wDraw / 2, yBot - hDraw, wDraw, hDraw);
+    }
+  }
   const FIN_GOODS_ON = false;
   // the products, composed as a still life
   const GOODS = FIN_GOODS_ON ? [
@@ -11631,7 +11653,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261002-brick';
+const ASSET_V = '20261002-finprod';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -11682,6 +11704,8 @@ async function loadPhotoSkin(){
     /* два корпуса улицы между 1989 и 1993: слева кирпич, справа
        каменные панели здания 4141 — бесшовные текстуры Эльдара (02.10.2026) */
     st_wall_brick: 'st_wall_brick.jpg', st_wall_4141b: 'st_wall_4141b.jpg',
+    /* финальная витрина: весь сегодняшний ряд одним рендером (Эльдар, 02.10.2026) */
+    ph_finprod: 'final_products.png',
     bench_top_e1: 'bench_top_e1.jpg', bench_face_e1: 'bench_face_e1.jpg',
     ph_furnace: 'furnace_0.png',
     ph_articulator: 'articulator_0.png',
