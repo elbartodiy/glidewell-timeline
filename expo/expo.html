@@ -493,8 +493,9 @@ const BEATS = [
   /* видео ложится в поток сразу после первого абзаца, а не в колонку и не в
      конец: страница должна привлекать им (Эльдар, 2026-09-23) */
   {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true, descHide:true, blockDX:145, yLift:120,
-  
-   th:'The analog→digital climax: robots make crowns.',
+   /* тезис снят (Эльдар, 02.10.2026): «The analog→digital climax: robots make
+      crowns» — фраза говорила то же, что и сама бухта, гораздо хуже её */
+   th:'',
    d:'Automated, AI-designed, robotic monolithic production.',
    wall:[], table:[],
    /* the live screen sits in the band between the block of type and the cells'
@@ -4007,9 +4008,12 @@ function cacheWrap(){
     const b = BEATS[i];
     const seg = segAt(b.x);
     ctx.font = `italic 100px ${seg.font}`;
-    b._th = wrapCalc(b.th, 100 * 500/30);
+    /* бит без тезиса или без описания — законный случай, а не ошибка данных.
+       Без этой проверки снятый th ронял весь зал в чёрный экран: wrapCalc
+       дёргал split у undefined прямо в boot (02.10.2026). */
+    b._th = b.th ? wrapCalc(b.th, 100 * 500/30) : [];
     ctx.font = `100px ${seg.font}`;
-    b._d = wrapCalc(b.d, 100 * 700/26);
+    b._d = b.d ? wrapCalc(b.d, 100 * 700/26) : [];
     /* year lane: half the distance to the nearest neighbour, minus breathing
        room. A BEAT THAT LETTERS NO YEAR IS NOT A NEIGHBOUR. The lane is the
        room a NUMERAL has on the wall, so it is measured to the numerals either
@@ -5924,7 +5928,38 @@ function drawMusicMark(){
     }
     ctx.globalAlpha = 1;
   }
+  /* ОТМЕТКА СБОРКИ. Зал правят из двух чатов, Pages выкладывает только
+     вершину ветки и отдаёт файл с cache-control: max-age=600 — и несколько
+     правок подряд могут до четверти часа не доезжать до экрана. Отметка
+     отвечает на один вопрос: КАКАЯ СБОРКА СЕЙЧАС ОТКРЫТА. Эльдар
+     (02.10.2026): «пусть висит под этими кнопками». */
+  if (BUILD.txt){
+    const bb = voicesMarkBox();
+    ctx.font = eraFont(11 * SS, '', seg.font);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = `rgba(${seg.ink},${(0.26 * A).toFixed(3)})`;
+    ctx.fillText(BUILD.txt, bb.x, bb.y + bb.h + 19 * SS);
+  }
   ctx.restore();
+}
+/* ЧТО ИМЕННО ПОКАЗАНО: время самого ФАЙЛА, который сейчас открыт
+   (Last-Modified с сервера), а не хэш коммита: хэш пришлось бы вписывать
+   в файл перед каждым коммитом, а зал правят два агента — любой забытый
+   шаг и отметка начинает ВРАТЬ, что хуже, чем её отсутствие. Время сервер
+   ставит сам и оно не может разойтись с тем, что лежит на Pages. Запрос один,
+   HEAD, без тела; не дошёл — отметки просто нет, зал этого не замечает. */
+const BUILD = {txt: ''};
+function initBuildMark(){
+  let u;
+  try { u = location.pathname + '?bm=' + Date.now(); } catch(e){ return; }
+  fetch(u, {method: 'HEAD', cache: 'no-store'}).then(r => {
+    const lm = r.headers.get('last-modified');
+    if (!lm) return;
+    const d = new Date(lm);
+    if (isNaN(+d)) return;
+    const p2 = n => String(n).padStart(2, '0');
+    BUILD.txt = p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes());
+  }).catch(() => {});
 }
 function initMusic(){
   const a = new Audio(MUSIC.src);
@@ -19319,6 +19354,7 @@ async function boot(){
   // reseat the film relays once everything (skin, props) has settled
   setTimeout(initFilmRelays, 2500);
   initMusic();
+  initBuildMark();   // отметка сборки в левом верхнем углу, под кнопками
   initWhoosh();
   initDoc();
   USA_SPRITE = makeUsaSprite();
