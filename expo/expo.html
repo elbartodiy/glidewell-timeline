@@ -9904,6 +9904,54 @@ function stClip(xw, p){
    Теперь гасить незачем: юбка живёт только внутри клина, где пола нет
    (stFloorGapPath в stFace), то есть ровно в проёме и нигде больше. */
 function stSkirtAlpha(){ return 1; }
+/* ТЕКСТУРА НА ГРАНЬ КОРПУСА (Эльдар, 02.10.2026: «на левую просто
+   натяни wall_orange, на правую wall_4141b»). Грань — плоскость x = const,
+   и по кадру она идёт вглубь: у каждой точки своё k, то есть одной drawImage
+   её не закрыть — canvas умеет только аффинные преобразования, а здесь
+   перспектива. Поэтому кладётся столбиками.
+
+   ШАГ — ПО k, А НЕ ПО z. px линеен по k, значит равный шаг по k — это равный
+   шаг ПО ЭКРАНУ. Равный шаг по z собрал бы все сто двадцать столбиков у
+   дальнего края: ближний край стены стоит на z = −860, почти в камере, и k
+   там под двадцать. По той же причине проход обрывается на краю кадра, а
+   не на zNear: дальше столбики уходят на тысячи пикселей в никуда.
+
+   КАФЕЛЬ. По высоте один кафель равен высоте стены (ST.top…1080 = 1600
+   единиц), ширина берётся из пропорций файла — картинка не тянется ни в
+   одну сторону. У обеих текстур кафель выходит 3200–3310 единиц шириной при
+   проходе длиной ~1710, то есть на грань ложится половина кафеля и шва нет
+   вообще; если проход когда-нибудь станет длиннее кафеля, выборка упирается
+   в правый край файла и проход обрывается — тиража пока нет. */
+const ST_TEX_H = 1080 - ST.top;              // 1600 — высота одного кафеля
+function stWallTex(p){
+  return PHOTO_TEX[p.side < 0 ? 'st_wall_orange' : 'st_wall_4141b'] || null;
+}
+function stTexBand(xw, p, img, yTile, yA, yB){
+  const dx = xw - cam.x;
+  if (Math.abs(dx) < 0.001) return;
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  if (!iw || !ih) return;
+  const TW = ST_TEX_H * iw / ih;
+  const sy = (yA - yTile) / ST_TEX_H * ih, sh = (yB - yA) / ST_TEX_H * ih;
+  if (!(sh > 0)) return;
+  const kEdge = ((dx > 0 ? W + 8 : -8) - W / 2) / (dx * SS);
+  const zEdge = kEdge > 0.0001 ? CFG.F / kEdge - CFG.F + cam.z : ST.zNear;
+  const zEnd = Math.max(ST.zNear, Math.min(p.zFar, zEdge));
+  const kA = k(p.zFar), kB = k(zEnd);
+  const N = 120;
+  for (let i = 0; i < N; i++){
+    const ka = kA + (kB - kA) * (i / N), kb = kA + (kB - kA) * ((i + 1) / N);
+    const za = CFG.F / ka - CFG.F + cam.z, zb = CFG.F / kb - CFG.F + cam.z;
+    let ua = (p.zFar - za) / TW, ub = (p.zFar - zb) / TW;
+    if (ua >= 1) break;
+    if (ub > 1) ub = 1;
+    const xa = px(xw, ka), xb = px(xw, kb);
+    const x0 = Math.min(xa, xb), x1 = Math.max(xa, xb);
+    if (x1 - x0 < 0.01) continue;
+    ctx.drawImage(img, ua * iw, sy, (ub - ua) * iw, sh,
+                  x0 - 0.5, py(yA, ka), (x1 - x0) + 1, py(yB, ka) - py(yA, ka));
+  }
+}
 function stFace(xw, p){
   const P = (y, z) => [px(xw, k(z)), py(y, k(z))];
   const FLOOR = 1080;
@@ -9911,6 +9959,7 @@ function stFace(xw, p){
   const skirt = [P(FLOOR, p.zFar), P(FLOOR, ST.zNear), P(ST.bot, ST.zNear), P(ST.bot, p.zFar)];
   const hole  = [P(ST.winTop, ST.winZ0), P(ST.winBot, ST.winZ0),
                  P(ST.winBot, ST.zNear), P(ST.winTop, ST.zNear)];
+  const tex = stWallTex(p);
   ctx.save(); stClip(xw, p);
   const g = ctx.createLinearGradient(outer[0][0], outer[0][1], outer[1][0], outer[1][1]);
   g.addColorStop(0, ST.tone[0]); g.addColorStop(1, ST.tone[1]);
@@ -9920,7 +9969,21 @@ function stFace(xw, p){
   ctx.closePath();
   hole.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
   ctx.closePath();
-  ctx.fill('evenodd');
+  if (tex){
+    /* сначала текстура внутри того же контура (evenodd — чтобы окно
+       осталось дырой), потом то же затенение по глубине, которое давала
+       прежняя пара тонов: дальний конец темнее ближнего */
+    ctx.save();
+    ctx.clip('evenodd');
+    stTexBand(xw, p, tex, ST.top, ST.top, FLOOR);
+    const sg = ctx.createLinearGradient(outer[0][0], 0, outer[1][0], 0);
+    sg.addColorStop(0, 'rgba(24,30,38,0.40)');
+    sg.addColorStop(1, 'rgba(24,30,38,0.03)');
+    ctx.fillStyle = sg; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  } else {
+    ctx.fill('evenodd');
+  }
   const al = stSkirtAlpha();
   if (al > 0.004){
     /* ЮБКА НЕ ВЫХОДИТ НА ПОЛ ЗАЛА. Она лежала поперёк пола серой полосой
@@ -9933,7 +9996,20 @@ function stFace(xw, p){
     ctx.beginPath();
     skirt.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
     ctx.closePath();
-    ctx.fill();
+    if (tex){
+      /* юбка — та же стена ниже пола, значит следующий кафель вниз,
+         а не другой материал: иначе на линии пола был бы тоновой излом */
+      ctx.save();
+      ctx.clip();
+      stTexBand(xw, p, tex, FLOOR, FLOOR, Math.min(ST.bot, FLOOR + ST_TEX_H));
+      const sg2 = ctx.createLinearGradient(skirt[0][0], 0, skirt[1][0], 0);
+      sg2.addColorStop(0, 'rgba(24,30,38,0.40)');
+      sg2.addColorStop(1, 'rgba(24,30,38,0.03)');
+      ctx.fillStyle = sg2; ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    } else {
+      ctx.fill();
+    }
     ctx.globalAlpha = 1;
     ctx.restore();
   }
@@ -9951,6 +10027,28 @@ function stEnd(p){
   stEndBand(p, kz, ST.top, 1080, false);
   stEndBand(p, kz, 1080, ST.bot, true);
 }
+/* ТОРЕЦ И ОТКОС — ТОТ ЖЕ МАТЕРИАЛ. Они оставались глухим сине-серым рядом
+   с облицованной гранью — корпус читался двухцветным, будто стена одного дома
+   приставлена к торцу другого. Эти два куска — прямоугольники на ОДНОЙ глубине,
+   так что им хватает одной drawImage без всяких столбиков: по горизонтали
+   берётся толщина стены от кафеля, по вертикали — та же развёртка, что у грани,
+   чтобы шов камня на торце стоял на одной высоте со швом на грани. */
+function stTexQuad(p, img, kz, xA, xB, yTop, yBot, shade){
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  if (!iw || !ih) return false;
+  const TW = ST_TEX_H * iw / ih;
+  const tile = Math.floor((yTop - ST.top) / ST_TEX_H);
+  const yTile = ST.top + tile * ST_TEX_H;
+  const sy = (yTop - yTile) / ST_TEX_H * ih, sh = (yBot - yTop) / ST_TEX_H * ih;
+  const sw = Math.abs(xB - xA) / TW * iw;
+  if (!(sh > 0) || !(sw > 0)) return false;
+  const x0 = Math.min(px(xA, kz), px(xB, kz)), x1 = Math.max(px(xA, kz), px(xB, kz));
+  const y0 = py(yTop, kz), y1 = py(yBot, kz);
+  ctx.drawImage(img, 0, sy, sw, sh, x0, y0, x1 - x0, y1 - y0);
+  ctx.fillStyle = `rgba(20,26,33,${shade})`;
+  ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+  return true;
+}
 function stEndBand(p, kz, yTop, yBot, inGap){
   ctx.save(); stClip(p.a, p);
   if (inGap){ ctx.beginPath(); stFloorGapPath(); ctx.clip(); }
@@ -9960,7 +10058,12 @@ function stEndBand(p, kz, yTop, yBot, inGap){
   ctx.lineTo(px(p.b, kz), py(yBot, kz));
   ctx.lineTo(px(p.a, kz), py(yBot, kz));
   ctx.closePath();
-  ctx.fillStyle = ST.jamb; ctx.fill();
+  const tex = stWallTex(p);
+  if (tex){
+    ctx.save(); ctx.clip();
+    if (!stTexQuad(p, tex, kz, p.a, p.b, yTop, yBot, 0.46)){ ctx.fillStyle = ST.jamb; ctx.fill(); }
+    ctx.restore();
+  } else { ctx.fillStyle = ST.jamb; ctx.fill(); }
   ctx.restore();
 }
 function stJamb(p){
@@ -9972,7 +10075,13 @@ function stJamb(p){
   ctx.lineTo(px(p.b, kz), py(ST.winBot, kz));
   ctx.lineTo(px(p.a, kz), py(ST.winBot, kz));
   ctx.closePath();
-  ctx.fillStyle = ST.jamb; ctx.fill();
+  const tex = stWallTex(p);
+  if (tex){
+    ctx.save(); ctx.clip();
+    /* откос глубже в тени, чем торец: он смотрит вдоль стены, света на нём нет */
+    if (!stTexQuad(p, tex, kz, p.a, p.b, ST.winTop, ST.winBot, 0.52)){ ctx.fillStyle = ST.jamb; ctx.fill(); }
+    ctx.restore();
+  } else { ctx.fillStyle = ST.jamb; ctx.fill(); }
   ctx.restore();
 }
 function stBand(p, yWorld, c0, c1){
@@ -11468,7 +11577,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261002-gmain';
+const ASSET_V = '20261002-street-walls';
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -11516,6 +11625,9 @@ async function loadPhotoSkin(){
   const want = {
     wall_e1: 'wall_e1.jpg', wall_e1_1907: 'wall_e1_1907.jpg',
     wall_e2: 'wall_e2.jpg', wall_e3: 'wall_e3.jpg', wall_e4: 'wall_e4.jpg',
+    /* два корпуса улицы между 1989 и 1993: слева белый профнастил, справа
+       каменные панели здания 4141 — бесшовные текстуры Эльдара (02.10.2026) */
+    st_wall_orange: 'st_wall_orange.jpg', st_wall_4141b: 'st_wall_4141b.jpg',
     bench_top_e1: 'bench_top_e1.jpg', bench_face_e1: 'bench_face_e1.jpg',
     ph_furnace: 'furnace_0.png',
     ph_articulator: 'articulator_0.png',
