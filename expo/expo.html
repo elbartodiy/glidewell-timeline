@@ -17814,7 +17814,12 @@ function drawShowroom(t){
   ctx.restore();
   // downlights set into it, and the pools they throw
   ctx.globalCompositeOperation = 'lighter';
-  for (let wx = SHOW_L + 330; wx < SHOW_R; wx += 660){
+  /* ПОСЛЕДНИЙ СВЕТИЛЬНИК СНЯТ. Ряд шёл до самого SHOW_R, и крайний приходился
+     на 45862 — за десять единиц до конца карниза, то есть ровно на его
+     закруглённом торце: половина плафона висела в воздухе («вот этот крайний
+     правый светильник лишний», Эльдар, 2026-10-01). Ряд кончается на полшага
+     раньше, последний встаёт на 45202 и целиком лежит на дереве. */
+  for (let wx = SHOW_L + 330; wx < SHOW_R - 400; wx += 660){
     const lx = px(wx, kk);
     if (lx < -260 || lx > W + 260) continue;
     ctx.fillStyle = 'rgba(255,236,196,0.85)';
