@@ -324,7 +324,7 @@ const BEATS = [
       (Эльдар, 2026-09-29: «сделай так, чтобы патент не перекрывался прибором»).
       Опустить её до просвета под листом — это сделать её игрушечной; на его же
       референсе они стоят рядом: лист справа, машина слева. */
-   patent:{dx:210, w:420, cy:400, rot:-0.5, cap:'thirty issued, thirty pending'},
+   patent:{dx:210, w:420, cy:400, rot:-0.5},   // без подписи: Эльдар снял её 02.10.2026
    /* машина, которая ломает коронки: стоит под листом патента, на прилавке */
    rig:{kind:'tester', dx:-250, lz:150, w:460},
    table:[], capDX:-540,
@@ -11595,9 +11595,23 @@ function drawCrownTester(b, t){
   /* КОРОНКА ВЫЕЗЖАЕТ ИЗ ПЕЧИ РАСКАЛЁННОЙ и остывает по дороге к прессу:
      пока она в печи и на выходе — hot = 1, к прессу сходит в ноль. */
   const cHot = ph < TESTER.outFwd ? 1 : 1 - ease(seg(TESTER.outFwd, TESTER.atPress));
+  /* ПРЕСС КАСАЕТСЯ КОРОНКИ. Боёк останавливался на два чертёжных деления выше
+     неё: машина делала вид, что давит, напряжения не возникало (Эльдар,
+     02.10.2026). Теперь шток доходит до верха коронки ровно, а пока добирается
+     нагрузка — вдавливается в неё на PRESS_BITE. Коронка на столько же садится
+     по высоте и чуть раздаётся вширь: это материал под нагрузкой, и именно
+     отсюда берётся напряжение, которое разрешается осколками. */
+  const PRESS_BITE = 3.4;
+  const biteU = ease(seg(TESTER.down, TESTER.load));
+  /* И ОТПУСКАЕТСЯ. Иначе уцелевшая коронка так и уезжала в правое окошко
+     сплющенной. Отдача быстрее, чем уход головы (0.25 с против 0.8): упругий
+     материал распрямляется сразу, как только с него сняли нагрузку. */
+  const sqz = (cu === 0 && !brokeC)
+    ? PRESS_BITE * biteU * (1 - ease(seg(TESTER.load, TESTER.load + 0.25))) / 46 : 0;
   const crown = (al2) => {
     if (!spC || !spC.c) return;
-    const h2 = 46 * sc * S1, w2 = h2 * spC.w / spC.h;
+    const hBase = 46 * sc * S1;
+    const h2 = hBase * (1 - sqz), w2 = hBase * (spC.w / spC.h) * (1 + sqz * 0.45);
     ctx.save(); ctx.globalAlpha = al2;
     ctx.drawImage(spC.c, X(cu) - w2 / 2, Y(cv) - h2, w2, h2);
     if (cHot > 0.01){
@@ -11818,8 +11832,11 @@ function drawCrownTester(b, t){
   }
 
   /* ── ТРАВЕРСА И ШТОК ── */
-  const headUp = 244, headDown = 182, ramLen = 82;
-  const hv = headUp - (headUp - headDown) * (ease(seg(TESTER.atPress, TESTER.down)) - ease(seg(TESTER.load, TESTER.up)));
+  /* headDown = верх коронки (52 настил + 46 её высота) + длина штока: на этой
+     отметке боёк её КАСАЕТСЯ, а не зависает над ней. Дальше идёт прикус. */
+  const headUp = 244, headDown = 180, ramLen = 82;
+  const drop = (headUp - headDown) * ease(seg(TESTER.atPress, TESTER.down)) + PRESS_BITE * biteU;
+  const hv = headUp - drop * (1 - ease(seg(TESTER.load, TESTER.up)));
   ctx.fillStyle = vg(hv, hv + 40, '#cfe0f2', '#8fa8c6');       // голубая траверса
   ctx.beginPath(); ctx.roundRect(X(-74), Y(hv + 40), 148 * S1, 40 * S1, 5 * S1); ctx.fill();
   ctx.fillStyle = 'rgba(255,255,255,0.45)';
