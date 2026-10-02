@@ -5227,11 +5227,69 @@ function drawOutro(){
   ctx.fillText('Glidewell \u00b7 one bench \u2192 the world', cx, py(430, kw));
   ctx.restore();
 }
+/* ФИНАЛЬНАЯ СТОЙКА — ПО ФОТОГРАФИИ СТЕНДА (IMG_2666, Эльдар 02.10.2026:
+   «это один и тот же стол и одно и то же пространство»). Все доли сняты с снимка
+   и привязаны к ВЫСОТЕ ЛИЦЕВОЙ ГРАНИ (единственный размер, который на снимке
+   виден целиком и не срезан кадром): 665 px. У нас она 380 единиц мира.
+     радиус угла   105/665 = 0,158
+     плашка с G    231/665 = 0,347 (высота), квадратная по файлу
+     верх блока    142/665 = 0,214 ниже столешницы
+     просвет        42/665 = 0,063
+     слово          645/665 = 0,970 (ширина), высота прописной 90/665 = 0,135
+     слово выше середины плашки на 32/665 = 0,048
+   Слово набирается шрифтом эпохи и ПОДГОНЯЕТСЯ по ширине одним замером:
+   пропорция со снимка важнее того, каким кеглем это вышло у конкретного шрифта. */
+const FIN_FACE_H = 380;                    // высота лицевой грани, единицы мира
+const FIN_Z_FACE = 150 - 240/2;            // ближняя грань стола: cz − полглубины
+function drawFinaleLogo(){
+  const im = IMGS.logo2026; if (!im) return;
+  const kf = k(FIN_Z_FACE), H = FIN_FACE_H;
+  const u = kf * SS;                        // единица мира в пикселях на этой глубине
+  /* РАЗМЕР БЕРЁТСЯ НЕ ОТ ВСЕЙ ГРАНИ. У фотографа стойка видна целиком, а в
+     зале камера у финала стоит вплотную: k там 1,8, и нижний край кадра режет
+     грань на мировом y = 430 + 650/k = 791 — из 380 единиц грани видна 91.
+     Это не зависит от окна: SS = H/1080, и низ кадра всегда приходится на одну
+     и ту же мировую линию. Плашка поэтому 56 единиц и стоит на 20 ниже
+     столешницы: 720…776, с запасом 15 до края кадра. Всё остальное — доли ОТ
+     ПЛАШКИ, снятые с IMG_2666 (231 px плашка, 42 просвет, 645 слово, 90 прописная,
+     32 подъём слова над серединой плашки) — так что пропорции вывески сохранены. */
+  const PL = 56;                            // сторона красной плашки, единицы мира
+  const plaq = PL * u;
+  const gap  = PL * (42 / 231) * u;
+  const wordW = PL * (645 / 231) * u;
+  const capH = PL * (90 / 231) * u;
+  const rise = PL * (32 / 231) * u;         // слово выше середины плашки
+  const yTop = py(700, kf) + 20 * u;
+  const blockW = plaq + gap + wordW;
+  const x0 = px(FIN_X, kf) - blockW / 2;
+  ctx.save();
+  /* рельеф: вывеска на стенде вырезана из акрила и стоит на грани, а не напечатана */
+  ctx.shadowColor = 'rgba(40,50,62,0.30)';
+  ctx.shadowBlur = Math.max(1, 7 * u);
+  ctx.shadowOffsetY = Math.max(1, 3 * u);
+  ctx.drawImage(im.el, x0, yTop, plaq, plaq);
+  ctx.shadowColor = 'transparent';
+  /* слово: кегль берётся от высоты прописной, дальше один замер и масштаб под ширину */
+  const seg = SEGMENTS[3];
+  let fs = capH / 0.72;
+  ctx.font = eraFont(fs, '600', seg.font);
+  const w1 = ctx.measureText('Glidewell').width;
+  if (w1 > 1) fs *= wordW / w1;
+  ctx.font = eraFont(fs, '600', seg.font);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.shadowColor = 'rgba(40,50,62,0.26)';
+  ctx.shadowBlur = Math.max(1, 5 * u);
+  ctx.shadowOffsetY = Math.max(1, 2 * u);
+  ctx.fillStyle = 'rgb(72,79,88)';          // тёмно-серый со снимка, без синевы светодиодов
+  ctx.fillText('Glidewell', x0 + plaq + gap, yTop + plaq / 2 - rise + capH / 2);
+  ctx.restore();
+}
 function drawFinaleTable(t){
   if (Math.abs(cam.x - FIN_X) > 3800) return;
   // the modern lit table
-  drawYawedTable(FIN_X, 150, 0, 900, 240, 700, 380,
-    {side0:'#eef1f4', side1:'#c6ccd2', top:'#f7f9fb', edge:'rgba(120,130,140,0.5)'});
+  drawYawedTable(FIN_X, 150, 0, 900, 240, 700, FIN_FACE_H,
+    {side0:'#eef1f4', side1:'#c6ccd2', top:'#f7f9fb', edge:'rgba(120,130,140,0.5)',
+     r: 0.158 * FIN_FACE_H});
 
   // light breathing under the tabletop edge
   const ke = k(32);
@@ -5241,6 +5299,24 @@ function drawFinaleTable(t){
   g2.addColorStop(1, 'rgba(150,215,255,0)');
   ctx.fillStyle = g2;
   ctx.fillRect(px(FIN_X - 450, ke), y0, 900*ke*SS, 26*SS);
+  /* ЦОКОЛЬ СВЕТИТСЯ. На стенде стойка не стоит на полу, а висит над ним:
+     по низу идёт холодная подсветка, которая моет грань снизу и выходит
+     пятном на ковёр (IMG_2666: подсветка цоколя 172,199,249 против грани 161,142,153).
+     Прежняя полоска была только сверху, под столешницей — низ уходил в темноту. */
+  {
+    const yF = py(1080, ke), xA = px(FIN_X - 450, ke), xB = px(FIN_X + 450, ke);
+    const up = 120 * ke * SS;               // насколько свет поднимается по грани
+    const gUp = ctx.createLinearGradient(0, yF, 0, yF - up);
+    gUp.addColorStop(0, `rgba(176,214,255,${(0.52 + 0.08*Math.sin(t*1.6)).toFixed(3)})`);
+    gUp.addColorStop(1, 'rgba(176,214,255,0)');
+    ctx.fillStyle = gUp; ctx.fillRect(xA, yF - up, xB - xA, up);
+    // и пятно на полу перед ней
+    const gDn = ctx.createLinearGradient(0, yF, 0, yF + up * 0.8);
+    gDn.addColorStop(0, 'rgba(176,214,255,0.34)');
+    gDn.addColorStop(1, 'rgba(176,214,255,0)');
+    ctx.fillStyle = gDn; ctx.fillRect(xA, yF, xB - xA, up * 0.8);
+  }
+  drawFinaleLogo();
   // the products, composed as a still life
   const GOODS = [
     {sp:'puck',    dx:-330, z:95, w:110, cap:'BruxZir\u00ae solid zirconia'},
@@ -14264,13 +14340,36 @@ function drawYawedTable(cx, cz, yawDeg, wW, dW, topY, hW, tone){
   const faces = [[c1, c2], [c2, c3], [c3, c4], [c4, c1]]
     .filter(([p, q]) => (p.z + q.z)/2 <= cz)       // faces angled toward us
     .sort((f, g) => (g[0].z + g[1].z) - (f[0].z + f[1].z));
+  /* СКРУГЛЁННЫЕ ВЕРХНИЕ УГЛЫ (tone.r, в единицах мира). У настоящей
+     стойки Glidewell корпус — один белый объём с крупным закруглением, а не коробка
+     с острыми рёбрами (IMG_2666: радиус ≈ 0,16 высоты лицевой грани —
+     105 px на 665). Без tone.r всё рисуется как раньше. */
+  const rr = tone.r ? tone.r : 0;
+  /* только БЛИЖНЯЯ грань. Скруглённый верх торцевых граней открывал столешницу
+     за ними — по краям стола торчали белые «крылья» (02.10.2026) */
+  const zNear = Math.min(...faces.map(([p, q]) => (p.z + q.z) / 2));
   for (const [p, q] of faces){
+    const roundThis = rr > 0 && Math.abs((p.z + q.z) / 2 - zNear) < 1;
     const g = ctx.createLinearGradient(0, top(p), 0, bot(p));
     g.addColorStop(0, tone.side0); g.addColorStop(1, tone.side1);
     ctx.fillStyle = g;
+    /* радиус в пикселях — на глубине СВОЕЙ грани, поэтому ближняя скруглена
+       крупнее дальней, как и положено; и никогда больше половины грани */
+    const rp = Math.min(rr * p.kt * SS, Math.abs(q.x - p.x) / 2, (bot(p) - top(p)) / 2);
+    const rq = Math.min(rr * q.kt * SS, Math.abs(q.x - p.x) / 2, (bot(q) - top(q)) / 2);
+    const sgn = q.x >= p.x ? 1 : -1;
     ctx.beginPath();
-    ctx.moveTo(p.x, top(p)); ctx.lineTo(q.x, top(q));
-    ctx.lineTo(q.x, bot(q)); ctx.lineTo(p.x, bot(p));
+    if (roundThis){
+      ctx.moveTo(p.x + sgn * rp, top(p));
+      ctx.lineTo(q.x - sgn * rq, top(q));
+      ctx.quadraticCurveTo(q.x, top(q), q.x, top(q) + rq);
+      ctx.lineTo(q.x, bot(q)); ctx.lineTo(p.x, bot(p));
+      ctx.lineTo(p.x, top(p) + rp);
+      ctx.quadraticCurveTo(p.x, top(p), p.x + sgn * rp, top(p));
+    } else {
+      ctx.moveTo(p.x, top(p)); ctx.lineTo(q.x, top(q));
+      ctx.lineTo(q.x, bot(q)); ctx.lineTo(p.x, bot(p));
+    }
     ctx.closePath(); ctx.fill();
   }
   // the top plane
