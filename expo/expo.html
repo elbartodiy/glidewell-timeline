@@ -363,7 +363,11 @@ const BEATS = [
      face, in the same band the lines under the counter use, and 2001's line
      landed on top of them. What the division actually made stands on the
      counter instead: the tooth-shaped boxes a crown is posted in. */
-  {x:17160, y:'2000', t:'PLASTIC INJECTION', minor:true, sub:15700, under:true, underHide:true,
+  /* subDX 330 — коробка становится справа от машины своего же 2000-го и не лезет
+     на неё: риг стоит на x−250 шириной 460, то есть кончается на −20; коробка
+     шириной 110 начинается на +275 — между ними почти триста единиц воздуха,
+     и до следующего года (2001) остаётся четыреста. */
+  {x:17160, y:'2000', t:'PLASTIC INJECTION', minor:true, sub:15700, subDX:330, under:true, underHide:true,
    th:'Own the supply chain so you can own the price.',
    d:'An in-house plastic-injection division starts making boxes, articulators and supplies — the vertical-integration playbook.',
    wall:[], table:[]},
@@ -622,7 +626,14 @@ function applyCut(){
   GAP.done = true;
   // only raw literals move here: SEGMENTS and the world anchors were already
   // filtered through SHIFT when the script was parsed
-  for (const b of BEATS) b.x = SHIFT(b.x);
+  /* ССЫЛКА НА РОДИТЕЛЯ СДВИГАЕТСЯ ВМЕСТЕ С НИМ. b.sub держит x бита, под
+     который подвешен этот; ритм-проходы ищут родителя ровно по этому числу
+     (|s.sub − b.x| < 1). Здесь x всех битов уезжал на врезки, а sub оставался сырым —
+     связь рвалась СРАЗУ, и дальше родителя двигали, а подвешенный бит оставался
+     где придётся. Именно так PLASTIC INJECTION уехал из-под своего 2000-го (24574)
+     на 25952 — вплотную к CAD/CAM 2002 (26033), через голову 2001-го, и «потерялся»
+     (Эльдар, 02.10.2026). Сдвигаем оба числа одним и тем же SHIFT. */
+  for (const b of BEATS){ b.x = SHIFT(b.x); if (b.sub != null) b.sub = SHIFT(b.sub); }
   // the founding beat owns the bay its bench stands in: it sits at its centre
   /* Four beats do not go where SHIFT would put them: each owns a bay that was
      cut for it and belongs at its centre. Their articles have to travel with
@@ -827,6 +838,20 @@ function applyCut(){
       } else console.error(`${nm}: key ${kx} matches no beat and nothing is near it`);
     }
   };
+  /* ПОДВЕШЕННЫЕ БИТЫ САДЯТСЯ ОТ СВОЕГО РОДИТЕЛЯ, А НЕ КУДА ДОЕДУТ. Смещение
+     было задано сырыми координатами (17160 против 15700 у родителя — 1460
+     единиц вправо), и ритм-проходы волокли этот зазор за собой. На нынешнем
+     ритме PLASTIC INJECTION уехал через голову 2001-го на 26034 и встал вплотную
+     к CAD/CAM 2002 (26033): коробка-зуб пластикового цеха стояла у чужого года,
+     а у своего её не было вовсе — «пластик инжекшн куда-то потерялось, надо её
+     вернуть, положить на место» (Эльдар, 02.10.2026). Теперь место задано subDX —
+     смещением ОТ РОДИТЕЛЯ в единицах мира, и пересчитывается ПОСЛЕ всех
+     проходов, так что никакой ритм его больше не разорвёт. */
+  for (const b of BEATS){
+    if (b.sub == null || b.subDX == null) continue;
+    const parent = BEATS.find(p2 => p2 !== b && Math.abs(p2.x - b.sub) < 1);
+    if (parent) b.x = parent.x + b.subDX;
+  }
   if (typeof STUDY_MORE === 'object') snap(STUDY_MORE, 'STUDY_MORE');
   if (typeof STUDY_MEDIA === 'object') snap(STUDY_MEDIA, 'STUDY_MEDIA');
   // and the articles that are keyed by name go to wherever their beat now stands
@@ -19530,9 +19555,14 @@ function frame(){
 
   drawForeground();
   drawDoorway();
-  if (Math.max(state.introFade, state.finFade || 0) > 0.01){
-    // packshot curtains: the welcome and the finale both close their frame
-    const IF = Math.max(state.introFade, state.finFade || 0);
+  /* ШТОРКИ — ТОЛЬКО У ЗАСТАВКИ, НЕ У ФИНАЛА. Это второе затемнение поверх
+     виньетирования: края кадра уходили в rgba(6,4,2,0.97), то есть почти в чёрное
+     — замерено на финальном кадре: середина 202, края 8–15. Эльдар (02.10.2026):
+     «из финала виньетирование полностью уберём, он даже два раза накладывается…
+     наоборот, чтобы светло было». У заставки они остаются: там это кадр
+     пакшота, а не зал. Сам finFade жив и дальше прячет интерфейс (см. hidden). */
+  if (state.introFade > 0.01){
+    const IF = state.introFade;
     const edge = 300*SS, soft = 640*SS;
     for (const s of [-1, 1]){
       const x0 = W/2 + s*edge, x1 = W/2 + s*(edge + soft);
