@@ -11947,7 +11947,7 @@ function initDecor(){
      (раздел «The year the donuts stopped»), и там же стоит ролик Джима. */
   {
     const b84 = BEATS.find(b => b.y === '1984');
-    if (b84) PROPS.push({x: b84.x + 280, z: 30, kind: 'ph_donuts', w: 150, noShadow: true,
+    if (b84) PROPS.push({x: b84.x + 280, z: 30, kind: 'ph_donuts', w: 150, drop: 16, noShadow: true,
       cap: 'Friday donuts \u2014 a Glidewell institution. What happened the year they were cancelled is told at 2009.'});
   }
 
@@ -12746,7 +12746,7 @@ function drawProps(midPass){
        worktop looks like. It takes no shadow either: the render carries its
        own, and the hall's would print a second one under a flat picture. */
     if (p.lay){
-      ctx.drawImage(sp.c, sx - pw2/2, syFoot - ph2 * 0.62, pw2, ph2);
+      ctx.drawImage(spriteMip(sp, pw2, ph2), sx - pw2/2, syFoot - ph2 * 0.62, pw2, ph2);
       if (p.study){
         const bi0 = BEATS.findIndex(bb => bb.t === p.study);
         if (bi0 >= 0) pushHit(sx - pw2/2, syFoot - ph2 * 0.62, pw2, ph2, {type:'study', beat: bi0});
@@ -12768,7 +12768,21 @@ function drawProps(midPass){
        notices against plaster and everybody notices against a lit screen: the
        implant at 2009 had the plasma showing through it (Eldar, 2026-09-23).
        The sprites carry their own alpha; the hall does not add any. */
-    ctx.drawImage(sp.c, sx - pw2/2, syFoot - ph2, pw2, ph2);
+    /* ЧЕРЕЗ МИП-ЦЕПОЧКУ, А НЕ НАПРЯМУЮ. Здесь стояла одна drawImage с полного
+       спрайта на размер в кадре — уменьшение в пять-восемь раз ЗА ОДИН ШАГ. Canvas
+       берёт при этом всего четыре соседних пикселя источника на каждый пиксель
+       результата, а остальные десятки просто выбрасывает: кромка рассыпается
+       ступеньками, а на движении ступеньки ползут — это и есть «стробит» (Эльдар,
+       02.10.2026, про пончики — но так было У ВСЕХ предметов на прилавках).
+       spriteMip делает то, что надо: складывает картинку вдвое столько раз, сколько
+       нужно, так что каждый исходный пиксель участвует в результате, и кэширует по
+       размеру. Оно уже работало у макетов, фургона и финального ряда — просто до
+       предметов на прилавках не было доведено.
+       Пережать файлы заранее здесь не помогло бы: размер в кадре меняется непрерывно
+       с камерой (он зависит от k и от размера окна), так что «своего размера» у
+       спрайта просто нет. Мип-цепочка — и есть тот самый «набор размеров заранее»,
+       только считается она по требованию и живёт в памяти, а не в репозитории. */
+    ctx.drawImage(spriteMip(sp, pw2, ph2), sx - pw2/2, syFoot - ph2, pw2, ph2);
     ctx.restore();
     /* A PROP MAY HAVE SOMETHING TO SAY. Most of these are furniture, but one or
        two are the exhibit for their year — they carry a caption, and a caption
