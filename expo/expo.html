@@ -5259,15 +5259,24 @@ function drawOutro(){
   /* the finale's floating mark is gone with the others: at the far end the
      walnut soffit runs across that very height, so the mark read as a lone
      letter stuck on a beam. The closing line carries the ending by itself. */
+  /* ОДНА СТРОКА, И ВЫШЕ. Было две строки плюс курсивная подпись под ними —
+     «Glidewell · one bench → the world». Эльдар (02.10.2026): «убери вот эту
+     строчку точно; ту верхнюю в одну строчку запиши и подними наверх».
+     Кегль подбирается так, чтобы строка заняла 0,62 кадра: писать её жёстким
+     числом нельзя — на узком окне она вылезет за края. */
   ctx.fillStyle = `rgba(${seg.ink},0.6)`;
-  ctx.font = eraFont(56 * kw * SS, '', seg.font);
-  try { ctx.letterSpacing = `${56*TRACK.title*kw*SS}px`; } catch(e){}
-  ctx.fillText('The best dentistry \u2014', cx, py(300, kw));
-  ctx.fillText('made affordable', cx, py(372, kw));
+  /* КЕГЛЬ — В ЕДИНИЦАХ МИРА, А НЕ В ДОЛЯХ КАДРА. Первая проба подгоняла строку
+     под 0,62 ширины окна, и на узком экране она стала бы шире относительно
+     стены, чем на широком, — надпись на стене так себя не ведёт. Кегль остался
+     ПРЕЖНИЙ, 56: Эльдар просил собрать две строки в одну и поднять, а не
+     укрупнить буквы. На кадре 2000 строка занимает 710 пикселей и до табло
+     слева ей ещё триста. */
+  const line = 'The best dentistry \u2014 made affordable';
+  const fs = 56;
+  ctx.font = eraFont(fs * kw * SS, '', seg.font);
+  try { ctx.letterSpacing = `${fs*TRACK.title*kw*SS}px`; } catch(e){}
+  ctx.fillText(line, cx, py(248, kw));
   try { ctx.letterSpacing = '0px'; } catch(e){}
-  ctx.font = eraFont(24 * kw * SS, 'italic', seg.font);
-  ctx.fillStyle = `rgba(${seg.ink},0.55)`;
-  ctx.fillText('Glidewell \u00b7 one bench \u2192 the world', cx, py(430, kw));
   ctx.restore();
 }
 /* ФИНАЛЬНАЯ СТОЙКА — ПО ФОТОГРАФИИ СТЕНДА (IMG_2666, Эльдар 02.10.2026:
@@ -5401,9 +5410,16 @@ function drawFinaleTable(t){
   {
     const fp = PHOTO_TEX.ph_finprod;
     if (fp && fp.naturalWidth){
-      const kF = k(FIN_Z_FACE), kB = k(FIN_Z_FACE + FIN_DEPTH);
-      const wBack = px(FIN_X + FIN_W / 2, kB) - px(FIN_X - FIN_W / 2, kB);
-      const wDraw = wBack * 0.96;
+      /* КРУПНЕЕ. Эльдар (02.10.2026): «почему эти предметы такие маленькие?
+         предметы увеличь, чтобы они были большими». Ширина бралась по ДАЛЬНЕЙ
+         кромке стола — самой узкой, — и ряд выходил вдвое меньше стойки, на
+         которой стоит. Теперь по ближней, самой широкой: белая полоса рендера
+         при этом выходит за силуэт стола сзади ровно на величину собственной
+         растушёвки (22 % ширины с каждой стороны), поэтому за край она не
+         вылезает, а растворяется. */
+      const kF = k(FIN_Z_FACE);
+      const wFront = px(FIN_X + FIN_W / 2, kF) - px(FIN_X - FIN_W / 2, kF);
+      const wDraw = wFront * 0.98;
       const hDraw = wDraw * fp.naturalHeight / fp.naturalWidth;
       const yBot = py(700, kF);                 // передняя кромка нашей столешницы
       ctx.drawImage(fp, px(FIN_X, kF) - wDraw / 2, yBot - hDraw, wDraw, hDraw);
