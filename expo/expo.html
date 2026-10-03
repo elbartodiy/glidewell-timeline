@@ -900,7 +900,21 @@ const REC2_L = SEAM_3 - 540, REC2_R = SEAM_3 + 540;   // the Digital Revolution 
 const CULL_BAY = 4100, CULL_BEAT = 4900;
 const REC_L = SHIFT(6350), REC_R = SHIFT(7450);   // era 1 ends; the 1979 recreation; era 2 begins
 const G8_W = 1400;   // the 1979 models' plinth, in world units — the counters are trimmed to it
-const T76_W = 1400;   // 1976: городок + почта + просвет между ними; объявлен здесь, а не у отрисовки, потому что им пользуется разрыв прилавка выше по файлу
+/* 1976. ШИРИНА ПЛИТЫ ВЫВЕДЕНА ИЗ ШИРИНЫ УЛИЦЫ, А НЕ ЗАДАНА РЯДОМ.
+   Эльдар (02.10.2026, зелёные и красные точки на кадре): «столешницу стола
+   нужно подрезать по столешницу города, чтобы была одна точка точка к точке».
+   Два рендера занимают разную долю своего файла — у плиты (g8) видимые пиксели
+   занимают 0,9793 ширины (столбцы 19…1865 из 1886), у улицы 0,9850 (13…1659 из
+   1672), и одинаковое число в коде давало разные края в кадре. Оба рендера
+   центрированы (0,4997 и 0,5003), так что совместить достаточно ширины. */
+const T76_STREET_W = 1340;                       // улица, единицы мира
+/* ДОЛЯ СЧИТАЕТСЯ ПО НИЖНЕМУ РЯДУ, ТО ЕСТЬ ПО ТОЙ ЛИНИИ, ГДЕ УЛИЦА СТОИТ НА
+   КАМНЕ. Первая проба резала файл по ряду 647 и захватывала светлую фаску СОБСТВЕННОГО
+   постамента диорамы (ряды 643…645) — она шире самой улицы и сливалась с нашим
+   камнем, отчего камень и выглядел длиннее. Теперь рез по 642 — последнему ряду
+   тёмной земли, и доля считана по нему: 22…1651 из 1672. */
+const T76_VIS_STREET = 0.9749, T76_VIS_PLINTH = 0.9793;
+const T76_W = Math.round(T76_STREET_W * T76_VIS_STREET / T76_VIS_PLINTH);   // 1348
 /* the eight signs on that plinth, as fractions of the render's width, nudged a
    touch right so the van pulls up at the building rather than at its logo */
 const G8_DOORS = [0.062, 0.180, 0.295, 0.417, 0.554, 0.660, 0.776, 0.901].map(v => v + 0.030);
@@ -3963,7 +3977,13 @@ function drawBenchDescs(){
          grey: both want light ink with a shadow under it. The pale slabs — the
          digital revolution, 2018, 2022, the glass hall — want dark ink with a
          white halo. Dark-on-dark was why the 1989 line could not be read. */
-      const onModels = (b.x > REC_L && b.x < REC_R) || (b.x > REC3_L && b.x < REC3_R);
+      /* 1976 ЛЕЖИТ НА ТАКОМ ЖЕ ТЁМНОМ ДЕРЕВЕ, что и плинт 1979-го: его прилавок
+         разорван под плиту, тумбы под битом нет, и строка сваливалась в ветку
+         «светлая плита» — тёмными чернилами по тёмному дереву, да ещё с
+         падением на 130 единиц. Эльдар (02.10.2026): «его не видно, он должен
+         быть светлее; и он сейчас очень низко, нужно выше». */
+      const onModels = (b.x > REC_L && b.x < REC_R) || (b.x > REC3_L && b.x < REC3_R) ||
+                       b.y === '1976';
       /* 1979's line lies on the dark wood of the models' plinth, so it is set
          light there; every other recreation reads dark on its pale slab — and
          so does 1973's, lying across the two pale stones of its labs. */
@@ -3974,11 +3994,6 @@ function drawBenchDescs(){
       shadow = onModels; slabDrop = onModels ? -22*SS : 130*SS;   // two rows higher again: on the counter's own lip
     }
     if (b.y === '1973'){ ink = '58,46,30'; shadow = false; }   // its line lies across the two pale stones: dark ink, as on the pale slabs
-    /* 1976 НЕ ПЕРЕКРАШИВАЕМ. Я пробовал тёмные чернила, как у 1973-го, и подъём
-       на камень — но камень по лицу здесь всего пара десятков пикселей, двум
-       строкам там не поместиться, а выше дороги строку закрывают сами дома.
-       Поэтому ink и тень остаются родными, светлыми по тёмному дереву, а строка
-       просто садится под каменный лоб — тем же приёмом, что у 1979-го. */
     ctx.save();
     ctx.textAlign = 'center';
     ctx.font = eraFont(23 * SS, '', seg.font);
@@ -9650,7 +9665,6 @@ function drawLabs73(){
    стола в одном месте. Теперь у диорамы её собственный блок отрезан (файл
    режется по ряду 647, где ровная кремовая грань начинается), и улица просто
    СТОИТ на плите, как девять лабораторий 1979-го. */
-const T76_STREET_W = 1340;     // улица уже плиты на 60 единиц: камень виден с торцов
 const G8_TOP = 0.16;           // доля высоты рендера g8 до верха его столешницы
 let X76 = null;
 function drawTown76(){
