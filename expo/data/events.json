@@ -1,59 +1,8 @@
 {
- "updated": "2026-10-02T22:16:32+00:00",
+ "updated": "2026-10-03T05:21:32+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 29,
+ "count": 26,
  "events": [
-  {
-   "title": "Techniques for Predictable Implant Surgery",
-   "from": "2026-10-02",
-   "to": "2026-10-02",
-   "city": "Las Vegas, NV",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Paresh B. Patel",
-    "Dr. Timothy Kosinski"
-   ],
-   "duration": "One Day",
-   "price": "595.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/techniques-for-predictable-implant-surgery?variant=53228926075244"
-  },
-  {
-   "title": "Implant Surgery, Aligner Therapy and CAD/CAM Dentistry",
-   "from": "2026-10-02",
-   "to": "2026-10-03",
-   "city": "Las Vegas, NV",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Arvind Petrie",
-    "Dr. Ben Miraglia",
-    "Dr. Danielle Brown",
-    "Dr. Darshan Patel",
-    "Dr. Jinny Bender",
-    "Dr. Justin Chi",
-    "Dr. Louis Kaufman",
-    "Dr. Paresh B. Patel",
-    "Dr. Timothy Kosinski"
-   ],
-   "duration": "Two Days",
-   "price": "1190.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/implant-surgery-aligner-therapy-and-cad-cam-dentistry?variant=53228907168108"
-  },
-  {
-   "title": "Effective and Practical Implant Overdentures",
-   "from": "2026-10-02",
-   "to": "2026-10-03",
-   "city": "Raleigh, NC",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Raymond Choi"
-   ],
-   "duration": "Two Days",
-   "price": "795.00",
-   "open": false,
-   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=53730326708588"
-  },
   {
    "title": "Clear Aligner Therapy Simplified",
    "from": "2026-10-03",
