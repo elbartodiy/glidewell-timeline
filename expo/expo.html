@@ -231,7 +231,7 @@ const BEATS = [
      это год, когда девять лабораторий стали одним цехом, то есть появился сам цех,
      который по пятницам кормят. Подвешен тем же механизмом, что и PLASTIC
      INJECTION: sub — сырой x родителя, subDX — смещение от него в единицах мира. */
-  {x:8750, y:'1984', t:'FRIDAY DONUTS', minor:true, sub:8750, subDX:280, under:true, underHide:true,
+  {x:8750, y:'1984', t:'FRIDAY DONUTS', minor:true, sub:8750, subDX:280, under:true, underHide:true, noYear:true,
    th:'', d:'', wall:[], table:[]},
 
   {x:9850, y:'1988', t:'BIOTEMPS', yLift:130,
@@ -17255,7 +17255,8 @@ function drawStudy(){
   const wantSide = !!(obj || railMedia || photos || (ppl && ppl.length));
   ctx.save();
   ctx.globalAlpha = a;
-  const meta = b.y + (b.t ? ' · ' + sentence(b.t) : (b.sign ? ' · ' + sentence(b.sign) : ''));
+  const meta = b.noYear ? sentence(b.t || b.sign || '')
+    : b.y + (b.t ? ' · ' + sentence(b.t) : (b.sign ? ' · ' + sentence(b.sign) : ''));
   const G = pageFrame(K, a, wantSide, meta, S.fitH);
   const {left, textW, topClip, botClip} = G;
   const u = PAGE.u * SS;
@@ -17268,11 +17269,20 @@ function drawStudy(){
 
   const inl = STUDY_INLINE[b.t];
   /* ---- the head: year, title, standfirst, rule — one stack, the same on every page ---- */
-  y += 9 * u;                                              // the year's baseline
-  ctx.font = K.font(PAGE.year);
-  ctx.fillStyle = `rgba(${K.ink},0.98)`;
-  ctx.fillText(b.y, left, y);
-  y += 7 * u;
+  /* У БИТА МОЖЕТ НЕ БЫТЬ ГОДА. Пятничные пончики стоят у 1984-го потому, что
+     именно тогда появился цех, но точного года у традиции нет, и ставить его
+     в шапку значит утверждать то, чего мы не знаем (Эльдар, 02.10.2026: «этот
+     год нужно убрать, там просто Friday Donuts»). Бит с noYear не печатает ни
+     числа, ни года в мета-строке — только название. */
+  if (!b.noYear){
+    y += 9 * u;                                            // the year's baseline
+    ctx.font = K.font(PAGE.year);
+    ctx.fillStyle = `rgba(${K.ink},0.98)`;
+    ctx.fillText(b.y, left, y);
+    y += 7 * u;
+  } else {
+    y += 7 * u;
+  }
   let tSz = PAGE.title;
   ctx.font = K.font(tSz);
   try { ctx.letterSpacing = `${tSz*TRACK.title*SS}px`; } catch(err){}
@@ -17691,6 +17701,7 @@ function drawStudy(){
     y += 16 * SS;
   }
   const yEnd = Math.max(y, sy) + 4 * u;
+  pageTopVeil(K, G, S.scroll > 2);
   pageFoot(K, G, yEnd, a, 'scroll to read on · tap outside to return');
   ctx.restore();
   state.cardRect = {x: G.wx0, y: G.wy0, w: G.ww, h: G.wh, r: K.r*SS};
@@ -18086,8 +18097,15 @@ function pageFrame(K, a, side, meta, fitH){
   if (meta) ctx.fillText(meta, wx0 + pad, metaY);
   try { ctx.letterSpacing = '0px'; } catch(err){}
   drawCloseX(wx0 + ww - pad * 0.5, closeY, 10 * SS, a, closeInk || K.ink);
-  // content clips inside the sheet, below its band
-  ctx.beginPath(); ctx.roundRect(wx0 + 2 * SS, wy0 + 2 * SS + bandH, ww - 4 * SS, wh - 4 * SS - bandH, r); ctx.clip();
+  /* ОБРЕЗКА НАЧИНАЕТСЯ ПОД МЕТА-СТРОКОЙ, А НЕ ПО КРАЮ ЛИСТА. Мета — год и
+     название в шапке — стоит внутри листа, и прокручиваемый текст ехал прямо
+     по ней: две строки одна поверх другой (Эльдар, 02.10.2026: «смотри, как
+     наслаиваются две, одна верхняя на другую… и во всех страничках такая
+     проблема»). Теперь верх обрезки — под самой метой, и сквозь неё не
+     пролезает ничто: ни строки, ни плитки, ни фотографии. Чинит все страницы
+     разом. */
+  const cTop = meta ? metaY + 11 * SS : wy0 + 2 * SS + bandH;
+  ctx.beginPath(); ctx.roundRect(wx0 + 2 * SS, cTop, ww - 4 * SS, wy0 + wh - 2 * SS - cTop, r); ctx.clip();
   /* ПОЛОСА ПОД ПОДСКАЗКОЙ — НЕ ДЛЯ ТЕКСТА. Строки шли до самого низа листа, и
      последняя оказывалась и срезана краем, и под надписью «scroll to read on»:
      на непрозрачной бумаге её съедала дымка, а на полупрозрачной (бухты
@@ -18099,11 +18117,25 @@ function pageFrame(K, a, side, meta, fitH){
   const footPad = 46 * SS;
   return {wx0, wy0, ww, wh, pad, left: wx0 + pad, textW, sideX: wx0 + pad + textW + gutter, side: sideW,
           top: wy0 + bandH + PAGE.top * SS, bandH, topClip: wy0 - 80 * SS, botClip: wy0 + wh + 80 * SS,
-          footPad, textBot: wy0 + wh - footPad};
+          cTop, footPad, textBot: wy0 + wh - footPad};
 }
 /* THE FOOT OF THE SHEET. When the text runs past the window it does not stop
    dead on a half-line: the last strip fades into the paper, and a quiet line
    in it says the page goes on. A page that fits says nothing. */
+/* И ВЕРХ ТОЖЕ НЕ РЕЖЕТСЯ НОЖОМ. Обрезка под метой останавливает текст, но
+   строка на границе разрубается пополам. Та же дымка, что внизу, только
+   короткая: лист проступает под метой, и строка уходит в него, а не обрывается
+   (Эльдар, 02.10.2026). Рисуется только когда страница прокручена, — у начала
+   страницы прятать нечего. */
+function pageTopVeil(K, G, scrolled){
+  if (!scrolled || G.cTop == null) return;
+  const h2 = 26 * SS;
+  const g = ctx.createLinearGradient(0, G.cTop, 0, G.cTop + h2);
+  g.addColorStop(0, K.bg); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.save(); ctx.globalAlpha = 0.92;
+  ctx.fillStyle = g; ctx.fillRect(G.wx0, G.cTop, G.ww, h2);
+  ctx.restore();
+}
 function pageFoot(K, G, yEnd, a, hint){
   /* дымка кончается там же, где кончаются строки: ниже — чистая бумага под
      подсказку, и ей больше не с чем спорить */
@@ -18436,6 +18468,7 @@ function drawPerson(){
     }
   }
   const yEnd = Math.max(y, my) + 4 * u;
+  pageTopVeil(K, G, S.scroll > 2);
   pageFoot(K, G, yEnd, a, 'scroll to read on · tap outside to go back');
   ctx.restore();
   state.cardRect = {x: G.wx0, y: G.wy0, w: G.ww, h: G.wh, r: K.r*SS};
