@@ -17706,6 +17706,7 @@ function drawStudy(){
     y += 16 * SS;
   }
   const yEnd = Math.max(y, sy) + 4 * u;
+  pageEdges(K, G, S.scroll * SS, S.maxScroll * SS);
   pageFoot(K, G, yEnd, a, 'scroll to read on · tap outside to return');
   ctx.restore();
   state.cardRect = {x: G.wx0, y: G.wy0, w: G.ww, h: G.wh, r: K.r*SS};
@@ -18126,6 +18127,44 @@ function pageFrame(K, a, side, meta, fitH){
 /* THE FOOT OF THE SHEET. When the text runs past the window it does not stop
    dead on a half-line: the last strip fades into the paper, and a quiet line
    in it says the page goes on. A page that fits says nothing. */
+/* ОКНО В ДОКУМЕНТ: КРАЙ И ПОЛОСКА. Вместо градиентного исчезания — две честные
+   вещи (Эльдар выбрал, 02.10.2026).
+
+   КРАЙ. Тонкая линия по верху и низу поля текста, в цвете линеек листа. Она
+   появляется только с той стороны, где ЕСТЬ продолжение: сверху — когда лист
+   прокручен, снизу — когда внизу ещё есть строки. Значит линия не украшение,
+   а сообщение: «здесь текст уходит за рамку».
+
+   ПОЛОСКА. Узкий штрих у правого края листа, внутри поля: дорожка во всю
+   высоту окна и бегунок, чья длина — доля видимого, а положение — доля
+   прокрученного. Отвечает на вопрос, на который дымка не отвечала никогда:
+   сколько осталось. Короче 24 единиц бегунок не делается — иначе на длинной
+   статье он превращается в точку. */
+function pageEdges(K, G, scroll, maxScroll){
+  if (G.cTop == null) return;
+  const top = G.cTop, bot = G.textBot != null ? G.textBot : G.wy0 + G.wh;
+  const inset = G.pad * 0.5;
+  const more = (maxScroll || 0) > 2;
+  /* ЦВЕТ БЕРЁТСЯ ОТ ЧЕРНИЛ, А НЕ ОТ K.rule. У стеклянного листа линейка задана
+     белым с четвертью непрозрачности — на его же светлой бумаге её не видно
+     вовсе. Чернила по построению контрастны бумаге на любом скине: тёмные на
+     светлой, светлые на тёмной. */
+  ctx.save();
+  ctx.fillStyle = `rgba(${K.ink},0.26)`;
+  if (scroll > 2) ctx.fillRect(G.wx0 + inset, top, G.ww - inset * 2, 1 * SS);
+  if (more && scroll < maxScroll - 2) ctx.fillRect(G.wx0 + inset, bot - 1 * SS, G.ww - inset * 2, 1 * SS);
+  if (more){
+    const rx = G.wx0 + G.ww - inset * 0.80, h = bot - top, w = 4 * SS;
+    const vis = Math.max(0.06, Math.min(1, h / (h + maxScroll)));
+    const th = Math.max(24 * SS, h * vis);
+    const ty = top + (h - th) * Math.max(0, Math.min(1, scroll / maxScroll));
+    ctx.fillStyle = `rgba(${K.ink},0.13)`;
+    ctx.beginPath(); ctx.roundRect(rx, top, w, h, w / 2); ctx.fill();
+    ctx.fillStyle = `rgba(${K.ink},0.46)`;
+    ctx.beginPath(); ctx.roundRect(rx, ty, w, th, w / 2); ctx.fill();
+  }
+  ctx.restore();
+}
 function pageFoot(K, G, yEnd, a, hint){
   /* дымка кончается там же, где кончаются строки: ниже — чистая бумага под
      подсказку, и ей больше не с чем спорить */
@@ -18456,6 +18495,7 @@ function drawPerson(){
     }
   }
   const yEnd = Math.max(y, my) + 4 * u;
+  pageEdges(K, G, S.scroll * SS, S.maxScroll * SS);
   pageFoot(K, G, yEnd, a, 'scroll to read on · tap outside to go back');
   ctx.restore();
   state.cardRect = {x: G.wx0, y: G.wy0, w: G.ww, h: G.wh, r: K.r*SS};
