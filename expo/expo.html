@@ -16531,8 +16531,13 @@ function flowText(text, x, y, maxW, lineH, o){
   const sp = ctx.measureText(' ').width;
   const toks = nameTokens(text, o.seen);
   let line = [], wLine = 0;
+  /* СТРОКА ЛИБО ЦЕЛАЯ, ЛИБО ЕЁ НЕТ — И ПО ВЕРХУ ТОЖЕ. По низу это правило уже
+     работало (textBot), а сверху строки обрезались канвой пополам, и чтобы это
+     скрыть, поверх лежала дымка. Эльдар (02.10.2026): «мне не нравится эта
+     дымка ни внизу, ни наверху». Дымка не нужна, если резать по строке: y —
+     базовая линия, верх строки на 0,78 кегля выше неё. */
   const flush = () => {
-    if (line.length && y > o.top && y < o.bot){
+    if (line.length && y - lineH * 0.78 > o.top && y < o.bot){
       let cx = x;
       for (let i = 0; i < line.length; i++){
         const t = line[i];
@@ -17263,7 +17268,7 @@ function drawStudy(){
   let y = G.top - S.scroll * SS;
   const seen = new Set();
   const flow = (txt, lh, ink) => {
-    y = flowText(txt, left, y, textW, lh, {seen, top: topClip, bot: G.textBot, accent: `rgba(${K.accent},0.95)`, ink: ink || ctx.fillStyle});
+    y = flowText(txt, left, y, textW, lh, {seen, top: G.cTop, bot: G.textBot, accent: `rgba(${K.accent},0.95)`, ink: ink || ctx.fillStyle});
   };
   ctx.textAlign = 'left';
 
@@ -17701,7 +17706,6 @@ function drawStudy(){
     y += 16 * SS;
   }
   const yEnd = Math.max(y, sy) + 4 * u;
-  pageTopVeil(K, G, S.scroll > 2);
   pageFoot(K, G, yEnd, a, 'scroll to read on · tap outside to return');
   ctx.restore();
   state.cardRect = {x: G.wx0, y: G.wy0, w: G.ww, h: G.wh, r: K.r*SS};
@@ -18122,35 +18126,19 @@ function pageFrame(K, a, side, meta, fitH){
 /* THE FOOT OF THE SHEET. When the text runs past the window it does not stop
    dead on a half-line: the last strip fades into the paper, and a quiet line
    in it says the page goes on. A page that fits says nothing. */
-/* И ВЕРХ ТОЖЕ НЕ РЕЖЕТСЯ НОЖОМ. Обрезка под метой останавливает текст, но
-   строка на границе разрубается пополам. Та же дымка, что внизу, только
-   короткая: лист проступает под метой, и строка уходит в него, а не обрывается
-   (Эльдар, 02.10.2026). Рисуется только когда страница прокручена, — у начала
-   страницы прятать нечего. */
-function pageTopVeil(K, G, scrolled){
-  if (!scrolled || G.cTop == null) return;
-  const h2 = 26 * SS;
-  const g = ctx.createLinearGradient(0, G.cTop, 0, G.cTop + h2);
-  g.addColorStop(0, K.bg); g.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.save(); ctx.globalAlpha = 0.92;
-  ctx.fillStyle = g; ctx.fillRect(G.wx0, G.cTop, G.ww, h2);
-  ctx.restore();
-}
 function pageFoot(K, G, yEnd, a, hint){
   /* дымка кончается там же, где кончаются строки: ниже — чистая бумага под
      подсказку, и ей больше не с чем спорить */
   const bot = G.textBot != null ? G.textBot : G.wy0 + G.wh;
   const over = yEnd > bot - 40 * SS;
   if (over){
-    const fh = 84 * SS, y0 = bot - fh;
     const m = /rgba?\(([^)]+)\)/.exec(K.bg);
     const parts = m ? m[1].split(',').map(v => v.trim()) : ['240', '240', '240', '1'];
     const rgb = parts.slice(0, 3).join(','), al = parts[3] != null ? +parts[3] : 1;
-    const g = ctx.createLinearGradient(0, y0, 0, bot);
-    g.addColorStop(0, `rgba(${rgb},0)`); g.addColorStop(0.55, `rgba(${rgb},${(al * 0.92).toFixed(3)})`); g.addColorStop(1, `rgba(${rgb},${al})`);
-    ctx.fillStyle = g; ctx.fillRect(G.wx0, y0, G.ww, fh);
-    /* и сама полоса под подсказку — сплошной бумагой, чтобы на полупрозрачном
-       листе сквозь неё не читалось то, что под ним */
+    /* ДЫМКИ НЕТ. Снизу строки и так не заезжают в полосу подсказки — туда не
+       пускает textBot, — а градиент поверх них был украшением, которое Эльдар
+       попросил снять. Осталась только сама полоса сплошной бумагой: на
+       полупрозрачном листе без неё сквозь подсказку читается зал. */
     ctx.fillStyle = `rgba(${rgb},${al})`;
     ctx.fillRect(G.wx0, bot, G.ww, G.wy0 + G.wh - bot);
     ctx.font = K.font(PAGE.small);
@@ -18468,7 +18456,6 @@ function drawPerson(){
     }
   }
   const yEnd = Math.max(y, my) + 4 * u;
-  pageTopVeil(K, G, S.scroll > 2);
   pageFoot(K, G, yEnd, a, 'scroll to read on · tap outside to go back');
   ctx.restore();
   state.cardRect = {x: G.wx0, y: G.wy0, w: G.ww, h: G.wh, r: K.r*SS};
