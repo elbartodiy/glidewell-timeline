@@ -1,56 +1,8 @@
 {
- "updated": "2026-10-03T21:16:48+00:00",
+ "updated": "2026-10-04T05:55:58+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 26,
+ "count": 23,
  "events": [
-  {
-   "title": "Clear Aligner Therapy Simplified",
-   "from": "2026-10-03",
-   "to": "2026-10-03",
-   "city": "Irvine, CA",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Ben Miraglia"
-   ],
-   "duration": "One Day",
-   "price": "195.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/introduction-to-clear-aligner-therapy-made-easy?variant=53049767723372"
-  },
-  {
-   "title": "Clear Aligners Therapy Advanced Course",
-   "from": "2026-10-03",
-   "to": "2026-10-03",
-   "city": "Irvine, CA",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Ben Miraglia"
-   ],
-   "duration": "One Day",
-   "price": "95.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/clear-aligners-therapy-advanced-course?variant=53190191120748"
-  },
-  {
-   "title": "Incorporating Digital Dentistry and Aligner Therapy",
-   "from": "2026-10-03",
-   "to": "2026-10-03",
-   "city": "Las Vegas, NV",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Arvind Petrie",
-    "Dr. Ben Miraglia",
-    "Dr. Danielle Brown",
-    "Dr. Darshan Patel",
-    "Dr. Jinny Bender",
-    "Dr. Justin Chi",
-    "Dr. Louis Kaufman"
-   ],
-   "duration": "One Day",
-   "price": "595.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/incorporating-aligner-therapy-and-cad-cam-dentistry?variant=53228912705900"
-  },
   {
    "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
    "from": "2026-10-16",
