@@ -9616,7 +9616,27 @@ function makeUsaSprite(){
   g.fillStyle = 'rgba(50,58,70,0.92)';
   g.font = '600 34px "Helvetica Neue", Arial, sans-serif';
   try { g.letterSpacing = '7px'; } catch(e){}
-  g.fillText('ONE LABORATORY, ONE COUNTRY', 490, 108);
+  /* ЗАГОЛОВОК. Прежний — «ONE LABORATORY, ONE COUNTRY» — снят по прямой
+     просьбе Эльдара (05.10.2026): фигура «один X, один Y» звучит лозунгом и к
+     смыслу листа отношения не имеет. Смысл тут один: у лаборатории нет
+     торговой территории — территория и есть почта. Строка измеряется и
+     ужимается по ширине паспарту (52..928), чтобы ни при каком кегле не
+     вылезти за поле, как когда-то вылезала подпись хаба. */
+  {
+    const TTL = 'THE MAIL IS THE TERRITORY';
+    const FIELD = 876;                        // ширина паспарту, 52..928
+    let fs = 34;
+    g.font = '600 ' + fs + 'px "Helvetica Neue", Arial, sans-serif';
+    /* В Chrome measureText уже учитывает letterSpacing (он выставлен выше);
+       там, где свойства нет, разрядку добавляем в счёт руками. */
+    const SPACED = (function(){ try { return g.letterSpacing === '7px'; } catch(e){ return false; } })();
+    let tw = g.measureText(TTL).width + (SPACED ? 0 : 7 * (TTL.length - 1));
+    if (tw > FIELD){
+      fs = Math.floor(fs * FIELD / tw);
+      g.font = '600 ' + fs + 'px "Helvetica Neue", Arial, sans-serif';
+    }
+    g.fillText(TTL, 490, 108);
+  }
   try { g.letterSpacing = '0px'; } catch(e){}
   g.fillStyle = 'rgba(60,66,76,0.8)';
   g.font = '28px "Helvetica Neue", Arial, sans-serif';
