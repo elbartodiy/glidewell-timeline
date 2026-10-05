@@ -3649,7 +3649,7 @@ function drawHungYear(b, seg, cx, band, fScale, focusAmt, near){
   ctx.restore();
   return {yBase, cap};
 }
-const hungBand = x => (x >= SHOW_L - 200 && x <= SHOW_R) ? timberBand() : null;
+const hungBand = x => (x >= SHOW_L - 200 && x <= SHOW_DRAW_R) ? timberBand() : null;
 
 function descInk(seg){
   const c = (seg.ink || '218,222,227').split(',').map(Number);
@@ -19061,6 +19061,21 @@ function update(dt){
    the wall of 2019 continues to the doorway's column and the wood is the
    finale's alone — from the doorway's far column to the end. */
 const SHOW_L = HALL_FRAME_R + 60, SHOW_R = WORLD_END + 300;
+/* ГДЕ КОНЧАЮТСЯ ПОВЕРХНОСТИ КОМНАТЫ — И ГДЕ КОНЧАЕТСЯ САМА КОМНАТА. Это разные
+   числа, и до сих пор было одно. SHOW_R — логическая правая граница шоурума:
+   от неё отмеряется середина орехового карниза, а значит и положение надписи
+   TODAY, и центры потолочных колец. Но ПОВЕРХНОСТИ — карниз, кессон, блеск
+   пола, деревянная лента на стене — на ней же и обрывались, а камера у финала
+   видит дальше: на отметке 45192 правый край кадра приходится на мировой
+   x ≈ 47350 (плоскость карниза, k = 0,483). Отсюда «слои заканчиваются раньше,
+   чем нужно; справа освещение просто пропадает» (Эльдар, 02.10.2026).
+
+   SHOW_DRAW_R — докуда ЧЕРТИТЬ. Запас 2600 взят с полуторным перекрытием
+   самого дальнего края кадра, чтобы и на широком окне комната не кончалась
+   в поле зрения. Светильники и кольца НЕ продлеваются: лампы считаются от
+   SHOW_R, потому что крайнюю Эльдар просил снять именно как лишнюю, а кольца
+   стоят от середины, которую двигать нельзя. */
+const SHOW_DRAW_R = WORLD_END + 2600;
 /* WHERE THE CEILING IS DRAWN FROM, WHICH IS NOT WHERE THE ROOM BEGINS. The
    timber soffit and the lit coffer both started at SHOW_L — a point taken sixty
    units past the doorway's far column, on purpose, so the column would cover
@@ -19078,12 +19093,12 @@ const SHOW_DRAW_L = HALL_FRAME_R - 600;
    formula, living beside the thing it measures, so the two cannot drift apart
    the way the year and its plate did. */
 function timberBand(){
-  if (cam.x < SHOW_L - 2600 || cam.x > SHOW_R + 2600) return null;
+  if (cam.x < SHOW_L - 2600 || cam.x > SHOW_DRAW_R + 2600) return null;
   const kk = k((SEGMENTS[3].z0 || 1400) - 6);
   return {yT: py(-330, kk), yB: py(-90, kk)};
 }
 function drawShowroom(t){
-  if (cam.x < SHOW_L - 2600 || cam.x > SHOW_R + 2600) return;
+  if (cam.x < SHOW_L - 2600 || cam.x > SHOW_DRAW_R + 2600) return;
   const seg = SEGMENTS[3], kk = k(seg.z0 - 6);
   /* THE RUN IS CUT AT ITS FIRST DOWNLIGHT. Left to start at SHOW_L it showed up
      two bays early as a brown block hanging in the air with nothing holding it.
@@ -19094,7 +19109,7 @@ function drawShowroom(t){
      the column covers its end, so there is nothing hanging in the air, and the
      wood and its downlights read as one ceiling from the door onward (Eldar) */
   const x0 = px(SHOW_DRAW_L, kk) - 12 * SS;
-  const x1 = px(SHOW_R, kk);
+  const x1 = px(SHOW_DRAW_R, kk);
   if (x1 < -200 || x0 > W + 200) return;
   ctx.save();
   // the ribbon: a soffit of walnut, turned down out of the ceiling
@@ -19223,7 +19238,7 @@ function drawShowroom(t){
      the join showed. It starts at the beam's own end now. */
   const recL = Math.max(0, x0);
   ctx.fillRect(recL, cyR - recH * 0.7,
-               Math.min(W, px(SHOW_R, kC)) - recL, recH * 1.3);
+               Math.min(W, px(SHOW_DRAW_R, kC)) - recL, recH * 1.3);
   for (const [gx, cl] of [[-1180, [[0, 0, 250], [190, 62, 178]]],
                           [560,   [[0, 0, 214], [162, -46, 150], [292, 40, 112]]],
                           [2140,  [[0, 0, 268], [206, 54, 190]]]]){
@@ -19289,7 +19304,7 @@ function sheenFade(gs, cw, ch, peak){
   gs.globalCompositeOperation = 'source-over';
 }
 function drawFloorSheen(){
-  if (cam.x < SHOW_L - 2400 || cam.x > SHOW_R + 2400) return;
+  if (cam.x < SHOW_L - 2400 || cam.x > SHOW_DRAW_R + 2400) return;
   /* A REFLECTION IS BOUNDED BY THE FLOOR IT LIES ON. This was clipped to
      "everything below the wall's foot", which on screen means the counter as
      well — so a whole upside-down portrait ended up on the front of a cabinet,
@@ -19316,8 +19331,8 @@ function drawFloorSheen(){
     const t = (y - yTop) / Math.max(1, H - yTop);
     return xT + (xB - xT) * t;
   };
-  const a0 = onFloorEdge(SHOW_L, yTop), a1 = onFloorEdge(SHOW_R, yTop);
-  const b0 = onFloorEdge(SHOW_L, yBot), b1 = onFloorEdge(SHOW_R, yBot);
+  const a0 = onFloorEdge(SHOW_L, yTop), a1 = onFloorEdge(SHOW_DRAW_R, yTop);
+  const b0 = onFloorEdge(SHOW_L, yBot), b1 = onFloorEdge(SHOW_DRAW_R, yBot);
   if (Math.max(a1, b1) < 0 || Math.min(a0, b0) > W) return;
   /* THE FLOOR BEGINS WHERE THE WALL ENDS — AND THE 2022 BAY IS NOT THE WALL.
      The fold of this reflection is the era wall's foot, one line across the
