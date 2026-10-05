@@ -7,7 +7,21 @@
 <style>
   html,body{margin:0;padding:0;height:100%;background:#0d0906;overflow:hidden;cursor:grab}
   body.dragging{cursor:grabbing}
-  canvas{display:block;width:100vw;height:100vh}
+  /* ПАЛЕЦ ПРИНАДЛЕЖИТ ЗАЛУ, А НЕ БРАУЗЕРУ. Эльдар (05.10.2026): «палец не
+     двигает экран — он как бы двигает, но очень слабо, приходится делать много
+     коротких движений». Измерено на эмуляции iPhone с настоящими касаниями
+     (CDP Input.dispatchTouchEvent): из тридцати pointermove одного ведения на
+     300 px до зала доходило ДВА — первые 20 px, — а потом прилетал
+     pointercancel, и зал проезжал 7 мировых единиц вместо двух сотен. Это и
+     есть «много коротких движений»: каждое новое касание отдаёт залу только
+     свои первые двадцать пикселей, пока браузер не решит, что это его жест.
+     touch-action у холста не был задан нигде в файле, то есть стоял auto —
+     браузер был вправе забрать ведение себе под прокрутку/масштаб. Теперь
+     ведение по холсту не значит для браузера ничего. */
+  canvas{display:block;width:100vw;height:100vh;touch-action:none}
+  html,body{touch-action:none;overscroll-behavior:none;
+            -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+            -webkit-tap-highlight-color:transparent}
   /* THE WORKING NOTE. Everything else in this file is painted on canvas, which
      cannot be selected or copied — and the whole point of this one is that it
      can. So it is real HTML over the hall: a sheet of text you can drag-select
@@ -31,6 +45,7 @@
      grows to its content instead of scrolling, so the long note simply ran off
      the bottom of the panel with no bar to pull */
   #docBody{flex:1 1 auto;min-height:0;overflow-y:scroll;overscroll-behavior:contain;
+           touch-action:pan-y;                      /* записку палец листает */
            padding:18px 24px 26px;margin:0;white-space:pre-wrap;
            user-select:text;-webkit-user-select:text;
            scrollbar-width:thin;scrollbar-color:rgba(220,205,175,0.45) transparent;
@@ -1555,15 +1570,30 @@ function formicaTexture({w=1200, h=512, base='#867f71'}){
                     action()    — the one button (focus / wake).
    Mouse today, flywheel encoder tomorrow: replace/add a driver, nothing else. */
 const Input = (() => {
-  let impulse = 0, action = false, anyInput = false, dragging = false;
+  let impulse = 0, action = false, anyInput = false, dragging = false, pan = 0;
   const api = {
     hover: null,   // last pointer position in canvas-buffer coords
     consume(){
-      const out = {impulse, action, anyInput, dragging};
-      impulse = 0; action = false; anyInput = false;
+      const out = {impulse, action, anyInput, dragging, pan};
+      impulse = 0; action = false; anyInput = false; pan = 0;
       return out;
     },
     push(dv){ impulse += dv; anyInput = true; },
+    /* ВТОРОЙ КАНАЛ: НЕ ТОЛЧОК, А ПЕРЕНОС. Колесо и мышь дают толчок — скорость,
+       которую зал потом гасит трением; это правильная физика для маховика.
+       Палец — не маховик: он держит то, по чему ведёт, и оно обязано стоять под
+       ним. Перенос применяется напрямую, поэтому отставания на время затухания
+       (1/friction = 0,42 с — треть экрана на быстром ведении) нет вовсе.
+
+       ЕДИНИЦЫ — ТОГО, ЗА ЧТО ДЕРЖИТ ПАЛЕЦ: мировые для зала, опорные пиксели
+       листа для раскрытой страницы. Одновременно держать можно только одно
+       (решает overlayOpen()), перевод делает драйвер, который один и знает, в
+       каких пикселях пришло касание.
+
+       Копится, а не присваивается, потому что касаний в кадре может быть два
+       (120 Гц на телефоне против 60 Гц кадров), и второе не должно стирать
+       первое: именно присваивание и дало бы «палец ведёт, а едет еле-еле». */
+    panBy(dWorld){ pan += dWorld; anyInput = true; },
     act(pt){ action = pt || true; anyInput = true; },
     setDragging(v){ dragging = v; anyInput = true; document.body.classList.toggle('dragging', v); },
   };
@@ -1577,9 +1607,18 @@ function attachMouseDriver(el){
     const d = e.deltaMode === 1 ? e.deltaY*32 : e.deltaY;
     Input.push(d * CFG.wheelGain);
   }, {passive:false});
-  let lastX = 0, moved = 0, down = false, markTap = false;
+  let lastX = 0, lastY = 0, moved = 0, down = false, markTap = false;
+  /* СКОЛЬКО МИРА В ОДНОМ ПИКСЕЛЕ ЭКРАНА — у скамьи, за которую зал и берут
+     (z = 0). clientX приходит в CSS-пикселях, px() считает в пикселях буфера,
+     поэтому сначала переводим одно в другое (W/innerWidth), потом делим на
+     масштаб кадра k*SS. Зависит от cam.z, то есть от того, насколько мы
+     вдвинуты: вблизи палец естественно проносит меньше мира. */
+  const worldPerPx = () => (W / innerWidth) / ((CFG.F / (CFG.F - cam.z)) * SS);
+  let fling = [];                       // хвост ведения: [время, x] за 100 мс
+  const isFinger = e => e.pointerType && e.pointerType !== 'mouse';
   el.addEventListener('pointerdown', e => {
-    down = true; moved = 0; lastX = e.clientX; markTap = false;
+    down = true; moved = 0; lastX = e.clientX; lastY = e.clientY; markTap = false;
+    fling = [[performance.now(), e.clientX]];
     const pt = toBuf(e);
     // the rule takes the pointer before the hall does: dragging its thumb
     // scrubs the century instead of shoving the bench
@@ -1642,10 +1681,42 @@ function attachMouseDriver(el){
       return;
     }
     if (!down) return;
-    const dx = e.clientX - lastX; lastX = e.clientX; moved += Math.abs(dx);
+    /* СДВИГ СЧИТАЕТСЯ ПО ОБЕИМ ОСЯМ. Считался только по горизонтали — и
+       вертикальный свайп по раскрытой странице приходил на отпускании как
+       «сдвинули меньше шести пикселей», то есть как тап по пустому месту, а
+       тап по пустому месту закрывает страницу. Мышью этого не видно: там текст
+       листают колесом. Пальцем страница закрывалась при каждой попытке её
+       прочитать (измерено 05.10.2026: ведение 195,600 -> 195,200 — страница
+       закрыта). */
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    moved += Math.abs(dx) + Math.abs(dy);
     if (state.ruleDrag){
       if (moved > 3) ruleSeek(toBuf(e), true, state.ruleDrag.off);
       Input.push(0);
+      return;
+    }
+    /* ПАЛЕЦ ДЕРЖИТ ЗАЛ, МЫШЬ ЕГО ТОЛКАЕТ. Мышиное ведение оставлено ровно
+       таким, каким было (толчок -dx*30 — «пихнуть скамью», к нему претензий не
+       было). Палец переносит зал на свою собственную дистанцию, один к одному,
+       — но только когда поверх зала ничего не открыто: на раскрытой странице
+       то же ведение листает текст, и там прежний канал толчка правильный. */
+    if (isFinger(e)){
+      const now = performance.now();
+      if (overlayOpen()){
+        /* НА РАСКРЫТОЙ СТРАНИЦЕ ПАЛЕЦ ДЕРЖИТ ТЕКСТ, А НЕ ЗАЛ, и держит его по
+           вертикали. Прежний канал толчка брал только горизонталь, поэтому
+           вертикальное ведение не листало ничего вовсе. Перевод в опорные
+           пиксели листа: (H/innerHeight) переводит CSS в пиксели буфера, SS —
+           буфер в опорные. */
+        fling.push([now, e.clientY]);
+        while (fling.length > 2 && now - fling[0][0] > 100) fling.shift();
+        Input.panBy(-dy * (H / innerHeight) / SS);
+      } else {
+        fling.push([now, e.clientX]);
+        while (fling.length > 2 && now - fling[0][0] > 100) fling.shift();
+        Input.panBy(-dx * worldPerPx());
+      }
       return;
     }
     // convert screen drag to world velocity kick (grab the bench, z=0)
@@ -1662,8 +1733,33 @@ function attachMouseDriver(el){
       if (!dragged) ruleSeek(toBuf(e), false);   // a tap glides there instead
       return;                                    // the rule never opens a year
     }
-    if (moved < 6) Input.act(toBuf(e));  // a click = the button, aimed at a point
+    if (moved < 6){ Input.act(toBuf(e)); return; }  // a click = the button, aimed at a point
+    /* БРОСОК. Перенос сам по себе инерции не оставляет: палец убрали — зал
+       встал. На отпускании отдаём залу ту скорость, с какой палец шёл в
+       последние 100 мс, и дальше работает прежнее трение — зал докатывается
+       сам. Порог 40 мс отсекает случай, когда палец перед отрывом замер:
+       остановленный зал бросать некуда. */
+    if (isFinger(e) && !overlayOpen() && fling.length > 1){
+      const [t0, x0] = fling[0], [t1, x1] = fling[fling.length - 1];
+      const ms = t1 - t0;
+      if (ms > 40) Input.push(-(x1 - x0) / (ms / 1000) * worldPerPx());
+    }
+    // страница инерции не держит: текст встаёт там, где его отпустили
+    fling = [];
   });
+  /* ОТМЕНА ВЕДЕНИЯ. Она случается, когда ведение забирает система: второй
+     палец, системный жест от края, звонок поверх киоска. До сих пор её никто
+     не слушал — down оставался true, ведение оставалось «зажатым», курсор
+     залипал в grabbing, а линейка продолжала считать, что её тянут. Отмена —
+     это не отпускание: ничего не нажимается, просто всё отпускается. */
+  const cancelDrag = () => {
+    state.seekDrag = null; state.spinDrag = null; state.ruleDrag = null;
+    down = false; markTap = false; moved = 0;
+    Input.setDragging(false);
+  };
+  el.addEventListener('pointercancel', cancelDrag);
+  el.addEventListener('lostpointercapture', () => { if (down || state.ruleDrag ||
+      state.seekDrag || state.spinDrag) cancelDrag(); });
   window.addEventListener('keydown', e => {
     if (state.docOpen) return;          // the note has the keyboard
     if (e.key === 'ArrowRight') Input.push(900);
@@ -17815,7 +17911,7 @@ function pageScroll(S, inp, dt){
      that slack was just a hand's width of empty air above the first line, and
      it stayed there. It rubber-bands instead: you can pull about a line and a
      half past the top and it springs back. */
-  S.scroll += inp.impulse * (inp.dragging ? 0.055 : 0.43);
+  S.scroll += (inp.pan || 0) + inp.impulse * (inp.dragging ? 0.055 : 0.43);
   S.scroll = Math.max(-56, Math.min(S.maxScroll, S.scroll));
   if (S.scroll < 0 && !inp.dragging){
     S.scroll += (0 - S.scroll) * Math.min(1, (dt || 0.016) * 9);
@@ -18677,6 +18773,11 @@ function drawAttractHint(t){
 /* ---------------- UPDATE ---------------- */
 function update(dt){
   const inp = Input.consume();
+  /* ОДНА МЕРА ДЛЯ ДВУХ КАНАЛОВ. Пороги в зале («сдвинули достаточно, чтобы
+     закрыть витрину / запустить фильм / перейти шов») написаны в единицах
+     толчка. Перенос в те же единицы переводится умножением на трение: толчок I
+     даёт в сумме I/friction мира, значит перенос d — это толчок d*friction. */
+  const drive = inp.impulse + (overlayOpen() ? 0 : inp.pan * CFG.friction);
   state.time += dt;
   state.dt = dt;
   updateMusic(dt);
@@ -18835,8 +18936,11 @@ function update(dt){
       } else if (inp.action === true) S.closing = true;   // a key closes it; scrolling past the top does NOT
       cam.vel = 0;
     } else {
-      if (Math.abs(inp.impulse) > 24) startFilm();   // the wheel starts the show
+      if (Math.abs(drive) > 24) startFilm();   // the wheel starts the show
       cam.vel += inp.impulse;
+      /* ПЕРЕНОС ПАЛЬЦЕМ. Пока палец ведёт, скорости у зала нет — иначе
+         остаток прежнего толчка продолжал бы тащить его из-под руки. */
+      if (inp.pan){ cam.vel = 0; cam.x += inp.pan; }
     }
     if (inp.action && state.pfmView && !state.pfmView.closing){
       state.pfmView.closing = true;
@@ -18915,7 +19019,7 @@ function update(dt){
       }
     }
     if (state.focusBeat >= 0){
-      if (Math.abs(inp.impulse) > 250){ state.focusBeat = -1; state.focusAnchor = null; cam.zTarget = 0; }
+      if (Math.abs(drive) > 250){ state.focusBeat = -1; state.focusAnchor = null; cam.zTarget = 0; }
       else {
         // glued to what was clicked while focused
         const b = BEATS[state.focusBeat];
@@ -19001,7 +19105,7 @@ function update(dt){
       const from = dir > 0 ? SE.inL : SE.outR;
       cam.x = from; cam.vel = 0;
       state.spliceArm = (state.spliceArm || 0) + dt;
-      const push = dir > 0 ? inp.impulse > 140 : inp.impulse < -140;
+      const push = dir > 0 ? drive > 140 : drive < -140;
       const go = state.mode === 'live'
         ? (push && state.spliceArm > 0.3)
         : state.spliceArm > 3.0;
