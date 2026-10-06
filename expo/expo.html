@@ -260,6 +260,13 @@ const BEATS = [
   {x:8750, y:'1984', t:'FRIDAY DONUTS', minor:true, sub:8750, subDX:280, under:true, underHide:true, noYear:true,
    th:'', d:'', wall:[], table:[]},
 
+  /* СТРОКА 1988-го ЖИВЁТ НА СТОЛЕ 1984-го, У ЕГО ПРАВОГО КРАЯ. Своего стола у
+     этого года больше нет (см. разрыв p84 в initTables). Эльдар (06.10.2026):
+     «убери этот стол, а текст передвинь на стол левее… ближе к правому краю».
+     Сдвигать ничем не нужно: capX и так держит строку внутри её прилавка, в 120
+     единицах от скошенного края, а бит стоит правее стола — значит строка сама
+     упирается в правый край. Пробовал задавать capDX руками: он, наоборот,
+     утаскивал её влево, на строку 1984-го. */
   {x:9850, y:'1988', t:'BIOTEMPS', yLift:130,
    th:'A second product proves the lab can build categories, not just crowns.',
    d:'BioTemps provisional restorations — lab-made PMMA temporaries that doubled as an esthetic “blueprint” the patient could approve before the final.',
@@ -1995,6 +2002,24 @@ function initTables(){
        until he has finished with it (2026-09-22: «там должно быть так, как
        было... нам там прилавок не нужен»). */
     if (b.ped) BENCH_BREAKS.push({x: b.x + (b.ped.dx ?? -430), half: b.ped.gapHalf || 330});
+  /* РАЗРЫВ ЗА 1984-м ДОХОДИТ ДО БУХТЫ 1989-го. Эльдар (06.10.2026): «убери этот
+     стол, а текст передвинь на стол левее». Между правой пилястрой синей комнаты
+     и постаментом 1989-го стоял отдельный кусок прилавка в 728 единиц — пустой,
+     без единого предмета, только с подписью 1988 года на лицевой грани. Пустой
+     стол посреди зала читается как недоделка, а не как пауза.
+
+     Считается ЗДЕСЬ, а не при пересадке разрывов в applyCut: там 1989-й ещё не
+     встал на своё окончательное место, и правый край выходил на 728 единиц
+     левее, чем надо (проверено: разрыв так и оставался 92,5 вместо 456,5).
+     Здесь постаменты уже разобраны, и число берётся у соседа — та самая
+     половина разрыва, которой постамент 1989-го и раздвигает прилавок. */
+  { const br = BENCH_BREAKS.find(v => v.p84),
+          b84 = BEATS.find(b => b.y === '1984'), b89 = BEATS.find(b => b.y === '1989');
+    if (br && b84 && b89){
+      const l = b84.x + 699;
+      const r = b89.x + (b89.ped ? (b89.ped.dx ?? -430) : 0) - ((b89.ped && b89.ped.gapHalf) || 330);
+      if (r > l){ br.x = (l + r) / 2; br.half = (r - l) / 2; }
+    } }
   /* THE CABINET STANDS IN A BREAK. It read as hanging because the counter ran
      straight past in front of it with nothing under its feet. The counter now
      stops short of it and picks up again where the jar used to stand, so the
