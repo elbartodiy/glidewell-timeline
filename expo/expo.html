@@ -1581,12 +1581,12 @@ function formicaTexture({w=1200, h=512, base='#867f71'}){
                     action()    — the one button (focus / wake).
    Mouse today, flywheel encoder tomorrow: replace/add a driver, nothing else. */
 const Input = (() => {
-  let impulse = 0, action = false, anyInput = false, dragging = false, pan = 0;
+  let impulse = 0, action = false, anyInput = false, dragging = false, pan = 0, swipe = 0;
   const api = {
     hover: null,   // last pointer position in canvas-buffer coords
     consume(){
-      const out = {impulse, action, anyInput, dragging, pan};
-      impulse = 0; action = false; anyInput = false; pan = 0;
+      const out = {impulse, action, anyInput, dragging, pan, swipe};
+      impulse = 0; action = false; anyInput = false; pan = 0; swipe = 0;
       return out;
     },
     push(dv){ impulse += dv; anyInput = true; },
@@ -1605,6 +1605,12 @@ const Input = (() => {
        (120 Гц на телефоне против 60 Гц кадров), и второе не должно стирать
        первое: именно присваивание и дало бы «палец ведёт, а едет еле-еле». */
     panBy(dWorld){ pan += dWorld; anyInput = true; },
+    /* СВАЙП — ОТДЕЛЬНЫЙ СИГНАЛ, А НЕ ПЕРЕНОС. Листание витрины дискретно: один
+       мах пальца — один предмет, промежуточных состояний у него нет. Через
+       канал переноса это пришлось бы копить и сбрасывать порогом; проще
+       сказать прямо. Направление как у бумаги: ведёшь лист влево — приходит
+       следующий. */
+    swipeBy(d){ swipe += d; anyInput = true; },
     act(pt){ action = pt || true; anyInput = true; },
     setDragging(v){ dragging = v; anyInput = true; document.body.classList.toggle('dragging', v); },
   };
@@ -1639,6 +1645,7 @@ function attachMouseDriver(el){
      Просим ПОВТОРНО, если из полного экрана вышли, но не чаще раза в пять
      секунд: киоску надо возвращаться самому, а человеку, который вышел
      нарочно, нужно успеть нажать что хотел. */
+  let downX = 0, downY = 0;             // откуда начался мах — для свайпа
   let fsAt = -1e9;
   const goFullscreen = () => {
     if (document.fullscreenElement || document.webkitFullscreenElement) return;
@@ -1654,6 +1661,7 @@ function attachMouseDriver(el){
   el.addEventListener('pointerdown', e => {
     down = true; moved = 0; lastX = e.clientX; lastY = e.clientY; markTap = false;
     fling = [[performance.now(), e.clientX]];
+    downX = e.clientX; downY = e.clientY;
     if (isFinger(e)) goFullscreen();     // палец входит в зал — зал занимает экран
     const pt = toBuf(e);
     // the rule takes the pointer before the hall does: dragging its thumb
@@ -1779,6 +1787,21 @@ function attachMouseDriver(el){
       const [t0, x0] = fling[0], [t1, x1] = fling[fling.length - 1];
       const ms = t1 - t0;
       if (ms > 40) Input.push(-(x1 - x0) / (ms / 1000) * worldPerPx());
+    }
+    /* МАХ ПО ОВЕРЛЕЮ. Эльдар (05.10.2026, киоск): «вещи в шкафу надо листать
+       свайпом, а не только стрелочками». До сих пор палец в витрине не давал
+       ВООБЩЕ НИЧЕГО: листание висело на колесе (через impulse) и на стрелках, а
+       при открытом оверлее палец уходит в канал переноса и притом по вертикали,
+       так что горизонтальное ведение не порождало ни одного сигнала.
+
+       Мах засчитывается, когда он преимущественно горизонтальный (вдвое длиннее
+       по x, чем по y) и длиннее 45 CSS-пикселей: иначе вертикальное листание
+       текста на странице то и дело оборачивалось бы перелистыванием предмета.
+       Тапа это не касается — у него сдвиг меньше шести, и он уходит раньше. */
+    if (isFinger(e) && overlayOpen()){
+      const dX = e.clientX - downX, dY = e.clientY - downY;
+      if (Math.abs(dX) > 45 && Math.abs(dX) > Math.abs(dY) * 2)
+        Input.swipeBy(dX < 0 ? 1 : -1);
     }
     // страница инерции не держит: текст встаёт там, где его отпустили
     fling = [];
@@ -18890,6 +18913,7 @@ function update(dt){
       V.wheel += inp.impulse;
       if (Math.abs(V.wheel) > 120){ turn(V.wheel > 0 ? 1 : -1); V.wheel = 0; }
       else V.wheel *= 0.86;
+      if (inp.swipe) { turn(inp.swipe > 0 ? 1 : -1); V.wheel = 0; }   // мах пальцем — один предмет
       if (inp.action && typeof inp.action === 'object'){
         const aimed = hitAt(inp.action.x, inp.action.y);
         if (aimed && aimed.type === 'closepage'){ V.closing = true; }
