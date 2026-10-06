@@ -8484,7 +8484,15 @@ function drawMapWall(t){
          proportions rather than by the floor line, so a smear drawn there lands
          a little above the ground and the whole block reads as hovering. The
          render carries its own dark base; that is what sits it down. */
-      if (xR < W + wR && xR + wR > -wR) ctx.drawImage(spriteMip(g8, wR, hR), xR, yFoot - hR, wR, hR);
+      if (xR < W + wR && xR + wR > -wR){
+        ctx.drawImage(spriteMip(g8, wR, hR), xR, yFoot - hR, wR, hR);
+        /* И ДЕВЯТЬ ЛАБОРАТОРИЙ ТОЖЕ ОТКРЫВАЮТ СВОЙ ГОД (Эльдар, 06.10.2026:
+           «то же самое про 1979»). Цель — макеты, то есть всё, что выше
+           каменной столешницы плиты: ниже неё плита уходит в пол и ведёт себя
+           как прилавок, а по прилавку страницы не открывают. */
+        const bi79 = BEATS.findIndex(b => b.y === '1979');
+        if (bi79 >= 0) pushHit(xR, yFoot - hR, wR, hR * TOP, {type: 'study', beat: bi79});
+      }
       /* THE SECOND VAN, AND YOU NEVER KNOW. The long plinth is a street eight
          labs deep, and a van the size of one of their doorways runs it right to
          left — but only sometimes. Each time the bay goes out of sight the
@@ -9860,6 +9868,10 @@ function drawLabs73(){
      их целиком — машинка стала не нужна и пририсовывала бы лишнее
      (Эльдар, 2026-09-24). */
   ctx.drawImage(labsShaded(spriteMip(sp, wR, hR), wR, hR), xR, yFoot - hR, wR, hR);
+  /* ЗДАНИЯ ОТКРЫВАЮТ СВОЙ ГОД. Эльдар (06.10.2026): «то же самое при нажатии на
+     здания 1973 — пусть открывается страница». Цель — силуэт самого рендера. */
+  { const bi = BEATS.findIndex(b => b.y === '1973');
+    if (bi >= 0) pushHit(xR, yFoot - hR, wR, hR, {type: 'study', beat: bi}); }
 }
 
 /* 1976 · ГЛАВНАЯ УЛИЦА ОСЕНЬЮ. Эльдар (02.10.2026) прислал одну диораму вместо
@@ -9915,8 +9927,12 @@ function drawTown76(){
   if (sp){
     const wS = T76_STREET_W * kR * SS, hS = wS * sp.h / sp.w;
     const xS = px(X76, kR) - wS / 2;
-    if (xS < W + wS && xS + wS > -wS)
+    if (xS < W + wS && xS + wS > -wS){
       ctx.drawImage(shade76(spriteMip(sp, wS, hS), wS, hS, 'street'), xS, yBench - hS, wS, hS);
+      /* И УЛИЦА ТОЖЕ (Эльдар, 06.10.2026: «то же самое с улицей 1976»). */
+      const bi = BEATS.findIndex(b => b.y === '1976');
+      if (bi >= 0) pushHit(xS, yBench - hS, wS, hS, {type: 'study', beat: bi});
+    }
   }
 }
 const S76 = new Map();
@@ -11455,6 +11471,25 @@ function drawPlates(t){
       // the sheet itself is painted by drawPlateBench, which also carries it
       // outward to the ends of the era; here only the loose props remain
       if (!segAt(p.x).plateBench) ctx.drawImage(L.sheet, sx - sw/2, y0);
+    }
+    /* ИНСТРУМЕНТЫ НА СТОЛЕ ОТКРЫВАЮТ 1970-й. Эльдар (06.10.2026): «при клике на
+       инструменты на столе в 1970 открывалась бы страница 1970». Прилавок первой
+       эпохи — это фотография, и весь натюрморт (лампа, артикулятор, печь, лотки,
+       коробки) живёт внутри неё: отдельных предметов, по которым можно попасть,
+       там нет. Поэтому цель — прямоугольник по самому скоплению инструментов,
+       а не по всему прилавку: иначе клик по пустой столешнице открывал бы
+       страницу, чего никто не просил.
+
+       Доли сняты с кадра: скопление занимает 0,31…0,79 ширины листа и всё, что
+       выше линии столешницы. Ниже неё — дверцы тумбы, они не инструменты. */
+    {
+      const bi70 = BEATS.findIndex(b => b.t === 'FOUNDED');
+      const frontZ2 = layers[layers.length - 1].z ?? wallZ;
+      const sx2 = px(p.x, k(frontZ2));
+      const hx0 = sx2 - sw / 2 + sw * 0.31, hx1 = sx2 - sw / 2 + sw * 0.79;
+      const hy1 = y0 + sh * bf;
+      if (bi70 >= 0 && hx1 > 0 && hx0 < W)
+        pushHit(hx0, y0, hx1 - hx0, hy1 - y0, {type: 'study', beat: bi70});
     }
     // sprites standing on the plate's counter — they live at their own depth,
     // so they never slide against the surface they stand on
