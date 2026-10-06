@@ -3,7 +3,18 @@
 <head>
 <meta charset="utf-8">
 <title>Glidewell — A Century of Access</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<!-- КИОСК. Зал стоит на вертикальном тач-экране в офисе Glidewell и открывается
+     с телефонов. Манифест нужен затем, чтобы «Добавить на главный экран» давало
+     иконку, которая открывается БЕЗ браузерной обвязки вовсе; пути в нём
+     относительные, поэтому он одинаково работает и с Pages, и с локального
+     сервера на самом устройстве (Эльдар, 05.10.2026). -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d0906">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
   html,body{margin:0;padding:0;height:100%;background:#0d0906;overflow:hidden;cursor:grab}
   body.dragging{cursor:grabbing}
@@ -1616,9 +1627,34 @@ function attachMouseDriver(el){
   const worldPerPx = () => (W / innerWidth) / ((CFG.F / (CFG.F - cam.z)) * SS);
   let fling = [];                       // хвост ведения: [время, x] за 100 мс
   const isFinger = e => e.pointerType && e.pointerType !== 'mouse';
+  /* ПОЛНЫЙ ЭКРАН ПО ПЕРВОМУ КАСАНИЮ. На киоске в офисе и на телефоне зал шёл с
+     адресной строкой Chrome поверх кадра — Эльдар (05.10.2026): «можно сделать
+     так, чтобы не было видно браузерную строку, чтобы всё воспроизводилось на
+     весь экран». Полный экран браузер отдаёт только по жесту человека, поэтому
+     просим его на первом же касании; клавиша f делает то же самое и остаётся.
+
+     ТОЛЬКО ПАЛЕЦ. Мышь не трогаем: на десктопе зал правят, и выкидывать окно в
+     полный экран от первого клика — поведение, о котором никто не просил.
+
+     Просим ПОВТОРНО, если из полного экрана вышли, но не чаще раза в пять
+     секунд: киоску надо возвращаться самому, а человеку, который вышел
+     нарочно, нужно успеть нажать что хотел. */
+  let fsAt = -1e9;
+  const goFullscreen = () => {
+    if (document.fullscreenElement || document.webkitFullscreenElement) return;
+    const now = performance.now();
+    if (now - fsAt < 5000) return;
+    fsAt = now;
+    try {
+      const d = document.documentElement;
+      const req = d.requestFullscreen || d.webkitRequestFullscreen;
+      if (req){ const r = req.call(d, {navigationUI: 'hide'}); if (r && r.catch) r.catch(() => {}); }
+    } catch(err){}
+  };
   el.addEventListener('pointerdown', e => {
     down = true; moved = 0; lastX = e.clientX; lastY = e.clientY; markTap = false;
     fling = [[performance.now(), e.clientX]];
+    if (isFinger(e)) goFullscreen();     // палец входит в зал — зал занимает экран
     const pt = toBuf(e);
     // the rule takes the pointer before the hall does: dragging its thumb
     // scrubs the century instead of shoving the bench
