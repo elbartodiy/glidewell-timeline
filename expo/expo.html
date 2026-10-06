@@ -18889,6 +18889,101 @@ function drawAttractHint(t){
   ctx.restore();
 }
 
+/* ЖЕСТ ПОКАЗЫВАЕТ САМ СЕБЯ. Эльдар (06.10.2026): «в автопрокрутке есть моменты
+   виртуального свайпа — пусть за две секунды до него в центре появится значок
+   свайпа и покажет, что надо свайпать, а на третью секунду он нажимается,
+   вспыхивает и свайпает; по движению всё то же, что и сейчас».
+
+   Виртуальных свайпов в автопилоте не было вовсе: он только везёт камеру —
+   разгон, остановка у экспоната, три секунды паузы, дальше. Так что «момент
+   свайпа» — это уход с каждой остановки, и подсказка занимает последние три
+   секунды этой паузы: две на показ, третья на нажатие.
+
+   Зачем вообще: зал стоит на тач-киоске, и человек, подошедший к нему, ниоткуда
+   не узнаёт, что экран можно вести пальцем. Пусть зал показывает это сам, пока
+   никого нет, — а подошедший увидит жест в первые же секунды.
+
+   Движение пальца — справа налево: ведёшь лист влево, приходит следующий. Это
+   та же рука, что и у настоящего свайпа (см. МАХ ПО ОВЕРЛЕЮ в драйвере). */
+const SWIPE_CUE = {a: 0, press: 0};
+function drawSwipeCue(t){
+  const dt = state.dt || 0.016;
+  const A = state.attract;
+  /* фаза подсказки: 0 — только появилась, 1 — миг нажатия. Пауза у экспоната
+     может быть длиннее трёх секунд (в финале она начинается с −2,4), поэтому
+     отсчёт идёт от КОНЦА паузы, а не от её начала. */
+  const live = state.mode === 'attract' && A.phase === 'dwell' && !overlayOpen();
+  const ph = live ? (A.dwell - (CFG.attractDwell - 3)) / 3 : -1;
+  const want = (ph >= 0 && ph <= 1) ? Math.min(1, ph * 6) : 0;
+  SWIPE_CUE.a += (want - SWIPE_CUE.a) * Math.min(1, dt * (want > SWIPE_CUE.a ? 7 : 5));
+  // вспышка зажигается на третьей секунде и живёт своей жизнью: автопилот к
+  // этому мигу уже трогается, и гасить её вместе с паузой нельзя
+  if (ph > 0.74 && ph <= 1) SWIPE_CUE.press = 1;
+  SWIPE_CUE.press = Math.max(0, SWIPE_CUE.press - dt * 1.6);
+  if (SWIPE_CUE.a < 0.015 && SWIPE_CUE.press < 0.015) return;
+
+  const a = SWIPE_CUE.a, pr = SWIPE_CUE.press;
+  const cx = W / 2, cy = H / 2;
+  const L = 260 * SS, r = 17 * SS;
+
+  /* ПРОХОДЫ. За две секунды палец проходит путь дважды — один раз показать
+     мало, три раза уже суетливо. Каждый проход 0,78 с, между ними 0,22 с
+     паузы; на нажатии палец срывается от середины влево вместе с залом. */
+  let u;                                   // 0..1 — где палец на своём пути
+  if (pr > 0.02){
+    u = Math.min(1, (1 - pr) * 2.2);
+  } else {
+    const period = 1.0, run = 0.78;
+    const tt = (ph >= 0 ? ph * 3 : 0) % period;
+    u = tt < run ? tt / run : 1;
+  }
+  const ease = u < 0.5 ? 2*u*u : 1 - Math.pow(-2*u + 2, 2) / 2;
+  const fx = cx + L / 2 - L * ease;
+
+  /* БЕЛЫМ С ТЕНЬЮ, А НЕ СВЕТОМ ПО СВЕТУ. Первая проба рисовала жест режимом
+     lighter цветом эпохи — и он утонул: середина кадра это ровно то место, где
+     стоит освещённый прожекторами экспонат, и светлое по светлому не читается
+     вовсе. Жест — не часть зала, он поверх него, поэтому белый, и под ним
+     мягкая тень, которая отделяет его от любого фона. */
+  ctx.save();
+  ctx.shadowColor = `rgba(0,0,0,${(0.55 * a).toFixed(3)})`;
+  ctx.shadowBlur = 12 * SS;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  // след: от начала пути до пальца, гаснет к хвосту
+  const g = ctx.createLinearGradient(cx + L / 2, 0, fx, 0);
+  g.addColorStop(0, 'rgba(255,255,255,0)');
+  g.addColorStop(1, `rgba(255,255,255,${(0.5 * a).toFixed(3)})`);
+  ctx.strokeStyle = g; ctx.lineWidth = 3.4 * SS;
+  ctx.beginPath(); ctx.moveTo(cx + L / 2, cy); ctx.lineTo(fx, cy); ctx.stroke();
+
+  // наконечник пути — куда ведут
+  const tipX = cx - L / 2;
+  ctx.strokeStyle = `rgba(255,255,255,${(0.5 * a).toFixed(3)})`;
+  ctx.lineWidth = 3 * SS;
+  ctx.beginPath();
+  ctx.moveTo(tipX + 12 * SS, cy - 11 * SS);
+  ctx.lineTo(tipX, cy);
+  ctx.lineTo(tipX + 12 * SS, cy + 11 * SS);
+  ctx.stroke();
+
+  // сам палец: ядро и кольцо
+  ctx.fillStyle = `rgba(255,255,255,${(0.22 * a + 0.6 * pr).toFixed(3)})`;
+  ctx.beginPath(); ctx.arc(fx, cy, r * 0.78, 0, 7); ctx.fill();
+  ctx.strokeStyle = `rgba(255,255,255,${(0.9 * a).toFixed(3)})`;
+  ctx.lineWidth = 2.6 * SS;
+  ctx.beginPath(); ctx.arc(fx, cy, r, 0, 7); ctx.stroke();
+
+  // ВСПЫШКА НАЖАТИЯ: кольцо расходится и гаснет
+  if (pr > 0.02){
+    const e = 1 - pr;
+    ctx.strokeStyle = `rgba(255,255,255,${(0.75 * pr).toFixed(3)})`;
+    ctx.lineWidth = 3 * SS * pr;
+    ctx.beginPath(); ctx.arc(fx, cy, r + 52 * SS * e, 0, 7); ctx.stroke();
+  }
+  ctx.restore();
+}
+
 /* ---------------- UPDATE ---------------- */
 function update(dt){
   const inp = Input.consume();
@@ -20111,6 +20206,7 @@ function frame(){
   drawInspect();   // a person card opens above the reading page
   drawOpenBox();   // one carton off the pile, opened
   drawAttractHint(t);
+  drawSwipeCue(t);     // автопрокрутка показывает жест перед каждым уходом с остановки
   // pointer affordance
   drawScanCursor();
   if (Input.hover && state.mode === 'live'){
