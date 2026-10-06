@@ -431,12 +431,16 @@ const BEATS = [
       пластикового цеха (ph_plastic на 21680, шириной 110), а закон тяготения
       не пускает монитор левее начала пролёта прилавка — он ровно на неё и
       садился. Монитор встаёт справа от коробки, с воздухом от неё. */
-   props:[{kind:'crt', dx:322, lz:130, w:320, label:'CAD revolution', mesh:'coping'}],   // экран считает каркас, который стоит на постаменте
+   /* МОНИТОР ПЕРЕЕХАЛ С ПРИЛАВКА НА ПОСТАМЕНТ (Эльдар, 06.10.2026): «убери тот
+      полузуб и поставь на постамент компьютер с коронкой CAD». Экспонат года —
+      не зуб, а машина, которая его считает. dx = 0, потому что постамент у
+      этого бита тоже на нуле. */
+   props:[{kind:'crt', dx:0, onPed:true, lz:0, w:190, mesh:'coping'}],
    /* На постаменте — коронка, разрезанная на станок и руку: слева голый
       фрезерованный каркас, справа он же под керамикой. Диск циркония, стоявший
       тут раньше, — предмет 2009-го: тем же спрайтом набита заготовка BruxZir в
       витрине того года. */
-   ped:{obj:'halfcrown', dx:0},
+   ped:{obj:'halfcrown', dx:0, bare:true},   // шляпка пустая: на ней стоит монитор
    th:'The mill arrives at the bench — the lab’s half of the crown goes digital.',
    d:'Glidewell takes up the outside milling systems — Cercon, Wol-Ceram — and four years later has its own: scan the model, design the coping on screen, mill it from a block.',
    wall:[], table:[]},
@@ -2045,8 +2049,15 @@ function initTables(){
   // fixed table objects step aside from any gap they would straddle,
   // then a spread pass keeps them from piling onto each other
   for (const b of BEATS){
+    /* ПРЕДМЕТ НА ПОСТАМЕНТЕ В РАСКЛАДКЕ ПРИЛАВКА НЕ УЧАСТВУЕТ. Законы ниже —
+       про вещи, стоящие на столешнице: они расступаются перед её разрывами и
+       не громоздятся друг на друга. Монитор 2002 года стоит НА ПОСТАМЕНТЕ, а
+       постамент сам и делает тот разрыв, от которого закон отодвигает, — и
+       отодвигал: dx уезжал с 0 на 464,5, монитор повисал в воздухе справа от
+       своей тумбы (06.10.2026). */
     const items = [...(b.st||[]), ...(b.table||[]), ...(b.props||[]),
-                   ...(b.album?[b.album]:[]), ...(b.pyr?[b.pyr]:[])];
+                   ...(b.album?[b.album]:[]), ...(b.pyr?[b.pyr]:[])]
+                  .filter(it => !it.onPed);
     const dodge = it => {
       const half = (it.w || 300) * 0.55 + 30;
       for (const br of BENCH_BREAKS){
@@ -2091,8 +2102,12 @@ function initTables(){
   // the law of gravity: every table object stands on an actual table span,
   // full footprint inside — nothing rides a gap, nothing levitates
   for (const b of BEATS){
+    /* И ЗДЕСЬ ТОЖЕ: предмет на постаменте не садится на столешницу. Этот проход
+       загоняет вещи внутрь ближайшего стола; монитор 2002 года он уводил на
+       соседний стол слева, потому что над постаментом столешницы нет вовсе. */
     const items = [...(b.st||[]), ...(b.table||[]), ...(b.props||[]),
-                   ...(b.album?[b.album]:[]), ...(b.pyr?[b.pyr]:[])];
+                   ...(b.album?[b.album]:[]), ...(b.pyr?[b.pyr]:[])]
+                  .filter(it => !it.onPed);
     for (const it of items){
       const half = (it.w || 300) * 0.5 + 20;
       const x = b.x + it.dx;
@@ -11026,11 +11041,17 @@ function drawScreenScan(g, r, t, prog){
 }
 function drawMonitor(p, x, z, wWorld, t){
   const mon = MONS[p.kind]; if (!mon) return;
-  const kk = k(bz(z));
+  /* МОНИТОР МОЖЕТ СТОЯТЬ НА ПОСТАМЕНТЕ, А НЕ ТОЛЬКО НА ПРИЛАВКЕ. Эльдар
+     (06.10.2026): «убери тот полузуб и поставь на постамент компьютер с
+     коронкой CAD». Экран у монитора ЖИВОЙ — каркас коронки строится прямо в
+     кадре, — поэтому его нельзя просто испечь в картинку: постамент берёт
+     готовый спрайт. Вместо этого монитор рисуется там, где стоит постамент:
+     его глубина и верх его шляпки — те же числа, что в drawPedestal. */
+  const kk = p.onPed ? k(PED_Z) : k(bz(z));
   const sx = px(x, kk);
   if (sx < -500 || sx > W + 500) return;
   const scale = (wWorld / mon.w) * kk * SS;
-  const syFoot = py(CFG.benchY - 2, kk);
+  const syFoot = py(p.onPed ? PED_CAP_Y : CFG.benchY - 2, kk);
   const dx = sx - mon.w*scale/2, dy = syFoot - mon.foot*scale;
   pushHit(dx, dy, mon.w*scale, mon.h*scale, {type:'focus', beat: BEATS.findIndex(bb => (bb.props||[]).includes(p)), anchor: x});
   contactShadow(sx, syFoot, mon.w * scale * 0.72, 0.38);
@@ -13910,10 +13931,14 @@ function drawHallCarpet(){
 function drawHallExhibit(){
   for (const b of BEATS) if (b.ped && b.ped.spin && Math.abs(b.x + (b.ped.dx ?? -430) - cam.x) < 2600) drawHallCrown(b);
 }
+/* ПОСТАМЕНТ: ГЛУБИНА И ВЕРХ ШЛЯПКИ. Были вписаны числами внутрь функции; теперь
+   у них одно имя, потому что на шляпку встаёт не только спрайт экспоната — на
+   2002-м там стоит живой монитор (см. drawMonitor, p.onPed). */
+const PED_Z = -90, PED_CAP_Y = 535;
 function drawPedestal(b, t, hero){
   if (hallOwns(b)) return;
   const ped = b.ped; if (!ped) return;
-  const z = -90, kk = k(z);
+  const z = PED_Z, kk = k(z);
   const x = b.x + (ped.dx ?? -430);
   const sx = px(x, kk);
   const colW = 165 * (ped.spin ? 1.85 : (ped.big ? 1.35 : (ped.vitrine ? 0.8 : 1))) * kk * SS;   // a piece you can turn in your hand needs a table under it, not a post
@@ -13921,7 +13946,7 @@ function drawPedestal(b, t, hero){
   const era = segIdx(b.x);
   const big = ped.big ? 1.3 : 1;
   const PHOTO_PED = ped.photo ? PROP_SPRITES[ped.photo] : null;
-  const yTop = py(ped.spin ? 620 : (ped.big ? 540 : (ped.low ? 668 : (ped.vitrine ? 625 : 535))), kk);   // and it stands lower, so the piece is at the height of a hand
+  const yTop = py(ped.spin ? 620 : (ped.big ? 540 : (ped.low ? 668 : (ped.vitrine ? 625 : PED_CAP_Y))), kk);   // and it stands lower, so the piece is at the height of a hand
   pushHit(sx - colW*0.7*big, yTop - 150*kk*SS*big, colW*1.4*big, H - yTop + 150*kk*SS, {type:'focus', beat: BEATS.indexOf(b), anchor: x});
   const warmC = era === 0 ? '255,215,140' : '225,240,255';
   // two side spotlights swing in and lock their beams exactly on the exhibit;
@@ -13932,14 +13957,23 @@ function drawPedestal(b, t, hero){
      shade of any kind: the room is already lit, and Eldar's rule for it is that
      arriving must never darken anything. */
   const inHall = x > REC17_L && x < REC17_R;
-  if (hero > 0.02 && !ped.vitrine && !inHall && !ped.points){   // a vitrine glows from its own capsule, and a cloud of points is its own light source
+  if (hero > 0.02 && !ped.vitrine && !inHall && !ped.points && !ped.bare){   // a vitrine glows from its own capsule, and a cloud of points is its own light source
+  /* ЭКРАН СВЕТИТ САМ. Два прожектора сходятся ровно на экспонате — для зуба
+     это верно, для монитора нет: лучи легли на экран и выбелили зелёный каркас
+     до нечитаемого (06.10.2026). Светящийся предмет своего света не просит, как
+     и облако точек 2007 года. */
     const lock = Math.min(1, hero * 1.7);
     const objSprite = PHOTO_PED || PED_SPRITES[ped.obj];
+    /* ПУСТАЯ ШЛЯПКА — ТОЖЕ ЭКСПОНАТ. На 2002-м на постаменте стоит не спрайт, а
+       живой монитор, которого рисует drawMonitor; лучи всё равно должны сойтись
+       на нём, поэтому высоту берём номинальную. */
+    if (!PHOTO_PED && !objSprite && !ped.bare) return;
     /* the beams cross ON the exhibit: for a photographed plinth that is the
        part of the render ABOVE its own stone cap, not the whole render */
     const objH = PHOTO_PED
       ? (PHOTO_PED.h * (colW * 1.5 / PP_CYLW) / PHOTO_PED.w) * PP_CAPTOP / 0.6
-      : 120 * (ped.big ? 1.3 : 1) * kk * SS * objSprite.h / objSprite.w;
+      : (objSprite ? 120 * (ped.big ? 1.3 : 1) * kk * SS * objSprite.h / objSprite.w
+                   : 150 * kk * SS);        // голая шляпка: высота монитора
     const yObj = yTop - objH * 0.6;
     /* A BEAM DIES ON WHAT IT LIGHTS. Two fixtures cross their beams on the
        exhibit, which is right — but the beams ran on to halfway down the screen
@@ -14039,6 +14073,7 @@ function drawPedestal(b, t, hero){
   }
   }
   // the object
+  if (ped.bare) return;        // предмет на шляпке рисует кто-то другой (2002: монитор)
   const obj = PED_SPRITES[ped.obj];
   /* a wide, low machine needs more of the cap than a puck does — `wide` lets
      an exhibit ask for it, and the dome is 172 units across, so it still fits */
