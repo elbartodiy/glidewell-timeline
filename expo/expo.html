@@ -18861,7 +18861,8 @@ function pageFrame(K, a, side, meta, fitH){
   ctx.textAlign = 'left';
   if (meta) ctx.fillText(meta, wx0 + pad, metaY);
   try { ctx.letterSpacing = '0px'; } catch(err){}
-  drawCloseX(wx0 + ww - pad * 0.5, closeY, 10 * SS, a, closeInk || K.ink);
+  const closeR = 10 * SS;
+  drawCloseX(wx0 + ww - pad * 0.5, closeY, closeR, a, closeInk || K.ink);
   /* ОБРЕЗКА НАЧИНАЕТСЯ ПОД МЕТА-СТРОКОЙ, А НЕ ПО КРАЮ ЛИСТА. Мета — год и
      название в шапке — стоит внутри листа, и прокручиваемый текст ехал прямо
      по ней: две строки одна поверх другой (Эльдар, 02.10.2026: «смотри, как
@@ -18882,7 +18883,8 @@ function pageFrame(K, a, side, meta, fitH){
   const footPad = 46 * SS;
   return {wx0, wy0, ww, wh, pad, left: wx0 + pad, textW, sideX: wx0 + pad + textW + gutter, side: sideW,
           top: wy0 + bandH + PAGE.top * SS, bandH, topClip: wy0 - 80 * SS, botClip: wy0 + wh + 80 * SS,
-          cTop, footPad, textBot: wy0 + wh - footPad};
+          cTop, footPad, textBot: wy0 + wh - footPad,
+          closeBot: closeY + closeR * 1.5};   // низ кольца крестика (drawCloseX рисует кольцо в 1.5 r)
 }
 /* THE FOOT OF THE SHEET. When the text runs past the window it does not stop
    dead on a half-line: the last strip fades into the paper, and a quiet line
@@ -18914,12 +18916,19 @@ function pageEdges(K, G, scroll, maxScroll){
   if (scroll > 2) ctx.fillRect(G.wx0 + inset, top, G.ww - inset * 2, 1 * SS);
   if (more && scroll < maxScroll - 2) ctx.fillRect(G.wx0 + inset, bot - 1 * SS, G.ww - inset * 2, 1 * SS);
   if (more){
-    const rx = G.wx0 + G.ww - inset * 0.80, h = bot - top, w = 4 * SS;
+    /* ДОРОЖКА НАЧИНАЕТСЯ ПОД КРЕСТИКОМ. Она стоит в той же вертикали, что и
+       крестик, и на странице человека (меты нет — поле от самого края листа)
+       шла прямо сквозь его кольцо, а на странице года упиралась в него
+       вплотную. Эльдар (07.10.2026): «крестик справа вверху накладывается на
+       другой элемент дизайна, надо эту линию скрола начинать под крестиком».
+       Верх дорожки — низ кольца и ещё 12 единиц воздуха. */
+    const rTop = G.closeBot != null ? Math.max(top, G.closeBot + 12 * SS) : top;
+    const rx = G.wx0 + G.ww - inset * 0.80, h = bot - rTop, w = 4 * SS;
     const vis = Math.max(0.06, Math.min(1, h / (h + maxScroll)));
     const th = Math.max(24 * SS, h * vis);
-    const ty = top + (h - th) * Math.max(0, Math.min(1, scroll / maxScroll));
+    const ty = rTop + (h - th) * Math.max(0, Math.min(1, scroll / maxScroll));
     ctx.fillStyle = `rgba(${K.ink},0.13)`;
-    ctx.beginPath(); ctx.roundRect(rx, top, w, h, w / 2); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(rx, rTop, w, h, w / 2); ctx.fill();
     ctx.fillStyle = `rgba(${K.ink},0.46)`;
     ctx.beginPath(); ctx.roundRect(rx, ty, w, th, w / 2); ctx.fill();
   }
