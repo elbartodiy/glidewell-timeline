@@ -929,7 +929,15 @@ function applyCut(){
      столе, всё это отмеряется от своих годов. Панели стены сдвигать отдельно не
      нужно: regularPanel ставит их по тем же годам (ширина — шаг, шов посередине),
      и они поедут за ними сами. */
-  for (const b of BEATS) if (['1980', '1984', '1988'].includes(b.y)) b.x -= 255;
+  /* сдвиг вычисляется от самих крайних годов, а не числом: ритм годов зависит
+     от врезок, и в сборке без улицы 1988-й стоит на 22 единицы дальше — с
+     постоянным −255 там вышло бы 612 и 591. Края стены — те же замеры. */
+  { const ROOM_L = 10390, ROOM_R = 13557;
+    const y80 = BEATS.find(b => b.y === '1980'), y88 = BEATS.find(b => b.y === '1988' && !b.minor);
+    if (y80 && y88){
+      const d = (ROOM_L + ROOM_R) / 2 - (y80.x + y88.x) / 2;
+      for (const b of BEATS) if (['1980', '1984', '1988'].includes(b.y)) b.x += d;
+    } }
   // and the articles that are keyed by name go to wherever their beat now stands
   if (typeof STUDY_BY_TITLE === 'object')
     for (const b of BEATS){ const key = b.t || b.y; if (STUDY_BY_TITLE[key]) STUDY_MORE[b.x] = STUDY_BY_TITLE[key]; }
