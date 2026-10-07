@@ -16987,7 +16987,7 @@ function personRank(P){
 }
 function peopleRoster(){
   const ids = PEOPLE_ORDER.filter(id => PEOPLE[id]);
-  return ids
+  const sorted = ids
     .map((id, i) => ({id, i, P: PEOPLE[id]}))
     .sort((a, b) => {
       if (a.id !== b.id && (a.id === 'jim' || b.id === 'jim')) return a.id === 'jim' ? -1 : 1;
@@ -16999,7 +16999,19 @@ function peopleRoster(){
       return a.i - b.i;                                    // then as typed
     })
     .map(o => o.id);
+  /* СРАЗУ ПОСЛЕ ДОКТОРА АБДУЛА — ЭТИ, И ИМЕННО В ЭТОМ ПОРЯДКЕ. Эльдар
+     (07.10.2026): «после доктора Абдула пусть идут ДиТолла, Релла и её муж,
+     др. Ховард, Тим Косински, Анна Амедури, Бобби Нортон, Дэвид Лисон». Муж
+     Реллы — Гордон Кристенсен; «др. Ховард» — Ховард Фарран (Dentaltown).
+     Остальные стоят по прежнему правилу, как стояли. */
+  const after = PEOPLE_AFTER_ALAS.filter(id => ids.includes(id));
+  const rest = sorted.filter(id => !after.includes(id));
+  const at = rest.indexOf('alas');
+  if (at < 0) return sorted;
+  rest.splice(at + 1, 0, ...after);
+  return rest;
 }
+const PEOPLE_AFTER_ALAS = ['ditolla', 'rella', 'gordon', 'farran', 'kosinski', 'ameduri', 'norton', 'leeson'];
 const PEOPLE_ORDER = [
   'jim', 'alas', 'marie', 'june', 'ellen', 'nadia', 'bianca', 'jimlam',
   'julio', 'joan', 'labar', 'sohn', 'wali', 'venard', 'ditolla', 'ceranic',
