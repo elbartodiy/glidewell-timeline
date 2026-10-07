@@ -99,6 +99,11 @@ const CFG = {
   wheelGain: 2.8,           // wheel px -> world velocity impulse
   maxVel: 3100,
   magnetDist: 300, magnetK: 5.5, magnetVel: 120,
+  /* трение, пока зал катится от броска пальца: 1,7 против 2,4 у колеса. Эльдар
+     (07.10.2026): «свайп ощущается скрипучим, хотелось бы скользящим… инерция
+     должна оставаться — не супер длинная». Путь броска v/трение: быстрый мах
+     (~1500 ед/с) проезжает ~880 единиц вместо 625. */
+  touchGlide: 1.7,
   idleToAttract: 45,        // seconds
   attractCruise: 560,       // world units / s (equilibrium lands near ~350)
   attractDwell: 3.0,        // seconds paused on a major beat
@@ -1611,12 +1616,12 @@ function formicaTexture({w=1200, h=512, base='#867f71'}){
                     action()    — the one button (focus / wake).
    Mouse today, flywheel encoder tomorrow: replace/add a driver, nothing else. */
 const Input = (() => {
-  let impulse = 0, action = false, anyInput = false, dragging = false, pan = 0, swipe = 0;
+  let impulse = 0, action = false, anyInput = false, dragging = false, pan = 0, swipe = 0, glide = false;
   const api = {
     hover: null,   // last pointer position in canvas-buffer coords
     consume(){
-      const out = {impulse, action, anyInput, dragging, pan, swipe};
-      impulse = 0; action = false; anyInput = false; pan = 0; swipe = 0;
+      const out = {impulse, action, anyInput, dragging, pan, swipe, glide};
+      impulse = 0; action = false; anyInput = false; pan = 0; swipe = 0; glide = false;
       return out;
     },
     push(dv){ impulse += dv; anyInput = true; },
@@ -1641,6 +1646,8 @@ const Input = (() => {
        сказать прямо. Направление как у бумаги: ведёшь лист влево — приходит
        следующий. */
     swipeBy(d){ swipe += d; anyInput = true; },
+    /* бросок пальца: скорость и пометка «катиться мягко, без магнита» */
+    glideBy(v){ impulse += v; glide = true; anyInput = true; },
     act(pt){ action = pt || true; anyInput = true; },
     setDragging(v){ dragging = v; anyInput = true; document.body.classList.toggle('dragging', v); },
   };
@@ -1733,6 +1740,7 @@ function attachMouseDriver(el){
       state.ruleDrag = {off: grabbed ? cam.x - g.toWorld(pt.x) : 0};
     }
     Input.setDragging(true); el.setPointerCapture(e.pointerId);
+    if (isFinger(e)) state.touchHeld = true;      // палец держит зал: ни скорости, ни магнита
   });
   el.addEventListener('pointermove', e => {
     Input.hover = toBuf(e);
@@ -1797,6 +1805,7 @@ function attachMouseDriver(el){
     Input.push(-dx * 30);
   });
   el.addEventListener('pointerup', e => {
+    state.touchHeld = false;
     if (state.seekDrag){ state.seekDrag = null; markTap = false; down = false; Input.setDragging(false); return; }
     if (state.spinDrag){ state.spinDrag = null; markTap = false; down = false; Input.setDragging(false); return; }
     if (markTap){ markTap = false; down = false; Input.setDragging(false); return; }
@@ -1816,7 +1825,21 @@ function attachMouseDriver(el){
     if (isFinger(e) && !overlayOpen() && fling.length > 1){
       const [t0, x0] = fling[0], [t1, x1] = fling[fling.length - 1];
       const ms = t1 - t0;
-      if (ms > 40) Input.push(-(x1 - x0) / (ms / 1000) * worldPerPx());
+      let v = ms > 40 ? -(x1 - x0) / (ms / 1000) * worldPerPx() : 0;
+      /* ПОСАДКА БЕЗ МАГНИТА. Прежде на излёте зал хватал магнит: как только
+         скорость падала ниже 120, его подтягивало пружиной к году, с рывком и
+         лёгкой раскачкой. Теперь точка остановки считается заранее — зал
+         проедет v/трение, — и если в пределах магнита там экспонат, скорость
+         подбирается так, чтобы зал докатился РОВНО до него, тем же плавным
+         торможением. Касается и отпускания без броска: палец замер у года —
+         зал мягко доезжает, а не дёргается. */
+      const f = CFG.touchGlide;
+      const land = cam.x + v / f;
+      const nb = nearestBeat(land);
+      state.glideTo = null;
+      if (nb && nb.d < CFG.magnetDist){ v = (BEATS[nb.i].x - cam.x) * f; state.glideTo = BEATS[nb.i].x; }
+      v = Math.max(-CFG.maxVel, Math.min(CFG.maxVel, v));
+      Input.glideBy(v);
     }
     /* МАХ ПО ОВЕРЛЕЮ. Эльдар (05.10.2026, киоск): «вещи в шкафу надо листать
        свайпом, а не только стрелочками». До сих пор палец в витрине не давал
@@ -1842,6 +1865,7 @@ function attachMouseDriver(el){
      залипал в grabbing, а линейка продолжала считать, что её тянут. Отмена —
      это не отпускание: ничего не нажимается, просто всё отпускается. */
   const cancelDrag = () => {
+    state.touchHeld = false;
     state.seekDrag = null; state.spinDrag = null; state.ruleDrag = null;
     down = false; markTap = false; moved = 0;
     Input.setDragging(false);
@@ -19532,7 +19556,13 @@ function update(dt){
       cam.vel += inp.impulse;
       /* ПЕРЕНОС ПАЛЬЦЕМ. Пока палец ведёт, скорости у зала нет — иначе
          остаток прежнего толчка продолжал бы тащить его из-под руки. */
-      if (inp.pan){ cam.vel = 0; cam.x += inp.pan; }
+      if (inp.pan){ cam.vel = 0; cam.x += inp.pan; state.touchGlide = false; state.glideTo = null; }
+      if (inp.glide) state.touchGlide = true;
+      else if (inp.impulse){ state.touchGlide = false; state.glideTo = null; }      // колесо или клавиши — прежняя физика
+      /* ПАЛЕЦ ДЕРЖИТ — ЗАЛ СТОИТ. Пока палец на экране, у зала нет своей
+         скорости вовсе: прежде её подмешивал магнит, и неподвижный палец
+         чувствовал, как зал ползёт к ближайшему году у него из-под руки. */
+      if (inp.dragging && !inp.glide && state.touchHeld) cam.vel = 0;
     }
     if (inp.action && state.pfmView && !state.pfmView.closing){
       state.pfmView.closing = true;
@@ -19672,7 +19702,18 @@ function update(dt){
 
   // physics
   cam.vel = Math.max(-CFG.maxVel, Math.min(CFG.maxVel, cam.vel));
-  cam.vel *= Math.pow(Math.E, -CFG.friction * dt);
+  cam.vel *= Math.pow(Math.E, -(state.touchGlide ? CFG.touchGlide : CFG.friction) * dt);
+  /* ДОВОДКА. Экспонента к цели подходит только асимптотически: при остановке по
+     малой скорости зал вставал в 5 единицах от года (замер 07.10.2026). Когда
+     скорость падает ниже 25, остаток проходится мягким приближением — без
+     рывка: скорость уже мала, и приближение её продолжает, а не ломает. */
+  if (state.touchGlide && Math.abs(cam.vel) < 25){
+    if (state.glideTo != null){
+      cam.vel = 0;
+      cam.x += (state.glideTo - cam.x) * Math.min(1, dt * 6);
+      if (Math.abs(state.glideTo - cam.x) < 0.3){ cam.x = state.glideTo; state.glideTo = null; state.touchGlide = false; }
+    } else if (Math.abs(cam.vel) < 3){ cam.vel = 0; state.touchGlide = false; }
+  }
   cam.x += cam.vel * dt;
 
   // ---- the yard video splice ----
@@ -19730,7 +19771,8 @@ function update(dt){
   if (cam.x > WORLD_END + 300){ cam.x = WORLD_END + 300; cam.vel = Math.min(0, cam.vel); }
 
   // beat magnetism when slow (live mode, not focused)
-  if (state.mode === 'live' && state.focusBeat < 0 && Math.abs(cam.vel) < CFG.magnetVel){
+  if (state.mode === 'live' && state.focusBeat < 0 && Math.abs(cam.vel) < CFG.magnetVel
+      && !state.touchGlide && !state.touchHeld){
     const nb = nearestBeat(cam.x);
     if (nb.d < CFG.magnetDist){
       cam.vel += (BEATS[nb.i].x - cam.x) * CFG.magnetK * dt * 0.6;
