@@ -3614,6 +3614,30 @@ const CAPS_MIXED = {BRUXZIR:'BruxZir', GLIDEWELL:'Glidewell', PRISMATIK:'Prismat
   'GLIDEWELL.IO':'glidewell.io', 'FASTMILL.IO':'fastmill.io', 'FASTDESIGN.IO':'fastdesign.io',
   NITE:'Nite', HAHN:'Hahn', MISCH:'Misch', RESNIK:'Resnik', TAGGART:'Taggart', PLAYSAFE:'PlaySafe',
   MACARTHUR:'MacArthur', BLVD:'Blvd', ZIRCONIA:'zirconia'};
+/* ИМЯ, У КОТОРОГО ЕСТЬ ЛОГОТИП, НЕ НАБИРАЕТСЯ ШРИФТОМ. Эльдар (07.10.2026):
+   «логотип нужно поставить вместо текстового обозначения, и этот же лого —
+   вместо текстового обозначения внутрь страницы». Вариант с подписью
+   IN-OFFICE SOLUTION есть только картинкой 300×60 — «если нет ничего
+   страшного, бери чистый»: знак отрисован из .ai (glidewell-io_pms185-
+   pmscool-gray-9-black), 1800 px. Высота знака берётся от высоты буквы «l»
+   того шрифта, которым стояло имя: базовая линия знака — 221 из 267 строк
+   (низ «l», замер по альфе), а «l» в знаке — от самого верха. Так знак
+   занимает ровно место набранного имени и стоит на той же линии. */
+const TITLE_LOGOS = {'GLIDEWELL.IO': {sp: 'ph_gio', rev: 'ph_gio_rev', base: 221 / 267}};
+/* light — лист тёмный, а набор на нём светлый: тогда знак вывороткой (серые
+   буквы и ™ в белый, красные точки как есть); серый знак на матовом стекле
+   2017-го читался пятном */
+function drawTitleLogo(t, x, yBase, align, alpha, light){
+  const L = TITLE_LOGOS[t]; const sp = L && (light && PROP_SPRITES[L.rev] || PROP_SPRITES[L.sp]);
+  if (!sp) return false;
+  const asc = ctx.measureText('l').actualBoundingBoxAscent;   // шрифт уже стоит тот, которым набиралось имя
+  const h = asc / L.base, w = h * sp.w / sp.h;
+  const x0 = align === 'left' ? x : x - w / 2;
+  ctx.save(); ctx.globalAlpha *= alpha;
+  ctx.drawImage(spriteMip(sp, w, h), x0, yBase - h * L.base, w, h);
+  ctx.restore();
+  return true;
+}
 function sentence(str){
   if (!str) return str;
   if (/[a-z]/.test(str)) return str;                 // already mixed: not ours to touch
@@ -3935,7 +3959,11 @@ function drawBeatText(b, focusAmt){
          the wall as well (2017: the render letters its own plinth) */
       letterRelief(0.55);
       if (LB) ctx.fillText(sentence(b.t), LB.x, LB.y + 46 * sc * 0.36 * kk * SS);
-      else if (!b.tHide) ctx.fillText(sentence(b.t), cx, mixN(py((b.minor ? tY + 4 : tY) + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt));
+      else if (!b.tHide){
+        const tYb = mixN(py((b.minor ? tY + 4 : tY) + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt);
+        if (TITLE_LOGOS[b.t]){ noShadow(); try { ctx.letterSpacing = '0px'; } catch(e){} }
+        if (!drawTitleLogo(b.t, cx, tYb, 'center', 0.55 + 0.45*near)) ctx.fillText(sentence(b.t), cx, tYb);
+      }
       noShadow();
       try { ctx.letterSpacing = '0px'; } catch(e){}
       if (near > 0.25 && b.th){
@@ -12333,6 +12361,8 @@ async function loadPhotoSkin(){
     ph_hall_plinth: 'hall_plinth.png',// the low stone the turning crown stands on
     ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
     ph_pillow: 'pillow.png',          // 1996: подушка с каппой Silent Nite — год уходит со стены, предмет остаётся
+    ph_gio: 'glidewell_io.png',       // 2017: логотип glidewell.io из вектора (.ai Эльдара) — вместо набранного имени
+    ph_gio_rev: 'glidewell_io_rev.png',// он же вывороткой: белые буквы, красные точки — для тёмного листа
     ph_bz_soon: 'bruxzir_soon.png',   // 2009: неоновая табличка BruxZir COMING SOON — временная, висит на ниточке
     ph_pfm1: 'pfm_1.png', ph_pfm2: 'pfm_2.png', ph_pfm3: 'pfm_3.png',   // the six PFM stages, cut apart
     ph_pfm4: 'pfm_4.png', ph_pfm5: 'pfm_5.png', ph_pfm6: 'pfm_6.png',
@@ -17952,7 +17982,8 @@ function drawStudy(){
   const studyTitle = sentence(b.t || b.sign || '');
   while (studyTitle && ctx.measureText(studyTitle).width > textW && tSz > 24){ tSz -= 1; ctx.font = K.font(tSz); }
   ctx.fillStyle = `rgba(${K.ink},0.92)`;
-  if (studyTitle) ctx.fillText(studyTitle, left, y);
+  const inkLight = K.ink.split(',').reduce((q, c) => q + (+c), 0) / 3 > 150;
+  if (studyTitle && !drawTitleLogo(b.t, left, y, 'left', 1, inkLight)) ctx.fillText(studyTitle, left, y);
   try { ctx.letterSpacing = '0px'; } catch(err){}
   /* A PAGE WHOSE FIGURE IS THE SUBJECT HAS NO RULE. On the crossover the rule
      sat between a one-line caption and the carton that caption names, and it
