@@ -5553,36 +5553,6 @@ const FIN_DEPTH = CFG.benchDepth;          // след — ровно как у 
 const FIN_W = 700;
 const FIN_Z_FACE = 0;                      // и ближняя грань тоже на их плоскости
 function drawFinaleLogo(){
-  /* GLIDEWELL.IO — КАК НА ЛИЦЕВОЙ ГРАНИ НАСТОЯЩЕГО СТЕНДА. Эльдар (07.10.2026,
-     фото IMG_5506): на стойке шоурума не красная плашка с «Glidewell», а большое
-     слово glidewell.io™ — серое «glidewell», тёмное «io», красные квадратики
-     вместо точек. Вырезано с самого фото: снимок 5712×4284, стойка снята почти в
-     лоб, слово в нём 2900 px шириной; альфа считалась от фона по каждому столбцу
-     (холодный свет снимка красит белую стойку в серо-голубой), цвета поставлены
-     ровные.
-
-     НА ВСЮ ГРАНЬ ЕГО НЕ ПОСТАВИТЬ, и это не выбор, а геометрия: у финала камера
-     вплотную. ЗАМЕР (07.10.2026, автопилот стоит на FIN_X): cam.z 430, масштаб
-     грани 1,915, нижний край кадра на мировом y 769 — одинаково при 2000×1040,
-     1240×700 и на портретном 1080×1920, потому что SS = H/1080. Грань начинается
-     под плитой на 722, значит видно её 47 единиц. (Комментарий у плашки ниже
-     считал 69 — для масштаба 1,8, которого у финала больше нет; первая проба
-     логотипа по нему, в 54 единицы, уходила низом за кадр.) Слово встаёт в эти
-     47: 38 единиц высотой, 222 шириной, с запасом 6 до края кадра. */
-  const gl = PHOTO_TEX.ph_glio;
-  if (gl && gl.naturalWidth){
-    const kf = k(FIN_Z_FACE), u = kf * SS;
-    const HL = 38;
-    const hP = HL * u, wP = hP * gl.naturalWidth / gl.naturalHeight;
-    const yTop = py(700 + FIN_LIP, kf) + 3 * u;
-    ctx.save();
-    ctx.shadowColor = 'rgba(40,50,62,0.20)';
-    ctx.shadowBlur = Math.max(1, 4 * u);
-    ctx.shadowOffsetY = Math.max(1, 1.5 * u);
-    ctx.drawImage(gl, px(FIN_X, kf) - wP / 2, yTop, wP, hP);
-    ctx.restore();
-    return;
-  }
   const im = IMGS.logo2026; if (!im) return;
   const kf = k(FIN_Z_FACE), H = FIN_FACE_H;
   const u = kf * SS;                        // единица мира в пикселях на этой глубине
@@ -5678,70 +5648,22 @@ function drawFinaleTable(t){
      По ближней кромке её белая полоса вышла бы за силуэт стола двумя треугольниками
      в воздухе. По дальней — всё ложится внутрь, а спереди остаётся наша же
      белая столешница — белое на белом, шва нет. */
-  /* СТЕНД КАК НА САМОМ ДЕЛЕ. Эльдар (07.10.2026, фото IMG_5506 — стенд в
-     шоуруме Glidewell): «финальный стол и пространство надо максимально сделать
-     узнаваемым из оригинального… делай, что доступно тебе сейчас». На
-     настоящем стенде на стойке стоят ТРИ ФРЕЗЫ fastmill.io В РЯД, а за средней
-     поднимается светящееся табло DIGITAL DENTISTRY. Общая картинка со
-     сканером, монитором и принтером, стоявшая здесь, — сборный натюрморт,
-     которого в шоуруме нет; она снята.
-
-     Пропорции со снимка: каждая фреза ≈ 0,19 ширины стойки, просветы ≈ 0,05,
-     ряд ≈ 0,67. Здесь фрезы взяты чуть крупнее (170 при стойке 700, просвет 30,
-     ряд 570): у финала камера стоит вплотную, и строго по снимку ряд вышел бы
-     мельче того, что Эльдар уже просил увеличить (02.10.2026). Стоят посередине
-     глубины столешницы, как на снимке, — не у кромки. */
   {
-    const mill = PROP_SPRITES.ph_mill;
-    const zM = FIN_Z_FACE + FIN_DEPTH * 0.5, kM = k(zM);
-    const MW = 170, GAP = 30;
-    // табло — за средней фрезой, сразу за дальней кромкой стойки
-    {
-      const zP = FIN_Z_FACE + FIN_DEPTH + 40, kP = k(zP), uP = kP * SS;
-      const PW = 196, PTOP = 506;                  // ширина и верх табло, единицы мира
-      const x0 = px(FIN_X - PW / 2, kP), x1 = px(FIN_X + PW / 2, kP);
-      const y0 = py(PTOP, kP), y1 = py(700, kP);  // низ уходит за стойку
-      if (x1 > 0 && x0 < W){
-        ctx.save();
-        // световой короб: холодный серо-голубой, светлее к середине — как светится лайтбокс
-        const g = ctx.createLinearGradient(x0, 0, x1, 0);
-        /* темнее, чем было в первой пробе: на коробе #dfe5ec белые буквы со
-           свечением расплывались в пятно */
-        g.addColorStop(0, '#a9b4c1'); g.addColorStop(0.5, '#c3ccd6'); g.addColorStop(1, '#a9b4c1');
-        ctx.shadowColor = 'rgba(30,40,55,0.22)'; ctx.shadowBlur = 18 * uP; ctx.shadowOffsetY = 4 * uP;
-        ctx.fillStyle = g; ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
-        ctx.shadowColor = 'transparent';
-        ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = Math.max(1, 1.2 * uP);
-        ctx.strokeRect(x0 + 0.5, y0 + 0.5, x1 - x0 - 1, y1 - y0 - 1);
-        // надпись: белая, жирная, узкая, в две строки — с мягким свечением, как на коробе
-        const fs = 25 * uP;
-        ctx.font = `800 ${fs}px "Helvetica Neue", Arial, sans-serif`;
-        try { ctx.letterSpacing = `${0.6 * uP}px`; } catch(e){}
-        ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-        ctx.shadowColor = 'rgba(255,255,255,0.75)'; ctx.shadowBlur = 5 * uP;
-        ctx.fillStyle = '#ffffff';
-        const cx = (x0 + x1) / 2;
-        ctx.fillText('DIGITAL', cx, y0 + 34 * uP);
-        ctx.fillText('DENTISTRY', cx, y0 + 62 * uP);
-        // и тонкая тень под буквами — иначе белое на светлом коробе тонет
-        ctx.shadowColor = 'rgba(40,50,64,0.45)'; ctx.shadowBlur = 3 * uP; ctx.shadowOffsetY = 1 * uP;
-        ctx.globalCompositeOperation = 'destination-over';
-        ctx.fillText('DIGITAL', cx, y0 + 34 * uP);
-        ctx.fillText('DENTISTRY', cx, y0 + 62 * uP);
-        try { ctx.letterSpacing = '0px'; } catch(e){}
-        ctx.restore();
-      }
-    }
-    // три фрезы в ряд
-    if (mill){
-      const pw = MW * kM * SS, ph = pw * mill.h / mill.w;
-      const yFoot = py(700, kM);
-      for (const dx of [-(MW + GAP), 0, MW + GAP]){
-        const sx = px(FIN_X + dx, kM);
-        if (sx < -pw || sx > W + pw) continue;
-        contactShadow(sx, yFoot, pw * 0.92, 0.30);
-        ctx.drawImage(spriteMip(mill, pw, ph), sx - pw / 2, yFoot - ph, pw, ph);
-      }
+    const fp = PHOTO_TEX.ph_finprod;
+    if (fp && fp.naturalWidth){
+      /* КРУПНЕЕ. Эльдар (02.10.2026): «почему эти предметы такие маленькие?
+         предметы увеличь, чтобы они были большими». Ширина бралась по ДАЛЬНЕЙ
+         кромке стола — самой узкой, — и ряд выходил вдвое меньше стойки, на
+         которой стоит. Теперь по ближней, самой широкой: белая полоса рендера
+         при этом выходит за силуэт стола сзади ровно на величину собственной
+         растушёвки (22 % ширины с каждой стороны), поэтому за край она не
+         вылезает, а растворяется. */
+      const kF = k(FIN_Z_FACE);
+      const wFront = px(FIN_X + FIN_W / 2, kF) - px(FIN_X - FIN_W / 2, kF);
+      const wDraw = wFront * 0.98;
+      const hDraw = wDraw * fp.naturalHeight / fp.naturalWidth;
+      const yBot = py(700, kF);                 // передняя кромка нашей столешницы
+      ctx.drawImage(fp, px(FIN_X, kF) - wDraw / 2, yBot - hDraw, wDraw, hDraw);
     }
   }
   const FIN_GOODS_ON = false;
@@ -12165,8 +12087,6 @@ async function loadPhotoSkin(){
     st_wall_brick: 'st_wall_brick.jpg', st_wall_4141b: 'st_wall_4141b.jpg',
     /* финальная витрина: весь сегодняшний ряд одним рендером (Эльдар, 02.10.2026) */
     ph_finprod: 'final_products.png',
-    /* логотип лицевой грани стойки — вырезан с фото стенда IMG_5506 (Эльдар, 07.10.2026) */
-    ph_glio: 'glidewell_io.png',
     /* сканер-курсор для страницы «The crossover» (Эльдар, 02.10.2026) */
     ph_scanwand: 'scan_wand.png',
     ph_donuts: 'donuts.png',          // пятничные пончики на прилавок 1984-го (Эльдар, 02.10.2026)
