@@ -17229,6 +17229,19 @@ const STUDY_PHOTOS_BY_TITLE = {
 /* люди страницы пролёта: Азерников назван в её тексте — пустых отсылок здесь
    не бывает (Эльдар, 2026-09-22) */
 BEAT_PEOPLE['2002 – 2009|THE DIGITAL REVOLUTION'] = ['azernikov'];
+/* КТО ГОВОРИТ НА СТРАНИЦЕ, ТОТ И В «PEOPLE OF THIS MOMENT». Список выше
+   вписывается руками, и спикеры роликов в него не попадали: Лабао и Парк
+   говорят на странице R&D, а в людях момента стояла одна Релла. Эльдар
+   (07.10.2026): «иногда там не хватает просто спикеров, которые уже добавлены
+   в видео». Теперь к вписанным добавляется каждый, у чьего ролика на этой
+   странице есть страница человека (pid), — в порядке роликов, без повторов. */
+function pagePeople(b){
+  const out = (BEAT_PEOPLE[b.y + '|' + (b.t || '')] || []).slice();
+  const inl = STUDY_INLINE[b.t];
+  for (const m of [...(STUDY_MEDIA[b.x] || []), ...(inl && inl.clip ? [inl.clip] : [])])
+    if (m.pid && PEOPLE[m.pid] && !out.includes(m.pid)) out.push(m.pid);
+  return out;
+}
 const STUDY_MEDIA_BY_TITLE = {
   /* Первым на странице — значит ляжет во всю ширину сразу после первого абзаца.
      Джим рассказывает не про сам 1970-й, а про то, что к нему привело: середина
@@ -17943,7 +17956,7 @@ function drawStudy(){
   const a = (e - 0.35) / 0.65;
   const media = STUDY_MEDIA[b.x];
   const more = STUDY_MORE[b.x];
-  const ppl = BEAT_PEOPLE[b.y + '|' + (b.t || '')];
+  const ppl = pagePeople(b);
   const obj = pageExhibit(b);
   /* what goes in the right-hand column: the exhibit, the voices, the people.
      A page with none of them is one column; a page that hangs its voices in a
@@ -21509,7 +21522,7 @@ async function boot(){
             words: STUDY_MORE[b.x] ? STUDY_MORE[b.x].split(/\s+/).length : 0,
             photos: ((typeof STUDY_PHOTOS_BY_TITLE === 'object' && STUDY_PHOTOS_BY_TITLE[b.t || b.y]) || []).length,
             voices: (STUDY_MEDIA[b.x] || []).length,
-            people: ((typeof BEAT_PEOPLE === 'object' && BEAT_PEOPLE[b.y + '|' + (b.t || '')]) || []).length,
+            people: (typeof pagePeople === 'function' ? pagePeople(b) : []).length,
             links: !!(typeof STUDY_LINKS === 'object' && STUDY_LINKS[b.t]),
             inline: !!(typeof STUDY_INLINE === 'object' && STUDY_INLINE[b.t]),
           },
