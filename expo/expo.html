@@ -8190,6 +8190,19 @@ function drawBruxZirSoon(){
   ctx.restore();
   ctx.drawImage(spriteMip(sp, w, h), x0, 0, w, h);
   ctx.restore();
+  /* ТАБЛИЧКА ОТКРЫВАЕТ СВОЙ ГОД. Эльдар (07.10.2026): «табличка BruxZir пусть
+     тоже будет кликабельной и ведёт на страницу 2009». Щит повёрнут вокруг
+     гвоздя, поэтому зона касания — рамка, описанная вокруг его четырёх
+     повёрнутых углов, а не прямоугольник до поворота. */
+  {
+    const c = Math.cos(BZ_SOON.tilt), s = Math.sin(BZ_SOON.tilt);
+    let hx0 = Infinity, hy0 = Infinity, hx1 = -Infinity, hy1 = -Infinity;
+    for (const [u, v] of [[x0, 0], [x0 + w, 0], [x0, h], [x0 + w, h]]){
+      const X = sx + u * c - v * s, Y = yHang + u * s + v * c;
+      hx0 = Math.min(hx0, X); hx1 = Math.max(hx1, X); hy0 = Math.min(hy0, Y); hy1 = Math.max(hy1, Y);
+    }
+    pushHit(hx0, hy0, hx1 - hx0, hy1 - hy0, {type: 'study', beat: BEATS.indexOf(b)});
+  }
   // свечение неона ложится на стену вокруг щита
   drawGlow('90,160,255', sx + w * (0.5 - BZ_SOON.hang), yHang + h * 0.5, w * 0.72, 0.13);
 }
