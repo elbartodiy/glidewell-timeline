@@ -19296,6 +19296,10 @@ function drawSwipeCue(t){
      отсчёт идёт от КОНЦА паузы, а не от её начала. */
   const live = state.mode === 'attract' && A.phase === 'dwell' && !overlayOpen();
   if (!live) return;
+  /* в финале жеста нет: «там мы уже приехали куда надо и свайпать дальше
+     некуда» (Эльдар, 07.10.2026). Из финала тур не едет дальше, а гаснет
+     и начинается сначала (phase 'fadeout'). */
+  if (A.atFinale) return;
   const T = A.dwell - ((A.dwellLen || CFG.attractDwell) - 3);
   if (T < 0 || T > 3) return;
 
