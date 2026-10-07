@@ -17514,7 +17514,7 @@ function drawCaseView(){
   ctx.fillText(`${V.page + 1} / ${CASE_ITEMS.length}`, W / 2, yFoot);
   ctx.font = eraFont(14 * SS, '', seg.font);
   ctx.fillStyle = 'rgba(206,184,146,0.42)';
-  ctx.fillText('· turn for the next object · tap anywhere else to close ·', W / 2, yFoot + 26 * SS);
+  ctx.fillText('· swipe for the next object · tap anywhere else to close ·', W / 2, yFoot + 26 * SS);   // та же правка, что у приглашения зала: жест — свайп
   for (const s2 of [-1, 1]){
     const at = V.page + s2;
     if (at < 0 || at >= CASE_ITEMS.length) continue;
@@ -19073,7 +19073,9 @@ function drawAttractHint(t){
   try { ctx.letterSpacing = `${24*TRACK.label*SS}px`; } catch(e){}
   ctx.fillStyle = `rgba(225,198,155,${a.toFixed(3)})`;
   // the rule owns the foot of the frame; the invitation stands above it
-  ctx.fillText('Turn the wheel · travel through time', W/2, H - 78*SS);
+  /* SWIPE, А НЕ WHEEL. Эльдар (07.10.2026): «turn the wheel надо поменять на
+     swipe, по-моему, так лучше». Колеса у киоска нет — есть палец. */
+  ctx.fillText('Swipe · travel through time', W/2, H - 78*SS);
   ctx.restore();
 }
 
