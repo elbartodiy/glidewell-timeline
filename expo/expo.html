@@ -17090,18 +17090,21 @@ function openStudy(i){
      а плитки под ним — выбор. Хранится номер в списке голосов страницы; при
      открытии это всегда первый, им страница и начинает говорить. */
   state.study = {beat: i, b, imgs, scroll: 0, amt: 0, maxScroll: 1, mainIdx: 0};
-  /* a page that carries voices starts speaking as it opens — but IN the rail,
-     small, right where the clip hangs; tapping it expands to the full player.
-     The hall film, meanwhile, fades out and holds its place. */
-  /* the rail's first clip, or — where the page carries its own, down in the
-     flow — that one. Either way it starts AT THE HEAD: a page opened a second
-     time used to pick the tape up where it had been left, mid-sentence. */
-  const inl0 = STUDY_INLINE[b.t];
-  const m = (STUDY_MEDIA[b.x] || [])[0] || (inl0 && inl0.clip);
-  if (m){
-    state.study.railV = playPageClip(m.src);
-    state.study.railSrc = m.src;
-  }
+  /* СТРАНИЦА ОТКРЫВАЕТСЯ ТИХО. Эльдар (07.10.2026): «при открытии страницы, где
+     есть видео, оно запускается сразу». Прежде первый голос начинал говорить
+     сам, как только лист вставал на место, — и это было задумано, пока большой
+     кадр был просто первым роликом списка. Теперь он плеер, у него есть кнопка,
+     и человек сам решает, кого слушать: на киоске голос, заговоривший без
+     спроса, ещё и пугает подошедшего.
+
+     Плёнку при этом НЕ создаём вовсе — большой кадр показывает стоп-кадр с
+     кнопкой. Первое же нажатие запустит её с начала: playPageClip всегда
+     перематывает в ноль, поэтому страница, открытая второй раз, не подхватит
+     реплику с середины.
+
+     Вернуть прежнее поведение — одна строка:
+       const m = (STUDY_MEDIA[b.x] || [])[0] || (STUDY_INLINE[b.t] || {}).clip;
+       if (m){ state.study.railV = playPageClip(m.src); state.study.railSrc = m.src; } */
 }
 function playPageClip(src){
   let v = VIDEO_EL[src];
