@@ -4570,10 +4570,13 @@ function updateFilm(){
     v.pause();
   }
   try { v.volume = Math.max(0, Math.min(1, T.vol)); } catch(e){}
-  // the master switch reaches every other voice in the hall
-  if (state.clip && state.clip.v) state.clip.v.muted = SOUND.off;
-  if (state.person && state.person.v) state.person.v.muted = SOUND.off;
-  if (state.study && state.study.railV) state.study.railV.muted = SOUND.off;
+  // the master switch reaches every other voice in the hall — except a tape
+  // the browser let run only silently (_noSound, см. playPageClip): снять с
+  // неё звук здесь, вне касания, значит дать браузеру её остановить
+  const hush = v => SOUND.off || !!v._noSound;
+  if (state.clip && state.clip.v) state.clip.v.muted = hush(state.clip.v);
+  if (state.person && state.person.v) state.person.v.muted = hush(state.person.v);
+  if (state.study && state.study.railV) state.study.railV.muted = hush(state.study.railV);
 }
 /* Relay stands: one every ~1.5 screens of travel, wherever a table span has
    room — never inside a recreation, a cut bay, or a beat's own composition.
@@ -17317,27 +17320,36 @@ const STUDY_MEDIA = {};   // filled at boot from STUDY_MEDIA_BY_TITLE
    пролёта в applyCut — по ней же находятся его статья и его голос. */
 const DR_PAGE = {x: 0, y: '2002 – 2009', t: 'THE DIGITAL REVOLUTION', virtual: true};
 const VIDEO_EL = {};
-// preview thumbs are real frames from the clips, grabbed at runtime
+/* ПРЕВЬЮ — ГОТОВЫЙ КАДР ИЗ САМОГО РОЛИКА. Раньше кадр вынимался на лету:
+   под каждую плитку заводился свой скрытый <video>, грузил тот же ролик и
+   перематывал его на шестую секунду. Пока кадр не приходил — а на стенде он
+   приходил долго или не приходил вовсе, — в плитке стоял портрет из профайла,
+   растянутый на 16:9. Эльдар (07.10.2026): «ты делаешь превью для видео,
+   беря портрет из профайла и растягивая его, — это выглядит плохо».
+   Теперь у каждого ролика есть свой кадр в assets/poster/<имя>.jpg, вынутый
+   AVFoundation заранее (момент выбран по листу кадров: человек в кадре, лицом
+   к камере; у архивных фильмов — титул), размер как у ролика, но не шире 960.
+   Ни одного лишнего плеера на странице: на Android-стенде каждый <video> —
+   это декодер, а их там немного. Новый ролик без кадра получает тёмную
+   плитку, а не чужое лицо — кадр для него делается той же командой. */
 const THUMBS = {};
 function thumbFor(m){
-  if (THUMBS[m.src]) return THUMBS[m.src];
-  if (THUMBS[m.src] === null) return null;
+  if (!m || !m.src) return null;
+  if (m.src in THUMBS) return THUMBS[m.src];
   THUMBS[m.src] = null;
-  const v = document.createElement('video');
-  /* КЛИП ТОЖЕ ЧЕРЕЗ vurl. Эльдар перевыкладывает готовые куски интервью под
-     тем же именем файла, и у того, кто уже смотрел, браузер отдавал старую
-     версию — новый монтаж просто не доезжал (2026-09-25). Ключи кэша здесь
-     остаются сырым путём, меняется только адрес запроса. */
-  v.src = vurl(m.src); v.preload = 'auto'; v.muted = true; v.playsInline = true;
-  v.addEventListener('loadeddata', () => { try { v.currentTime = Math.min(6, (v.duration || 8) * 0.25); } catch(e){} });
-  v.addEventListener('seeked', () => {
-    const c = document.createElement('canvas');
-    c.width = 480; c.height = Math.max(2, Math.round(480 * v.videoHeight / Math.max(1, v.videoWidth)));
-    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
-    THUMBS[m.src] = {el: c, w: c.width, h: c.height};
-  }, {once: true});
+  const el = new Image();
+  el.onload = () => { THUMBS[m.src] = {el, w: el.naturalWidth, h: el.naturalHeight}; };
+  el.onerror = () => console.warn('нет кадра-превью для', m.src);
+  el.src = vurl('assets/poster/' + m.src.split('/').pop().replace(/\.mp4$/, '.jpg'));
   return null;
 }
+/* все кадры — заранее, когда зал уже стоит: тридцать с лишним jpg на два
+   мегабайта, и страница открывается сразу с кадром, без пустой плитки */
+setTimeout(() => {
+  for (const k in STUDY_MEDIA_BY_TITLE) for (const m of STUDY_MEDIA_BY_TITLE[k]) thumbFor(m);
+  for (const k in PEOPLE) for (const c of (PEOPLE[k].clips || [])) thumbFor(c);
+  for (const k in STUDY_INLINE) if (STUDY_INLINE[k].clip) thumbFor(STUDY_INLINE[k].clip);
+}, 6000);
 /* ONE VOICE AT A TIME. Every page keeps its clip in VIDEO_EL, and a page can
    open another page — a name in the prose, a face in the rail — so two tapes
    could end up talking over each other. Anything that opens hushes whatever was
@@ -17389,9 +17401,22 @@ function playPageClip(src){
     v.src = vurl(src); v.preload = 'auto'; v.playsInline = true;   // см. thumbFor: имя файла у клипов не меняется
     VIDEO_EL[src] = v;
   }
-  v.muted = SOUND.off;
+  v._noSound = false; v.muted = SOUND.off;
   try { v.currentTime = 0; } catch(e){}
-  v.play().catch(()=>{});
+  /* ЕСЛИ БРАУЗЕР НЕ ДАЛ ЗВУК — ПЛЁНКА ВСЁ РАВНО ИДЁТ. Страница открывается из
+     кадра анимации, а не из обработчика касания, и строгий браузер (Safari,
+     WebView киоска) может отказать ролику со звуком. Тогда он идёт без звука,
+     а звук включается первым же касанием — в самом обработчике, где отказать
+     уже нельзя. Эльдар (07.10.2026): «при открытии страниц видео не
+     воспроизводится». */
+  v.play().catch(err => {
+    if (!err || err.name !== 'NotAllowedError' || v.muted) return;
+    v.muted = true; v._noSound = true;
+    v.play().then(() => {
+      const unmute = () => { v._noSound = false; if (!v.paused) v.muted = SOUND.off; };
+      window.addEventListener('pointerup', unmute, {once: true, capture: true});
+    }).catch(() => {});
+  });
   return v;
 }
 let FROST = null;
@@ -17768,7 +17793,7 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
       ctx.drawImage(rv, mx + tw/2 - rv.videoWidth*s/2, ty + th/2 - rv.videoHeight*s/2,
         rv.videoWidth*s, rv.videoHeight*s);
     } else {
-    const im = thumbFor(m) || IMGS[m.img];   // a real interview frame, portrait until it loads
+    const im = thumbFor(m);   // кадр из самого ролика, никогда не портрет (см. thumbFor)
     if (im){
       const s = Math.max(tw/im.w, th/im.h);
       ctx.globalAlpha = 0.9;
@@ -17779,8 +17804,17 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
     const pg = ctx.createLinearGradient(0, ty + th*0.5, 0, ty + th);
     pg.addColorStop(0, 'rgba(8,10,14,0)'); pg.addColorStop(1, 'rgba(8,10,14,0.85)');
     ctx.fillStyle = pg; ctx.fillRect(mx, ty, tw, th);
+    /* плёнка уже пущена, но первый кадр ещё не пришёл: вместо значка «пуск»,
+       который читается как «нажми, оно стоит», — бегущая дуга загрузки */
+    const loading = S.railV && m.src === S.railSrc && !S.railV.paused && S.railV.readyState < 2;
+    if (loading){
+      const br = Math.max(22 * SS, th * 0.11), t = (performance.now() / 1000) * 5;
+      ctx.strokeStyle = 'rgba(250,252,255,0.9)'; ctx.lineWidth = 3.5 * SS; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.arc(mx + tw/2, ty + th/2 - br * 0.32, br, t, t + 4.2); ctx.stroke();
+      ctx.lineCap = 'butt';
+    }
     // play badge — not over a tape that is already speaking
-    if (!(useV && !S.railV.paused)){
+    if (!loading && !(useV && !S.railV.paused)){
     /* значок растёт вместе с плиткой: 25 было задано под плитку с колонку, и
        на видео во всю ширину абзаца тот же кружок читался пылинкой. Доля
        высоты, но не меньше прежних 25 — маленькие плитки не меняются. */
@@ -18910,7 +18944,7 @@ function drawPerson(){
           ctx.drawImage(v3, left + vw3/2 - v3.videoWidth*s3/2, y + vh3/2 - v3.videoHeight*s3/2,
                         v3.videoWidth*s3, v3.videoHeight*s3);
         } else {
-          const im3 = thumbFor(c3) || face;
+          const im3 = thumbFor(c3);
           if (im3){
             const s3 = Math.min(vw3 / im3.w, vh3 / im3.h);
             ctx.globalAlpha = a * 0.62;
@@ -19056,7 +19090,7 @@ function drawPerson(){
         ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 6*SS); ctx.clip();
         ctx.fillStyle = '#14181d';
         ctx.fillRect(mx, ty, tw, th);
-        const im = previewing ? null : (thumbFor(c) || face);
+        const im = previewing ? null : thumbFor(c);
         if (previewing){
           const vw2 = S.v.videoWidth || 16, vh2 = S.v.videoHeight || 9;
           const s2 = Math.max(tw/vw2, th/vh2);
