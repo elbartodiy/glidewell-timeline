@@ -17465,6 +17465,33 @@ function playPageClip(src){
   });
   return v;
 }
+/* ЭКСПОНАТ СТРАНИЦЫ — ТОТ, ЧТО СТОИТ НА ПОСТАМЕНТЕ. Страница брала картинку
+   из спрайта постамента (b.ped.obj), а у 2002-го постамент пустой (bare): на
+   шляпке стоит монитор с коронкой CAD, а спрайт остался прежний — полузуб.
+   Эльдар (07.10.2026): «на странице 2002 сверху справа неправильная картинка
+   для CAD/CAM — у нас другой теперь символ». Для пустого постамента страница
+   показывает то, что стоит на нём, — монитор, и экран у него такой же живой,
+   как в зале (каркас коронки вращается, построен целиком). */
+let PAGE_MON = null;
+function pageExhibit(b){
+  if (!b.ped) return null;
+  if (!b.ped.bare) return PED_SPRITES[b.ped.obj] || null;
+  const p = (b.props || []).find(q => q.onPed && (q.kind === 'crt' || q.kind === 'lcd'));
+  const mon = p && MONS[p.kind]; if (!mon) return null;
+  const sc = 2;   // лист рисует экспонат шириной в колонку — запас на 4K
+  if (!PAGE_MON) PAGE_MON = document.createElement('canvas');
+  const c = PAGE_MON, g = c.getContext('2d');
+  if (c.width !== mon.w * sc){ c.width = mon.w * sc; c.height = mon.h * sc; }
+  g.clearRect(0, 0, c.width, c.height);
+  g.drawImage(mon.c, 0, 0, c.width, c.height);
+  const r = {x: mon.screen.x * sc, y: mon.screen.y * sc, w: mon.screen.w * sc, h: mon.screen.h * sc};
+  g.save(); g.beginPath(); g.rect(r.x, r.y, r.w, r.h); g.clip();
+  if (p.kind === 'crt') drawScreenCAD(g, r, state.time || 0, p.col === 'amber', 1,
+                                      p.mesh === 'coping' ? COPING_MESH : MESH, p.mesh === 'coping' ? 'coping' : 'crown');
+  else drawScreenScan(g, r, state.time || 0, 1);
+  g.restore();
+  return {c, w: c.width, h: c.height};
+}
 let FROST = null;
 /* ONE WINDOW FOR THE CROSSOVER. The year opened a reading page and the carton
    on the counter opened a second, unrelated overlay — two doors onto one
@@ -17917,7 +17944,7 @@ function drawStudy(){
   const media = STUDY_MEDIA[b.x];
   const more = STUDY_MORE[b.x];
   const ppl = BEAT_PEOPLE[b.y + '|' + (b.t || '')];
-  const obj = b.ped && PED_SPRITES[b.ped.obj];
+  const obj = pageExhibit(b);
   /* what goes in the right-hand column: the exhibit, the voices, the people.
      A page with none of them is one column; a page that hangs its voices in a
      strip under the article (railBelow) keeps them out of the column. */
