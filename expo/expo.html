@@ -442,12 +442,16 @@ const BEATS = [
       полузуб и поставь на постамент компьютер с коронкой CAD». Экспонат года —
       не зуб, а машина, которая его считает. dx = 0, потому что постамент у
       этого бита тоже на нуле. */
-   props:[{kind:'crt', dx:0, onPed:true, lz:0, w:190, mesh:'coping'}],
+   /* 282, а не 190: на прилавке он был 320 при масштабе глубины 0,982, на
+      постаменте масштаб 1,113 — та же ширина на экране выходит 320·0,982/1,113
+      = 282. 190 сделали его на треть меньше прежнего (Эльдар, 07.10.2026: «он
+      слишком маленький — ты его как будто уменьшил»). */
+   props:[{kind:'crt', dx:0, onPed:true, lz:0, w:282, mesh:'coping'}],
    /* На постаменте — коронка, разрезанная на станок и руку: слева голый
       фрезерованный каркас, справа он же под керамикой. Диск циркония, стоявший
       тут раньше, — предмет 2009-го: тем же спрайтом набита заготовка BruxZir в
       витрине того года. */
-   ped:{obj:'halfcrown', dx:0, bare:true},   // шляпка пустая: на ней стоит монитор
+   ped:{obj:'halfcrown', dx:0, bare:true, big:true},   // шляпка пустая, на ней стоит монитор; big — колонна шире под широкий корпус
    th:'The mill arrives at the bench — the lab’s half of the crown goes digital.',
    d:'Glidewell takes up the outside milling systems — Cercon, Wol-Ceram — and four years later has its own: scan the model, design the coping on screen, mill it from a block.',
    wall:[], table:[]},
@@ -4202,6 +4206,13 @@ function drawBenchDescs(){
          as something lying on the floor. It belongs just under the top of that
          face, where the brown begins. */
       shadow = onModels; slabDrop = onModels ? -22*SS : 130*SS;   // two rows higher again: on the counter's own lip
+      /* 1976 — НА ДЕРЕВО, А НЕ НА СТЫК. С общими −22 первая строка ложилась
+         ровно на стык камня плиты и дерева (Эльдар, 07.10.2026: «посмотри, как
+         текст нужно ниже опустить»). Замер по кадру 2000×1040: стык на y 701,
+         верх заглавных первой строки на 686 — нужно 37 px вниз, чтобы над
+         строкой остался воздух; 37/SS 0,963 = 38 единиц, −22 + 38 = 16, взято
+         18. У 1979-го строка своя, она остаётся на −22. */
+      if (b.y === '1976') slabDrop = 18*SS;
     }
     if (b.y === '1973'){ ink = '58,46,30'; shadow = false; }   // its line lies across the two pale stones: dark ink, as on the pale slabs
     ctx.save();
@@ -11115,7 +11126,7 @@ function drawMonitor(p, x, z, wWorld, t){
   const sx = px(x, kk);
   if (sx < -500 || sx > W + 500) return;
   const scale = (wWorld / mon.w) * kk * SS;
-  const syFoot = py(p.onPed ? PED_CAP_Y : CFG.benchY - 2, kk);
+  const syFoot = py(p.onPed ? (p._capY || PED_CAP_Y) : CFG.benchY - 2, kk);
   const dx = sx - mon.w*scale/2, dy = syFoot - mon.foot*scale;
   pushHit(dx, dy, mon.w*scale, mon.h*scale, {type:'focus', beat: BEATS.findIndex(bb => (bb.props||[]).includes(p)), anchor: x});
   contactShadow(sx, syFoot, mon.w * scale * 0.72, 0.38);
@@ -12264,7 +12275,10 @@ function initDecor(){
        70 units, so one screw is ~16 units across; the pair in the new render is
        about seven screw-widths wide, which puts it at 115. It sits 120 units
        left of the assembly, at the front of the worktop. */
-    if (bsr) PROPS.push({x: bsr.x - 120, z: 18, kind: 'ph_implant2', w: 115, lay: true, study: 'SCREW-RETAINED'});
+    /* z 55, а не 18: на 18 лежащая пара свешивалась с передней кромки прилавка —
+       «подними левые импланты чуть выше, чтобы они не падали со стола»
+       (Эльдар, 07.10.2026). Глубже на столешнице — значит и выше в кадре. */
+    if (bsr) PROPS.push({x: bsr.x - 120, z: 55, kind: 'ph_implant2', w: 115, lay: true, study: 'SCREW-RETAINED'});
   }
 
   /* 1996 — ПОДУШКА ВМЕСТО ГОДА. Silent Nite — первое, что компания сделала не
@@ -14025,6 +14039,9 @@ function drawHallExhibit(){
    у них одно имя, потому что на шляпку встаёт не только спрайт экспоната — на
    2002-м там стоит живой монитор (см. drawMonitor, p.onPed). */
 const PED_Z = -90, PED_CAP_Y = 535;
+/* верх шляпки по флагам постамента — одно место на постамент и на то, что на
+   нём стоит, иначе монитор на «большом» постаменте висел бы на 5 единиц выше */
+const pedCapY = ped => ped.spin ? 620 : (ped.big ? 540 : (ped.low ? 668 : (ped.vitrine ? 625 : PED_CAP_Y)));
 function drawPedestal(b, t, hero){
   if (hallOwns(b)) return;
   const ped = b.ped; if (!ped) return;
@@ -14036,7 +14053,7 @@ function drawPedestal(b, t, hero){
   const era = segIdx(b.x);
   const big = ped.big ? 1.3 : 1;
   const PHOTO_PED = ped.photo ? PROP_SPRITES[ped.photo] : null;
-  const yTop = py(ped.spin ? 620 : (ped.big ? 540 : (ped.low ? 668 : (ped.vitrine ? 625 : PED_CAP_Y))), kk);   // and it stands lower, so the piece is at the height of a hand
+  const yTop = py(pedCapY(ped), kk);   // and it stands lower, so the piece is at the height of a hand
   pushHit(sx - colW*0.7*big, yTop - 150*kk*SS*big, colW*1.4*big, H - yTop + 150*kk*SS, {type:'focus', beat: BEATS.indexOf(b), anchor: x});
   const warmC = era === 0 ? '255,215,140' : '225,240,255';
   // two side spotlights swing in and lock their beams exactly on the exhibit;
@@ -20373,7 +20390,7 @@ function frame(){
     // the label goes on AFTER the pictures: it stands in front of them, not behind
     if (b.plaque && b.plaqueLz != null) drawBenchPlaque(b);
     if (b.rig && RIGS[b.rig.kind]) RIGS[b.rig.kind](b, t);
-    for (const p of (b.props || [])) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
+    for (const p of (b.props || [])) if (!p.onPed) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
     if (b.pfmRow) drawPfmRow(b, i);
     if (b.pyr) drawBookPyramid(b, t);
@@ -20462,6 +20479,13 @@ function frame(){
   /* culled by the PLINTH's own place, not the beat's: the crown's plinth now
      stands two thousand units from the beat that owns it, in the glass hall */
   for (const b of BEATS) if (b.ped && Math.abs(b.x + (b.ped.dx ?? -430) - cam.x) < 2000) drawPedestal(b, t, hero);
+  /* ТО, ЧТО СТОИТ НА ПОСТАМЕНТЕ, — ПОСЛЕ ПОСТАМЕНТА. Монитор 2002-го рисовался
+     вместе с вещами прилавка, то есть ДО постаментов, и шляпка ложилась поверх
+     его подставки: он читался стоящим позади своей тумбы (Эльдар, 07.10.2026). */
+  for (const b of BEATS){
+    if (!b.props || !b.ped || Math.abs(b.x - cam.x) > 2600) continue;
+    for (const p of b.props) if (p.onPed){ p._capY = pedCapY(b.ped); drawMonitor(p, b.x + p.dx, p.lz, p.w, t); }
+  }
   /* the factory is the exhibit of its own catharsis: the room dims, the line
      does NOT — it is drawn again over the veil, machines, shafts and all,
      exactly the way the pedestals climb back out of the dark */
