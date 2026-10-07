@@ -17191,7 +17191,10 @@ const STUDY_PHOTOS_BY_TITLE = {
      Christensen — her own portrait has been in the repository all along, under
      'rella', and the wall photograph at the beat already uses it. Eldar caught
      it on the page itself (2026-09-22, «???» over the picture). */
-  'RESEARCH AND DEVELOPMENT': [{img: 'rella', cap: 'Dr. Rella Christensen'}],
+  /* портрет Реллы снят с альбома (Эльдар, 07.10.2026): «фото Реллы надо
+     оттуда убрать, но другого плана фото могут быть там». Лицо человека
+     живёт на его странице, куда ведёт «People of this moment»; альбом — для
+     снимков самого момента. На стене такта её портрет остаётся. */
 };
 /* люди страницы пролёта: Азерников назван в её тексте — пустых отсылок здесь
    не бывает (Эльдар, 2026-09-22) */
@@ -17846,7 +17849,13 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
     ctx.fillText(m.name, mx + 14*SS, ty + th - 34*SS);
     ctx.font = K.font(15, 'italic');
     ctx.fillStyle = 'rgba(200,206,214,0.85)';
-    ctx.fillText(m.label, mx + 14*SS, ty + th - 12*SS);
+    // подпись в узкой плитке колонки не режется на полуслове — кончается многоточием
+    let lab = m.label || '';
+    if (ctx.measureText(lab).width > tw - 28*SS){
+      while (lab.length > 4 && ctx.measureText(lab + '\u2026').width > tw - 28*SS) lab = lab.slice(0, -1);
+      lab = lab.replace(/[\s,;:\u2014-]+$/, '') + '\u2026';
+    }
+    ctx.fillText(lab, mx + 14*SS, ty + th - 12*SS);
     ctx.restore();
     ctx.strokeStyle = K.edge; ctx.lineWidth = 1.2*SS;
     ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 10*SS); ctx.stroke();
@@ -17892,8 +17901,20 @@ function drawStudy(){
   const inFlow = !b.railSide;
   const clipAt = b.clipAt != null ? b.clipAt : 0;
   const railMedia = (media && media.length && !inFlow) ? media : null;
+  /* ОСТАЛЬНЫЕ ГОЛОСА — В ПРАВУЮ КОЛОНКУ, СТОЛБИКОМ. Эльдар (07.10.2026), про
+     R&D: в правой колонке сперва фото, потом ссылки на людей, «и дальше должны
+     были идти видео — ряд видео, те самые, что сейчас горизонтально под
+     основным видеоокном». В тексте остаётся один большой экран; плитки под
+     ним уходят на поле. Порядок тот же, что и в полосе: ord — простая
+     перестановка выбранного с большим (см. drawVoiceStrip). На узком экране,
+     где колонки нет (pageFrame отдаёт side = 0), плитки ложатся под экраном,
+     как раньше. */
+  const ord = media ? media.map((_, i2) => i2) : [];
+  { const mIdx = media ? Math.max(0, Math.min(media.length - 1, S.mainIdx || 0)) : 0;
+    if (mIdx > 0){ ord[0] = mIdx; ord[mIdx] = 0; } }
+  const flowRest = inFlow && media && media.length > 1;
   const photos = (typeof STUDY_PHOTOS_BY_TITLE === 'object' && STUDY_PHOTOS_BY_TITLE[b.t || b.y]) || null;
-  const wantSide = !!(obj || railMedia || photos || (ppl && ppl.length));
+  const wantSide = !!(obj || railMedia || flowRest || photos || (ppl && ppl.length));
   ctx.save();
   ctx.globalAlpha = a;
   const meta = b.noYear ? sentence(b.t || b.sign || '')
@@ -18024,20 +18045,6 @@ function drawStudy(){
       }
       sy += 2 * u;
     }
-    if (railMedia){
-      ctx.font = K.font(PAGE.small, '700');
-      try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
-      ctx.fillStyle = `rgba(${K.dim},0.95)`;
-      if (sy > topClip && sy < botClip) ctx.fillText(railMedia.length > 1 ? 'The voices' : 'Watch', sx, sy);
-      try { ctx.letterSpacing = '0px'; } catch(err){}
-      sy += 3 * u;
-      const th = Math.round(sw * 170 / 300);
-      for (let mi = 0; mi < railMedia.length; mi++){
-        studyClipTile(railMedia[mi], sx, sy, sw, th, S, K, b, topClip, botClip);
-        sy += th + 3 * u;
-      }
-      sy += 3 * u;
-    }
     if (ppl && ppl.length){
       ctx.font = K.font(PAGE.small, '700');
       try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
@@ -18065,6 +18072,23 @@ function drawStudy(){
         sy += ch + u;
       }
       sy += 2 * u;
+    }
+    const sideClips = railMedia || (flowRest ? ord.slice(1).map(i2 => media[i2]) : null);
+    if (sideClips){
+      // воздух над заголовком — как между альбомом и людьми, а не впритык к карточке
+      if (ppl && ppl.length) sy += 2 * u;
+      ctx.font = K.font(PAGE.small, '700');
+      try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
+      ctx.fillStyle = `rgba(${K.dim},0.95)`;
+      if (sy > topClip && sy < botClip) ctx.fillText(railMedia ? (railMedia.length > 1 ? 'The voices' : 'Watch') : 'More voices', sx, sy);
+      try { ctx.letterSpacing = '0px'; } catch(err){}
+      sy += 3 * u;
+      const th = Math.round(sw * 170 / 300);
+      for (let mi = 0; mi < sideClips.length; mi++){
+        studyClipTile(sideClips[mi], sx, sy, sw, th, S, K, b, topClip, botClip);
+        sy += th + 3 * u;
+      }
+      sy += 3 * u;
     }
   }
 
@@ -18220,10 +18244,8 @@ function drawStudy(){
        большого, а тот, что был большим, — на освободившееся место выбранного.
        Остальные не двигаются: страница не должна перекладываться под рукой, у
        неё и так есть прокрутка. */
-    const ord = media.map((_, i2) => i2);
-    const mIdx = Math.max(0, Math.min(media.length - 1, S.mainIdx || 0));
-    if (mIdx > 0){ ord[0] = mIdx; ord[mIdx] = 0; }
-    for (let mi = 0; mi < media.length; mi++){
+    const nFlow = G.side ? 1 : media.length;   // с колонкой остальные — на поле (см. ОСТАЛЬНЫЕ ГОЛОСА)
+    for (let mi = 0; mi < nFlow; mi++){
       const big = inFlow && mi === 0;
       const tw5 = big ? twB : tw4, th5 = big ? thB : th4;
       if (rx4 > left && rx4 + tw5 > left + textW + 1){ rx4 = left; y += rowH + gap4; rowH = 0; }
