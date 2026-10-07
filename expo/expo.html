@@ -1172,7 +1172,7 @@ function initAttractStops(){
   /* ТРИ УРОКА КАСАНИЯ. Эльдар (07.10.2026): «научить на первых элементах —
      шкаф, стол с инструментами, первые здания». На этих остановках палец не
      только показывает свайп, но сначала подходит к экспонату и касается его, а
-     экспонат отвечает бликом (см. drawTapLesson). Шкаф и 1973-й своих остановок
+     экспонат отвечает бликом (см. drawTapCues). Шкаф и 1973-й своих остановок
      не имели — тур прыгал с заставки на 1970-й и оттуда на 1979-й, — поэтому
      они добавлены сюда; на 1970-м остановка уже была. */
   ATTRACT_LESSONS = [];
@@ -1181,7 +1181,7 @@ function initAttractStops(){
   const b70L = BEATS.find(b => b.y === '1970');
   if (b70L) ATTRACT_LESSONS.push({x: b70L.x, pick: 'tools70'});
   const b73L = BEATS.find(b => b.y === '1973');
-  if (b73L) ATTRACT_LESSONS.push({x: b73L.x, pick: 'labs73', aim: [0.73, 0.5]});   // в «Second lab», а не в щель между тумбами
+  if (b73L) ATTRACT_LESSONS.push({x: b73L.x, pick: 'labs73'});
   for (const L of ATTRACT_LESSONS) s.add(L.x);
   ATTRACT_STOPS = [...s].sort((a, b) => a - b);
 }
@@ -19212,33 +19212,62 @@ function drawSheen(pick, u){
   return true;
 }
 
-/* УРОК КАСАНИЯ — первые LESSON_LEN секунд паузы на остановке-уроке:
-   0,0–0,3  палец проступает в стороне от экспоната, снизу-справа, как рука;
-   0,3–1,2  подходит к нему;
-   1,2      касание — ядро вспыхивает, волна расходится, экспонат бликует;
-   2,6–3,0  палец гаснет; дальше, как на любой остановке, — показ свайпа. */
-const LESSON_LEN = 3.2;
-function drawTapLesson(){
-  const A = state.attract;
-  if (state.mode !== 'attract' || A.phase !== 'dwell' || !A.lesson || overlayOpen()) return;
-  const t = A.dwell;
-  if (t < 0 || t > LESSON_LEN) return;
-  const tg = lessonTarget(A.lesson.pick); if (!tg) return;
-  const aim = A.lesson.aim || [0.5, 0.5];
-  const tx = tg.x + tg.w * aim[0], ty = tg.y + tg.h * aim[1];
-  const sx = tx + 150 * SS, sy = ty + 110 * SS;
-  const u = Math.max(0, Math.min(1, (t - 0.3) / 0.9));
-  const ease = u < 0.5 ? 2*u*u : 1 - Math.pow(-2*u + 2, 2) / 2;
-  const fx = sx + (tx - sx) * ease, fy = sy + (ty - sy) * ease;
-  const a = Math.min(1, t / 0.3) * (t > 2.6 ? Math.max(0, 1 - (t - 2.6) / 0.4) : 1);
-  const pr = t >= 1.2 ? Math.max(0, 1 - (t - 1.2) / 0.62) : 0;
-  if (!drawSheen(A.lesson.pick, (t - 1.2) / SHEEN_LEN))
-    drawGlint(tg, glintAt((t - 1.2) / GLINT_LEN));    // силуэта нет — тогда хотя бы контур
-  ctx.save();
-  ctx.shadowColor = `rgba(0,0,0,${(0.55 * a).toFixed(3)})`;
-  ctx.shadowBlur = 12 * SS;
-  drawCueFinger(fx, fy, 17 * SS, a, pr);
-  ctx.restore();
+/* СИГНАЛ КАСАНИЯ — ВСЯКИЙ РАЗ, КОГДА ОБЪЕКТ ПОДХОДИТ К ЦЕНТРУ. Эльдар
+   (07.10.2026): «надо, чтобы сигнал тача с бликом появлялся всякий раз, когда
+   объект приближается к центру экрана». Прежде урок жил только в автопрокрутке
+   и только на стоянке; теперь он привязан к самому объекту и срабатывает в
+   любом режиме — и когда зал везёт автопилот, и когда его ведёт человек.
+
+   Кто: те, у кого есть силуэт для проблеска (TAP_CUE_PICKS) — шкаф, стол с
+   инструментами, первые здания. Когда: центр цели касания входит в среднюю
+   треть кадра (|x − W/2| < 0,15·W). Снова — только после того, как объект
+   ушёл далеко от центра (> 0,35·W) или с экрана: без такого зазора объект,
+   стоящий на границе, мигал бы сигналом при каждом шевелении пальца.
+
+   ЧАСЫ — СВОИ У КАЖДОГО ОБЪЕКТА, и картинка — чистая функция от них
+   (см. «ВСЁ — ЧИСТАЯ ФУНКЦИЯ ОТ ЧАСОВ» у значка свайпа):
+     0,0–0,3  палец проступает в стороне от экспоната, снизу-справа, как рука;
+     0,3–1,0  подходит к нему — и идёт за ним, если зал ещё едет;
+     1,0      касание — ядро вспыхивает, волна расходится, по силуэту проблеск;
+     2,0–2,4  палец гаснет. */
+const TAP_CUE_PICKS = {cabinet: [0.5, 0.5], tools70: [0.5, 0.5], labs73: [0.73, 0.5]};   // куда целит палец; на 1973-м — в «Second lab», а не в щель между тумбами
+const TAP_CUE_LEN = 2.4;
+const TAP_CUE = {};          // pick -> {t: часы сигнала или −1, armed}
+/* на остановке-уроке автопилот стоит дольше на LESSON_LEN — чтобы сигнал,
+   начатый на подходе, успел кончиться раньше, чем пойдёт показ свайпа */
+const LESSON_LEN = 2.0;
+function drawTapCues(){
+  const dt = state.dt || 0.016;
+  const busy = overlayOpen() || state.introHold;
+  for (const pick in TAP_CUE_PICKS){
+    const st = TAP_CUE[pick] || (TAP_CUE[pick] = {t: -1, armed: true});
+    const src = SHEEN_SRC[pick];
+    const tg = (src && src.t === state.time) ? lessonTarget(pick) : null;
+    if (!tg){ st.t = -1; st.armed = true; continue; }        // ушёл с экрана — снова готов
+    const aim = TAP_CUE_PICKS[pick];
+    const tx = tg.x + tg.w * aim[0], ty = tg.y + tg.h * aim[1];
+    const off = Math.abs(tx - W / 2) / W;
+    if (off > 0.35) st.armed = true;
+    if (st.t < 0 && st.armed && off < 0.15 && !busy){ st.t = 0; st.armed = false; }
+    if (st.t < 0) continue;
+    if (busy){ st.t = -1; continue; }                        // открыли страницу — сигнал больше не нужен
+    st.t += dt;
+    const t = st.t;
+    if (t > TAP_CUE_LEN){ st.t = -1; continue; }
+    const sx = tx + 150 * SS, sy = ty + 110 * SS;
+    const u = Math.max(0, Math.min(1, (t - 0.3) / 0.7));
+    const ease = u < 0.5 ? 2*u*u : 1 - Math.pow(-2*u + 2, 2) / 2;
+    const fx = sx + (tx - sx) * ease, fy = sy + (ty - sy) * ease;
+    const a = Math.min(1, t / 0.3) * (t > 2.0 ? Math.max(0, 1 - (t - 2.0) / 0.4) : 1);
+    const pr = t >= 1.0 ? Math.max(0, 1 - (t - 1.0) / 0.62) : 0;
+    if (!drawSheen(pick, (t - 1.0) / SHEEN_LEN))
+      drawGlint(tg, glintAt((t - 1.0) / GLINT_LEN));          // силуэта нет — тогда хотя бы контур
+    ctx.save();
+    ctx.shadowColor = `rgba(0,0,0,${(0.55 * a).toFixed(3)})`;
+    ctx.shadowBlur = 12 * SS;
+    drawCueFinger(fx, fy, 17 * SS, a, pr);
+    ctx.restore();
+  }
 }
 
 /* ВДОХ ПРИ ОСТАНОВКЕ снят (Эльдар, 07.10.2026: «четвёртый убери»): блик
@@ -20486,7 +20515,7 @@ function frame(){
   drawOpenBox();   // one carton off the pile, opened
   drawAttractHint(t);
   drawSwipeCue(t);     // автопрокрутка показывает жест перед каждым уходом с остановки
-  drawTapLesson();     // а на первых трёх — ещё и касание: шкаф, стол с инструментами, первые здания
+  drawTapCues();       // шкаф, стол с инструментами, первые здания — сигнал касания, как только подходят к центру
   // pointer affordance
   drawScanCursor();
   if (Input.hover && state.mode === 'live'){
