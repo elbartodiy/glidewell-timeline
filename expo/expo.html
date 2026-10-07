@@ -17083,7 +17083,13 @@ function openStudy(i){
   hushClips();
   const b = (i && typeof i === 'object') ? i : BEATS[i];
   const imgs = [];   // reserved: the speaker-video carousel will live here
-  state.study = {beat: i, b, imgs, scroll: 0, amt: 0, maxScroll: 1};
+  /* mainIdx — КТО СЕЙЧАС НА БОЛЬШОМ ЭКРАНЕ. Эльдар (06.10.2026): «есть большой
+     экран, где сейчас Джим, и под ним ролики, которые мы можем посмотреть;
+     нажимаю на Лобао — он должен перейти на большой экран вместо Джима, а Джим
+     уходит туда». То есть большой кадр — это не «первый ролик списка», а ПЛЕЕР,
+     а плитки под ним — выбор. Хранится номер в списке голосов страницы; при
+     открытии это всегда первый, им страница и начинает говорить. */
+  state.study = {beat: i, b, imgs, scroll: 0, amt: 0, maxScroll: 1, mainIdx: 0};
   /* a page that carries voices starts speaking as it opens — but IN the rail,
      small, right where the clip hangs; tapping it expands to the full player.
      The hall film, meanwhile, fades out and holds its place. */
@@ -17883,11 +17889,18 @@ function drawStudy(){
     const tw4 = Math.min(PAGE.side * SS, textW), th4 = Math.round(tw4 * 170 / 300), gap4 = 3 * u;
     const twB = textW, thB = Math.round(twB * 170 / 300);
     let rx4 = left, rowH = 0;
+    /* ПРОСТАЯ ПЕРЕСТАНОВКА, А НЕ ПЕРЕСОРТИРОВКА. Выбранный ролик встаёт на место
+       большого, а тот, что был большим, — на освободившееся место выбранного.
+       Остальные не двигаются: страница не должна перекладываться под рукой, у
+       неё и так есть прокрутка. */
+    const ord = media.map((_, i2) => i2);
+    const mIdx = Math.max(0, Math.min(media.length - 1, S.mainIdx || 0));
+    if (mIdx > 0){ ord[0] = mIdx; ord[mIdx] = 0; }
     for (let mi = 0; mi < media.length; mi++){
       const big = inFlow && mi === 0;
       const tw5 = big ? twB : tw4, th5 = big ? thB : th4;
       if (rx4 > left && rx4 + tw5 > left + textW + 1){ rx4 = left; y += rowH + gap4; rowH = 0; }
-      studyClipTile(media[mi], rx4, y, tw5, th5, S, K, b, topClip, botClip);
+      studyClipTile(media[ord[mi]], rx4, y, tw5, th5, S, K, b, topClip, botClip);
       rx4 += tw5 + gap4; rowH = Math.max(rowH, th5);
     }
     y += rowH + 4 * u;
@@ -19166,7 +19179,19 @@ function update(dt){
              article; it plays where it hangs now, and a second tap stops it. */
           const m4 = aimed.media;
           if (S.railSrc === m4.src && S.railV && !S.railV.paused){ try { S.railV.pause(); } catch(e){} }
-          else { S.railV = playPageClip(m4.src); S.railSrc = m4.src; }
+          else {
+            /* ВЫБРАННЫЙ ПЕРЕЕЗЖАЕТ НА БОЛЬШОЙ ЭКРАН. Прежде ролик начинал
+               говорить прямо в своей плитке — то есть в превьюшке под текстом, —
+               а большой кадр оставался занят первым голосом страницы. Теперь
+               большой кадр это плеер: нажали на Лобао, Лобао наверху, Джим ушёл
+               на его место. Старую плёнку останавливаем явно, иначе две говорят
+               разом (у соседней ветки inclip это уже сделано именно так). */
+            const list4 = STUDY_MEDIA[(S.b || BEATS[S.beat]).x] || [];
+            const ix4 = list4.indexOf(m4);
+            if (ix4 >= 0) S.mainIdx = ix4;
+            if (S.railV) try { S.railV.pause(); } catch(e){}
+            S.railV = playPageClip(m4.src); S.railSrc = m4.src;
+          }
         } else if (aimed && aimed.type === 'person' && PEOPLE[aimed.id]){
           openPerson(aimed.id);     // the name in the text goes to the person, not to a portrait
         } else if (aimed && aimed.type === 'link'){
