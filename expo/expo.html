@@ -19177,10 +19177,11 @@ function drawSheen(pick, u){
   g.globalCompositeOperation = 'source-over';
   g.clearRect(0, 0, ow, oh);
   // 1) свет: предмет весь на миг светлеет, и по нему наискось идёт полоса
-  /* яркость — после первой пробы: при 0,20 и 0,78 светлые вещи (кремовый шкаф,
-     белые здания, лампа) в середине полосы уходили в чистый белый и теряли
-     рисунок, предмет превращался в белую вырезку */
-  const flash = 0.12 * Math.sin(Math.PI * u);
+  /* ЯРКОСТЬ — 5…10 %. Эльдар (07.10.2026): «пересвет — это потому что сто
+     процентов, а надо процентов пять-десять». Первая проба (0,20 и 0,78)
+     выжигала светлые вещи — кремовый шкаф, белые здания, лампу — в белую
+     вырезку; проблеск должен быть намёком на блеск, а не вспышкой. */
+  const flash = 0.05 * Math.sin(Math.PI * u);
   g.fillStyle = `rgba(255,255,255,${flash.toFixed(3)})`;
   g.fillRect(0, 0, ow, oh);
   const bwPx = Math.max(60 * SS, s.w * 0.22);
@@ -19190,7 +19191,7 @@ function drawSheen(pick, u){
   const bw = bwPx / len;
   const e = u < 0.5 ? 2*u*u : 1 - Math.pow(-2*u + 2, 2) / 2;
   const pc = bw + (1 - 2 * bw) * e;                     // полоса начинается и кончается за краем предмета
-  const peak = 0.62 * Math.min(1, Math.sin(Math.PI * u) * 1.6);
+  const peak = 0.10 * Math.min(1, Math.sin(Math.PI * u) * 1.6);
   gr.addColorStop(pc - bw, 'rgba(255,255,255,0)');
   gr.addColorStop(pc, `rgba(255,255,255,${peak.toFixed(3)})`);
   gr.addColorStop(pc + bw, 'rgba(255,255,255,0)');
