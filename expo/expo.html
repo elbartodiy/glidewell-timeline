@@ -17726,6 +17726,7 @@ function drawStudy(){
   const meta = b.noYear ? sentence(b.t || b.sign || '')
     : b.y + (b.t ? ' · ' + sentence(b.t) : (b.sign ? ' · ' + sentence(b.sign) : ''));
   const G = pageFrame(K, a, wantSide, meta, S.fitH);
+  S.sheet = {x: G.wx0, y: G.wy0, w: G.ww, h: G.wh};   // где лист — чтобы касание по нему не закрывало страницу
   const {left, textW, topClip, botClip} = G;
   const u = PAGE.u * SS;
   let y = G.top - S.scroll * SS;
@@ -18246,6 +18247,16 @@ function pageScroll(S, inp, dt){
     if (S.scroll > -0.4) S.scroll = 0;
   }
 }
+/* ЗАКРЫВАЕТ ТОЛЬКО ПУСТОТА ВОКРУГ ЛИСТА. Эльдар (07.10.2026): «при нажатии на
+   страницу не надо её закрывать — закрытие только по пространству вне
+   страницы». Прежде закрывало любое касание мимо ссылок и плиток — в том числе
+   по тексту и полям самого листа: человек, тронувший абзац, чтобы читать
+   дальше, терял страницу. Теперь касание внутри листа не делает ничего. */
+function tapOutsideSheet(S, pt){
+  const r = S && S.sheet;
+  if (!r || !pt || typeof pt !== 'object') return true;
+  return pt.x < r.x || pt.x > r.x + r.w || pt.y < r.y || pt.y > r.y + r.h;
+}
 function drawPeople(){
   const S = state.people; if (!S) return;
   S.amt += ((S.closing ? 0 : 1) - S.amt) * Math.min(1, (state.dt || 0.016) * 5);
@@ -18265,6 +18276,7 @@ function drawPeople(){
   ctx.globalAlpha = a;
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 42*SS; ctx.shadowOffsetY = 14*SS;
+  S.sheet = {x: wx0, y: wy0, w: ww, h: wh};
   ctx.fillStyle = K.bg;
   ctx.beginPath(); ctx.roundRect(wx0, wy0, ww, wh, K.r*SS); ctx.fill();
   ctx.restore();
@@ -18716,6 +18728,7 @@ function drawPerson(){
   ctx.globalAlpha = a;
   // the same sheet as a year's page: the meta line carries the way back
   const G = pageFrame(K, a, !!(clips.length || face), null, S.fitH);
+  S.sheet = {x: G.wx0, y: G.wy0, w: G.ww, h: G.wh};
   const {left, textW, topClip, botClip} = G;
   const u = PAGE.u * SS;
   const top0 = G.top;
@@ -19474,7 +19487,7 @@ function update(dt){
         }
         else if (aimed && aimed.type === 'person' && aimed.id !== S.id) openPerson(aimed.id);
         else if (aimed && aimed.type === 'voices'){ S.closing = true; if (!state.people) openPeople(); }
-        else S.closing = true;
+        else if (tapOutsideSheet(S, inp.action)) S.closing = true;
       } else if (inp.action === true) S.closing = true;   // scrolling past the top does NOT close it
       cam.vel = 0;
     } else if (state.caseView){
@@ -19525,7 +19538,7 @@ function update(dt){
         const aimed = hitAt(inp.action.x, inp.action.y);
         if (aimed && aimed.type === 'closepage') S.closing = true;
         else if (aimed && aimed.type === 'person') openPerson(aimed.id);
-        else S.closing = true;
+        else if (tapOutsideSheet(S, inp.action)) S.closing = true;
       } else if (inp.action === true) S.closing = true;   // scrolling past the top does NOT close it
       cam.vel = 0;
     } else if (state.study){
@@ -19577,7 +19590,7 @@ function update(dt){
             S.railV = v3; S.railSrc = c3.src;
             v3.play().catch(()=>{});
           }
-        } else S.closing = true;
+        } else if (tapOutsideSheet(S, inp.action)) S.closing = true;
       } else if (inp.action === true) S.closing = true;   // a key closes it; scrolling past the top does NOT
       cam.vel = 0;
     } else {
