@@ -232,7 +232,9 @@ const BEATS = [
       on Anterior Signature series with Joe Hattouni» досталась гольфу, а
       настоящий снимок с Хаттуни — следующий, современный. Ни года, ни второго
       человека; вопрос Джиму в файле вопросов. */
-   wall:[],
+   /* доска со схемой Джима — урок, которым этот год и был (см. makeWhiteboard).
+      top 290 — на одной линии с фото 1984-го в соседней панели. */
+   wall:[{img:'board1980', w:700, dx:0, top:268, maxB:700}],
    table:[]},
 
   {x:8750, y:'1984', t:'CONSOLIDATION', yLift:130,
@@ -1487,6 +1489,118 @@ function makePrint(name, opts){
    нарочно щедрые — вертикаль стала длиннее относительно горизонтали, как и
    просил Эльдар (02.10.2026). Низ поля тяжелее верха: так паспарту режут в
    багетной мастерской, иначе картина смотрится съехавшей вниз. */
+/* ДОСКА 1980-ГО. Эльдар (07.10.2026): «на 1980 нужно сделать доску и нарисовать
+   схему, которую Джим рисовал, — доска на стене, смотри реф». Рефы: кадр, где
+   Джим маркером объясняет на белой доске коронку, и вырезка одного рисунка с
+   неё. У 1980-го — International Study Program, обучение дантистов, — и доска
+   здесь ровно то, чем этот год был: урок.
+
+   Рисунок с рефов, а не придуманный: слева — резец в профиль, тот самый
+   «лепесток» с двойной линией у режущего края и вогнутым основанием; справа —
+   коронка в разрезе: купол, внутри ряды дуг (слои керамики, которые Джим
+   наносит маркером одну за другой), косая черта через них, две красные
+   отметки, длинная горизонталь по шейке и под ней культя с двумя столбиками.
+   Подписей нет: на рефе их не разобрать, а выдумывать нельзя.
+
+   Маркер — двумя проходами со смещением в полпикселя: так линия получает
+   неровный край живого фломастера, а не векторную чистоту. Случайность
+   задана семенем — доска одна и та же при каждом запуске. */
+function makeWhiteboard(){
+  const RES = 1.5, IW = 1200, IH = 820, SH = 40;
+  const c = document.createElement('canvas');
+  c.width = (IW + SH * 2) * RES; c.height = (IH + SH * 2) * RES;
+  const g = c.getContext('2d');
+  g.setTransform(RES, 0, 0, RES, SH * RES, SH * RES);
+  let seed = 19801;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  // тень доски на стене
+  g.save(); g.shadowColor = 'rgba(0,0,0,0.42)'; g.shadowBlur = 26; g.shadowOffsetY = 10;
+  g.fillStyle = '#9aa1a8'; g.fillRect(0, 0, IW, 760); g.restore();
+  // алюминиевая рама
+  const fr = g.createLinearGradient(0, 0, 0, 760);
+  fr.addColorStop(0, '#d7dce0'); fr.addColorStop(0.5, '#b9c0c6'); fr.addColorStop(1, '#a3abb2');
+  g.fillStyle = fr; g.fillRect(0, 0, IW, 760);
+  g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 2; g.strokeRect(1.5, 1.5, IW - 3, 757);
+  // поле доски: тёплый белый, чуть темнее к краям
+  const F = 20;
+  const sf = g.createLinearGradient(0, F, 0, 760 - F);
+  sf.addColorStop(0, '#f4f3ef'); sf.addColorStop(1, '#e9e8e3');
+  g.fillStyle = sf; g.fillRect(F, F, IW - F * 2, 760 - F * 2);
+  g.strokeStyle = 'rgba(60,66,72,0.35)'; g.lineWidth = 1.5; g.strokeRect(F, F, IW - F * 2, 760 - F * 2);
+  // призраки стёртого маркера — доска рабочая, а не новая
+  g.save(); g.lineCap = 'round';
+  for (let i = 0; i < 7; i++){
+    g.strokeStyle = `rgba(120,128,120,${(0.035 + rnd() * 0.03).toFixed(3)})`;
+    g.lineWidth = 30 + rnd() * 40;
+    const x = 80 + rnd() * 1000, y = 90 + rnd() * 560;
+    g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 60 + rnd() * 120, y - 40 + rnd() * 80, x + 140 + rnd() * 160, y + rnd() * 40 - 20); g.stroke();
+  }
+  g.restore();
+  // маркер: путь рисуется дважды со сдвигом — неровный край фломастера
+  const pen = (col, w, draw) => {
+    g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
+    for (const [dx, dy, a] of [[0, 0, 0.9], [0.6, -0.5, 0.45]]){
+      g.strokeStyle = col.replace('A', a); g.lineWidth = w * 1.8;   // ×1,8 после первой пробы: с расстояния зала линия маркера пропадала
+      g.beginPath(); draw(dx, dy); g.stroke();
+    }
+    g.restore();
+  };
+  const GREEN = 'rgba(58,78,48,A)', RED = 'rgba(178,52,52,A)';
+  // РЕЗЕЦ В ПРОФИЛЬ (вырезка с рефа): острый край вверху, вогнутое основание
+  pen(GREEN, 5.2, (dx, dy) => {
+    g.moveTo(330 + dx, 150 + dy);
+    g.bezierCurveTo(255 + dx, 250 + dy, 215 + dx, 430 + dy, 235 + dx, 585 + dy);   // губная сторона
+    g.moveTo(330 + dx, 150 + dy);
+    g.bezierCurveTo(390 + dx, 175 + dy, 470 + dx, 400 + dy, 488 + dx, 585 + dy);   // язычная
+    g.moveTo(235 + dx, 585 + dy);
+    g.quadraticCurveTo(362 + dx, 500 + dy, 488 + dx, 585 + dy);                    // основание дугой
+  });
+  pen(GREEN, 4.2, (dx, dy) => {                                                    // вторая линия у края
+    g.moveTo(330 + dx, 150 + dy); g.lineTo(352 + dx, 168 + dy);
+    g.bezierCurveTo(345 + dx, 205 + dy, 300 + dx, 260 + dy, 286 + dx, 300 + dy);
+  });
+  // КОРОНКА В РАЗРЕЗЕ (кадр с Джимом)
+  pen(GREEN, 5.2, (dx, dy) => {                                                    // купол
+    g.moveTo(640 + dx, 560 + dy);
+    g.bezierCurveTo(610 + dx, 300 + dy, 720 + dx, 175 + dy, 820 + dx, 180 + dy);
+    g.bezierCurveTo(955 + dx, 186 + dy, 1050 + dx, 330 + dy, 1015 + dx, 560 + dy);
+  });
+  for (let i = 0; i < 6; i++){                                                     // слои — ряды дуг
+    const y = 285 + i * 46, sx = 655 + i * 4, ex = 1000 - i * 2;
+    pen(GREEN, 3.4, (dx, dy) => {
+      g.moveTo(sx + dx, y + 14 + dy);
+      g.quadraticCurveTo((sx + ex) / 2 + dx, y - 10 - i * 2 + dy, ex + dx, y + 18 + dy);
+    });
+  }
+  pen(GREEN, 4.4, (dx, dy) => { g.moveTo(705 + dx, 560 + dy); g.lineTo(890 + dx, 225 + dy); });   // косая через слои
+  pen(RED, 5, (dx, dy) => { g.moveTo(812 + dx, 362 + dy); g.lineTo(872 + dx, 360 + dy); });       // красные отметки
+  pen(RED, 5, (dx, dy) => { g.moveTo(822 + dx, 450 + dy); g.lineTo(880 + dx, 452 + dy); });
+  pen(GREEN, 4.4, (dx, dy) => { g.moveTo(585 + dx, 566 + dy); g.lineTo(1120 + dx, 562 + dy); });  // линия шейки
+  pen(GREEN, 5.2, (dx, dy) => {                                                    // культя
+    g.moveTo(662 + dx, 566 + dy);
+    g.bezierCurveTo(655 + dx, 650 + dy, 690 + dx, 700 + dy, 760 + dx, 702 + dy);
+    g.lineTo(905 + dx, 700 + dy);
+    g.bezierCurveTo(975 + dx, 698 + dy, 1000 + dx, 640 + dy, 995 + dx, 566 + dy);
+  });
+  for (const x0 of [742, 860]) pen(GREEN, 4.2, (dx, dy) => {                     // два столбика
+    g.moveTo(x0 + dx, 575 + dy); g.lineTo(x0 + 2 + dx, 672 + dy); g.lineTo(x0 + 42 + dx, 674 + dy); g.lineTo(x0 + 40 + dx, 576 + dy);
+  });
+  pen(GREEN, 4.2, (dx, dy) => { g.moveTo(1112 + dx, 548 + dy); g.lineTo(1132 + dx, 588 + dy); });  // засечка на конце линии
+  // полочка с маркером и губкой
+  const tr = g.createLinearGradient(0, 742, 0, 790);
+  tr.addColorStop(0, '#cdd3d8'); tr.addColorStop(1, '#8e969d');
+  g.save(); g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 10; g.shadowOffsetY = 5;
+  g.fillStyle = tr; g.fillRect(-6, 742, IW + 12, 34); g.restore();
+  g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(-6, 742, IW + 12, 2);
+  g.fillStyle = '#d8b93a'; g.fillRect(760, 718, 150, 30);                         // губка
+  g.fillStyle = '#4c4d4f'; g.fillRect(760, 744, 150, 6);
+  g.save(); g.translate(330, 734); g.rotate(-0.02);                               // маркер
+  g.fillStyle = '#2f3f2a'; g.fillRect(0, 0, 120, 13);
+  g.fillStyle = '#e8e8e4'; g.fillRect(120, 1, 22, 11);
+  g.restore();
+  return {c, w: c.width, h: c.height, inner: {x: SH * RES, y: SH * RES, w: IW * RES, h: IH * RES}};
+}
+
 function makeTriptych(names, opts){
   const srcs = names.map(n => IMGS[n]);
   if (srcs.some(s => !s)) return null;
@@ -20827,6 +20941,7 @@ async function boot(){
     const sp = makeTriptych(['chairv1', 'chairv12', 'chairv21'], {tone: eraStyle[3].tone});
     if (sp) SPRITES.chairtrio = sp;
   }
+  { const sp = makeWhiteboard(); if (sp) SPRITES.board1980 = sp; }   // доска 1980-го — рисуется, не грузится
   PED_SPRITES.crown = makePedObj('crown');
   PED_SPRITES.logo1970 = makePedObj('logo1970');
   PED_SPRITES.bizcard = makePedObj('bizcard');
