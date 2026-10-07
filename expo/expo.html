@@ -1198,7 +1198,12 @@ function initAttractStops(){
   s.add((REC2_L + REC2_R) / 2);     // the digital revolution
   for (const p of PLATES) s.add(p.x);   // the generated bay is a composition: stop dead centre
   s.add(FACT_X);                    // the robotic line
-  s.add(STAGE_X);                   // Jim on stage
+  /* остановка «Jim on stage» живёт, только пока стоит сама сцена. Её разобрали
+     23.09 (STAGE_ON = false), а остановка осталась, и тур перед самым финалом
+     вставал на пустой ковёр, да ещё и показывал там свайп. Эльдар
+     (07.10.2026): «что там за пауза почти в самом конце, перед тем как
+     закрепить зум-ин на последнем экране? … зачем там пауза на пустой стене». */
+  if (STAGE_ON) s.add(STAGE_X);
   s.add(FIN_X);                     // the product still life closes the tour
   /* ТРИ УРОКА КАСАНИЯ. Эльдар (07.10.2026): «научить на первых элементах —
      шкаф, стол с инструментами, первые здания». На этих остановках палец не
