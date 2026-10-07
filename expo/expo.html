@@ -1155,6 +1155,7 @@ function spliceEdges(){
 /* where the guided tour is allowed to stop: every stop is a finished
    composition whose apex belongs at the exact center of the screen */
 let ATTRACT_STOPS = [];
+let ATTRACT_LESSONS = [];   // остановки, на которых палец учит касанию: {x, pick}
 function initAttractStops(){
   const s = new Set();
   for (const b of BEATS){
@@ -1168,6 +1169,20 @@ function initAttractStops(){
   s.add(FACT_X);                    // the robotic line
   s.add(STAGE_X);                   // Jim on stage
   s.add(FIN_X);                     // the product still life closes the tour
+  /* ТРИ УРОКА КАСАНИЯ. Эльдар (07.10.2026): «научить на первых элементах —
+     шкаф, стол с инструментами, первые здания». На этих остановках палец не
+     только показывает свайп, но сначала подходит к экспонату и касается его, а
+     экспонат отвечает бликом (см. drawTapLesson). Шкаф и 1973-й своих остановок
+     не имели — тур прыгал с заставки на 1970-й и оттуда на 1979-й, — поэтому
+     они добавлены сюда; на 1970-м остановка уже была. */
+  ATTRACT_LESSONS = [];
+  const cab0 = TALL_UNITS[0];
+  if (cab0) ATTRACT_LESSONS.push({x: cab0.x, pick: 'cabinet'});
+  const b70L = BEATS.find(b => b.y === '1970');
+  if (b70L) ATTRACT_LESSONS.push({x: b70L.x, pick: 'tools70'});
+  const b73L = BEATS.find(b => b.y === '1973');
+  if (b73L) ATTRACT_LESSONS.push({x: b73L.x, pick: 'labs73', aim: [0.73, 0.5]});   // в «Second lab», а не в щель между тумбами
+  for (const L of ATTRACT_LESSONS) s.add(L.x);
   ATTRACT_STOPS = [...s].sort((a, b) => a - b);
 }
 function segIdx(x){ for (let i = SEGMENTS.length-1; i > 0; i--) if (x >= SEGMENTS[i].x0) return i; return 0; }
@@ -9853,6 +9868,7 @@ function makeUsaSprite(){
    the width the counters are trimmed to — so the pair reads as the exhibit's
    own counter, not as a thing put on one. */
 let X73 = null;
+const LABS73_CAP = 0.372;   // низ каменной шляпки тумб в рендере labs_1973 (замер выше, в drawLabs73)
 function drawLabs73(){
   const sp = PROP_SPRITES.ph_labs73;
   if (!sp) return;
@@ -9869,9 +9885,14 @@ function drawLabs73(){
      (Эльдар, 2026-09-24). */
   ctx.drawImage(labsShaded(spriteMip(sp, wR, hR), wR, hR), xR, yFoot - hR, wR, hR);
   /* ЗДАНИЯ ОТКРЫВАЮТ СВОЙ ГОД. Эльдар (06.10.2026): «то же самое при нажатии на
-     здания 1973 — пусть открывается страница». Цель — силуэт самого рендера. */
+     здания 1973 — пусть открывается страница». Цель — ЗДАНИЯ НА СВОИХ КАМНЯХ, а
+     не весь рендер: деревянные тела тумб уходят в пол и зданиями не являются, а
+     блик урока касания, обнимавший их до пола, читался как «нажми на шкафчик»
+     (07.10.2026). Замер по столбцу x=1471, середина правой тумбы: здания до
+     0,310 высоты файла, камень 0,310…0,372, латунная полоса до 0,380, ниже
+     дерево. Цель кончается по низу камня. */
   { const bi = BEATS.findIndex(b => b.y === '1973');
-    if (bi >= 0) pushHit(xR, yFoot - hR, wR, hR, {type: 'study', beat: bi}); }
+    if (bi >= 0) pushHit(xR, yFoot - hR, wR, hR * LABS73_CAP, {type: 'study', beat: bi}); }
 }
 
 /* 1976 · ГЛАВНАЯ УЛИЦА ОСЕНЬЮ. Эльдар (02.10.2026) прислал одну диораму вместо
@@ -18972,7 +18993,7 @@ function drawSwipeCue(t){
      может быть длиннее трёх секунд (в финале она начинается с −2,4), поэтому
      отсчёт идёт от КОНЦА паузы, а не от её начала. */
   const live = state.mode === 'attract' && A.phase === 'dwell' && !overlayOpen();
-  const ph = live ? (A.dwell - (CFG.attractDwell - 3)) / 3 : -1;
+  const ph = live ? (A.dwell - ((A.dwellLen || CFG.attractDwell) - 3)) / 3 : -1;
   const want = (ph >= 0 && ph <= 1) ? Math.min(1, ph * 6) : 0;
   SWIPE_CUE.a += (want - SWIPE_CUE.a) * Math.min(1, dt * (want > SWIPE_CUE.a ? 7 : 5));
   // вспышка зажигается на третьей секунде и живёт своей жизнью: автопилот к
@@ -19026,21 +19047,129 @@ function drawSwipeCue(t){
   ctx.lineTo(tipX + 12 * SS, cy + 11 * SS);
   ctx.stroke();
 
-  // сам палец: ядро и кольцо
+  drawCueFinger(fx, cy, r, a, pr);
+  ctx.restore();
+}
+/* ПАЛЕЦ ПОДСКАЗКИ — ОДИН НА ОБА ЖЕСТА: свайп и касание. Белое ядро, кольцо и,
+   на нажатии, расходящаяся волна. Рисуется внутри save/restore вызывающего, с
+   его тенью. a — видимость, pr — сила нажатия (1 в миг касания, гаснет к 0). */
+function drawCueFinger(fx, cy, r, a, pr){
   ctx.fillStyle = `rgba(255,255,255,${(0.22 * a + 0.6 * pr).toFixed(3)})`;
   ctx.beginPath(); ctx.arc(fx, cy, r * 0.78, 0, 7); ctx.fill();
   ctx.strokeStyle = `rgba(255,255,255,${(0.9 * a).toFixed(3)})`;
   ctx.lineWidth = 2.6 * SS;
   ctx.beginPath(); ctx.arc(fx, cy, r, 0, 7); ctx.stroke();
-
-  // ВСПЫШКА НАЖАТИЯ: кольцо расходится и гаснет
   if (pr > 0.02){
     const e = 1 - pr;
     ctx.strokeStyle = `rgba(255,255,255,${(0.75 * pr).toFixed(3)})`;
     ctx.lineWidth = 3 * SS * pr;
     ctx.beginPath(); ctx.arc(fx, cy, r + 52 * SS * e, 0, 7); ctx.stroke();
   }
+}
+
+/* БЛИК ЭКСПОНАТА. Эльдар (07.10.2026): «а и б вместе — по тачу просто блик…
+   суть — показывается кликабельность». Светлый мягкий контур проступает вокруг
+   того, что можно нажать, и гаснет. Это ответ экспоната на касание пальца-
+   подсказки в автопрокрутке, и это же — его вдох, когда человек сам
+   остановился у бухты. Страница при этом НЕ открывается: блик говорит «меня
+   можно открыть», а не открывает. */
+function drawGlint(r, a){
+  if (!r || a <= 0.01) return;
+  const pad = 12 * SS, rad = 16 * SS;
+  ctx.save();
+  ctx.shadowColor = `rgba(255,255,255,${(0.9 * a).toFixed(3)})`;
+  ctx.shadowBlur = 24 * SS;
+  /* 0,8 и 2,8 — после первой пробы: на кремовом шкафу 1907-го при 0,6 контур
+     еле угадывался, а светлый шкаф — первое, чему тур учит. */
+  ctx.strokeStyle = `rgba(255,255,255,${(0.8 * a).toFixed(3)})`;
+  ctx.lineWidth = 2.8 * SS;
+  ctx.beginPath(); ctx.roundRect(r.x - pad, r.y - pad, r.w + 2 * pad, r.h + 2 * pad, rad); ctx.stroke();
   ctx.restore();
+}
+const GLINT_LEN = 1.3;        // секунды: проступил и погас
+const glintAt = u => (u <= 0 || u >= 1) ? 0 : Math.sin(Math.PI * u);
+
+/* ЦЕЛЬ УРОКА ИЩЕТСЯ НА ЭКРАНЕ — в тех же прямоугольниках касания, что слушает
+   зал (HITS), поэтому блик лежит ровно там, куда попадёт настоящий палец. Стол
+   и здания — самая крупная цель своего года: строка года на стене мельче. */
+function lessonTarget(pick){
+  let best = null, bestA = 0;
+  for (const h of HITS){
+    const p = h.p; if (!p) continue;
+    const y = p.beat != null && BEATS[p.beat] ? BEATS[p.beat].y : '';
+    const ok = pick === 'cabinet' ? p.type === 'opencase'
+             : pick === 'tools70' ? (p.type === 'study' && y === '1970')
+             : pick === 'labs73'  ? (p.type === 'study' && y === '1973')
+             : false;
+    if (!ok) continue;
+    const ar = h.w * h.h;
+    if (ar > bestA){ bestA = ar; best = h; }
+  }
+  return best;
+}
+
+/* УРОК КАСАНИЯ — первые LESSON_LEN секунд паузы на остановке-уроке:
+   0,0–0,3  палец проступает в стороне от экспоната, снизу-справа, как рука;
+   0,3–1,2  подходит к нему;
+   1,2      касание — ядро вспыхивает, волна расходится, экспонат бликует;
+   2,6–3,0  палец гаснет; дальше, как на любой остановке, — показ свайпа. */
+const LESSON_LEN = 3.2;
+function drawTapLesson(){
+  const A = state.attract;
+  if (state.mode !== 'attract' || A.phase !== 'dwell' || !A.lesson || overlayOpen()) return;
+  const t = A.dwell;
+  if (t < 0 || t > LESSON_LEN) return;
+  const tg = lessonTarget(A.lesson.pick); if (!tg) return;
+  const aim = A.lesson.aim || [0.5, 0.5];
+  const tx = tg.x + tg.w * aim[0], ty = tg.y + tg.h * aim[1];
+  const sx = tx + 150 * SS, sy = ty + 110 * SS;
+  const u = Math.max(0, Math.min(1, (t - 0.3) / 0.9));
+  const ease = u < 0.5 ? 2*u*u : 1 - Math.pow(-2*u + 2, 2) / 2;
+  const fx = sx + (tx - sx) * ease, fy = sy + (ty - sy) * ease;
+  const a = Math.min(1, t / 0.3) * (t > 2.6 ? Math.max(0, 1 - (t - 2.6) / 0.4) : 1);
+  const pr = t >= 1.2 ? Math.max(0, 1 - (t - 1.2) / 0.62) : 0;
+  drawGlint(tg, glintAt((t - 1.2) / GLINT_LEN));
+  ctx.save();
+  ctx.shadowColor = `rgba(0,0,0,${(0.55 * a).toFixed(3)})`;
+  ctx.shadowBlur = 12 * SS;
+  drawCueFinger(fx, fy, 17 * SS, a, pr);
+  ctx.restore();
+}
+
+/* ВДОХ ПРИ ОСТАНОВКЕ. Человек сам довёл зал до бухты и отпустил — главный
+   экспонат один раз бликует. «Главный» — самая крупная цель касания в средней
+   половине кадра, ниже строки года: годы на стене тоже открывают страницы, но
+   экспонат — предмет, а не надпись. Остановка меряется по самому cam.x, а не
+   по скорости: пальцем зал ведётся переносом, скорость при этом ноль, и по ней
+   ведение читалось бы как стояние. Снова бликует, только когда зал уехал от
+   прошлого места больше чем на 500 единиц, — иначе мигал бы на каждой паузе. */
+const BREATH = {t: -1, still: 0, lastX: null, armX: null};
+function mainTarget(){
+  let best = null, bestA = 0;
+  for (const h of HITS){
+    const p = h.p;
+    if (!p || !['study', 'opencase', 'focus', 'album', 'photo', 'spin'].includes(p.type)) continue;
+    const cx = h.x + h.w / 2, cy = h.y + h.h / 2;
+    if (cx < W * 0.25 || cx > W * 0.75 || cy < H * 0.3 || cy > H * 0.88) continue;
+    const ar = h.w * h.h; if (ar > bestA){ bestA = ar; best = h; }
+  }
+  return best;
+}
+function drawArrivalGlint(){
+  const dt = state.dt || 0.016;
+  const moved = BREATH.lastX == null ? 0 : Math.abs(cam.x - BREATH.lastX);
+  BREATH.lastX = cam.x;
+  const idle = state.mode === 'live' && !overlayOpen() && state.focusBeat < 0;
+  BREATH.still = idle && moved < 0.5 ? BREATH.still + dt : 0;
+  const armed = BREATH.armX == null || Math.abs(cam.x - BREATH.armX) > 500;
+  if (BREATH.t < 0 && armed && BREATH.still > 0.35){
+    if (mainTarget()){ BREATH.t = 0; BREATH.armX = cam.x; }
+  }
+  if (BREATH.t < 0) return;
+  BREATH.t += dt;
+  const u = BREATH.t / GLINT_LEN;
+  if (u >= 1 || !idle){ BREATH.t = -1; return; }
+  drawGlint(mainTarget(), glintAt(u) * 0.85);
 }
 
 /* ---------------- UPDATE ---------------- */
@@ -19331,13 +19460,20 @@ function update(dt){
       if (d < 6){
         cam.x = A.stopX; cam.vel = 0;
         A.atFinale = Math.abs(A.stopX - FIN_X) < 10;
+        /* на остановке-уроке пауза длиннее на сам урок: касание и блик идут
+           первыми, а последние три секунды, как везде, — показ свайпа */
+        A.lesson = ATTRACT_LESSONS.find(L => Math.abs(L.x - A.stopX) < 10) || null;
+        A.dwellLen = CFG.attractDwell + (A.lesson ? LESSON_LEN : 0);
         A.phase = 'dwell'; A.dwell = A.atFinale ? -2.4 : 0; A.stopX = null;
       }
       if (cam.x > WORLD_END + 220) A.phase = 'fadeout';
     } else if (A.phase === 'dwell'){
       cam.vel *= Math.pow(0.001, dt);
       A.dwell += dt;
-      if (A.dwell > CFG.attractDwell) A.phase = A.atFinale ? 'fadeout' : 'cruise';   // the story ends on the packshot, then loops
+      if (A.dwell > (A.dwellLen || CFG.attractDwell)){
+        A.phase = A.atFinale ? 'fadeout' : 'cruise';   // the story ends on the packshot, then loops
+        A.lesson = null; A.dwellLen = null;
+      }
     } else if (A.phase === 'fadeout'){
       cam.vel *= Math.pow(0.01, dt);
       A.fade = Math.min(1, A.fade + dt*1.2);
@@ -19350,7 +19486,7 @@ function update(dt){
          good. It is a new tour, so it is not at the finale. */
       if (A.fade >= 1){ cam.x = INTRO_X; cam.vel = 0; cam.z = 430; cam.zTarget = 430;
                         state.introHold = true; A.phase = 'fadein'; A.beatIdx = -1;
-                        A.atFinale = false; A.stopX = null; }
+                        A.atFinale = false; A.stopX = null; A.lesson = null; A.dwellLen = null; }
     } else if (A.phase === 'fadein'){
       A.fade = Math.max(0, A.fade - dt*1.2);
       if (A.fade <= 0){ A.phase = 'dwell'; A.dwell = -2.2; }
@@ -20278,6 +20414,8 @@ function frame(){
   drawOpenBox();   // one carton off the pile, opened
   drawAttractHint(t);
   drawSwipeCue(t);     // автопрокрутка показывает жест перед каждым уходом с остановки
+  drawTapLesson();     // а на первых трёх — ещё и касание: шкаф, стол с инструментами, первые здания
+  drawArrivalGlint();  // человек сам остановился у бухты — главный экспонат один раз бликует
   // pointer affordance
   drawScanCursor();
   if (Input.hover && state.mode === 'live'){
