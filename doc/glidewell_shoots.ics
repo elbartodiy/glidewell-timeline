@@ -95,4 +95,11 @@ DTSTART;TZID=America/Los_Angeles:20261105T130000
 DTEND;TZID=America/Los_Angeles:20261105T150000
 SUMMARY:Proposed — Tim Kosinski (Irvine, before the Nov 6-7 symposium)
 END:VEVENT
+BEGIN:VEVENT
+UID:gw-ditolla-irvine@glidewell
+DTSTAMP:20261013T120000Z
+DTSTART;VALUE=DATE:20261113
+DTEND;VALUE=DATE:20261114
+SUMMARY:Shoot — Dr. Mike DiTolla (Irvine campus; time TBD)
+END:VEVENT
 END:VCALENDAR
