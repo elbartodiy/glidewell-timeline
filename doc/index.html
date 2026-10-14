@@ -1800,7 +1800,7 @@ function openSpeaker(id,keep){
     +'<dl>'
     +(s.glsummary?'<dt>'+L(UI.dGL)+'</dt><dd class="spk-brief">'+L(s.glsummary)+'</dd>':'')
     +(s.brief?'<dt>'+L(UI.dBrief)+'</dt><dd class="spk-brief">'+L(s.brief)+'</dd>':'')
-    +(s.prepQs?'<dt>'+L({en:"Interview questions — send for prep (10)",ru:"Вопросы к интервью — отправить для подготовки (10)"})+'</dt><dd><ol class="prep-qs">'+L(s.prepQs).map(function(q){return '<li>'+q+'</li>';}).join('')+'</ol></dd>':'')
+    +(s.prepQs?'<dt>'+L({en:"Interview questions — send for prep ("+s.prepQs.en.length+")",ru:"Вопросы к интервью — отправить для подготовки ("+s.prepQs.ru.length+")"})+'</dt><dd><ol class="prep-qs">'+L(s.prepQs).map(function(q){return '<li>'+q+'</li>';}).join('')+'</ol></dd>':'')
     +(s.quote?'<dt>'+L(UI.dQuote)+'</dt><dd><blockquote class="spk-quote">“'+s.quote.q+'”<cite><a href="'+s.quote.url+'" target="_blank" rel="noopener">'+s.quote.src+'</a></cite></blockquote></dd>':'')
     +(typeof SPK_CHAIRSIDE!=='undefined'&&SPK_CHAIRSIDE[id]?'<dt>'+L({en:"In the Chairside archive",ru:"След в архиве Chairside"})+'</dt><dd>'+chairsideLinks(SPK_CHAIRSIDE[id])+'</dd>':'')
     +'<dt>'+L(UI.dSpeaksThemes)+'</dt><dd><div class="who">'+themes+'</div></dd>'
