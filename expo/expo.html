@@ -4612,7 +4612,7 @@ function updateFilm(){
   // the master switch reaches every other voice in the hall — except a tape
   // the browser let run only silently (_noSound, см. playPageClip): снять с
   // неё звук здесь, вне касания, значит дать браузеру её остановить
-  const hush = v => SOUND.off || !!v._noSound;
+  const hush = v => !!v._noSound;   // голоса не зависят от кнопки-динамика — только фильм
   if (state.clip && state.clip.v) state.clip.v.muted = hush(state.clip.v);
   if (state.person && state.person.v) state.person.v.muted = hush(state.person.v);
   if (state.study && state.study.railV) state.study.railV.muted = hush(state.study.railV);
@@ -6441,7 +6441,7 @@ function updateWhoosh(){
   const voice = (state.clip && state.clip.v && !state.clip.v.paused) ||
                 (state.person && state.person.v && !state.person.v.paused) ||
                 (state.study && state.study.railV && !state.study.railV.paused);
-  const quiet = SOUND.off || voice || state.introHold || state.study || state.person ||
+  const quiet = voice || state.introHold || state.study || state.person ||
                 state.people || state.inspect || state.docOpen;
   for (const c of WHOOSH.cues){
     if (c.x == null) continue;
@@ -6482,14 +6482,19 @@ function updateWhoosh(){
    Browsers refuse sound before a gesture, so it waits for the first touch. */
 const MUSIC = {src: 'audio/mus_hall.m4a', vol: 0.30, duck: 0.18, cur: 0, el: null,
                off: localStorage.getItem('glidewell.music') !== 'on'};   // silent by default: the film is the soundtrack now
-/* the master switch: kills ALL sound — film, clips, music — with one tap */
+/* КНОПКА-ДИНАМИК ГЛУШИТ ТОЛЬКО ФОНОВЫЙ ФИЛЬМ. Была общим выключателем: один
+   тап — и молчали фильм, спикеры на страницах, музыка, звуки зала. Эльдар
+   (14.10.2026): «должен выключаться звук фильма фонового… открыли страницу,
+   там появляется спикер, начинает говорить — пусть говорит. Полностью звук мы
+   пока не отключаем, не делаем такой возможности». SOUND.off теперь значит
+   «фильм без звука» и больше нигде не читается: голоса, музыка (у неё своя
+   кнопка) и звуки зала от него не зависят. */
 const SOUND = {off: localStorage.getItem('glidewell.sound') === 'off'};
 /* ONE-SHOT PINGS. Not a whoosh cue — those are placed on the rail and timed to
    peak on arrival. This is a sound tied to a thing that happens in the room:
    it takes its own copy of a file, plays the head of it and cuts. */
 const PINGS = {};
 function pingOnce(file, gain, cutMs){
-  if (SOUND.off) return;
   let a = PINGS[file];
   if (!a){ a = PINGS[file] = new Audio('audio/whoosh/' + file + '.m4a'); a.preload = 'auto'; }
   try {
@@ -6501,8 +6506,6 @@ function pingOnce(file, gain, cutMs){
 function toggleSound(){
   SOUND.off = !SOUND.off;
   try { localStorage.setItem('glidewell.sound', SOUND.off ? 'off' : 'on'); } catch(e){}
-  // a one-shot already in flight — an aeroplane's swell, the scan's ping — stops with it
-  if (SOUND.off) for (const k in PINGS){ try { PINGS[k].pause(); } catch(e){} }
 }
 function toggleMusic(){
   MUSIC.off = !MUSIC.off;
@@ -6665,7 +6668,7 @@ function initMusic(){
 function updateMusic(dt){
   const a = MUSIC.el; if (!a) return;
   // a speaking voice always wins; the attract loop plays a little lower still
-  let want = (MUSIC.off || SOUND.off) ? 0 : MUSIC.vol;
+  let want = MUSIC.off ? 0 : MUSIC.vol;
   const voice = state.person && state.person.v;
   const rail = state.study && state.study.railV;
   const speaking = state.clip || (voice && !voice.paused && !voice.muted) ||
@@ -17518,7 +17521,7 @@ function playPageClip(src){
     v.src = vurl(src); v.preload = 'auto'; v.playsInline = true;   // см. thumbFor: имя файла у клипов не меняется
     VIDEO_EL[src] = v;
   }
-  v._noSound = false; v.muted = SOUND.off;
+  v._noSound = false; v.muted = false;
   try { v.currentTime = 0; } catch(e){}
   /* ЕСЛИ БРАУЗЕР НЕ ДАЛ ЗВУК — ПЛЁНКА ВСЁ РАВНО ИДЁТ. Страница открывается из
      кадра анимации, а не из обработчика касания, и строгий браузер (Safari,
@@ -17530,7 +17533,7 @@ function playPageClip(src){
     if (!err || err.name !== 'NotAllowedError' || v.muted) return;
     v.muted = true; v._noSound = true;
     v.play().then(() => {
-      const unmute = () => { v._noSound = false; if (!v.paused) v.muted = SOUND.off; };
+      const unmute = () => { v._noSound = false; if (!v.paused) v.muted = false; };
       window.addEventListener('pointerup', unmute, {once: true, capture: true});
     }).catch(() => {});
   });
@@ -19923,7 +19926,7 @@ function update(dt){
           if (S.railSrc === c3.src && S.railV && !S.railV.paused) S.railV.pause();
           else {
             if (S.railV && S.railV !== v3) try { S.railV.pause(); } catch(e){}
-            v3.muted = SOUND.off;
+            v3.muted = false;
             S.railV = v3; S.railSrc = c3.src;
             v3.play().catch(()=>{});
           }
