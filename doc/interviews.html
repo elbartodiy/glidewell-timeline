@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -73,6 +73,8 @@
   .btn{display:inline-block;border:0;background:var(--navy);color:#fff;font:600 13px var(--body);border-radius:9px;padding:9px 14px;cursor:pointer}
   .foot{margin-top:28px;font-size:12.5px;color:var(--mute);line-height:1.6}
   .foot button{border:0;background:none;color:var(--teal);font:600 12.5px var(--body);cursor:pointer;padding:0}
+  .status{font-family:var(--mono);font-size:11.5px;color:var(--teal);margin-top:10px;min-height:14px}
+  .sim{font-family:var(--mono);font-size:11px;color:var(--mute)}
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy);color:#fff;font-size:13px;padding:9px 14px;border-radius:9px;opacity:0;transition:opacity .2s;pointer-events:none}
   .toast.on{opacity:1}
 </style>
@@ -81,24 +83,24 @@
 <div class="page">
   <div class="top">
     <div>
-      <div class="kicker">Interviews · кто что сказал</div>
-      <h1>Поиск по интервью</h1>
+      <div class="kicker">Interviews · who said what</div>
+      <h1>Interview Finder</h1>
     </div>
-    <a class="back" href="index.html">← таймлайн</a>
+    <a class="back" href="index.html">← timeline</a>
   </div>
-  <p class="sub">Пиши, о чём речь — по-английски точнее (текст интервью английский), по-русски находит там, где есть перевод. В ответе — только оригиналы: исходный звук петлички и клипы камер, которые писали в этот момент, с примерной минутой. Часы на камерах не сведены: точность — до нескольких секунд, «≈» — у камеры были сбиты часы, сдвиг оценён.</p>
 
   <div id="loader" class="load" hidden>
-    <h2>Нужен файл индекса</h2>
-    <p>Расшифровки не лежат на сайте — они на диске. Выбери файл<br><code>Extreme SSD / Documentary Glidewell / Documents / _Index / interviews_index.jsonl</code><br>Страница запомнит его в этом браузере; когда индекс обновится, загрузи файл заново.</p>
-    <label class="drop" id="drop">Перетащи файл сюда или <span class="btn">Выбрать файл</span>
+    <h2>Load the index file</h2>
+    <p>Transcripts are not stored on this site — they live on the drive. Choose<br><code>Extreme SSD / Documentary Glidewell / Documents / _Index / interviews_index.jsonl</code><br>This browser will remember it. When the index is updated, load the file again.</p>
+    <label class="drop" id="drop">Drop the file here or <span class="btn">Choose file</span>
       <input type="file" id="file" accept=".jsonl,.json,.txt" hidden></label>
   </div>
 
   <div id="app" hidden>
     <div class="search">
-      <div class="qbox"><input id="q" type="search" placeholder="например: hand-made technicians wax · BruxZir hammer · Джим отказался от имплантов" autocomplete="off"><span class="cnt" id="cnt"></span></div>
+      <div class="qbox"><input id="q" type="search" placeholder="Where does Jim refuse to do implants?" autocomplete="off"><span class="cnt" id="cnt"></span></div>
       <div class="chips" id="chips"></div>
+      <div class="status" id="status"></div>
     </div>
     <div class="res" id="res"></div>
     <div class="foot" id="foot"></div>
@@ -119,6 +121,83 @@
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
   function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(function(){e.classList.remove('on')},1600)}
 
+  // ---- смысловой поиск: многоязычная модель прямо в браузере (transformers.js) ----
+  // Кусок → вектор «смысла» один раз (кеш в IndexedDB); запрос на любом языке → вектор → косинус.
+  var MODEL='Xenova/multilingual-e5-small', model=null, EMB=null, DIM=0, embReady=false, embErr=false, qcache={};
+  function status(t){$('status').textContent=t||''}
+  function sig(){return MODEL+'|'+rows.length+'|'+rows[0].text.slice(0,60)+'|'+rows[rows.length-1].text.slice(0,60)}
+  function getModel(){
+    if(model)return model;
+    model=import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2').then(function(T){
+      T.env.allowLocalModels=false;
+      return T.pipeline('feature-extraction',MODEL,{quantized:true,progress_callback:function(p){
+        if(p.status==='progress'&&/onnx/.test(p.file||''))status('Downloading the meaning model (once) … '+Math.round(p.progress)+'%');}});
+    });
+    return model;
+  }
+  function embed(texts){return getModel().then(function(m){return m(texts,{pooling:'mean',normalize:true})}).then(function(o){return o.data})}
+  function fromIndex(){ // векторы уже лежат в индексе (embed_index.mjs): int8 + масштаб, base64
+    if(!rows.length||!rows[0].e||rows[0].em!==MODEL)return false;
+    var d=atob(rows[0].e).length,v=new Float32Array(rows.length*d);
+    for(var i=0;i<rows.length;i++){
+      var r=rows[i];if(!r.e)return false;var b=atob(r.e),n=0,o=i*d;
+      for(var j=0;j<d;j++){var x=b.charCodeAt(j);if(x>127)x-=256;v[o+j]=x/r.es;n+=v[o+j]*v[o+j]}
+      n=Math.sqrt(n)||1;for(j=0;j<d;j++)v[o+j]/=n;
+    }
+    EMB=v;DIM=d;embReady=true;return true;
+  }
+  function prepare(){
+    if(fromIndex()){status('');run();return}
+    var sg=sig();
+    idbGet('emb').then(function(c){
+      if(c&&c.sig===sg){EMB=c.v;DIM=c.d;embReady=true;status('');run();return}
+      var n=rows.length,B=16,i=0,v=null;
+      status('Loading the meaning model …');
+      (function step(){
+        var batch=rows.slice(i,i+B).map(function(r){return 'passage: '+r.text.slice(0,1500)});
+        embed(batch).then(function(e){
+          if(!v){DIM=e.length/batch.length;v=new Float32Array(n*DIM)}
+          v.set(e,i*DIM);i+=B;
+          status('Preparing meaning search (once) … '+Math.min(i,n)+' / '+n);
+          if(i<n)setTimeout(step,0);
+          else{EMB=v;embReady=true;idbSet('emb',{sig:sg,v:v,d:DIM});status('');run()}
+        }).catch(function(err){embErr=true;status('Meaning search unavailable ('+(err&&err.message||err)+') — searching by words.');run()});
+      })();
+    });
+  }
+  function semScores(q){
+    var k='query: '+q;
+    var p=qcache[k]||(qcache[k]=embed([k]));
+    return p.then(function(qv){
+      var out=new Float32Array(rows.length);
+      for(var r=0;r<rows.length;r++){var o=r*DIM,d=0;for(var j=0;j<DIM;j++)d+=EMB[o+j]*qv[j];out[r]=d}
+      return out;
+    });
+  }
+
+  // ---- имя в запросе = фильтр по человеку («Азерников про …», «where does Paul …») ----
+  var ALIAS={
+    'Sergei Azernikov':['azernikov','азерников','sergei','сергей'],
+    'Dr. Howard Farran':['farran','фарран','howard','говард'],
+    'Dr. Paul Feuerstein':['feuerstein','фейерштейн','фойерштайн','paul','пол'],
+    'Dr. Marie Buell':['buell','бьюэлл','бьюэл','бюэлл','marie','мари'],
+    'Dr. Paresh Patel':['patel','патель','пател','paresh','пареш'],
+    'Dr. Randy Resnik':['resnik','резник','randy','рэнди','ренди'],
+    'Dr. Neil Park':['park','парк','neil','нил'],
+    'Dr. Abdul Alas':['abdul','абдул','alas'],
+    'Edsel Labao':['edsel','эдсел','эдсель','labao','лабао']
+  };
+  function aliasHit(w,a){return w===a||(a.length>=3&&w.indexOf(a)===0&&w.length-a.length<=2)}
+  function whoInQuery(q){
+    var words=norm(q).split(' '),known={};rows.forEach(function(r){known[r.person]=1});
+    for(var p in ALIAS){if(!known[p])continue;
+      for(var i=0;i<words.length;i++)for(var k=0;k<ALIAS[p].length;k++)if(aliasHit(words[i],ALIAS[p][k])){
+        var rest=words.filter(function(w,j){return j!==i&&w!=='dr'&&w!=='др'&&w!=='доктор'&&w!=='doctor'}).join(' ');
+        return{p:p,rest:rest};
+      }}
+    return null;
+  }
+
   // ---- загрузка ----
   function parse(text){
     var out=[];text.split(/\r?\n/).forEach(function(l){l=l.trim();if(!l)return;try{out.push(JSON.parse(l))}catch(e){}});
@@ -126,18 +205,18 @@
   }
   function start(text,meta){
     rows=parse(text);
-    if(!rows.length){$('loader').hidden=false;$('app').hidden=true;toast('В файле нет записей');return}
-    rows.forEach(function(r,i){r._i=i;r._en=norm(r.text);r._ru=norm(r.ru||'')});
+    if(!rows.length){$('loader').hidden=false;$('app').hidden=true;toast('No records in this file');return}
+    rows.forEach(function(r,i){r._i=i;r._en=norm(r.text);r._ru=norm(r.ru||'');r._nw=r._en.split(' ').length});
     buildIdf();
     $('loader').hidden=true;$('app').hidden=false;
-    $('foot').innerHTML='Индекс: '+rows.length+' кусков'+(meta&&meta.name?' · '+esc(meta.name):'')+(meta&&meta.at?' · загружен '+esc(meta.at):'')+
-      ' · <button id="reload">загрузить новый файл</button>';
+    $('foot').innerHTML='Index: '+rows.length+' segments'+(meta&&meta.name?' · '+esc(meta.name):'')+(meta&&meta.at?' · loaded '+esc(meta.at):'')+
+      ' · <button id="reload">load a newer file</button>';
     $('reload').onclick=function(){$('file').click()};
-    chips();run();
+    chips();run();prepare();
   }
   function readFile(f){
     var rd=new FileReader();
-    rd.onload=function(){var meta={name:f.name,at:new Date().toLocaleString('ru-RU')};idbSet('index',rd.result);idbSet('meta',meta);start(rd.result,meta);toast('Индекс загружен')};
+    rd.onload=function(){var meta={name:f.name,at:new Date().toLocaleString('en-US')};idbSet('index',rd.result);idbSet('meta',meta);start(rd.result,meta);toast('Index loaded')};
     rd.readAsText(f);
   }
   $('file').onchange=function(e){if(e.target.files[0])readFile(e.target.files[0])};
@@ -193,52 +272,73 @@
     return{h:(a>0?'… ':'')+s+(b<html.length?' …':''),cut:true};
   }
 
-  function card(r,ts){
+  function card(r,ts,sem){
     var en=highlight(r.text,ts,false),c=clip(en,520);
     var ru=r.ru?highlight(r.ru,ts,true):'';
     var w='';
-    if(r.audio)w+='<span class="k">звук</span><span class="v">'+esc(r.audio.file)+'<span class="tc">'+esc(r.audio.tc)+'</span></span>';
-    (r.sound||[]).forEach(function(s){w+='<span class="k">звук</span><span class="v">'+esc(s.file)+'<span class="tc">'+esc(s.tc)+'</span></span>'});
-    (r.cams||[]).forEach(function(x){w+='<span class="k">камера</span><span class="v">'+esc(x.file)+'<span class="tc">'+esc(x.tc)+'</span><span class="dev">'+esc(x.dev||'')+'</span></span>'});
-    if(r.clock)w+='<span class="k">часы</span><span class="v">'+esc(r.clock)+'</span>';
-    if(!r.audio&&!(r.cams||[]).length)w+='<span class="k">файл</span><span class="v nf">оригинал ещё не привязан</span>';
+    if(r.audio)w+='<span class="k">audio</span><span class="v">'+esc(r.audio.file)+'<span class="tc">'+esc(r.audio.tc)+'</span></span>';
+    (r.sound||[]).forEach(function(s){w+='<span class="k">audio</span><span class="v">'+esc(s.file)+'<span class="tc">'+esc(s.tc)+'</span></span>'});
+    (r.cams||[]).forEach(function(x){w+='<span class="k">camera</span><span class="v">'+esc(x.file)+'<span class="tc">'+esc(x.tc)+'</span></span>'});
+    if(!r.audio&&!(r.cams||[]).length)w+='<span class="k">file</span><span class="v nf">not yet matched to an original</span>';
     return '<div class="card" data-i="'+r._i+'">'+
-      '<div class="who"><span class="p">'+esc(r.person)+'</span>'+(r.who&&r.who!==r.person?'<span class="s">говорит: '+esc(r.who)+'</span>':'')+'<span class="d">'+esc(r.date||'')+'</span><button class="copy" data-act="copy">Копировать</button></div>'+
-      '<div class="q" data-full="0">'+c.h+'</div>'+(c.cut?'<button class="more" data-act="full">весь кусок</button>':'')+
-      (ru?'<button class="more" data-act="ru">перевод реплики</button><div class="ru" hidden>'+ru+'</div>':'')+
+      '<div class="who"><span class="p">'+esc(r.person)+'</span>'+(r.who&&r.who!==r.person?'<span class="s">speaking: '+esc(r.who)+'</span>':'')+(sem!=null?'<span class="sim">'+Math.round(sem*100)+'</span>':'')+'<span class="d">'+esc(r.date||'')+'</span><button class="copy" data-act="copy">Copy</button></div>'+
+      '<div class="q" data-full="0">'+c.h+'</div>'+(c.cut?'<button class="more" data-act="full">show full segment</button>':'')+
+      (ru?'<button class="more" data-act="ru">Russian translation</button><div class="ru" hidden>'+ru+'</div>':'')+
       '<div class="where">'+w+'</div></div>';
   }
 
   function chips(){
     var cnt={};rows.forEach(function(r){cnt[r.person]=(cnt[r.person]||0)+1});
-    var h='<button class="chip'+(person?'':' on')+'" data-p="">Все<b>'+rows.length+'</b></button>';
+    var h='<button class="chip'+(person?'':' on')+'" data-p="">All<b>'+rows.length+'</b></button>';
     Object.keys(cnt).sort().forEach(function(p){h+='<button class="chip'+(person===p?' on':'')+'" data-p="'+esc(p)+'">'+esc(p)+'<b>'+cnt[p]+'</b></button>'});
     $('chips').innerHTML=h;
   }
   $('chips').onclick=function(e){var b=e.target.closest('.chip');if(!b)return;person=b.getAttribute('data-p');chips();run()};
 
-  var lastTs=[];
-  function run(){
-    var q=$('q').value.trim(),ts=terms(q);lastTs=ts;
-    try{history.replaceState(null,'',q?('#q='+encodeURIComponent(q)+(person?'&p='+encodeURIComponent(person):'')):location.pathname)}catch(e){}
-    var pool=person?rows.filter(function(r){return r.person===person}):rows;
-    if(!ts.length){$('cnt').textContent='';$('res').innerHTML='<div class="empty">Задай вопрос по смыслу — словами, которые могли прозвучать. Сначала покажутся куски, где совпало больше слов.<br>Например: <i>hand made technicians</i>, <i>gold price ounce</i>, <i>Vietnam marines</i>, <i>powder scanner</i>.</div>';return}
-    var phrase=norm(q);
-    var found=pool.map(function(r){return{r:r,s:score(r,ts,phrase)}}).filter(function(x){return x.s>0}).sort(function(a,b){return b.s-a.s});
-    $('cnt').textContent=found.length?found.length+' мест':'';
-    if(!found.length){$('res').innerHTML='<div class="empty">Ничего не нашлось. Попробуй другие слова — по-английски, как могли сказать в интервью.</div>';return}
-    $('res').innerHTML=found.slice(0,MAX).map(function(x){return card(x.r,ts)}).join('')+(found.length>MAX?'<div class="empty">Показаны первые '+MAX+' из '+found.length+'. Уточни запрос или выбери человека.</div>':'');
+  var lastTs=[],runId=0;
+  function render(list,ts,total,label){
+    $('cnt').textContent=total?total+' '+label:'';
+    if(!list.length){$('res').innerHTML='<div class="empty">Nothing found. Try describing it differently.</div>';return}
+    $('res').innerHTML=list.map(function(x){return card(x.r,ts,x.sem)}).join('')+(total>list.length?'<div class="empty">Showing the best '+list.length+'. Narrow the search or pick a person.</div>':'');
   }
-  var tmr;$('q').addEventListener('input',function(){clearTimeout(tmr);tmr=setTimeout(run,140)});
+  function run(){
+    var q=$('q').value.trim(),ts=terms(q),id=++runId;lastTs=ts;
+    try{history.replaceState(null,'',q?('#q='+encodeURIComponent(q)+(person?'&p='+encodeURIComponent(person):'')):location.pathname)}catch(e){}
+    var auto=!person&&q?whoInQuery(q):null,who=person||(auto&&auto.p)||'';
+    if(auto){q=auto.rest||q;ts=terms(q);lastTs=ts}
+    status(auto?'→ '+auto.p:'');
+    var pool=who?rows.filter(function(r){return r.person===who}):rows;
+    if(!q){$('cnt').textContent='';$('res').innerHTML='';return}
+    var phrase=norm(q);
+    if(embReady){
+      if(!window._mReady)status('Loading the meaning model (first time only) …');
+      semScores(q).then(function(sc){
+        window._mReady=true;status(auto?'→ '+auto.p:'');
+        if(id!==runId)return;
+        var found=pool.filter(function(r){return r._nw>=5}).map(function(r){var kw=ts.length?score(r,ts,phrase):0;
+            var damp=r._nw<20?(20-r._nw)*0.0025:0; // обрывки из пары слов «похожи» на всё — понижаем
+            return{r:r,sem:sc[r._i],s:sc[r._i]-damp+Math.min(kw,6)*0.006}})
+          .sort(function(a,b){return b.s-a.s});
+        var top=found.length?found[0].s:0;
+        var good=found.filter(function(x){return x.s>=top-0.06});
+        render(good.slice(0,30),ts,good.length,'best matches');
+      });
+      return;
+    }
+    if(!ts.length){$('res').innerHTML='';return}
+    var found=pool.map(function(r){return{r:r,s:score(r,ts,phrase)}}).filter(function(x){return x.s>0}).sort(function(a,b){return b.s-a.s});
+    render(found.slice(0,MAX),ts,found.length,'word matches');
+  }
+  var tmr;$('q').addEventListener('input',function(){clearTimeout(tmr);tmr=setTimeout(run,embReady?350:140)});
 
   $('res').onclick=function(e){
     var b=e.target.closest('[data-act]');if(!b)return;var c=b.closest('.card'),r=rows[+c.getAttribute('data-i')],a=b.getAttribute('data-act');
     if(a==='full'){c.querySelector('.q').innerHTML=highlight(r.text,lastTs,false);b.remove()}
-    if(a==='ru'){var d=c.querySelector('.ru');d.hidden=!d.hidden;b.textContent=d.hidden?'перевод реплики':'скрыть перевод'}
+    if(a==='ru'){var d=c.querySelector('.ru');d.hidden=!d.hidden;b.textContent=d.hidden?'Russian translation':'hide translation'}
     if(a==='copy'){
-      var t=r.person+(r.who&&r.who!==r.person?' ('+r.who+')':'')+' — '+(r.date||'')+' '+(r.clock||'')+'\n'+
-        [r.audio].concat(r.sound||[]).filter(Boolean).map(function(x){return 'Звук: '+x.file+' '+x.tc}).concat((r.cams||[]).map(function(x){return 'Камера: '+x.file+' '+x.tc})).join('\n')+'\n«'+r.text.slice(0,240)+(r.text.length>240?'…':'')+'»';
-      (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){toast('Скопировано')},function(){toast('Не удалось скопировать')});
+      var t=r.person+(r.who&&r.who!==r.person?' ('+r.who+')':'')+' — '+(r.date||'')+'\n'+
+        [r.audio].concat(r.sound||[]).filter(Boolean).map(function(x){return 'Audio: '+x.file+' '+x.tc}).concat((r.cams||[]).map(function(x){return 'Camera: '+x.file+' '+x.tc})).join('\n')+'\n«'+r.text.slice(0,240)+(r.text.length>240?'…':'')+'»';
+      (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){toast('Copied')},function(){toast('Could not copy')});
     }
   };
 
