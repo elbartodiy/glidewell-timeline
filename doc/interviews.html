@@ -94,6 +94,13 @@
   .strip .s.cur{outline:4px solid var(--red);outline-offset:-4px}
   .strip .s.cur .ttc{background:var(--red)}
   .chips.sub{margin-top:8px}
+  .vis{background:var(--card);border-radius:14px;padding:12px 14px 14px;box-shadow:5px 5px 14px var(--nm-lo),-5px -5px 12px var(--nm-hi)}
+  .vis h3{margin:0 0 10px;font:600 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--teal)}
+  .vis .row{display:grid;grid-template-columns:repeat(auto-fill,136px);grid-auto-rows:102px;gap:8px;justify-content:space-between}
+  .vis .s{position:relative;border-radius:6px;overflow:hidden;background:#11151a;width:136px;height:102px;cursor:pointer}
+  .vis .s img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .vis .s .ttc{position:absolute;left:6px;bottom:6px;font:600 11px var(--mono);color:#fff;background:rgba(19,23,27,.72);padding:2px 6px;border-radius:4px}
+  .vis .s:hover{outline:3px solid var(--teal);outline-offset:-3px}
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy);color:#fff;font-size:13px;padding:9px 14px;border-radius:9px;opacity:0;transition:opacity .2s;pointer-events:none}
   .toast.on{opacity:1}
 </style>
@@ -142,8 +149,11 @@
     if(thumbURL[k])return Promise.resolve(thumbURL[k]);
     return idb().then(function(d){return new Promise(function(ok){var t=d.transaction(TS).objectStore(TS).get(k);t.onsuccess=function(){var b=t.result;ok(b?(thumbURL[k]=URL.createObjectURL(b)):'')};t.onerror=function(){ok('')}})}).catch(function(){return ''});
   }
-  function fillThumbs(root){(root||document).querySelectorAll('img[data-th]').forEach(function(im){var k=im.getAttribute('data-th');im.removeAttribute('data-th');thumbGet(k).then(function(u){if(u)im.src=u})})}
+  function fillThumbs(root){(root||document).querySelectorAll('img[data-th]').forEach(function(im){var k=im.getAttribute('data-th');im.removeAttribute('data-th');if(serverMode){im.src=SERVER+'/thumb/'+k.split('/').map(encodeURIComponent).join('/');return}thumbGet(k).then(function(u){if(u)im.src=u})})}
   var $=function(id){return document.getElementById(id)};
+  // Локальный сервер поиска (Documents/_scripts/finder_server.mjs): если запущен — ищем через него
+  // (перевод вопроса, смысл+слова, «судья»), кадры и открытие файлов тоже через него. Нет — работаем в браузере.
+  var SERVER='http://127.0.0.1:8765', serverMode=false, SV=null, VIS=[];
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
   function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(function(){e.classList.remove('on')},1600)}
 
@@ -247,13 +257,16 @@
     var by=function(n){return files.find(function(f){return f.name===n})};
     var fi=by('interviews_index.jsonl'),fa=by('archive_index.jsonl'),fs=by('archive_strips.json');
     if(!fi&&!fa){toast('No index files in this folder');return}
-    var thumbs=files.filter(function(f){return /\.jpg$/i.test(f.name)&&/archive_thumbs\//.test(f.webkitRelativePath||'')});
+    // миниатюры лежат пакетами archive_thumbs/<id>.pack (thumbs_pack.py): 4 байта длины заголовка, JSON {кадр:[смещение,длина]}, JPEG подряд
+    var packs=files.filter(function(f){return /\.pack$/i.test(f.name)&&!/^\._/.test(f.name)&&/archive_thumbs\//.test(f.webkitRelativePath||'')});
     status('Loading the index …');
     Promise.all([fi?readText(fi):'',fa?readText(fa):'',fs?readText(fs):'{}']).then(function(t){
-      var text=(t[0]||'')+'\n'+(t[1]||''),meta={name:'_Index folder',at:new Date().toLocaleString('en-US'),thumbs:thumbs.length};
-      var list=thumbs.map(function(f){var p=f.webkitRelativePath.split('archive_thumbs/')[1];return[p,f]});
-      status('Saving '+list.length+' thumbnails …');
-      return thumbsPut(list).then(function(){thumbURL={};return Promise.all([idbSet('index',text),idbSet('strips',t[2]),idbSet('meta',meta)])}).then(function(){start(text,meta,t[2]);toast('Index loaded')});
+      var text=(t[0]||'')+'\n'+(t[1]||''),meta={name:'_Index folder',at:new Date().toLocaleString('en-US'),thumbs:0};
+      status('Reading thumbnails …');
+      return Promise.all(packs.map(function(f){return f.arrayBuffer().then(function(buf){
+        var aid=f.name.replace(/\.pack$/i,''),n=new DataView(buf).getUint32(0),idx=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,4,n))),base=4+n;
+        return Object.keys(idx).map(function(k){return[aid+'/'+k,new Blob([new Uint8Array(buf,base+idx[k][0],idx[k][1])],{type:'image/jpeg'})]});
+      })})).then(function(parts){var list=[].concat.apply([],parts);meta.thumbs=list.length;status('Saving '+list.length+' thumbnails …');return thumbsPut(list)}).then(function(){thumbURL={};return Promise.all([idbSet('index',text),idbSet('strips',t[2]),idbSet('meta',meta)])}).then(function(){start(text,meta,t[2]);toast('Index loaded')});
     });
   }
   $('file').onchange=function(e){if(e.target.files.length)readFolder(e.target.files)};
@@ -310,7 +323,8 @@
   function abs(r,f){return ROOT+(r.base?r.base+'/':'')+f}
   function link(a,path,t){return 'glidewell-finder://open?a='+a+'&t='+Math.round(t||0)+'&f='+encodeURIComponent(path)}
   function fileLine(r,x){var p=abs(r,x.file),t=tcs(x.tc);
-    return esc(x.file)+'<span class="tc">'+esc(x.tc)+'</span><a class="go dir" href="'+link('reveal',p,0)+'" title="Show in Finder">Folder</a><a class="go" href="'+link('play',p,t)+'" title="Open in QuickTime at '+esc(x.tc)+'">▶</a>'}
+    return esc(x.file)+'<span class="tc">'+esc(x.tc)+'</span><a class="go dir" data-open="reveal" data-f="'+esc(p)+'" data-t="0" href="'+link('reveal',p,0)+'" title="Show in Finder">Folder</a><a class="go" data-open="play" data-f="'+esc(p)+'" data-t="'+t+'" href="'+link('play',p,t)+'" title="Open in QuickTime at '+esc(x.tc)+'">▶</a>'}
+  function openVia(a,f,t){if(serverMode){fetch(SERVER+'/api/open?a='+a+'&t='+Math.round(t||0)+'&f='+encodeURIComponent(f)).then(function(r){return r.json()}).then(function(d){if(d.result!=='ok')toast('File not found — is the drive connected?')}).catch(function(){location.href=link(a,f,t)})}else location.href=link(a,f,t)}
   function tcs(t){var p=String(t).replace('≈','').split(':').map(Number);return p[0]*3600+p[1]*60+(p[2]||0)}
   function card(r,ts,sem){
     var en=highlight(r.text,ts,false),c=clip(en,520);
@@ -324,12 +338,12 @@
     var tc=(r.cams&&r.cams[0]&&r.cams[0].tc)||'';
     var th=r.thumb?'<div class="th"><img alt="" data-th="'+esc(r.thumb)+'"><span class="ttc">'+esc(tc)+'</span></div>':'';
     var body='<div>'+
-      '<div class="who">'+(arch?'<span class="src">'+(r.kind==='shot'?'shot':'speech')+'</span>':'')+'<span class="p">'+esc(r.person)+'</span>'+(r.who&&r.who!==r.person?'<span class="s">speaking: '+esc(r.who)+'</span>':'')+(sem!=null?'<span class="sim">'+Math.round(sem*100)+'</span>':'')+'<span class="d">'+esc(r.date||'')+'</span><button class="copy" data-act="copy">Copy</button></div>'+
+      '<div class="who">'+(arch?'<span class="src">'+(r.kind==='shot'?'shot':'speech')+'</span>':'')+'<span class="p">'+esc(r.person)+'</span>'+(r.who&&r.who!==r.person?'<span class="s">speaking: '+esc(r.who)+'</span>':'')+(sem!=null&&!serverMode?'<span class="sim">'+Math.round(sem*100)+'</span>':'')+'<span class="d">'+esc(r.date||'')+'</span><button class="copy" data-act="copy">Copy</button></div>'+
       '<div class="q" data-full="0">'+(r.kind==='shot'?esc(r.text.split(' · On screen: ')[0]):c.h)+'</div>'+
       (r.ocr?'<div class="ocr">On screen: '+esc(r.ocr)+'</div>':'')+
       (c.cut&&r.kind!=='shot'?'<button class="more" data-act="full">show full segment</button>':'')+
       (ru?'<button class="more" data-act="ru">Russian translation</button><div class="ru" hidden>'+ru+'</div>':'')+
-      (arch&&STRIPS[r.aid]&&STRIPS[r.aid].shots.length?' <button class="more" data-act="strip">all shots of this file ('+STRIPS[r.aid].shots.length+')</button>':'')+
+      (arch&&(r.nshots||(STRIPS[r.aid]&&STRIPS[r.aid].shots.length))?' <button class="more" data-act="strip">all shots of this file ('+(r.nshots||STRIPS[r.aid].shots.length)+')</button>':'')+
       '<div class="where">'+w+'</div></div>';
     return '<div class="card'+(th?' has-th':'')+'" data-i="'+r._i+'">'+th+body+'</div>';
   }
@@ -341,6 +355,12 @@
   }
 
   function chips(){
+    if(serverMode){
+      var h='';[['','All',SV.rows],['interview','Interviews',SV.counts.interview],['archive','Archive',SV.counts.archive]].forEach(function(c){h+='<button class="chip'+(source===c[0]?' on':'')+'" data-s="'+c[0]+'">'+c[1]+'<b>'+c[2]+'</b></button>'});
+      $('chips').innerHTML=h;var h2='';
+      if(source==='interview'){h2='<button class="chip'+(person?'':' on')+'" data-p="">Everyone</button>';SV.people.forEach(function(p){h2+='<button class="chip'+(person===p?' on':'')+'" data-p="'+esc(p)+'">'+esc(p)+'</button>'})}
+      $('chips2').innerHTML=h2;return;
+    }
     var n={interview:0,archive:0},cnt={};
     rows.forEach(function(r){n[r.source]=(n[r.source]||0)+1;if(r.source==='interview')cnt[r.person]=(cnt[r.person]||0)+1});
     var h='';[['','All',rows.length],['interview','Interviews',n.interview],['archive','Archive',n.archive]].forEach(function(c){
@@ -370,18 +390,37 @@
     var pool=rows.filter(function(r){return (!source||r.source===source)&&(!who||r.person===who)});
     if(!q){$('cnt').textContent='';$('res').innerHTML='';return}
     var phrase=norm(q);
+    if(serverMode){
+      status('Searching …');
+      var url=SERVER+'/api/search?q='+encodeURIComponent($('q').value.trim())+'&source='+encodeURIComponent(source)+'&person='+encodeURIComponent(person);
+      fetch(url).then(function(x){return x.json()}).then(function(d){
+        if(id!==runId)return;
+        rows=[];d.results.forEach(function(r){r._en=norm(r.text);r._ru=norm(r.ru||'');rows[r._i]=r});
+        status((d.person?'→ '+d.person+' · ':'')+(d.used?'searched as: “'+d.used+'” · ':'')+(d.ms/1000).toFixed(1)+' s');
+        render(d.results.map(function(r){return{r:r,sem:r.score}}),terms(d.used||q),d.total,'matches');
+        if(d.visual&&d.visual.length){
+          VIS=d.visual;
+          $('res').insertAdjacentHTML('afterbegin','<div class="vis"><h3>Shots that look like this</h3><div class="row">'+d.visual.map(function(v,k){
+            return '<div class="s" data-v="'+k+'" title="'+esc(v.title)+' · '+hmsj(v.t0)+' — click to play"><img alt="" data-th="'+esc(v.thumb)+'"><span class="ttc">'+hmsj(v.t0)+'</span></div>'}).join('')+'</div></div>');
+          fillThumbs($('res'));
+        }
+      }).catch(function(){status('Search server stopped — reload the page');});
+      return;
+    }
     if(embReady){
       if(!window._mReady)status('Loading the meaning model (first time only) …');
       semScores(q).then(function(sc){
         window._mReady=true;status(auto?'→ '+auto.p:'');
         if(id!==runId)return;
-        var found=pool.filter(function(r){return r._nw>=5}).map(function(r){var kw=ts.length?score(r,ts,phrase):0;
-            var damp=r._nw<20?(20-r._nw)*0.0025:0; // обрывки из пары слов «похожи» на всё — понижаем
-            return{r:r,sem:sc[r._i],s:sc[r._i]-damp+Math.min(kw,6)*0.006}})
-          .sort(function(a,b){return b.s-a.s});
-        var top=found.length?found[0].s:0;
-        var good=found.filter(function(x){return x.s>=top-0.06});
-        render(good.slice(0,30),ts,good.length,'best matches');
+        // слияние рангов (RRF): смысл + слова (+ реплики Джима, если он в вопросе) — по замерам на контрольном наборе
+        var cand=pool.filter(function(r){return r._nw>=5});
+        var sem=cand.map(function(r){var damp=r._nw<20?(20-r._nw)*0.0025:0;return{r:r,v:sc[r._i]-damp}}).sort(function(a,b){return b.v-a.v});
+        var kw=ts.length?cand.map(function(r){return{r:r,v:score(r,ts,phrase)}}).filter(function(x){return x.v>0}).sort(function(a,b){return b.v-a.v}):[];
+        var rr=new Map(),add=function(list){list.slice(0,200).forEach(function(x,k){rr.set(x.r,(rr.get(x.r)||0)+1/(60+k))})};
+        add(sem);add(kw);
+        if(/(^|[^\p{L}])(jim|джим\p{L}*)/iu.test(q))add(sem.filter(function(x){return x.r.who==='Jim Glidewell'}));
+        var found=Array.from(rr.entries()).sort(function(a,b){return b[1]-a[1]}).map(function(e){return{r:e[0],sem:sc[e[0]._i]}});
+        render(found.slice(0,30),ts,found.length,'matches');
       });
       return;
     }
@@ -389,13 +428,17 @@
     var found=pool.map(function(r){return{r:r,s:score(r,ts,phrase)}}).filter(function(x){return x.s>0}).sort(function(a,b){return b.s-a.s});
     render(found.slice(0,MAX),ts,found.length,'word matches');
   }
-  var tmr;$('q').addEventListener('input',function(){clearTimeout(tmr);tmr=setTimeout(run,embReady?350:140)});
+  var tmr;$('q').addEventListener('input',function(){clearTimeout(tmr);tmr=setTimeout(run,serverMode?900:(embReady?350:140))});
+  $('q').addEventListener('keydown',function(e){if(e.key==='Enter'){clearTimeout(tmr);run()}});
 
   $('res').onclick=function(e){
+    var vs=e.target.closest('.vis .s');if(vs){var v=VIS[+vs.getAttribute('data-v')];openVia(e.altKey?'reveal':'play',ROOT+v.base+'/'+v.file,v.t0);return}
     var sh=e.target.closest('.strip .s');
-    if(sh){var cr=rows[+sh.closest('.card').getAttribute('data-i')];location.href=link('play',abs(cr,cr.cams[0].file),tcs(sh.getAttribute('data-tc')));return}
+    if(sh){var cr=rows[+sh.closest('.card').getAttribute('data-i')];openVia('play',abs(cr,cr.cams[0].file),tcs(sh.getAttribute('data-tc')));return}
+    var go=e.target.closest('a.go[data-open]');if(go){e.preventDefault();openVia(go.getAttribute('data-open'),go.getAttribute('data-f'),+go.getAttribute('data-t'));return}
     var b=e.target.closest('[data-act]');if(!b)return;var c=b.closest('.card'),r=rows[+c.getAttribute('data-i')],a=b.getAttribute('data-act');
     if(a==='full'){c.querySelector('.q').innerHTML=highlight(r.text,lastTs,false);b.remove()}
+    if(a==='strip'&&serverMode&&!STRIPS[r.aid]){fetch(SERVER+'/api/strip?aid='+encodeURIComponent(r.aid)).then(function(x){return x.json()}).then(function(S){STRIPS[r.aid]=S;b.click()});return}
     if(a==='strip'){var ex=c.querySelector('.strip');if(ex){ex.remove();b.textContent=b.textContent.replace('hide','all')}else{c.insertAdjacentHTML('beforeend',strip(r));fillThumbs(c);var sp=c.querySelector('.strip'),cu=sp.querySelector('.cur');if(cu)sp.scrollTop+=cu.getBoundingClientRect().top-sp.getBoundingClientRect().top-140;b.textContent=b.textContent.replace('all','hide')}}
     if(a==='ru'){var d=c.querySelector('.ru');d.hidden=!d.hidden;b.textContent=d.hidden?'Russian translation':'hide translation'}
     if(a==='copy'){
@@ -408,7 +451,16 @@
   // ---- старт ----
   var h=decodeURIComponent(location.hash.slice(1));var mq=h.match(/q=([^&]*)/),mp=h.match(/p=([^&]*)/);
   if(mq)$('q').value=mq[1];if(mp)person=mp[1];
+  function startServer(st){
+    serverMode=true;SV=st;ROOT=st.root||ROOT;$('loader').hidden=true;$('app').hidden=false;
+    $('foot').innerHTML='Search server on this Mac · '+st.rows+' segments';
+    chips();run();
+  }
+  var ctl=window.AbortController?new AbortController():null;setTimeout(function(){ctl&&ctl.abort()},1500);
+  fetch(SERVER+'/api/status',ctl?{signal:ctl.signal}:{}).then(function(x){return x.json()}).then(function(st){if(st&&st.ok)startServer(st);else throw 0}).catch(function(){browserStart()});
+  function browserStart(){
   Promise.all([idbGet('index'),idbGet('meta'),idbGet('strips')]).then(function(v){if(v[0]&&v[1]&&v[1].name==='_Index folder')start(v[0],v[1],v[2]);else{$('loader').hidden=false}});
+  }
 })();
 </script>
 </body>
