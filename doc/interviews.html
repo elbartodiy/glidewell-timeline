@@ -59,6 +59,10 @@
   .where .v{font-family:var(--mono);font-size:13px;color:var(--ink);word-break:break-all}
   .where .v .tc{background:var(--teal-tint);color:var(--teal);border-radius:4px;padding:1px 6px;margin-left:6px;font-weight:600;white-space:nowrap}
   .where .v .dev{color:var(--mute);font-size:11.5px;margin-left:6px}
+  .where .v .go{display:inline-block;margin-left:8px;font:600 11.5px var(--body);color:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:1px 8px;text-decoration:none;white-space:nowrap;vertical-align:1px}
+  .where .v .go:hover{border-color:var(--teal);color:var(--teal)}
+  .where .v .go.dir{color:#fff;background:var(--navy);border-color:var(--navy)}
+  .where .v .go.dir:hover{background:var(--teal);border-color:var(--teal);color:#fff}
   .where .v.nf{color:var(--mute);font-family:var(--body);font-size:13px}
   .copy{border:1px solid var(--line);background:var(--card);border-radius:8px;font:600 12px var(--body);color:var(--ink-2);padding:5px 10px;cursor:pointer;white-space:nowrap}
   .copy:hover{border-color:var(--teal);color:var(--teal)}
@@ -301,14 +305,20 @@
     return{h:(a>0?'… ':'')+s+(b<html.length?' …':''),cut:true};
   }
 
+  // Где лежат файлы. Ссылки открывает помощник «Glidewell Opener» (~/Applications) по схеме glidewell-finder://
+  var ROOT=(function(){try{return localStorage.getItem('finder_root')}catch(e){return null}})()||'/Volumes/Extreme SSD/Documentary Glidewell/';
+  function abs(r,f){return ROOT+(r.base?r.base+'/':'')+f}
+  function link(a,path,t){return 'glidewell-finder://open?a='+a+'&t='+Math.round(t||0)+'&f='+encodeURIComponent(path)}
+  function fileLine(r,x){var p=abs(r,x.file),t=tcs(x.tc);
+    return esc(x.file)+'<span class="tc">'+esc(x.tc)+'</span><a class="go dir" href="'+link('reveal',p,0)+'" title="Show in Finder">Folder</a><a class="go" href="'+link('play',p,t)+'" title="Open in QuickTime at '+esc(x.tc)+'">▶</a>'}
   function tcs(t){var p=String(t).replace('≈','').split(':').map(Number);return p[0]*3600+p[1]*60+(p[2]||0)}
   function card(r,ts,sem){
     var en=highlight(r.text,ts,false),c=clip(en,520);
     var ru=r.ru?highlight(r.ru,ts,true):'';
     var w='',arch=r.source==='archive';
-    if(r.audio)w+='<span class="k">audio</span><span class="v">'+esc(r.audio.file)+'<span class="tc">'+esc(r.audio.tc)+'</span></span>';
-    (r.sound||[]).forEach(function(s){w+='<span class="k">audio</span><span class="v">'+esc(s.file)+'<span class="tc">'+esc(s.tc)+'</span></span>'});
-    (r.cams||[]).forEach(function(x){w+='<span class="k">'+(arch?'file':'camera')+'</span><span class="v">'+esc(x.file)+'<span class="tc">'+esc(x.tc)+'</span></span>'});
+    if(r.audio)w+='<span class="k">audio</span><span class="v">'+fileLine(r,r.audio)+'</span>';
+    (r.sound||[]).forEach(function(s){w+='<span class="k">audio</span><span class="v">'+fileLine(r,s)+'</span>'});
+    (r.cams||[]).forEach(function(x){w+='<span class="k">'+(arch?'file':'camera')+'</span><span class="v">'+fileLine(r,x)+'</span>'});
     (r.also||[]).forEach(function(a){w+='<span class="k">copy</span><span class="v nf">'+esc(a)+'</span>'});
     if(!r.audio&&!(r.cams||[]).length)w+='<span class="k">file</span><span class="v nf">not yet matched to an original</span>';
     var tc=(r.cams&&r.cams[0]&&r.cams[0].tc)||'';
@@ -327,7 +337,7 @@
   function strip(r){
     var S=STRIPS[r.aid],cur=tcs((r.cams[0]||{}).tc||0),best=0;
     S.shots.forEach(function(x,i){if(x[0]<=cur)best=i});
-    return '<div class="strip">'+S.shots.map(function(x,i){return '<div class="s'+(i===best?' cur':'')+'" data-tc="'+hmsj(x[0])+'" title="'+esc(S.file)+' '+hmsj(x[0])+'"><img alt="" loading="lazy" data-th="'+esc(r.aid+'/'+x[1])+'"><span class="ttc">'+hmsj(x[0])+'</span></div>'}).join('')+'</div>';
+    return '<div class="strip">'+S.shots.map(function(x,i){return '<div class="s'+(i===best?' cur':'')+'" data-tc="'+hmsj(x[0])+'" title="Play from '+hmsj(x[0])+'"><img alt="" loading="lazy" data-th="'+esc(r.aid+'/'+x[1])+'"><span class="ttc">'+hmsj(x[0])+'</span></div>'}).join('')+'</div>';
   }
 
   function chips(){
@@ -383,14 +393,14 @@
 
   $('res').onclick=function(e){
     var sh=e.target.closest('.strip .s');
-    if(sh){var tc=sh.getAttribute('data-tc'),fn=sh.getAttribute('title');(navigator.clipboard?navigator.clipboard.writeText(fn):Promise.reject()).then(function(){toast('Copied: '+fn)},function(){toast(fn)});return}
+    if(sh){var cr=rows[+sh.closest('.card').getAttribute('data-i')];location.href=link('play',abs(cr,cr.cams[0].file),tcs(sh.getAttribute('data-tc')));return}
     var b=e.target.closest('[data-act]');if(!b)return;var c=b.closest('.card'),r=rows[+c.getAttribute('data-i')],a=b.getAttribute('data-act');
     if(a==='full'){c.querySelector('.q').innerHTML=highlight(r.text,lastTs,false);b.remove()}
     if(a==='strip'){var ex=c.querySelector('.strip');if(ex){ex.remove();b.textContent=b.textContent.replace('hide','all')}else{c.insertAdjacentHTML('beforeend',strip(r));fillThumbs(c);var sp=c.querySelector('.strip'),cu=sp.querySelector('.cur');if(cu)sp.scrollTop+=cu.getBoundingClientRect().top-sp.getBoundingClientRect().top-140;b.textContent=b.textContent.replace('all','hide')}}
     if(a==='ru'){var d=c.querySelector('.ru');d.hidden=!d.hidden;b.textContent=d.hidden?'Russian translation':'hide translation'}
     if(a==='copy'){
       var t=r.person+(r.who&&r.who!==r.person?' ('+r.who+')':'')+(r.date?' — '+r.date:'')+'\n'+
-        [r.audio].concat(r.sound||[]).filter(Boolean).map(function(x){return 'Audio: '+x.file+' '+x.tc}).concat((r.cams||[]).map(function(x){return (r.source==='archive'?'File: ':'Camera: ')+x.file+' '+x.tc})).join('\n')+'\n«'+r.text.slice(0,240)+(r.text.length>240?'…':'')+'»';
+        [r.audio].concat(r.sound||[]).filter(Boolean).map(function(x){return 'Audio: '+abs(r,x.file)+'  '+x.tc}).concat((r.cams||[]).map(function(x){return (r.source==='archive'?'File: ':'Camera: ')+abs(r,x.file)+'  '+x.tc})).join('\n')+'\n«'+r.text.slice(0,240)+(r.text.length>240?'…':'')+'»';
       (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){toast('Copied')},function(){toast('Could not copy')});
     }
   };
