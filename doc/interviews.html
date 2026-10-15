@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Interview Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Токены — те же, что у рабочего таймлайна (doc/index.html) */
+  :root{
+    --ink:#13171B;--ink-2:#4A555F;--paper:#F4F6F8;--card:#FFFFFF;--line:#E4E8EC;
+    --navy:#1C2024;--slate:#9098A0;--teal:#137C7C;--teal-tint:#E6F2F2;--red:#E11B2A;--red-tint:#FCEDEE;
+    --mute:#8A929B;--mark:#FFE9A8;
+    --nm-lo:rgba(174,186,206,.55);--nm-hi:rgba(255,255,255,.92);
+    --disp:"Space Grotesk",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased}
+  a{color:var(--teal)}
+  .page{max-width:980px;margin:0 auto;padding:28px 24px 64px}
+  @media(max-width:600px){.page{padding:18px 16px 48px}}
+  .top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal)}
+  h1{font-family:var(--disp);font-size:30px;font-weight:700;letter-spacing:-.01em;margin:4px 0 6px;color:var(--navy)}
+  .sub{color:var(--ink-2);font-size:14px;line-height:1.5;margin:0 0 20px;max-width:640px}
+  .back{font-family:var(--mono);font-size:12px;color:var(--mute);text-decoration:none}
+  .back:hover{color:var(--ink)}
+
+  .search{position:sticky;top:0;z-index:5;background:var(--paper);padding:10px 0 12px}
+  .qbox{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:14px;padding:4px 6px 4px 16px;
+        box-shadow:6px 6px 16px var(--nm-lo),-6px -6px 14px var(--nm-hi)}
+  .qbox input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:500 17px/1.2 var(--body);color:var(--ink);padding:12px 0}
+  .qbox input::placeholder{color:#A9B0B7}
+  .qbox .cnt{font-family:var(--mono);font-size:12px;color:var(--mute);white-space:nowrap;padding-right:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 11px;font:500 12.5px var(--body);color:var(--ink-2);cursor:pointer}
+  .chip b{font-family:var(--mono);font-weight:500;color:var(--mute);margin-left:4px;font-size:11px}
+  .chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+  .chip.on b{color:#C9CED3}
+
+  .res{display:flex;flex-direction:column;gap:14px;margin-top:6px}
+  .card{background:var(--card);border-radius:14px;padding:16px 18px 14px;box-shadow:5px 5px 14px var(--nm-lo),-5px -5px 12px var(--nm-hi);position:relative}
+  .card::before{content:"";position:absolute;left:16px;right:16px;top:0;height:3px;border-radius:0 0 3px 3px;background:var(--teal);opacity:.85}
+  .who{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .who .p{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--navy)}
+  .who .s{font-size:12.5px;color:var(--mute)}
+  .who .d{font-family:var(--mono);font-size:11.5px;color:var(--mute);margin-left:auto}
+  .who .copy{margin-left:4px}
+  .q{font-size:15px;line-height:1.55;color:var(--ink)}
+  .q mark,.ru mark{background:var(--mark);color:inherit;border-radius:2px;padding:0 1px}
+  .more{border:0;background:none;color:var(--teal);font:600 12.5px var(--body);cursor:pointer;padding:6px 0 0}
+  .ru{margin-top:8px;padding-left:12px;border-left:2px solid var(--teal-tint);color:#3D5A80;font-size:14px;line-height:1.5;font-style:italic}
+
+  .where{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px;display:grid;grid-template-columns:auto 1fr;gap:5px 12px;align-items:baseline}
+  .where .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+  .where .v{font-family:var(--mono);font-size:13px;color:var(--ink);word-break:break-all}
+  .where .v .tc{background:var(--teal-tint);color:var(--teal);border-radius:4px;padding:1px 6px;margin-left:6px;font-weight:600;white-space:nowrap}
+  .where .v .dev{color:var(--mute);font-size:11.5px;margin-left:6px}
+  .where .v.nf{color:var(--mute);font-family:var(--body);font-size:13px}
+  .copy{border:1px solid var(--line);background:var(--card);border-radius:8px;font:600 12px var(--body);color:var(--ink-2);padding:5px 10px;cursor:pointer;white-space:nowrap}
+  .copy:hover{border-color:var(--teal);color:var(--teal)}
+
+  .empty{color:var(--mute);font-size:14px;padding:30px 4px;line-height:1.6}
+  .load{background:var(--card);border-radius:16px;padding:26px 24px;box-shadow:6px 6px 16px var(--nm-lo),-6px -6px 14px var(--nm-hi);margin-top:8px}
+  .load h2{font-family:var(--disp);font-size:19px;margin:0 0 8px;color:var(--navy)}
+  .load p{margin:0 0 14px;color:var(--ink-2);font-size:14px;line-height:1.55}
+  .load code{font-family:var(--mono);font-size:12.5px;background:var(--paper);padding:2px 6px;border-radius:4px;word-break:break-all}
+  .drop{border:2px dashed var(--slate);border-radius:12px;padding:22px;text-align:center;color:var(--ink-2);font-size:14px;cursor:pointer}
+  .drop.over{border-color:var(--teal);background:var(--teal-tint)}
+  .btn{display:inline-block;border:0;background:var(--navy);color:#fff;font:600 13px var(--body);border-radius:9px;padding:9px 14px;cursor:pointer}
+  .foot{margin-top:28px;font-size:12.5px;color:var(--mute);line-height:1.6}
+  .foot button{border:0;background:none;color:var(--teal);font:600 12.5px var(--body);cursor:pointer;padding:0}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy);color:#fff;font-size:13px;padding:9px 14px;border-radius:9px;opacity:0;transition:opacity .2s;pointer-events:none}
+  .toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top">
+    <div>
+      <div class="kicker">Interviews · кто что сказал</div>
+      <h1>Поиск по интервью</h1>
+    </div>
+    <a class="back" href="index.html">← таймлайн</a>
+  </div>
+  <p class="sub">Пиши, о чём речь — по-английски точнее (текст интервью английский), по-русски находит там, где есть перевод. В ответе — только оригиналы: исходный звук петлички и клипы камер, которые писали в этот момент, с примерной минутой. Часы на камерах не сведены: точность — до нескольких секунд, «≈» — у камеры были сбиты часы, сдвиг оценён.</p>
+
+  <div id="loader" class="load" hidden>
+    <h2>Нужен файл индекса</h2>
+    <p>Расшифровки не лежат на сайте — они на диске. Выбери файл<br><code>Extreme SSD / Documentary Glidewell / Documents / _Index / interviews_index.jsonl</code><br>Страница запомнит его в этом браузере; когда индекс обновится, загрузи файл заново.</p>
+    <label class="drop" id="drop">Перетащи файл сюда или <span class="btn">Выбрать файл</span>
+      <input type="file" id="file" accept=".jsonl,.json,.txt" hidden></label>
+  </div>
+
+  <div id="app" hidden>
+    <div class="search">
+      <div class="qbox"><input id="q" type="search" placeholder="например: hand-made technicians wax · BruxZir hammer · Джим отказался от имплантов" autocomplete="off"><span class="cnt" id="cnt"></span></div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="res" id="res"></div>
+    <div class="foot" id="foot"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  var DB='interview_finder', ST='kv', rows=[], person='', idf={}, MAX=60;
+
+  function idb(){return new Promise(function(ok,no){try{var r=indexedDB.open(DB,1);r.onupgradeneeded=function(){r.result.createObjectStore(ST)};r.onsuccess=function(){ok(r.result)};r.onerror=function(){no(r.error)}}catch(e){no(e)}})}
+  function idbGet(k){return idb().then(function(d){return new Promise(function(ok){var t=d.transaction(ST).objectStore(ST).get(k);t.onsuccess=function(){ok(t.result)};t.onerror=function(){ok(null)}})}).catch(function(){return null})}
+  function idbSet(k,v){return idb().then(function(d){return new Promise(function(ok){var t=d.transaction(ST,'readwrite');t.objectStore(ST).put(v,k);t.oncomplete=ok;t.onerror=ok})}).catch(function(){})}
+
+  var $=function(id){return document.getElementById(id)};
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(function(){e.classList.remove('on')},1600)}
+
+  // ---- загрузка ----
+  function parse(text){
+    var out=[];text.split(/\r?\n/).forEach(function(l){l=l.trim();if(!l)return;try{out.push(JSON.parse(l))}catch(e){}});
+    return out;
+  }
+  function start(text,meta){
+    rows=parse(text);
+    if(!rows.length){$('loader').hidden=false;$('app').hidden=true;toast('В файле нет записей');return}
+    rows.forEach(function(r,i){r._i=i;r._en=norm(r.text);r._ru=norm(r.ru||'')});
+    buildIdf();
+    $('loader').hidden=true;$('app').hidden=false;
+    $('foot').innerHTML='Индекс: '+rows.length+' кусков'+(meta&&meta.name?' · '+esc(meta.name):'')+(meta&&meta.at?' · загружен '+esc(meta.at):'')+
+      ' · <button id="reload">загрузить новый файл</button>';
+    $('reload').onclick=function(){$('file').click()};
+    chips();run();
+  }
+  function readFile(f){
+    var rd=new FileReader();
+    rd.onload=function(){var meta={name:f.name,at:new Date().toLocaleString('ru-RU')};idbSet('index',rd.result);idbSet('meta',meta);start(rd.result,meta);toast('Индекс загружен')};
+    rd.readAsText(f);
+  }
+  $('file').onchange=function(e){if(e.target.files[0])readFile(e.target.files[0])};
+  var drop=$('drop');
+  ['dragenter','dragover'].forEach(function(ev){drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.add('over')})});
+  ['dragleave','drop'].forEach(function(ev){drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.remove('over')})});
+  drop.addEventListener('drop',function(e){var f=e.dataTransfer.files[0];if(f)readFile(f)});
+
+  // ---- поиск ----
+  function norm(s){return String(s).toLowerCase().replace(/ё/g,'е').replace(/[^\p{L}\p{N}\s'-]/gu,' ').replace(/\s+/g,' ')}
+  var STOP={'the':1,'a':1,'an':1,'and':1,'or':1,'of':1,'to':1,'in':1,'on':1,'is':1,'it':1,'that':1,'about':1,'where':1,'what':1,'how':1,'did':1,'say':1,'said':1,'talk':1,'talked':1,
+    'где':1,'как':1,'что':1,'про':1,'о':1,'об':1,'и':1,'в':1,'на':1,'с':1,'по':1,'он':1,'она':1,'говорил':1,'говорила':1,'рассказывал':1,'рассказывала':1,'сказал':1,'сказала':1,'это':1,'тот':1,'там':1};
+  function stem(w){ // грубая основа: англ. и рус. окончания
+    if(/[а-я]/.test(w)){return w.length>5?w.slice(0,w.length-2):w}
+    return w.replace(/(ings|ing|ers|er|ies|ied|ed|es|s)$/,'').slice(0,Math.max(4,w.length-3))||w;
+  }
+  function terms(q){
+    return norm(q).split(' ').filter(function(w){return w&&!STOP[w]&&(w.length>1||/\d/.test(w))}).map(function(w){return{w:w,st:stem(w),ru:/[а-я]/.test(w)}});
+  }
+  function hit(field,t){ // слово, начинающееся с основы
+    var i=field.indexOf(t.st);
+    while(i>-1){if(i===0||field[i-1]===' '||field[i-1]==='-')return true;i=field.indexOf(t.st,i+1)}
+    return false;
+  }
+  function buildIdf(){idf={};}
+  function weight(t){
+    if(idf[t.st]!=null)return idf[t.st];
+    var n=0;rows.forEach(function(r){if(hit(t.ru?r._ru:r._en,t))n++});
+    return idf[t.st]=Math.log((rows.length+1)/(n+1))+0.2;
+  }
+  function score(r,ts,phrase){
+    var s=0,m=0;
+    ts.forEach(function(t){if(hit(t.ru?r._ru:r._en,t)){s+=weight(t);m++}});
+    if(!m)return 0;
+    if(phrase&&(r._en.indexOf(phrase)>-1||r._ru.indexOf(phrase)>-1))s+=3;
+    return s*(m/ts.length)*(m/ts.length);
+  }
+
+  function highlight(text,ts,ru){
+    var h=esc(text);
+    ts.filter(function(t){return t.ru===ru}).forEach(function(t){
+      var re=new RegExp('(^|[^\\p{L}])('+t.st.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[\\p{L}\']*)','giu');
+      h=h.replace(re,'$1<mark>$2</mark>');
+    });
+    return h;
+  }
+  function clip(html,n){ // режем вокруг первой подсветки
+    var plain=html.replace(/<[^>]+>/g,'');if(plain.length<=n)return{h:html,cut:false};
+    var i=html.indexOf('<mark>');if(i<0)i=0;var a=Math.max(0,i-n/3|0);
+    while(a>0&&html[a]!==' ')a--;
+    var b=Math.min(html.length,a+n);while(b<html.length&&html[b]!==' ')b++;
+    var s=html.slice(a,b);if((s.match(/<mark>/g)||[]).length>(s.match(/<\/mark>/g)||[]).length)s+='</mark>';
+    return{h:(a>0?'… ':'')+s+(b<html.length?' …':''),cut:true};
+  }
+
+  function card(r,ts){
+    var en=highlight(r.text,ts,false),c=clip(en,520);
+    var ru=r.ru?highlight(r.ru,ts,true):'';
+    var w='';
+    if(r.audio)w+='<span class="k">звук</span><span class="v">'+esc(r.audio.file)+'<span class="tc">'+esc(r.audio.tc)+'</span></span>';
+    (r.sound||[]).forEach(function(s){w+='<span class="k">звук</span><span class="v">'+esc(s.file)+'<span class="tc">'+esc(s.tc)+'</span></span>'});
+    (r.cams||[]).forEach(function(x){w+='<span class="k">камера</span><span class="v">'+esc(x.file)+'<span class="tc">'+esc(x.tc)+'</span><span class="dev">'+esc(x.dev||'')+'</span></span>'});
+    if(r.clock)w+='<span class="k">часы</span><span class="v">'+esc(r.clock)+'</span>';
+    if(!r.audio&&!(r.cams||[]).length)w+='<span class="k">файл</span><span class="v nf">оригинал ещё не привязан</span>';
+    return '<div class="card" data-i="'+r._i+'">'+
+      '<div class="who"><span class="p">'+esc(r.person)+'</span>'+(r.who&&r.who!==r.person?'<span class="s">говорит: '+esc(r.who)+'</span>':'')+'<span class="d">'+esc(r.date||'')+'</span><button class="copy" data-act="copy">Копировать</button></div>'+
+      '<div class="q" data-full="0">'+c.h+'</div>'+(c.cut?'<button class="more" data-act="full">весь кусок</button>':'')+
+      (ru?'<button class="more" data-act="ru">перевод реплики</button><div class="ru" hidden>'+ru+'</div>':'')+
+      '<div class="where">'+w+'</div></div>';
+  }
+
+  function chips(){
+    var cnt={};rows.forEach(function(r){cnt[r.person]=(cnt[r.person]||0)+1});
+    var h='<button class="chip'+(person?'':' on')+'" data-p="">Все<b>'+rows.length+'</b></button>';
+    Object.keys(cnt).sort().forEach(function(p){h+='<button class="chip'+(person===p?' on':'')+'" data-p="'+esc(p)+'">'+esc(p)+'<b>'+cnt[p]+'</b></button>'});
+    $('chips').innerHTML=h;
+  }
+  $('chips').onclick=function(e){var b=e.target.closest('.chip');if(!b)return;person=b.getAttribute('data-p');chips();run()};
+
+  var lastTs=[];
+  function run(){
+    var q=$('q').value.trim(),ts=terms(q);lastTs=ts;
+    try{history.replaceState(null,'',q?('#q='+encodeURIComponent(q)+(person?'&p='+encodeURIComponent(person):'')):location.pathname)}catch(e){}
+    var pool=person?rows.filter(function(r){return r.person===person}):rows;
+    if(!ts.length){$('cnt').textContent='';$('res').innerHTML='<div class="empty">Задай вопрос по смыслу — словами, которые могли прозвучать. Сначала покажутся куски, где совпало больше слов.<br>Например: <i>hand made technicians</i>, <i>gold price ounce</i>, <i>Vietnam marines</i>, <i>powder scanner</i>.</div>';return}
+    var phrase=norm(q);
+    var found=pool.map(function(r){return{r:r,s:score(r,ts,phrase)}}).filter(function(x){return x.s>0}).sort(function(a,b){return b.s-a.s});
+    $('cnt').textContent=found.length?found.length+' мест':'';
+    if(!found.length){$('res').innerHTML='<div class="empty">Ничего не нашлось. Попробуй другие слова — по-английски, как могли сказать в интервью.</div>';return}
+    $('res').innerHTML=found.slice(0,MAX).map(function(x){return card(x.r,ts)}).join('')+(found.length>MAX?'<div class="empty">Показаны первые '+MAX+' из '+found.length+'. Уточни запрос или выбери человека.</div>':'');
+  }
+  var tmr;$('q').addEventListener('input',function(){clearTimeout(tmr);tmr=setTimeout(run,140)});
+
+  $('res').onclick=function(e){
+    var b=e.target.closest('[data-act]');if(!b)return;var c=b.closest('.card'),r=rows[+c.getAttribute('data-i')],a=b.getAttribute('data-act');
+    if(a==='full'){c.querySelector('.q').innerHTML=highlight(r.text,lastTs,false);b.remove()}
+    if(a==='ru'){var d=c.querySelector('.ru');d.hidden=!d.hidden;b.textContent=d.hidden?'перевод реплики':'скрыть перевод'}
+    if(a==='copy'){
+      var t=r.person+(r.who&&r.who!==r.person?' ('+r.who+')':'')+' — '+(r.date||'')+' '+(r.clock||'')+'\n'+
+        [r.audio].concat(r.sound||[]).filter(Boolean).map(function(x){return 'Звук: '+x.file+' '+x.tc}).concat((r.cams||[]).map(function(x){return 'Камера: '+x.file+' '+x.tc})).join('\n')+'\n«'+r.text.slice(0,240)+(r.text.length>240?'…':'')+'»';
+      (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){toast('Скопировано')},function(){toast('Не удалось скопировать')});
+    }
+  };
+
+  // ---- старт ----
+  var h=decodeURIComponent(location.hash.slice(1));var mq=h.match(/q=([^&]*)/),mp=h.match(/p=([^&]*)/);
+  if(mq)$('q').value=mq[1];if(mp)person=mp[1];
+  Promise.all([idbGet('index'),idbGet('meta')]).then(function(v){if(v[0])start(v[0],v[1]);else{$('loader').hidden=false}});
+})();
+</script>
+</body>
+</html>
