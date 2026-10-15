@@ -112,7 +112,7 @@
       <div class="kicker">Interviews · Archive</div>
       <h1>Finder</h1>
     </div>
-    <a class="back" href="index.html">← timeline</a>
+    <a class="back" href="https://elbartodiy.github.io/glidewell-timeline/doc/index.html">← timeline</a>
   </div>
 
   <div id="loader" class="load" hidden>
@@ -151,9 +151,10 @@
   }
   function fillThumbs(root){(root||document).querySelectorAll('img[data-th]').forEach(function(im){var k=im.getAttribute('data-th');im.removeAttribute('data-th');if(serverMode){im.src=SERVER+'/thumb/'+k.split('/').map(encodeURIComponent).join('/');return}thumbGet(k).then(function(u){if(u)im.src=u})})}
   var $=function(id){return document.getElementById(id)};
-  // Локальный сервер поиска (Documents/_scripts/finder_server.mjs): если запущен — ищем через него
-  // (перевод вопроса, смысл+слова, «судья»), кадры и открытие файлов тоже через него. Нет — работаем в браузере.
-  var SERVER='http://127.0.0.1:8765', serverMode=false, SV=null, VIS=[];
+  // Сервер поиска на Mac (Documents/_scripts/finder_server.mjs) работает, только если страница открыта С НЕГО
+  // (http://127.0.0.1:8765). Публичный сайт к компьютеру не обращается — решение Эльдара 15.10.2026.
+  var LOCAL=location.hostname==='127.0.0.1'&&location.port==='8765';
+  var SERVER=LOCAL?location.origin:'', serverMode=false, SV=null, VIS=[];
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
   function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(function(){e.classList.remove('on')},1600)}
 
@@ -456,8 +457,8 @@
     $('foot').innerHTML='Search server on this Mac · '+st.rows+' segments';
     chips();run();
   }
-  var ctl=window.AbortController?new AbortController():null;setTimeout(function(){ctl&&ctl.abort()},1500);
-  fetch(SERVER+'/api/status',ctl?{signal:ctl.signal}:{}).then(function(x){return x.json()}).then(function(st){if(st&&st.ok)startServer(st);else throw 0}).catch(function(){browserStart()});
+  if(LOCAL)fetch(SERVER+'/api/status').then(function(x){return x.json()}).then(function(st){if(st&&st.ok)startServer(st);else throw 0}).catch(function(){browserStart()});
+  else browserStart();
   function browserStart(){
   Promise.all([idbGet('index'),idbGet('meta'),idbGet('strips')]).then(function(v){if(v[0]&&v[1]&&v[1].name==='_Index folder')start(v[0],v[1],v[2]);else{$('loader').hidden=false}});
   }
