@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Interview Finder</title>
+<title>Glidewell Finder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -75,6 +75,18 @@
   .foot button{border:0;background:none;color:var(--teal);font:600 12.5px var(--body);cursor:pointer;padding:0}
   .status{font-family:var(--mono);font-size:11.5px;color:var(--teal);margin-top:10px;min-height:14px}
   .sim{font-family:var(--mono);font-size:11px;color:var(--mute)}
+  .card.has-th{display:grid;grid-template-columns:200px 1fr;gap:16px}
+  @media(max-width:640px){.card.has-th{grid-template-columns:1fr}}
+  .th{position:relative;border-radius:8px;overflow:hidden;background:#11151a;aspect-ratio:4/3;align-self:start}
+  .th img{width:100%;height:100%;object-fit:cover;display:block}
+  .th .ttc,.strip .ttc{position:absolute;left:6px;bottom:6px;font:600 11px var(--mono);color:#fff;background:rgba(19,23,27,.72);padding:2px 6px;border-radius:4px}
+  .src{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal)}
+  .ocr{margin-top:6px;font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+  .strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px;margin-top:12px;grid-column:1/-1;max-height:440px;overflow:auto;padding:2px;scroll-behavior:auto}
+  .strip .s{position:relative;border-radius:6px;overflow:hidden;background:#11151a;aspect-ratio:4/3;cursor:pointer}
+  .strip .s img{width:100%;height:100%;object-fit:cover;display:block}
+  .strip .s.cur{outline:3px solid var(--teal);outline-offset:-3px}
+  .chips.sub{margin-top:8px}
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy);color:#fff;font-size:13px;padding:9px 14px;border-radius:9px;opacity:0;transition:opacity .2s;pointer-events:none}
   .toast.on{opacity:1}
 </style>
@@ -83,23 +95,24 @@
 <div class="page">
   <div class="top">
     <div>
-      <div class="kicker">Interviews · who said what</div>
-      <h1>Interview Finder</h1>
+      <div class="kicker">Interviews · Archive</div>
+      <h1>Finder</h1>
     </div>
     <a class="back" href="index.html">← timeline</a>
   </div>
 
   <div id="loader" class="load" hidden>
-    <h2>Load the index file</h2>
-    <p>Transcripts are not stored on this site — they live on the drive. Choose<br><code>Extreme SSD / Documentary Glidewell / Documents / _Index / interviews_index.jsonl</code><br>This browser will remember it. When the index is updated, load the file again.</p>
-    <label class="drop" id="drop">Drop the file here or <span class="btn">Choose file</span>
-      <input type="file" id="file" accept=".jsonl,.json,.txt" hidden></label>
+    <h2>Load the index folder</h2>
+    <p>Transcripts and thumbnails are not stored on this site — they live on the drive. Choose the folder<br><code>Extreme SSD / Documentary Glidewell / Documents / _Index</code><br>This browser will remember it. When the index is updated, load the folder again.</p>
+    <label class="drop" id="drop"><span class="btn">Choose the _Index folder</span>
+      <input type="file" id="file" webkitdirectory directory multiple hidden></label>
   </div>
 
   <div id="app" hidden>
     <div class="search">
       <div class="qbox"><input id="q" type="search" placeholder="Where does Jim refuse to do implants?" autocomplete="off"><span class="cnt" id="cnt"></span></div>
       <div class="chips" id="chips"></div>
+      <div class="chips sub" id="chips2"></div>
       <div class="status" id="status"></div>
     </div>
     <div class="res" id="res"></div>
@@ -111,12 +124,18 @@
 <script>
 (function(){
   'use strict';
-  var DB='interview_finder', ST='kv', rows=[], person='', idf={}, MAX=60;
+  var DB='interview_finder', ST='kv', TS='thumbs', rows=[], person='', source='', idf={}, MAX=60, STRIPS={}, thumbURL={};
 
-  function idb(){return new Promise(function(ok,no){try{var r=indexedDB.open(DB,1);r.onupgradeneeded=function(){r.result.createObjectStore(ST)};r.onsuccess=function(){ok(r.result)};r.onerror=function(){no(r.error)}}catch(e){no(e)}})}
+  function idb(){return new Promise(function(ok,no){try{var r=indexedDB.open(DB,2);r.onupgradeneeded=function(){var d=r.result;if(!d.objectStoreNames.contains(ST))d.createObjectStore(ST);if(!d.objectStoreNames.contains(TS))d.createObjectStore(TS)};r.onsuccess=function(){ok(r.result)};r.onerror=function(){no(r.error)}}catch(e){no(e)}})}
   function idbGet(k){return idb().then(function(d){return new Promise(function(ok){var t=d.transaction(ST).objectStore(ST).get(k);t.onsuccess=function(){ok(t.result)};t.onerror=function(){ok(null)}})}).catch(function(){return null})}
   function idbSet(k,v){return idb().then(function(d){return new Promise(function(ok){var t=d.transaction(ST,'readwrite');t.objectStore(ST).put(v,k);t.oncomplete=ok;t.onerror=ok})}).catch(function(){})}
 
+  function thumbsPut(list){return idb().then(function(d){return new Promise(function(ok){var t=d.transaction(TS,'readwrite'),st=t.objectStore(TS);st.clear();list.forEach(function(x){st.put(x[1],x[0])});t.oncomplete=ok;t.onerror=ok})}).catch(function(){})}
+  function thumbGet(k){
+    if(thumbURL[k])return Promise.resolve(thumbURL[k]);
+    return idb().then(function(d){return new Promise(function(ok){var t=d.transaction(TS).objectStore(TS).get(k);t.onsuccess=function(){var b=t.result;ok(b?(thumbURL[k]=URL.createObjectURL(b)):'')};t.onerror=function(){ok('')}})}).catch(function(){return ''});
+  }
+  function fillThumbs(root){(root||document).querySelectorAll('img[data-th]').forEach(function(im){var k=im.getAttribute('data-th');im.removeAttribute('data-th');thumbGet(k).then(function(u){if(u)im.src=u})})}
   var $=function(id){return document.getElementById(id)};
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
   function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(function(){e.classList.remove('on')},1600)}
@@ -203,27 +222,34 @@
     var out=[];text.split(/\r?\n/).forEach(function(l){l=l.trim();if(!l)return;try{out.push(JSON.parse(l))}catch(e){}});
     return out;
   }
-  function start(text,meta){
+  function start(text,meta,strips){
+    try{STRIPS=JSON.parse(strips||'{}')}catch(e){STRIPS={}}
     rows=parse(text);
     if(!rows.length){$('loader').hidden=false;$('app').hidden=true;toast('No records in this file');return}
-    rows.forEach(function(r,i){r._i=i;r._en=norm(r.text);r._ru=norm(r.ru||'');r._nw=r._en.split(' ').length});
+    rows.forEach(function(r,i){r.source=r.source||'interview';r._i=i;r._en=norm(r.text);r._ru=norm(r.ru||'');r._nw=r._en.split(' ').length});
     buildIdf();
     $('loader').hidden=true;$('app').hidden=false;
-    $('foot').innerHTML='Index: '+rows.length+' segments'+(meta&&meta.name?' · '+esc(meta.name):'')+(meta&&meta.at?' · loaded '+esc(meta.at):'')+
-      ' · <button id="reload">load a newer file</button>';
+    $('foot').innerHTML='Index: '+rows.length+' segments'+(meta&&meta.thumbs?' · '+meta.thumbs+' thumbnails':'')+(meta&&meta.at?' · loaded '+esc(meta.at):'')+
+      ' · <button id="reload">load a newer folder</button>';
     $('reload').onclick=function(){$('file').click()};
     chips();run();prepare();
   }
-  function readFile(f){
-    var rd=new FileReader();
-    rd.onload=function(){var meta={name:f.name,at:new Date().toLocaleString('en-US')};idbSet('index',rd.result);idbSet('meta',meta);start(rd.result,meta);toast('Index loaded')};
-    rd.readAsText(f);
+  function readText(f){return new Promise(function(ok){var rd=new FileReader();rd.onload=function(){ok(rd.result)};rd.onerror=function(){ok('')};rd.readAsText(f)})}
+  function readFolder(files){
+    files=Array.prototype.slice.call(files);
+    var by=function(n){return files.find(function(f){return f.name===n})};
+    var fi=by('interviews_index.jsonl'),fa=by('archive_index.jsonl'),fs=by('archive_strips.json');
+    if(!fi&&!fa){toast('No index files in this folder');return}
+    var thumbs=files.filter(function(f){return /\.jpg$/i.test(f.name)&&/archive_thumbs\//.test(f.webkitRelativePath||'')});
+    status('Loading the index …');
+    Promise.all([fi?readText(fi):'',fa?readText(fa):'',fs?readText(fs):'{}']).then(function(t){
+      var text=(t[0]||'')+'\n'+(t[1]||''),meta={name:'_Index folder',at:new Date().toLocaleString('en-US'),thumbs:thumbs.length};
+      var list=thumbs.map(function(f){var p=f.webkitRelativePath.split('archive_thumbs/')[1];return[p,f]});
+      status('Saving '+list.length+' thumbnails …');
+      return thumbsPut(list).then(function(){thumbURL={};return Promise.all([idbSet('index',text),idbSet('strips',t[2]),idbSet('meta',meta)])}).then(function(){start(text,meta,t[2]);toast('Index loaded')});
+    });
   }
-  $('file').onchange=function(e){if(e.target.files[0])readFile(e.target.files[0])};
-  var drop=$('drop');
-  ['dragenter','dragover'].forEach(function(ev){drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.add('over')})});
-  ['dragleave','drop'].forEach(function(ev){drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.remove('over')})});
-  drop.addEventListener('drop',function(e){var f=e.dataTransfer.files[0];if(f)readFile(f)});
+  $('file').onchange=function(e){if(e.target.files.length)readFolder(e.target.files)};
 
   // ---- поиск ----
   function norm(s){return String(s).toLowerCase().replace(/ё/g,'е').replace(/[^\p{L}\p{N}\s'-]/gu,' ').replace(/\s+/g,' ')}
@@ -272,42 +298,63 @@
     return{h:(a>0?'… ':'')+s+(b<html.length?' …':''),cut:true};
   }
 
+  function tcs(t){var p=String(t).replace('≈','').split(':').map(Number);return p[0]*3600+p[1]*60+(p[2]||0)}
   function card(r,ts,sem){
     var en=highlight(r.text,ts,false),c=clip(en,520);
     var ru=r.ru?highlight(r.ru,ts,true):'';
-    var w='';
+    var w='',arch=r.source==='archive';
     if(r.audio)w+='<span class="k">audio</span><span class="v">'+esc(r.audio.file)+'<span class="tc">'+esc(r.audio.tc)+'</span></span>';
     (r.sound||[]).forEach(function(s){w+='<span class="k">audio</span><span class="v">'+esc(s.file)+'<span class="tc">'+esc(s.tc)+'</span></span>'});
-    (r.cams||[]).forEach(function(x){w+='<span class="k">camera</span><span class="v">'+esc(x.file)+'<span class="tc">'+esc(x.tc)+'</span></span>'});
+    (r.cams||[]).forEach(function(x){w+='<span class="k">'+(arch?'file':'camera')+'</span><span class="v">'+esc(x.file)+'<span class="tc">'+esc(x.tc)+'</span></span>'});
+    (r.also||[]).forEach(function(a){w+='<span class="k">copy</span><span class="v nf">'+esc(a)+'</span>'});
     if(!r.audio&&!(r.cams||[]).length)w+='<span class="k">file</span><span class="v nf">not yet matched to an original</span>';
-    return '<div class="card" data-i="'+r._i+'">'+
-      '<div class="who"><span class="p">'+esc(r.person)+'</span>'+(r.who&&r.who!==r.person?'<span class="s">speaking: '+esc(r.who)+'</span>':'')+(sem!=null?'<span class="sim">'+Math.round(sem*100)+'</span>':'')+'<span class="d">'+esc(r.date||'')+'</span><button class="copy" data-act="copy">Copy</button></div>'+
-      '<div class="q" data-full="0">'+c.h+'</div>'+(c.cut?'<button class="more" data-act="full">show full segment</button>':'')+
+    var tc=(r.cams&&r.cams[0]&&r.cams[0].tc)||'';
+    var th=r.thumb?'<div class="th"><img alt="" data-th="'+esc(r.thumb)+'"><span class="ttc">'+esc(tc)+'</span></div>':'';
+    var body='<div>'+
+      '<div class="who">'+(arch?'<span class="src">'+(r.kind==='shot'?'shot':'speech')+'</span>':'')+'<span class="p">'+esc(r.person)+'</span>'+(r.who&&r.who!==r.person?'<span class="s">speaking: '+esc(r.who)+'</span>':'')+(sem!=null?'<span class="sim">'+Math.round(sem*100)+'</span>':'')+'<span class="d">'+esc(r.date||'')+'</span><button class="copy" data-act="copy">Copy</button></div>'+
+      '<div class="q" data-full="0">'+(r.kind==='shot'?esc(r.text.split(' · On screen: ')[0]):c.h)+'</div>'+
+      (r.ocr?'<div class="ocr">On screen: '+esc(r.ocr)+'</div>':'')+
+      (c.cut&&r.kind!=='shot'?'<button class="more" data-act="full">show full segment</button>':'')+
       (ru?'<button class="more" data-act="ru">Russian translation</button><div class="ru" hidden>'+ru+'</div>':'')+
+      (arch&&STRIPS[r.aid]&&STRIPS[r.aid].shots.length?' <button class="more" data-act="strip">all shots of this file ('+STRIPS[r.aid].shots.length+')</button>':'')+
       '<div class="where">'+w+'</div></div>';
+    return '<div class="card'+(th?' has-th':'')+'" data-i="'+r._i+'">'+th+body+'</div>';
+  }
+  function hmsj(x){x=Math.round(x);return [x/3600|0,(x/60|0)%60,x%60].map(function(n){return (n<10?'0':'')+n}).join(':')}
+  function strip(r){
+    var S=STRIPS[r.aid],cur=tcs((r.cams[0]||{}).tc||0),best=0;
+    S.shots.forEach(function(x,i){if(x[0]<=cur)best=i});
+    return '<div class="strip">'+S.shots.map(function(x,i){return '<div class="s'+(i===best?' cur':'')+'" data-tc="'+hmsj(x[0])+'" title="'+esc(S.file)+' '+hmsj(x[0])+'"><img alt="" loading="lazy" data-th="'+esc(r.aid+'/'+x[1])+'"><span class="ttc">'+hmsj(x[0])+'</span></div>'}).join('')+'</div>';
   }
 
   function chips(){
-    var cnt={};rows.forEach(function(r){cnt[r.person]=(cnt[r.person]||0)+1});
-    var h='<button class="chip'+(person?'':' on')+'" data-p="">All<b>'+rows.length+'</b></button>';
-    Object.keys(cnt).sort().forEach(function(p){h+='<button class="chip'+(person===p?' on':'')+'" data-p="'+esc(p)+'">'+esc(p)+'<b>'+cnt[p]+'</b></button>'});
+    var n={interview:0,archive:0},cnt={};
+    rows.forEach(function(r){n[r.source]=(n[r.source]||0)+1;if(r.source==='interview')cnt[r.person]=(cnt[r.person]||0)+1});
+    var h='';[['','All',rows.length],['interview','Interviews',n.interview],['archive','Archive',n.archive]].forEach(function(c){
+      if(c[0]&&!c[2])return;h+='<button class="chip'+(source===c[0]?' on':'')+'" data-s="'+c[0]+'">'+c[1]+'<b>'+c[2]+'</b></button>'});
     $('chips').innerHTML=h;
+    var h2='';
+    if(source==='interview'){h2='<button class="chip'+(person?'':' on')+'" data-p="">Everyone</button>';
+      Object.keys(cnt).sort().forEach(function(p){h2+='<button class="chip'+(person===p?' on':'')+'" data-p="'+esc(p)+'">'+esc(p)+'<b>'+cnt[p]+'</b></button>'})}
+    $('chips2').innerHTML=h2;
   }
-  $('chips').onclick=function(e){var b=e.target.closest('.chip');if(!b)return;person=b.getAttribute('data-p');chips();run()};
+  $('chips').onclick=function(e){var b=e.target.closest('.chip');if(!b)return;source=b.getAttribute('data-s');person='';chips();run()};
+  $('chips2').onclick=function(e){var b=e.target.closest('.chip');if(!b)return;person=b.getAttribute('data-p');chips();run()};
 
   var lastTs=[],runId=0;
   function render(list,ts,total,label){
     $('cnt').textContent=total?total+' '+label:'';
     if(!list.length){$('res').innerHTML='<div class="empty">Nothing found. Try describing it differently.</div>';return}
     $('res').innerHTML=list.map(function(x){return card(x.r,ts,x.sem)}).join('')+(total>list.length?'<div class="empty">Showing the best '+list.length+'. Narrow the search or pick a person.</div>':'');
+    fillThumbs($('res'));
   }
   function run(){
     var q=$('q').value.trim(),ts=terms(q),id=++runId;lastTs=ts;
     try{history.replaceState(null,'',q?('#q='+encodeURIComponent(q)+(person?'&p='+encodeURIComponent(person):'')):location.pathname)}catch(e){}
-    var auto=!person&&q?whoInQuery(q):null,who=person||(auto&&auto.p)||'';
+    var auto=!person&&q&&source!=='archive'?whoInQuery(q):null,who=person||(auto&&auto.p)||'';
     if(auto){q=auto.rest||q;ts=terms(q);lastTs=ts}
     status(auto?'→ '+auto.p:'');
-    var pool=who?rows.filter(function(r){return r.person===who}):rows;
+    var pool=rows.filter(function(r){return (!source||r.source===source)&&(!who||r.person===who)});
     if(!q){$('cnt').textContent='';$('res').innerHTML='';return}
     var phrase=norm(q);
     if(embReady){
@@ -332,12 +379,15 @@
   var tmr;$('q').addEventListener('input',function(){clearTimeout(tmr);tmr=setTimeout(run,embReady?350:140)});
 
   $('res').onclick=function(e){
+    var sh=e.target.closest('.strip .s');
+    if(sh){var tc=sh.getAttribute('data-tc'),fn=sh.getAttribute('title');(navigator.clipboard?navigator.clipboard.writeText(fn):Promise.reject()).then(function(){toast('Copied: '+fn)},function(){toast(fn)});return}
     var b=e.target.closest('[data-act]');if(!b)return;var c=b.closest('.card'),r=rows[+c.getAttribute('data-i')],a=b.getAttribute('data-act');
     if(a==='full'){c.querySelector('.q').innerHTML=highlight(r.text,lastTs,false);b.remove()}
+    if(a==='strip'){var ex=c.querySelector('.strip');if(ex){ex.remove();b.textContent=b.textContent.replace('hide','all')}else{c.insertAdjacentHTML('beforeend',strip(r));fillThumbs(c);var sp=c.querySelector('.strip'),cu=sp.querySelector('.cur');if(cu)sp.scrollTop+=cu.getBoundingClientRect().top-sp.getBoundingClientRect().top-140;b.textContent=b.textContent.replace('all','hide')}}
     if(a==='ru'){var d=c.querySelector('.ru');d.hidden=!d.hidden;b.textContent=d.hidden?'Russian translation':'hide translation'}
     if(a==='copy'){
-      var t=r.person+(r.who&&r.who!==r.person?' ('+r.who+')':'')+' — '+(r.date||'')+'\n'+
-        [r.audio].concat(r.sound||[]).filter(Boolean).map(function(x){return 'Audio: '+x.file+' '+x.tc}).concat((r.cams||[]).map(function(x){return 'Camera: '+x.file+' '+x.tc})).join('\n')+'\n«'+r.text.slice(0,240)+(r.text.length>240?'…':'')+'»';
+      var t=r.person+(r.who&&r.who!==r.person?' ('+r.who+')':'')+(r.date?' — '+r.date:'')+'\n'+
+        [r.audio].concat(r.sound||[]).filter(Boolean).map(function(x){return 'Audio: '+x.file+' '+x.tc}).concat((r.cams||[]).map(function(x){return (r.source==='archive'?'File: ':'Camera: ')+x.file+' '+x.tc})).join('\n')+'\n«'+r.text.slice(0,240)+(r.text.length>240?'…':'')+'»';
       (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){toast('Copied')},function(){toast('Could not copy')});
     }
   };
@@ -345,7 +395,7 @@
   // ---- старт ----
   var h=decodeURIComponent(location.hash.slice(1));var mq=h.match(/q=([^&]*)/),mp=h.match(/p=([^&]*)/);
   if(mq)$('q').value=mq[1];if(mp)person=mp[1];
-  Promise.all([idbGet('index'),idbGet('meta')]).then(function(v){if(v[0])start(v[0],v[1]);else{$('loader').hidden=false}});
+  Promise.all([idbGet('index'),idbGet('meta'),idbGet('strips')]).then(function(v){if(v[0]&&v[1]&&v[1].name==='_Index folder')start(v[0],v[1],v[2]);else{$('loader').hidden=false}});
 })();
 </script>
 </body>
