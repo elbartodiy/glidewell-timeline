@@ -3329,8 +3329,14 @@ function drawFloor(){
        примерно посередине кадра: выше пол отходил от стены и в зазор было
        видно дорогу, ниже налезал. Помеченный край считается floorLineAt —
        той же линией, по которой режется пол и обрезается стена. */
-    if (fa && fa.edge){ const ln = floorLineAt(fa.x); cL.x = ln(cL.y); xBL = ln(H); }
-    if (fb && fb.edge){ const ln = floorLineAt(fb.x); cR.x = ln(cR.y); xBR = ln(H); }
+    /* …но только пока улица стоит. Без неё (ST_HIDDEN) край плиты 1993 — не
+       подошва стены корпуса, а угол самой панели: прямая floorLineAt на высоте
+       новой линии пола (Z93_FOOT, 16.10) давала x на глубине 680, а не 728, и
+       угол пола отходил от угла белой стенки, по-разному на каждой камере.
+       Эльдар (16.10.2026): «смотри, как у тебя ездят края и не сочетаются
+       уголки этой белой стенки и белого пола». */
+    if (fa && fa.edge && !ST_HIDDEN){ const ln = floorLineAt(fa.x); cL.x = ln(cL.y); xBL = ln(H); }
+    if (fb && fb.edge && !ST_HIDDEN){ const ln = floorLineAt(fb.x); cR.x = ln(cR.y); xBR = ln(H); }
     const xTL = cL.x, xTR = cR.x;
     if (Math.max(xTR, xBR) < 0 || Math.min(xTL, xBL) > W) continue;
     const g = ctx.createLinearGradient(0, Math.min(cL.y, cR.y, yTop), 0, H);
@@ -8897,11 +8903,31 @@ function crownGeometry(){
   }
 }
 /* the scan: the surface as a cloud of measured points, nothing solid yet */
-function drawCrownScan(cx, cy, w, a){
+/* ТОЧКИ НА ЭКРАНЕ — ТОЛЬКО ТЕ, ЧТО УЖЕ ДОЛЕТЕЛИ. Облако на экране цифровой
+   революции стояло целиком с самого начала, и поток из 2007 прилетал на уже
+   готовое. Эльдар (16.10.2026): «хорошо было бы, если бы тех точек, которые
+   сейчас на экране видны, ещё не было — но когда эти прилетают, они
+   появлялись». reveal — голова потока (relay07Head): точка i на экране видна,
+   когда её собственная точка в потоке дошла (q = голова − 0,45·r1 ≥ 1, тот же
+   r1, что в drawDataRelay07). Ход потока — функция камеры, поэтому назад
+   точки так же по одной уходят. */
+function relay07Head(){
+  const b07 = BEATS.find(b => b.y === '2007' && b.ped && b.ped.points);
+  if (!b07) return Infinity;
+  const x07 = b07.x + (b07.ped.dx ?? -430), mid2 = (REC2_L + REC2_R) / 2;
+  const u = Math.max(0, Math.min(1, (cam.x - x07 - 40) / (mid2 - x07 - 40)));
+  return (u * u * (3 - 2 * u)) * 1.45;
+}
+function drawCrownScan(cx, cy, w, a, reveal){
   crownGeometry();
   const sp = PED_SPRITES.crown2, h = w * sp.h / sp.w;
   ctx.save();
-  for (const [ux, uy] of CROWN_PTS){
+  for (let i = 0; i < CROWN_PTS.length; i++){
+    const [ux, uy] = CROWN_PTS[i];
+    if (reveal != null){
+      const h1 = Math.sin(i * 12.9898) * 43758.5453, r1 = h1 - Math.floor(h1);
+      if (reveal - r1 * 0.45 < 1) continue;           // ещё в пути
+    }
     const px_ = cx + ux * w, py_ = cy + uy * h;
     ctx.fillStyle = `rgba(150,225,255,${(a * (0.35 + 0.5 * Math.abs(uy))).toFixed(3)})`;
     ctx.beginPath(); ctx.arc(px_, py_, Math.max(0.7, w * 0.006), 0, 7); ctx.fill();
@@ -9400,7 +9426,7 @@ function drawRec2(t){
   drawGlow('160,220,255', cx, cyS, w * 1.15, 0.45);
   // the back plane holds the SCAN: measured points, not yet an object
   const ws = 499 * kk * SS, hs = ws * sp.h / sp.w;
-  drawCrownScan(cx, cyS, ws, 1);
+  drawCrownScan(cx, cyS, ws, 1, relay07Head());
   // THE MOMENT OF ALIGNMENT: when the three states lock, the form the points
   // have only been describing flares into being for an instant — the data
   // becomes the object, once, and then the room settles back
