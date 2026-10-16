@@ -7218,7 +7218,16 @@ function drawMapHero(t, h){
   const cx = px(mid, kk), cyS = py(450, kk);
   /* the wash: the bay lifts, its own panel and the models with it */
   {
-    const kc = k(604), x0b = px(REC_L, kc), x1b = px(REC_R, kc);
+    /* СВЕТ ДО ВНЕШНИХ ГРАНЕЙ КОЛОНН. Прямоугольник света резался по REC_L/REC_R
+       на глубине 604 — это середина колонн, да ещё на чужой плоскости: край
+       света ложился внутрь каждой колонны вертикальной ступенькой (окно
+       1000×1100: x 165 и 835 при колоннах 114–190 и 810–886). Эльдар
+       (16.10.2026): «смотри на колоннах, какие вертикальные полосы — не должно
+       быть так». Теперь свет берёт плоскость колонн (R79_BAY_Z) и их внешние
+       грани — та же ширина 120, что в drawMapWall, — и край света совпадает с
+       краем колонны. */
+    const kc = k(R79_BAY_Z), cwc = 120 * kc * SS;
+    const x0b = px(REC_L, kc) - cwc / 2, x1b = px(REC_R, kc) + cwc / 2;
     const yb = py(CFG.benchY + 260, k(CFG.benchDepth));
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
