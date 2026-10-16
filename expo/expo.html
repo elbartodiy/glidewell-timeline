@@ -317,7 +317,13 @@ const BEATS = [
 
   /* ---- ERA 3 · the computer arrives, 1995–2007
           (1993 · Newport Beach happens inside the video splice) ---- */
-  {x:12150, y:'1993', t:'', tier:1, ink:'103,108,115', ysMul:1.18,
+  /* typeEra: 2 — ЦИФРЫ 1993 НАБРАНЫ КАК У 90-Х. Граница эпох стояла на улице
+     между 1989 и 1993, и 1993 был первым годом девяностых — тем же широким
+     начертанием, что 1995. Улицу скрыли (16.10), бухта 1993 уехала влево, а
+     граница стен осталась на месте — и цифры 1993 стали Helvetica восьмидесятых.
+     Эльдар (16.10.2026): «1993 тоже не похож на 1995». Стены и пол не двигаются:
+     только надпись берёт шрифт, масштаб и место в ряду эпохи 2. */
+  {x:12150, y:'1993', t:'', tier:1, ink:'103,108,115', ysMul:1.18, typeEra: 2,
    /* the numerals take the colour of the floor under them — the nineties
       office slab, #82868d at its near edge, a shade deeper so they read as
       cut into the panel rather than painted on it. Dark, never black. */
@@ -3789,7 +3795,8 @@ function drawBeatText(b, focusAmt){
     }
     return;
   }
-  const seg = b.ink ? Object.assign({}, segAt(b.x), {ink: b.ink}) : segAt(b.x);
+  const segT = b.typeEra != null ? SEGMENTS[b.typeEra] : segAt(b.x);   // эпоха надписи (см. typeEra у 1993)
+  const seg = b.ink ? Object.assign({}, segT, {ink: b.ink}) : segT;
   const wz = seg.tz || wallZAt(b.x);   // one shared text plane per era group — equal type everywhere
   const dxW = b.x - cam.x;
   const near = Math.max(0, 1 - Math.abs(dxW)/1300);
@@ -4500,10 +4507,16 @@ function drawCapLines(lines, cx, y, lh, colw){
 }
 /* line breaks are computed once at a reference size — they never re-flow */
 function cacheWrap(){
-  const LETTERED = BEATS.filter(b => !b.plaque);   // the beats that put a numeral on the wall
+  /* БИТ БЕЗ СВОЕЙ ЦИФРЫ — НЕ СОСЕД. Пятничные пончики (02.10) стоят в 280
+     единицах от 1984-го, своей цифры на стене у них нет (noYear), а дорожку
+     1984-го они ужимали — и общая шкала эпохи срезала ВСЕ цифры восьмидесятых
+     вдвое (0,50). Эльдар (16.10.2026): «в какой-то момент цифры в восьмидесятых
+     на стене стали другими — надо вернуть». Тот же случай, что с имплантом
+     2009–13 (22.09), только с другим признаком. */
+  const LETTERED = BEATS.filter(b => !b.plaque && !b.noYear);   // the beats that put a numeral on the wall
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    const seg = segAt(b.x);
+    const seg = b.typeEra != null ? SEGMENTS[b.typeEra] : segAt(b.x);
     ctx.font = `italic 100px ${seg.font}`;
     /* бит без тезиса или без описания — законный случай, а не ошибка данных.
        Без этой проверки снятый th ронял весь зал в чёрный экран: wrapCalc
@@ -4533,7 +4546,7 @@ function cacheWrap(){
   }
   // one shared year scale per era — identical sizes inside each space
   for (const seg of SEGMENTS){
-    const era = LETTERED.filter(b => b.x >= seg.x0 && b.x < seg.x1 && !b.sub);
+    const era = LETTERED.filter(b => (b.typeEra != null ? SEGMENTS[b.typeEra] === seg : (b.x >= seg.x0 && b.x < seg.x1)) && !b.sub);
     if (!era.length) continue;
     const m = Math.min(1, ...era.map(b => b._ys));
     era.forEach(b => b._ys = m);
