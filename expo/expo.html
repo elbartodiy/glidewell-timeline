@@ -15110,40 +15110,71 @@ function drawPlasmaPanel(b, t){
 
 /* ---------------- FINALE · the stage and the book ---------------- */
 let BOOK_SPRITE = null;
+/* ГОРКА КНИГ — КНИГИ, А НЕ ПОЛОСКИ. Эльдар (16.10.2026): «сама гора книг не
+   очень реалистично выглядит: в том числе потому что по высоте корешок сжат и
+   потому что нет объёма, в отличие от коробочек, которые прямо рядом лежат».
+   Замерено: снимок корешка — 560×53, то есть 10,6 : 1, а в горке он ложился
+   в 64×16 — 4 : 1, и надпись на нём ехала. Теперь корешок кладётся в своих
+   пропорциях (толщина = длина / 10,6), а у каждой книги, как у коробок
+   кроссовера (drawBoxPile), есть крышка — тёмная обложка, видимая сверху, — и
+   у крайней справа торец: обрез страниц. Наклон крышки — тот же, что у
+   коробок: смещение вправо на глубину, подъём 0,62 глубины. Глубина книги —
+   её ширина, 0,68 длины (обложка 420×626), сжатая так же, как у коробок
+   (9 на 26). Холст — вдвое плотнее прежнего (840×720), чтобы на 4K стопка не
+   мылилась; низ нижнего ряда, как и был, — строка 340 из 360 (теперь 680). */
 function makeBookPyramid(){
-  const c = document.createElement('canvas'); c.width = 420; c.height = 360;
+  const S = 2;
+  const c = document.createElement('canvas'); c.width = 420 * S; c.height = 360 * S;
   const g = c.getContext('2d');
   const spine = IMGS.bookspine, front = IMGS.bookfront;
-  const bw = 64, bh = 16;
-  const rows = [6, 5, 4, 3];
+  const asp = spine ? spine.w / spine.h : 10.6;
+  const bw = 64 * S, bh = bw / asp;                 // корешок в его собственных пропорциях
+  const dp = bw * 0.68 * (9 / 26), rise = dp * 0.62;   // глубина книги в наклоне коробок
+  const rows = [6, 5, 5, 4, 4, 3, 3, 2];
+  const base = 340 * S;
   g.save();
-  g.filter = 'blur(7px)';
+  g.filter = 'blur(' + (7 * S) + 'px)';
   g.fillStyle = 'rgba(0,0,0,0.30)';
-  g.beginPath(); g.ellipse(210, 344, 6*bw/2 + 14, 11, 0, 0, Math.PI*2); g.fill();
+  g.beginPath(); g.ellipse(210 * S + dp / 2, base + 4 * S, 6 * bw / 2 + 14 * S, 11 * S, 0, 0, Math.PI * 2); g.fill();
   g.restore();
+  let topY = base;
   rows.forEach((n, r) => {
+    const y = base - (r + 1) * bh;                  // верх корешка этого ряда
     for (let i = 0; i < n; i++){
-      const x = 210 - n*bw/2 + i*bw + (r%2)*2;
-      const y = 340 - (r+1)*bh;
-      if (spine) g.drawImage(spine.el, x + 1, y + 1, bw - 2, bh - 1);
-      g.strokeStyle = 'rgba(0,0,0,0.55)'; g.lineWidth = 1;
-      g.strokeRect(x + 1, y + 1, bw - 2, bh - 1);
+      const x = 210 * S - n * bw / 2 + i * bw + ((r * 5) % 3 - 1) * S;
+      // крышка — обложка сверху, тёмная, с бликом к дальнему краю
+      const tg = g.createLinearGradient(0, y - rise, 0, y);
+      tg.addColorStop(0, '#2a2e33'); tg.addColorStop(1, '#141619');
+      g.fillStyle = tg;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + dp, y - rise); g.lineTo(x + bw + dp, y - rise); g.lineTo(x + bw, y); g.closePath(); g.fill();
+      g.strokeStyle = 'rgba(255,255,255,0.10)'; g.lineWidth = S * 0.6;
+      g.beginPath(); g.moveTo(x + dp, y - rise); g.lineTo(x + bw + dp, y - rise); g.stroke();
+      // торец справа: обрез страниц между двумя тонкими крышками переплёта
+      g.fillStyle = '#e9e3d5';
+      g.beginPath(); g.moveTo(x + bw, y); g.lineTo(x + bw + dp, y - rise); g.lineTo(x + bw + dp, y - rise + bh); g.lineTo(x + bw, y + bh); g.closePath(); g.fill();
+      g.strokeStyle = 'rgba(20,22,25,0.85)'; g.lineWidth = S * 0.9;
+      g.beginPath(); g.moveTo(x + bw, y + 0.4 * S); g.lineTo(x + bw + dp, y - rise + 0.4 * S);
+      g.moveTo(x + bw, y + bh - 0.4 * S); g.lineTo(x + bw + dp, y - rise + bh - 0.4 * S); g.stroke();
+      g.strokeStyle = 'rgba(120,112,98,0.35)'; g.lineWidth = S * 0.4;
+      for (let q = 1; q < 3; q++){ const yy = y + bh * q / 3; g.beginPath(); g.moveTo(x + bw, yy); g.lineTo(x + bw + dp, yy - rise); g.stroke(); }
+      // корешок — снимок, лицом к залу
+      if (spine) g.drawImage(spine.el, x, y, bw, bh);
+      g.strokeStyle = 'rgba(0,0,0,0.6)'; g.lineWidth = S * 0.7;
+      g.strokeRect(x + 0.35 * S, y + 0.35 * S, bw - 0.7 * S, bh - 0.7 * S);
     }
+    topY = y - rise;
   });
   if (front){
-    const fw = 96, fh = fw * front.h / front.w;
-    const sx = 210 - fw/2, sy = 340 - 4*bh - fh - 2;
+    const fw = 96 * S, fh = fw * front.h / front.w;
+    const sx = 210 * S - fw / 2 + dp * 0.5, sy = topY - fh + rise * 0.55;
     g.save();
-    g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 14; g.shadowOffsetY = 7;
+    g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 14 * S; g.shadowOffsetY = 7 * S;
     g.drawImage(front.el, sx, sy, fw, fh);
     g.restore();
-    g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = 1;
-    g.strokeRect(sx + 0.5, sy + 0.5, fw - 1, fh - 1);
+    g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = S;
+    g.strokeRect(sx + 0.5 * S, sy + 0.5 * S, fw - S, fh - S);
   }
-  /* WHERE THE PILE ACTUALLY STANDS. The bottom row's baseline is row 340 of the
-     360-row canvas; hung by the canvas the pile floated twenty rows above the
-     counter (Eldar, 2026-09-22: «они парят над столом»). */
-  return {c, w: c.width, h: c.height, base: 340};
+  return {c, w: c.width, h: c.height, base};
 }
 /* the book card: cover, story, code — a product card without the price tag */
 let BOOK_CARD = null;
