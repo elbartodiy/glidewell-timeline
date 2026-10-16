@@ -6685,8 +6685,9 @@ function updateMusic(dt){
   let want = MUSIC.off ? 0 : MUSIC.vol;
   const voice = state.person && state.person.v;
   const rail = state.study && state.study.railV;
+  const bookV = state.inspect && state.inspect.v;
   const speaking = state.clip || (voice && !voice.paused && !voice.muted) ||
-        (rail && !rail.paused && !rail.muted);
+        (rail && !rail.paused && !rail.muted) || (bookV && !bookV.paused && !bookV.muted);
   if (speaking) want *= MUSIC.duck;
   if (state.mode === 'attract') want *= 0.75;
   want *= 1 - (state.attract.fade || 0);
@@ -15208,16 +15209,35 @@ function makeBookCard(){
   tx = padL + coverW + 56; colW = W0 - padL - tx;
   mc.font = '26px ' + FAM; blurbLines = wrapWith(mc, blurb, colW);
   const qrY = 62 + coverH + 40;
+  /* РОЛИК — ПОСЛЕ ВСЕГО. Эльдар (16.10.2026): «сделай видео просто ниже, после
+     всего, что сейчас есть на странице книги»; «открывается — видео плей сразу».
+     Джим сам представляет книгу (JG Book Promo for Social Media, 2020, 1:24).
+     Карточка растёт вниз на линейку, подпись и кадр 16:9 во всю ширину; её
+     масштаб на экране считается по прежней высоте (baseH), так что обложка,
+     текст и форма не мельчают — ролик уходит ниже края и до него листают. */
+  const baseH = H0;
+  const vX = padL, vW = W0 - padL * 2, vH = Math.round(vW * 9 / 16);
+  const vRule = baseH - M - 6, vLab = vRule + 62, vTop = vLab + 30;
+  const H1 = vTop + vH + 56 + M;
 
-  const c = document.createElement('canvas'); c.width = W0; c.height = H0;
+  const c = document.createElement('canvas'); c.width = W0; c.height = H1;
   const g = c.getContext('2d');
   g.save();
   g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 26; g.shadowOffsetY = 12;
-  g.fillStyle = '#fbfcfd'; g.fillRect(M, M, W0 - M*2, H0 - M*2);
+  g.fillStyle = '#fbfcfd'; g.fillRect(M, M, W0 - M*2, H1 - M*2);
   g.restore();
   /* рамка стала волоском: тройная голубая обводка спорила с самой карточкой */
   g.strokeStyle = 'rgba(34,38,44,0.14)'; g.lineWidth = 1.5;
-  g.strokeRect(M + 0.75, M + 0.75, W0 - M*2 - 1.5, H0 - M*2 - 1.5);
+  g.strokeRect(M + 0.75, M + 0.75, W0 - M*2 - 1.5, H1 - M*2 - 1.5);
+  // раздел ролика: линейка, подпись, тёмное гнездо под кадр (сам кадр рисует зал)
+  g.beginPath(); g.moveTo(padL, vRule); g.lineTo(W0 - padL, vRule); g.stroke();
+  g.fillStyle = '#22262c'; g.font = '600 30px ' + FAM;
+  g.fillText('Jim on the book', padL, vLab);
+  const labW = g.measureText('Jim on the book').width;
+  g.fillStyle = '#7b828b'; g.font = '24px ' + FAM;
+  g.fillText('\u00b7  in his own words, 2020  \u00b7  1:24', padL + labW + 14, vLab);
+  g.save(); g.shadowColor = 'rgba(0,0,0,0.3)'; g.shadowBlur = 14; g.shadowOffsetY = 6;
+  g.fillStyle = '#14181d'; g.fillRect(vX, vTop, vW, vH); g.restore();
 
   if (IMGS.bookfront){
     g.save();
@@ -15265,8 +15285,9 @@ function makeBookCard(){
   g.strokeStyle = 'rgba(34,38,44,0.14)'; g.lineWidth = 1.5;
   g.beginPath(); g.moveTo(tx, ruleY); g.lineTo(tx + colW, ruleY); g.stroke();
 
-  return {c, w: W0, h: H0, inner: {w: W0, h: H0},
-          form: {x: tx, y: formTop, w: colW, h: formH}};
+  return {c, w: W0, h: H1, inner: {w: W0, h: H1}, baseH,
+          form: {x: tx, y: formTop, w: colW, h: formH},
+          video: {x: vX, y: vTop, w: vW, h: vH, src: 'media/jg_book_promo.mp4'}};
 }
 function drawBookPyramid(b, t){
   /* near the front plane: at 155 deep the pile slid against the counter's
@@ -16786,6 +16807,7 @@ function drawInspect(){
        иначе проглотило бы клавиши зала (M — музыка и прочее) */
     if (BOOK.el) try { BOOK.el.blur(); } catch(e){}
     serPing(false);
+    if (I.v) try { I.v.pause(); } catch(e){}
     state.inspect = null; return;
   }
   const e = I.amt*I.amt*(3-2*I.amt);
@@ -16809,9 +16831,14 @@ function drawInspect(){
      другой картинки — чуть уже, чтобы под ней осталось место подписи. */
   const offer = !!I.offer;
   const maxW = offer ? W*0.60 : W*0.72, maxH = offer ? H*0.82 : H*0.78;
-  const th = Math.min(maxH, maxW*sp.h/sp.w);
-  const tw = th * sp.w/sp.h;
-  const tx = W/2 - tw/2, ty = H*0.46 - th/2;
+  /* карточка книги длиннее экрана: размер — по её прежней высоте (baseH), а
+     сама она листается (I.scroll, как у страниц) */
+  const baseH = (offer && sp.baseH) || sp.h;
+  const th0 = Math.min(maxH, maxW*baseH/sp.w);
+  const tw = th0 * sp.w/baseH, th = sp.h * tw / sp.w;
+  if (offer){ if (!Number.isFinite(I.scroll)) I.scroll = 0; I.maxScroll = Math.max(0, (H*0.46 - th0/2 + th + 30*SS - H) / SS); }
+  const tx = W/2 - tw/2, ty = H*0.46 - th0/2 - (offer ? I.scroll * SS : 0);
+  if (offer) I.sheet = {x: tx, y: ty, w: tw, h: th};   // касание по самой карточке её не закрывает
   ctx.fillStyle = `rgba(3,2,2,${0.62*e})`;
   ctx.fillRect(0, 0, W, H);
   ctx.drawImage(sp.c, mixN(sx0,tx,e), mixN(sy0,ty,e), mixN(sw0,tw,e), mixN(sh0,th,e));
@@ -16854,6 +16881,44 @@ function drawInspect(){
     drawBookOffer({x: tx + sp.form.x * sc, y: ty + sp.form.y * sc,
                    w: sp.form.w * sc, h: sp.form.h * sc}, e);
   }
+  if (I.offer && sp.video && e > 0.6) drawBookVideo(I, sp.video, tx, ty, tw / sp.w, (e - 0.6) / 0.4);
+}
+/* РОЛИК КАРТОЧКИ КНИГИ. Пускается сам, как только карточка открыта, — тем же
+   playPageClip, что и голоса страниц (со звуком; если браузер звук не дал —
+   без звука до первого касания). Касание по кадру — пауза / дальше. */
+function drawBookVideo(I, V, tx, ty, sc, a){
+  if (!I.v){ hushClips(); I.v = playPageClip(V.src); }
+  const x = tx + V.x * sc, y = ty + V.y * sc, w = V.w * sc, h = V.h * sc;
+  if (y > H || y + h < 0) { pushHit(x, y, w, h, {type: 'bookvideo'}); return; }
+  const v = I.v;
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  if (v.readyState >= 2 && v.videoWidth){
+    const s2 = Math.max(w / v.videoWidth, h / v.videoHeight);
+    ctx.drawImage(v, x + w/2 - v.videoWidth*s2/2, y + h/2 - v.videoHeight*s2/2, v.videoWidth*s2, v.videoHeight*s2);
+  } else {
+    const im = thumbFor({src: V.src});
+    if (im) ctx.drawImage(im.el, x, y, w, h);
+  }
+  const loading = !v.paused && v.readyState < 2;
+  const br = Math.max(26 * SS, h * 0.09), cx = x + w/2, cy = y + h/2;
+  if (loading){
+    const t = performance.now() / 1000 * 5;
+    ctx.strokeStyle = 'rgba(250,252,255,0.9)'; ctx.lineWidth = 3.5 * SS; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(cx, cy, br, t, t + 4.2); ctx.stroke(); ctx.lineCap = 'butt';
+  } else if (v.paused){
+    ctx.fillStyle = 'rgba(250,252,255,0.92)'; ctx.beginPath(); ctx.arc(cx, cy, br, 0, 7); ctx.fill();
+    ctx.fillStyle = '#1a2027'; ctx.beginPath();
+    ctx.moveTo(cx - br*0.28, cy - br*0.52); ctx.lineTo(cx + br*0.52, cy); ctx.lineTo(cx - br*0.28, cy + br*0.52);
+    ctx.closePath(); ctx.fill();
+  }
+  // полоска хода внизу кадра
+  if (v.duration){
+    ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(x, y + h - 4*SS, w, 4*SS);
+    ctx.fillStyle = 'rgba(225,27,42,0.9)'; ctx.fillRect(x, y + h - 4*SS, w * Math.min(1, v.currentTime / v.duration), 4*SS);
+  }
+  ctx.restore();
+  pushHit(x, y, w, h, {type: 'bookvideo'});
 }
 
 /* ARTICLES KEYED BY NAME. The map below is keyed by a beat's coordinate, and a
@@ -19821,8 +19886,20 @@ function update(dt){
         else if (aimed && aimed.type === 'bookconsent') BOOK.consent = !BOOK.consent;
         else if (aimed && aimed.type === 'booksend') bookSend();
         else if (aimed && aimed.type === 'bookserial') serPick().then(() => serPing(true));
+        else if (aimed && aimed.type === 'bookvideo'){
+          const v = state.inspect.v;
+          if (v){ v._noSound = false; v.muted = false; try { v.paused ? v.play() : v.pause(); } catch(err){} }
+        }
+        // карточка книги листается и, как страницы, закрывается только касанием мимо неё
+        else if (state.inspect.offer && !tapOutsideSheet(state.inspect, inp.action)){}
         else state.inspect.closing = true;
-      } else if (inp.action === true || Math.abs(inp.impulse) > 260) state.inspect.closing = true;
+      } else if (state.inspect.offer){
+        // до первой отрисовки у карточки ещё нет предела прокрутки — без нуля здесь scroll стал бы NaN
+        if (!Number.isFinite(state.inspect.maxScroll)) state.inspect.maxScroll = 0;
+        if (!Number.isFinite(state.inspect.scroll)) state.inspect.scroll = 0;
+        pageScroll(state.inspect, inp, dt);
+      }
+      else if (inp.action === true || Math.abs(inp.impulse) > 260) state.inspect.closing = true;
       cam.vel = 0;
     } else if (state.clip){
       // the speaker window: the cross, any click, or a strong scroll puts it back
