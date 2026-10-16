@@ -15128,7 +15128,11 @@ function makeBookPyramid(){
   const g = c.getContext('2d');
   const spine = IMGS.bookspine, front = IMGS.bookfront;
   const asp = spine ? spine.w / spine.h : 10.6;
-  const bw = 64 * S, bh = bw / asp;                 // корешок в его собственных пропорциях
+  /* КНИГА ТОЛЩЕ СНИМКА КОРЕШКА. Эльдар (16.10.2026): «книга толще». Снимок —
+     10,6 : 1, а настоящая книга в твёрдом переплёте ~9,4 × 1,3 дюйма — 7,2 : 1.
+     Корешок берёт толщину книги, а надпись в нём остаётся в своих пропорциях,
+     посередине; сверху и снизу — тот же чёрный суперобложки. */
+  const bw = 64 * S, bh = bw / 7.2, sh = bw / asp;
   const dp = bw * 0.68 * (9 / 26), rise = dp * 0.62;   // глубина книги в наклоне коробок
   const rows = [6, 5, 5, 4, 4, 3, 3, 2];
   const base = 340 * S;
@@ -15158,7 +15162,8 @@ function makeBookPyramid(){
       g.strokeStyle = 'rgba(120,112,98,0.35)'; g.lineWidth = S * 0.4;
       for (let q = 1; q < 3; q++){ const yy = y + bh * q / 3; g.beginPath(); g.moveTo(x + bw, yy); g.lineTo(x + bw + dp, yy - rise); g.stroke(); }
       // корешок — снимок, лицом к залу
-      if (spine) g.drawImage(spine.el, x, y, bw, bh);
+      g.fillStyle = '#0f1012'; g.fillRect(x, y, bw, bh);
+      if (spine) g.drawImage(spine.el, x, y + (bh - sh) / 2, bw, sh);
       g.strokeStyle = 'rgba(0,0,0,0.6)'; g.lineWidth = S * 0.7;
       g.strokeRect(x + 0.35 * S, y + 0.35 * S, bw - 0.7 * S, bh - 0.7 * S);
     }
