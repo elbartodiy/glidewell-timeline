@@ -2899,22 +2899,8 @@ function drawWall(){
        другого здания»). Зажимаем вырез в [sx0, sx1]. */
     const stGap = stWallGapAt(kw);
     const g0 = stGap ? Math.max(stGap[0], sx0) : 0, g1 = stGap ? Math.min(stGap[1], sx1) : 0;
-    /* ПОД ПАНЕЛЬЮ 1993 СТЕНЫ НЕТ — ТАМ ПОЛ. Панель стоит глубже стены эпохи
-       (z 728 против 680), и её низ — линия пола на её плоскости — выше низа
-       стены: на камере 1993 у окна 1000×1100 это 804 против 815. Стена
-       рисуется после пола, и в эти 11 px под панелью ложился её тёмный
-       плинтус — полосой от левого края панели до постамента (Эльдар,
-       15.10.2026, скриншот: обведено, а белым — как должно сходиться).
-       Вырез — ровно ширина панели на её плоскости, от её низа до низа стены;
-       плита пола 1993 стоит в тех же двух точках (FAR93_L/R), так что под
-       вырезом всегда она. */
-    const y93 = py(1080, k(REC93_Z));
-    const h0 = Math.max(sx0, px(REC93_BL, k(REC93_Z))), h1 = Math.min(sx1, px(REC93_BR, k(REC93_Z)));
-    const hole93 = h1 > h0 && yFoot > y93;
     if (stGap && g1 > g0){ ctx.rect(g0, 0, g1 - g0, yFoot); ctx.clip('evenodd'); }
     else ctx.clip();
-    // вырез — отдельным клипом: два выреза в одном evenodd-пути, перекрывшись, вернули бы стену
-    if (hole93){ ctx.beginPath(); ctx.rect(sx0, 0, sx1 - sx0, yFoot); ctx.rect(h0, y93, h1 - h0, yFoot - y93); ctx.clip('evenodd'); }
     // Belt and braces: paint the era's own average tone across the whole span
     // first. Tiling can miss by a pixel at a seam for a dozen reasons; when it
     // does you should see wall, not the room's black background.
@@ -3127,7 +3113,19 @@ const bayFoot = (x, z, y, yz) => ({x, z, y: y != null ? y : CFG.benchY + 240,
    «я всё ещё вижу там дырку, значит структура неправильная»).
    Теперь плита берёт те же две точки, на которых стоит сам экран — тем же
    stepFoot, каким стоят блоки 1979, 1989, DR и 2018. */
-const FAR93_L = stepFoot(REC93_BL, REC93_Z), FAR93_R = stepFoot(REC93_BR, REC93_Z);
+/* ОДНА ЛИНИЯ ПОЛА С ЛЕВОЙ СТЕНОЙ. Панель стоит глубже стены эпохи (728 против
+   680), и её «свой» пол — y 1080 на её плоскости — ложился выше подошвы этой
+   стены: на камере 1993 в окне 1000×1100 — 804 против 815. Плинтус стены
+   кончался на одной высоте, панель — на другой, и горизонталь ломалась
+   ступенькой у левого угла панели. Эльдар (16.10.2026, скриншот: зелёная точка
+   — низ панели, белая — низ плинтуса): «зелёную точку надо подтянуть к белой —
+   тогда горизонтальная линия будет единой». Теперь низ панели, дальние углы
+   её плиты и углы соседних плит считают y 1080 на глубине ЛЕВОЙ стены
+   (Z93_FOOT); x у всех по-прежнему на плоскости панели. Справа стена глубже
+   (850), там ступенька вниз к панели была и остаётся. Это заменяет вырез стены
+   под панелью от 15.10: низ панели теперь и есть низ стены, вырезать нечего. */
+const Z93_FOOT = segAt(REC93_BL - 1).z0 || 680;
+const FAR93_L = bayFoot(REC93_BL, REC93_Z, 1080, Z93_FOOT), FAR93_R = bayFoot(REC93_BR, REC93_Z, 1080, Z93_FOOT);
 FAR93_L.edge = true;   // слева от бухты 1993 стоит корпус улицы: край идёт по его подошве
 /* 1989's panel is drawn down to the floor line on its OWN plane, not to the
    counter's — so its feet are read there (drawRec3). */
@@ -3182,7 +3180,7 @@ const FAR23_L = bayFoot(REC23_L, 1000), FAR23_R = bayFoot(REC23_R, 1000);
    line to this x and then steps down to meet the bay here */
 /* те же две точки со стороны соседних плит — иначе ступенька просто
    переезжает на соседа (Эльдар, 2026-09-30) */
-const EDG93_L = stepEdge(REC93_BL, REC93_Z), EDG93_R = stepEdge(REC93_BR, REC93_Z);
+const EDG93_L = bayDrop(REC93_BL, REC93_Z, 1080, Z93_FOOT), EDG93_R = bayDrop(REC93_BR, REC93_Z, 1080, Z93_FOOT);   // та же линия, что у плиты 1993 (Z93_FOOT)
 EDG93_L.edge = true;   // тот же стык с другой стороны — пол эпохи в просвете улицы
 const EDG23_L = bayDrop(REC23_L, 1000), EDG23_R = bayDrop(REC23_R, 1000);
 /* the floor: each era has its own material tone; the change lands exactly
@@ -8285,7 +8283,7 @@ function drawRec93(t){
      которой в комнате нет; плита пола начиналась там же и уходила вперёд по
      настоящему полу — стык расходился. Обе стороны теперь считают от
      y = 1080 на z = REC93_Z (Эльдар, 2026-09-30). */
-  const yBase = py(1080, kk);
+  const yBase = py(1080, k(Z93_FOOT));   // низ панели — на линии пола левой стены (см. Z93_FOOT)
   const x0 = px(REC93_BL, kk), x1 = px(REC93_BR, kk);
   const wg = ctx.createLinearGradient(0, 0, 0, yBase);
   wg.addColorStop(0, '#c3cad0');
