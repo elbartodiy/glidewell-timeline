@@ -480,7 +480,12 @@ const BEATS = [
    t:'PRISMATIK', minor:true, yLift:190,
    th:'The front tooth, made rather than bought.',
    d:'January 2005: a full line of leucite-reinforced pressed ceramics under Glidewell’s own Prismatik brand — the esthetic front tooth made in-house rather than bought in. A year later Prismatik Dentalcraft becomes a manufacturing division of its own.',
-   wall:[], table:[]},
+   /* ТАБЛИЧКА PRISMATIK DENTALCRAFT — логотип Эльдара (16.10.2026) на белой
+      пластине, на пустой стене 2005-го. Клик открывает страницу года; когда
+      табличка проходит центр экрана, по ней один раз пробегает радужный блик
+      (drawPrismGlint) — призма в логотипе, призма в свете. Висит ниже
+      заголовков (top 420): на 300 через её верх пролетал самолёт 2007-го. */
+   wall:[{img:'prismatik05', w:760, dx:0, top:420, maxB:700, page:true, glint:true}], table:[]},
 
   {x:18700, y:'2007', t:'FIRST DIGITAL CASE', fly:true, yLift:190, flyLift:66,   // the same line as 2001 and 2005, at every distance
    th:'Nobody called it AI training data yet — but that is what it was.',
@@ -1537,6 +1542,73 @@ function makeBoardPhoto(){
   g.save(); g.shadowColor = 'rgba(0,0,0,0.42)'; g.shadowBlur = 26; g.shadowOffsetY = 10;
   g.drawImage(ph.c, SH, SH, iw, ih); g.restore();
   return {c, w: c.width, h: c.height, inner: {x: SH, y: SH, w: iw, h: ih}};
+}
+/* Табличка Prismatik: белая пластина с логотипом (у логотипа свой белый фон,
+   он и есть поле пластины), тонкая кромка, четыре стальные шляпки держателей
+   и та же мягкая тень на стене, что у доски 1980-го. inner — сама пластина:
+   по ней меряется ширина на стене и по ней же обрезается блик. */
+function makePrismatikPlate(){
+  const ph = PROP_SPRITES.ph_prismatik; if (!ph) return null;
+  const SH = 40, PX = 70, PY = 46, iw = ph.w + PX * 2, ih = ph.h + PY * 2, R = 16;
+  const c = document.createElement('canvas'); c.width = iw + SH * 2; c.height = ih + SH * 2;
+  const g = c.getContext('2d');
+  g.translate(SH, SH);
+  g.save(); g.shadowColor = 'rgba(0,0,0,0.38)'; g.shadowBlur = 24; g.shadowOffsetY = 9;
+  g.fillStyle = '#fbfbfa'; g.beginPath(); g.roundRect(0, 0, iw, ih, R); g.fill(); g.restore();
+  g.save(); g.beginPath(); g.roundRect(0, 0, iw, ih, R); g.clip();
+  g.drawImage(ph.c, PX, PY, ph.w, ph.h);
+  // лёгкий свет сверху: акрил, а не бумага
+  const sg = g.createLinearGradient(0, 0, 0, ih);
+  sg.addColorStop(0, 'rgba(255,255,255,0.10)'); sg.addColorStop(1, 'rgba(0,0,0,0.05)');
+  g.fillStyle = sg; g.fillRect(0, 0, iw, ih);
+  g.restore();
+  g.strokeStyle = 'rgba(120,124,128,0.55)'; g.lineWidth = 2;
+  g.beginPath(); g.roundRect(1, 1, iw - 2, ih - 2, R - 1); g.stroke();
+  for (const [x, y] of [[30, 30], [iw - 30, 30], [30, ih - 30], [iw - 30, ih - 30]]){
+    const cg = g.createRadialGradient(x - 3, y - 3, 1, x, y, 11);
+    cg.addColorStop(0, '#f2f4f6'); cg.addColorStop(0.6, '#a9b0b6'); cg.addColorStop(1, '#6f767c');
+    g.fillStyle = cg; g.beginPath(); g.arc(x, y, 11, 0, Math.PI * 2); g.fill();
+  }
+  return {c, w: c.width, h: c.height, inner: {x: SH, y: SH, w: iw, h: ih}, R};
+}
+/* РАДУЖНЫЙ БЛИК ПО ТАБЛИЧКЕ (Эльдар, 16.10.2026: «блик появляющийся и
+   исчезающий — радужный — когда табличка проходит через центр экрана»).
+   Взводится, когда центр таблички дальше 0.35 W от середины экрана, и
+   срабатывает, когда он пересекает середину (или стоит ближе 0.04 W) — один
+   проход за раз, как у значков касания. Полоса спектра идёт наискосок слева
+   направо за GLINT_MS, яркость — по синусу: из ничего и в ничто. Двумя
+   проходами: multiply окрашивает белое поле, screen — чёрные буквы. */
+const GLINT_MS = 1500;
+function drawPrismGlint(it, sp, sx, sy, scale){
+  const d = sx - W / 2, now = performance.now();
+  if (it._glArm === undefined) it._glArm = true;
+  if (Math.abs(d) > 0.35 * W) it._glArm = true;
+  if (it._glArm && (Math.abs(d) < 0.04 * W || (it._glD != null && Math.sign(d) !== Math.sign(it._glD)))){
+    it._glArm = false; it._glT0 = now;
+  }
+  it._glD = d;
+  if (it._glT0 == null) return;
+  const p = (now - it._glT0) / GLINT_MS;
+  if (p >= 1){ it._glT0 = null; return; }
+  const env = Math.sin(Math.PI * p);
+  const I = sp.inner;
+  const x0 = sx - sp.w * scale / 2 + I.x * scale, y0 = sy - sp.h * scale / 2 + I.y * scale;
+  const pw = I.w * scale, ph = I.h * scale, bw = ph * 0.9;
+  const cx = x0 - bw + p * (pw + bw * 2), cy = y0 + ph / 2;
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(x0, y0, pw, ph, (sp.R || 0) * scale); ctx.clip();
+  ctx.translate(cx, cy); ctx.rotate(0.42);
+  const gr = ctx.createLinearGradient(-bw / 2, 0, bw / 2, 0);
+  const stops = [[0.00, '255,60,60', 0], [0.14, '255,60,60', 1], [0.29, '255,200,40', 1],
+                 [0.43, '60,220,90', 1], [0.57, '40,200,255', 1], [0.71, '70,90,255', 1],
+                 [0.86, '200,60,255', 1], [1.00, '200,60,255', 0]];
+  for (const [o, rgb, a] of stops) gr.addColorStop(o, `rgba(${rgb},${a})`);
+  ctx.fillStyle = gr;
+  ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = 0.34 * env;
+  ctx.fillRect(-bw / 2, -ph * 2, bw, ph * 4);
+  ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = 0.55 * env;
+  ctx.fillRect(-bw / 2, -ph * 2, bw, ph * 4);
+  ctx.restore();
 }
 function makeWhiteboard(){
   const RES = 1.5, IW = 1200, IH = 820, SH = 40;
@@ -12509,6 +12581,7 @@ async function loadPhotoSkin(){
     ph_pillow: 'pillow.png',          // 1996: подушка с каппой Silent Nite — год уходит со стены, предмет остаётся
     ph_monlcd: 'monitor_lcd.png',     // монитор с сайтом у 2000-го — фото Эльдара (16.10.2026), экран вырезан под запись
     ph_board80: 'board_1980.png',     // 1980: доска со схемой Джима — фото Эльдара (16.10.2026), вместо нарисованной
+    ph_prismatik: 'prismatik_logo.png', // 2005: логотип Prismatik Dentalcraft, Inc. — от Эльдара (16.10.2026), на белом, как прислан
     ph_quote76: 'quote_1976.jpg',     // 1976: табличка «Those guys mail anyway…» — дерево с гравировкой, фото Эльдара
     ph_gio: 'glidewell_io.png',       // 2017: логотип glidewell.io из вектора (.ai Эльдара) — вместо набранного имени
     ph_gio_rev: 'glidewell_io_rev.png',// он же вывороткой: белые буквы, красные точки — для тёмного листа
@@ -21065,8 +21138,9 @@ function frame(){
                                : wallSX(b.x, it.dx, k(wz));
       rivet('wall:' + (it.img || '') + ':' + b.x, ax, k(it.pz != null ? it.pz : exhibitZ(b.x)));
       drawSprite(sp, b.x + it.dx, it.cy, wz, it.w, it.rot || 0, null,
-                 it.study ? {type:'study', beat: i, mainSrc: it.study}
+                 it.study || it.page ? {type:'study', beat: i, mainSrc: it.study || undefined}
                           : {type:'photo', sp, wx: b.x + it.dx, cy: it.cy, z: wz, w: it.w, cap: it.cap, link: it.link, beat: i}, ax);
+      if (it.glint) drawPrismGlint(it, sp, ax, py(it.cy, k(wz)), (it.w / sp.inner.w) * k(wz) * SS);
       if (it.cap){
         const kk = k(wz);
         const seg = segAt(b.x);
@@ -21477,6 +21551,7 @@ async function boot(){
      на место нарисованной (та же ширина на стене — it.w по внутренней рамке),
      с той же мягкой тенью; нарисованная остаётся запасом, если фото не пришло. */
   { const sp = makeBoardPhoto() || makeWhiteboard(); if (sp) SPRITES.board1980 = sp; }
+  { const sp = makePrismatikPlate(); if (sp) SPRITES.prismatik05 = sp; }
   PED_SPRITES.crown = makePedObj('crown');
   PED_SPRITES.logo1970 = makePedObj('logo1970');
   PED_SPRITES.bizcard = makePedObj('bizcard');
