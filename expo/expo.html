@@ -15399,7 +15399,7 @@ function makeBookCard(){
   g.fillText('Jim on the book', padL, vLab);
   const labW = g.measureText('Jim on the book').width;
   g.fillStyle = '#7b828b'; g.font = '24px ' + FAM;
-  g.fillText('\u00b7  in his own words, 2020  \u00b7  1:24', padL + labW + 14, vLab);
+  g.fillText('\u00b7  in his own words (2020)  \u00b7  1:24', padL + labW + 14, vLab);
   g.save(); g.shadowColor = 'rgba(0,0,0,0.3)'; g.shadowBlur = 14; g.shadowOffsetY = 6;
   g.fillStyle = '#14181d'; g.fillRect(vX, vTop, vW, vH); g.restore();
 
@@ -17567,7 +17567,7 @@ const STUDY_MEDIA_BY_TITLE = {
                     /* лекция Джима менеджерам лабораторий об анатомии зуба, с набросками,
                        переснятая в 2020-м (архив, 2000s/Common Sense Dental Technology,
                        Master — All Sections, 1:16:47); её открывает доска на стене */
-                    {name:'Jim Glidewell', img:'jimnow', pid:'jim', src:'media/common_sense_2020.mp4', label:'Common Sense Dental Technology, 2020'}],
+                    {name:'Jim Glidewell', img:'jimnow', pid:'jim', src:'media/common_sense_2020.mp4', label:'Common Sense Dental Technology'}],
   /* второй голос — сам Джим: его обращение из Chairside Magazine, том 12,
      выпуск 12 (архив «Classic product videos/2012-Present»), Эльдар
      07.10.2026. Две минуты, в конце анонс Glidewell Dental Symposium 2017.
@@ -17631,7 +17631,7 @@ const STUDY_MEDIA_BY_TITLE = {
      подходит под BruxZir Factory» — это кино о производстве, а не о самой
      коронке. Звук поднят к уровню зала. У фабрики голосов до сих пор не было —
      этот первый, и ляжет во всю ширину после первого абзаца. */
-  'BRUXZIR FACTORY': [{name:'How BruxZir is made', src:'media/brux_2008.mp4', label:'archive film, 2008'}],
+  'BRUXZIR FACTORY': [{name:'How BruxZir is made', src:'media/brux_2008.mp4', label:'archive film'}],
   /* ПРЕДСТАВЛЕНИЕ СПИКЕРА — ТОЛЬКО НА ЕГО СТРАНИЦЕ. resnik_01, park_01 и
      patel_01 — первые короткие ролики (01.09), в которых человек рассказывает о
      себе. На страницах годов им не место: Эльдар (16.10.2026), про Screw-retained:
@@ -17688,6 +17688,40 @@ for (const list of Object.values(STUDY_MEDIA_BY_TITLE)){
     if (!P.clips) P.clips = [];
     if (!P.clips.some(c => c.src === m.src)) P.clips.push({src: m.src, label: m.label || ''});
   }
+}
+/* ГОД ПУБЛИКАЦИИ — В СКОБКАХ ПОСЛЕ ПОДПИСИ. Эльдар (16.10.2026): «нужно пройтись
+   по всем видео на отдельных страницах… после подписи в скобках обязательно год
+   публикации видео; если неизвестно — хотя бы примерно, с вопросом»; «интервью
+   не надо подписывать — интервью, которые мы снимали» (Парк, Пател, Резник,
+   Азерников, Лабао, Фейерштейн — 2026, без года). Откуда годы:
+     jim_01…04   — выпуски «Lasting Impressions» (GTV), файлы LIM0125 / LIM0225:
+                   январь и февраль 2025;
+     jim_bruxzir — «BruxZir Rebrand v1», к семилетию марки (2009 + 7): 2016;
+     jim_chairside — Chairside Magazine, т. 12, вып. 12, анонс Symposium 2017: 2017;
+     brux_2008, rnd_labs_2010, website_2001 — годы самих архивных записей;
+     common_sense_2020 — Джим во вступлении 2020-го: «то было четырнадцать лет
+                   назад» — лекция 2006-го, переизданная в 2020-м: 2006–2020;
+     jim_glass   — плёнка без даты: молодой Джим у воды, 4:3 — примерно 1990?;
+     jim_trailer_2 — превью трейлера нашего фильма, июнь 2026. */
+const CLIP_YEAR = {
+  'media/jim_01.mp4': '2025', 'media/jim_02.mp4': '2025', 'media/jim_03.mp4': '2025', 'media/jim_04.mp4': '2025',
+  'media/jim_bruxzir.mp4': '2016', 'media/jim_chairside.mp4': '2017',
+  'media/brux_2008.mp4': '2008', 'media/rnd_labs_2010.mp4': '2010', 'media/website_2001.mp4': '2001',
+  'media/common_sense_2020.mp4': '2006\u20132020', 'media/jim_glass.mp4': '1990?', 'media/jim_trailer_2.mp4': '2026',
+};
+function withYear(lab, src){
+  const y = CLIP_YEAR[src];
+  return y && !String(lab).includes('(' + y + ')') ? (lab ? lab + ' (' + y + ')' : '(' + y + ')') : lab;
+}
+for (const k in STUDY_MEDIA_BY_TITLE) for (const m of STUDY_MEDIA_BY_TITLE[k]) if (m.src) m.label = withYear(m.label || '', m.src);
+for (const k in PEOPLE) for (const c of (PEOPLE[k].clips || [])) if (c.src) c.label = withYear(c.label || '', c.src);
+/* подпись, которая не влезает, режется по тексту, а год в скобках остаётся целым */
+function fitLabel(lab, maxW){
+  if (!lab || ctx.measureText(lab).width <= maxW) return lab;
+  const m = lab.match(/^(.*?)(\s\([^)]*\))$/), body0 = m ? m[1] : lab, tail = m ? m[2] : '';
+  let body = body0;
+  while (body.length > 3 && ctx.measureText(body + '\u2026' + tail).width > maxW) body = body.slice(0, -1);
+  return body.replace(/[\s,;:\u2014-]+$/, '') + '\u2026' + tail;
 }
 const STUDY_MEDIA = {};   // filled at boot from STUDY_MEDIA_BY_TITLE
 /* БИТ, КОТОРОГО НЕТ НА СТЕНЕ. Страница читается из объекта бита — год, титул,
@@ -18244,11 +18278,7 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
     ctx.font = K.font(15, 'italic');
     ctx.fillStyle = 'rgba(200,206,214,0.85)';
     // подпись в узкой плитке колонки не режется на полуслове — кончается многоточием
-    let lab = m.label || '';
-    if (ctx.measureText(lab).width > tw - 28*SS){
-      while (lab.length > 4 && ctx.measureText(lab + '\u2026').width > tw - 28*SS) lab = lab.slice(0, -1);
-      lab = lab.replace(/[\s,;:\u2014-]+$/, '') + '\u2026';
-    }
+    const lab = fitLabel(m.label || '', tw - 28*SS);
     ctx.fillText(lab, mx + 14*SS, ty + th - 12*SS);
     ctx.restore();
     ctx.strokeStyle = K.edge; ctx.lineWidth = 1.2*SS;
@@ -19564,9 +19594,8 @@ function drawPerson(){
         }
         ctx.fillStyle = 'rgba(244,246,248,0.96)';
         ctx.font = K.font(17, 'italic');
-        let lab = c.label || '';
-        while (ctx.measureText(lab + '…').width > tw - 28*SS && lab.length > 4) lab = lab.slice(0, -1);
-        if (lab) ctx.fillText(lab === c.label ? lab : lab.replace(/[ ,]+$/, '') + '…', mx + 14*SS, ty + th - 16*SS);
+        const lab = fitLabel(c.label || '', tw - 28*SS);
+        if (lab) ctx.fillText(lab, mx + 14*SS, ty + th - 16*SS);
         ctx.restore();
         ctx.strokeStyle = live ? `rgba(${K.red},0.9)` : K.edge;
         ctx.lineWidth = (live ? 2.4 : 1.2)*SS;
