@@ -5324,7 +5324,10 @@ function drawFilmVideoWall(){
    вполне ЭЛТ, и две железки одной породы на соседних прилавках читаются как
    одна эпоха. Немой, как все экраны зала, кроме фильма. */
 const DESK_SCREENS = [
-  {beat: 'WEB · CLINICAL VOICE', dx: 0, lz: 70, w: 290, src: 'media/website_2001.mp4'},
+  /* lz 70 → 30: подставка стояла у самого дальнего края столешницы — «слишком
+     близко к дальнему краю, свисает почти» (Эльдар, 16.10.2026); ближе к залу
+     она садится в середину столешницы */
+  {beat: 'WEB · CLINICAL VOICE', dx: 0, lz: 30, w: 290, src: 'media/website_2001.mp4'},
 ];
 function initDeskScreens(){
   for (const d of DESK_SCREENS){
@@ -5358,13 +5361,15 @@ function drawDeskScreens(){
        Нарисованный корпус ниже — запасной, если фото не пришло. */
     const mp = PROP_SPRITES.ph_monlcd;
     if (mp){
-      const scw2 = d.w * kk * SS, s2 = scw2 / 910;
+      /* на 20 % меньше нарисованного и без тени: «давай его на 20 процентов
+         уменьшим, и тень под него не надо добавлять — нереалистично выглядит»
+         (Эльдар, 16.10.2026) */
+      const scw2 = d.w * 0.8 * kk * SS, s2 = scw2 / 910;
       const bw2 = mp.w * s2, bh2 = mp.h * s2;
       const footY2 = py(CFG.benchY - 2, kk);
       const x02 = sx - bw2 / 2, y02 = footY2 - 1077 * s2;
       if (sx < -bw2 || sx > W + bw2) continue;
       const rx = x02 + 82 * s2, ry = y02 + 90 * s2, rw = 910 * s2, rh = 654 * s2;
-      contactShadow(sx, footY2, bw2 * 0.45, 0.28);
       ctx.save();
       ctx.beginPath(); ctx.rect(rx - 1, ry - 1, rw + 2, rh + 2); ctx.clip();
       ctx.fillStyle = '#0d1014'; ctx.fillRect(rx - 1, ry - 1, rw + 2, rh + 2);
@@ -5381,10 +5386,7 @@ function drawDeskScreens(){
         ctx.fillStyle = gl; ctx.fillRect(rx, ry, rw, rh);
       }
       ctx.restore();
-      ctx.save();
-      ctx.shadowColor = 'rgba(0,0,0,0.30)'; ctx.shadowBlur = 14 * kk * SS; ctx.shadowOffsetY = 5 * kk * SS;
       ctx.drawImage(spriteMip(mp, bw2, bh2), x02, y02, bw2, bh2);
-      ctx.restore();
       const bi2 = BEATS.findIndex(bb => bb.t === d.beat);
       if (bi2 >= 0) pushHit(x02, y02, bw2, bh2, {type: 'study', beat: bi2});
       continue;
