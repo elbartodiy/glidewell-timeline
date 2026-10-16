@@ -5350,6 +5350,45 @@ function drawDeskScreens(){
     }
     if (!near) continue;
     const kk = k(d.lz), sx = px(d.x, kk);
+    /* МОНИТОР — ФОТО. Эльдар (16.10.2026) положил в артефакты LCD Monitor.png
+       («это 2000»): бежевый монитор тех лет с вырезанным экраном. Проём замерен
+       заливкой по альфе — 910×654 из 1071×1079 (x 82, y 90), низ подставки —
+       строка 1077. Ширина экрана та же, что была (d.w), корпус и подставка — от
+       неё; запись сайта кладётся в проём ПОД корпусом, край рамки ложится на неё.
+       Нарисованный корпус ниже — запасной, если фото не пришло. */
+    const mp = PROP_SPRITES.ph_monlcd;
+    if (mp){
+      const scw2 = d.w * kk * SS, s2 = scw2 / 910;
+      const bw2 = mp.w * s2, bh2 = mp.h * s2;
+      const footY2 = py(CFG.benchY - 2, kk);
+      const x02 = sx - bw2 / 2, y02 = footY2 - 1077 * s2;
+      if (sx < -bw2 || sx > W + bw2) continue;
+      const rx = x02 + 82 * s2, ry = y02 + 90 * s2, rw = 910 * s2, rh = 654 * s2;
+      contactShadow(sx, footY2, bw2 * 0.45, 0.28);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(rx - 1, ry - 1, rw + 2, rh + 2); ctx.clip();
+      ctx.fillStyle = '#0d1014'; ctx.fillRect(rx - 1, ry - 1, rw + 2, rh + 2);
+      if (d.ready && d.v.readyState >= 2){
+        const vw0 = d.v.videoWidth || 640, vh0 = d.v.videoHeight || 428;
+        const sc = Math.max(rw / vw0, rh / vh0);
+        const vx = rx + rw / 2 - vw0 * sc / 2, vy = ry + rh / 2 - vh0 * sc / 2;
+        ctx.drawImage(d.v, vx, vy, vw0 * sc, vh0 * sc);
+        ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = 0.42;   // кинескоп светит (см. ниже)
+        ctx.drawImage(d.v, vx, vy, vw0 * sc, vh0 * sc); ctx.restore();
+        const gl = ctx.createLinearGradient(0, ry, 0, ry + rh);
+        gl.addColorStop(0, 'rgba(255,255,255,0.12)'); gl.addColorStop(0.4, 'rgba(255,255,255,0.03)');
+        gl.addColorStop(1, 'rgba(255,255,255,0.01)');
+        ctx.fillStyle = gl; ctx.fillRect(rx, ry, rw, rh);
+      }
+      ctx.restore();
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.30)'; ctx.shadowBlur = 14 * kk * SS; ctx.shadowOffsetY = 5 * kk * SS;
+      ctx.drawImage(spriteMip(mp, bw2, bh2), x02, y02, bw2, bh2);
+      ctx.restore();
+      const bi2 = BEATS.findIndex(bb => bb.t === d.beat);
+      if (bi2 >= 0) pushHit(x02, y02, bw2, bh2, {type: 'study', beat: bi2});
+      continue;
+    }
     const scw = d.w * kk * SS, sch = scw * 3/4;
     const pad = 10 * kk * SS, chin = 26 * kk * SS;
     const bw = scw + pad * 2, bh = sch + pad + chin;
@@ -12460,6 +12499,7 @@ async function loadPhotoSkin(){
     ph_hall_plinth: 'hall_plinth.png',// the low stone the turning crown stands on
     ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
     ph_pillow: 'pillow.png',          // 1996: подушка с каппой Silent Nite — год уходит со стены, предмет остаётся
+    ph_monlcd: 'monitor_lcd.png',     // монитор с сайтом у 2000-го — фото Эльдара (16.10.2026), экран вырезан под запись
     ph_board80: 'board_1980.png',     // 1980: доска со схемой Джима — фото Эльдара (16.10.2026), вместо нарисованной
     ph_quote76: 'quote_1976.jpg',     // 1976: табличка «Those guys mail anyway…» — дерево с гравировкой, фото Эльдара
     ph_gio: 'glidewell_io.png',       // 2017: логотип glidewell.io из вектора (.ai Эльдара) — вместо набранного имени
