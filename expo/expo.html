@@ -206,7 +206,7 @@ const BEATS = [
       началась почтовая модель. Эп.12 «Lasting Impressions», 00:14:16. */
    wall:[],
    capDY:-26,   // под каменный лоб плиты, где дерево темнее всего и светлый шрифт читается
-   quote:{dx:0, cy:318, w:760,
+   quote:{dx:0, cy:318, w:760, img:'ph_quote76',
           lines:['\u201CThose guys mail anyway.',
                  'I think I\u2019m gonna mail them a letter.\u201D'],
           by:'Jim Glidewell'},
@@ -234,7 +234,11 @@ const BEATS = [
       человека; вопрос Джиму в файле вопросов. */
    /* доска со схемой Джима — урок, которым этот год и был (см. makeWhiteboard).
       top 290 — на одной линии с фото 1984-го в соседней панели. */
-   wall:[{img:'board1980', w:700, dx:0, top:268, maxB:700}],
+   /* study: касание по доске открывает страницу 1980-го — и сразу на большом
+      экране «Common Sense Dental Technology» (2020), где Джим объясняет анатомию
+      зуба простыми набросками, — Эльдар, 16.10.2026: «по клику на доску пусть
+      на странице там открывается так же вот это видео». */
+   wall:[{img:'board1980', w:700, dx:0, top:268, maxB:700, study:'media/common_sense_2020.mp4'}],
    table:[]},
 
   {x:8750, y:'1984', t:'CONSOLIDATION', yLift:130,
@@ -1522,6 +1526,15 @@ function makePrint(name, opts){
    Маркер — двумя проходами со смещением в полпикселя: так линия получает
    неровный край живого фломастера, а не векторную чистоту. Случайность
    задана семенем — доска одна и та же при каждом запуске. */
+function makeBoardPhoto(){
+  const ph = PROP_SPRITES.ph_board80; if (!ph) return null;
+  const SH = 40, iw = ph.w, ih = ph.h;
+  const c = document.createElement('canvas'); c.width = iw + SH * 2; c.height = ih + SH * 2;
+  const g = c.getContext('2d');
+  g.save(); g.shadowColor = 'rgba(0,0,0,0.42)'; g.shadowBlur = 26; g.shadowOffsetY = 10;
+  g.drawImage(ph.c, SH, SH, iw, ih); g.restore();
+  return {c, w: c.width, h: c.height, inner: {x: SH, y: SH, w: iw, h: ih}};
+}
 function makeWhiteboard(){
   const RES = 1.5, IW = 1200, IH = 820, SH = 40;
   const c = document.createElement('canvas');
@@ -12421,6 +12434,8 @@ async function loadPhotoSkin(){
     ph_hall_plinth: 'hall_plinth.png',// the low stone the turning crown stands on
     ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
     ph_pillow: 'pillow.png',          // 1996: подушка с каппой Silent Nite — год уходит со стены, предмет остаётся
+    ph_board80: 'board_1980.png',     // 1980: доска со схемой Джима — фото Эльдара (16.10.2026), вместо нарисованной
+    ph_quote76: 'quote_1976.jpg',     // 1976: табличка «Those guys mail anyway…» — дерево с гравировкой, фото Эльдара
     ph_gio: 'glidewell_io.png',       // 2017: логотип glidewell.io из вектора (.ai Эльдара) — вместо набранного имени
     ph_gio_rev: 'glidewell_io_rev.png',// он же вывороткой: белые буквы, красные точки — для тёмного листа
     ph_bz_soon: 'bruxzir_soon.png',   // 2009: неоновая табличка BruxZir COMING SOON — временная, висит на ниточке
@@ -15019,6 +15034,25 @@ function drawQuotePlate(b, i){
   const pad  = 46 * kk * SS;
   const byFs = fs * 0.62;
 
+  /* ТАБЛИЧКА — ФОТО. Эльдар положил в артефакты 1976quote.png: тёмное дерево с
+     гравировкой той же фразы. Она встаёт на место нарисованной — той же ширины
+     и на той же высоте. Подписи на фото нет, и под табличкой её тоже нет:
+     «добавив подпись — этого я не просил» (Эльдар, 16.10.2026). */
+  const qp = q.img && PROP_SPRITES[q.img];
+  if (qp){
+    ctx.save();
+    ctx.font = eraFont(fs, 'italic', seg.font);
+    let wT = 0; for (const ln of q.lines) wT = Math.max(wT, ctx.measureText(ln).width);
+    const wI = Math.max((q.w || 700) * kk * SS * 0.5, wT + pad * 2), hI = wI * qp.h / qp.w;
+    const xI = cx - wI / 2, yI = py(q.cy || 390, kk) - hI / 2;
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 16 * kk * SS; ctx.shadowOffsetY = 6 * kk * SS;
+    ctx.drawImage(spriteMip(qp, wI, hI), xI, yI, wI, hI);
+    ctx.shadowColor = 'transparent';
+    ctx.restore();
+    pushHit(xI, yI, wI, hI, {type:'study', beat: i});
+    return;
+  }
+
   ctx.save();
   ctx.textAlign = 'center';
   ctx.font = eraFont(fs, 'italic', seg.font);
@@ -17451,7 +17485,11 @@ const STUDY_MEDIA_BY_TITLE = {
      страница и начинается. По правилу страницы клип ложится в поток сразу
      после первого абзаца (Эльдар, 2026-09-24). */
   '1993': [{name:'Edsel Labao', img:'labao', pid:'labao', src:'media/labao_01.mp4', label:'on the move to MacArthur Boulevard'}],
-  'STUDY PROGRAM': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_08.mp4', label:'on education'}],
+  'STUDY PROGRAM': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_08.mp4', label:'on education'},
+                    /* лекция Джима менеджерам лабораторий об анатомии зуба, с набросками,
+                       переснятая в 2020-м (архив, 2000s/Common Sense Dental Technology,
+                       Master — All Sections, 1:16:47); её открывает доска на стене */
+                    {name:'Jim Glidewell', img:'jimnow', pid:'jim', src:'media/common_sense_2020.mp4', label:'Common Sense Dental Technology, 2020'}],
   /* второй голос — сам Джим: его обращение из Chairside Magazine, том 12,
      выпуск 12 (архив «Classic product videos/2012-Present»), Эльдар
      07.10.2026. Две минуты, в конце анонс Glidewell Dental Symposium 2017.
@@ -17620,7 +17658,7 @@ function closeClip(){
   if (C && C.v){ try { C.v.pause(); } catch(e){} }
   state.clip = null;
 }
-function openStudy(i){
+function openStudy(i, mainSrc){
   hushClips();
   const b = (i && typeof i === 'object') ? i : BEATS[i];
   const imgs = [];   // reserved: the speaker-video carousel will live here
@@ -17643,7 +17681,12 @@ function openStudy(i){
      Плёнка всегда идёт с начала — playPageClip перематывает в ноль, — поэтому
      страница, открытая второй раз, не подхватит реплику с середины. */
   const inl0 = STUDY_INLINE[b.t];
-  const m = (STUDY_MEDIA[b.x] || [])[0] || (inl0 && inl0.clip);
+  /* mainSrc — страницу открыл предмет, у которого свой ролик (доска 1980-го):
+     он и встаёт на большой экран, остальные голоса — в колонке, как обычно */
+  const list0 = STUDY_MEDIA[b.x] || [];
+  const mi0 = mainSrc ? list0.findIndex(q => q.src === mainSrc) : -1;
+  if (mi0 > 0) state.study.mainIdx = mi0;
+  const m = (mi0 >= 0 ? list0[mi0] : list0[0]) || (inl0 && inl0.clip);
   if (m){
     state.study.railV = playPageClip(m.src);
     state.study.railSrc = m.src;
@@ -20153,7 +20196,7 @@ function update(dt){
         if (bi2 >= 0) openStudy(bi2); else { state.openBox = {amt: 0, closing: false}; }
         cam.vel = 0;
       } else if (aimed && aimed.type === 'study'){
-        openStudy(aimed.beat);
+        openStudy(aimed.beat, aimed.mainSrc);
       } else if (aimed && aimed.type === 'welcomevid'){
         const v = WELCOME_TV.v;
         if (v){
@@ -20908,7 +20951,8 @@ function frame(){
                                : wallSX(b.x, it.dx, k(wz));
       rivet('wall:' + (it.img || '') + ':' + b.x, ax, k(it.pz != null ? it.pz : exhibitZ(b.x)));
       drawSprite(sp, b.x + it.dx, it.cy, wz, it.w, it.rot || 0, null,
-                 {type:'photo', sp, wx: b.x + it.dx, cy: it.cy, z: wz, w: it.w, cap: it.cap, link: it.link, beat: i}, ax);
+                 it.study ? {type:'study', beat: i, mainSrc: it.study}
+                          : {type:'photo', sp, wx: b.x + it.dx, cy: it.cy, z: wz, w: it.w, cap: it.cap, link: it.link, beat: i}, ax);
       if (it.cap){
         const kk = k(wz);
         const seg = segAt(b.x);
@@ -21314,7 +21358,11 @@ async function boot(){
     const sp = makeTriptych(['chairv1', 'chairv12', 'chairv21'], {tone: eraStyle[3].tone});
     if (sp) SPRITES.chairtrio = sp;
   }
-  { const sp = makeWhiteboard(); if (sp) SPRITES.board1980 = sp; }   // доска 1980-го — рисуется, не грузится
+  /* ДОСКА 1980-ГО — ТЕПЕРЬ ФОТО. Эльдар (16.10.2026) положил в артефакты
+     Board.png: настоящая доска с той же схемой, вырезанная по альфе. Она встаёт
+     на место нарисованной (та же ширина на стене — it.w по внутренней рамке),
+     с той же мягкой тенью; нарисованная остаётся запасом, если фото не пришло. */
+  { const sp = makeBoardPhoto() || makeWhiteboard(); if (sp) SPRITES.board1980 = sp; }
   PED_SPRITES.crown = makePedObj('crown');
   PED_SPRITES.logo1970 = makePedObj('logo1970');
   PED_SPRITES.bizcard = makePedObj('bizcard');
