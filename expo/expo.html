@@ -1936,6 +1936,7 @@ function attachMouseDriver(el){
   };
   el.addEventListener('pointerdown', e => {
     down = true; moved = 0; lastX = e.clientX; lastY = e.clientY; markTap = false;
+    Input.downAt = toBuf(e); Input.downFinger = isFinger(e);   // где и чем начато касание — для экрана с сайтом
     fling = [[performance.now(), e.clientX]];
     downX = e.clientX; downY = e.clientY;
     if (isFinger(e)) goFullscreen();     // палец входит в зал — зал занимает экран
@@ -17956,6 +17957,131 @@ const STUDY_INLINE = {
           hint: 'click to digitize', done: 'and this is what happened to it \u2014 the case became data'},
   },
 };
+/* ПЯТЬ САЙТОВ В ОДНОМ МОНИТОРЕ. Эльдар (16.10.2026): на странице первого
+   сайта сразу после видео — тот же монитор, что на прилавке, шириной с видео;
+   нажатие меняет сайт на следующий, сверху мигает значок «нажми», снизу
+   проявляется год. Снимки лежат в артефактах (Website1998…2018.png, все
+   803 px шириной); страница сайта показана с верха, остальное листается
+   ПАЛЬЦЕМ внутри экрана — колесо мыши монитор не трогает («забей на
+   прокрутку — только тачслайд»). Адреса — по архиву Wayback: до 2001-го
+   glidewell-lab.com, с 2008-го glidewelldental.com. Ключ — заголовок бита. */
+const STUDY_SITES = {
+  'WEB \u00b7 CLINICAL VOICE': [
+    {src: 'website_1998', year: '1998', host: 'glidewell-lab.com'},
+    {src: 'website_2001', year: '2001', host: 'glidewell-lab.com'},
+    {src: 'website_2008', year: '2008', host: 'glidewelldental.com'},
+    {src: 'website_2014', year: '2014', host: 'glidewelldental.com'},
+    {src: 'website_2018', year: '2018', host: 'glidewelldental.com'}],
+};
+const SITE_IMG = {};         // src -> Image, грузится, когда страница впервые его просит
+function siteImg(name){
+  let im = SITE_IMG[name];
+  if (!im){
+    im = SITE_IMG[name] = new Image();
+    im.src = vurl('assets/web/' + name + (WEBP_OK ? '.webp' : '.png'));
+  }
+  return im.complete && im.naturalWidth ? im : null;
+}
+/* Монитор с сайтом в потоке страницы. Возвращает новый y. Экран — проём
+   фото монитора (910×654 из 1071×1079, x 82, y 90 — замерено для прилавка,
+   см. drawDeskScreens); корпус во всю ширину текста, то есть экран чуть уже
+   видео над ним. Смена сайта — наплыв за 0,45 с, сайт встаёт на свой верх;
+   год и адрес под подставкой проявляются за 0,8 с и чуть поднимаются. */
+function drawSiteMonitor(S, K, sites, left, y, textW, topClip, botClip, a){
+  const mp = PROP_SPRITES.ph_monlcd;
+  const u = PAGE.u * SS;
+  S._siteRect = null;
+  if (!mp || !sites.length) return y;
+  for (const st of sites) siteImg(st.src);              // все пять — заранее, чтобы смена не мигала пустым
+  const n = sites.length;
+  const idx = ((S.siteIdx || 0) % n + n) % n;
+  const now = state.time || 0;
+  const t0 = S.siteT0 != null ? S.siteT0 : -10;
+  const since = now - t0;
+  y += 6 * u;
+  // ЗНАЧОК «НАЖМИ» над монитором: кольцо с точкой дышит, на вдохе расходится волна
+  const iconY = y + 2 * u;
+  {
+    const ph = (now % 2.2) / 2.2;
+    const br = 0.5 - 0.5 * Math.cos(ph * Math.PI * 2);
+    const cx = left + textW / 2, r = 13 * SS;
+    ctx.save();
+    ctx.strokeStyle = `rgba(${K.accent},${(0.35 + 0.6 * br).toFixed(3)})`;
+    ctx.lineWidth = 2.4 * SS;
+    ctx.beginPath(); ctx.arc(cx, iconY, r, 0, 7); ctx.stroke();
+    ctx.fillStyle = `rgba(${K.accent},${(0.45 + 0.5 * br).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(cx, iconY, r * 0.42, 0, 7); ctx.fill();
+    const w2 = Math.max(0, (ph - 0.5) / 0.5);
+    if (w2 > 0){
+      ctx.strokeStyle = `rgba(${K.accent},${(0.5 * (1 - w2)).toFixed(3)})`;
+      ctx.lineWidth = 1.6 * SS;
+      ctx.beginPath(); ctx.arc(cx, iconY, r * (1 + 1.1 * w2), 0, 7); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  y += 6 * u;
+  const bw = textW, s2 = bw / mp.w, bh = mp.h * s2;
+  const x0 = left, y0 = y;
+  const rx = x0 + 82 * s2, ry = y0 + 90 * s2, rw = 910 * s2, rh = 654 * s2;
+  if (y0 + bh > topClip && y0 < botClip){
+    ctx.save();
+    ctx.beginPath(); ctx.rect(rx - 1, ry - 1, rw + 2, rh + 2); ctx.clip();
+    ctx.fillStyle = '#0d1014'; ctx.fillRect(rx - 1, ry - 1, rw + 2, rh + 2);
+    const im = siteImg(sites[idx].src);
+    const fade = Math.min(1, since / 0.45);
+    const prev = S.sitePrev != null && fade < 1 ? siteImg(sites[S.sitePrev].src) : null;
+    const drawSite = (img, off, al) => {
+      const sc = rw / img.naturalWidth;
+      ctx.globalAlpha = a * al;
+      ctx.drawImage(img, rx, ry - off, rw, img.naturalHeight * sc);
+    };
+    if (prev) drawSite(prev, S.sitePrevOff || 0, 1);
+    if (im){
+      const sc = rw / im.naturalWidth;
+      S.siteMax = Math.max(0, (im.naturalHeight * sc - rh) / SS);
+      S.siteScroll = Math.max(0, Math.min(S.siteMax, S.siteScroll || 0));
+      drawSite(im, S.siteScroll * SS, prev ? fade : 1);
+    }
+    ctx.globalAlpha = a;
+    const gl = ctx.createLinearGradient(0, ry, 0, ry + rh);   // стекло: свет сверху, как у монитора на прилавке
+    gl.addColorStop(0, 'rgba(255,255,255,0.10)'); gl.addColorStop(0.4, 'rgba(255,255,255,0.02)');
+    gl.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gl; ctx.fillRect(rx, ry, rw, rh);
+    ctx.restore();
+    ctx.drawImage(spriteMip(mp, bw, bh), x0, y0, bw, bh);
+    pushHit(x0, y0, bw, 1077 * s2, {type: 'sitenext'});
+    S._siteRect = {x: rx, y: Math.max(ry, topClip), w: rw, h: Math.min(ry + rh, botClip) - Math.max(ry, topClip)};
+    if (S._siteRect.h <= 0) S._siteRect = null;
+  }
+  y = y0 + 1077 * s2 + 7 * u;
+  // ГОД ПРОЯВЛЯЕТСЯ: из ничего, снизу вверх на 10 px, за 0,8 с после смены
+  const ap = Math.min(1, Math.max(0, since / 0.8));
+  const ease = 1 - Math.pow(1 - ap, 3);
+  const lift = (1 - ease) * 10 * SS;
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.globalAlpha = a * ease;
+  ctx.font = K.font(PAGE.title);
+  ctx.fillStyle = `rgba(${K.ink},0.92)`;
+  if (y > topClip && y < botClip) ctx.fillText(sites[idx].year, left + textW / 2, y + lift);
+  y += 4.2 * u;
+  ctx.font = K.font(PAGE.small, '700');
+  try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
+  ctx.fillStyle = `rgba(${K.dim},0.95)`;
+  if (y > topClip && y < botClip) ctx.fillText(sites[idx].host, left + textW / 2, y + lift);
+  try { ctx.letterSpacing = '0px'; } catch(err){}
+  ctx.globalAlpha = a;
+  // где ты в ряду: пять точек, текущая — залитая
+  y += 3.4 * u;
+  const dg = 16 * SS, dx0 = left + textW / 2 - dg * (n - 1) / 2;
+  for (let i = 0; i < n; i++){
+    ctx.fillStyle = `rgba(${K.accent},${i === idx ? 0.9 : 0.28})`;
+    ctx.beginPath(); ctx.arc(dx0 + i * dg, y, (i === idx ? 4.2 : 3.4) * SS, 0, 7);
+    if (y > topClip && y < botClip) ctx.fill();
+  }
+  ctx.restore();
+  return y + 4 * u;
+}
 /* the addresses the company keeps today, hung on the page whose subject is
    the company going onto the web. Keyed by the beat's title. */
 const STUDY_LINKS = {
@@ -18751,6 +18877,8 @@ function drawStudy(){
       rx4 += tw5 + gap4; rowH = Math.max(rowH, th5);
     }
     y += rowH + 4 * u;
+    const sites = STUDY_SITES[b.t];
+    if (sites) y = drawSiteMonitor(S, K, sites, left, y, textW, topClip, botClip, a);
   };
   if (inl && inl.boxTop) drawInlineBox();
   const bodyInk = `rgba(${K.ink},0.88)`;
@@ -20261,6 +20389,16 @@ function update(dt){
     } else if (state.study){
       // the reading page: the wheel scrolls, names open their people, a click closes
       const S = state.study;
+      /* ПАЛЕЦ, ПОСТАВЛЕННЫЙ НА ЭКРАН МОНИТОРА, ЛИСТАЕТ САЙТ, А НЕ СТРАНИЦУ.
+         Решает место, где палец коснулся (Input.downAt), а не где он сейчас:
+         ведение, начатое на экране и ушедшее за край, остаётся у сайта.
+         Мышь и колесо монитор не трогают (Эльдар, 16.10.2026). */
+      const sr = S._siteRect, da = Input.downAt;
+      if (sr && inp.dragging && inp.pan && Input.downFinger && da &&
+          da.x >= sr.x && da.x <= sr.x + sr.w && da.y >= sr.y && da.y <= sr.y + sr.h){
+        S.siteScroll = Math.max(0, Math.min(S.siteMax || 0, (S.siteScroll || 0) + inp.pan));
+        inp.pan = 0;
+      }
       pageScroll(S, inp, dt);
       if (inp.action && typeof inp.action === 'object'){
         const aimed = hitAt(inp.action.x, inp.action.y);
@@ -20288,6 +20426,14 @@ function update(dt){
           openPerson(aimed.id);     // the name in the text goes to the person, not to a portrait
         } else if (aimed && aimed.type === 'link'){
           try { window.open(aimed.url, '_blank', 'noopener'); } catch(e){}   // the page stays open behind it
+        } else if (aimed && aimed.type === 'sitenext'){
+          const sites = STUDY_SITES[(S.b || BEATS[S.beat]).t] || [];
+          if (sites.length){
+            S.sitePrev = ((S.siteIdx || 0) % sites.length + sites.length) % sites.length;
+            S.sitePrevOff = (S.siteScroll || 0) * SS;
+            S.siteIdx = (S.sitePrev + 1) % sites.length;
+            S.siteT0 = state.time; S.siteScroll = 0;   // новый сайт встаёт на свой верх
+          }
         } else if (aimed && aimed.type === 'redigitize'){
           S.dissing = false; S.diss = 0; S.doneAt = 0;   // the carton comes back, whole
         } else if (aimed && aimed.type === 'digitize'){
