@@ -1,22 +1,8 @@
 {
- "updated": "2026-10-16T21:11:37+00:00",
+ "updated": "2026-10-17T04:29:33+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 23,
+ "count": 22,
  "events": [
-  {
-   "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
-   "from": "2026-10-16",
-   "to": "2026-10-17",
-   "city": "Louisville, KY",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Paresh B. Patel"
-   ],
-   "duration": "Two Days",
-   "price": "795.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=52784432546156"
-  },
   {
    "title": "Techniques for Predictable Implant Surgery",
    "from": "2026-10-23",
