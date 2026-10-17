@@ -376,6 +376,20 @@ const BEATS = [
           cap:'Chairside \u00b7 Vol 1, 2006 \u00b7 Vol 12, 2017 \u00b7 Vol 21, 2026',
           link:'https://glidewelldental.com/education/chairside-magazine'}], table:[]},
 
+  /* КОМПЬЮТЕР С САЙТОМ — СРАЗУ ЗА 1998-м. Сайт glidewell-lab.com работал уже
+     в декабре 1998-го (Wayback, «©1998»), и Эльдар (16.10.2026) поставил
+     монитор сразу после Chairside, а всё, что шло за ним, — 1999, R&D и
+     проектор — на шаг вперёд, на прежнее место компьютера. Сдвигать руками
+     ничего не надо: ритм-проход раздаёт места по порядку, и бит, вставший
+     между 1998 и 1999, получает слот 1999-го, а тот — слот R&D. */
+  {x:14540, y:'2001', capDX:0,
+   /* ГОД СО СТЕНЫ СНЯТ: на прилавке стоит монитор с записью первого сайта, и
+      он же открывает страницу (Эльдар, 2026-09-28) — как подушка в 1996-м. */
+   t:'WEB · CLINICAL VOICE', minor:true, yLift:190, noWall:true,
+   th:'The lab learns to publish — online and on camera.',
+   d:'The first Glidewell Laboratories website goes live; the brand gains its clinical-education voice on camera.',
+   wall:[], table:[]},
+
   /* 1999 — ГЛАВНАЯ СТАНЦИЯ ВЕРТИКАЛЬНОЙ ИНТЕГРАЦИИ (Эльдар, 02.10.2026:
      «всё, что сейчас в 99-м, полностью поменять на вертикальную интеграцию»). Большая
      статья пришла сюда с бита PLASTIC INJECTION — она вся была про принцип, а не
@@ -421,14 +435,6 @@ const BEATS = [
    rig:{kind:'tester', dx:-250, lz:150, w:460, dv:8},   // dv: посажена ниже, к переднему ребру столешницы (Эльдар, 02.10.2026)
    table:[], capDX:-540,
    table:[]},
-
-  {x:16520, y:'2001', capDX:-430,   // its line steps left of the plastic-injection block written on the bench face
-   /* ГОД СО СТЕНЫ СНЯТ: на прилавке стоит монитор с записью первого сайта, и
-      он же открывает страницу (Эльдар, 2026-09-28) — как подушка в 1996-м. */
-   t:'WEB · CLINICAL VOICE', minor:true, yLift:190, noWall:true,
-   th:'The lab learns to publish — online and on camera.',
-   d:'The first Glidewell Laboratories website goes live; the brand gains its clinical-education voice on camera.',
-   wall:[], table:[]},
 
   /* THE OBJECT SAYS IT. Its name and thesis used to be written on the bench
      face, in the same band the lines under the counter use, and 2001's line
@@ -4818,8 +4824,11 @@ function initFilmRelays(){
        обложек Chairside: правая обложка стоит на dx 340 при ширине 285, плюс
        60 воздуха, плюс полширины картины — и проектор больше никуда не уедет,
        как бы ни переставляли годы. */
+    /* С 16.10.2026 ОТМЕРЯЕТСЯ ОТ 1999-го: между журналами и проектором встал
+       компьютер с сайтом, и проектор уходит вперёд вместе с 1999-м. +409 — то
+       место, где он стоял относительно 1999-го до переезда (19810 − 19401). */
     {kind: 'proj',
-     x: (BEATS.find(b => b.t === 'CHAIRSIDE PERSPECTIVES') || {x: SHIFT(15330) - 1172}).x + 1172,
+     x: (BEATS.find(b => b.t === 'VERTICAL INTEGRATION') || {x: SHIFT(15330) - 409}).x + 409,
      w: 1260, cy: 318},
     /* ЭКРАН СЕРЕДИНЫ ДВУХТЫСЯЧНЫХ САДИТСЯ ОТ 2005-го, А НЕ ОТ 2002-го. Сперва
        я отмерил его от 2002-го — и он всё равно налезал на янтарный монитор:
@@ -12711,7 +12720,11 @@ function initDecor(){
        them is in git at 41d6e4e if the wall ever wants paper again. */
   }
   // mid-ground people & machines (the wall is far enough now)
-  FIGURES.push({x: SHIFT(16460), z: 560, h: 700, sprite: makeFigure(7)});         // ~2000 · the CAD operator
+  /* силуэт за монитором с сайтом едет вместе с монитором: стоял на SHIFT(16460),
+     в 51 от бита сайта, и после переезда компьютера за 1998-й (16.10.2026)
+     оказался бы перед патентом R&D */
+  { const bw = BEATS.find(b => b.t === 'WEB \u00b7 CLINICAL VOICE');
+    FIGURES.push({x: bw ? bw.x + 51 : SHIFT(16460), z: 560, h: 700, sprite: makeFigure(7)}); }   // ~2000 · the CAD operator
   // mills receding behind the factory line
   // the graduates' mortarboard behind the alumnae portraits
   PROPS.push({x: SHIFT(25700), z: 4, kind: 'gradcap', w: 175, late: true});   // on the plate's own plane, a hair nearer, and to its right
