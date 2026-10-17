@@ -477,17 +477,30 @@ const BEATS = [
    wall:[], table:[]},
 
   {x:18060, y:'2005', capDX:-300,   // and 360 forward: 2001's line was running into this one; its caption steps left, clear of 2007's
-   t:'PRISMATIK', minor:true, yLift:190,
-   th:'The front tooth, made rather than bought.',
+   t:'PRISMATIK', minor:true, yLift:190, tHide:true,
+   /* тезис снят со стены, на листе он остаётся (Эльдар, 16.10.2026: «эту
+      подпись убираем») — thWallHide гасит его во всех рисовалках стены.
+      Название «Prismatik» под годом тоже снято (tHide): его говорит сама
+      табличка; на листе заголовок остаётся. */
+   th:'The front tooth, made rather than bought.', thWallHide:true,
    d:'January 2005: a full line of leucite-reinforced pressed ceramics under Glidewell’s own Prismatik brand — the esthetic front tooth made in-house rather than bought in. A year later Prismatik Dentalcraft becomes a manufacturing division of its own.',
    /* ТАБЛИЧКА PRISMATIK DENTALCRAFT — логотип Эльдара (16.10.2026) на белой
       пластине, на пустой стене 2005-го. Клик открывает страницу года; когда
       табличка проходит центр экрана, по ней один раз пробегает радужный блик
       (drawPrismGlint) — призма в логотипе, призма в свете. Поднята на
       свою высоту: «нижняя граница должна начинаться там, где сейчас
-      верхняя» (Эльдар, 16.10.2026) — пластина 232 мира в высоту, её верх
-      был на 440, низ теперь там же; top 188 — это верх спрайта с тенью. */
-   wall:[{img:'prismatik05', w:760, dx:0, top:188, maxB:700, page:true, glint:true}], table:[]},
+      верхняя» (Эльдар, 16.10.2026).
+      ПРИБИТА К САМОЙ СТЕНЕ, А НЕ К ПЛОСКОСТИ ТЕКСТА: «она сейчас ездит по
+      стене — нужно, чтобы она была ровно посередине между двумя линиями»
+      (Эльдар, 16.10.2026). Швы панелей стоят на глубине стены (z 850 —
+      замерено: при сдвиге камеры на 400 они уходят на 198 px, k·SS 0,495),
+      поэтому у таблички pz 850. Швы по обе стороны — на −588,8 и +435,3 от
+      b.x, середина −76,7 → dx −77. Ширина 848 = прежние 760 × k(668)/k(850).
+      ВЫШЕ — НА МЕСТО НАЗВАНИЯ: «табличка почти там же, где начинается сейчас
+      текст Prismatik, на том же уровне» (Эльдар, 16.10.2026). Верх букв
+      названия — 173 px экрана на 2000×1040; верх пластины туда же: мир −59 на
+      глубине стены, спрайт с тенью начинается на 22 выше — top −81. */
+   wall:[{img:'prismatik05', w:848, dx:-77, pz:850, top:-81, maxB:700, page:true, glint:true}], table:[]},
 
   {x:18700, y:'2007', t:'FIRST DIGITAL CASE', fly:true, yLift:190, flyLift:66,   // the same line as 2001 and 2005, at every distance
    th:'Nobody called it AI training data yet — but that is what it was.',
@@ -3957,8 +3970,8 @@ function drawBeatText(b, focusAmt){
         };
         const tsW = (seg.tScale || 1) * (b._ys || 1) * (b.ysMul || 1) * spread;
         cast(b.y, eraFont(170 * (seg.yearScale || 1) * tsW * kW * SS, '', seg.fontYear || seg.font), 140);
-        cast(sentence(b.t), eraFont(46 * (seg.tScale || 1) * spread * kW * SS, '', seg.font), tY + cd0);
-        if (b.th && b._th && !b.thBelow){
+        if (!b.tHide) cast(sentence(b.t), eraFont(46 * (seg.tScale || 1) * spread * kW * SS, '', seg.font), tY + cd0);   // снятое название не бросает и тени
+        if (b.th && b._th && !b.thBelow && !b.thWallHide){
           ctx.font = eraFont(30 * (seg.tScale || 1) * spread * kW * SS, 'italic', seg.font);
           b._th.forEach((ln, i) => {
             ctx.shadowOffsetY = dy;
@@ -3995,7 +4008,7 @@ function drawBeatText(b, focusAmt){
       else if (!b.tHide) ctx.fillText(sentence(b.t), cx, mixN(py(tY + cd - lift, kk), H*0.16 + 62*SS, focusAmt));
       noShadow();
       try { ctx.letterSpacing = '0px'; } catch(e){}
-      if (near > 0.25 && b.th && !b.thBelow && fFade > 0.05){
+      if (near > 0.25 && b.th && !b.thBelow && !b.thWallHide && fFade > 0.05){
         ctx.font = eraFont(30 * (seg.tScale || 1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${((near-0.25)/0.75 * 0.72 * fFade).toFixed(3)})`;
         letterRelief(0.50);
@@ -4093,7 +4106,7 @@ function drawBeatText(b, focusAmt){
       }
       noShadow();
       try { ctx.letterSpacing = '0px'; } catch(e){}
-      if (near > 0.25 && b.th){
+      if (near > 0.25 && b.th && !b.thWallHide){
         ctx.font = eraFont(30 * (b.minor?0.8:1) * (seg.tScale||1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
         if (fFade > 0.05 && !b.thBelow){
