@@ -513,8 +513,12 @@ const BEATS = [
       В ПОЛТОРА РАЗА МЕНЬШЕ (Эльдар, 19.10.2026): w 848 → 565; середина между
       швами та же (dx −77), верх пластины на той же высоте (мир −59), а тень
       спрайта теперь 15 над ним — top −74.
-      И НИЖЕ НА 1/6 СВОЕЙ ШИРИНЫ (Эльдар, 19.10.2026): 565 / 6 ≈ 94 → top 20. */
-   wall:[{img:'prismatik05', w:565, dx:-77, pz:850, top:20, maxB:700, page:true, glint:true}], table:[]},
+      И НИЖЕ НА 1/6 СВОЕЙ ШИРИНЫ (Эльдар, 19.10.2026): 565 / 6 ≈ 94 → top 20.
+      ПО ЦЕНТРУ ГОДА, А НЕ ШВОВ (Эльдар, 19.10.2026: «в момент, когда 2005 в
+      центре экрана, лого тоже должно быть в центре; забей на центровку
+      относительно стыков»): dx 0 — при камере на b.x он на середине экрана
+      на любой глубине; к стене он по-прежнему прибит (pz 850). */
+   wall:[{img:'prismatik05', w:565, dx:0, pz:850, top:20, maxB:700, page:true, glint:true}], table:[]},
 
   {x:18700, y:'2007', t:'FIRST DIGITAL CASE', fly:true, yLift:190, flyLift:66,   // the same line as 2001 and 2005, at every distance
    th:'Nobody called it AI training data yet — but that is what it was.',
@@ -4863,7 +4867,9 @@ function initFilmRelays(){
        исходному замыслу он и был «офисный LCD на прилавке перед 2005-м»
        (Эльдар, 2026-09-23). */
     {kind: 'lcd05', lz: 16, w: 235,
-     x: (BEATS.find(b => b.t === 'PRISMATIK') || {x: SHIFT(17620) - 150}).x + 150},
+     /* по центру стола 2005-го (Эльдар, 19.10.2026): прилавок года стоит
+        на самом бите, так что +150 → 0 */
+     x: (BEATS.find(b => b.t === 'PRISMATIK') || {x: SHIFT(17620)}).x},
     /* 16:9, as a plasma is — larger, and measured on the deep wall (k≈0.39) so
        its top clears the taglines (screen-wise below them) and its bottom stops
        short of the counters' line with a little air */
