@@ -12691,6 +12691,7 @@ async function loadPhotoSkin(){
        надписью Glidewell Laboratories. Вырезан по альфе: x 353…900, y 24…1253
        → 548 × 1230; прежний postbox.png остаётся в git. */
     ph_postbox: 'postbox_1989.png',  // the mailed case, open, on its own plinth
+    ph_postbox_light: 'postbox_1989_light.png',   // тот же кадр «в свете» — проступает к центру экрана (19.10.2026)
     ph_plane: 'plane_1993.png',       // and the freighter that carries it, landing at 1993
     ph_plastic: 'plastic_2000.png',   // 2000: the tooth-shaped crown boxes the injection division made
     ph_tv70: 'tv_1970.png',           // the seventies set, cut out with its tube knocked through
@@ -14778,6 +14779,22 @@ function drawPedestal(b, t, hero){
        490, — так что ствол уходит за край экрана сам. PP_SPLIT больше не
        нужен и оставлен только как замер. */
     ctx.drawImage(spriteMip(PHOTO_PED, wP, hP), sx - wP/2, yImg, wP, hP);   // уменьшение в 2 раза — через mip, без лесенки
+    /* СВЕТ ПРОСТУПАЕТ К ЦЕНТРУ ЭКРАНА (Эльдар, 19.10.2026: «по мере
+       приближения объекта к центру экрана будем накладывать прозрачность — на
+       него его дубль», файл «…_light» в артефактах). Дубль снят в том же
+       кадре (совпадает до пикселя), вырезан тем же прямоугольником и ложится
+       поверх с прозрачностью от положения на экране: с 0,85 полуширины от
+       середины — ничего, на середине — целиком. */
+    const LP = ped.photo === 'ph_postbox' ? PROP_SPRITES.ph_postbox_light : null;
+    if (LP){
+      const d = Math.abs(sx - W / 2) / (W / 2);
+      const u = Math.max(0, Math.min(1, 1 - d / 0.85)), la = u * u * (3 - 2 * u);
+      if (la > 0.004){
+        ctx.save(); ctx.globalAlpha = la;
+        ctx.drawImage(spriteMip(LP, wP, hP), sx - wP/2, yImg, wP, hP);
+        ctx.restore();
+      }
+    }
     return;
   }
   // column — but a cloud of points has no plinth at all (Eldar, 2026-09-22)
