@@ -12686,7 +12686,11 @@ async function loadPhotoSkin(){
     ph_pfm1: 'pfm_1.png', ph_pfm2: 'pfm_2.png', ph_pfm3: 'pfm_3.png',   // the six PFM stages, cut apart
     ph_pfm4: 'pfm_4.png', ph_pfm5: 'pfm_5.png', ph_pfm6: 'pfm_6.png',
     ph_pfmrow: 'pfm_row.png',         // and the whole line, for the screen-filling look
-    ph_postbox: 'postbox.png',       // 1984: the mailed case, open, on its own plinth
+    /* НОВЫЙ РЕНДЕР (Эльдар, 19.10.2026: «1989 Glidewell Dental Impressions
+       Exhibit» в артефактах) — та же коробка на тумбе, со старым знаком GL и
+       надписью Glidewell Laboratories. Вырезан по альфе: x 353…900, y 24…1253
+       → 548 × 1230; прежний postbox.png остаётся в git. */
+    ph_postbox: 'postbox_1989.png',  // the mailed case, open, on its own plinth
     ph_plane: 'plane_1993.png',       // and the freighter that carries it, landing at 1993
     ph_plastic: 'plastic_2000.png',   // 2000: the tooth-shaped crown boxes the injection division made
     ph_tv70: 'tv_1970.png',           // the seventies set, cut out with its tube knocked through
@@ -14524,8 +14528,12 @@ function updateCrownSpin(dt){
   crownTurn(CROWN3D.wy * dt, CROWN3D.wx * dt);
 }
 /* the postbox render, measured once: how much of its width is the cylinder,
-   how far down its stone cap sits, and where the plain shaft begins */
-const PP_CYLW = 579 / 617, PP_CAPTOP = 438 / 950, PP_SPLIT = 626 / 950;
+   how far down its stone cap sits, and where the plain shaft begins.
+   Перемерено на postbox_1989.png (19.10.2026) тем же способом, что старый
+   (579/617, 438/950, 626/950): цилиндр 512 из 548; каменная шляпка
+   начинает расходиться со строки 407; кончается на 472, гладкий ствол — та же
+   прибавка, что у старого (126 × 548/617 = 112) → 584. */
+const PP_CYLW = 512 / 548, PP_CAPTOP = 407 / 1230, PP_SPLIT = 584 / 1230;
 /* -------- AN EXHIBIT MADE OF POINTS --------
    The crown's own lathe mesh, its vertices turned about the vertical axis and
    drawn as dots rather than faces: the same tooth, read as data. Additive, so
