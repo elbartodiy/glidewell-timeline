@@ -14473,10 +14473,30 @@ const PP_CYLW = 579 / 617, PP_CAPTOP = 438 / 950, PP_SPLIT = 626 / 950;
    the far side of the cloud shows through the near side, and dimmer with depth
    so the turn is legible. It carries its own light: a soft glow at the centre
    and a wash on the stone under it. */
+/* ОБЛАКО СОБИРАЕТСЯ, А НЕ ВЪЕЗЖАЕТ. Эльдар (19.10.2026): коронка появлялась
+   справа уже готовой, а «точки должны не одновременно появляться в разных
+   концах пространства и лететь, собираясь в эту коронку, когда она в центре
+   экрана». Сборка — функция положения облака на экране, не времени: справа
+   от середины точки разбросаны по всему кадру, и чем ближе к середине, тем их
+   больше и тем ближе они к своим местам; на середине облако целое. Левее
+   середины оно остаётся собранным — оттуда уходит поток к экрану цифровой
+   революции (drawDataRelay07), и при обратном ходе коронка входит слева уже
+   готовой. У каждой точки свой разброс: место старта в кадре, задержка
+   появления и изгиб пути — из одного хэша по её номеру, так что картина
+   одна и та же при каждом проходе. */
+const CLOUD_GATHER = {from: 1.08, to: 0.04};   // |сдвиг от середины| / (W/2): с края кадра — до почти середины
+function cloudGather(cx){
+  const d = (cx - W / 2) / (W / 2);
+  if (d <= CLOUD_GATHER.to) return 1;
+  const u = Math.max(0, Math.min(1, (CLOUD_GATHER.from - d) / (CLOUD_GATHER.from - CLOUD_GATHER.to)));
+  return u * u * (3 - 2 * u);
+}
+const hash01 = n => { const h = Math.sin(n) * 43758.5453; return h - Math.floor(h); };
 function drawPointCloud(cx, footY, size, t, hero){
   const mesh = crownMesh(), {rings, M, P} = mesh;
   const scale = size / 122;
   const cy = footY - 34 * scale;
+  const G = cloudGather(cx);
   const tilt = 0.30, ct = Math.cos(tilt), st = Math.sin(tilt);
   const a = t * 0.55;                       // one turn every eleven seconds
   const ca = Math.cos(a), sa = Math.sin(a);
@@ -14484,21 +14504,37 @@ function drawPointCloud(cx, footY, size, t, hero){
   const bright = 0.55 + 0.45 * Math.min(1, hero * 1.6);
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  drawGlow('140,210,255', cx, cy - 6 * scale, size * 1.15, 0.14 * bright);
+  drawGlow('140,210,255', cx, cy - 6 * scale, size * 1.15, 0.14 * bright * G);   // свет у облака — по мере того, как оно собралось
   const dot = Math.max(0.9, 1.5 * SS);
   let bx0 = 1e9, bx1 = -1e9, by0 = 1e9, by1 = -1e9;   // the cloud's own screen box, for the relay that leaves it
+  let idx = 0;
   for (let m = 0; m < M; m += 2){
     const ring = rings[m];
     for (let pI = 0; pI < P; pI += 2){
       const v = ring[pI];
+      const n = idx++;
       const x = v[0] * grow, y = v[1] * grow, z = v[2] * grow;
       const xr = x * ca + z * sa, zr = -x * sa + z * ca;
       const yv = y * ct - zr * st, dz = y * st + zr * ct;
       const near = 0.5 + 0.5 * (dz / 62);        // -1..1 folded to 0..1
-      const sxp = cx + xr * scale, syp = cy - yv * scale;
+      let sxp = cx + xr * scale, syp = cy - yv * scale;
       if (sxp < bx0) bx0 = sxp; if (sxp > bx1) bx1 = sxp; if (syp < by0) by0 = syp; if (syp > by1) by1 = syp;
+      let fade = 1;
+      if (G < 1){
+        /* задержка 0…0,6 сборки, полёт — оставшиеся 0,4: к G = 1 долетают все */
+        const pi = Math.max(0, Math.min(1, (G - 0.6 * hash01(n * 12.9898 + 1.3)) / 0.4));
+        if (pi <= 0) continue;                                    // эта точка ещё не появилась
+        const e = pi * pi * (3 - 2 * pi);
+        const x0 = W * (-0.05 + 1.1 * hash01(n * 78.233 + 4.1));  // старт — где угодно в кадре
+        const y0 = H * (0.04 + 0.86 * hash01(n * 39.425 + 7.7));
+        const bend = (hash01(n * 5.17 + 2.9) - 0.5) * 0.5;        // путь не прямой: лёгкая дуга
+        const ox = sxp - x0, oy = syp - y0;
+        const arc = Math.sin(Math.PI * e) * bend;
+        sxp = x0 + ox * e - oy * arc; syp = y0 + oy * e + ox * arc;
+        fade = Math.min(1, pi * 3.5);                             // проступает на месте старта, не вспыхивает
+      }
       const r = dot * (0.62 + 0.75 * near);
-      ctx.fillStyle = `rgba(${170 + 60 * near | 0},${215 + 30 * near | 0},255,${(bright * (0.16 + 0.5 * near)).toFixed(3)})`;
+      ctx.fillStyle = `rgba(${170 + 60 * near | 0},${215 + 30 * near | 0},255,${(bright * (0.16 + 0.5 * near) * fade).toFixed(3)})`;
       ctx.fillRect(sxp - r / 2, syp - r / 2, r, r);
     }
   }
@@ -14507,7 +14543,7 @@ function drawPointCloud(cx, footY, size, t, hero){
   // the wash it throws down on its own stone
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  drawGlow('120,190,255', cx, footY + 2, size * 0.9, 0.10 * bright);
+  drawGlow('120,190,255', cx, footY + 2, size * 0.9, 0.10 * bright * G);
   ctx.restore();
 }
 /* the hall's crown is not painted with the other pedestals: it stands in the
