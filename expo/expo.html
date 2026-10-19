@@ -12921,7 +12921,8 @@ function initDecor(){
      — Эльдар (02.10.2026) просил собрать всё в одном месте. */
   {
     const bdo = BEATS.find(b => b.t === 'FRIDAY DONUTS');
-    if (bdo) PROPS.push({x: bdo.x, z: 30, kind: 'ph_donuts', w: 150, drop: 16, noShadow: true,
+    // +150 — на свою ширину вправо (Эльдар, 19.10.2026: «пончики подвинь на корпус вправо»)
+    if (bdo) PROPS.push({x: bdo.x + 150, z: 30, kind: 'ph_donuts', w: 150, drop: 16, noShadow: true,
       study: 'FRIDAY DONUTS'});
   }
 
