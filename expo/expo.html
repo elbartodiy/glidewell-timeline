@@ -430,7 +430,9 @@ const BEATS = [
       (Эльдар, 2026-09-29: «сделай так, чтобы патент не перекрывался прибором»).
       Опустить её до просвета под листом — это сделать её игрушечной; на его же
       референсе они стоят рядом: лист справа, машина слева. */
-   patent:{dx:210, w:420, cy:400, rot:-0.5},   // без подписи: Эльдар снял её 02.10.2026
+   /* dx 0 — ровно под годом (Эльдар, 19.10.2026: «грамоту про R&D надо
+      сдвинуть по центру — ровно под год»); было 210 */
+   patent:{dx:0, w:420, cy:400, rot:-0.5},   // без подписи: Эльдар снял её 02.10.2026
    /* машина, которая ломает коронки: стоит под листом патента, на прилавке */
    rig:{kind:'tester', dx:-250, lz:150, w:460, dv:8},   // dv: посажена ниже, к переднему ребру столешницы (Эльдар, 02.10.2026)
    table:[], capDX:-540,
@@ -4883,6 +4885,14 @@ function initFilmRelays(){
        +409 → −11. */
     {kind: 'proj',
      x: (BEATS.find(b => b.t === 'VERTICAL INTEGRATION') || {x: SHIFT(15330) + 11}).x - 11,
+     /* МАШИНКА — НЕ ПОД КАРТИНОЙ, А ВПЛОТНУЮ К ТЕСТ-ПРЕССУ R&D (Эльдар,
+        19.10.2026: «пусть проектор стоит рядом вплотную с тест-прессом, вместо
+        палочек»; и «проектор ездит относительно компа»). mx — где стоит
+        машинка; картина остаётся на x, луч идёт к ней наискосок. Левый край
+        пресса — его dx −250 минус полширины 230; машинке (70) — 35 до центра
+        и 24 воздуха. */
+     mx: (b => b && b.rig ? b.x + (b.rig.dx || 0) - (b.rig.w || 460) / 2 - 24 - 35 : null)
+         (BEATS.find(b => b.t === 'RESEARCH AND DEVELOPMENT')),
      w: 1260, cy: 318},
     /* ЭКРАН СЕРЕДИНЫ ДВУХТЫСЯЧНЫХ САДИТСЯ ОТ 2005-го, А НЕ ОТ 2002-го. Сперва
        я отмерил его от 2002-го — и он всё равно налезал на янтарный монитор:
@@ -4918,15 +4928,16 @@ function initFilmRelays(){
          машинка шириной 70: считать его по картине значит требовать полтора
          метра столешницы там, где нужна ладонь */
       const half = (r.kind === 'proj' ? 70 : (r.w || 300)) * 0.5 + 24;
-      if (TABLES.some(tb => r.x - half >= tb.x0 + 16 && r.x + half <= tb.x1 - 16)) continue;
+      const own = r.kind === 'proj' && r.mx != null ? 'mx' : 'x';   // у проектора на столе стоит машинка, не картина
+      if (TABLES.some(tb => r[own] - half >= tb.x0 + 16 && r[own] + half <= tb.x1 - 16)) continue;
       let best = null, bd = 1e9;
       for (const tb of TABLES){
         if (tb.x1 - tb.x0 < half * 2 + 48) continue;
-        const cx = Math.max(tb.x0 + 16 + half, Math.min(tb.x1 - 16 - half, r.x));
-        const d = Math.abs(cx - r.x);
+        const cx = Math.max(tb.x0 + 16 + half, Math.min(tb.x1 - 16 - half, r[own]));
+        const d = Math.abs(cx - r[own]);
         if (d < bd){ bd = d; best = cx; }
       }
-      if (best != null) r.x = best;
+      if (best != null) r[own] = best;
     }
   }
   if (DBG) console.log('film screens:', FILM_RELAYS.map(r => r.kind + '@' + (r.x | 0)).join(', '));
@@ -5317,7 +5328,9 @@ function drawFilmProjector(r){
   const g = filmProjGeom(r);
   if (g.sx < -g.pw && g.sx > W + g.pw) return;
   // the machine on the bench, forward of the wall
-  const km = k(60), mx = px(r.x, km);
+  /* на столешнице, а не в глубине 60: на своей глубине машинка ехала
+     относительно соседей по прилавку (закон болта, bz) */
+  const km = k(bz(60)), mx = px(r.mx != null ? r.mx : r.x, km);
   const mw = 70 * km * SS, mh = 26 * km * SS;
   const mFoot = py(CFG.benchY - 2, km);
   const lensX = mx, lensY = mFoot - mh*0.55;
@@ -12765,6 +12778,12 @@ function initDecor(){
          photograph — the founding plate and era 2's photographed run */
       if (PLATES.some(pl => Math.abs(x - pl.x) < (pl.w || 0)/2 + 120)) continue;
       if (x > SHIFT(7550) && x < REC3_L) continue;
+      /* у машины R&D на столе ничего лишнего: когда 1999 встал посередине между
+         1998 и 2000, в освободившемся промежутке выпала стопка бумаг, вплотную
+         к машине — Эльдар (19.10.2026): «убери эти палочки со стола» */
+      /* четыре вызова R() — те же, что съел бы пропущенный предмет: иначе
+         сдвинулась бы вся случайная раскладка дальше по залу */
+      if (BEATS.some(bt => bt.t === 'RESEARCH AND DEVELOPMENT' && Math.abs(bt.x - x) < 700)){ R(); R(); R(); R(); continue; }
       const kinds = eraProps[si];
       PROPS.push({x, z: 45 + R()*60, kind: kinds[(R()*kinds.length)|0],
                   w: 95 + R()*60, flip: R() > 0.5});
@@ -12810,7 +12829,10 @@ function initDecor(){
     /* И ЕЩЁ ВПРАВО НА 0,4 ДЛИНЫ. Эльдар (2026-09-25): «правее и ещё правее,
        примерно на 0,4, почти половину от её длины». Длина машины — её ширина
        на прилавке, 460 единиц, значит 0,4 × 460 = 184: x −75 → +109. */
-    if (b17) PROPS.push({x: b17.x + 109, z: 70, kind: 'ph_mill_v1', w: 460, drop: 36, noShadow: true});
+    /* НА ЧЕТВЕРТЬ МЕНЬШЕ (Эльдар, 19.10.2026: «милл машину на 2017 надо
+       уменьшить на 1/4»): w 460 → 345; drop — доля той же фотографии, поэтому
+       уменьшается вместе с ней, 36 → 27; середина машины на прежнем месте. */
+    if (b17) PROPS.push({x: b17.x + 109, z: 70, kind: 'ph_mill_v1', w: 345, drop: 27, noShadow: true});
     /* the plastic-injection division's own product, on the counter at its own
        tick — right of the CAD screen, which it must not cover */
     const bpl = BEATS.find(b => b.t === 'PLASTIC INJECTION');
@@ -12821,7 +12843,18 @@ function initDecor(){
        подписью «Plastic injection · 2000 — an in-house division making the
        boxes, the articulators and the supplies every case ships in»; p.study
        и p.cap взаимоисключающие, поэтому подпись снята. */
-    if (bpl) PROPS.push({x: bpl.x, z: 52, kind: 'ph_plastic', w: 110, study: 'VERTICAL INTEGRATION'});
+    /* ПОРОВНУ ВОЗДУХА С ОБЕИХ СТОРОН (Эльдар, 19.10.2026): «справа и слева от
+       неё одинаково воздуха на столе — от края и до предмета с другой
+       стороны». Середина между правым краем тест-пресса R&D (dx −250 +
+       полширины 230) и правым концом прилавка, на котором коробки стоят. */
+    const brd = BEATS.find(b => b.t === 'RESEARCH AND DEVELOPMENT');
+    let xpl = bpl ? bpl.x : 0;
+    if (bpl && brd && brd.rig){
+      const rigR = brd.x + (brd.rig.dx || 0) + (brd.rig.w || 460) / 2;
+      const tb = TABLES.find(t => xpl >= t.x0 && xpl <= t.x1);
+      if (tb && tb.x1 > rigR) xpl = (rigR + tb.x1) / 2;
+    }
+    if (bpl) PROPS.push({x: xpl, z: 52, kind: 'ph_plastic', w: 110, study: 'VERTICAL INTEGRATION'});
     /* 2009–13 STANDS ON THE COUNTER. The screw-retained beat is about three
        parts — the crown, the titanium base and the implant — and about what
        they cost, so the parts themselves stand at the beat, in the place its
