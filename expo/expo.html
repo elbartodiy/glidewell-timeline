@@ -14760,25 +14760,24 @@ function drawPedestal(b, t, hero){
     drawGlow(warmC, sx, yObj, objH * 1.6, 0.22 * lock * hero);
   }
   /* A PHOTOGRAPHED PLINTH DRAWS ITSELF. The render carries its own cylinder
-     and its own stone cap; all the hall has to do is stand it on the floor.
-     The cylinder runs off the bottom of the render, so the last strip of it is
-     stretched down to the floor line — a plain shaft, so the seam is invisible
-     — and the drawn column, cap and glass dome all stand down. */
+     and its own stone cap; all the hall has to do is stand it on the floor —
+     and the drawn column, cap and glass dome all stand down. (The old render's
+     shaft was stretched to the floor; the 1989 render is long enough not to
+     need it — see below.) */
   if (PHOTO_PED){
     const wP = colW * 1.5 / PP_CYLW;              // the whole render, sized by its own cylinder
     const sc = wP / PHOTO_PED.w;
     const hP = PHOTO_PED.h * sc;
     const yImg = yTop - PP_CAPTOP * hP;           // its stone cap lands where ours would have
     const yFloorP = py(1080, kk);
-    const splitPx = PP_SPLIT * PHOTO_PED.h;       // in source rows
     softFootShadow(sx, yFloorP, wP * 0.44, hP * 0.012, 0.42);
-    ctx.drawImage(PHOTO_PED.c, 0, 0, PHOTO_PED.w, splitPx,
-                  sx - wP/2, yImg, wP, splitPx * sc);
-    const yBody = yImg + splitPx * sc;
-    if (yFloorP > yBody){
-      ctx.drawImage(PHOTO_PED.c, 0, splitPx - 24, PHOTO_PED.w, 24,
-                    sx - wP/2, yBody - 1, wP, yFloorP - yBody + 1);
-    }
+    /* БЕЗ РАСТЯЖКИ. Тумба в рендере 1989-го нарочно длинная (Эльдар,
+       19.10.2026: «там специально сделан длинный пьедестал, чтобы ты не
+       колхозил растяжку»): фото рисуется целиком, как снято. Его низ и так
+       ниже кадра — 1094 при высоте 1040 на 2000×1040, 737 при 700, 516 при
+       490, — так что ствол уходит за край экрана сам. PP_SPLIT больше не
+       нужен и оставлен только как замер. */
+    ctx.drawImage(spriteMip(PHOTO_PED, wP, hP), sx - wP/2, yImg, wP, hP);   // уменьшение в 2 раза — через mip, без лесенки
     return;
   }
   // column — but a cloud of points has no plinth at all (Eldar, 2026-09-22)
