@@ -505,8 +505,11 @@ const BEATS = [
       ВЫШЕ — НА МЕСТО НАЗВАНИЯ: «табличка почти там же, где начинается сейчас
       текст Prismatik, на том же уровне» (Эльдар, 16.10.2026). Верх букв
       названия — 173 px экрана на 2000×1040; верх пластины туда же: мир −59 на
-      глубине стены, спрайт с тенью начинается на 22 выше — top −81. */
-   wall:[{img:'prismatik05', w:848, dx:-77, pz:850, top:-81, maxB:700, page:true, glint:true}], table:[]},
+      глубине стены, спрайт с тенью начинается на 22 выше — top −81.
+      В ПОЛТОРА РАЗА МЕНЬШЕ (Эльдар, 19.10.2026): w 848 → 565; середина между
+      швами та же (dx −77), верх пластины на той же высоте (мир −59), а тень
+      спрайта теперь 15 над ним — top −74. */
+   wall:[{img:'prismatik05', w:565, dx:-77, pz:850, top:-74, maxB:700, page:true, glint:true}], table:[]},
 
   {x:18700, y:'2007', t:'FIRST DIGITAL CASE', fly:true, yLift:190, flyLift:66,   // the same line as 2001 and 2005, at every distance
    th:'Nobody called it AI training data yet — but that is what it was.',
@@ -876,6 +879,20 @@ function applyCut(){
     if (b80 && b84 && b88){
       const to = b84.x + (b84.x - b80.x);
       if (to < b88.x) { moved.push([b88.x, to]); b88.x = to; }
+    }
+  }
+  /* 1999 — РОВНО ПОСЕРЕДИНЕ МЕЖДУ 1998 И 2000. Монитор с сайтом (бит без года
+     на стене) занял в ритме свой слот, и 1999 встал вдвое дальше от 1998-го,
+     чем от 2000-го (1527 против 764). Эльдар (19.10.2026): «год 1999 сейчас
+     висит не ровно между 1998 и 2000 — это ошибка». Стена читается по годам,
+     поэтому год встаёт в середину; монитор стоит на прилавке своим слотом. */
+  {
+    const b98 = BEATS.find(b => b.t === 'CHAIRSIDE PERSPECTIVES'),
+          b99 = BEATS.find(b => b.t === 'VERTICAL INTEGRATION'),
+          b00 = BEATS.find(b => b.t === 'RESEARCH AND DEVELOPMENT');
+    if (b98 && b99 && b00){
+      const to = (b98.x + b00.x) / 2;
+      if (Math.abs(to - b99.x) > 1){ moved.push([b99.x, to]); b99.x = to; }
     }
   }
   /* 1976 BY HAND TOO. The last beat of the craft era keeps its own coordinate
@@ -5430,7 +5447,10 @@ const DESK_SCREENS = [
   /* «ещё ниже… почти у нижнего края стола» (16.10): столешница на снимке
      прилавка — полоса 652…674 px (окно 2000×1040), её передний край — 674.
      lz −5 ставит подставку на ~672, в двух пикселях от кромки. */
-  {beat: 'WEB · CLINICAL VOICE', dx: 0, lz: -5, w: 290, src: 'media/website_2001.mp4'},
+  /* dx 273 — на один корпус вправо (Эльдар, 19.10.2026): корпус фото монитора —
+     1071 из 910 экрана, при экране 290 × 0,8 это 273 мира. Так монитор не
+     заходит на рамку Chairside, когда смотришь с 1999-го. */
+  {beat: 'WEB · CLINICAL VOICE', dx: 273, lz: -5, w: 290, src: 'media/website_2001.mp4'},
 ];
 function initDeskScreens(){
   for (const d of DESK_SCREENS){
@@ -12724,7 +12744,7 @@ function initDecor(){
      в 51 от бита сайта, и после переезда компьютера за 1998-й (16.10.2026)
      оказался бы перед патентом R&D */
   { const bw = BEATS.find(b => b.t === 'WEB \u00b7 CLINICAL VOICE');
-    FIGURES.push({x: bw ? bw.x + 51 : SHIFT(16460), z: 560, h: 700, sprite: makeFigure(7)}); }   // ~2000 · the CAD operator
+    FIGURES.push({x: bw ? bw.x + 51 + 273 : SHIFT(16460), z: 560, h: 700, sprite: makeFigure(7)}); }   // +273 — монитор сдвинут на корпус   // ~2000 · the CAD operator
   // mills receding behind the factory line
   // the graduates' mortarboard behind the alumnae portraits
   PROPS.push({x: SHIFT(25700), z: 4, kind: 'gradcap', w: 175, late: true});   // on the plate's own plane, a hair nearer, and to its right
@@ -12755,8 +12775,14 @@ function initDecor(){
     /* the plastic-injection division's own product, on the counter at its own
        tick — right of the CAD screen, which it must not cover */
     const bpl = BEATS.find(b => b.t === 'PLASTIC INJECTION');
-    if (bpl) PROPS.push({x: bpl.x, z: 52, kind: 'ph_plastic', w: 110,
-      cap: 'Plastic injection \u00b7 2000 \u2014 an in-house division making the boxes, the articulators and the supplies every case ships in. Own the supply chain, and you own the price.'});
+    /* КОРОБОЧКИ ОТКРЫВАЮТ СТРАНИЦУ 1999-го. Эльдар (19.10.2026): страницу
+       Vertical Integration «надо сделать доступной по клику на коробочки для
+       коронок» — коробки, которые компания льёт сама, и есть вертикальная
+       интеграция в одном предмете. Прежде клик поднимал их к экрану с
+       подписью «Plastic injection · 2000 — an in-house division making the
+       boxes, the articulators and the supplies every case ships in»; p.study
+       и p.cap взаимоисключающие, поэтому подпись снята. */
+    if (bpl) PROPS.push({x: bpl.x, z: 52, kind: 'ph_plastic', w: 110, study: 'VERTICAL INTEGRATION'});
     /* 2009–13 STANDS ON THE COUNTER. The screw-retained beat is about three
        parts — the crown, the titanium base and the implant — and about what
        they cost, so the parts themselves stand at the beat, in the place its
