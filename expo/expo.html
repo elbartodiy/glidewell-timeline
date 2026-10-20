@@ -4049,7 +4049,7 @@ function drawBeatText(b, focusAmt){
         const tsW = (seg.tScale || 1) * (b._ys || 1) * (b.ysMul || 1) * spread;
         cast(b.y, eraFont(170 * (seg.yearScale || 1) * tsW * kW * SS, '', seg.fontYear || seg.font), 140);
         if (!b.tHide) cast(sentence(b.tWall || b.t), eraFont(46 * (seg.tScale || 1) * spread * kW * SS, '', seg.font), tY + cd0);   // снятое название не бросает и тени
-        if (b.th && b._th && !b.thBelow && !b.thWallHide){
+        if (b.th && b._th && !b.thBelow && !b.thWallHide && WALL_THESIS){
           ctx.font = eraFont(30 * (seg.tScale || 1) * spread * kW * SS, 'italic', seg.font);
           b._th.forEach((ln, i) => {
             ctx.shadowOffsetY = dy;
@@ -4086,7 +4086,7 @@ function drawBeatText(b, focusAmt){
       else if (!b.tHide) ctx.fillText(sentence(b.tWall || b.t), cx, mixN(py(tY + cd - lift, kk), H*0.16 + 62*SS, focusAmt));
       noShadow();
       try { ctx.letterSpacing = '0px'; } catch(e){}
-      if (near > 0.25 && b.th && !b.thBelow && !b.thWallHide && fFade > 0.05){
+      if (near > 0.25 && b.th && !b.thBelow && !b.thWallHide && WALL_THESIS && fFade > 0.05){
         ctx.font = eraFont(30 * (seg.tScale || 1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${((near-0.25)/0.75 * 0.72 * fFade).toFixed(3)})`;
         letterRelief(0.50);
@@ -4184,7 +4184,7 @@ function drawBeatText(b, focusAmt){
       }
       noShadow();
       try { ctx.letterSpacing = '0px'; } catch(e){}
-      if (near > 0.25 && b.th && !b.thWallHide){
+      if (near > 0.25 && b.th && !b.thWallHide && WALL_THESIS){
         ctx.font = eraFont(30 * (b.minor?0.8:1) * (seg.tScale||1) * kk * SS, 'italic', seg.font);
         ctx.fillStyle = `rgba(${seg.ink},${(near-0.25)/0.75 * 0.72})`;
         if (fFade > 0.05 && !b.thBelow){
@@ -4272,6 +4272,10 @@ function drawHungYear(b, seg, cx, band, fScale, focusAmt, near){
   ctx.restore();
   return {yBase, cap};
 }
+/* ТЕЗИСЫ СО СТЕНЫ СНЯТЫ ВСЕ (Эльдар, 20.10.2026: «и вообще убери все эти доп.
+   тексты третьего уровня на событиях»). Курсивная строка под названием года
+   больше не пишется на стене ни у кого; на страницах годов она остаётся. */
+const WALL_THESIS = false;
 const hungBand = x => (x >= SHOW_L - 200 && x <= SHOW_DRAW_R) ? timberBand() : null;
 
 function descInk(seg){
@@ -4551,7 +4555,7 @@ function drawBenchDescs(){
            whole bay is a photograph and an italic line laid over it is simply
            unreadable. Those ask for it here instead, one line above the
            caption, where the frame is quiet. */
-        if (b.thBelow && b.th){
+        if (b.thBelow && b.th && WALL_THESIS){
           ctx.save();
           ctx.textAlign = 'center';
           ctx.font = eraFont(22 * SS, 'italic', seg.font);
@@ -4655,7 +4659,7 @@ function drawBenchDescs(){
     /* Some beats cannot carry their thesis under the title: at 2022 the whole
        bay is a photograph and an italic line laid over it is unreadable. Those
        ask for it here instead, one line above the caption, where it is quiet. */
-    if (b.thBelow && b.th){
+    if (b.thBelow && b.th && WALL_THESIS){
       ctx.save();
       ctx.font = eraFont(22 * SS, 'italic', seg.font);
       ctx.fillStyle = `rgba(${ink},${(dAmt * 0.70).toFixed(3)})`;
