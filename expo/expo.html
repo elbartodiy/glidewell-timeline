@@ -5770,12 +5770,23 @@ function boardLoad(){
          расписанию, но день без сети или упавшая задача бывают у всех, а
          табло, показывающее вчерашний курс, хуже пустого. Прошедшее зал
          отбрасывает сам, по своим часам. */
-      const today = new Date().toISOString().slice(0, 10);
-      BOARD.rows = (d.events || []).filter(e => e.to >= today);
+      BOARD.rows = (d.events || []).filter(e => e.to >= boardToday());
       BOARD.updated = d.updated;
       BOARD.age = d.updated ? (Date.now() - new Date(d.updated)) / 86400000 : null;
     })
     .catch(() => {});
+}
+/* ПРОШЕДШЕЕ ОТСЕКАЕТСЯ НА КАЖДОМ КАДРЕ, А НЕ ТОЛЬКО ПРИ ЗАГРУЗКЕ (Эльдар,
+   20.10.2026: «почему на экране курсов крутятся уже прошедшие курсы?»). Список
+   фильтровался один раз — когда файл пришёл. Киоск стоит без интернета и
+   неделями не перезагружается; если очередной запрос файла не прошёл (Мак ушёл
+   с хотспота), на табло оставался список того дня, когда он загрузился, и
+   прошедшие курсы так и крутились. И дата бралась по UTC: в Калифорнии после
+   пяти вечера «сегодня» становилось завтрашним днём. Теперь — местная дата и
+   проверка при каждой отрисовке. */
+function boardToday(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 const BOARD_MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 /* ТАБЛО МЕРОПРИЯТИЙ на стене финала: настоящие ближайшие курсы — город, даты,
@@ -5926,7 +5937,8 @@ function drawEventBoard(t){
   ctx.fillRect(x0 + pad, yTop + BD.head * u, w - pad * 2, Math.max(1, 1 * u));
 
   /* ---- строки ---- */
-  const rows = BOARD.rows;
+  const today0 = boardToday();
+  const rows = BOARD.rows.filter(e => e.to >= today0);
   const listTop = yTop + BD.head * u, listH = h - BD.head * u - 22 * u;
   if (!rows.length){
     ctx.font = eraFont(BD.who * u, 'italic', F);
