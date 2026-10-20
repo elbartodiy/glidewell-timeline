@@ -1,7 +1,7 @@
 {
- "updated": "2026-10-20T11:40:44+00:00",
+ "updated": "2026-10-20T17:11:17+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 22,
+ "count": 39,
  "events": [
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -362,6 +362,244 @@
    "price": "1295.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/all-on-x-fp3-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=52849325015404"
+  },
+  {
+   "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
+   "from": "2027-02-19",
+   "to": "2027-02-20",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Paresh B. Patel"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=67783519699308"
+  },
+  {
+   "title": "Dental Sleep Medicine: Snoring and Sleep Apnea Treatment Made Easy",
+   "from": "2027-03-12",
+   "to": "2027-03-13",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Jamison Spencer"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/dental-sleep-medicine-treating-patients-with-sleep-related-disordered-breathing?variant=67784818622828"
+  },
+  {
+   "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
+   "from": "2027-03-12",
+   "to": "2027-03-13",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Paresh B. Patel"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=67783519797612"
+  },
+  {
+   "title": "Effective and Practical Implant Overdentures",
+   "from": "2027-03-19",
+   "to": "2027-03-20",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Raymond Choi"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67783137460588"
+  },
+  {
+   "title": "Esthetic Techniques with Anterior Crowns and Veneers",
+   "from": "2027-04-02",
+   "to": "2027-04-02",
+   "city": "Louisville, KY",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Danielle Brown"
+   ],
+   "duration": "One Day",
+   "price": "695.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67783099220332"
+  },
+  {
+   "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
+   "from": "2027-05-21",
+   "to": "2027-05-22",
+   "city": "Louisville, KY",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Paresh B. Patel"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=67783519895916"
+  },
+  {
+   "title": "Effective and Practical Implant Overdentures",
+   "from": "2027-05-21",
+   "to": "2027-05-22",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Raymond Choi"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67783137558892"
+  },
+  {
+   "title": "Dental Sleep Medicine: Snoring and Sleep Apnea Treatment Made Easy",
+   "from": "2027-06-11",
+   "to": "2027-06-12",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Jamison Spencer"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/dental-sleep-medicine-treating-patients-with-sleep-related-disordered-breathing?variant=67784818786668"
+  },
+  {
+   "title": "Esthetic Techniques with Anterior Crowns and Veneers",
+   "from": "2027-06-25",
+   "to": "2027-06-25",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Danielle Brown"
+   ],
+   "duration": "One Day",
+   "price": "695.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67783099384172"
+  },
+  {
+   "title": "Effective and Practical Implant Overdentures",
+   "from": "2027-07-16",
+   "to": "2027-07-17",
+   "city": "Louisville, KY",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Raymond Choi"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67783137657196"
+  },
+  {
+   "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
+   "from": "2027-07-23",
+   "to": "2027-07-24",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Paresh B. Patel"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=67783519994220"
+  },
+  {
+   "title": "Effective and Practical Implant Overdentures",
+   "from": "2027-09-10",
+   "to": "2027-09-11",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Raymond Choi"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67783137755500"
+  },
+  {
+   "title": "Esthetic Techniques with Anterior Crowns and Veneers",
+   "from": "2027-09-17",
+   "to": "2027-09-17",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Danielle Brown"
+   ],
+   "duration": "One Day",
+   "price": "695.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67783099548012"
+  },
+  {
+   "title": "Effective and Practical Implant Overdentures",
+   "from": "2027-10-01",
+   "to": "2027-10-02",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Raymond Choi"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67783137853804"
+  },
+  {
+   "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
+   "from": "2027-10-22",
+   "to": "2027-10-23",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Paresh B. Patel"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=67783520092524"
+  },
+  {
+   "title": "Esthetic Techniques with Anterior Crowns and Veneers",
+   "from": "2027-10-29",
+   "to": "2027-10-29",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Danielle Brown"
+   ],
+   "duration": "One Day",
+   "price": "695.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67783099711852"
+  },
+  {
+   "title": "Dental Sleep Medicine: Snoring and Sleep Apnea Treatment Made Easy",
+   "from": "2027-11-12",
+   "to": "2027-11-13",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Jamison Spencer"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/dental-sleep-medicine-treating-patients-with-sleep-related-disordered-breathing?variant=67784818950508"
   }
  ]
 }
