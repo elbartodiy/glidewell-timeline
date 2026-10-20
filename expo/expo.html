@@ -575,7 +575,9 @@ const BEATS = [
    d:'August 2012: Glidewell buys IOS Technologies outright, and with it the FastScan intraoral scanner and the TS150 mill — rather than wait for someone else to build the scanner it depends on. The International Technology Center had opened the year before.',
    wall:[], table:[]},
 
-  {x:23170, y:'2015', t:'HAHN TAPERED IMPLANT', minor:true, yLift:120,
+  /* clipAt 1: статья начинается заголовком «Chronology» отдельным блоком, и при
+     clipAt 0 ролик уезжал в самый конец страницы — ставим после хронологии */
+  {x:23170, y:'2015', t:'HAHN TAPERED IMPLANT', minor:true, yLift:120, clipAt:1,
    th:'The BruxZir move, applied to the most expensive tooth — premium, made affordable.',
    d:'June 2015: Glidewell’s own implant, designed with implant pioneer Dr. Jack Hahn — premium quality at a fraction of the price. It only takes the Glidewell HT name years later.',
    wall:[], table:[]},
@@ -13654,7 +13656,11 @@ function drawDiscMill(b, t){
   const foot = py(CFG.benchY - 2, kk);
   const bw = 240 * S1, bh = 196 * S1, x0 = sx - bw / 2, y0 = foot - bh;
   if (x0 > W + 40 || x0 + bw < -40) return;
-  const ph = latchedPhase(b.x, 700);
+  /* МЕДЛЕННЕЕ: НАЧИНАЕТ РАНЬШЕ И КОНЧАЕТ ПОЗЖЕ (Эльдар, 20.10.2026: «давай этот
+     процесс замедлим — начинается чуть раньше и заканчивается чуть позже»).
+     Было: от 700 до бита и готово ровно на бите; стало: от 1000 до бита до 300
+     за ним — 1300 единиц хода вместо 700. Обратно идёт так же, по камере. */
+  const ph = (() => { const u = Math.max(0, Math.min(1, (cam.x - (b.x - 1000)) / 1300)); return u * u * (3 - 2 * u); })();
   const N = discSlots().length, slot = 1 / N;
 
   ctx.save();
@@ -18128,7 +18134,10 @@ const STUDY_MEDIA_BY_TITLE = {
      Leaders (park_01); на страницах Резника и Парка они остаются. */
   'SCREW-RETAINED': [],
   'SCANNERS \u00b7 SCALE': [{name:'Dr. Paresh Patel', img:'patel', pid:'patel', src:'media/2010s_patel.mp4', label:'on scanners in every office'}],
-  'HAHN TAPERED IMPLANT': [],
+  /* официальный ролик Glidewell (YouTube A2u-BKs_5rc, 20.03.2024): Glidewell HT —
+     бывший Hahn Tapered Implant System. Эльдар прислал ссылку 20.10.2026; 640×360,
+     звук поднят к уровню зала (−22,2 → −14,6 дБ, компрессор с добором 9). */
+  'HAHN TAPERED IMPLANT': [{name:'Glidewell', src:'media/glidewell_ht_2024.mp4', label:'Introduction to the Glidewell HT Implant System'}],
   /* Азерников про полную оцифровку встаёт ПЕРВЫМ: страница про то, как
      лаборатория въезжает в кабинет, и это ровно его предмет, а Парк на ней
      говорит про симпозиум. Первый в списке — тот, что начинает играть, когда
@@ -18195,6 +18204,7 @@ const CLIP_YEAR = {
   'media/jim_bruxzir.mp4': '2016', 'media/jim_chairside.mp4': '2017',
   'media/brux_2008.mp4': '2008', 'media/rnd_labs_2010.mp4': '2010', 'media/website_2001.mp4': '2001',
   'media/common_sense_2020.mp4': '2006\u20132020', 'media/jim_glass.mp4': '1990?', 'media/jim_trailer_2.mp4': '2026',
+  'media/glidewell_ht_2024.mp4': '2024',
 };
 function withYear(lab, src){
   const y = CLIP_YEAR[src];
