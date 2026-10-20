@@ -8678,7 +8678,11 @@ function drawModel93(wx, lz, wWorld, topWorldY){
      while the building is still off the frame to the right, and it needs the
      site's coordinates to fly towards — a stale stash from the last time the
      model was on screen put its parking place in the wrong spot */
-  MODEL93 = {p, s, XM, ZM, sx, kk};   // the plane parks on this site, in these units
+  /* planeK — во сколько раз самолёт меньше площадки: макет вырос в 1,9 раза
+     (330 → 627), а самолёт должен остаться прежним (Эльдар, 20.10.2026: «почему
+     там такой огромный самолёт теперь садится?»). Путь и место посадки — в
+     единицах площадки, размер — прежний. */
+  MODEL93 = {p, s, XM, ZM, sx, kk, planeK: 330 / wWorld};   // the plane parks on this site, in these units
   if (sx < -500 || sx > W + 500) return;
 
   // the plinth: the ground plane of the model, oversailed and extruded down
@@ -8913,7 +8917,7 @@ function drawPlane93(){
      perspective is the model's too, and it is painted before the model, which
      is why it parks out of sight behind the building. */
   const XPARK = 66, ZL = 8, LIFT = 96;               // a shallow approach: already on finals
-  const wPx0 = 74 * P.s;
+  const wPx0 = 74 * P.s * (P.planeK || 1);
   /* far enough out to be off the frame, whatever the window: it used to stop at
      a fixed point on the site and simply cease to exist in mid-air */
   const XFAR = Math.min(-760, ((-wPx0 * 2.2 - P.p.ox) / P.p.s) + ZL * 0.5);
