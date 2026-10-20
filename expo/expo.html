@@ -11526,7 +11526,15 @@ function drawDust(t){
 function lampFlicker(t, seed){
   return 0.86 + 0.10*Math.sin(t*11 + seed*7) * Math.sin(t*2.7 + seed*3) + 0.04*Math.sin(t*23 + seed);
 }
-function drawLamp(x, t, seed, fadeAtStone){
+/* ЛАМПА ПЕРВОЙ ЭПОХИ — ФОТОГРАФИЯ (Эльдар, 20.10.2026: «Vintage black wall
+   lamp_up вместо ламп в первую эпоху, а свечение уже отдельно делается слоем»).
+   Чёрный эмалированный колпак с патиной, снят снизу-сбоку. Замерено на вырезке
+   (1081 × 1141): колпак во всю ширину — 1071 px на строке 1080, нижний край
+   колпака и лампочка — строка 1090; выше — шнур до самого верха кадра. Колпак
+   шириной LAMP1_W мира, кромка — на прежней высоте лампочки, свет, луч и пятно
+   рисуются, как и прежде, кодом поверх. */
+const LAMP1_W = 140, LAMP1_RIM = 1090 / 1141, LAMP1_SHADE = 1071 / 1081;
+function drawLamp(x, t, seed, fadeAtStone, photo){
   const kk = k(240);
   let sx = px(x, kk);
   if (sx < -300 || sx > W + 300) return 0;
@@ -11536,11 +11544,26 @@ function drawLamp(x, t, seed, fadeAtStone){
   const modern = x >= SHIFT(2200);
   const inten = modern ? 0.97 : lampFlicker(t, seed);
   const bulbY = py(modern ? -44 : 38, kk);  // the new fixtures ride higher, clear of a flying year
+  const LP = photo ? PROP_SPRITES.ph_lamp1 : null;
+  if (LP){
+    const lw = LAMP1_W / LAMP1_SHADE * kk * SS, lh = lw * LP.h / LP.w;
+    const ly = bulbY - LAMP1_RIM * lh;
+    // шнур с потолка до того места, где он начинается на фото
+    if (ly > 0){
+      ctx.strokeStyle = 'rgba(14,12,11,0.95)'; ctx.lineWidth = Math.max(1, 2.2*kk*SS);
+      ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, ly + 2); ctx.stroke();
+    }
+    ctx.drawImage(spriteMip(LP, lw, lh), sx - lw / 2, ly, lw, lh);
+  }
   // cord
+  if (!LP){
   ctx.strokeStyle = modern ? 'rgba(48,40,30,0.9)' : 'rgba(20,10,4,0.9)';
   ctx.lineWidth = 3*kk*SS;
   ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, bulbY); ctx.stroke();
-  if (modern){
+  }
+  if (LP){
+    // колпак уже на фото
+  } else if (modern){
     /* a long rectangular pendant, top corners rounded, bottom edge straight —
        and honestly shaded: the light is UNDER it, so the crown sits in its own
        shadow and only the lower rim burns */
@@ -12801,6 +12824,7 @@ async function loadPhotoSkin(){
     ph_plastic: 'plastic_2000.png',   // 2000: the tooth-shaped crown boxes the injection division made
     ph_tv70: 'tv_1970.png',           // the seventies set, cut out with its tube knocked through
     ph_model93: 'model_1993.png',    // 1993: макет здания 4141 на графитовой тумбе — рендер Эльдара (20.10.2026)
+    ph_lamp1: 'lamp_era1.png',       // лампа первой эпохи — Vintage black wall lamp_up, фото Эльдара (20.10.2026)
     ph_prj93: 'proj_1993.png',        // the 1993 LCD data projector on its stand, photographed
     ph_g8: 'g8_1979.png',             // 1979: the nine labs, as models on one long plinth
     ph_obj1: 'obj_furnace.png',     // шкаф 1970: шесть предметов с первого верстака Джима
@@ -21805,7 +21829,7 @@ function frame(){
     // the cool eras keep their light but lose the fixture: a black slab hung
     // over the numerals was reading as a bar across the composition
     if (L.seg.lamp === 'tube') continue;
-    drawLamp(L.x, t, i+1, L.fadeAtStone);
+    drawLamp(L.x, t, i+1, L.fadeAtStone, L.seg === SEGMENTS[0]);
   }
   drawDust(t);
 
