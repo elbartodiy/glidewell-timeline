@@ -1,7 +1,7 @@
 {
- "updated": "2026-10-20T17:11:17+00:00",
+ "updated": "2026-10-20T21:41:10+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 39,
+ "count": 44,
  "events": [
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -364,6 +364,20 @@
    "url": "https://glidewelldirect.com/products/all-on-x-fp3-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=52849325015404"
   },
   {
+   "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
+   "from": "2027-02-12",
+   "to": "2027-02-13",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/surgical-placement-of-dental-implants-a-restorative-driven-approach?variant=67785036923244"
+  },
+  {
    "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
    "from": "2027-02-19",
    "to": "2027-02-20",
@@ -420,6 +434,20 @@
    "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67783137460588"
   },
   {
+   "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
+   "from": "2027-03-19",
+   "to": "2027-03-20",
+   "city": "Louisville, KY",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/surgical-placement-of-dental-implants-a-restorative-driven-approach?variant=67785037087084"
+  },
+  {
    "title": "Esthetic Techniques with Anterior Crowns and Veneers",
    "from": "2027-04-02",
    "to": "2027-04-02",
@@ -432,6 +460,20 @@
    "price": "695.00",
    "open": false,
    "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67783099220332"
+  },
+  {
+   "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
+   "from": "2027-05-14",
+   "to": "2027-05-15",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/surgical-placement-of-dental-implants-a-restorative-driven-approach?variant=67785037250924"
   },
   {
    "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
@@ -488,6 +530,20 @@
    "price": "695.00",
    "open": false,
    "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67783099384172"
+  },
+  {
+   "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
+   "from": "2027-07-16",
+   "to": "2027-07-17",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/surgical-placement-of-dental-implants-a-restorative-driven-approach?variant=67785037414764"
   },
   {
    "title": "Effective and Practical Implant Overdentures",
@@ -558,6 +614,20 @@
    "price": "895.00",
    "open": false,
    "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67783137853804"
+  },
+  {
+   "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
+   "from": "2027-10-08",
+   "to": "2027-10-09",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Timothy Kosinski"
+   ],
+   "duration": "Two Days",
+   "price": "895.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/surgical-placement-of-dental-implants-a-restorative-driven-approach?variant=67785037578604"
   },
   {
    "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
