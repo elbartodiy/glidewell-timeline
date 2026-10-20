@@ -4264,24 +4264,8 @@ function drawHungYear(b, seg, cx, band, fScale, focusAmt, near){
   }
   ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
   ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
-  /* ТОЛЩИНА В ПАЛЕЦ (Эльдар, 19.10.2026: «буквам дать лёгкий, едва уловимый
-     объём, толщиной в палец»). Буквы стоят на стене и выходят к нам на
-     TODAY_DEPTH — глубина перспективы: задняя кромка буквы лежит ближе к
-     точке схода (середина экрана, линия глаз), и между ней и лицом видна
-     узкая грань. Вывеска выше глаз, поэтому видно в основном низ букв, а
-     сбоку — грань, обращённую к середине экрана; у самой середины объём почти
-     пропадает, как у настоящей вывески. Грань темнее лица, к лицу светлеет. */
-  if (b.sign === 'TODAY'){
-    const vx = W / 2, vy = CFG.horizon * SS;
-    const N = 6;
-    for (let i = N; i >= 1; i--){
-      const t = i / N, f = TODAY_DEPTH * t;
-      const shade = 0.42 + 0.22 * (1 - t);           // грань в тени: заметно темнее лица, иначе буква читается жирной, а не толстой
-      const c = seg.ink.split(',').map(v => Math.round(+v * shade)).join(',');
-      ctx.fillStyle = `rgba(${c},0.96)`;
-      ctx.fillText(label, cx + (vx - cx) * f, yBase + (vy - yBase) * f);
-    }
-  }
+  /* объём «толщиной в палец» был (f911c46) и снят по просьбе Эльдара
+     (19.10.2026: «TODAY плохо выглядит в новом варианте — откати объём») */
   ctx.fillStyle = `rgba(${seg.ink},0.94)`;
   ctx.fillText(label, cx, yBase);
   try { ctx.letterSpacing = '0px'; } catch(e){}
@@ -4289,10 +4273,6 @@ function drawHungYear(b, seg, cx, band, fScale, focusAmt, near){
   return {yBase, cap};
 }
 const hungBand = x => (x >= SHOW_L - 200 && x <= SHOW_DRAW_R) ? timberBand() : null;
-/* доля пути до точки схода, на которую задняя кромка букв TODAY ближе к ней,
-   чем лицо: 0,009 ≈ толщина 21 при стене на глубине 1400 (21 / (900+1400+21)).
-   0,012 читалось уже не «едва уловимо» — буквы сбоку экрана выглядели тумбами. */
-const TODAY_DEPTH = 0.009;
 
 function descInk(seg){
   const c = (seg.ink || '218,222,227').split(',').map(Number);
