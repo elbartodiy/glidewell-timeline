@@ -1380,11 +1380,16 @@ function initCapLanes(){
   const mc = document.createElement('canvas').getContext('2d');
   const items = [];
   for (const b of BEATS){
-    if (b.under || b.plaque || !b.t) continue;
+    if (b.under || b.plaque || !b.t || b.tHide) continue;
     const seg = segAt(b.x);
     const sc = (b.minor ? 0.6 : 1) * (seg.tScale || 1);
     mc.font = eraFont(46 * sc, '', seg.font);
-    const wpx = mc.measureText(b.t).width + Math.max(0, b.t.length - 1) * 9 * sc;
+    /* мерить то, что написано НА СТЕНЕ: у 2002-го там «CAD/CAM» (tWall), а
+       полное «CAD/CAM ENTERS THE LAB» сталкивалось с R&D и спускало подпись
+       на строку ниже, чем у соседей (Эльдар, 19.10.2026: «2002 должна быть
+       идентичной цифрам этой эры»); снятое название (tHide) места не занимает */
+    const tw = b.tWall || b.t;
+    const wpx = mc.measureText(tw).width + Math.max(0, tw.length - 1) * 9 * sc;
     const kT = k((seg.tz || wallZAt(b.x)) - 8);
     items.push({b, half: wpx * kT / 2});
     b._capDrop = 0;
