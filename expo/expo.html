@@ -923,6 +923,23 @@ function applyCut(){
       moved.push([b89.x, to]); b89.x = to;
     }
   }
+  /* 1995 — ПОРОВНУ ВОЗДУХА СЛЕВА И СПРАВА (Эльдар, 20.10.2026: «1995 слева не
+     имеет столько же воздуха, сколько справа»; из вариантов — «только 1995»).
+     Слева — от края панели 1993 (REC93_BR) до левого края цифры, справа — от её
+     правого края до левого края 1998-го. Цифра года на этой стене — 394 мира
+     (замерено: 217 px при k 0,5725 и SS 0,963): x = (x1998 + REC93_BR − 197) / 2.
+     Остальные годы не трогаются. */
+  {
+    const b95 = BEATS.find(b => b.y === '1995' && b.t === 'OPERATORY \u00b7 PLAYSAFE'),
+          b98 = BEATS.find(b => b.t === 'CHAIRSIDE PERSPECTIVES');
+    if (b95 && b98){
+      const to = (b98.x + REC93_BR - 197) / 2, d = to - b95.x;
+      if (Math.abs(d) > 1){
+        for (const s2 of BEATS) if (s2.sub != null && Math.abs(s2.sub - b95.x) < 1){ moved.push([s2.x, s2.x + d]); s2.x += d; s2.sub = to; }
+        moved.push([b95.x, to]); b95.x = to;
+      }
+    }
+  }
   /* 1976 BY HAND TOO. The last beat of the craft era keeps its own coordinate
      through the rhythm pass, and its block — the year, its two photographs and
      the hanging set that follows them — finished hard against the 1979 bay's
@@ -2328,6 +2345,10 @@ function initLights(){
     }
     if (best >= 0 && bd < 620) LIGHT_GRID[best].x = b.x;
   }
+  /* ДВЕ ЛАМПЫ У ШКАФА СНЯТЫ (Эльдар, 20.10.2026, перечеркнул на кадре): та, что
+     висит над шкафом 1907-го на краю тёмной стены, и кремовая над фотографией
+     Джима за ним — на 2333 и 3256. Пятна на стене уходят вместе с ними. */
+  LIGHT_GRID = LIGHT_GRID.filter(L => !(L.seg === SEGMENTS[0] && L.x > 1900 && L.x < 3700));
   LIGHT_GRID.push({x: INTRO_X, seg: SEGMENTS[0]});   // the welcome lamp, dead over the inscription
   LIGHT_GRID.push({x: FIN_X, seg: SEGMENTS[3]});     // and its mirror over the finale
   /* ЛАМПА НАД ДОМАМИ 1973-го ГАСНЕТ У КАМНЯ. Её пятно доходило по стене вниз
