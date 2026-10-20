@@ -3489,6 +3489,17 @@ function drawFloor(){
               y: o.y != null ? py(o.y, k(o.yz)) : yTop};
     };
     const cL = corner(fa, a), cR = corner(fb, b);
+    /* БЛИЖНИЙ КРАЙ — НАСТОЯЩАЯ ТОЧКА ПЛОСКОСТИ −40, А НЕ ЕЁ x НА НИЖНЕМ КРАЕ
+       КАДРА. Край плиты кончался в (px(a, k(−40)), H), хотя сама плоскость −40
+       лежит на полу ниже кадра, на py(1080, k(−40)): ближняя точка уезжала по x
+       на (a − cam)·0,046·SS, и край пола у 1979 шёл не по прямой x = a через оба
+       нижних угла ступени, а круче — под прилавком он выходил правее (Эльдар,
+       20.10.2026: точка A должна проходить там, где B, — на продолжении ребра
+       ступени). Замер на 1150×1240, камера 1979 − 1050: задний нижний угол
+       ступени (890, 957), прямая x = a приходит к низу кадра в 1082, а край
+       плиты приходил в 1106. Теперь край — эта прямая до настоящей ближней
+       точки за кадром; соседние плиты берут те же точки и стыкуются. */
+    const yB = py(1080, kNear);
     let xBL = px(a, kNear), xBR = px(b, kNear);
     /* КРАЙ, КОТОРЫЙ УПИРАЕТСЯ В СТЕНУ УЛИЦЫ, ИДЁТ ПО НАСТОЯЩЕЙ ПРЯМОЙ. Обычный
        край плиты — хорда от дальнего угла бухты к ближнему углу на плоскости
@@ -3504,8 +3515,8 @@ function drawFloor(){
        угол пола отходил от угла белой стенки, по-разному на каждой камере.
        Эльдар (16.10.2026): «смотри, как у тебя ездят края и не сочетаются
        уголки этой белой стенки и белого пола». */
-    if (fa && fa.edge && !ST_HIDDEN){ const ln = floorLineAt(fa.x); cL.x = ln(cL.y); xBL = ln(H); }
-    if (fb && fb.edge && !ST_HIDDEN){ const ln = floorLineAt(fb.x); cR.x = ln(cR.y); xBR = ln(H); }
+    if (fa && fa.edge && !ST_HIDDEN){ const ln = floorLineAt(fa.x); cL.x = ln(cL.y); xBL = ln(yB); }
+    if (fb && fb.edge && !ST_HIDDEN){ const ln = floorLineAt(fb.x); cR.x = ln(cR.y); xBR = ln(yB); }
     const xTL = cL.x, xTR = cR.x;
     if (Math.max(xTR, xBR) < 0 || Math.min(xTL, xBL) > W) continue;
     const g = ctx.createLinearGradient(0, Math.min(cL.y, cR.y, yTop), 0, H);
@@ -3518,7 +3529,7 @@ function drawFloor(){
     if (cR.drop) ctx.lineTo(cR.x, yTop);
     ctx.lineTo(cR.x, cR.y);
     if (cR.via) for (const p of cR.via) ctx.lineTo(p.x, p.y);
-    ctx.lineTo(xBR, H); ctx.lineTo(xBL, H);
+    ctx.lineTo(xBR, yB); ctx.lineTo(xBL, yB);
     if (cL.via) for (let i = cL.via.length - 1; i >= 0; i--) ctx.lineTo(cL.via[i].x, cL.via[i].y);
     ctx.closePath();
     ctx.fillStyle = g;
@@ -3529,9 +3540,9 @@ function drawFloor(){
     ctx.strokeStyle = 'rgba(0,0,0,0.20)';
     ctx.lineWidth = 1.4 * SS;
     const jR = cR.via ? cR.via[cR.via.length - 1] : cR;   // the joint starts where the side does
-    ctx.beginPath(); ctx.moveTo(jR.x, jR.y); ctx.lineTo(xBR, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(jR.x, jR.y); ctx.lineTo(xBR, yB); ctx.stroke();
     ctx.strokeStyle = 'rgba(255,255,255,0.10)';
-    ctx.beginPath(); ctx.moveTo(jR.x + 1.4 * SS, jR.y); ctx.lineTo(xBR + 1.4 * SS, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(jR.x + 1.4 * SS, jR.y); ctx.lineTo(xBR + 1.4 * SS, yB); ctx.stroke();
   }
 }
 
@@ -11548,7 +11559,9 @@ function drawLamp(x, t, seed, fadeAtStone, photo){
   const modern = x >= SHIFT(2200);
   const inten = modern ? 0.97 : lampFlicker(t, seed);
   const bulbY = py(modern ? -44 : 38, kk);  // the new fixtures ride higher, clear of a flying year
-  const LP = photo ? PROP_SPRITES.ph_lamp1 : null;
+  /* только у ламп 1907-го, до основания: «1970 я тебе не говорил лампы менять»
+     (Эльдар, 20.10.2026) — с основания висят прежние кремовые светильники */
+  const LP = photo && !modern ? PROP_SPRITES.ph_lamp1 : null;
   if (LP){
     const lw = LAMP1_W / LAMP1_SHADE * kk * SS, lh = lw * LP.h / LP.w;
     const ly = bulbY - LAMP1_RIM * lh;
@@ -21391,9 +21404,12 @@ function drawFloorSheen(){
      floor opened at the portal and slid about as the camera moved. The sides
      are now sampled ON the floor's line, at the two heights the band spans. */
   const kSeam = k(CFG.benchDepth), kNear = k(-40);
+  /* тот же отрезок, что и край плиты в drawFloor: до ближней точки плоскости
+     −40 на её настоящей высоте (20.10.2026) */
   const onFloorEdge = (wx, y) => {
+    const yN = py(1080, kNear);
     const xT = px(wx, kSeam), xB = px(wx, kNear);
-    const t = (y - yTop) / Math.max(1, H - yTop);
+    const t = (y - yTop) / Math.max(1, yN - yTop);
     return xT + (xB - xT) * t;
   };
   const a0 = onFloorEdge(SHOW_L, yTop), a1 = onFloorEdge(SHOW_DRAW_R, yTop);
