@@ -17087,6 +17087,9 @@ function bookInit(){
   if (BOOK.el) return;
   const el = document.createElement('textarea');
   el.setAttribute('aria-hidden', 'true');
+  el.setAttribute('inputmode', 'none');   // см. КЛАВИАТУРА НЕ ВСПЛЫВАЕТ НА СКАНЕ в bookFocus
+  el.setAttribute('autocomplete', 'off'); el.setAttribute('autocorrect', 'off');
+  el.setAttribute('autocapitalize', 'off'); el.setAttribute('spellcheck', 'false');
   el.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;width:10px;height:10px';
   document.body.appendChild(el);
   BOOK.el = el;
@@ -17122,11 +17125,26 @@ function bookFromCode(txt){
   if (fn) BOOK.name = fn[1].split(',').filter(Boolean).reverse().join(' ').trim();
   bookFocus(BOOK.email ? 'badge' : 'email');
 }
+/* КЛАВИАТУРА НЕ ВСПЛЫВАЕТ НА СКАНЕ (Эльдар, 19.10.2026: «чтобы при открытии
+   книги Джима не открывалась клавиатура сразу — там сканер, а не клавиатура,
+   но сканер пока не подключён»). Скрытое поле держит фокус ради сканера —
+   он печатает в него как внешняя клавиатура, — и Android на этот фокус
+   поднимал экранную. Пока поле ждёт бейдж, inputmode = none: экранной
+   клавиатуры нет, а сканер и любая настоящая клавиатура по-прежнему пишут.
+   Когда гость сам нажимает на почту или имя, режим меняется и поле
+   перефокусируется — тогда клавиатура появляется, потому что там её и ждут. */
 function bookFocus(f){
   BOOK.field = f;
   if (!BOOK.el) return;
+  const mode = f === 'badge' ? 'none' : (f === 'email' ? 'email' : 'text');
+  const changed = BOOK.el.getAttribute('inputmode') !== mode;
+  BOOK.el.setAttribute('inputmode', mode);
   BOOK.el.value = (f === 'badge') ? '' : (BOOK[f] || '');
-  try { BOOK.el.focus({preventScroll: true}); BOOK.el.setSelectionRange(BOOK.el.value.length, BOOK.el.value.length); } catch(e){}
+  try {
+    if (changed && document.activeElement === BOOK.el) BOOK.el.blur();   // новый режим клавиатуры применяется только к новому фокусу
+    BOOK.el.focus({preventScroll: true});
+    BOOK.el.setSelectionRange(BOOK.el.value.length, BOOK.el.value.length);
+  } catch(e){}
 }
 function bookReset(){
   BOOK.badge = ''; BOOK.name = ''; BOOK.email = ''; BOOK.consent = false; BOOK.done = false;
