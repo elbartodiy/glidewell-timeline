@@ -6103,7 +6103,15 @@ function finProdOpaque(fp){
    на 790 она с запасом под кадром, знак — на 840…1010. */
 const FIN_LOGO = {pl: 170, top: 840, archPad: 70, archTop: 790, archR: 150};
 function drawFinaleLogo(){
-  const im = IMGS.logo2026; if (!im) return;
+  /* ЛОГОТИП — ТОТ, ЧТО НА САЙТЕ (Эльдар, 20.10.2026: «посмотри, как пишется
+     логотип Glidewell (новый), и исправь в экспо те варианты, которые не
+     соответствуют — последний стол точно с ошибкой»). Слово было набрано
+     шрифтом зала, а у компании своя гарнитура и красная квадратная точка над i.
+     Теперь знак и слово — одна векторная вывеска glidewell_logo.svg (геометрия —
+     экспорт Illustrator с диска, цвета сняты с logo-glidewell-rgb-512.png сайта:
+     красный 235,0,69, серый 128,130,133). Высота — прежняя высота знака. */
+  const LG = IMGS.glidewelllogo;
+  const im = IMGS.logo2026; if (!im && !LG) return;
   const kf = k(FIN_Z_FACE);
   const u = kf * SS;
   const L = FIN_LOGO, PL = L.pl;
@@ -6113,7 +6121,7 @@ function drawFinaleLogo(){
   const capH = PL * (90 / 231) * u;
   const rise = PL * (32 / 231) * u;
   const yTop = py(L.top, kf);
-  const blockW = plaq + gap + wordW;
+  const blockW = LG ? plaq * LG.w / LG.h : plaq + gap + wordW;
   const cx = px(FIN_X, kf), x0 = cx - blockW / 2;
   // арка: ниша чуть темнее грани, верх скруглён, низ уходит к цоколю
   const aW = blockW + 2 * L.archPad * u, aX = cx - aW / 2;
@@ -6139,6 +6147,11 @@ function drawFinaleLogo(){
   ctx.shadowColor = 'rgba(40,50,62,0.30)';
   ctx.shadowBlur = Math.max(1, 9 * u);
   ctx.shadowOffsetY = Math.max(1, 4 * u);
+  if (LG){
+    ctx.drawImage(LG.el, x0, yTop, blockW, plaq);
+    ctx.restore();
+    return;
+  }
   ctx.drawImage(im.el, x0, yTop, plaq, plaq);
   ctx.shadowColor = 'transparent';
   const seg = SEGMENTS[3];
@@ -15946,15 +15959,20 @@ function makeBanner(title, sub, cta, imgName){
     g.strokeStyle = 'rgba(0,0,0,0.15)'; g.lineWidth = 1.5;
     g.strokeRect(596, 40, dw, dh);
   }
-  // brand mark
-  g.fillStyle = '#d0342c'; g.fillRect(48, 48, 44, 44);
-  g.fillStyle = '#fff';
-  g.font = '700 30px "Helvetica Neue", Arial, sans-serif';
-  g.textAlign = 'center'; g.fillText('G', 70, 80);
+  // brand mark — настоящий логотип с сайта, а не красный квадрат с набранной «G» (20.10.2026)
+  if (IMGS.glidewelllogo){
+    const L = IMGS.glidewelllogo; g.drawImage(L.el, 48, 48, 44 * L.w / L.h, 44);
+  } else {
+    g.fillStyle = '#d0342c'; g.fillRect(48, 48, 44, 44);
+    g.fillStyle = '#fff';
+    g.font = '700 30px "Helvetica Neue", Arial, sans-serif';
+    g.textAlign = 'center'; g.fillText('G', 70, 80);
+    g.textAlign = 'left';
+    g.fillStyle = '#4a5058';
+    g.font = '600 26px "Helvetica Neue", Arial, sans-serif';
+    g.fillText('Glidewell', 106, 78);
+  }
   g.textAlign = 'left';
-  g.fillStyle = '#4a5058';
-  g.font = '600 26px "Helvetica Neue", Arial, sans-serif';
-  g.fillText('Glidewell', 106, 78);
   // title, up to two lines
   g.fillStyle = '#23282e';
   g.font = '800 84px "Helvetica Neue", Arial, sans-serif';
@@ -15984,14 +16002,19 @@ function makeBannerVert(title, sub, cta, imgName){
   g.restore();
   g.strokeStyle = 'rgba(90,200,250,0.65)'; g.lineWidth = 3;
   g.strokeRect(12, 12, 536, 976);
-  g.fillStyle = '#d0342c'; g.fillRect(40, 42, 40, 40);
-  g.fillStyle = '#fff'; g.textAlign = 'center';
-  g.font = '700 27px "Helvetica Neue", Arial, sans-serif';
-  g.fillText('G', 60, 71);
+  if (IMGS.glidewelllogo){
+    const L = IMGS.glidewelllogo; g.drawImage(L.el, 40, 42, 40 * L.w / L.h, 40);
+  } else {
+    g.fillStyle = '#d0342c'; g.fillRect(40, 42, 40, 40);
+    g.fillStyle = '#fff'; g.textAlign = 'center';
+    g.font = '700 27px "Helvetica Neue", Arial, sans-serif';
+    g.fillText('G', 60, 71);
+    g.textAlign = 'left';
+    g.fillStyle = '#4a5058';
+    g.font = '600 24px "Helvetica Neue", Arial, sans-serif';
+    g.fillText('Glidewell', 92, 70);
+  }
   g.textAlign = 'left';
-  g.fillStyle = '#4a5058';
-  g.font = '600 24px "Helvetica Neue", Arial, sans-serif';
-  g.fillText('Glidewell', 92, 70);
   g.fillStyle = '#23282e';
   g.font = '800 64px "Helvetica Neue", Arial, sans-serif';
   title.split('\n').forEach((ln, i) => g.fillText(ln, 40, 160 + i*70));
@@ -22678,6 +22701,7 @@ lab4int:'assets/img/lab4int.jpg',
 lab5move:'assets/img/lab5move.jpg',
 logo1970:'assets/img/logo1970.jpg',
 logo2026:'assets/img/logo2026.jpg',
+glidewelllogo:'assets/img/glidewell_logo.svg',
 nadia:'assets/img/nadia.jpg',
 old1:'assets/img/old1.jpg',
 old2:'assets/img/old2.jpg',
