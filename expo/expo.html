@@ -21286,8 +21286,14 @@ function finWallSprite(){
   FIN_WALL_SP = {c, w: ph.w, h: ph.h};
   return FIN_WALL_SP;
 }
+/* ВИДНА С ДАЛЕКА — И ДОЛЖНА БЫТЬ ГОТОВА ЗАРАНЕЕ (Эльдар, 20.10.2026: «фон этой
+   части стены подгружается не сразу, и мы видим, как он появляется, когда
+   приближаемся»). Отсечка «4200 от финала» включала плиту, когда её левый край
+   уже был в кадре (камера на 36000 видит стену до 38660, а край плиты — 38570),
+   и стена возникала на глазах. Теперь отсечка только по самому кадру, а маска
+   печатается заранее (prewarmFinaleWall при загрузке). */
+function prewarmFinaleWall(){ finWallSprite(); }
 function drawFinaleWall(){
-  if (Math.abs(cam.x - FIN_X) > 4200) return;
   const sp = finWallSprite(); if (!sp) return;
   const kw = k(SEGMENTS[3].z0 || 1400);
   const x0 = px(FIN_WALL.L(), kw), x1 = px(FIN_WALL.L() + FIN_WALL.w, kw);
@@ -22202,6 +22208,7 @@ async function boot(){
   await loadAssets();
   loadPageFonts();                      // the reading pages' typefaces, in the background
   if (PHOTO_SKIN) await loadPhotoSkin();
+  prewarmFinaleWall();   // маска стены финала — до первого кадра
   loadPortraits();     // the wall of voices — small, and never blocking the boot
   await loadPlates();
   TEX.wall1 = woodTexture({plank:'v', plankSize:150, base:'#20150b', light:'#372712', w:1400, h:900});
