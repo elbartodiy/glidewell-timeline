@@ -1178,7 +1178,7 @@ const HALL_MID = (HALL_FRAME_L + HALL_FRAME_R) / 2;
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
 const SEGMENTS = [
-  {x0:-3450, x1:REC_L, z0:550, z1:550, tz:550, wall:'wall1', bench:'bench1', front:'front1',
+  {x0:-3450, x1:REC_L, z0:550, z1:550, tz:550, wall:'wall1', bench:'bench1', front:'front1', skirt:'wood',
    plateBench: true,     // this era's counter IS the centrepiece photograph, stretched
    font:'Georgia, "Iowan Old Style", "Palatino Linotype", serif',
    ink:'232,205,160', lamp:'bulb', dust:true,
@@ -1242,7 +1242,7 @@ const SEGMENTS = [
    rail:'rgba(185,196,202,0.5)', railInk:'rgba(212,222,228,0.75)',
    light:{pool:'218,232,252', poolR:1250, poolA:0.13},
    bgc:[26,29,34], grain:0},
-  {x0:REC2_R, x1:WORLD_END+2800, z0:1400, z1:1400, tz:680, wall:'wall4', bench:'bench4', front:'front4',
+  {x0:REC2_R, x1:WORLD_END+2800, z0:1400, z1:1400, tz:680, wall:'wall4', bench:'bench4', front:'front4', skirt:'white',
    font:'"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'55,64,76', lamp:'tube', dust:false,
    rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
@@ -3124,6 +3124,16 @@ function drawWall(){
         ctx.drawImage(tile(texT, tw2, hW), px(wx, kk), yTopW, tw2, hW);
       }
     }
+    /* ПЛИНТУС ТАМ, ГДЕ ЕГО НЕТ В ФОТОГРАФИИ (Эльдар, 19.10.2026: «по всей
+       ленте посмотреть, где нет плинтуса, — пусть его, чтобы было
+       аккуратнее»). В стенах второй и третьей эпохи он снят вместе со стеной:
+       полоса в 48 строк из 1192 у низа фото — 64 единицы мира при высоте
+       стены 1600 (замерено по wall_e2/e3, яркая кромка на 1144-й строке).
+       У штукатурки эпохи ремесла, у тёмного дерева 1907-го и у белого зала
+       его не было, и стена уходила в пол без шва. Здесь он кладётся той же
+       высоты и на глубине самой стены, в материале своей эпохи; затемнение
+       низа стены ниже ложится и на него. */
+    if (seg.skirt) drawSkirting(seg, sx0, sx1, kw, yFoot, swx);
     if (seg.floor){
       // the blue diode line along the white wall's base
       const kl = k(seg.z0 - 6);
@@ -3172,6 +3182,35 @@ function drawWall(){
   }
 }
 
+const SKIRT_H = 64;   // мира — высота плинтуса, как в фото стен второй и третьей эпохи
+const SKIRT_STYLE = {
+  wood:     {top: '#6e4c31', mid: '#4d3320', bot: '#3a2617', lip: 'rgba(255,228,190,0.32)', shade: 0.20},
+  woodDark: {top: '#3e2717', mid: '#2c1a0e', bot: '#22140a', lip: 'rgba(255,214,170,0.20)', shade: 0.24},
+  white:    {top: '#f4f5f7', mid: '#e7e9ec', bot: '#d9dce0', lip: 'rgba(255,255,255,0.95)', shade: 0.08},
+};
+function drawSkirting(seg, sx0, sx1, kw, yFoot, swx){
+  const yT = py(1080 - SKIRT_H, kw), h = yFoot - yT;
+  if (h < 1) return;
+  const band = (x0, x1, st) => {
+    if (x1 <= x0) return;
+    // тень от плинтуса вверх по стене — узкая, как от выступа в палец
+    const sg = ctx.createLinearGradient(0, yT - 6 * kw * SS, 0, yT);
+    sg.addColorStop(0, 'rgba(0,0,0,0)'); sg.addColorStop(1, `rgba(0,0,0,${st.shade})`);
+    ctx.fillStyle = sg; ctx.fillRect(x0, yT - 6 * kw * SS, x1 - x0, 6 * kw * SS);
+    const g = ctx.createLinearGradient(0, yT, 0, yFoot);
+    g.addColorStop(0, st.top); g.addColorStop(0.35, st.mid); g.addColorStop(1, st.bot);
+    ctx.fillStyle = g; ctx.fillRect(x0, yT, x1 - x0, h);
+    ctx.fillStyle = st.lip; ctx.fillRect(x0, yT, x1 - x0, Math.max(1, 2 * kw * SS));
+  };
+  const style = SKIRT_STYLE[seg.skirt] || SKIRT_STYLE.wood;
+  /* у первой стены две отделки: тёмное дерево 1907-го до шва swx и штукатурка
+     после — плинтус меняет материал на том же шве */
+  if (seg.skirt === 'wood' && swx > -1e8){
+    const xs = Math.max(sx0, Math.min(sx1, px(swx, kw)));
+    band(sx0, xs, SKIRT_STYLE.woodDark);
+    band(xs, sx1, style);
+  } else band(sx0, sx1, style);
+}
 /* A BAY'S TWO FEET — the two points its white panel actually stands on, and so
    the two the floor's white must start from. A panel is a rectangle on its own
    plane and it hangs BELOW the wall's foot line, so neither of the floor's own
