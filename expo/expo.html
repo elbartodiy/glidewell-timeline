@@ -20634,6 +20634,15 @@ function update(dt){
       V.wheel += inp.impulse;
       if (Math.abs(V.wheel) > 120){ turn(V.wheel > 0 ? 1 : -1); V.wheel = 0; }
       else V.wheel *= 0.86;
+      /* И СВАЙП (Эльдар, 19.10.2026: «сделай, чтобы фотоальбом менял страницы
+         свайпом»): мах пальцем — одна страница, как у витрины. Мах вперёд с
+         последней страницы закрывает альбом — ровно как стрелка вперёд там же. */
+      if (inp.swipe){
+        const d2 = inp.swipe > 0 ? 1 : -1;
+        if (d2 > 0 && V.page >= A2.big.length - 1) V.closing = true;
+        else turn(d2);
+        V.wheel = 0;
+      }
       if (inp.action && typeof inp.action === 'object'){
         const aimed = hitAt(inp.action.x, inp.action.y);
         if (aimed && aimed.type === 'closepage'){ V.closing = true; }
