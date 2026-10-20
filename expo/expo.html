@@ -8334,8 +8334,8 @@ function drawPendant(t){
   ctx.restore();
 }
 /* THE FIRST FILE TRAVELS TOO. Walk on from 2007 and the points of the case
-   that became data lift off the cloud on its pedestal — the cloud itself stays,
-   turning — and stream ahead of you into the browser window of the digital
+   that became data lift off the cloud on its pedestal — and since 19.10.2026
+   the cloud empties as they go (see cloudLeft) — and stream ahead of you into the browser window of the digital
    revolution, landing on the scan that window is showing, each one flashing
    as it arrives. Same idea as the 2018→2019 relay below: what crosses the room
    is the file, never the object. (Eldar, 2026-09-10.) */
@@ -14552,12 +14552,32 @@ const PP_CYLW = 512 / 548, PP_CAPTOP = 407 / 1230, PP_SPLIT = 584 / 1230;
    готовой. У каждой точки свой разброс: место старта в кадре, задержка
    появления и изгиб пути — из одного хэша по её номеру, так что картина
    одна и та же при каждом проходе. */
-const CLOUD_GATHER = {from: 1.08, to: 0.04};   // |сдвиг от середины| / (W/2): с края кадра — до почти середины
+/* ВТОРОЙ ПРОХОД (Эльдар, 19.10.2026): «слишком рано собирается — ещё до
+   того, как 2007 стал центром», и «из-за короткого пролёта точки мелькают, не
+   видно их основного движения». Сборка теперь идёт по прямой от края кадра
+   ровно до середины (а не по S-кривой, которая делала половину работы в
+   первой трети пути), и у каждой точки полёт — 0,7 всей сборки при задержке
+   0…0,3 (было 0,4 при 0…0,6): точки видны в пути почти весь подход, а целой
+   коронка становится только в центре. */
+const CLOUD_GATHER = {from: 1.02, to: 0.0, delay: 0.3};   // |сдвиг от середины| / (W/2)
 function cloudGather(cx){
   const d = (cx - W / 2) / (W / 2);
   if (d <= CLOUD_GATHER.to) return 1;
-  const u = Math.max(0, Math.min(1, (CLOUD_GATHER.from - d) / (CLOUD_GATHER.from - CLOUD_GATHER.to)));
-  return u * u * (3 - 2 * u);
+  return Math.max(0, Math.min(1, (CLOUD_GATHER.from - d) / (CLOUD_GATHER.from - CLOUD_GATHER.to)));
+}
+/* И РАЗЛЕТАЕТСЯ ТОЙ ЖЕ ДОРОГОЙ, КАКОЙ УХОДИТ ПОТОК. Эльдар (19.10.2026):
+   «эти же точки улетают потом направо — и соответственно не остаётся коронки
+   после них на том месте». Облако тает ровно с тем же ходом, с каким поток
+   drawDataRelay07 отрывает точки от него: голова потока head = p·1,45, точка
+   ушла, когда head − 0,45·r > 0. К середине пути до цифровой революции на
+   постаменте пусто. */
+function cloudLeft(){
+  const b07 = BEATS.find(b => b.y === '2007' && b.ped && b.ped.points);
+  if (!b07) return 0;
+  const x07 = b07.x + (b07.ped.dx ?? -430), mid2 = (REC2_L + REC2_R) / 2;
+  if (cam.x <= x07 + 40) return 0;
+  const u = Math.max(0, Math.min(1, (cam.x - x07 - 40) / (mid2 - x07 - 40)));
+  return (u * u * (3 - 2 * u)) * 1.45;
 }
 const hash01 = n => { const h = Math.sin(n) * 43758.5453; return h - Math.floor(h); };
 function drawPointCloud(cx, footY, size, t, hero){
@@ -14565,6 +14585,8 @@ function drawPointCloud(cx, footY, size, t, hero){
   const scale = size / 122;
   const cy = footY - 34 * scale;
   const G = cloudGather(cx);
+  const headOut = cloudLeft();
+  const kept = Math.max(0, 1 - headOut / 0.45);       // какая доля облака ещё на месте — для его света
   const tilt = 0.30, ct = Math.cos(tilt), st = Math.sin(tilt);
   const a = t * 0.55;                       // one turn every eleven seconds
   const ca = Math.cos(a), sa = Math.sin(a);
@@ -14572,7 +14594,7 @@ function drawPointCloud(cx, footY, size, t, hero){
   const bright = 0.55 + 0.45 * Math.min(1, hero * 1.6);
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  drawGlow('140,210,255', cx, cy - 6 * scale, size * 1.15, 0.14 * bright * G);   // свет у облака — по мере того, как оно собралось
+  drawGlow('140,210,255', cx, cy - 6 * scale, size * 1.15, 0.14 * bright * G * kept);   // свет у облака — по мере того, как оно собралось и пока не улетело
   const dot = Math.max(0.9, 1.5 * SS);
   let bx0 = 1e9, bx1 = -1e9, by0 = 1e9, by1 = -1e9;   // the cloud's own screen box, for the relay that leaves it
   let idx = 0;
@@ -14587,10 +14609,12 @@ function drawPointCloud(cx, footY, size, t, hero){
       const near = 0.5 + 0.5 * (dz / 62);        // -1..1 folded to 0..1
       let sxp = cx + xr * scale, syp = cy - yv * scale;
       if (sxp < bx0) bx0 = sxp; if (sxp > bx1) bx1 = sxp; if (syp < by0) by0 = syp; if (syp > by1) by1 = syp;
+      if (headOut > 0 && headOut - 0.45 * hash01(n * 12.9898 + 9.1) > 0) continue;   // эта точка уже в потоке
       let fade = 1;
       if (G < 1){
-        /* задержка 0…0,6 сборки, полёт — оставшиеся 0,4: к G = 1 долетают все */
-        const pi = Math.max(0, Math.min(1, (G - 0.6 * hash01(n * 12.9898 + 1.3)) / 0.4));
+        /* задержка 0…0,3 сборки, полёт — оставшиеся 0,7: к G = 1 долетают все */
+        const D = CLOUD_GATHER.delay;
+        const pi = Math.max(0, Math.min(1, (G - D * hash01(n * 12.9898 + 1.3)) / (1 - D)));
         if (pi <= 0) continue;                                    // эта точка ещё не появилась
         const e = pi * pi * (3 - 2 * pi);
         const x0 = W * (-0.05 + 1.1 * hash01(n * 78.233 + 4.1));  // старт — где угодно в кадре
@@ -14611,7 +14635,7 @@ function drawPointCloud(cx, footY, size, t, hero){
   // the wash it throws down on its own stone
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  drawGlow('120,190,255', cx, footY + 2, size * 0.9, 0.10 * bright * G);
+  drawGlow('120,190,255', cx, footY + 2, size * 0.9, 0.10 * bright * G * kept);
   ctx.restore();
 }
 /* the hall's crown is not painted with the other pedestals: it stands in the
