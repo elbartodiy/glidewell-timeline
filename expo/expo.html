@@ -16406,14 +16406,23 @@ function drawFactory(t, over){
          world height came out as two different screen heights and the lights
          began at visibly different levels. The ceiling is one plane: both
          fixtures are measured on it. */
-      const kCeil = k(210);
-      const top = py(-40, kCeil), low = py(640, kc);
-      softBeam(sxc, sxc, top, low, halfC * 0.42, halfC * 1.15, '226,240,255', 0.30 * lit,
+      /* ЛАМПА — НА ПОТОЛКЕ, ЛУЧ — НА РОБОТЕ (Эльдар, 19.10.2026: «лампочки
+         закрепить на потолке и по ходу движения менять угол освещения, чтобы
+         они всегда освещали этих роботов — внизу свет закреплён за полом, а
+         вверху за потолком»). Светильник висит над камерой, но на ПЕРЕДНЕМ
+         потолке, ближе к нам (FACT_LAMP_Z), а пятно — на крыше камеры, на её
+         глубине. У двух концов разный параллакс, и луч сам наклоняется при
+         ходе: верх едет с потолком, низ стоит на роботе. Раньше оба конца были
+         на глубине камеры, и луч стоял отвесной полосой, читаясь светом на
+         стене. */
+      const kL = k(FACT_LAMP_Z);
+      const lx = px(cx2, kL), top = py(-40, kL), low = py(640, kc);
+      softBeam(lx, sxc, top, low, halfC * 0.42, halfC * 1.15, '226,240,255', 0.30 * lit,
                [[0, 0.10], [0.42, 0.55], [0.62, 0.30], [1, 0]]);
       drawGlow('226,240,255', sxc, roof, halfC * 1.5, 0.16 * lit);
-      // the fitting it comes out of
+      // the fitting it comes out of — on the near ceiling
       ctx.fillStyle = `rgba(236,246,255,${(0.9 * lit).toFixed(2)})`;
-      ctx.beginPath(); ctx.ellipse(sxc, top, 12 * kc * SS, 3.5 * kc * SS, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(lx, top, 12 * kL * SS, 3.5 * kL * SS, 0, 0, 7); ctx.fill();
     }
     ctx.restore();
   }
@@ -16426,6 +16435,9 @@ function drawFactory(t, over){
   if (!over) pushHit(px(FACT_X - 480, kk), py(560, kk), (960)*kk*SS, py(1080,kk)-py(560,kk),
                      {type:'focus', beat: BEATS.indexOf(b), anchor: FACT_X});
 }
+/* глубина потолка, на котором висят лампы фабрики: 100 — ближе камер (190…232),
+   и при y −40 светильник как раз садится на верхний край кадра (k 0,9) */
+const FACT_LAMP_Z = 100;
 const STAGE_X = SHIFT(28830);
 let JIM_FIG = null;
 /* СЦЕНА РАЗОБРАНА. Помост, человек на нём, жёлтый прожектор и три зрителя —
