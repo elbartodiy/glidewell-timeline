@@ -4109,9 +4109,10 @@ function drawBeatText(b, focusAmt){
       }
       ctx.textAlign = 'center';
       let hitTopF = py(20 - lift, kk);
-      const bandF = hungBand(b.x);
+      const tB = b.sign === 'TODAY' ? todayBand() : null;
+      const bandF = tB || hungBand(b.x);
       if (bandF){
-        const r = drawHungYear(b, seg, cx, bandF, fScale, focusAmt, near);
+        const r = drawHungYear(b, seg, tB ? tB.cx : cx, bandF, fScale, focusAmt, near);
         hitTopF = r.yBase - r.cap - 18 * SS;
       } else {
         const ySz9 = 170 * (seg.yearScale || 1) * ts * fScale * kk * SS;
@@ -5739,7 +5740,13 @@ const FIN_X = SHIFT(29750) - 450;
    между плазмой и этим табло». Просвет между ними 217 единиц (правый край
    плазмы BOARD_X − 875, левый край табло BOARD_X − 658), на столько и сдвиг.
    Плазма привязана к BOARD_X, поэтому едет вместе с ним и просвет сохраняется. */
-const BOARD_X = SHIFT(29750) - 3400 + 580 + 217;   // своё место на стене, от стола не зависит: он подвинулся, табло нет
+const BOARD_X0 = SHIFT(29750) - 3400 + 580 + 217;   // своё место на стене, от стола не зависит: он подвинулся, табло нет
+/* С НОВОЙ СТЕНОЙ ФИНАЛА (20.10.2026) табло висит на ореховой панели, как на
+   эскизе Эльдара: центр 39291, верх −20, и оно на 0,86 меньше (BOARD_S) — панель
+   в этом месте шириной около 1230, полное табло (1316) из неё вылезало. Строки
+   те же: масштаб берёт весь рисунок табло, а не только его рамку. */
+const BOARD_X = 39330;
+const BOARD_S = 0.86;
 /* РАЗМЕРЫ ТАБЛО. Сверху его держит ореховый карниз (низ на −90), снизу —
    столешница (700). Всё, что между ними, — его полоса; залезть на карниз значит
    читаться как наклейка поверх потолка. */
@@ -5748,7 +5755,7 @@ const BOARD_X = SHIFT(29750) - 3400 + 580 + 217;   // своё место на �
    «слишком широкое и короткое, надо реалистичнее»). 16:9 — то, что действительно
    висит: высоту берём всю, какая есть между карнизом (низ на −90) и столешницей
    (700), ширина следует из неё. */
-const BOARD_H = 740, BOARD_W = Math.round(BOARD_H * 16 / 9), BOARD_TOP = -48;
+const BOARD_H = 740, BOARD_W = Math.round(BOARD_H * 16 / 9), BOARD_TOP = -20;
 /* Низ держится выше, чем начинается карточка CrownAI: она висит на ближней
    плоскости и по экрану едет быстрее стены, поэтому при некоторых камерах
    наезжает на угол. Развести их расстоянием нельзя — только высотой. */
@@ -5838,7 +5845,7 @@ function drawTodayTV(){
   const seg = SEGMENTS[3];
   const kw = k((seg.z0 || 1400) - 6);
   const u = kw * SS;
-  const vCen = BOARD_TOP + BOARD_H / 2;                 // одна линия с табло
+  const vCen = BOARD_TOP + BOARD_H * BOARD_S / 2;       // одна линия с табло
   const x0 = px(cx - TODAY_TV.w / 2, kw), x1 = px(cx + TODAY_TV.w / 2, kw);
   if (x1 < -40 || x0 > W + 40) return;
   const yTop = py(vCen - TODAY_TV.h / 2, kw), yBot = py(vCen + TODAY_TV.h / 2, kw);
@@ -5890,10 +5897,10 @@ function drawEventBoard(t){
   boardLoad();
   const seg = SEGMENTS[3];
   const kw = k((seg.z0 || 1400) - 6);
-  const u = kw * SS;
-  const x0 = px(BOARD_X - BOARD_W/2, kw), x1 = px(BOARD_X + BOARD_W/2, kw);
+  const u = kw * SS * BOARD_S;
+  const x0 = px(BOARD_X - BOARD_W * BOARD_S / 2, kw), x1 = px(BOARD_X + BOARD_W * BOARD_S / 2, kw);
   if (x1 < -40 || x0 > W + 40) return;
-  const yTop = py(BOARD_TOP, kw), yBot = py(BOARD_TOP + BOARD_H, kw);
+  const yTop = py(BOARD_TOP, kw), yBot = py(BOARD_TOP + BOARD_H * BOARD_S, kw);
   const w = x1 - x0, h = yBot - yTop, pad = BD.pad * u;
   const F = seg.font;
   ctx.save();
@@ -12842,6 +12849,7 @@ async function loadPhotoSkin(){
   const want = {
     wall_e1: 'wall_e1.jpg', wall_e1_1907: 'wall_e1_1907.jpg',
     wall_e2: 'wall_e2.jpg', wall_e3: 'wall_e3.jpg', wall_e4: 'wall_e4.jpg',
+    ph_finwall: 'finale_wall.jpg',   // финал: стена «Symmetrical walnut and white showroom wall» — рендер Эльдара (20.10.2026)
     /* два корпуса улицы между 1989 и 1993: слева кирпич, справа
        каменные панели здания 4141 — бесшовные текстуры Эльдара (02.10.2026) */
     st_wall_brick: 'st_wall_brick.jpg', st_wall_4141b: 'st_wall_4141b.jpg',
@@ -21236,6 +21244,59 @@ const SHOW_DRAW_L = HALL_FRAME_R - 600;
    merely set in front of it, so they need its actual screen coordinates. One
    formula, living beside the thing it measures, so the two cannot drift apart
    the way the year and its plate did. */
+/* СТЕНА ФИНАЛА — РЕНДЕР ЭЛЬДАРА (20.10.2026: «нужно сделать так в конце» по
+   эскизу, и сама стена — «Symmetrical walnut and white showroom wall»; «можешь
+   разрезать, подкладывать, мягко входить»). Ореховая панель со скошенным краем
+   и подсветкой слева, белая середина, две скруглённые мягкие панели справа.
+   Вырезка — строки 10…720 рендера (сверху срезан потолочный карниз, снизу — пол
+   рендера: под ним наш пол); строка 720 — линия пола стены, она ложится на 1080
+   мира на глубине стены. Ширина FIN_WALL.w = 4700: кадр финала (камера на FIN_X,
+   z 430) видит стену от 38769 до 43071 — плита шире его с запасом, а её верх
+   (−525) выше верхнего края кадра (−460). Края плиты растворяются в нашей белой
+   стене (FIN_WALL.fade) — на подходе стена входит мягко, без шва. Ореховый
+   карниз кончается у её левого края своим закруглением, табло и TODAY висят на
+   ореховой панели, как на эскизе. */
+/* слева растворяется только белая полоска до ореха (38 из 2079 px) — орех
+   встаёт чётким краем, как на эскизе; справа — мягко на 7 % */
+const FIN_WALL = {w: 4700, fadeL: 0.016, fade: 0.07, fadeTop: 0.06};
+FIN_WALL.h = FIN_WALL.w * 710 / 2079;
+FIN_WALL.L = () => FIN_X - FIN_WALL.w / 2;
+let FIN_WALL_SP = null;
+function finWallSprite(){
+  if (FIN_WALL_SP) return FIN_WALL_SP;
+  const ph = PROP_SPRITES.ph_finwall; if (!ph) return null;
+  const c = document.createElement('canvas'); c.width = ph.w; c.height = ph.h;
+  const g = c.getContext('2d');
+  g.drawImage(ph.c, 0, 0, ph.w, ph.h);
+  g.globalCompositeOperation = 'destination-in';
+  const f = FIN_WALL.fade;
+  const gx = g.createLinearGradient(0, 0, ph.w, 0);
+  gx.addColorStop(0, 'rgba(0,0,0,0)'); gx.addColorStop(FIN_WALL.fadeL, 'rgba(0,0,0,1)');
+  gx.addColorStop(1 - f, 'rgba(0,0,0,1)'); gx.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gx; g.fillRect(0, 0, ph.w, ph.h);
+  const gy = g.createLinearGradient(0, 0, 0, ph.h);
+  gy.addColorStop(0, 'rgba(0,0,0,0)'); gy.addColorStop(FIN_WALL.fadeTop, 'rgba(0,0,0,1)'); gy.addColorStop(1, 'rgba(0,0,0,1)');
+  g.fillStyle = gy; g.fillRect(0, 0, ph.w, ph.h);
+  FIN_WALL_SP = {c, w: ph.w, h: ph.h};
+  return FIN_WALL_SP;
+}
+function drawFinaleWall(){
+  if (Math.abs(cam.x - FIN_X) > 4200) return;
+  const sp = finWallSprite(); if (!sp) return;
+  const kw = k(SEGMENTS[3].z0 || 1400);
+  const x0 = px(FIN_WALL.L(), kw), x1 = px(FIN_WALL.L() + FIN_WALL.w, kw);
+  if (x1 < 0 || x0 > W) return;
+  const yB = py(1080, kw), yT = py(1080 - FIN_WALL.h, kw);
+  rivet('finale_wall', (x0 + x1) / 2, kw);
+  ctx.drawImage(spriteMip(sp, x1 - x0, yB - yT), x0, yT, x1 - x0, yB - yT);
+}
+/* TODAY — на ореховой панели, над табло, на глубине стены (по эскизу). */
+const TODAY_WALL = {x: 39330, yT: -300, yB: -95};
+function todayBand(){
+  if (!PROP_SPRITES.ph_finwall) return null;
+  const kw = k((SEGMENTS[3].z0 || 1400) - 6);
+  return {yT: py(TODAY_WALL.yT, kw), yB: py(TODAY_WALL.yB, kw), cx: px(TODAY_WALL.x, kw)};
+}
 function timberBand(){
   if (cam.x < SHOW_L - 2600 || cam.x > SHOW_DRAW_R + 2600) return null;
   const kk = k((SEGMENTS[3].z0 || 1400) - 6);
@@ -21253,7 +21314,8 @@ function drawShowroom(t){
      the column covers its end, so there is nothing hanging in the air, and the
      wood and its downlights read as one ceiling from the door onward (Eldar) */
   const x0 = px(SHOW_DRAW_L, kk) - 12 * SS;
-  const x1 = px(SHOW_DRAW_R, kk);
+  /* карниз кончается у стены финала: дальше потолок — её собственный */
+  const x1 = PROP_SPRITES.ph_finwall ? px(FIN_WALL.L(), kk) : px(SHOW_DRAW_R, kk);
   if (x1 < -200 || x0 > W + 200) return;
   ctx.save();
   // the ribbon: a soffit of walnut, turned down out of the ceiling
@@ -21327,7 +21389,8 @@ function drawShowroom(t){
      закруглённом торце: половина плафона висела в воздухе («вот этот крайний
      правый светильник лишний», Эльдар, 2026-10-01). Ряд кончается на полшага
      раньше, последний встаёт на 45202 и целиком лежит на дереве. */
-  for (let wx = SHOW_L + 330; wx < SHOW_R - 400; wx += 660){
+  const dlEnd = PROP_SPRITES.ph_finwall ? FIN_WALL.L() - 200 : SHOW_R - 400;
+  for (let wx = SHOW_L + 330; wx < dlEnd; wx += 660){
     const lx = px(wx, kk);
     if (lx < -260 || lx > W + 260) continue;
     ctx.fillStyle = 'rgba(255,236,196,0.85)';
@@ -21707,6 +21770,7 @@ function frame(){
      мировыми прямыми x = const, теми самыми, на которых стоят откосы. */
   ctx.save(); stCutHall('floor'); drawFloor(); ctx.restore();
   drawWall();   // проём улицы каждая полоса стены вырезает сама, на своей глубине
+  drawFinaleWall();   // стена финала — рендер, поверх белой стены эпохи
   drawFilmVideoWall();   // the film backdrop sits directly on the deep wall
   drawFilmProjectorWall();   // and the 1999 throw washes over the plaster
   drawFilmWallPlasma();      // the 2009 plasma hangs on the wall, behind the counters
