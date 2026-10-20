@@ -8686,6 +8686,37 @@ function drawModel93(wx, lz, wWorld, topWorldY){
      вниз по трём нижним углам и обратно вверх по левому; ближний верхний
      угол C лежит внутри и в контур не входит. Эльдар, 2026-09-25. */
   REC93_BOX = [A, B, [B[0], B[1] + H], [C[0], C[1] + H], [D[0], D[1] + H], D];
+  /* МАКЕТ — РЕНДЕР ЭЛЬДАРА (20.10.2026: «Three-Story Museum Maquette on Graphite
+     Pedestal» — здание 4141 на графитовой тумбе; «тумба стоит внутри — ставь и
+     всё»). Кладётся как снят, без растяжки: передний верхний край его плиты
+     (строка 401 из 1078 вырезки, плита во всю ширину 1214) встаёт туда же, где
+     был край нарисованной плиты, и той же ширины — 136 единиц модели, так что
+     MODEL93 и место посадки самолёта (за зданием) не меняются. Нарисованный
+     макет ниже остаётся запасным, если файла нет. */
+  const PM = PROP_SPRITES.ph_model93;
+  if (PM){
+    const sc = (C[0] - D[0]) / 1214, iw = PM.w * sc, ih = PM.h * sc;
+    const ix = (D[0] + C[0]) / 2 - (1 + 1214 / 2) * sc;
+    /* ТУМБА СТОИТ ВНУТРИ БУХТЫ (Эльдар: «тумба стоит внутри как бы»). Тумба
+       рендера короче нарисованной: поставленная на пол своей глубины (lz 240),
+       она уронила бы макет на подпись года. Её низ ставится на линию, где пол
+       бухты встречается со стеной (Z93_FOOT), — горизонталь, поэтому совпадение
+       держится при любой камере; на 2000×1040 это сдвиг всего на ~23 px
+       относительно плиты на прежней высоте. Площадка для самолёта (p.oy) едет
+       вместе с макетом, чтобы он садился туда же. */
+    const yFloor = py(1080, k(Z93_FOOT));
+    const iy = yFloor - ih;
+    p.oy += iy - (D[1] - 401 * sc);
+    REC93_BOX = [[ix, iy], [ix + iw, iy], [ix + iw, iy + ih], [ix, iy + ih]];
+    ctx.save();
+    ctx.translate(sx, yFloor); ctx.scale(1, 0.16); ctx.translate(-sx, -yFloor);
+    const gs = ctx.createRadialGradient(sx, yFloor, 0, sx, yFloor, iw * 0.62);
+    gs.addColorStop(0, 'rgba(0,0,0,0.42)'); gs.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gs; ctx.beginPath(); ctx.arc(sx, yFloor, iw * 0.62, 0, 7); ctx.fill();
+    ctx.restore();
+    ctx.drawImage(spriteMip(PM, iw, ih), ix, iy, iw, ih);
+    return;
+  }
   ctx.save();
   ctx.translate(sx, py(1080, kk)); ctx.scale(1, 0.16); ctx.translate(-sx, -py(1080, kk));
   const gsh = ctx.createRadialGradient(sx, py(1080, kk), 0, sx, py(1080, kk), (XM+2*OV) * s * 0.7);
@@ -12746,6 +12777,7 @@ async function loadPhotoSkin(){
     ph_plane: 'plane_1993.png',       // and the freighter that carries it, landing at 1993
     ph_plastic: 'plastic_2000.png',   // 2000: the tooth-shaped crown boxes the injection division made
     ph_tv70: 'tv_1970.png',           // the seventies set, cut out with its tube knocked through
+    ph_model93: 'model_1993.png',    // 1993: макет здания 4141 на графитовой тумбе — рендер Эльдара (20.10.2026)
     ph_prj93: 'proj_1993.png',        // the 1993 LCD data projector on its stand, photographed
     ph_g8: 'g8_1979.png',             // 1979: the nine labs, as models on one long plinth
     ph_obj1: 'obj_furnace.png',     // шкаф 1970: шесть предметов с первого верстака Джима
