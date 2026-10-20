@@ -21494,11 +21494,28 @@ function frame(){
      furniture, so a standing photograph passes over them the way any object
      passes over what is written on the plaster. Flying and focused years keep
      the late pass — they travel toward the camera and must ride above. */
+  /* ГОД ТУМБЫ В СВЕТЕ НЕ ГАСНЕТ. У тумбы вуаль гасит весь кадр, чтобы
+     экспонат «вышел из темноты», — и стоящий год 2002-го гас вместе со стеной,
+     хотя его экспонат светится (Эльдар, 19.10.2026: «сам год там же
+     затемняется — это не верно, он должен быть явно ярким, как и тумба с
+     компом»). Надпись того бита, чья тумба сейчас даёт вуаль, рисуется после
+     вуали и до тумбы — тумба и монитор по-прежнему стоят перед ней. Летающие
+     годы (1989, 2007) идут своим поздним проходом и не трогаются. */
+  let heroText = -1;
+  { let best = 0.01;
+    for (let i = 0; i < BEATS.length; i++){
+      const b = BEATS[i];
+      if (!b.ped || b.fly) continue;
+      const pedX = b.x + (b.ped.dx ?? -430);
+      if (pedX > REC17_L && pedX < REC17_R) continue;
+      const h = Math.max(0, 1 - Math.abs(pedX - cam.x) / 680);
+      if (h > best){ best = h; heroText = i; }
+    } }
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
     if (Math.abs(b.x - cam.x) > CULL_BEAT) continue;
     const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
-    if (!b.fly && focusAmt <= 0.01) drawBeatText(b, focusAmt);
+    if (!b.fly && focusAmt <= 0.01 && i !== heroText) drawBeatText(b, focusAmt);
   }
   /* A COLUMN STANDS IN FRONT OF WHAT IS WRITTEN ON THE WALL. The portal's two
      pilasters were painted with the recreation, long before the wall type, so
@@ -21668,6 +21685,10 @@ function frame(){
   if (hero > 0.01){
     ctx.fillStyle = `rgba(2,2,3,${(0.38*hero).toFixed(3)})`;
     ctx.fillRect(0, 0, W, H);
+  }
+  if (heroText >= 0){
+    const fa = state.focusBeat === heroText ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
+    if (fa <= 0.01) drawBeatText(BEATS[heroText], fa);   // поверх вуали, до тумбы (см. ГОД ТУМБЫ В СВЕТЕ)
   }
   /* culled by the PLINTH's own place, not the beat's: the crown's plinth now
      stands two thousand units from the beat that owns it, in the glass hall */
