@@ -6276,7 +6276,13 @@ function drawFinaleTable(t){
      свесом открылся клин фона (Эльдар увидел его сразу). */
   drawYawedTable(FIN_X, FIN_Z_FACE + FIN_DEPTH / 2, 0, FIN_W, FIN_DEPTH, 700, FIN_FACE_H,
     {side0:'#eef1f4', side1:'#c6ccd2', top:'#f7f9fb', edge:'rgba(120,130,140,0.5)',
-     lip: FIN_LIP, ov: 6, lip0:'#fdfeff', lip1:'#dfe4e9'});
+     lip: FIN_LIP, ov: 6, lip0:'#fdfeff', lip1:'#dfe4e9',
+     /* ГЕОМЕТРИЯ ПО ГОРИЗОНТАЛИ ОСЛАБЛЕНА (Эльдар, 20.10.2026: «финальный стол
+        прям очень геометрически искажается и меняется в пространстве — может,
+        ослабить эту геометрию по горизонтали?»). Торцы и дальняя кромка ходят
+        по x на 40 % от честной перспективы: стол остаётся объёмом, но не
+        раскрывается и не перекашивается на каждом шаге. */
+     hPersp: 0.4});
 
   const ke = k(FIN_Z_FACE);
   /* СИНЯЯ ПОЛОСА ПОД СТОЛЕШНИЦЕЙ СНЯТА. Она изображала «дыхание света» в то
@@ -16014,9 +16020,15 @@ function drawBookPyramid(b, t){
 /* a freestanding table plane, rotated in plan — any yaw, anywhere on the floor */
 function drawYawedTable(cx, cz, yawDeg, wW, dW, topY, hW, tone){
   const a = yawDeg * Math.PI/180, ca = Math.cos(a), sa = Math.sin(a);
+  /* tone.hPersp (0…1): сколько горизонтальной перспективы оставить глубине.
+     1 — честная, как было; меньше — точки в глубине ходят по x почти как
+     передняя грань, и торцы стола не «распахиваются» при каждом шаге камеры.
+     По вертикали перспектива честная всегда. */
+  const hp = tone.hPersp != null ? tone.hPersp : 1, kFace = k(cz - dW / 2);
   const P = (lx, lz) => {                     // local table coords -> screen
     const wx = cx + lx*ca - lz*sa, wz = cz + lx*sa + lz*ca;
-    return {x: px(wx, k(wz)), kt: k(wz), z: wz};
+    const xf = px(wx, kFace);
+    return {x: xf + (px(wx, k(wz)) - xf) * hp, kt: k(wz), z: wz};
   };
   /* СТОЛЕШНИЦА — ПЛИТА, А НЕ ЛИСТ. tone.lip — её толщина, tone.ov — свес
      над корпусом, оба в единицах мира. Без них всё как раньше. */
