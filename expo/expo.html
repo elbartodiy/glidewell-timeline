@@ -385,7 +385,10 @@ const BEATS = [
   {x:14540, y:'2001', capDX:0,
    /* ГОД СО СТЕНЫ СНЯТ: на прилавке стоит монитор с записью первого сайта, и
       он же открывает страницу (Эльдар, 2026-09-28) — как подушка в 1996-м. */
-   t:'WEB · CLINICAL VOICE', minor:true, yLift:190, noWall:true,
+   /* на листе — «1998» и «Web site» (Эльдар, 21.10.2026: «оставь внутри страницы
+      1998 и название Web site»); y и t остаются прежними — по ним бит стоит в
+      ленте и находит свои видео, ссылки и людей */
+   t:'WEB · CLINICAL VOICE', minor:true, yLift:190, noWall:true, pageY:'1998', pageT:'Web site',
    th:'The lab learns to publish — online and on camera.',
    /* сайт — с 1998-го (Wayback: glidewell-lab.com, «©1998»), потом новый домен
       glidewelldental.com; DiTolla — около 2001-го (Эльдар, 21.10.2026) */
@@ -19258,7 +19261,7 @@ function drawStudy(){
   ctx.save();
   ctx.globalAlpha = a;
   const meta = b.noYear ? sentence(b.t || b.sign || '')
-    : b.y + (b.t ? ' · ' + sentence(b.t) : (b.sign ? ' · ' + sentence(b.sign) : ''));
+    : (b.pageY || b.y) + (b.pageT ? ' · ' + b.pageT : b.t ? ' · ' + sentence(b.t) : (b.sign ? ' · ' + sentence(b.sign) : ''));
   const G = pageFrame(K, a, wantSide, meta, S.fitH);
   S.sheet = {x: G.wx0, y: G.wy0, w: G.ww, h: G.wh};   // где лист — чтобы касание по нему не закрывало страницу
   const {left, textW, topClip, botClip} = G;
@@ -19281,7 +19284,7 @@ function drawStudy(){
     y += 9 * u;                                            // the year's baseline
     ctx.font = K.font(PAGE.year);
     ctx.fillStyle = `rgba(${K.ink},0.98)`;
-    ctx.fillText(b.y, left, y);
+    ctx.fillText(b.pageY || b.y, left, y);   // pageY — год на листе, если он не совпадает с местом в ленте
     y += 7 * u;
   } else {
     y += 7 * u;
@@ -19289,7 +19292,7 @@ function drawStudy(){
   let tSz = PAGE.title;
   ctx.font = K.font(tSz);
   try { ctx.letterSpacing = `${tSz*TRACK.title*SS}px`; } catch(err){}
-  const studyTitle = sentence(b.t || b.sign || '');
+  const studyTitle = b.pageT || sentence(b.t || b.sign || '');
   while (studyTitle && ctx.measureText(studyTitle).width > textW && tSz > 24){ tSz -= 1; ctx.font = K.font(tSz); }
   ctx.fillStyle = `rgba(${K.ink},0.92)`;
   const inkLight = K.ink.split(',').reduce((q, c) => q + (+c), 0) / 3 > 150;
