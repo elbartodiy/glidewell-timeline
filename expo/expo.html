@@ -15630,14 +15630,21 @@ function drawWallWindow(b){
   const kk = k(wz), ki = k(wz + WIN_TH);
   const hWorld = d.w / WIN_OPEN;
   const wx = b.x + d.dx;
-  const ax = px(wx, kk);
+  /* …И ВСЁ-ТАКИ ЕДЕТ ВМЕСТЕ С КОМПОЗИЦИЕЙ (Эльдар, 21.10.2026: «это окно ездит
+     по стене, а должно бы быть частью стены, как и прикрученная рамка
+     Chairside»). Глаз сверяет окно не со стыками панелей, а с соседями — рамкой
+     Chairside, годами, — а они по закону заклёпки стоят на плоскости
+     композиции. Проём теперь сдвинут так же (wallSX), а глубина — откосы,
+     комната за ним — считается от его же стены, как и раньше. */
+  const wshift = wallSX(b.x, d.dx, kk) - px(wx, kk);
+  const ax = px(wx, kk) + wshift;
   const w = d.w * kk * SS, h = hWorld * kk * SS;
   const x0 = ax - w / 2, y0 = py(d.top, kk), x1 = x0 + w, y1 = y0 + h;
   if (x1 < -w || x0 > W + w) return;
   // внутренняя — на глубине стены: меньше и сдвинута к точке схода
-  const bx = px(wx, ki), bw = d.w * ki * SS, bh = hWorld * ki * SS;
+  const bx = px(wx, ki) + wshift, bw = d.w * ki * SS, bh = hWorld * ki * SS;
   const u0 = bx - bw / 2, v0 = py(d.top, ki), u1 = u0 + bw, v1 = v0 + bh;
-  rivet('window:' + b.x, ax, kk);   // проверяется против кладки, а не против композиции
+  rivet('window:' + b.x, ax, k(exhibitZ(b.x)));   // с 21.10.2026 — против композиции, как рамки
 
   /* ПРОСВЕТ — ЭТО ПЕРЕСЕЧЕНИЕ ДВУХ РАМОК, А НЕ ВНУТРЕННЯЯ. Сквозь стену видно
      только то, что попадает и в наружное отверстие, и во внутреннее. При
@@ -15672,7 +15679,7 @@ function drawWallWindow(b){
     const need = visX * Math.abs(kI - kR) * SS;                   // сколько просит геометрия
     const slack = Math.max(0, (rw - openW) / 2);                  // сколько даёт снимок
     const fac = need > 1 ? Math.min(1, slack / need) : 1;
-    const lag = (px(wx, kR) - bx) * fac;
+    const lag = (px(wx, kR) + wshift - bx) * fac;
     ctx.drawImage(spriteMip({c: im.el}, rw, rh),
                   bx + lag - rw / 2, (v0 + v1) / 2 - rh * WIN_LOOK, rw, rh);
   }
