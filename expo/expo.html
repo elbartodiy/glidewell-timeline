@@ -3395,6 +3395,7 @@ const FSTP_89_L = stepFoot(REC3_L - STEP_PAD, R89_BAY_Z), FSTP_89_R = stepFoot(R
    block sat a finger above the floor line and the skirting appeared to run on
    underneath it. Each takes the plane of the wall it is cut into: the
    pilasters, the panel's edge and the block's back, all three. */
+const FLOOR79_H = 0.4;   // см. «У БУХТЫ 1979 КРАЙ ПОЛА ИДЁТ КРУЧЕ» в drawFloor
 const R79_BAY_Z = SEGMENTS[0].z0;      // 550 — the wall 1979 is cut into
 const STEP_79_L = stepEdge(REC_L - STEP_PAD, R79_BAY_Z), STEP_79_R = stepEdge(REC_R + STEP_PAD, R79_BAY_Z);
 const DR_BAY_Z = SEGMENTS[2].z0;       // 850 — era 2's wall, the one the Digital Revolution is cut into
@@ -3550,6 +3551,15 @@ function drawFloor(){
        точки за кадром; соседние плиты берут те же точки и стыкуются. */
     const yB = py(1080, kNear);
     let xBL = px(a, kNear), xBR = px(b, kNear);
+    /* У БУХТЫ 1979 КРАЙ ПОЛА ИДЁТ КРУЧЕ, ЧЕМ ЧЕСТНАЯ ПЕРСПЕКТИВА (Эльдар,
+       21.10.2026, нарисовал линию от заднего угла ступени вниз: почти отвесно, с
+       наклоном 0,27 против 0,6…0,7 честной прямой x = a). Ближняя точка края
+       стягивается к заднему углу: остаётся FLOOR79_H доли горизонтального
+       расхода — так край идёт вниз от угла ступени по его линии. Обе плиты на
+       стыке берут ту же точку. */
+    const steep = (x, cTop) => cTop.x + (px(x, kNear) - cTop.x) * FLOOR79_H;
+    if (Math.abs(a - (REC_R + STEP_PAD)) < 1 || Math.abs(a - (REC_L - STEP_PAD)) < 1) xBL = steep(a, cL);
+    if (Math.abs(b - (REC_L - STEP_PAD)) < 1 || Math.abs(b - (REC_R + STEP_PAD)) < 1) xBR = steep(b, cR);
     /* КРАЙ, КОТОРЫЙ УПИРАЕТСЯ В СТЕНУ УЛИЦЫ, ИДЁТ ПО НАСТОЯЩЕЙ ПРЯМОЙ. Обычный
        край плиты — хорда от дальнего угла бухты к ближнему углу на плоскости
        −40, и это НЕ проекция прямой x = const: дальний угол взят по правилу
