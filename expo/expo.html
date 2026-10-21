@@ -10349,6 +10349,7 @@ const HALL_PED_H = 340;      // the crown's pedestal, floor to the underside of 
 const HALL_PED_Z = 420;
 /* the three plates arrive together or the room is not drawn at all — there is
    no second version of this bay to fall back on */
+const FLOOR_PHOTO_END = 39900;   // мира: за левым прилавком финала (36412…40000), см. drawRec17
 function hallReady(){ return PHOTO_TEX.ph_hall_wall && PHOTO_TEX.ph_hall_floor && PHOTO_TEX.ph_hall_plinth; }
 function drawRec17(t){
   if (Math.abs(cam.x - HALL_MID) > 5500 || !hallReady()) return;
@@ -10386,7 +10387,14 @@ function drawRec17(t){
        (Эльдар, 02.10.2026: «пол какой-то видно кусочек правее уже, чем стола,
        освещение просто пропадает»). Зал там и кончается, так что полу нечего
        обрывать раньше края мира. */
-    const fEndW = WORLD_END + 400;
+    /* …И ВСЁ ЖЕ КОНЧАЕТСЯ ЗА ЛЕВЫМ ПРИЛАВКОМ ФИНАЛА (Эльдар, 21.10.2026, кадр
+       финала: отражение зала «имеет длину, которая заканчивается тут» — в
+       просвете между прилавком и столом, — «а надо подрезать до зелёной
+       линии», под прилавок). В просвете 40000…40420 лежали отражения колонн
+       стеклянного холла — комнаты, которой там нет. Край теперь за прилавком
+       36412…40000 (FLOOR_PHOTO_END), с растворением на 300 единиц, — справа от
+       него наш пол того же тона, с живым отражением стены у её подошвы. */
+    const fEndW = typeof FLOOR_PHOTO_END !== 'undefined' ? FLOOR_PHOTO_END : WORLD_END + 400;
     const fStart = Math.max(0, px(fStartW, k(0))), fEnd = Math.min(W, px(fEndW, k(0)));
     if (fEnd > fStart){
     ctx.save();
@@ -10400,9 +10408,21 @@ function drawRec17(t){
        go under the floor, and the join itself is a floor line, which is where
        a floor line belongs. */
     const FL_LIFT = Math.round(6 * SS);
-    ctx.drawImage(fl, 0, srcY, fl.naturalWidth, srcH,
+    const drawFl = () => ctx.drawImage(fl, 0, srcY, fl.naturalWidth, srcH,
                   Math.round(roomCX-fw/2), Math.round(bh) - FL_LIFT,
                   Math.round(fw), Math.ceil(floorH) + FL_LIFT);
+    /* правый край растворяется в прозрачность — под фото уже лежит наш пол,
+       он и проступает: фото кладётся сплошь до начала растворения, дальше —
+       полосами с убывающей прозрачностью */
+    const fadeW = fEndW < WORLD_END ? px(fEndW, k(0)) - px(fEndW - 300, k(0)) : 0;
+    if (fadeW > 1){
+      const xg0 = fEnd - fadeW, N = 10;
+      ctx.save(); ctx.beginPath(); ctx.rect(fStart, bh - 1, Math.max(0, xg0 - fStart), floorH + 2); ctx.clip(); drawFl(); ctx.restore();
+      for (let i = 0; i < N; i++){
+        ctx.save(); ctx.globalAlpha = 1 - (i + 0.5) / N;
+        ctx.beginPath(); ctx.rect(xg0 + fadeW * i / N, bh - 1, fadeW / N + 0.5, floorH + 2); ctx.clip(); drawFl(); ctx.restore();
+      }
+    } else drawFl();
     /* NO SECOND WALL UNDER THE FLOOR LINE. The render's floor mirrors the room
        sharply for the first rows under the skirting — a band of pilaster bases
        upside down — and that band runs under the whole late stretch, because
