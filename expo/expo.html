@@ -21431,6 +21431,18 @@ function todayBand(){
   const kw = k((SEGMENTS[3].z0 || 1400) - 6);
   return {yT: py(TODAY_WALL.yT, kw), yB: py(TODAY_WALL.yB, kw), cx: px(TODAY_WALL.x, kw)};
 }
+let WALNUT_TILE = null;
+function walnutTile(){
+  if (WALNUT_TILE) return WALNUT_TILE;
+  const ph = PROP_SPRITES.ph_finwall; if (!ph) return null;
+  const SX = 60, SY = 290, SW = 460, SH = 106;      // в вырезке строки сдвинуты на 10 вверх
+  const c = document.createElement('canvas'); c.width = SW * 2; c.height = SH;
+  const g = c.getContext('2d');
+  g.drawImage(ph.c, SX, SY, SW, SH, 0, 0, SW, SH);
+  g.save(); g.translate(SW * 2, 0); g.scale(-1, 1);
+  g.drawImage(ph.c, SX, SY, SW, SH, 0, 0, SW, SH); g.restore();
+  return (WALNUT_TILE = c);
+}
 function timberBand(){
   if (cam.x < SHOW_L - 2600 || cam.x > SHOW_DRAW_R + 2600) return null;
   const kk = k((SEGMENTS[3].z0 || 1400) - 6);
@@ -21478,13 +21490,38 @@ function drawShowroom(t){
   beam.lineTo(xL, yB);
   beam.closePath();
   ctx.fill(beam);
+  /* ОРЕХ СО СТЕНЫ ФИНАЛА (Эльдар, 20.10.2026: «в последнем зале у линии
+     деревянной используй не цвет, а прям бери из куска дерева со стены —
+     наложением продли, если надо, где надо порежь»). Полоса 106 строк × 460
+     столбцов из ореховой панели рендера (строки 300…406, столбцы 60…520 — чистое
+     дерево, мимо скошенного края) в масштабе самой стены: 4700 / 2079 = 2,26
+     единицы на пиксель, то есть 240 единиц высоты карниза = 106 строк. Плитка
+     — кусок и его зеркальная копия, так что стык невидим; тянется вдоль всего
+     карниза на его глубине, поверх — прежняя светотень. */
+  const WT = walnutTile();
+  if (WT){
+    ctx.save(); ctx.clip(beam);
+    const tw = WT.width * 2.26 * kk * SS, th = yB - yT;
+    const wx0 = SHOW_DRAW_L, period = WT.width * 2.26;
+    let wx = wx0 + Math.floor((cam.x - (W / 2) / (kk * SS) - wx0) / period) * period;
+    for (; px(wx, kk) < x1 + 2; wx += period){
+      const sx0 = px(wx, kk);
+      if (sx0 + tw < x0 - 2) continue;
+      ctx.drawImage(WT, sx0, yT, tw + 1, th);
+    }
+    const sh2 = ctx.createLinearGradient(0, yT, 0, yB);
+    sh2.addColorStop(0, 'rgba(40,24,12,0.28)'); sh2.addColorStop(0.45, 'rgba(40,24,12,0)');
+    sh2.addColorStop(1, 'rgba(30,18,8,0.22)');
+    ctx.fillStyle = sh2; ctx.fillRect(x0, yT, x1 - x0, yB - yT);
+    ctx.restore();
+  }
   // the grain, and the shadow it drops on the wall below
   ctx.save();
   ctx.clip(beam);
   /* the grain lines are one device pixel each and land on whole pixels: at
      1.6 px on fractional rows they were re-sampled every frame and shimmered
      as a stack of flickering stripes whenever the camera moved */
-  for (let i = 0; i < 26; i++){
+  for (let i = 0; i < (WT ? 0 : 26); i++){
     const yy = Math.round(yT + (yB - yT) * (i / 26));
     ctx.fillStyle = `rgba(${i % 3 ? 62 : 206},${i % 3 ? 48 : 182},${i % 3 ? 34 : 148},0.045)`;
     ctx.fillRect(x0, yy, x1 - x0, 1);
