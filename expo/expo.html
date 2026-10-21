@@ -3395,7 +3395,17 @@ const FSTP_89_L = stepFoot(REC3_L - STEP_PAD, R89_BAY_Z), FSTP_89_R = stepFoot(R
    block sat a finger above the floor line and the skirting appeared to run on
    underneath it. Each takes the plane of the wall it is cut into: the
    pilasters, the panel's edge and the block's back, all three. */
-const FLOOR79_H = 0.4;   // см. «У БУХТЫ 1979 КРАЙ ПОЛА ИДЁТ КРУЧЕ» в drawFloor
+/* край бухты 1979 на полу: x(z) по прямой через задний угол ступени
+   (REC_L − STEP_PAD, z бухты) и нижний угол плиты с макетами (середина ∓ G8_W/2,
+   z 120 — плоскость, на которой стоит рендер плиты). По нему идут и край пола,
+   и торцы ступени. */
+const EDGE79 = (() => {
+  const line = (x1, z1, x2, z2) => z => x1 + (x2 - x1) * (z - z1) / (z2 - z1);
+  return {
+    L: z => line(REC_L - STEP_PAD, SEGMENTS[0].z0, (REC_L + REC_R) / 2 - G8_W / 2, 120)(z),
+    R: z => line(REC_R + STEP_PAD, SEGMENTS[0].z0, (REC_L + REC_R) / 2 + G8_W / 2, 120)(z),
+  };
+})();
 const R79_BAY_Z = SEGMENTS[0].z0;      // 550 — the wall 1979 is cut into
 const STEP_79_L = stepEdge(REC_L - STEP_PAD, R79_BAY_Z), STEP_79_R = stepEdge(REC_R + STEP_PAD, R79_BAY_Z);
 const DR_BAY_Z = SEGMENTS[2].z0;       // 850 — era 2's wall, the one the Digital Revolution is cut into
@@ -3551,15 +3561,16 @@ function drawFloor(){
        точки за кадром; соседние плиты берут те же точки и стыкуются. */
     const yB = py(1080, kNear);
     let xBL = px(a, kNear), xBR = px(b, kNear);
-    /* У БУХТЫ 1979 КРАЙ ПОЛА ИДЁТ КРУЧЕ, ЧЕМ ЧЕСТНАЯ ПЕРСПЕКТИВА (Эльдар,
-       21.10.2026, нарисовал линию от заднего угла ступени вниз: почти отвесно, с
-       наклоном 0,27 против 0,6…0,7 честной прямой x = a). Ближняя точка края
-       стягивается к заднему углу: остаётся FLOOR79_H доли горизонтального
-       расхода — так край идёт вниз от угла ступени по его линии. Обе плиты на
-       стыке берут ту же точку. */
-    const steep = (x, cTop) => cTop.x + (px(x, kNear) - cTop.x) * FLOOR79_H;
-    if (Math.abs(a - (REC_R + STEP_PAD)) < 1 || Math.abs(a - (REC_L - STEP_PAD)) < 1) xBL = steep(a, cL);
-    if (Math.abs(b - (REC_L - STEP_PAD)) < 1 || Math.abs(b - (REC_R + STEP_PAD)) < 1) xBR = steep(b, cR);
+    /* У БУХТЫ 1979 КРАЙ ПОЛА — ПРЯМАЯ НА ПОЛУ ЧЕРЕЗ ДВЕ ТОЧКИ: задний нижний угол
+       ступени и нижний угол плиты с макетами (Эльдар, 21.10.2026: «линия всегда
+       должна проходить через эту точку — с какого угла ни смотрели, точки
+       соединены»). Это настоящая линия на полу (EDGE79), поэтому её проекция
+       прямая при любой камере, и обе точки лежат на ней всегда. Соседняя плита
+       берёт ту же ближнюю точку и стыкуется. */
+    if (Math.abs(a - (REC_R + STEP_PAD)) < 1){ const x = EDGE79.R(-40); xBL = px(x, kNear); }
+    if (Math.abs(a - (REC_L - STEP_PAD)) < 1){ const x = EDGE79.L(-40); xBL = px(x, kNear); }
+    if (Math.abs(b - (REC_L - STEP_PAD)) < 1){ const x = EDGE79.L(-40); xBR = px(x, kNear); }
+    if (Math.abs(b - (REC_R + STEP_PAD)) < 1){ const x = EDGE79.R(-40); xBR = px(x, kNear); }
     /* КРАЙ, КОТОРЫЙ УПИРАЕТСЯ В СТЕНУ УЛИЦЫ, ИДЁТ ПО НАСТОЯЩЕЙ ПРЯМОЙ. Обычный
        край плиты — хорда от дальнего угла бухты к ближнему углу на плоскости
        −40, и это НЕ проекция прямой x = const: дальний угол взят по правилу
@@ -10238,7 +10249,7 @@ function drawRec4(t){
    nosing, and a concealed strip washing the riser and a little of the floor.
    It belongs to every recreation, not to one, and each takes its own stone: the
    craft century's is warm, the later rooms are cool and pale. */
-function drawBayStep(L, R, tone, zBack, zNose){
+function drawBayStep(L, R, tone, zBack, zNose, edge){
   /* Where the block stands in depth. EVERY BAY NOW NAMES ITS OWN PILASTERS'
      PLANE, and the default is only a fallback: 1989 was riveted to its columns
      at 722 and the other two were left on the generic 590, so those two slid
@@ -10278,7 +10289,8 @@ function drawBayStep(L, R, tone, zBack, zNose){
      against the wall it belongs to. */
   const wx0 = L - STEP_PAD, wx1 = R + STEP_PAD;
   const bx0 = px(wx0, kFar), bx1 = px(wx1, kFar);
-  const nx0 = px(wx0, kStep), nx1 = px(wx1, kStep);
+  /* торцы ступени идут по той же линии на полу, что и край пола (edge, 1979) */
+  const nx0 = px(edge ? edge.L(zF) : wx0, kStep), nx1 = px(edge ? edge.R(zF) : wx1, kStep);
   if (nx1 < -200 || nx0 > W + 200) return;
   const T = tone;
   const tg = ctx.createLinearGradient(0, yTreadBack, 0, yNose);
@@ -22030,7 +22042,7 @@ function frame(){
      furniture is painted later and covers the block everywhere except the
      slot, which is exactly where it is wanted. The bay's own pilasters end on
      its tread, so there is nothing of them left for it to cover. */
-  drawBayStep(REC_L, REC_R, STEP_TONE.warm, R79_BAY_Z, noseOf(R79_BAY_Z));
+  drawBayStep(REC_L, REC_R, STEP_TONE.warm, R79_BAY_Z, noseOf(R79_BAY_Z), EDGE79);
   drawMapWall(t);
   drawLabs73();
   drawTown76();
