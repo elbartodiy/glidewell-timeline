@@ -2391,7 +2391,15 @@ function initTables(){
   { const br = BENCH_BREAKS.find(v => v.p84),
           b84 = BEATS.find(b => b.y === '1984'), b89 = BEATS.find(b => b.y === '1989');
     if (br && b84 && b89){
-      const l = b84.x + 699;
+      /* СИММЕТРИЧНО (Эльдар, 20.10.2026, кадр на 1984-м: «давай сделаем стол
+         справа такой же длины, как он слева — а то несимметрично смотрится»).
+         Стол начинается на 1018 левее 1984-го (10955 при 11973,5), а кончался
+         на 699 правее; теперь — на том же расстоянии справа, сколько слева. */
+      /* левый край — тот же, с какого initTables начнёт этот прилавок (benchBeat
+         эпохи), TABLES в этот момент ещё не построены */
+      const sg = segAt(b84.x), bb0 = sg.benchBeat && BEATS.find(b => b.y === sg.benchBeat.y);
+      const x0t = bb0 && sg.benchBeat.from != null ? bb0.x + sg.benchBeat.from : null;
+      const l = x0t != null ? b84.x + (b84.x - x0t) : b84.x + 699;
       const r = b89.x + (b89.ped ? (b89.ped.dx ?? -430) : 0) - ((b89.ped && b89.ped.gapHalf) || 330);
       if (r > l){ br.x = (l + r) / 2; br.half = (r - l) / 2; }
     } }
