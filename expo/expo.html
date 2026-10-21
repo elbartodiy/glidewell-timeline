@@ -5112,17 +5112,30 @@ function drawFilmPanel(x, wWorld, welcome){
   ctx.beginPath(); ctx.rect(vx, vy, sw, sh); ctx.clip();
   ctx.fillStyle = '#000';
   ctx.fillRect(vx, vy, sw, sh);
-  if (v && v.videoWidth && v.readyState >= 2){
+  /* ПОКА ФИЛЬМ НЕ ПРИШЁЛ — ЕГО КАДР, А НЕ ЧЁРНОЕ ПОЛЕ (Эльдар, 20.10.2026:
+     «фильм в самом начале не загружается сразу — там чёрное поле со словом
+     „фильм“, и это не очень»). Файл фильма 93 МБ, и на киоске через хотспот
+     телефона кадр-постер (2,2 с) приходит не сразу. Тот же кадр лежит
+     картинкой assets/poster/movie_pre.jpg и грузится вместе с залом, до
+     первого кадра; он стоит на экране, пока видео не готово или ещё
+     перематывается к постеру. */
+  const posterIm = IMGS.filmposter;
+  const vidReady = v && v.videoWidth && v.readyState >= 2 &&
+                   !(v.muted && (v.seeking || Math.abs(v.currentTime - (T.posterT || 0)) > 0.4));
+  if (vidReady){
     const s = Math.max(sw / v.videoWidth, sh / v.videoHeight);
     ctx.drawImage(v, sx - v.videoWidth*s/2, vy + sh/2 - v.videoHeight*s/2,
                   v.videoWidth*s, v.videoHeight*s);
+  } else if (posterIm){
+    const s = Math.max(sw / posterIm.w, sh / posterIm.h);
+    ctx.drawImage(posterIm.el, sx - posterIm.w*s/2, vy + sh/2 - posterIm.h*s/2, posterIm.w*s, posterIm.h*s);
   } else {
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(236,210,165,0.35)';
     ctx.font = eraFont(15 * kk * SS);
     ctx.fillText('The film', sx, vy + sh/2 + 5*kk*SS);
   }
-  if (v && v.readyState >= 2 && (v.muted || T.userPaused)){
+  if (((v && v.readyState >= 2) || posterIm) && (!v || v.muted || T.userPaused)){
     // a thin outlined play mark, not a badge — on the poster and on a pause
     ctx.strokeStyle = 'rgba(252,250,244,0.9)'; ctx.lineWidth = 2*SS;
     ctx.beginPath();
@@ -22928,6 +22941,7 @@ lab4int:'assets/img/lab4int.jpg',
 lab5move:'assets/img/lab5move.jpg',
 logo1970:'assets/img/logo1970.jpg',
 logo2026:'assets/img/logo2026.jpg',
+filmposter:'assets/poster/movie_pre.jpg',
 glidewelllogo:'assets/img/glidewell_logo.svg',
 nadia:'assets/img/nadia.jpg',
 old1:'assets/img/old1.jpg',
