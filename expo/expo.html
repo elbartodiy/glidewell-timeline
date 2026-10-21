@@ -5005,7 +5005,7 @@ function initFilmRelays(){
     /* cy 600: поднята на уровень карточки Glidewell HT (Эльдар, 20.10.2026: «саму
        плазму поднять до уровня постера») — их центры совпадают на экране при
        любой камере: 430 + (546 − 430) · k(655) / k(1384) = 600 */
-    {kind: 'plasma', x: SHIFT(22240), w: 880, cy: 600},           // between 2009 and the 2010s — up off the counter
+    {kind: 'plasma', x: SHIFT(22240), w: 880, cy: 550},           // between 2009 and the 2010s — up off the counter
     /* the LED wall hangs from the soffit's second downlight: the rig is four
        panels wide, and its first seam sits exactly under that fitting — the
        wall and the lights share one plane, so the two cannot slide apart */
@@ -16268,7 +16268,14 @@ function initBanners(){
        Плазма висит на стене (z 1384, k 0,394) шириной 880, карточка — на 655
        (k 0,579): та же ширина на экране — 880 · 0,394 / 0,579 = 599. Низ был на
        560 + 160 = 720; высота карточки теперь 348 — центр 546. */
-    {x: bx('2015', 0), w: 599, cy: 546, sp: makeImageBanner('glidewellht') || makeBanner('Glidewell HT\u2122', 'Premium implant, a fraction of the price', 'Premium \u00b7 affordable')},
+    /* ВТОРОЙ ЗАМЕР (Эльдар, 20.10.2026: «постер всё ещё не такого же размера, как
+       плазма, и не на одном уровне — можно чуть выше»). Первый раз сравнивал
+       ширину экрана плазмы с шириной карточки целиком, а у карточки 16 px поля
+       под тень с каждой стороны, у плазмы — рамка 9. Видимое: плазма с рамкой
+       898 · k(1384) = 354 px, картинка карточки w · 748/780 · k(655) — отсюда
+       w 637. И оба чуть выше: плазма cy 550, карточка — на тот же центр на
+       экране, 430 + 120 · k(1384)/k(655) = 512. */
+    {x: bx('2015', 0), w: 637, cy: 512, sp: makeImageBanner('glidewellht') || makeBanner('Glidewell HT\u2122', 'Premium implant, a fraction of the price', 'Premium \u00b7 affordable')},
     /* карточка glidewell.io снята (Эльдар, 20.10.2026: «а glidewell.io постер
        давай вообще уберём»); знак года вместо неё стал крупнее (TITLE_LOGOS) */
     /* КАРТОЧКА CrownAI СНЯТА (Эльдар, 02.10.2026). Продукт настоящий — май
