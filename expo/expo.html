@@ -3402,8 +3402,12 @@ const FSTP_89_L = stepFoot(REC3_L - STEP_PAD, R89_BAY_Z), FSTP_89_R = stepFoot(R
 const EDGE79 = (() => {
   const line = (x1, z1, x2, z2) => z => x1 + (x2 - x1) * (z - z1) / (z2 - z1);
   return {
-    L: z => line(REC_L - STEP_PAD, SEGMENTS[0].z0, (REC_L + REC_R) / 2 - G8_W / 2, 120)(z),
-    R: z => line(REC_R + STEP_PAD, SEGMENTS[0].z0, (REC_L + REC_R) / 2 + G8_W / 2, 120)(z),
+    /* угол плиты — по самому рендеру, а не по его рамке: корпус плиты в
+       g8_1979.png занимает столбцы 19…1865 из 1886 (замер по альфе у нижней
+       кромки), то есть на 14 и 15 единиц внутрь от краёв G8_W (21.10.2026:
+       «осталось всё же соединить точки») */
+    L: z => line(REC_L - STEP_PAD, SEGMENTS[0].z0, (REC_L + REC_R) / 2 - G8_W / 2 + G8_W * 19 / 1886, 120)(z),
+    R: z => line(REC_R + STEP_PAD, SEGMENTS[0].z0, (REC_L + REC_R) / 2 + G8_W / 2 - G8_W * 20 / 1886, 120)(z),
   };
 })();
 const R79_BAY_Z = SEGMENTS[0].z0;      // 550 — the wall 1979 is cut into
