@@ -8971,6 +8971,9 @@ function drawModel93(wx, lz, wWorld, topWorldY){
     ctx.fillStyle = gs; ctx.beginPath(); ctx.arc(sx, yFloor, iw * 0.62, 0, 7); ctx.fill();
     ctx.restore();
     ctx.drawImage(spriteMip(PM, iw, ih), ix, iy, iw, ih);
+    /* здание открывает ту же страницу, что и год (Эльдар, 21.10.2026) */
+    { const bi93 = BEATS.findIndex(b => b.y === '1993');
+      if (bi93 >= 0) pushHit(ix, iy, iw, ih, {type: 'study', beat: bi93}); }
     return;
   }
   ctx.save();
