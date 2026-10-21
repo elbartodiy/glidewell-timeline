@@ -736,6 +736,13 @@ const CUTS = [
      то есть сайт такой же, как стенд. Код улицы не удалён: ST_HIDDEN = false
      и врезка on: true возвращают её целиком. */
   {at: 11750, w: 4272, on: false},
+  /* ВОЗДУХ ПОСЛЕ 2000-ГО (Эльдар, 21.10.2026: «после 2000 до цифровой революции
+     сделать расстояние между годами такое же, как между 1995 и 2000» — вариант
+     1, раздвинуть зал). Годы 1995…2000 стоят через 1146, а 2002, 2005, 2007 —
+     через 764: врезка 1147 перед бухтой Digital Revolution двигает её и всё
+     после неё вправо, а годы 2002…2007 ставятся через тот же шаг от 2000-го
+     (см. ШАГ ПОСЛЕ 2000-ГО в applyCut). Не бухта — noBay: реквизит не чистит. */
+  {at: 19100, w: 1147, on: true, noBay: true},
 ];
 function SHIFT(x){
   let s = 0;
@@ -945,6 +952,22 @@ function applyCut(){
         for (const s2 of BEATS) if (s2.sub != null && Math.abs(s2.sub - b95.x) < 1){ moved.push([s2.x, s2.x + d]); s2.x += d; s2.sub = to; }
         moved.push([b95.x, to]); b95.x = to;
       }
+    }
+  }
+  /* ШАГ ПОСЛЕ 2000-ГО — ТОТ ЖЕ, ЧТО ДО НЕГО (см. врезку 19100): 2002, 2005 и
+     2007 встают через шаг 1999 → 2000 от 2000-го. */
+  {
+    const b99 = BEATS.find(b => b.t === 'VERTICAL INTEGRATION'),
+          b00 = BEATS.find(b => b.t === 'RESEARCH AND DEVELOPMENT');
+    if (b99 && b00){
+      const step = b00.x - b99.x;
+      ['CAD/CAM ENTERS THE LAB', 'PRISMATIK', 'FIRST DIGITAL CASE'].forEach((t, i) => {
+        const b = BEATS.find(q => q.t === t); if (!b) return;
+        const to = b00.x + step * (i + 1), d = to - b.x;
+        if (Math.abs(d) < 1) return;
+        for (const s2 of BEATS) if (s2.sub != null && Math.abs(s2.sub - b.x) < 1){ moved.push([s2.x, s2.x + d]); s2.x += d; s2.sub = to; }
+        moved.push([b.x, to]); b.x = to;
+      });
     }
   }
   /* 1976 BY HAND TOO. The last beat of the craft era keeps its own coordinate
@@ -12431,7 +12454,7 @@ function clearPlateBays(){
   for (const u of TALL_UNITS) bays.push([u.x - u.w / 2 - 150, u.x + u.w / 2 + 150]);
   // and the bays the cuts opened, whole: they exist for one composition each
   for (let i = 0; i < CUTS.length; i++)
-    if (CUTS[i].on) bays.push([bayStart(i), bayStart(i) + CUTS[i].w]);
+    if (CUTS[i].on && !CUTS[i].noBay) bays.push([bayStart(i), bayStart(i) + CUTS[i].w]);
   if (!bays.length) return;
   const inBay = x => bays.some(([a, b]) => x > a && x < b);
   for (let i = PROPS.length - 1; i >= 0; i--) if (inBay(PROPS[i].x)) PROPS.splice(i, 1);
