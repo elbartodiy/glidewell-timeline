@@ -3450,6 +3450,9 @@ const FLOOR_TONES = {
     r2017: ['#d4d9de', '#8e959c'],   // the glass hall: the render's own polished concrete
     rDR:   ['#dde1e6', '#989ea6'],   // digital revolution: cool light stone
     r2022: ['#e4e7ea', '#a3a9b0'],   // fastscan: the whitest slab of all
+    /* завод 2019-го — тёмный металл (Эльдар, 20.10.2026: «пол на 2019 давай
+       сделаем тёмным металлом — только там, т. к. там роботы и как бы завод») */
+    f2019: ['#5a6068', '#1c1f23'],
   },
   plaza: ['#9aa27f', '#5c6650'],  // outside: sunlit ground
 };
@@ -3500,7 +3503,7 @@ function drawFloor(){
        it. */
     [REC17_R, REC18_L - STEP_PAD, T.era[3], null, STEP_18_L],
     [REC18_L - STEP_PAD, REC18_R + STEP_PAD, T.rec.r2018, FSTP_18_L, FSTP_18_R],
-    [REC18_R + STEP_PAD, REC4_L - STEP_PAD, T.era[3], STEP_18_R, STEP_22_L],
+    [REC18_R + STEP_PAD, REC4_L - STEP_PAD, T.rec.f2019, STEP_18_R, STEP_22_L],
     [REC4_R + STEP_PAD, REC23_L, T.era[3], STEP_22_R, EDG23_L],
     [REC23_L, REC23_R, T.rec.r2023, FAR23_L, FAR23_R],
     [REC4_L - STEP_PAD, REC4_R + STEP_PAD, T.rec.r2022, FSTP_22_L, FSTP_22_R],
