@@ -3900,7 +3900,7 @@ const CAPS_MIXED = {BRUXZIR:'BruxZir', GLIDEWELL:'Glidewell', PRISMATIK:'Prismat
 /* wall / wallDrop — только на стене: знак вдвое крупнее и ниже на высоту
    прежнего знака (Эльдар, 20.10.2026: «лого на 2017 сделаем больше и ниже —
    ×2 попробуем»); на странице года он прежнего размера */
-const TITLE_LOGOS = {'GLIDEWELL.IO': {sp: 'ph_gio', rev: 'ph_gio_rev', base: 221 / 267, wall: 2, wallDrop: 1.0}};
+const TITLE_LOGOS = {'GLIDEWELL.IO': {sp: 'ph_gio', rev: 'ph_gio_rev', base: 221 / 267, wall: 3, wallDrop: 4.0}};   // ещё ×1,5 и ниже на свою высоту (20.10.2026)
 /* light — лист тёмный, а набор на нём светлый: тогда знак вывороткой (серые
    буквы и ™ в белый, красные точки как есть); серый знак на матовом стекле
    2017-го читался пятном */
@@ -4999,7 +4999,10 @@ function initFilmRelays(){
     /* 16:9, as a plasma is — larger, and measured on the deep wall (k≈0.39) so
        its top clears the taglines (screen-wise below them) and its bottom stops
        short of the counters' line with a little air */
-    {kind: 'plasma', x: SHIFT(22240), w: 880, cy: 648},           // between 2009 and the 2010s — up off the counter
+    /* cy 600: поднята на уровень карточки Glidewell HT (Эльдар, 20.10.2026: «саму
+       плазму поднять до уровня постера») — их центры совпадают на экране при
+       любой камере: 430 + (546 − 430) · k(655) / k(1384) = 600 */
+    {kind: 'plasma', x: SHIFT(22240), w: 880, cy: 600},           // between 2009 and the 2010s — up off the counter
     /* the LED wall hangs from the soffit's second downlight: the rig is four
        panels wide, and its first seam sits exactly under that fitting — the
        wall and the lights share one plane, so the two cannot slide apart */
@@ -16258,7 +16261,11 @@ function initBanners(){
     {x: bx('2009', 178), w: 550, sp: makeBanner('BruxZir\u00ae', 'The best dentistry \u2014 made affordable', 'The #1 crown')},
     /* карточка Glidewell HT — настоящая, «glidewellht.png» из артефактов
        (Эльдар, 20.10.2026: «поставь его на постер нужный»); набранная — запасная */
-    {x: bx('2015', -122), w: 550, sp: makeImageBanner('glidewellht') || makeBanner('Glidewell HT\u2122', 'Premium implant, a fraction of the price', 'Premium \u00b7 affordable')},
+    /* РОВНО ПОД 2015, НИЗ НА ПРЕЖНЕЙ ВЫСОТЕ, РАЗМЕРОМ С ПЛАЗМУ (Эльдар, 20.10.2026).
+       Плазма висит на стене (z 1384, k 0,394) шириной 880, карточка — на 655
+       (k 0,579): та же ширина на экране — 880 · 0,394 / 0,579 = 599. Низ был на
+       560 + 160 = 720; высота карточки теперь 348 — центр 546. */
+    {x: bx('2015', 0), w: 599, cy: 546, sp: makeImageBanner('glidewellht') || makeBanner('Glidewell HT\u2122', 'Premium implant, a fraction of the price', 'Premium \u00b7 affordable')},
     /* карточка glidewell.io снята (Эльдар, 20.10.2026: «а glidewell.io постер
        давай вообще уберём»); знак года вместо неё стал крупнее (TITLE_LOGOS) */
     /* КАРТОЧКА CrownAI СНЯТА (Эльдар, 02.10.2026). Продукт настоящий — май
