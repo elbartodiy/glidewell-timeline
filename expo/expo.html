@@ -6331,7 +6331,8 @@ function drawFinaleLogo(){
    финальный стол (его подошва на плоскости его передней грани), перевёрнутый
    вниз, со спадом прозрачности; кладётся только на пол — в просветы слева и
    справа от стола, ниже подошвы стены. */
-const FIN_REFL = /[?&]refl=1/.test(location.search);
+/* ВКЛЮЧЕНО НАСОВСЕМ, ЯРЧЕ И БЕЗ КОВРА (Эльдар, 21.10.2026). ?refl=0 — выключить. */
+const FIN_REFL = !/[?&]refl=0/.test(location.search);
 let FIN_REFL_C = null;
 function drawFinaleReflection(){
   if (!FIN_REFL || Math.abs(cam.x - FIN_X) > 3800) return;
@@ -6343,19 +6344,41 @@ function drawFinaleReflection(){
   const cR = (() => { const tb = TABLES.find(q => q.x1 > FIN_X - 2000 && q.x1 < FIN_X); return tb ? px(tb.x1, k(0)) : 0; })();
   const h = Math.min(H - yWall, yAx);
   if (h < 4) return;
-  if (!FIN_REFL_C) FIN_REFL_C = document.createElement('canvas');
-  const c = FIN_REFL_C; if (c.width !== W || c.height !== H){ c.width = W; c.height = H; }
+  /* зеркало размыто: полированный камень, а не стекло — копия в шестую долю
+     размера и обратно (размытие почти бесплатно); отражённые надписи табло не
+     читаются чётко */
+  const RS = 6, sw = Math.max(1, Math.round(W / RS)), shh = Math.max(1, Math.round(H / RS));
+  if (!FIN_REFL_C){ FIN_REFL_C = document.createElement('canvas'); FIN_REFL_C.s = document.createElement('canvas'); }
+  const c = FIN_REFL_C; if (c.width !== W || c.height !== H){ c.width = W; c.height = H; c.s.width = sw; c.s.height = shh; }
+  const gs = c.s.getContext('2d');
+  gs.setTransform(1, 0, 0, 1, 0, 0); gs.clearRect(0, 0, sw, shh);
+  // зеркало: строка yAx − d ложится на yAx + d
+  gs.save(); gs.scale(sw / W, shh / H); gs.translate(0, 2 * yAx); gs.scale(1, -1);
+  gs.drawImage(ctx.canvas, 0, 0, W, H, 0, 0, W, H);
+  gs.restore();
   const g = c.getContext('2d');
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
-  // зеркало: строка yAx − d ложится на yAx + d
-  g.save(); g.translate(0, 2 * yAx); g.scale(1, -1);
-  g.drawImage(ctx.canvas, 0, 0, W, H, 0, 0, W, H);
-  g.restore();
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(c.s, 0, 0, sw, shh, 0, 0, W, H);
   // спад: сильнее у линии, на нет к низу
   g.globalCompositeOperation = 'destination-in';
   const gr = g.createLinearGradient(0, yWall, 0, H);
-  gr.addColorStop(0, 'rgba(0,0,0,0.34)'); gr.addColorStop(0.5, 'rgba(0,0,0,0.14)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  gr.addColorStop(0, 'rgba(0,0,0,0.58)'); gr.addColorStop(0.5, 'rgba(0,0,0,0.28)'); gr.addColorStop(1, 'rgba(0,0,0,0.04)');
   g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  /* ковёр матовый — на нём отражения нет: его трапеция вырезается из зеркала
+     по тем же точкам, что рисует drawHallCarpet */
+  {
+    const br = BENCH_BREAKS.find(v => Math.abs(v.x - HALL_MID) < 1);
+    const half = (br ? br.half : 580) + 220;
+    const wx0 = HALL_MID - half, wx1 = CARPET_X1();
+    const kFc = k(CARPET_Z_FAR), kNc = k(CARPET_Z_NEAR);
+    const yF = py(1080, kFc), yN = py(1080, kNc);
+    g.globalCompositeOperation = 'destination-out';
+    g.fillStyle = '#000';
+    g.beginPath();
+    g.moveTo(px(wx0, kFc), yF); g.lineTo(px(wx1, kFc), yF);
+    g.lineTo(px(wx1, kNc), yN); g.lineTo(px(wx0, kNc), yN); g.closePath(); g.fill();
+  }
   g.globalCompositeOperation = 'source-over';
   ctx.save();
   ctx.beginPath();
