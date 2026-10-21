@@ -15018,6 +15018,22 @@ function cloudLeft(){
   const u = Math.max(0, Math.min(1, (cam.x - x07 - 40) / (mid2 - x07 - 40)));
   return (u * u * (3 - 2 * u)) * 1.45;
 }
+let CLOUD_BACK = [], CLOUD_BACK_NEXT = [], CLOUD_BACK_T = -1;
+function drawCloudBack(){
+  if (CLOUD_BACK_T !== state.time){ CLOUD_BACK = CLOUD_BACK_NEXT; CLOUD_BACK_NEXT = []; CLOUD_BACK_T = state.time; }
+  if (!CLOUD_BACK.length) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < CLOUD_BACK.length; i += 5){
+    const x = CLOUD_BACK[i], y = CLOUD_BACK[i + 1], r = CLOUD_BACK[i + 2], al = CLOUD_BACK[i + 3], near = CLOUD_BACK[i + 4];
+    const hr = r * 5.2;
+    ctx.globalAlpha = Math.min(1, al * 0.55);
+    ctx.drawImage(cloudHalo(), x - hr / 2, y - hr / 2, hr, hr);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = `rgba(${190 + 60 * near | 0},${228 + 27 * near | 0},255,${al.toFixed(3)})`;
+    ctx.fillRect(x - r / 2, y - r / 2, r, r);
+  }
+  ctx.restore();
+}
 let CLOUD_HALO = null;
 function cloudHalo(){
   if (CLOUD_HALO) return CLOUD_HALO;
@@ -15073,6 +15089,15 @@ function drawPointCloud(cx, footY, size, t, hero){
         const arc = Math.sin(Math.PI * e) * bend;
         sxp = x0 + ox * e - oy * arc; syp = y0 + oy * e + ox * arc;
         fade = Math.min(1, pi * 3.5);                             // проступает на месте старта, не вспыхивает
+        /* ЧАСТЬ ТОЧЕК ЛЕТИТ ЗА ПРИЛАВКАМИ (Эльдар, 21.10.2026: «некоторые точки не
+           только перед столом, но некоторые и позади стола сначала при полёте»).
+           Треть точек первую половину пути идёт за мебелью: их рисует ранний
+           проход drawCloudBack (до прилавков), с позиций этого кадра — на
+           следующем; потом они выходят вперёд. */
+        if (pi < 0.5 && hash01(n * 3.31 + 6.6) < 0.34){
+          CLOUD_BACK_NEXT.push(sxp, syp, dot * (0.62 + 0.75 * near), bright * (0.34 + 0.66 * near) * fade, near);
+          continue;
+        }
       }
       const r = dot * (0.62 + 0.75 * near);
       /* ЯРЧЕ И СО СВЕЧЕНИЕМ (Эльдар, 20.10.2026: «давай точки коронки 2007 сделаем
@@ -22265,6 +22290,7 @@ function frame(){
      red carpet — which runs a couple of hundred units past the counter's end on
      purpose — was painted over the end of the run and the joint showed (Eldar,
      2026-09-21). Furniture goes over the floor, always. */
+  drawCloudBack();   // точки коронки 2007, которые на подлёте идут за прилавками
   drawSheetBenches();
   drawShowroomLight(t);   // light coming OUT of the furniture, so after it
   drawProjectors(t, 'machine');   // it stands on the bench, so it comes after it
