@@ -3903,7 +3903,7 @@ const CAPS_MIXED = {BRUXZIR:'BruxZir', GLIDEWELL:'Glidewell', PRISMATIK:'Prismat
 /* wall / wallDrop — только на стене: знак вдвое крупнее и ниже на высоту
    прежнего знака (Эльдар, 20.10.2026: «лого на 2017 сделаем больше и ниже —
    ×2 попробуем»); на странице года он прежнего размера */
-const TITLE_LOGOS = {'GLIDEWELL.IO': {sp: 'ph_gio', rev: 'ph_gio_rev', base: 221 / 267, wall: 3, wallDrop: 4.0}};   // ещё ×1,5 и ниже на свою высоту (20.10.2026)
+const TITLE_LOGOS = {'GLIDEWELL.IO': {sp: 'ph_gio', rev: 'ph_gio_rev', base: 221 / 267, wall: 3, wallDrop: 4.0, glow: 1}};   // ещё ×1,5 и ниже на свою высоту (20.10.2026)
 /* light — лист тёмный, а набор на нём светлый: тогда знак вывороткой (серые
    буквы и ™ в белый, красные точки как есть); серый знак на матовом стекле
    2017-го читался пятном */
@@ -3916,6 +3916,22 @@ function drawTitleLogo(t, x, yBase, align, alpha, light){
   if (onWall && L.wallDrop) yBase += h0 * L.wallDrop;
   const x0 = align === 'left' ? x : x - w / 2;
   ctx.save(); ctx.globalAlpha *= alpha;
+  /* СВЕЧЕНИЕ НА СТЕНЕ (Эльдар, 20.10.2026: «логотипу 2017 свечение»): буквы
+     подсвечены сзади, как TODAY, — тот же приём: знак рисуется далеко за кадром,
+     а в место возвращается только его размытая тень белого цвета, двумя
+     проходами, сложением; потом сам знак поверх */
+  if (onWall && L.glow){
+    const OFF = W + 4000, img = spriteMip(sp, w, h);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.shadowOffsetX = OFF; ctx.shadowOffsetY = 0;
+    for (const [bl, a] of [[46, 0.55], [18, 0.45]]){
+      ctx.shadowColor = `rgba(255,255,255,${(a * L.glow).toFixed(3)})`;
+      ctx.shadowBlur = bl * SS;
+      ctx.drawImage(img, x0 - OFF, yBase - h * L.base, w, h);
+    }
+    ctx.restore();
+  }
   ctx.drawImage(spriteMip(sp, w, h), x0, yBase - h * L.base, w, h);
   ctx.restore();
   return true;
