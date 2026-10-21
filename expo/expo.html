@@ -6314,6 +6314,46 @@ function drawFinaleLogo(){
   ctx.fillText('Glidewell', x0 + plaq + gap, yTop + plaq / 2 - rise + capH / 2);
   ctx.restore();
 }
+/* ПРОБА «ОБЫЧНОГО» ОТРАЖЕНИЯ В ПРОСВЕТАХ ФИНАЛА (Эльдар, 21.10.2026: «как пол
+   выглядит с обычным отражением, а не наложенным?» — «do it»). Только по
+   ?refl=1, по умолчанию выключено. Зеркало — кадр выше линии, где стоит
+   финальный стол (его подошва на плоскости его передней грани), перевёрнутый
+   вниз, со спадом прозрачности; кладётся только на пол — в просветы слева и
+   справа от стола, ниже подошвы стены. */
+const FIN_REFL = /[?&]refl=1/.test(location.search);
+let FIN_REFL_C = null;
+function drawFinaleReflection(){
+  if (!FIN_REFL || Math.abs(cam.x - FIN_X) > 3800) return;
+  /* ось — подошва стены: стол стоит на полу у самого края кадра, и его
+     отражение ушло бы за кадр; видно отражение стены, ореха и табло */
+  const kF = k(FIN_Z_FACE);
+  const yWall = py(1080, k(SEGMENTS[3].z0 || 1400)), yAx = yWall;
+  const tL = px(FIN_X - FIN_W / 2, kF), tR = px(FIN_X + FIN_W / 2, kF);
+  const cR = (() => { const tb = TABLES.find(q => q.x1 > FIN_X - 2000 && q.x1 < FIN_X); return tb ? px(tb.x1, k(0)) : 0; })();
+  const h = Math.min(H - yWall, yAx);
+  if (h < 4) return;
+  if (!FIN_REFL_C) FIN_REFL_C = document.createElement('canvas');
+  const c = FIN_REFL_C; if (c.width !== W || c.height !== H){ c.width = W; c.height = H; }
+  const g = c.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
+  // зеркало: строка yAx − d ложится на yAx + d
+  g.save(); g.translate(0, 2 * yAx); g.scale(1, -1);
+  g.drawImage(ctx.canvas, 0, 0, W, H, 0, 0, W, H);
+  g.restore();
+  // спад: сильнее у линии, на нет к низу
+  g.globalCompositeOperation = 'destination-in';
+  const gr = g.createLinearGradient(0, yWall, 0, H);
+  gr.addColorStop(0, 'rgba(0,0,0,0.34)'); gr.addColorStop(0.5, 'rgba(0,0,0,0.14)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'source-over';
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(cR, yWall, Math.max(0, tL - cR), H - yWall);     // просвет между прилавком и столом
+  ctx.rect(tR, yWall, Math.max(0, W - tR), H - yWall);      // справа от стола
+  ctx.clip();
+  ctx.drawImage(c, 0, 0);
+  ctx.restore();
+}
 function drawFinaleTable(t){
   if (Math.abs(cam.x - FIN_X) > 3800) return;
   // the modern lit table
@@ -22135,6 +22175,7 @@ function frame(){
 
   // table items
   drawFinaleTable(t);
+  drawFinaleReflection();   // проба: ?refl=1
   drawProps(false);
   drawWelcomeTV();    // the film stands on the welcome bench
   drawFilmRelays();   // and its relays pick it up down the rail
