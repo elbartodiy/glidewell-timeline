@@ -14837,6 +14837,16 @@ function cloudLeft(){
   const u = Math.max(0, Math.min(1, (cam.x - x07 - 40) / (mid2 - x07 - 40)));
   return (u * u * (3 - 2 * u)) * 1.45;
 }
+let CLOUD_HALO = null;
+function cloudHalo(){
+  if (CLOUD_HALO) return CLOUD_HALO;
+  const c = document.createElement('canvas'); c.width = c.height = 32;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  gr.addColorStop(0, 'rgba(170,225,255,0.9)'); gr.addColorStop(0.35, 'rgba(140,205,255,0.32)');
+  gr.addColorStop(1, 'rgba(120,190,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 32, 32);
+  return (CLOUD_HALO = c);
+}
 const hash01 = n => { const h = Math.sin(n) * 43758.5453; return h - Math.floor(h); };
 function drawPointCloud(cx, footY, size, t, hero){
   const mesh = crownMesh(), {rings, M, P} = mesh;
@@ -14884,7 +14894,16 @@ function drawPointCloud(cx, footY, size, t, hero){
         fade = Math.min(1, pi * 3.5);                             // проступает на месте старта, не вспыхивает
       }
       const r = dot * (0.62 + 0.75 * near);
-      ctx.fillStyle = `rgba(${170 + 60 * near | 0},${215 + 30 * near | 0},255,${(bright * (0.16 + 0.5 * near) * fade).toFixed(3)})`;
+      /* ЯРЧЕ И СО СВЕЧЕНИЕМ (Эльдар, 20.10.2026: «давай точки коронки 2007 сделаем
+         более светящимися»): ядро плотнее (0,16…0,66 → 0,34…1) и вокруг каждой
+         точки — мягкий ореол из заготовленного пятна (CLOUD_HALO), в режиме
+         сложения: соседние ореолы сливаются в свечение облака. */
+      const al = bright * (0.34 + 0.66 * near) * fade;
+      const hr = r * 5.2;
+      ctx.globalAlpha = Math.min(1, al * 0.55);
+      ctx.drawImage(cloudHalo(), sxp - hr / 2, syp - hr / 2, hr, hr);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = `rgba(${190 + 60 * near | 0},${228 + 27 * near | 0},255,${al.toFixed(3)})`;
       ctx.fillRect(sxp - r / 2, syp - r / 2, r, r);
     }
   }
