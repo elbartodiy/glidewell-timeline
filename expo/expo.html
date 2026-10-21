@@ -19559,6 +19559,11 @@ function drawStudy(){
   const drawVoiceStrip = () => {
     if (voicesDone || !(media && media.length && inFlow)) return;
     voicesDone = true;
+    /* МОНИТОР С САЙТАМИ — ПЕРЕД ВИДЕО (Эльдар, 21.10.2026: «давай поменяем
+       местами видео и экран монитора внутри 2001»): сначала сайты, под ними
+       запись первого сайта */
+    { const sites = STUDY_SITES[b.t];
+      if (sites){ y = drawSiteMonitor(S, K, sites, left, y, textW, topClip, botClip, a); y += 2 * u; } }
     y += 2 * u;
     ctx.fillStyle = K.rule;
     if (y > topClip && y < botClip) ctx.fillRect(left, y, textW, 1.5 * SS);
@@ -19592,8 +19597,6 @@ function drawStudy(){
       rx4 += tw5 + gap4; rowH = Math.max(rowH, th5);
     }
     y += rowH + 4 * u;
-    const sites = STUDY_SITES[b.t];
-    if (sites) y = drawSiteMonitor(S, K, sites, left, y, textW, topClip, botClip, a);
   };
   if (inl && inl.boxTop) drawInlineBox();
   const bodyInk = `rgba(${K.ink},0.88)`;
