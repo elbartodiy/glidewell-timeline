@@ -16239,7 +16239,7 @@ function makeImageBanner(name){
   g.save(); g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 14; g.shadowOffsetY = 6;
   g.drawImage(im.el, P, P, im.w, im.h); g.restore();
   g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 2; g.strokeRect(P + 1, P + 1, im.w - 2, im.h - 2);
-  return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
+  return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}, pad: P};
 }
 function makeBannerVert(title, sub, cta, imgName){
   const c = document.createElement('canvas'); c.width = 560; c.height = 1000;
@@ -16350,7 +16350,10 @@ function drawBanners(t){
     // cables
     ctx.strokeStyle = 'rgba(120,128,136,0.6)'; ctx.lineWidth = 1.4*SS;
     for (const s of [-0.38, 0.38]){
-      ctx.beginPath(); ctx.moveTo(sx + sw*s, 0); ctx.lineTo(sx + sw*s, syC - shh/2); ctx.stroke();
+      /* трос доходит до самой картинки, а не до края поля под тень вокруг неё
+         (Эльдар, 21.10.2026, обвёл зазор над постером Glidewell HT) */
+      const padY = (bn.sp.pad || 0) * sw / bn.sp.w;
+      ctx.beginPath(); ctx.moveTo(sx + sw*s, 0); ctx.lineTo(sx + sw*s, syC - shh/2 + padY + 1); ctx.stroke();
     }
     pushHit(sx - sw/2, syC - shh/2, sw, shh,
             {type:'photo', sp: bn.sp, wx: bn.x, cy, z: zB, w: bn.w, beat: nearestBeat(bn.x).i});
