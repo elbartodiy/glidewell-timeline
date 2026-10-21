@@ -15171,8 +15171,10 @@ function drawPedestal(b, t, hero){
        is not an object but the case turned into data. It keeps the height it
        had: cloudFoot is still measured from where the cap was. */
     const cloudFoot = yTop - 30 * kk * SS;          // lifted clear of where the cap was (Eldar: "чуть повыше")
-    drawPointCloud(sx, cloudFoot, ow * 1.62, t, hero);
-    PC07 = {cx: sx, footY: cloudFoot, size: ow * 1.62};   // the data relay leaves from here
+    /* ×1,5 (Эльдар, 20.10.2026: «давай саму светящуюся коронку 2007 увеличим
+       ×1,5»): 1,62 → 2,43; низ облака там же, растёт вверх */
+    drawPointCloud(sx, cloudFoot, ow * 2.43, t, hero);
+    PC07 = {cx: sx, footY: cloudFoot, size: ow * 2.43};   // the data relay leaves from here
   } else if (ped.spin){
     const footY3 = yTop - 3*kk*SS;
     // the shade it puts on the stone, sized to the crown's own footprint
