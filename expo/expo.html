@@ -3897,7 +3897,10 @@ const CAPS_MIXED = {BRUXZIR:'BruxZir', GLIDEWELL:'Glidewell', PRISMATIK:'Prismat
    того шрифта, которым стояло имя: базовая линия знака — 221 из 267 строк
    (низ «l», замер по альфе), а «l» в знаке — от самого верха. Так знак
    занимает ровно место набранного имени и стоит на той же линии. */
-const TITLE_LOGOS = {'GLIDEWELL.IO': {sp: 'ph_gio', rev: 'ph_gio_rev', base: 221 / 267}};
+/* wall / wallDrop — только на стене: знак вдвое крупнее и ниже на высоту
+   прежнего знака (Эльдар, 20.10.2026: «лого на 2017 сделаем больше и ниже —
+   ×2 попробуем»); на странице года он прежнего размера */
+const TITLE_LOGOS = {'GLIDEWELL.IO': {sp: 'ph_gio', rev: 'ph_gio_rev', base: 221 / 267, wall: 2, wallDrop: 1.0}};
 /* light — лист тёмный, а набор на нём светлый: тогда знак вывороткой (серые
    буквы и ™ в белый, красные точки как есть); серый знак на матовом стекле
    2017-го читался пятном */
@@ -3905,7 +3908,9 @@ function drawTitleLogo(t, x, yBase, align, alpha, light){
   const L = TITLE_LOGOS[t]; const sp = L && (light && PROP_SPRITES[L.rev] || PROP_SPRITES[L.sp]);
   if (!sp) return false;
   const asc = ctx.measureText('l').actualBoundingBoxAscent;   // шрифт уже стоит тот, которым набиралось имя
-  const h = asc / L.base, w = h * sp.w / sp.h;
+  const onWall = align === 'center';
+  const h0 = asc / L.base, h = h0 * (onWall && L.wall || 1), w = h * sp.w / sp.h;
+  if (onWall && L.wallDrop) yBase += h0 * L.wallDrop;
   const x0 = align === 'left' ? x : x - w / 2;
   ctx.save(); ctx.globalAlpha *= alpha;
   ctx.drawImage(spriteMip(sp, w, h), x0, yBase - h * L.base, w, h);
@@ -16171,6 +16176,17 @@ function makeBanner(title, sub, cta, imgName){
   g.fillText(cta, 66, 489);
   return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
 }
+/* готовая картинка как карточка: тень, тонкая светлая кромка — как у набранных */
+function makeImageBanner(name){
+  const im = IMGS[name]; if (!im) return null;
+  const P = 16, c = document.createElement('canvas');
+  c.width = im.w + P * 2; c.height = im.h + P * 2;
+  const g = c.getContext('2d');
+  g.save(); g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 14; g.shadowOffsetY = 6;
+  g.drawImage(im.el, P, P, im.w, im.h); g.restore();
+  g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 2; g.strokeRect(P + 1, P + 1, im.w - 2, im.h - 2);
+  return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
+}
 function makeBannerVert(title, sub, cta, imgName){
   const c = document.createElement('canvas'); c.width = 560; c.height = 1000;
   const g = c.getContext('2d');
@@ -16238,8 +16254,11 @@ function initBanners(){
      2009, -122 from 2015 and -453 from 2017. */
   BANNERS = [
     {x: bx('2009', 178), w: 550, sp: makeBanner('BruxZir\u00ae', 'The best dentistry \u2014 made affordable', 'The #1 crown')},
-    {x: bx('2015', -122), w: 550, sp: makeBanner('Glidewell HT\u2122', 'Premium implant, a fraction of the price', 'Premium \u00b7 affordable')},
-    {x: bx('2017', -453), w: 240, cy: 455, sp: makeBannerVert('glidewell.io', 'The lab moves\ninto your office', 'Single-visit', 'fastmill')},
+    /* карточка Glidewell HT — настоящая, «glidewellht.png» из артефактов
+       (Эльдар, 20.10.2026: «поставь его на постер нужный»); набранная — запасная */
+    {x: bx('2015', -122), w: 550, sp: makeImageBanner('glidewellht') || makeBanner('Glidewell HT\u2122', 'Premium implant, a fraction of the price', 'Premium \u00b7 affordable')},
+    /* карточка glidewell.io снята (Эльдар, 20.10.2026: «а glidewell.io постер
+       давай вообще уберём»); знак года вместо неё стал крупнее (TITLE_LOGOS) */
     /* КАРТОЧКА CrownAI СНЯТА (Эльдар, 02.10.2026). Продукт настоящий — май
        2021, — но слоган «Designed by intelligence, milled by robots» и плашка
        «AI in every crown» были написаны здесь, у Glidewell таких слов нет, а
@@ -22960,6 +22979,7 @@ lab4int:'assets/img/lab4int.jpg',
 lab5move:'assets/img/lab5move.jpg',
 logo1970:'assets/img/logo1970.jpg',
 logo2026:'assets/img/logo2026.jpg',
+glidewellht:'assets/img/glidewell_ht_banner.png',
 filmposter:'assets/poster/movie_pre.jpg',
 glidewelllogo:'assets/img/glidewell_logo.svg',
 nadia:'assets/img/nadia.jpg',
