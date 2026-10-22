@@ -1,7 +1,7 @@
 {
- "updated": "2026-10-22T11:56:27+00:00",
+ "updated": "2026-10-22T17:13:42+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 56,
+ "count": 48,
  "events": [
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -364,20 +364,6 @@
    "url": "https://glidewelldirect.com/products/all-on-x-fp3-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=52849325015404"
   },
   {
-   "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
-   "from": "2027-02-12",
-   "to": "2027-02-13",
-   "city": "Irvine, CA",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Timothy Kosinski"
-   ],
-   "duration": "Two Days",
-   "price": "895.00",
-   "open": false,
-   "url": "https://glidewelldirect.com/products/surgical-placement-of-dental-implants-a-restorative-driven-approach?variant=67785036923244"
-  },
-  {
    "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
    "from": "2027-02-19",
    "to": "2027-02-20",
@@ -387,7 +373,7 @@
     "Dr. Paresh B. Patel"
    ],
    "duration": "Two Days",
-   "price": "895.00",
+   "price": "795.00",
    "open": false,
    "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=67783519699308"
   },
@@ -403,23 +389,9 @@
     "Dr. Taylor Manalili"
    ],
    "duration": "Two Days",
-   "price": "1395.00",
+   "price": "1295.00",
    "open": false,
-   "url": "https://glidewelldirect.com/products/all-on-x-fp3-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=67793972625772"
-  },
-  {
-   "title": "Dental Sleep Medicine: Snoring and Sleep Apnea Treatment Made Easy",
-   "from": "2027-03-12",
-   "to": "2027-03-13",
-   "city": "Irvine, CA",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Jamison Spencer"
-   ],
-   "duration": "Two Days",
-   "price": "895.00",
-   "open": false,
-   "url": "https://glidewelldirect.com/products/dental-sleep-medicine-treating-patients-with-sleep-related-disordered-breathing?variant=67784818622828"
+   "url": "https://glidewelldirect.com/products/all-on-x-fp3-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=67808695124332"
   },
   {
    "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
@@ -431,7 +403,7 @@
     "Dr. Paresh B. Patel"
    ],
    "duration": "Two Days",
-   "price": "895.00",
+   "price": "795.00",
    "open": false,
    "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=67783519797612"
   },
@@ -445,23 +417,9 @@
     "Dr. Raymond Choi"
    ],
    "duration": "Two Days",
-   "price": "895.00",
+   "price": "795.00",
    "open": false,
-   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67783137460588"
-  },
-  {
-   "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
-   "from": "2027-03-19",
-   "to": "2027-03-20",
-   "city": "Louisville, KY",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Timothy Kosinski"
-   ],
-   "duration": "Two Days",
-   "price": "895.00",
-   "open": false,
-   "url": "https://glidewelldirect.com/products/surgical-placement-of-dental-implants-a-restorative-driven-approach?variant=67785037087084"
+   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67808493306220"
   },
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -488,23 +446,9 @@
     "Dr. Danielle Brown"
    ],
    "duration": "One Day",
-   "price": "695.00",
+   "price": "595.00",
    "open": false,
-   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67783099220332"
-  },
-  {
-   "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
-   "from": "2027-05-14",
-   "to": "2027-05-15",
-   "city": "Raleigh, NC",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Timothy Kosinski"
-   ],
-   "duration": "Two Days",
-   "price": "895.00",
-   "open": false,
-   "url": "https://glidewelldirect.com/products/surgical-placement-of-dental-implants-a-restorative-driven-approach?variant=67785037250924"
+   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67808548749676"
   },
   {
    "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
@@ -516,7 +460,7 @@
     "Dr. Paresh B. Patel"
    ],
    "duration": "Two Days",
-   "price": "895.00",
+   "price": "795.00",
    "open": false,
    "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=67783519895916"
   },
@@ -530,9 +474,9 @@
     "Dr. Raymond Choi"
    ],
    "duration": "Two Days",
-   "price": "895.00",
+   "price": "795.00",
    "open": false,
-   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67783137558892"
+   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67808493404524"
   },
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -548,20 +492,6 @@
    "price": "695.00",
    "open": false,
    "url": "https://glidewelldirect.com/products/techniques-for-predictable-implant-surgery?variant=67794571002220"
-  },
-  {
-   "title": "Dental Sleep Medicine: Snoring and Sleep Apnea Treatment Made Easy",
-   "from": "2027-06-11",
-   "to": "2027-06-12",
-   "city": "Raleigh, NC",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Jamison Spencer"
-   ],
-   "duration": "Two Days",
-   "price": "895.00",
-   "open": false,
-   "url": "https://glidewelldirect.com/products/dental-sleep-medicine-treating-patients-with-sleep-related-disordered-breathing?variant=67784818786668"
   },
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -588,23 +518,9 @@
     "Dr. Danielle Brown"
    ],
    "duration": "One Day",
-   "price": "695.00",
+   "price": "595.00",
    "open": false,
-   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67783099384172"
-  },
-  {
-   "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
-   "from": "2027-07-16",
-   "to": "2027-07-17",
-   "city": "Irvine, CA",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Timothy Kosinski"
-   ],
-   "duration": "Two Days",
-   "price": "895.00",
-   "open": false,
-   "url": "https://glidewelldirect.com/products/surgical-placement-of-dental-implants-a-restorative-driven-approach?variant=67785037414764"
+   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67808548847980"
   },
   {
    "title": "Effective and Practical Implant Overdentures",
@@ -616,9 +532,9 @@
     "Dr. Raymond Choi"
    ],
    "duration": "Two Days",
-   "price": "895.00",
+   "price": "795.00",
    "open": false,
-   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67783137657196"
+   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67808493502828"
   },
   {
    "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
@@ -630,7 +546,7 @@
     "Dr. Paresh B. Patel"
    ],
    "duration": "Two Days",
-   "price": "895.00",
+   "price": "795.00",
    "open": false,
    "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=67783519994220"
   },
@@ -661,9 +577,9 @@
     "Dr. Taylor Manalili"
    ],
    "duration": "Two Days",
-   "price": "1395.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/all-on-x-fp3-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=67793972724076"
+   "price": "1295.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/all-on-x-fp3-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=67808695222636"
   },
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -690,9 +606,9 @@
     "Dr. Raymond Choi"
    ],
    "duration": "Two Days",
-   "price": "895.00",
+   "price": "795.00",
    "open": false,
-   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67783137755500"
+   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67808493601132"
   },
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -719,9 +635,9 @@
     "Dr. Danielle Brown"
    ],
    "duration": "One Day",
-   "price": "695.00",
+   "price": "595.00",
    "open": false,
-   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67783099548012"
+   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67808548946284"
   },
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -763,23 +679,9 @@
     "Dr. Raymond Choi"
    ],
    "duration": "Two Days",
-   "price": "895.00",
+   "price": "795.00",
    "open": false,
-   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67783137853804"
-  },
-  {
-   "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
-   "from": "2027-10-08",
-   "to": "2027-10-09",
-   "city": "Raleigh, NC",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Timothy Kosinski"
-   ],
-   "duration": "Two Days",
-   "price": "895.00",
-   "open": false,
-   "url": "https://glidewelldirect.com/products/surgical-placement-of-dental-implants-a-restorative-driven-approach?variant=67785037578604"
+   "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67808493699436"
   },
   {
    "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
@@ -791,7 +693,7 @@
     "Dr. Paresh B. Patel"
    ],
    "duration": "Two Days",
-   "price": "895.00",
+   "price": "795.00",
    "open": false,
    "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=67783520092524"
   },
@@ -805,9 +707,9 @@
     "Dr. Danielle Brown"
    ],
    "duration": "One Day",
-   "price": "695.00",
+   "price": "595.00",
    "open": false,
-   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67783099711852"
+   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67808549044588"
   },
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -825,20 +727,6 @@
    "url": "https://glidewelldirect.com/products/techniques-for-predictable-implant-surgery?variant=67794571460972"
   },
   {
-   "title": "Dental Sleep Medicine: Snoring and Sleep Apnea Treatment Made Easy",
-   "from": "2027-11-12",
-   "to": "2027-11-13",
-   "city": "Raleigh, NC",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Jamison Spencer"
-   ],
-   "duration": "Two Days",
-   "price": "895.00",
-   "open": false,
-   "url": "https://glidewelldirect.com/products/dental-sleep-medicine-treating-patients-with-sleep-related-disordered-breathing?variant=67784818950508"
-  },
-  {
    "title": "All-on-X FP3 Fundamentals: Modern Full-Arch Workflow",
    "from": "2027-12-03",
    "to": "2027-12-04",
@@ -850,9 +738,9 @@
     "Dr. Taylor Manalili"
    ],
    "duration": "Two Days",
-   "price": "1395.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/all-on-x-fp3-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=67793972822380"
+   "price": "1295.00",
+   "open": false,
+   "url": "https://glidewelldirect.com/products/all-on-x-fp3-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=67808695320940"
   }
  ]
 }
