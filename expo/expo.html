@@ -15416,6 +15416,66 @@ function drawCadGlass(){
   }
   ctx.restore();
 }
+/* РЕНТГЕН В CAD-СТИЛЕ — ШАГ 1: КОНТУРЫ (Эльдар, 22.10.2026: «стекло рентгена,
+   но CAD — всё, что через него видно, как насквозь, в CAD-стиле», «попробуем»,
+   «только внутри стекла, конечно»). Участок кадра, который лежит за стеклом,
+   уже нарисован — его и берём: копия участка уходит текстурой в WebGL, шейдер
+   оставляет от сцены только края (Собель по яркости) и кладёт их бирюзовыми
+   линиями — цвет каркаса на мониторе 2002-го — на тёмный фон, сквозь который
+   едва проступает сама сцена. Работает по тому, что реально стоит за стеклом:
+   едешь — и сквозь него проплывает та же комната, только чертежом. Нет WebGL —
+   стекло остаётся стеклом. ?cadxr=0 выключает. */
+const CADXR_ON = !/[?&]cadxr=0/.test(location.search);
+let CADXR = null;
+function cadXray(x, y, w, h){
+  if (!CADXR_ON || CADXR === false) return null;
+  if (!CADXR){
+    try {
+      const c = document.createElement('canvas'), gl = c.getContext('webgl', {premultipliedAlpha: false, preserveDrawingBuffer: true});
+      if (!gl) throw 0;
+      const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o);
+        if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(o); return o; };
+      const pr = gl.createProgram();
+      gl.attachShader(pr, sh(gl.VERTEX_SHADER, 'attribute vec2 p;varying vec2 v;void main(){v=p*.5+.5;gl_Position=vec4(p,0.,1.);}'));
+      gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, [
+        'precision mediump float;uniform sampler2D t;uniform vec2 R;uniform float d;varying vec2 v;',
+        'float L(vec2 q){return dot(texture2D(t,q/R).rgb,vec3(.299,.587,.114));}',
+        'void main(){',
+        ' vec2 pc=vec2(v.x,1.-v.y)*R;',
+        ' float tl=L(pc+vec2(-d,-d)),tc=L(pc+vec2(0.,-d)),tr=L(pc+vec2(d,-d));',
+        ' float ml=L(pc+vec2(-d,0.)),mc=L(pc),mr=L(pc+vec2(d,0.));',
+        ' float bl=L(pc+vec2(-d,d)),bc=L(pc+vec2(0.,d)),br=L(pc+vec2(d,d));',
+        ' float gx=(tr+2.*mr+br)-(tl+2.*ml+bl), gy=(bl+2.*bc+br)-(tl+2.*tc+tr);',
+        ' float e=smoothstep(.10,.42,length(vec2(gx,gy)));',
+        ' vec3 bg=vec3(.025,.07,.095)+vec3(.03,.08,.09)*mc;',
+        ' gl_FragColor=vec4(bg+vec3(.42,.95,.82)*e,1.);',
+        '}'].join('\n')));
+      gl.linkProgram(pr);
+      if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw gl.getProgramInfoLog(pr);
+      gl.useProgram(pr);
+      const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+      const ap = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(ap); gl.vertexAttribPointer(ap, 2, gl.FLOAT, false, 0, 0);
+      const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+      for (const [k2, v2] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR],
+                              [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k2, v2);
+      const src = document.createElement('canvas');
+      CADXR = {c, gl, src, sg: src.getContext('2d'), uR: gl.getUniformLocation(pr, 'R'), ud: gl.getUniformLocation(pr, 'd')};
+    } catch (e){ if (DBG) console.warn('cadxr off:', e); CADXR = false; return null; }
+  }
+  const X = CADXR, gl = X.gl;
+  const w2 = Math.max(2, Math.round(w)), h2 = Math.max(2, Math.round(h));
+  if (X.src.width !== w2 || X.src.height !== h2){ X.src.width = X.c.width = w2; X.src.height = X.c.height = h2; }
+  // the part of the frame behind the glass, as it stands right now
+  X.sg.clearRect(0, 0, w2, h2);
+  X.sg.drawImage(ctx.canvas, Math.round(x), Math.round(y), w2, h2, 0, 0, w2, h2);
+  gl.viewport(0, 0, w2, h2);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, X.src);
+  gl.uniform2f(X.uR, w2, h2);
+  gl.uniform1f(X.ud, Math.max(1, SS));
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  return X.c;
+}
 /* экран в корпусе: стекло внутри рамки глубиной CAD_GLASS.depth, на двух тросах.
    Грани корпуса открываются по экрану — грань рисуется, только если её задняя
    кромка в кадре лежит снаружи передней (закон «видимость — по экрану»). */
@@ -15440,14 +15500,23 @@ function drawCadScreen(cx, kF, fade){
     ctx.fillStyle = 'rgba(230,236,242,0.30)';
     ctx.fillRect(sx - Math.max(0.6, 0.45 * kM * SS), 0, Math.max(0.6, 0.3 * kM * SS), sy);
   }
-  // внутренние грани рамки — видны сквозь стекло, когда экран не по центру
   const IX0 = X0 + B, IX1 = X1 - B, IY0 = Y0 + B, IY1 = Y1 - B;
+  const [gx0, gy0] = F(IX0, IY0), [gx1, gy1] = F(IX1, IY1), gw = gx1 - gx0, gh = gy1 - gy0;
+  /* рентген: только внутри стекла, только видимая в кадре часть — и ПЕРВЫМ:
+     снятый после граней рамки, он обводил и их, как предмет за стеклом */
+  {
+    const cx0 = Math.max(0, gx0), cy0 = Math.max(0, gy0), cx1 = Math.min(W, gx1), cy1 = Math.min(H, gy1);
+    if (cx1 - cx0 > 2 && cy1 - cy0 > 2){
+      const xr = cadXray(cx0, cy0, cx1 - cx0, cy1 - cy0);
+      if (xr) ctx.drawImage(xr, Math.round(cx0), Math.round(cy0));
+    }
+  }
+  // внутренние грани рамки — видны сквозь стекло, когда экран не по центру
   if (px(IX0, kB) > px(IX0, kF)) side(IX0, IY0, IX0, IY1, '#2a2d32');
   if (px(IX1, kB) < px(IX1, kF)) side(IX1, IY0, IX1, IY1, '#24272b');
   if (py(IY0, kB) > py(IY0, kF)) side(IX0, IY0, IX1, IY0, '#1d1f23');
   if (py(IY1, kB) < py(IY1, kF)) side(IX0, IY1, IX1, IY1, '#3a3e44');
   // стекло — внутри рамки
-  const [gx0, gy0] = F(IX0, IY0), [gx1, gy1] = F(IX1, IY1), gw = gx1 - gx0, gh = gy1 - gy0;
   ctx.fillStyle = 'rgba(200,226,242,0.05)';
   ctx.fillRect(gx0, gy0, gw, gh);
   const sh = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
