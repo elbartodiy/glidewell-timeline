@@ -3454,6 +3454,14 @@ const EDGE79 = (() => {
   };
 })();
 const R79_BAY_Z = SEGMENTS[0].z0;      // 550 — the wall 1979 is cut into
+/* СТУПЕНЬКА 1979-ГО ШИРЕ, И ДАЛЬНИЙ СТОЛ СТОИТ НА НЕЙ. Когда прилавок 80-х ушёл
+   (парты, 21.10.2026), открылся правый конец бухты: дальний стол — блок
+   главного здания, фасад на z 430 — стоял на полу перед ступенькой, а ступенька
+   кончалась у стены, на 462. Эльдар (22.10.2026, красным по кадру): «давай
+   сделаем ступеньку шире и стол как бы поставим на неё — вот тот дальний».
+   Нос ступени выходит на 390 — на 40 единиц перед фасадом блока, — торцы идут
+   по той же линии пола EDGE79, а блок встаёт ногами на проступь (1040). */
+const R79_STEP_NOSE = 390, STEP_TREAD_Y = 1040;
 const STEP_79_L = stepEdge(REC_L - STEP_PAD, R79_BAY_Z), STEP_79_R = stepEdge(REC_R + STEP_PAD, R79_BAY_Z);
 const DR_BAY_Z = SEGMENTS[2].z0;       // 850 — era 2's wall, the one the Digital Revolution is cut into
 /* 2018 and 2022 sit inside the white room, whose wall stands at 1400 — far
@@ -9417,7 +9425,7 @@ function drawMapWall(t){
          where the map's top edge used to be. */
       const kG = k(430);
       const wG = 1040 * kG * SS, hG = wG * gm.h / gm.w;
-      const yFootG = py(1080, kG), xG = px(mid, kG) - wG / 2;
+      const yFootG = py(STEP_TREAD_Y, kG), xG = px(mid, kG) - wG / 2;   // на проступи ступеньки (R79_STEP_NOSE)
       if (xG < W + wG && xG + wG > -wG){
         softFootShadow(px(mid, kG), yFootG, wG * 0.46, hG * 0.012, 0.45);
         ctx.drawImage(spriteMip(gm, wG, hG), xG, yFootG - hG, wG, hG);
@@ -10387,7 +10395,7 @@ function drawBayStep(L, R, tone, zBack, zNose, edge){
      depth the block always had. 1989 keeps the shallow pair it was drawn with. */
   const zB = zBack != null ? zBack : 590;
   const zF = zNose != null ? zNose : (zBack != null ? zBack - 82 : 520);
-  const kFar = k(zB), kStep = k(zF), zTread = 1040;
+  const kFar = k(zB), kStep = k(zF), zTread = STEP_TREAD_Y;
   /* THE BACK EDGE IS THE WALL'S FOOT. A block standing in a niche is deeper
      than the wall beside it, so a back edge taken at the block's own plane sits
      ABOVE the skirting and the two lines never meet. The block is buried in the
@@ -22248,7 +22256,7 @@ function frame(){
      furniture is painted later and covers the block everywhere except the
      slot, which is exactly where it is wanted. The bay's own pilasters end on
      its tread, so there is nothing of them left for it to cover. */
-  drawBayStep(REC_L, REC_R, STEP_TONE.warm, R79_BAY_Z, noseOf(R79_BAY_Z), EDGE79);
+  drawBayStep(REC_L, REC_R, STEP_TONE.warm, R79_BAY_Z, R79_STEP_NOSE, EDGE79);
   drawMapWall(t);
   drawLabs73();
   drawTown76();
