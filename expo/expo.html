@@ -15352,7 +15352,9 @@ const pedCapY = ped => ped.spin ? 620 : (ped.big ? 540 : (ped.low ? 668 : (ped.v
    по своей плоскости — z можно двигать, размер в кадре останется. Рамка теперь
    по умолчанию; во всю высоту — ?cadglass=full. */
 const CAD_GLASS = (() => {
-  const z = -450, s = (CFG.F + z) / CFG.F, hz = CFG.horizon;
+  /* −450 → −560 («надо ещё чуть ближе к камере», 22.10.2026): k 2,65 против
+     прилавков — едет по кадру в 2,65 раза быстрее них */
+  const z = -560, s = (CFG.F + z) / CFG.F, hz = CFG.horizon;
   return {z, w: 760 * s, top: hz + (89.5 - hz) * s, bot: hz + (977.3 - hz) * s,
           frame: !/[?&]cadglass=full/.test(location.search)};
 })();
