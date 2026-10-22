@@ -15355,7 +15355,13 @@ const CAD_GLASS = (() => {
   /* −450 → −560 («надо ещё чуть ближе к камере», 22.10.2026): k 2,65 против
      прилавков — едет по кадру в 2,65 раза быстрее них */
   const z = -560, s = (CFG.F + z) / CFG.F, hz = CFG.horizon;
+  /* РАМКА И ПОДВЕС (Эльдар, 22.10.2026: «дай ему рамку и подвес сверху, чтобы
+     казалось реальным экраном с небольшой глубиной — 3 см, если сравнивать с
+     реальным миром»). В зале 422 единицы на метр: глубина корпуса 3 см = 13,
+     рамка по лицу 1,4 см = 6. Подвес — два троса к потолку на зажимах,
+     на 0,2 и 0,8 ширины. */
   return {z, w: 760 * s, top: hz + (89.5 - hz) * s, bot: hz + (977.3 - hz) * s,
+          depth: 13, bezel: 6, cables: [0.2, 0.8],
           frame: !/[?&]cadglass=full/.test(location.search)};
 })();
 function drawCadGlass(){
@@ -15368,6 +15374,7 @@ function drawCadGlass(){
   const kg = k(CAD_GLASS.z);
   const x0 = px(b.x - CAD_GLASS.w / 2, kg), x1 = px(b.x + CAD_GLASS.w / 2, kg);
   if (x1 < 0 || x0 > W) return;
+  if (CAD_GLASS.frame){ drawCadScreen(b.x, kg, fade); return; }
   const gw = x1 - x0;
   const y0 = CAD_GLASS.frame ? py(CAD_GLASS.top, kg) : 0;
   const y1 = CAD_GLASS.frame ? py(CAD_GLASS.bot, kg) : H, gh = y1 - y0;
@@ -15406,6 +15413,76 @@ function drawCadGlass(){
     ctx.fillStyle = 'rgba(245,252,255,0.55)';
     ctx.fillRect(x0, y0, gw, hl);
     ctx.fillRect(x0, y1 - hl, gw, hl);
+  }
+  ctx.restore();
+}
+/* экран в корпусе: стекло внутри рамки глубиной CAD_GLASS.depth, на двух тросах.
+   Грани корпуса открываются по экрану — грань рисуется, только если её задняя
+   кромка в кадре лежит снаружи передней (закон «видимость — по экрану»). */
+function drawCadScreen(cx, kF, fade){
+  const G = CAD_GLASS, kB = k(G.z + G.depth), kM = k(G.z + G.depth / 2);
+  const X0 = cx - G.w / 2, X1 = cx + G.w / 2, Y0 = G.top, Y1 = G.bot, B = G.bezel;
+  const F = (x, y) => [px(x, kF), py(y, kF)], Bk = (x, y) => [px(x, kB), py(y, kB)];
+  const quad = (pts, fill) => {
+    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
+  };
+  // a face of the case between the front and back planes, along a world segment
+  const side = (xa, ya, xb, yb, fill) => quad([F(xa, ya), F(xb, yb), Bk(xb, yb), Bk(xa, ya)], fill);
+  ctx.save();
+  ctx.globalAlpha = fade;
+  // ПОДВЕС: тросы от зажимов на верхней грани — в потолок, за кадр
+  for (const u of G.cables){
+    const wx = X0 + (X1 - X0) * u, sx = px(wx, kM), sy = py(Y0, kM);
+    ctx.fillStyle = 'rgba(26,28,32,0.85)';
+    ctx.fillRect(sx - Math.max(0.6, 0.45 * kM * SS), 0, Math.max(1.2, 0.9 * kM * SS), sy);
+    ctx.fillStyle = 'rgba(230,236,242,0.30)';
+    ctx.fillRect(sx - Math.max(0.6, 0.45 * kM * SS), 0, Math.max(0.6, 0.3 * kM * SS), sy);
+  }
+  // внутренние грани рамки — видны сквозь стекло, когда экран не по центру
+  const IX0 = X0 + B, IX1 = X1 - B, IY0 = Y0 + B, IY1 = Y1 - B;
+  if (px(IX0, kB) > px(IX0, kF)) side(IX0, IY0, IX0, IY1, '#2a2d32');
+  if (px(IX1, kB) < px(IX1, kF)) side(IX1, IY0, IX1, IY1, '#24272b');
+  if (py(IY0, kB) > py(IY0, kF)) side(IX0, IY0, IX1, IY0, '#1d1f23');
+  if (py(IY1, kB) < py(IY1, kF)) side(IX0, IY1, IX1, IY1, '#3a3e44');
+  // стекло — внутри рамки
+  const [gx0, gy0] = F(IX0, IY0), [gx1, gy1] = F(IX1, IY1), gw = gx1 - gx0, gh = gy1 - gy0;
+  ctx.fillStyle = 'rgba(200,226,242,0.05)';
+  ctx.fillRect(gx0, gy0, gw, gh);
+  const sh = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
+  sh.addColorStop(0,    'rgba(255,255,255,0.07)');
+  sh.addColorStop(0.30, 'rgba(255,255,255,0.01)');
+  sh.addColorStop(0.46, 'rgba(255,255,255,0.06)');
+  sh.addColorStop(0.52, 'rgba(255,255,255,0.01)');
+  sh.addColorStop(1,    'rgba(255,255,255,0)');
+  ctx.fillStyle = sh; ctx.fillRect(gx0, gy0, gw, gh);
+  // наружные грани корпуса — по ту сторону, где камера
+  if (px(X0, kB) < px(X0, kF)) side(X0, Y0, X0, Y1, '#1e2125');
+  if (px(X1, kB) > px(X1, kF)) side(X1, Y0, X1, Y1, '#1e2125');
+  if (py(Y0, kB) < py(Y0, kF)) side(X0, Y0, X1, Y0, '#4a4f56');
+  if (py(Y1, kB) > py(Y1, kF)) side(X0, Y1, X1, Y1, '#16181b');
+  // лицо рамки: кольцо между наружным и внутренним прямоугольником
+  const [ox0, oy0] = F(X0, Y0), [ox1, oy1] = F(X1, Y1);
+  const fg = ctx.createLinearGradient(0, oy0, 0, oy1);
+  fg.addColorStop(0, '#454a51'); fg.addColorStop(0.5, '#33373c'); fg.addColorStop(1, '#2a2d31');
+  ctx.beginPath();
+  ctx.rect(ox0, oy0, ox1 - ox0, oy1 - oy0);
+  ctx.rect(gx0, gy0, gw, gh);
+  ctx.fillStyle = fg; ctx.fill('evenodd');
+  const hl = Math.max(1, 0.25 * kF * SS);
+  ctx.fillStyle = 'rgba(235,242,250,0.35)';            // свет сверху ложится на верхнюю кромку
+  ctx.fillRect(ox0, oy0, ox1 - ox0, hl);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';                  // и тень там, где рамка встречает стекло
+  ctx.fillRect(gx0, gy0, gw, hl);
+  ctx.fillStyle = 'rgba(225,240,252,0.22)';
+  ctx.fillRect(gx0, gy1 - hl, gw, hl);
+  // зажимы тросов — на верхней грани
+  for (const u of G.cables){
+    const wx = X0 + (X1 - X0) * u;
+    const [ca, cb] = F(wx - 5, Y0 - 4), [cc, cd] = F(wx + 5, Y0);
+    ctx.fillStyle = '#25282c'; ctx.fillRect(ca, cb, cc - ca, cd - cb);
+    ctx.fillStyle = 'rgba(235,242,250,0.30)'; ctx.fillRect(ca, cb, cc - ca, Math.max(1, hl * 0.8));
   }
   ctx.restore();
 }
