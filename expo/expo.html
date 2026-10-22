@@ -226,6 +226,7 @@ const BEATS = [
    wall:[], table:[]},
 
   {x:7990, y:'1980', t:'STUDY PROGRAM', yLift:130,   // era 2's type plane is deeper: 130 here is 1973's 95
+   descTitle:true,   // строка — под названием на стене: на партах ей негде лечь (DESK_CAP, 21.10.2026)
    th:'Education as a bond — long before it was a marketing channel.',
    d:'An International Study Program brings dentists in from Japan and abroad to train in the US — the root of Jim’s lifelong belief in teaching and symposia.',
    /* ФОТО СНЯТЫ — ни одно не из 1980-го (Эльдар, 02.10.2026: «проверь по смыслу
@@ -244,7 +245,7 @@ const BEATS = [
    wall:[{img:'board1980', w:700, dx:0, top:268, maxB:700, study:'media/common_sense_2020.mp4'}],
    table:[]},
 
-  {x:8750, y:'1984', t:'CONSOLIDATION', yLift:130,
+  {x:8750, y:'1984', t:'CONSOLIDATION', yLift:130, descTitle:true,
    th:'One machine, fed nationally — the model that scales.',
    d:'Nine labs merge into one centralized plant in Orange (15,000 sq ft, 42 staff); mail now brings the majority of cases.',
    /* ОДНА ЛАБОРАТОРИЯ, СНАРУЖИ И ВНУТРИ — «Our 3rd lab: 1983–1984», все три
@@ -281,7 +282,7 @@ const BEATS = [
      единицах от скошенного края, а бит стоит правее стола — значит строка сама
      упирается в правый край. Пробовал задавать capDX руками: он, наоборот,
      утаскивал её влево, на строку 1984-го. */
-  {x:9850, y:'1988', t:'BIOTEMPS', yLift:130,
+  {x:9850, y:'1988', t:'BIOTEMPS', yLift:130, descTitle:true,
    th:'A second product proves the lab can build categories, not just crowns.',
    d:'BioTemps provisional restorations — lab-made PMMA temporaries that doubled as an esthetic “blueprint” the patient could approve before the final.',
    wall:[], table:[]},
@@ -3800,7 +3801,7 @@ function drawBench(){
   for (const b of BEATS){
     const bx = px(b.x, kf);
     if (bx > -100 && bx < W + 100){
-      if (!TABLES.some(tb => b.x >= tb.x0 && b.x <= tb.x1)) continue;  // no table — no etched year
+      if (!TABLES.some(tb => b.x >= tb.x0 && b.x <= tb.x1 && !desksRun(tb))) continue;  // no table — no etched year (and none on the desks of the eighties)
       const seg = segAt(b.x);
       ctx.font = `${Math.round(26*SS)}px ${seg.font}`;
       ctx.fillStyle = seg.railInk;
@@ -4600,7 +4601,7 @@ function capClashes(kf){
   const rank = [], hide = new Set(), claimed = [];
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
-    if (b.under || b.descWall || !b._d || Math.abs(b.x - cam.x) > 3500) continue;
+    if (b.under || b.descWall || deskCap(b) || !b._d || Math.abs(b.x - cam.x) > 3500) continue;
     capColW(b);
     if (b._capWss !== SS){
       ctx.save();
@@ -4620,6 +4621,44 @@ function capClashes(kf){
     else claimed.push([a, z]);
   }
   return hide;
+}
+/* СТРОКА ВОСЬМИДЕСЯТЫХ — НА СТЕНЕ, ПОД НАЗВАНИЕМ ГОДА. Прилавка 1980–1988 больше
+   нет, на его месте парты (DESKS80, 21.10.2026), а на партах строке негде лечь:
+   поверх спинок стульев её не прочесть (проверено кадром на 1984-м). Под
+   названием года на стене есть пустая полоса — до фото 1984-го там 95 px при
+   2000×1040, — и строка встаёт туда, по центру своей панели, на плоскости
+   надписей эпохи (едет вместе с годом). Кегль 19 вместо 23, колонка 540 (панель — 559): так
+   1984-й укладывается в две строки и не доходит до рамы здания, а 1980-й и
+   1988-й в три — над доской и над пустой панелью. Пока рендера парт нет,
+   строка остаётся на прилавке, как была. */
+const DESK_CAP = {font: 19, lh: 27, col: 540, gap: 36};
+const deskCap = b => b.descTitle && !!PROP_SPRITES.ph_desks80;
+function drawDeskCap(b){
+  const seg = segAt(b.x);
+  const wz = seg.tz || wallZAt(b.x), kk = k(wz - 8);
+  const m = kk * (CFG.F + wz - 8) / CFG.F;          // 1 with the camera at rest
+  const cx = px(b.x + (b.blockDX || 0), k(b.pinZ || (wz - 8)));
+  const half = DESK_CAP.col * SS * m / 2, fadeC = 130 * SS;
+  const want = Math.max(0, Math.min(1, Math.min((W - (cx + half)) / fadeC, (cx - half) / fadeC)));
+  b._capA = (b._capA || 0) + (want - (b._capA || 0)) * Math.min(1, (state.dt || 0.016) * 10);
+  const near = Math.max(0, 1 - Math.abs(b.x - cam.x) / 1300);
+  const a = b._capA * (0.55 + 0.4 * near);
+  if (a < 0.02) return;
+  if (!b._dT){
+    ctx.save(); ctx.font = `100px ${seg.font}`;
+    // «sq ft» не рвётся по строкам (на 1984-м «sq» оставался в конце первой)
+    b._dT = wrapCalc(b.d.replace(/ sq ft/g, '\u00a0sq\u00a0ft'), DESK_CAP.col * 100 / DESK_CAP.font);
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = eraFont(DESK_CAP.font * SS * m, '', seg.font);
+  ctx.fillStyle = `rgba(${seg.ink},${a.toFixed(3)})`;
+  letterRelief(0.5);
+  const y0 = py(208 + (b._capDrop || 0) - (b.yLift || 0), kk) + DESK_CAP.gap * SS * m;
+  b._dT.forEach((ln, i) => ctx.fillText(ln, cx, y0 + i * DESK_CAP.lh * SS * m));
+  noShadow();
+  ctx.restore();
 }
 function drawBenchDescs(){
   CAP_RECT = null;
@@ -4642,6 +4681,7 @@ function drawBenchDescs(){
        only drawn while it is visible, so once it went out it never got a fresh
        position and could never come back — 1989's simply stopped appearing. */
     if (b.descHide){ b._capA = 0; continue; }   // a beat whose line the hall does not show
+    if (deskCap(b)){ drawDeskCap(b); continue; }
     const cwP = capX(b, kf), halfC = capColW(b) / 2, fadeC = 130 * SS;
     /* A LINE AT THE FOOT OF THE FRAME BELONGS TO ITS OWN BAY. descWall lines are
        drawn in the middle of the frame, but their fade was still measured on
@@ -12621,6 +12661,45 @@ const BENCH_SHEETS = [
   {era: 2, key: 'b3', top: 25, endL: 34, endR: 35},   // 1993–2007 · grey-green doors, speckled laminate
   {era: 3, key: 'b4', top: 24, endL: 33, endR: 34},   // 2009–2026 · white lacquer, its diode light photographed
 ];
+/* ПАРТЫ ВОСЬМИДЕСЯТЫХ ВМЕСТО ПРИЛАВКА 1980–1988. Эльдар (21.10.2026): «Clean
+   Five-Desk Transparent Cutout в артефактах — заменить столы в восьмидесятых на
+   эти парты», «все», «просто вся линия как раз ставится вместо столов — она вроде
+   как раз по размеру (пончики не забудь оставить на парте)». Прогон в TABLES
+   остаётся: на него опираются пончики, строки годов и проверки предметов при
+   загрузке, — не рисуется только сам прилавок, и на его место встаёт рендер.
+   Кладётся как снят, без растяжки: пять парт от левой кромки первой до правой
+   кромки пятой (столбцы 37…2131 вырезки desks_80s, 2168 × 554) — ровно длина
+   прежнего прилавка, 2038 единиц, середина — на 1984-м. Передние ножки стульев
+   (строка 455 — нижняя непрозрачная) стоят на полу у переднего края, z 0;
+   передняя кромка столешницы (строка 66, чёрный кант) выходит тогда на 701 —
+   высота прежнего прилавка (700), её никто не подгонял. Ниже 455 — мягкая тень
+   самого рендера, своей тени зал не кладёт. */
+const DESKS80 = {c0: 37, c1: 2131, foot: 455, top: 16, w: 2038,
+  desks: [[59, 445], [484, 861], [897, 1273], [1308, 1686], [1725, 2108]]};
+function desksRun(tb){
+  if (tb._desks == null){
+    const b = BEATS.find(q => q.y === '1984' && q.t === 'CONSOLIDATION');
+    tb._desks = b && b.x >= tb.x0 && b.x <= tb.x1 && segIdx(b.x) === 1 ? b : false;
+  }
+  return tb._desks && PROP_SPRITES.ph_desks80 ? tb._desks : null;
+}
+function drawDesks80(tb, kf){
+  const sp = PROP_SPRITES.ph_desks80, D = DESKS80, b84 = desksRun(tb);
+  const U = D.w / (D.c1 - D.c0);                     // world units per image pixel
+  const mid = (D.c0 + D.c1) / 2, s = U * kf * SS;
+  const x0 = px(b84.x - mid * U, kf), y0 = py(1080, kf) - D.foot * s;
+  const iw = sp.w * s, ih = sp.h * s;
+  if (x0 > W || x0 + iw < 0) return;
+  ctx.drawImage(spriteMip(sp, iw, ih), x0, y0, iw, ih);
+  /* парта — дверь в свой год: ближайший к ней год этого прогона */
+  const yrs = BEATS.filter(b => !b.sub && !b.minor && b.x >= tb.x0 - 200 && b.x <= tb.x1 + 200);
+  for (const [a, z] of D.desks){
+    const wx = b84.x + ((a + z) / 2 - mid) * U;
+    let bi = -1, bd = 1e9;
+    for (const b of yrs){ const d = Math.abs(b.x - wx); if (d < bd){ bd = d; bi = BEATS.indexOf(b); } }
+    if (bi >= 0) pushHit(x0 + a * s, y0 + D.top * s, (z - a) * s, (D.foot - D.top) * s, {type:'study', beat: bi});
+  }
+}
 const sheetOf = tb => {
   for (const sh of BENCH_SHEETS){
     if (tb.seg !== SEGMENTS[sh.era]) continue;
@@ -12647,6 +12726,7 @@ function drawSheetBenches(){
   if (yFloor - yBack < 2) return;
   ctx.save();
   for (const tb of TABLES){
+    if (desksRun(tb)){ drawDesks80(tb, kf); continue; }
     const S2 = sheetOf(tb); if (!S2) continue;
     const {sh, L, G, R} = S2;
     const IH = L.naturalHeight || L.height;
@@ -13088,6 +13168,7 @@ async function loadPhotoSkin(){
     /* сканер-курсор для страницы «The crossover» (Эльдар, 02.10.2026) */
     ph_scanwand: 'scan_wand.png',
     ph_donuts: 'donuts.png',          // пятничные пончики на прилавок 1984-го (Эльдар, 02.10.2026)
+    ph_desks80: 'desks_80s.png',      // пять школьных парт вместо прилавка 1980–1988 — рендер Эльдара (21.10.2026)
     bench_top_e1: 'bench_top_e1.jpg', bench_face_e1: 'bench_face_e1.jpg',
     ph_furnace: 'furnace_0.png',
     ph_articulator: 'articulator_0.png',
@@ -13362,7 +13443,11 @@ function initDecor(){
   {
     const bdo = BEATS.find(b => b.t === 'FRIDAY DONUTS');
     // +150 — на свою ширину вправо (Эльдар, 19.10.2026: «пончики подвинь на корпус вправо»)
-    if (bdo) PROPS.push({x: bdo.x + 150, z: 30, kind: 'ph_donuts', w: 150, drop: 16, noShadow: true,
+    /* НА ЧЕТВЁРТОЙ ПАРТЕ (21.10.2026): прилавка под ними больше нет. x тот же —
+       он приходится на четвёртую парту (её столбцы 1308…1686 — это +218…+586 от
+       1984-го, коробка стоит на +430); опора — середина столешницы, строка 41
+       вырезки: 1080 − (455 − 41) · 0,973 ≈ 677, на плоскости парт (z 0). */
+    if (bdo) PROPS.push({x: bdo.x + 150, z: 0, kind: 'ph_donuts', w: 150, footY: 677, noShadow: true,
       study: 'FRIDAY DONUTS'});
   }
 
@@ -14151,7 +14236,10 @@ function drawProps(midPass){
        Нужен там, где столешница на фотографии лежит не там, где её считает
        геометрия зала, и предмет читается висящим над ней. По умолчанию нуля,
        то есть для всех остальных ничего не меняется. */
-    const syFoot = (p.mid && midPass !== 'late') ? py(1080, kk) : py(CFG.benchY - 2 - p._lifted + (p.drop || 0), kk);
+    /* p.footY — своя высота опоры в мире (пончики стоят на парте, а не на прилавке) */
+    const syFoot = (p.mid && midPass !== 'late') ? py(1080, kk)
+                 : p.footY != null ? py(p.footY, kk)
+                 : py(CFG.benchY - 2 - p._lifted + (p.drop || 0), kk);
     /* The join. Every one of these was a single drawImage with nothing under
        it, so fifty objects hovered a hair above the counter in every frame —
        while a mere pinned photograph got a proper contact shadow. An object
