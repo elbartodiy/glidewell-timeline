@@ -227,6 +227,10 @@ const BEATS = [
 
   {x:7990, y:'1980', t:'STUDY PROGRAM', yLift:130,   // era 2's type plane is deeper: 130 here is 1973's 95
    descTitle:true,   // строка — под названием на стене: на партах ей негде лечь (DESK_CAP, 21.10.2026)
+   /* …и её на стене нет вовсе (Эльдар, 22.10.2026: «1980 — убрать полностью и
+      чуть поднять доску выше, оставляя воздух между доской и Study program»);
+      текст года остаётся на его странице */
+   descHide:true,
    th:'Education as a bond — long before it was a marketing channel.',
    d:'An International Study Program brings dentists in from Japan and abroad to train in the US — the root of Jim’s lifelong belief in teaching and symposia.',
    /* ФОТО СНЯТЫ — ни одно не из 1980-го (Эльдар, 02.10.2026: «проверь по смыслу
@@ -242,10 +246,21 @@ const BEATS = [
       экране «Common Sense Dental Technology» (2020), где Джим объясняет анатомию
       зуба простыми набросками, — Эльдар, 16.10.2026: «по клику на доску пусть
       на странице там открывается так же вот это видео». */
-   wall:[{img:'board1980', w:700, dx:0, top:268, maxB:700, study:'media/common_sense_2020.mp4'}],
+   /* top 268 → 147: доска на 67 px выше (2000×1040) — верх её рамы на 268 px,
+      ~45 px воздуха под «Study program» (22.10.2026), и на одной высоте с
+      верхом блока фото 1984-го */
+   /* maxB 700 → 579: размер доски держался высотой места (700 − 268 = 432);
+      поднятая, она получила бы на 121 больше и выросла — предел едет вместе с ней */
+   wall:[{img:'board1980', w:700, dx:0, top:147, maxB:579, study:'media/common_sense_2020.mp4'}],
    table:[]},
 
+  /* СТРОКА НА СТЕНЕ — ОДНА И ПОД ФОТО (Эльдар, 22.10.2026: «1984 — сократить
+     текст до одной строчки и эту строчку сделать под фото, подняв их немного»).
+     dWall — только для стены, полный d остаётся на странице. deskCapFoot —
+     мировая высота её базовой линии на плоскости надписей: 778 = 606 px на
+     2000×1040, на 23 px выше верха парт. */
   {x:8750, y:'1984', t:'CONSOLIDATION', yLift:130, descTitle:true,
+   dWall:'Nine labs become one 15,000 sq ft plant in Orange.', deskCapFoot:778,
    th:'One machine, fed nationally — the model that scales.',
    d:'Nine labs merge into one centralized plant in Orange (15,000 sq ft, 42 staff); mail now brings the majority of cases.',
    /* ОДНА ЛАБОРАТОРИЯ, СНАРУЖИ И ВНУТРИ — «Our 3rd lab: 1983–1984», все три
@@ -259,9 +274,11 @@ const BEATS = [
       top — верх спрайта, в нём ещё его тень (11–15 единиц). maxB — свой
       нижний предел: общий 690 рассчитан на одну линию и ужимал нижний ряд,
       хотя прилавок в этой комнате начинается только на ~876. */
-   wall:[{img:'lab3ext', w:456, dx:0,    top:231, maxB:860},
-         {img:'lab3ben', w:342, dx:-190, top:532, maxB:860},
-         {img:'lab3rec', w:342, dx:190,  top:532, maxB:860}],
+   /* весь блок на 46 px выше (top −83 мира, 22.10.2026): под ним встаёт
+      строка года, а верх здания — на высоте доски 1980-го */
+   wall:[{img:'lab3ext', w:456, dx:0,    top:148, maxB:860},
+         {img:'lab3ben', w:342, dx:-190, top:449, maxB:860},
+         {img:'lab3rec', w:342, dx:190,  top:449, maxB:860}],
    table:[]},
 
   /* ПЯТНИЧНЫЕ ПОНЧИКИ — СВОЯ СТРАНИЦА БЕЗ СВОЕГО ГОДА НА СТЕНЕ. Эльдар
@@ -282,7 +299,11 @@ const BEATS = [
      единицах от скошенного края, а бит стоит правее стола — значит строка сама
      упирается в правый край. Пробовал задавать capDX руками: он, наоборот,
      утаскивал её влево, на строку 1984-го. */
-  {x:9850, y:'1988', t:'BIOTEMPS', yLift:130, descTitle:true,
+  /* текст — вниз, над партой (Эльдар, 22.10.2026: «текст давай опустим вниз
+     пока — над партой»). На линию строки 1984-го (778) он лёг бы на коробку
+     пончиков на четвёртой парте; 618 — последняя строка на 518 px (2000×1040),
+     над крышкой коробки с воздухом */
+  {x:9850, y:'1988', t:'BIOTEMPS', yLift:130, descTitle:true, deskCapFoot:618,
    th:'A second product proves the lab can build categories, not just crowns.',
    d:'BioTemps provisional restorations — lab-made PMMA temporaries that doubled as an esthetic “blueprint” the patient could approve before the final.',
    wall:[], table:[]},
@@ -4814,7 +4835,7 @@ function drawDeskCap(b){
   if (!b._dT){
     ctx.save(); ctx.font = `100px ${seg.font}`;
     // «sq ft» не рвётся по строкам (на 1984-м «sq» оставался в конце первой)
-    b._dT = wrapCalc(b.d.replace(/ sq ft/g, '\u00a0sq\u00a0ft'), DESK_CAP.col * 100 / DESK_CAP.font);
+    b._dT = wrapCalc((b.dWall || b.d).replace(/ sq ft/g, '\u00a0sq\u00a0ft'), DESK_CAP.col * 100 / DESK_CAP.font);
     ctx.restore();
   }
   ctx.save();
@@ -4822,7 +4843,11 @@ function drawDeskCap(b){
   ctx.font = eraFont(DESK_CAP.font * SS * m, '', seg.font);
   ctx.fillStyle = `rgba(${seg.ink},${a.toFixed(3)})`;
   letterRelief(0.5);
-  const y0 = py(208 + (b._capDrop || 0) - (b.yLift || 0), kk) + DESK_CAP.gap * SS * m;
+  /* deskCapFoot — строка стоит не под названием, а ниже: её последняя базовая
+     линия на этой мировой высоте, блок растёт вверх */
+  const y0 = b.deskCapFoot != null
+    ? py(b.deskCapFoot, kk) - (b._dT.length - 1) * DESK_CAP.lh * SS * m
+    : py(208 + (b._capDrop || 0) - (b.yLift || 0), kk) + DESK_CAP.gap * SS * m;
   b._dT.forEach((ln, i) => ctx.fillText(ln, cx, y0 + i * DESK_CAP.lh * SS * m));
   noShadow();
   ctx.restore();
@@ -4848,7 +4873,7 @@ function drawBenchDescs(){
        only drawn while it is visible, so once it went out it never got a fresh
        position and could never come back — 1989's simply stopped appearing. */
     if (b.descHide){ b._capA = 0; continue; }   // a beat whose line the hall does not show
-    if (deskCap(b)){ drawDeskCap(b); continue; }
+    if (deskCap(b)) continue;   // надпись на стене — рисуется со стеной (см. проход годов)
     const cwP = capX(b, kf), halfC = capColW(b) / 2, fadeC = 130 * SS;
     /* A LINE AT THE FOOT OF THE FRAME BELONGS TO ITS OWN BAY. descWall lines are
        drawn in the middle of the frame, but their fade was still measured on
@@ -5642,7 +5667,11 @@ function drawFilmHangTV(r){
    столешнице. Теперь закон болта, как у всех вещей на прилавке: k(bz(lz)) —
    плоскость прилавка. Проём 280 → 235: в кадре на ~11 % меньше прежнего
    (235/280 × k(18)/k(70) = 0,89). */
-const TV95 = {open: [130, 162, 1043, 798], foot: 1031, openW: 235, drop: 14};
+/* drop 14 → 9 (Эльдар, 22.10.2026, красная и зелёная точки: «подтяни красную к
+   зелёной, чтобы красная была на краю»): на плоскости прилавка ножки встали на
+   4,5 px ниже передней кромки столешницы — телевизор стоял за краем стола.
+   Теперь низ ножек ровно на кромке (675 px на 2000×1040). */
+const TV95 = {open: [130, 162, 1043, 798], foot: 1031, openW: 235, drop: 9};
 function drawFilmCRT95(r){
   const sp = PROP_SPRITES.ph_tv95;
   if (sp){
@@ -22974,6 +23003,11 @@ function frame(){
     const focusAmt = state.focusBeat === i ? Math.min(1, cam.z / CFG.focusCamZ) : 0;
     if (!b.fly && focusAmt <= 0.01 && i !== heroText) drawBeatText(b, focusAmt);
   }
+  /* СТРОКИ ВОСЬМИДЕСЯТЫХ — НАДПИСЬ НА СТЕНЕ, И ПРЕДМЕТЫ СТОЯТ ПЕРЕД НЕЙ. Они
+     рисовались проходом подписей, поверх всего, и на ходу коробка пончиков на
+     четвёртой парте проезжала ПОД строкой 1984-го (22.10.2026). Теперь — здесь,
+     со стеной: парты и пончики закрывают их, как любой предмет в комнате. */
+  for (const b of BEATS) if (deskCap(b) && !b.descHide && Math.abs(b.x - cam.x) < 3500) drawDeskCap(b);
   /* A COLUMN STANDS IN FRONT OF WHAT IS WRITTEN ON THE WALL. The portal's two
      pilasters were painted with the recreation, long before the wall type, so
      the GUIDING LEADERS plate and the 2017 numerals crossed over them as the
