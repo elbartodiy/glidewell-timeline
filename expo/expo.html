@@ -6441,19 +6441,42 @@ function drawFinaleReflection(){
   /* зеркало размыто: полированный камень, а не стекло — копия в шестую долю
      размера и обратно (размытие почти бесплатно); отражённые надписи табло не
      читаются чётко */
-  const RS = 6, sw = Math.max(1, Math.round(W / RS)), shh = Math.max(1, Math.round(H / RS));
-  if (!FIN_REFL_C){ FIN_REFL_C = document.createElement('canvas'); FIN_REFL_C.s = document.createElement('canvas'); }
-  const c = FIN_REFL_C; if (c.width !== W || c.height !== H){ c.width = W; c.height = H; c.s.width = sw; c.s.height = shh; }
-  const gs = c.s.getContext('2d');
-  gs.setTransform(1, 0, 0, 1, 0, 0); gs.clearRect(0, 0, sw, shh);
-  // зеркало: строка yAx − d ложится на yAx + d
-  gs.save(); gs.scale(sw / W, shh / H); gs.translate(0, 2 * yAx); gs.scale(1, -1);
-  gs.drawImage(ctx.canvas, 0, 0, W, H, 0, 0, W, H);
-  gs.restore();
+  /* ПО СТУПЕНЯМ, НЕ БОЛЬШЕ ЧЕМ ВДВОЕ ЗА ШАГ (Эльдар, 22.10.2026: «почему такая
+     пикселизация сильна на отражении»). Кадр ужимался в шесть раз одним
+     drawImage и одним же растягивался обратно. На сжатии canvas берёт по
+     четыре соседних пикселя на каждый пиксель результата и выбрасывает
+     остальные 32 из блока 6×6 — светлая кромка ореха рассыпалась ступеньками;
+     на растяжке каждый такой пиксель становился квадратом 6×6 с видимыми
+     границами. Теперь вниз 1 → ½ (здесь же зеркало) → ¼ → ⅙ и обратно
+     ⅙ → ⅓ → ⅔ → 1: каждый шаг усредняет всё, что сжимает, и сглаживает то,
+     что растягивает. Размытие то же — та же шестая доля, — а квадратов нет. */
+  const LV = [2, 4, 6, 3, 1.5];             // делители размеров промежуточных холстов
+  if (!FIN_REFL_C){ FIN_REFL_C = document.createElement('canvas'); FIN_REFL_C.lv = LV.map(() => document.createElement('canvas')); }
+  const c = FIN_REFL_C;
+  if (c.width !== W || c.height !== H){
+    c.width = W; c.height = H;
+    LV.forEach((d, i) => { c.lv[i].width = Math.max(1, Math.round(W / d)); c.lv[i].height = Math.max(1, Math.round(H / d)); });
+  }
+  const step = (src, dst) => {
+    const gd = dst.getContext('2d');
+    gd.setTransform(1, 0, 0, 1, 0, 0); gd.clearRect(0, 0, dst.width, dst.height);
+    gd.imageSmoothingQuality = 'high';
+    gd.drawImage(src, 0, 0, src.width, src.height, 0, 0, dst.width, dst.height);
+  };
+  {
+    // зеркало: строка yAx − d ложится на yAx + d
+    const h2 = c.lv[0], gh = h2.getContext('2d');
+    gh.setTransform(1, 0, 0, 1, 0, 0); gh.clearRect(0, 0, h2.width, h2.height);
+    gh.imageSmoothingQuality = 'high';
+    gh.save(); gh.scale(h2.width / W, h2.height / H); gh.translate(0, 2 * yAx); gh.scale(1, -1);
+    gh.drawImage(ctx.canvas, 0, 0, W, H, 0, 0, W, H);
+    gh.restore();
+  }
+  for (let i = 1; i < LV.length; i++) step(c.lv[i - 1], c.lv[i]);
   const g = c.getContext('2d');
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
   g.imageSmoothingQuality = 'high';
-  g.drawImage(c.s, 0, 0, sw, shh, 0, 0, W, H);
+  g.drawImage(c.lv[LV.length - 1], 0, 0, c.lv[LV.length - 1].width, c.lv[LV.length - 1].height, 0, 0, W, H);
   // спад: сильнее у линии, на нет к низу
   g.globalCompositeOperation = 'destination-in';
   const gr = g.createLinearGradient(0, yWall, 0, H);
