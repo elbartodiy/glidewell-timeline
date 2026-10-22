@@ -2251,6 +2251,7 @@ function attachMouseDriver(el){
       Input.push(0);
       return;
     }
+    if (!overlayOpen()) tiltGrab(e.clientX - downX, e.clientY);   // лист чуть поворачивается под пальцем
     /* ПАЛЕЦ ДЕРЖИТ ЗАЛ, МЫШЬ ЕГО ТОЛКАЕТ. Мышиное ведение оставлено ровно
        таким, каким было (толчок -dx*30 — «пихнуть скамью», к нему претензий не
        было). Палец переносит зал на свою собственную дистанцию, один к одному,
@@ -2279,6 +2280,7 @@ function attachMouseDriver(el){
   });
   el.addEventListener('pointerup', e => {
     state.touchHeld = false;
+    tiltRelease();
     if (state.seekDrag){ state.seekDrag = null; markTap = false; down = false; Input.setDragging(false); return; }
     if (state.spinDrag){ state.spinDrag = null; markTap = false; down = false; Input.setDragging(false); return; }
     if (markTap){ markTap = false; down = false; Input.setDragging(false); return; }
@@ -2339,6 +2341,7 @@ function attachMouseDriver(el){
      это не отпускание: ничего не нажимается, просто всё отпускается. */
   const cancelDrag = () => {
     state.touchHeld = false;
+    tiltRelease();
     state.seekDrag = null; state.spinDrag = null; state.ruleDrag = null;
     down = false; markTap = false; moved = 0;
     Input.setDragging(false);
@@ -2998,6 +3001,41 @@ function initDoc(){
 }
 
 const cv = document.getElementById('view');
+/* ЛИСТ ПОВОРАЧИВАЕТСЯ ПОД ПАЛЬЦЕМ (Эльдар, 22.10.2026: «можно ли при свайпе
+   чуть наклонять камеру, как будто палец не только захватил экран, но и чуть
+   повернул его нажатием, и после отпускания он мягко возвращается в ровную
+   горизонталь — и, может быть, волнообразно даже в обратную сторону повернётся
+   на инерции до полного спокойствия»). Палец держит лист за точку и ведёт:
+   поворот — как от силы, приложенной не в центре. Плечо — где держит палец по
+   высоте (внизу — полное, посередине — треть, вверху — обратное), сила —
+   насколько лист уведён от точки касания; мягкий предел TILT.max градусов
+   (tanh — без упора). Отпустил — затухающая пружина (жёсткость k, вязкость c:
+   ζ ≈ 0,37 — возврат, перелёт в обратную сторону, ещё полволны, покой за
+   ~1,5 с). Поворачивается холст целиком (CSS), со своим масштабом ровно на
+   столько, чтобы углы не открывались: s = cos a + (W/H)·sin|a|. Страницы
+   поверх зала не поворачиваются. ?tilt=0 выключает. */
+const TILT = {on: !/[?&]tilt=0/.test(location.search), max: 1.1, k: 55, c: 5.5,
+              a: 0, w: 0, target: 0, shown: 0};
+function tiltGrab(dxCss, yCss){
+  if (!TILT.on) return;
+  const arm = 0.35 + 0.65 * Math.max(-1, Math.min(1, (yCss / innerHeight - 0.5) * 2));
+  TILT.target = TILT.max * Math.tanh(-arm * (dxCss / innerWidth) * 2.4);
+}
+function tiltRelease(){ TILT.target = 0; }
+function tiltStep(dt){
+  if (!TILT.on) return;
+  if (overlayOpen()) TILT.target = 0;
+  const h = Math.min(dt, 0.05);
+  TILT.w += (TILT.k * (TILT.target - TILT.a) - TILT.c * TILT.w) * h;
+  TILT.a += TILT.w * h;
+  if (Math.abs(TILT.a) < 0.002 && Math.abs(TILT.w) < 0.01 && TILT.target === 0){ TILT.a = 0; TILT.w = 0; }
+  if (Math.abs(TILT.a - TILT.shown) < 0.001) return;
+  TILT.shown = TILT.a;
+  if (TILT.a === 0){ cv.style.transform = ''; return; }
+  const r = Math.abs(TILT.a) * Math.PI / 180;
+  const sc = Math.cos(r) + Math.max(innerWidth / innerHeight, innerHeight / innerWidth) * Math.sin(r);
+  cv.style.transform = `rotate(${TILT.a.toFixed(3)}deg) scale(${sc.toFixed(4)})`;
+}
 // pin the canvas to its own compositor layer (anti-ghosting). ?noz=1 takes it
 // off again, for a machine where the compositor tears the frame into bands.
 if (!/[?&]noz=1/.test(location.search)) cv.style.transform = 'translateZ(0)';
@@ -22220,6 +22258,7 @@ function update(dt){
   }
   // dolly
   cam.z += (cam.zTarget - cam.z) * Math.min(1, dt*3);
+  tiltStep(dt);   // наклон листа под пальцем и его возврат на пружине
 }
 
 /* ---------------- FRAME ---------------- */
