@@ -1754,7 +1754,30 @@ function drawPrismGlint(it, sp, sx, sy, scale){
    экранном смешении, — и на линии от блика через центр кадра встают два
    слабых радужных кольца-призрака, как в настоящем объективе. Всё — по той же
    фазе p и той же огибающей, что у блика на табличке, и рисуется поверх зала. */
-let PRISM_FLARE = null;
+/* РАДУЖНЫЙ ЛАЙТ-ЛИК — ОСНОВНОЙ ВАРИАНТ (Эльдар, 22.10.2026: «не знаю про
+   кольца, посмотрим, может, другие варианты бликов, но суть — в радужном
+   лайт-лике»). Как засветка на плёнке: мягкое радужное пятно затекает в кадр с
+   верхнего края, над табличкой, и проплывает вслед за бликом, спектр вытянут
+   поперёк. Строится в маленьком холсте (радуга, срезанная мягким эллипсом) и
+   растягивается на кадр — мягкость даром. Кольца-призраки — ?flare=rings. */
+const FLARE_RINGS = /[?&]flare=rings/.test(location.search);
+let PRISM_FLARE = null, LEAK_C = null;
+function leakSprite(){
+  if (LEAK_C) return LEAK_C;
+  const c = document.createElement('canvas'); c.width = 256; c.height = 160;
+  const g = c.getContext('2d');
+  const lg = g.createLinearGradient(0, 0, 256, 0);
+  [[0.00, '255,70,80'], [0.20, '255,150,60'], [0.38, '255,230,90'], [0.54, '90,230,150'],
+   [0.70, '70,180,255'], [0.86, '130,100,255'], [1.00, '230,90,230']]
+    .forEach(([o, rgb]) => lg.addColorStop(o, `rgb(${rgb})`));
+  g.fillStyle = lg; g.fillRect(0, 0, 256, 160);
+  g.globalCompositeOperation = 'destination-in';
+  g.setTransform(1, 0, 0, 160 / 256, 0, 0);
+  const rg = g.createRadialGradient(128, 0, 0, 128, 0, 256);
+  rg.addColorStop(0, 'rgba(0,0,0,1)'); rg.addColorStop(0.45, 'rgba(0,0,0,0.45)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = rg; g.fillRect(0, 0, 256, 256);
+  return (LEAK_C = c);
+}
 function drawPrismFlare(){
   const F = PRISM_FLARE; PRISM_FLARE = null;
   if (!F || F.env < 0.01) return;
@@ -1774,8 +1797,15 @@ function drawPrismFlare(){
     ctx.fillRect(-bw / 2, -H * 1.5, bw, H * 3);
     ctx.restore();
   }
+  // лайт-лик: затекает с верхнего края над бликом и плывёт вместе с ним
+  if (!FLARE_RINGS){
+    const lw = W * 0.9, lh = H * 0.85;
+    const lx = F.x - lw / 2 + (F.p - 0.5) * W * 0.35;
+    ctx.globalAlpha = 0.16 * F.env;
+    ctx.drawImage(leakSprite(), lx, -lh * 0.08, lw, lh);
+  }
   // кольца-призраки: на прямой от блика через центр кадра, по ту сторону
-  for (const [t2, r, a] of [[1.45, 0.11, 0.09], [1.9, 0.055, 0.12]]){
+  if (FLARE_RINGS) for (const [t2, r, a] of [[1.45, 0.11, 0.09], [1.9, 0.055, 0.12]]){
     const gx = F.x + (W / 2 - F.x) * t2, gy = F.y + (H / 2 - F.y) * t2;
     const R = H * r;
     const rg = ctx.createRadialGradient(gx, gy, R * 0.55, gx, gy, R);
