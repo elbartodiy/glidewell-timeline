@@ -15389,7 +15389,7 @@ function drawCadGlass(){
   const kg = k(CAD_GLASS.z);
   const x0 = px(b.x - CAD_GLASS.w / 2, kg), x1 = px(b.x + CAD_GLASS.w / 2, kg);
   if (x1 < 0 || x0 > W) return;
-  if (CAD_GLASS.frame){ drawCadScreen(b.x, kg, fade); return; }
+  if (CAD_GLASS.frame){ drawCadScreen(b, kg, fade); return; }
   const gw = x1 - x0;
   const y0 = CAD_GLASS.frame ? py(CAD_GLASS.top, kg) : 0;
   const y1 = CAD_GLASS.frame ? py(CAD_GLASS.bot, kg) : H, gh = y1 - y0;
@@ -15439,8 +15439,22 @@ function drawCadGlass(){
    линиями — цвет каркаса на мониторе 2002-го — на тёмный фон, сквозь который
    едва проступает сама сцена. Работает по тому, что реально стоит за стеклом:
    едешь — и сквозь него проплывает та же комната, только чертежом. Нет WebGL —
-   стекло остаётся стеклом. ?cadxr=0 выключает. */
+   стекло остаётся стеклом. ?cadxr=0 выключает.
+   СТИЛЬ — КАК НА РЕНДЕРЕ FASTSCAN (Эльдар, 22.10.2026, картинка тележки
+   Medit/fastscan.io: «попробуй сделать не в стиле рентгена, а в этом»). Тот же
+   участок сцены, другой шейдер: почти без цвета (30 % своего остаётся),
+   высокий ключ — 0,42 + 0,58·L^0,75: всё поднято к белому, но тени остаются
+   тенями (линейное сжатие в 0,6…1 давало туман), лёгкий холодный оттенок, и тонкий
+   серо-голубой контур по краям, как у чистого продуктового рендера на светлом
+   фоне. Рентген остаётся на пробу: ?cadxr=xray. */
 const CADXR_ON = !/[?&]cadxr=0/.test(location.search);
+/* «НЕ СВЕТЛАЯ СТУДИЙНАЯ КАРТИНКА, А ОБРАЩАЙ ВНИМАНИЕ, КАК ВЫГЛЯДИТ ДИЗАЙН ВНУТРИ
+   ЭКРАНА» (Эльдар, 22.10.2026, к снимкам Medit Scan и fastdesign.io). По
+   умолчанию — окно CAD-программы: вьюпорт (серо-голубой фон, матовая глина,
+   тонкий контур) и поверх него интерфейс — вкладки, столбик инструментов,
+   размеры постамента и монитора в миллиметрах, стрелки манипулятора на
+   мониторе (drawCadUI). Остальные пробы: ?cadxr=xray, ?cadxr=studio. */
+const CADXR_MODE = ((location.search.match(/[?&]cadxr=(xray|studio)/) || [])[1]) || 'cad';
 let CADXR = null;
 function cadXray(x, y, w, h){
   if (!CADXR_ON || CADXR === false) return null;
@@ -15461,9 +15475,22 @@ function cadXray(x, y, w, h){
         ' float ml=L(pc+vec2(-d,0.)),mc=L(pc),mr=L(pc+vec2(d,0.));',
         ' float bl=L(pc+vec2(-d,d)),bc=L(pc+vec2(0.,d)),br=L(pc+vec2(d,d));',
         ' float gx=(tr+2.*mr+br)-(tl+2.*ml+bl), gy=(bl+2.*bc+br)-(tl+2.*tc+tr);',
-        ' float e=smoothstep(.10,.42,length(vec2(gx,gy)));',
-        ' vec3 bg=vec3(.025,.07,.095)+vec3(.03,.08,.09)*mc;',
-        ' gl_FragColor=vec4(bg+vec3(.42,.95,.82)*e,1.);',
+        ' float m=length(vec2(gx,gy));',
+        CADXR_MODE === 'xray'
+          ? ' float e=smoothstep(.10,.42,m); vec3 bg=vec3(.025,.07,.095)+vec3(.03,.08,.09)*mc; gl_FragColor=vec4(bg+vec3(.42,.95,.82)*e,1.);'
+          : CADXR_MODE === 'studio'
+          ? ' vec3 c=texture2D(t,pc/R).rgb; vec3 g=mix(vec3(mc),c,.30);' +
+            ' vec3 hk=(.42+.58*pow(max(g,vec3(0.)),vec3(.75)))*vec3(.972,.982,1.);' +
+            ' float e=smoothstep(.07,.45,m); gl_FragColor=vec4(mix(hk,vec3(.56,.62,.69),e*.6),1.);'
+          /* вьюпорт CAD-программы: яркость сцены ложится на карту из трёх тонов —
+             тёмное в сланец, середина (стена) в серо-голубой фон окна, светлое в
+             матовую «глину»; сверху окно чуть светлее, как у вьюпорта; края —
+             тонким тёмным контуром модели; свой цвет остаётся на 12 % */
+          : ' vec3 c=texture2D(t,pc/R).rgb;' +
+            ' vec3 c0=vec3(.24,.27,.31), c1=vec3(.72,.79,.86), c2=vec3(.95,.955,.96);' +
+            ' vec3 g=mc<.5?mix(c0,c1,mc/.5):mix(c1,c2,(mc-.5)/.5);' +
+            ' g+=vec3(.035,.035,.04)*(v.y-.5); g=mix(g,c,.12);' +
+            ' float e=smoothstep(.07,.45,m); gl_FragColor=vec4(mix(g,vec3(.30,.34,.40),e*.7),1.);',
         '}'].join('\n')));
       gl.linkProgram(pr);
       if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw gl.getProgramInfoLog(pr);
@@ -15491,11 +15518,133 @@ function cadXray(x, y, w, h){
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   return X.c;
 }
+/* ИНТЕРФЕЙС CAD-ПРОГРАММЫ ПОВЕРХ ВЬЮПОРТА — по снимкам Medit Scan и
+   fastdesign.io: белая полоса вкладок сверху (активна Design), столбик синих
+   кнопок инструментов слева, размерные линии и манипулятор. Логотипа нет: в
+   2002-м ни fastdesign, ни fastscan ещё не было. Размеры — настоящие размеры
+   предметов зала в миллиметрах (422 единицы на метр): шляпка постамента Ø654,
+   высота 1280, монитор 668 в ширину. Всё — в пределах стекла. */
+const CAD_MM = u => Math.round(u / 422 * 1000);
+function drawCadUI(b, gx, gy, gw, gh, vx, vy, vw, vh){
+  ctx.save();
+  ctx.beginPath(); ctx.rect(gx, gy, gw, gh); ctx.clip();
+  const u = gw / 100;                                  // единица интерфейса — сотая ширины стекла
+  gx = vx; gy = vy; gw = vw; gh = vh;                  // полоса и кнопки — в открытой части стекла
+  const font = '"Helvetica Neue", Arial, sans-serif';
+  // верхняя полоса вкладок
+  const bh = 4.2 * u;
+  ctx.fillStyle = 'rgba(250,251,252,0.96)'; ctx.fillRect(gx, gy, gw, bh);
+  ctx.fillStyle = 'rgba(150,160,172,0.7)'; ctx.fillRect(gx, gy + bh, gw, Math.max(1, 0.12 * u));
+  ctx.font = `${(1.7 * u).toFixed(1)}px ${font}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  let tx = gx + 4 * u;
+  for (const [name, on] of [['Cases', 0], ['Scan', 0], ['Design', 1], ['Mill', 0]]){
+    const tw = ctx.measureText(name).width;
+    if (on){
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(tx - 1.2 * u, gy + 0.6 * u, tw + 2.4 * u, bh - 0.6 * u);
+      ctx.strokeStyle = 'rgba(150,160,172,0.7)'; ctx.lineWidth = Math.max(1, 0.1 * u);
+      ctx.strokeRect(tx - 1.2 * u, gy + 0.6 * u, tw + 2.4 * u, bh);
+    }
+    ctx.fillStyle = on ? '#2f6db5' : '#6a7480';
+    ctx.fillText(name, tx, gy + bh / 2 + 0.2 * u);
+    tx += tw + 4.4 * u;
+  }
+  // столбик инструментов слева
+  const bw = 4.6 * u, by0 = gy + bh + 2 * u;
+  for (let i = 0; i < 9; i++){
+    const yy = by0 + i * (bw + 0.6 * u);
+    if (yy + bw > gy + gh) break;
+    const g2 = ctx.createLinearGradient(0, yy, 0, yy + bw);
+    g2.addColorStop(0, i === 3 ? '#4a8fd6' : '#3a78c0'); g2.addColorStop(1, i === 3 ? '#2d6fb8' : '#245a9c');
+    ctx.fillStyle = g2; ctx.fillRect(gx + 1.2 * u, yy, bw, bw);
+    // простой белый знак на каждой кнопке
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = Math.max(1, 0.25 * u);
+    const cx2 = gx + 1.2 * u + bw / 2, cy2 = yy + bw / 2, r2 = bw * 0.24;
+    ctx.beginPath();
+    switch (i % 5){
+      case 0: ctx.moveTo(cx2 - r2, cy2); ctx.lineTo(cx2 + r2, cy2); ctx.moveTo(cx2, cy2 - r2); ctx.lineTo(cx2, cy2 + r2); break;
+      case 1: ctx.arc(cx2, cy2, r2, 0, 7); break;
+      case 2: ctx.rect(cx2 - r2, cy2 - r2 * 0.7, r2 * 2, r2 * 1.4); break;
+      case 3: ctx.moveTo(cx2 - r2, cy2 + r2); ctx.lineTo(cx2, cy2 - r2); ctx.lineTo(cx2 + r2, cy2 + r2); ctx.closePath(); break;
+      default: for (let j = -1; j <= 1; j++){ ctx.moveTo(cx2 - r2, cy2 + j * r2 * 0.6); ctx.lineTo(cx2 + r2, cy2 + j * r2 * 0.6); }
+    }
+    ctx.stroke();
+  }
+  // размеры: постамент и монитор — на плоскости постамента
+  const kk = k(PED_Z), ped = b.ped, sx = px(b.x, kk);
+  const colW = 165 * (ped.big ? 1.35 : 1) * kk * SS, rx = colW * 0.62;
+  const yCap = py(pedCapY(ped), kk), yFloor = py(1080, kk);
+  const dimCol = '#2f6db5';
+  const label = (txt, x, y) => {
+    ctx.font = `600 ${(1.6 * u).toFixed(1)}px ${font}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const w2 = ctx.measureText(txt).width + 1.6 * u, h2 = 2.4 * u;
+    ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(x - w2 / 2, y - h2 / 2, w2, h2);
+    ctx.fillStyle = dimCol; ctx.fillText(txt, x, y + 0.1 * u);
+  };
+  const arrow = (x, y, ax, ay) => {          // наконечник в точке (x, y), смотрит по (ax, ay)
+    const L = 1.1 * u, n = Math.hypot(ax, ay) || 1, ux = ax / n, uy = ay / n;
+    ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.lineTo(x - ux * L - uy * L * 0.45, y - uy * L + ux * L * 0.45);
+    ctx.lineTo(x - ux * L + uy * L * 0.45, y - uy * L - ux * L * 0.45);
+    ctx.closePath(); ctx.fill();
+  };
+  ctx.strokeStyle = dimCol; ctx.fillStyle = dimCol; ctx.lineWidth = Math.max(1, 0.12 * u);
+  // Ø шляпки — под ней, на стволе: над шляпкой стоит монитор
+  {
+    const yD = yCap + 4.2 * u;
+    ctx.beginPath(); ctx.moveTo(sx - rx, yCap + 1.2 * u); ctx.lineTo(sx - rx, yD + 0.8 * u);
+    ctx.moveTo(sx + rx, yCap + 1.2 * u); ctx.lineTo(sx + rx, yD + 0.8 * u);
+    ctx.moveTo(sx - rx, yD); ctx.lineTo(sx + rx, yD); ctx.stroke();
+    arrow(sx - rx, yD, -1, 0); arrow(sx + rx, yD, 1, 0);
+    ctx.fillStyle = dimCol; label('Ø ' + CAD_MM(165 * (ped.big ? 1.35 : 1) * 1.24), sx, yD);
+  }
+  // высота — справа от ствола
+  {
+    const xD = sx + rx + 3 * u;
+    ctx.strokeStyle = dimCol; ctx.fillStyle = dimCol;
+    ctx.beginPath(); ctx.moveTo(sx + rx + 0.6 * u, yCap); ctx.lineTo(xD + 0.8 * u, yCap);
+    ctx.moveTo(xD, yCap); ctx.lineTo(xD, yFloor); ctx.stroke();
+    arrow(xD, yCap, 0, -1); arrow(xD, yFloor, 0, 1);
+    label(String(CAD_MM(1080 - pedCapY(ped))), xD, yCap + (Math.min(yFloor, gy + gh) - yCap) * 0.5);
+  }
+  // монитор: ширина и манипулятор
+  const p = (b.props || []).find(q => q.onPed), mon = p && MONS[p.kind];
+  if (mon){
+    /* корпус — столбцы 34…357 и верх со строки 32 из спрайта 392×382 (замер
+       по альфе); весь спрайт шире на тень */
+    const scale = (p.w / mon.w) * kk * SS, mh = mon.h * scale;
+    const mx0 = sx - mon.w * scale / 2 + 34 * scale, mw = (357 - 34) * scale;
+    const my0 = yCap - mon.foot * scale + 32 * scale;
+    const yW = my0 - 2.6 * u;
+    ctx.strokeStyle = dimCol; ctx.fillStyle = dimCol;
+    ctx.beginPath(); ctx.moveTo(mx0, my0 - 0.5 * u); ctx.lineTo(mx0, yW - 0.8 * u);
+    ctx.moveTo(mx0 + mw, my0 - 0.5 * u); ctx.lineTo(mx0 + mw, yW - 0.8 * u);
+    ctx.moveTo(mx0, yW); ctx.lineTo(mx0 + mw, yW); ctx.stroke();
+    arrow(mx0, yW, -1, 0); arrow(mx0 + mw, yW, 1, 0);
+    label(String(CAD_MM(p.w * (357 - 34) / mon.w)), sx, yW);
+    // манипулятор: три оси со сферами на концах, как в окне дизайна
+    const gx2 = sx, gy2 = my0 + mh * 0.34, L = mw * 0.40;
+    const axis = (dx, dy, col, ball) => {
+      ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = Math.max(1.5, 0.45 * u);
+      ctx.beginPath(); ctx.moveTo(gx2, gy2); ctx.lineTo(gx2 + dx * 0.86, gy2 + dy * 0.86); ctx.stroke();
+      arrow(gx2 + dx, gy2 + dy, dx, dy);
+      const bx = gx2 + dx * 0.55, byy = gy2 + dy * 0.55;
+      const rg = ctx.createRadialGradient(bx - 0.3 * u, byy - 0.3 * u, 0.1 * u, bx, byy, 1.1 * u);
+      rg.addColorStop(0, '#ffffff'); rg.addColorStop(1, ball);
+      ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(bx, byy, 1.0 * u, 0, 7); ctx.fill();
+    };
+    axis(L, 0, '#d0403a', '#e7a0c8');
+    axis(-L * 0.62, L * 0.42, '#2f9a4a', '#58c27a');
+    axis(0, -L * 0.8, '#2f6db5', '#7fc3ef');
+    ctx.fillStyle = '#9aa3ad'; ctx.beginPath(); ctx.arc(gx2, gy2, 0.8 * u, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+}
 /* экран в корпусе: стекло внутри рамки глубиной CAD_GLASS.depth, на двух тросах.
    Грани корпуса открываются по экрану — грань рисуется, только если её задняя
    кромка в кадре лежит снаружи передней (закон «видимость — по экрану»). */
-function drawCadScreen(cx, kF, fade){
-  const G = CAD_GLASS, kB = k(G.z + G.depth), kM = k(G.z + G.depth / 2);
+function drawCadScreen(b, kF, fade){
+  const cx = b.x, G = CAD_GLASS, kB = k(G.z + G.depth), kM = k(G.z + G.depth / 2);
   const X0 = cx - G.w / 2, X1 = cx + G.w / 2, Y0 = G.top, Y1 = G.bot, B = G.bezel;
   const F = (x, y) => [px(x, kF), py(y, kF)], Bk = (x, y) => [px(x, kB), py(y, kB)];
   const quad = (pts, fill) => {
@@ -15523,7 +15672,17 @@ function drawCadScreen(cx, kF, fade){
     const cx0 = Math.max(0, gx0), cy0 = Math.max(0, gy0), cx1 = Math.min(W, gx1), cy1 = Math.min(H, gy1);
     if (cx1 - cx0 > 2 && cy1 - cy0 > 2){
       const xr = cadXray(cx0, cy0, cx1 - cx0, cy1 - cy0);
-      if (xr) ctx.drawImage(xr, Math.round(cx0), Math.round(cy0));
+      if (xr){
+        ctx.drawImage(xr, Math.round(cx0), Math.round(cy0));
+        /* интерфейс встаёт в ту часть стекла, которую не закрывают внутренние
+           грани рамки (их задние кромки), — иначе полоса вкладок уходила под
+           верхнюю грань наполовину */
+        if (CADXR_MODE === 'cad'){
+          const vx0 = Math.max(gx0, px(IX0, kB)), vx1 = Math.min(gx1, px(IX1, kB));
+          const vy0 = Math.max(gy0, py(IY0, kB)), vy1 = Math.min(gy1, py(IY1, kB));
+          drawCadUI(b, gx0, gy0, gw, gh, vx0, vy0, vx1 - vx0, vy1 - vy0);
+        }
+      }
     }
   }
   // внутренние грани рамки — видны сквозь стекло, когда экран не по центру
