@@ -1715,16 +1715,15 @@ function makePrismatikPlate(){
    проходами: multiply окрашивает белое поле, screen — чёрные буквы. */
 const GLINT_MS = 1500;
 function drawPrismGlint(it, sp, sx, sy, scale){
-  const d = sx - W / 2, now = performance.now();
-  if (it._glArm === undefined) it._glArm = true;
-  if (Math.abs(d) > 0.35 * W) it._glArm = true;
-  if (it._glArm && (Math.abs(d) < 0.04 * W || (it._glD != null && Math.sign(d) !== Math.sign(it._glD)))){
-    it._glArm = false; it._glT0 = now;
-  }
-  it._glD = d;
-  if (it._glT0 == null) return;
-  const p = (now - it._glT0) / GLINT_MS;
-  if (p >= 1){ it._glT0 = null; return; }
+  /* БЛИК ЕДЕТ СО СКРОЛЛОМ (Эльдар, 22.10.2026: «один раз радуга проходит и
+     обратно не возвращается — надо, чтобы каждый раз проходила», «блик просто
+     двигается со скроллом»). Таймера больше нет: фаза — это место таблички в
+     кадре. Табличка входит в средние 30 % кадра справа — блик на левом
+     краю пластины; проходит середину — блик посередине; уходит влево — блик
+     сходит с правого края. Отмотал назад — радуга идёт обратно. */
+  const d = sx - W / 2, RNG = 0.15 * W;   // блик живёт, пока табличка в средних 30 % кадра
+  const p = 0.5 - d / (2 * RNG);
+  if (p <= 0 || p >= 1) return;
   const env = Math.sin(Math.PI * p);
   const I = sp.inner;
   const x0 = sx - sp.w * scale / 2 + I.x * scale, y0 = sy - sp.h * scale / 2 + I.y * scale;
