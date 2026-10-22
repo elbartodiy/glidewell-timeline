@@ -1375,6 +1375,35 @@ function initAttractStops(){
   for (const L of ATTRACT_LESSONS) s.add(L.x);
   ATTRACT_STOPS = [...s].sort((a, b) => a - b);
 }
+/* ТУР ПОДЪЕЗЖАЕТ К ЭКРАНАМ ФИЛЬМА (Эльдар, 22.10.2026: «при автоматическом
+   движении немного приближаться к экранам и проекторам, где идёт сам основной
+   фильм, когда экран к центру экрана приближается; пусть там движение зависает
+   на 3 секунды, а потом, отлетая, на общий основной план до момента полного
+   выхода экрана с экрана — всё на изи-ин-изи-аут. Затестим?»). Только в
+   автопоказе и только пока фильм идёт со звуком — иначе экраны не светятся и
+   смотреть не на что. Каждый экран фильма (FILM_RELAYS) — остановка тура на
+   FILM_STOP.dwell секунд, без подсказки-свайпа; та, что ближе 200 к обычной
+   остановке, не добавляется. Наезд — функция места камеры, не времени: на
+   подходе (последние FILM_STOP.in единиц) камера плавно въезжает до
+   FILM_STOP.z, на остановке держит, на отходе (FILM_STOP.out — примерно
+   столько, сколько экрану надо, чтобы уйти за край кадра) так же плавно
+   отъезжает на общий план. ?filmstop=0 выключает. */
+const FILM_STOP = {on: !/[?&]filmstop=0/.test(location.search), z: 120, dwell: 3.0, in: 900, out: 1100};   // z 170 → 120: «не надо прям вплотную, слегка» — кадр крупнее на ~15 %
+const filmEngaged = () => { const v = WELCOME_TV.v; return !!(v && !v.muted && v.readyState >= 2); };
+function filmStopXs(){
+  if (!FILM_STOP.on || !filmEngaged()) return [];
+  return FILM_RELAYS.map(r => r.x).filter(x => !ATTRACT_STOPS.some(sx => Math.abs(sx - x) < 200));
+}
+function filmZoomTarget(){
+  if (!FILM_STOP.on || state.mode !== 'attract' || state.introHold || state.finHold || state.focusBeat >= 0) return null;
+  const A = state.attract;
+  if (A.phase !== 'cruise' && A.phase !== 'dwell') return null;
+  const xs = filmStopXs(); if (!xs.length) return null;
+  let r = xs[0]; for (const x of xs) if (Math.abs(x - cam.x) < Math.abs(r - cam.x)) r = x;
+  const d = cam.x - r;
+  const u = Math.max(0, Math.min(1, d < 0 ? 1 + d / FILM_STOP.in : 1 - d / FILM_STOP.out));
+  return FILM_STOP.z * u * u * (3 - 2 * u);
+}
 function segIdx(x){ for (let i = SEGMENTS.length-1; i > 0; i--) if (x >= SEGMENTS[i].x0) return i; return 0; }
 function segAt(x){ return SEGMENTS[segIdx(x)]; }
 function mixN(a,b,t){ return a+(b-a)*t; }
@@ -21420,6 +21449,7 @@ function drawSwipeCue(t){
      некуда» (Эльдар, 07.10.2026). Из финала тур не едет дальше, а гаснет
      и начинается сначала (phase 'fadeout'). */
   if (A.atFinale) return;
+  if (A.film) return;   // у экрана фильма — смотрят фильм, свайп не показываем
   const T = A.dwell - ((A.dwellLen || CFG.attractDwell) - 3);
   if (T < 0 || T > 3) return;
 
@@ -22024,6 +22054,7 @@ function update(dt){
       if (A.stopX == null){
         let best = null;
         for (const sx of ATTRACT_STOPS) if (sx > cam.x + 60 && (best == null || sx < best)) best = sx;
+        for (const sx of filmStopXs()) if (sx > cam.x + 60 && (best == null || sx < best)) best = sx;   // и экраны фильма
         A.stopX = best != null ? best : WORLD_END + 9999;
       }
       const d = A.stopX - cam.x;
@@ -22036,6 +22067,9 @@ function update(dt){
            первыми, а последние три секунды, как везде, — показ свайпа */
         A.lesson = ATTRACT_LESSONS.find(L => Math.abs(L.x - A.stopX) < 10) || null;
         A.dwellLen = CFG.attractDwell + (A.lesson ? LESSON_LEN : 0);
+        /* остановка у экрана фильма — своя пауза и без подсказки-свайпа */
+        A.film = !ATTRACT_STOPS.some(sx => Math.abs(sx - A.stopX) < 10);
+        if (A.film) A.dwellLen = FILM_STOP.dwell;
         A.phase = 'dwell'; A.dwell = A.atFinale ? -2.4 : 0; A.stopX = null;
       }
       if (cam.x > WORLD_END + 220) A.phase = 'fadeout';
@@ -22044,7 +22078,7 @@ function update(dt){
       A.dwell += dt;
       if (A.dwell > (A.dwellLen || CFG.attractDwell)){
         A.phase = A.atFinale ? 'fadeout' : 'cruise';   // the story ends on the packshot, then loops
-        A.lesson = null; A.dwellLen = null;
+        A.lesson = null; A.dwellLen = null; A.film = false;
       }
     } else if (A.phase === 'fadeout'){
       cam.vel *= Math.pow(0.01, dt);
@@ -22175,6 +22209,15 @@ function update(dt){
   } else if (state.finHold && state.focusBeat >= 0){ state.finHold = false; }
   state.finFade = (state.finFade || 0) + ((state.finHold ? 1 : 0) - (state.finFade || 0)) * Math.min(1, dt*2.2);
 
+  // подъезд тура к экранам фильма (FILM_STOP): пока он ведёт, zTarget — его
+  {
+    const fz = filmZoomTarget();
+    if (fz != null){ cam.zTarget = fz; state.filmZoom = true; }
+    else if (state.filmZoom){
+      state.filmZoom = false;
+      if (!state.introHold && !state.finHold && state.focusBeat < 0) cam.zTarget = 0;
+    }
+  }
   // dolly
   cam.z += (cam.zTarget - cam.z) * Math.min(1, dt*3);
 }
