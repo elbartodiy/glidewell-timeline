@@ -15330,6 +15330,68 @@ const PED_Z = -90, PED_CAP_Y = 535;
 /* верх шляпки по флагам постамента — одно место на постамент и на то, что на
    нём стоит, иначе монитор на «большом» постаменте висел бы на 5 единиц выше */
 const pedCapY = ped => ped.spin ? 620 : (ped.big ? 540 : (ped.low ? 668 : (ped.vitrine ? 625 : PED_CAP_Y)));
+/* СТЕКЛО ПЕРЕД CAD/CAM. Эльдар (22.10.2026): «сделай на переднем плане перед
+   CAD/CAM прозрачный экран шириной чуть больше проёма между столами»; «это
+   стекло я хочу сделать чем-то вроде рентгена, но CAD — всё, что через него
+   видно, как насквозь, в CAD-стиле… для начала — просто расположение»;
+   «высота — во весь экран». Пока это только место: чистое стекло, кромки и
+   блик. Стоит в комнате ближе прилавков (z −160; постамент на −90), по центру
+   бита 2002 — он и есть середина проёма 21744…22404 (660). Ширина 625 на своей
+   плоскости — это 760 на плоскости прилавков (×k(−160)/k(0) = 1,216): в покое
+   стекло на 50 шире проёма с каждой стороны. По высоте — от пола до потолка,
+   оба за кадром. Тапы проходят сквозь него.
+   ВАРИАНТ С РАМКОЙ — НА ПРОБУ (Эльдар: «или, может, лучше короче снизу и
+   сверху, чтобы рамку было видно — надо тестить»): ?cadglass=frame. Тогда
+   стекло от 150 до 880 по высоте на своей плоскости (на 2000×1040 это
+   86…941 px) и кромка обходит его по всем четырём сторонам. */
+const CAD_GLASS = {z: -160, w: 625, top: 150, bot: 880,
+  frame: /[?&]cadglass=frame/.test(location.search)};
+function drawCadGlass(){
+  const b = BEATS.find(q => q.y === '2002' && q.ped);
+  if (!b || Math.abs(b.x - cam.x) > 2600) return;
+  const kg = k(CAD_GLASS.z);
+  const x0 = px(b.x - CAD_GLASS.w / 2, kg), x1 = px(b.x + CAD_GLASS.w / 2, kg);
+  if (x1 < 0 || x0 > W) return;
+  const gw = x1 - x0;
+  const y0 = CAD_GLASS.frame ? py(CAD_GLASS.top, kg) : 0;
+  const y1 = CAD_GLASS.frame ? py(CAD_GLASS.bot, kg) : H, gh = y1 - y0;
+  ctx.save();
+  // the sheet: a cool tint so faint it only reads where it overlaps something
+  ctx.fillStyle = 'rgba(200,226,242,0.05)';
+  ctx.fillRect(x0, y0, gw, gh);
+  // one sheen across it, as a pane of glass takes the room
+  const sh = ctx.createLinearGradient(x0, y0, x1, y1);
+  sh.addColorStop(0,    'rgba(255,255,255,0.07)');
+  sh.addColorStop(0.30, 'rgba(255,255,255,0.01)');
+  sh.addColorStop(0.46, 'rgba(255,255,255,0.06)');
+  sh.addColorStop(0.52, 'rgba(255,255,255,0.01)');
+  sh.addColorStop(1,    'rgba(255,255,255,0)');
+  ctx.fillStyle = sh; ctx.fillRect(x0, y0, gw, gh);
+  // the edges: a polished bevel on each side, the lit one brighter
+  const bv = 10 * kg * SS, hl = Math.max(1, 1.2 * SS);
+  const eL = ctx.createLinearGradient(x0, 0, x0 + bv, 0);
+  eL.addColorStop(0, 'rgba(235,248,255,0.45)'); eL.addColorStop(1, 'rgba(235,248,255,0)');
+  ctx.fillStyle = eL; ctx.fillRect(x0, y0, bv, gh);
+  const eR = ctx.createLinearGradient(x1, 0, x1 - bv, 0);
+  eR.addColorStop(0, 'rgba(215,236,250,0.30)'); eR.addColorStop(1, 'rgba(215,236,250,0)');
+  ctx.fillStyle = eR; ctx.fillRect(x1 - bv, y0, bv, gh);
+  ctx.fillStyle = 'rgba(245,252,255,0.55)';
+  ctx.fillRect(x0, y0, hl, gh);
+  ctx.fillRect(x1 - hl, y0, hl, gh);
+  if (CAD_GLASS.frame){
+    // the top takes the light from above, the foot is where the light leaves the pane
+    const eT = ctx.createLinearGradient(0, y0, 0, y0 + bv);
+    eT.addColorStop(0, 'rgba(240,250,255,0.50)'); eT.addColorStop(1, 'rgba(240,250,255,0)');
+    ctx.fillStyle = eT; ctx.fillRect(x0, y0, gw, bv);
+    const eB = ctx.createLinearGradient(0, y1, 0, y1 - bv * 1.4);
+    eB.addColorStop(0, 'rgba(225,242,255,0.55)'); eB.addColorStop(1, 'rgba(225,242,255,0)');
+    ctx.fillStyle = eB; ctx.fillRect(x0, y1 - bv * 1.4, gw, bv * 1.4);
+    ctx.fillStyle = 'rgba(245,252,255,0.55)';
+    ctx.fillRect(x0, y0, gw, hl);
+    ctx.fillRect(x0, y1 - hl, gw, hl);
+  }
+  ctx.restore();
+}
 function drawPedestal(b, t, hero){
   if (hallOwns(b)) return;
   const ped = b.ped; if (!ped) return;
@@ -22567,6 +22629,7 @@ function frame(){
   // painted on the wall behind it, so the still life passes over them the way
   // any object in the room passes over what is written on the plaster
   drawPlates(t);
+  drawCadGlass();        // стекло перед CAD/CAM 2002 — ближе прилавков
   drawBenchDescs();
 
   drawForeground();
