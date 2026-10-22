@@ -535,7 +535,16 @@ const BEATS = [
       центре экрана, лого тоже должно быть в центре; забей на центровку
       относительно стыков»): dx 0 — при камере на b.x он на середине экрана
       на любой глубине; к стене он по-прежнему прибит (pz 850). */
-   wall:[{img:'prismatik05', w:565, dx:0, pz:850, top:20, maxB:700, page:true, glint:true}], table:[]},
+   /* И СНОВА НА ПЛОСКОСТИ ШВОВ (Эльдар, 22.10.2026: «год, стена и лого — все на
+      разных плоскостях; год со стеной — ок, но лого — не понимаю причины ему
+      быть не к стене прикрученным»). pz 850 был плоскостью швов, пока 21.10
+      рисунок стены не переехал на плоскость рамок (kT = k(tz − 8), см.
+      drawWall) — табличка осталась на старой глубине и поехала по швам. pz
+      снят: она висит как любая вещь на стене (wallSX, exhibitZ = 672 — та же
+      плоскость, что швы), а размер и высота пересчитаны на плоскость 668 так,
+      чтобы в покое она стояла в кадре там же и той же: ×(900+668)/(900+850) =
+      0,896 → w 565 → 506, top 20 → 430 + (20 − 430)·0,896 = 63, maxB 700 → 672. */
+   wall:[{img:'prismatik05', w:506, dx:0, top:63, maxB:672, page:true, glint:true}], table:[]},
 
   {x:18700, y:'2007', t:'FIRST DIGITAL CASE', fly:true, yLift:190, flyLift:66,   // the same line as 2001 and 2005, at every distance
    th:'Nobody called it AI training data yet — but that is what it was.',
@@ -1734,6 +1743,46 @@ function drawPrismGlint(it, sp, sx, sy, scale){
   ctx.fillRect(-bw / 2, -ph * 2, bw, ph * 4);
   ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = 0.55 * env;
   ctx.fillRect(-bw / 2, -ph * 2, bw, ph * 4);
+  ctx.restore();
+  PRISM_FLARE = {p, env, x: Math.max(x0, Math.min(x0 + pw, cx)), y: cy};
+}
+/* БЛИК В ОБЪЕКТИВ (Эльдар, 22.10.2026: «оставив радугу на самой табличке, дай
+   едва заметную проплывающую радугу по всему экрану в момент, когда радуга
+   проходит по лого», «то есть она как бы бликует в виртуальный объектив»).
+   Пока блик идёт по табличке, свет призмы попадает в камеру: по всему кадру
+   под тем же углом проплывает широкая радужная полоса — едва заметная, на
+   экранном смешении, — и на линии от блика через центр кадра встают два
+   слабых радужных кольца-призрака, как в настоящем объективе. Всё — по той же
+   фазе p и той же огибающей, что у блика на табличке, и рисуется поверх зала. */
+let PRISM_FLARE = null;
+function drawPrismFlare(){
+  const F = PRISM_FLARE; PRISM_FLARE = null;
+  if (!F || F.env < 0.01) return;
+  const stops = [[0.00, '255,60,60', 0], [0.16, '255,70,60', 1], [0.31, '255,200,50', 1],
+                 [0.46, '70,220,100', 1], [0.60, '50,200,255', 1], [0.74, '80,100,255', 1],
+                 [0.88, '200,70,255', 1], [1.00, '200,70,255', 0]];
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  // широкая полоса через весь кадр
+  {
+    const bw = W * 0.55, cx = -bw + F.p * (W + bw * 2);
+    ctx.save();
+    ctx.translate(cx, H / 2); ctx.rotate(0.42);
+    const gr = ctx.createLinearGradient(-bw / 2, 0, bw / 2, 0);
+    for (const [o, rgb, a] of stops) gr.addColorStop(o, `rgba(${rgb},${a})`);
+    ctx.fillStyle = gr; ctx.globalAlpha = 0.07 * F.env;
+    ctx.fillRect(-bw / 2, -H * 1.5, bw, H * 3);
+    ctx.restore();
+  }
+  // кольца-призраки: на прямой от блика через центр кадра, по ту сторону
+  for (const [t2, r, a] of [[1.45, 0.11, 0.09], [1.9, 0.055, 0.12]]){
+    const gx = F.x + (W / 2 - F.x) * t2, gy = F.y + (H / 2 - F.y) * t2;
+    const R = H * r;
+    const rg = ctx.createRadialGradient(gx, gy, R * 0.55, gx, gy, R);
+    for (const [o, rgb, al] of stops) rg.addColorStop(o, `rgba(${rgb},${al})`);
+    ctx.fillStyle = rg; ctx.globalAlpha = a * F.env;
+    ctx.beginPath(); ctx.arc(gx, gy, R, 0, 7); ctx.fill();
+  }
   ctx.restore();
 }
 function makeWhiteboard(){
@@ -22970,6 +23019,7 @@ function frame(){
   drawBenchDescs();
 
   drawForeground();
+  drawPrismFlare();      // блик призмы Prismatik в объектив — поверх зала
   drawDoorway();
   /* ШТОРКИ — ТОЛЬКО У ЗАСТАВКИ, НЕ У ФИНАЛА. Это второе затемнение поверх
      виньетирования: края кадра уходили в rgba(6,4,2,0.97), то есть почти в чёрное
