@@ -5555,7 +5555,39 @@ function drawFilmHangTV(r){
   ctx.restore();
 }
 /* the nineties set stands on the real (procedural) bench at real depth */
+/* ТЕЛЕВИЗОР 1995-ГО — РЕНДЕР ЭЛЬДАРА (22.10.2026: «Compact 1993 4:3 CRT TV»,
+   «то был 1995 год телек»). Вырезка tv_1995 1175 × 1050; стекло кинескопа в
+   рендере прозрачное — проём 130…1043 × 162…798 (замер по альфе от середины),
+   низ ножек — строка 1031. Фильм кладётся в проём (с запасом в 6 px под
+   скруглённые углы рамки), корпус — поверх, на стекле лёгкий блик. Ширина
+   проёма — 280 единиц, примерно та же картинка, что у прежнего нарисованного
+   экрана (290); ножки на прилавке, как стоял он. Нет файла — прежний рисунок. */
+const TV95 = {open: [130, 162, 1043, 798], foot: 1031, openW: 280};
 function drawFilmCRT95(r){
+  const sp = PROP_SPRITES.ph_tv95;
+  if (sp){
+    const kk = k(r.lz || 70), sx = px(r.x, kk), [ox0, oy0, ox1, oy1] = TV95.open;
+    const s = TV95.openW / (ox1 - ox0) * kk * SS, iw = sp.w * s, ih = sp.h * s;
+    if (sx < -iw || sx > W + iw) return;
+    const footY = py(CFG.benchY - 2, kk), x0 = sx - iw / 2, y0 = footY - TV95.foot * s;
+    contactShadow(sx, footY, iw * 0.5, 0.28);
+    const m = 6 * s;
+    const fx = x0 + ox0 * s - m, fy = y0 + oy0 * s - m, fw = (ox1 - ox0) * s + 2 * m, fh = (oy1 - oy0) * s + 2 * m;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
+    filmInto(fx, fy, fw, fh, 0.95, 'soft');
+    // стекло кинескопа: свет сверху-слева и лёгкое затемнение к краям
+    const gl = ctx.createLinearGradient(fx, fy, fx + fw * 0.7, fy + fh);
+    gl.addColorStop(0, 'rgba(255,255,255,0.10)'); gl.addColorStop(0.35, 'rgba(255,255,255,0.03)');
+    gl.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gl; ctx.fillRect(fx, fy, fw, fh);
+    const vg = ctx.createRadialGradient(fx + fw / 2, fy + fh / 2, fh * 0.35, fx + fw / 2, fy + fh / 2, fw * 0.62);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.30)');
+    ctx.fillStyle = vg; ctx.fillRect(fx, fy, fw, fh);
+    ctx.restore();
+    ctx.drawImage(spriteMip(sp, iw, ih), x0, y0, iw, ih);
+    return;
+  }
   const kk = k(r.lz || 70), sx = px(r.x, kk);
   const scw = r.w * kk * SS, sch = scw * 3/4;
   const pad = 10 * kk * SS, chin = 26 * kk * SS;
@@ -13347,6 +13379,7 @@ async function loadPhotoSkin(){
     ph_plane: 'plane_1993.png',       // and the freighter that carries it, landing at 1993
     ph_plastic: 'plastic_2000.png',   // 2000: the tooth-shaped crown boxes the injection division made
     ph_tv70: 'tv_1970.png',           // the seventies set, cut out with its tube knocked through
+    ph_tv95: 'tv_1995.png',           // киноэкран 1995-го — «Compact 1993 4:3 CRT TV», рендер Эльдара (22.10.2026)
     ph_model93: 'model_1993.png',    // 1993: макет здания 4141 на графитовой тумбе — рендер Эльдара (20.10.2026)
     ph_lamp1: 'lamp_era1.png',       // лампа первой эпохи — Vintage black wall lamp_up, фото Эльдара (20.10.2026)
     ph_prj93: 'proj_1993.png',        // the 1993 LCD data projector on its stand, photographed
