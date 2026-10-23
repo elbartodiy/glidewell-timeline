@@ -1139,7 +1139,14 @@ function applyCut(){
   /* the 1973 stones stand where the 1973 beat finally stands — the rhythm pass
      moves the seventies, and the counters must part around the stones, not
      around the raw coordinate */
-  { const br = BENCH_BREAKS.find(v => v.l73), b73 = BEATS.find(b => b.y === '1973'); if (br && b73) br.x = b73.x; }
+  /* РАВНЫЙ ВОЗДУХ СЛЕВА И СПРАВА ОТ МАКЕТОВ 1973-ГО (Эльдар, 23.10.2026: «смотри,
+     как неровно слева и справа — слева слишком много места»). Когда фото Rose
+     ушло со стены, слева от камней осталось 474 px пустоты против 88 справа
+     (до плиты улицы 1976-го), замер при камере на 1973-м, 2000×1040. Левый
+     конец разрыва поднят к камням: прилавок PFM кончается на b73 − 488, правый
+     край разрыва прежний (b73 + 890). */
+  { const br = BENCH_BREAKS.find(v => v.l73), b73 = BEATS.find(b => b.y === '1973');
+    if (br && b73){ const hl = 488, hr = L73_W / 2 + 440; br.x = b73.x + (hr - hl) / 2; br.half = (hr + hl) / 2; } }
   { const br = BENCH_BREAKS.find(v => v.p84), b84 = BEATS.find(b => b.y === '1984'); if (br && b84) br.x = b84.x + (699 + 884) / 2; }
 }
 const INTRO_X = -650;
