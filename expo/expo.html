@@ -447,7 +447,9 @@ const BEATS = [
      In-Ceram Zirconia переехала в статью 2000 года (R&D): именно там «обжёгся на чужом
      материале», и два текста говорили одно и то же дважды. Вес бита на стене
      не менялся: просили главную СТРАНИЦУ, а ритм годов 1998–2002 трогать не просили. */
-  {x:14925, y:'1999', t:'VERTICAL INTEGRATION', minor:true, yLift:190,
+  /* descWall — строка внизу кадра, а не на прилавке: прилавка у 1999-го с
+     23.10.2026 нет, и она ложилась поверх строки 2001-го */
+  {x:14925, y:'1999', t:'VERTICAL INTEGRATION', minor:true, yLift:190, descWall:true,
    th:'Do not buy what you can make.',
    d:'By the end of the nineties Glidewell makes its own almost everything — materials, parts, interiors, advertising. Not to save money: to set its own pace.',
    wall:[], table:[]},
@@ -4978,6 +4980,77 @@ function drawDeskCap(b){
   noShadow();
   ctx.restore();
 }
+/* ЛИНИЯ ЦИРКОНИЯ НА ЛИЦЕ ПЛОЩАДКИ ПРЕССА (Эльдар, 23.10.2026: «там вообще было
+   бы прикольно показать процесс прессовки и производства блоков циркония — в
+   нижней части, схематично, но анимационно»; «делай всё как видишь»). Чертёж
+   светлой линией по тёмному металлу, цикл 8 с: порошок сыплется из бункера в
+   форму → пуансон прессует его в «зелёный» блок → блок едет по ленте в печь →
+   спекается (печь светится, блок садится на ~20 % и белеет) → выходит готовым
+   блоком. Шаги — общая схема изготовления циркониевого блока прессованием,
+   без утверждений о собственном процессе Glidewell. */
+const ZR = {T: 8};
+function drawZirconiaLine(x, y, w, h, t, a){
+  const p = (t % ZR.T) / ZR.T;
+  const sm = (a0, a1) => { const u = Math.max(0, Math.min(1, (p - a0) / (a1 - a0))); return u * u * (3 - 2 * u); };
+  const X = f => x + f * w, Y = f => y + f * h;
+  const ink = al => `rgba(226,232,238,${(al * a).toFixed(3)})`;
+  const lw = Math.max(1, 1.3 * SS);
+  ctx.save();
+  ctx.lineWidth = lw; ctx.strokeStyle = ink(0.7); ctx.fillStyle = ink(0.7);
+  const belt = 0.74;
+  // лента с роликами
+  ctx.beginPath(); ctx.moveTo(X(0.02), Y(belt)); ctx.lineTo(X(0.98), Y(belt)); ctx.stroke();
+  for (let f = 0.05; f < 0.97; f += 0.055){ ctx.beginPath(); ctx.arc(X(f), Y(belt) + 3 * SS, 2.2 * SS, 0, 7); ctx.stroke(); }
+  // бункер и пресс над формой
+  const fx = 0.14, bwid = 0.075, bhgt = 0.2;
+  ctx.beginPath(); ctx.moveTo(X(fx - 0.06), Y(0.02)); ctx.lineTo(X(fx + 0.06), Y(0.02));
+  ctx.lineTo(X(fx + 0.02), Y(0.2)); ctx.lineTo(X(fx - 0.02), Y(0.2)); ctx.closePath(); ctx.stroke();
+  // порошок сыплется 0…0,16
+  if (p < 0.18){ for (let i = 0; i < 9; i++){ const q = ((p * 14 + i / 9) % 1);
+    ctx.fillStyle = ink(0.8 * (1 - sm(0.14, 0.18)));
+    ctx.fillRect(X(fx - 0.008 + 0.016 * ((i * 37) % 7) / 7), Y(0.22 + q * (belt - 0.24)), 1.6 * SS, 1.6 * SS); } }
+  // колонны пресса и пуансон: опускается 0,16…0,28, держит, поднимается к 0,36
+  ctx.strokeStyle = ink(0.55);
+  ctx.beginPath(); ctx.moveTo(X(fx - 0.07), Y(0.24)); ctx.lineTo(X(fx - 0.07), Y(belt));
+  ctx.moveTo(X(fx + 0.07), Y(0.24)); ctx.lineTo(X(fx + 0.07), Y(belt));
+  ctx.moveTo(X(fx - 0.08), Y(0.24)); ctx.lineTo(X(fx + 0.08), Y(0.24)); ctx.stroke();
+  const ramDown = sm(0.16, 0.26) * (1 - sm(0.3, 0.38));
+  const ramY = 0.26 + ramDown * (belt - bhgt - 0.26);
+  ctx.strokeStyle = ink(0.8);
+  ctx.strokeRect(X(fx - bwid / 2), Y(0.26), bwid * w, (ramY - 0.26) * h + 1);
+  // форма (матрица) — две стенки у ленты
+  ctx.beginPath(); ctx.moveTo(X(fx - bwid / 2 - 0.01), Y(belt - bhgt - 0.04)); ctx.lineTo(X(fx - bwid / 2 - 0.01), Y(belt));
+  ctx.moveTo(X(fx + bwid / 2 + 0.01), Y(belt - bhgt - 0.04)); ctx.lineTo(X(fx + bwid / 2 + 0.01), Y(belt)); ctx.stroke();
+  // печь
+  const k0 = 0.46, k1 = 0.68;
+  const inKiln = sm(0.5, 0.56) * (1 - sm(0.7, 0.76));
+  ctx.fillStyle = `rgba(255,170,90,${(0.22 * inKiln * a).toFixed(3)})`;
+  ctx.fillRect(X(k0), Y(0.18), (k1 - k0) * w, (belt - 0.18) * h);
+  ctx.strokeStyle = ink(0.7); ctx.strokeRect(X(k0), Y(0.18), (k1 - k0) * w, (belt - 0.18) * h);
+  for (let i = 1; i <= 3; i++){ ctx.beginPath(); ctx.moveTo(X(k0 + 0.03), Y(0.18 + 0.07 * i)); ctx.lineTo(X(k1 - 0.03), Y(0.18 + 0.07 * i)); ctx.globalAlpha = 0.35 + 0.65 * inKiln; ctx.stroke(); ctx.globalAlpha = 1; }
+  // блок: родится под прессом (0,16…0,3), едет в печь (0,38…0,52), спекается, выезжает (0,74…0,88), гаснет
+  if (p > 0.16){
+    let bx = fx;
+    if (p > 0.38) bx = fx + (0.57 - fx) * sm(0.38, 0.52);
+    if (p > 0.74) bx = 0.57 + (0.88 - 0.57) * sm(0.74, 0.88);
+    const sinter = sm(0.56, 0.7), shrink = 1 - 0.2 * sinter;
+    const born = sm(0.16, 0.28), gone = 1 - sm(0.92, 1);
+    const bw2 = bwid * shrink, bh2 = bhgt * shrink * (0.35 + 0.65 * born);
+    ctx.globalAlpha = gone;
+    ctx.fillStyle = `rgba(${Math.round(150 + 100 * sinter)},${Math.round(150 + 100 * sinter)},${Math.round(145 + 105 * sinter)},${((0.35 + 0.55 * sinter) * a).toFixed(3)})`;
+    ctx.fillRect(X(bx - bw2 / 2), Y(belt) - bh2 * h, bw2 * w, bh2 * h);
+    ctx.strokeStyle = ink(0.9); ctx.strokeRect(X(bx - bw2 / 2), Y(belt) - bh2 * h, bw2 * w, bh2 * h);
+    ctx.globalAlpha = 1;
+  }
+  // подписи шагов
+  ctx.font = `${Math.round(12 * SS)}px "Helvetica Neue", Arial, sans-serif`;
+  ctx.textAlign = 'center'; ctx.fillStyle = ink(0.6);
+  try { ctx.letterSpacing = `${1.2 * SS}px`; } catch(e){}
+  const lab = [[fx, 'POWDER · PRESS'], [(k0 + k1) / 2, 'SINTER'], [0.88, 'ZIRCONIA BLOCK']];
+  for (const [f, s2] of lab) ctx.fillText(s2, X(f), Y(belt) + 22 * SS);
+  try { ctx.letterSpacing = '0px'; } catch(e){}
+  ctx.restore();
+}
 function drawBenchDescs(){
   CAP_RECT = null;
   const kf = k(0);
@@ -5042,6 +5115,10 @@ function drawBenchDescs(){
       const lh = 27 * SS, top = P.y0 + 52 * SS;
       b._dR.forEach((ln, i) => { const yy = top + i * lh; if (yy < P.y1 - 8 * SS) ctx.fillText(ln, P.cx - colw / 2, yy); });
       ctx.restore();
+      const by0 = top + b._dR.length * lh + 6 * SS;
+      /* подписи шагов — над линейкой века внизу кадра, а не под ней */
+      const zh = Math.min(P.y1 - 16 * SS - by0, (H * 0.915 - 26 * SS - by0) / 0.74);
+      if (zh > 60 * SS) drawZirconiaLine(P.cx - colw / 2, by0, colw, zh, state.time, dAmt);
       continue;
     }
     if (b.descBase && typeof CELL_Z !== 'undefined'){
