@@ -5351,7 +5351,11 @@ function initFilmRelays(){
     /* under the lamp, then a step right: the same air on both sides of the
        set — from Jim's things on the left to the PFM stages on the right
        (Eldar, 2026-09-10) */
-    {kind: 'crt70',  x: (lamp != null ? lamp : bayEnd + 400) + 95, w: 250},
+    /* ОТ PFM ERA, А НЕ ОТ ЛАМПЫ (23.10.2026, скрин Эльдара: телевизор встал на
+       этапы PFM). Лампы расставлены по годам, и после вырезки trim73 ближайшая
+       лампа уехала на 293 вправо, а этапы PFM — на 134 влево: телевизор сел на
+       них. Его место до вырезки — 485 левее бита PFM ERA, оно и взято. */
+    {kind: 'crt70',  x: ((BEATS.find(b => b.t === 'PFM ERA') || {}).x - 485) || ((lamp != null ? lamp : bayEnd + 400) + 95), w: 250},
     /* 1976's hanging set: ABOVE the photograph, not on it. At cy 320 the set
        spanned 189–451 and the frames under it start at 360, so the film covered
        the top half of the right-hand photograph (Eldar, 2026-09-22: «телевизор
