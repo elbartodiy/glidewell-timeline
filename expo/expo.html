@@ -21869,7 +21869,7 @@ function update(dt){
       state.pfmView = null;
       if (state.openBox) state.openBox = null;
       closeClip();
-      state.attract.phase = 'cruise';
+      state.attract.phase = 'cruise'; state.attract.settleX = null;
       state.focusBeat = -1; cam.zTarget = 0;
     }
   }
@@ -22164,10 +22164,16 @@ function update(dt){
         A.stopX = best != null ? best : WORLD_END + 9999;
       }
       const d = A.stopX - cam.x;
-      const target = Math.min(CFG.attractCruise, Math.max(70, d * 1.15));
+      /* ОСТАНОВКА БЕЗ РЫВКА (Эльдар, 23.10.2026: «он вроде замедляется на
+         изи-аут, но всё равно в конце идёт рывок перед остановкой»). Скорость
+         держалась не ниже 70: последние ~60 единиц тур ехал ровно, а за 6 до
+         точки скорость обнулялась разом — это и был рывок. Порога больше нет:
+         скорость тает вместе с расстоянием до самого конца, а последние
+         единицы камера докатывает уже на паузе тем же законом (A.settleX). */
+      const target = Math.min(CFG.attractCruise, d * 1.15);
       cam.vel += (target - cam.vel) * Math.min(1, dt*4);
       if (d < 6){
-        cam.x = A.stopX; cam.vel = 0;
+        A.settleX = A.stopX;
         A.atFinale = Math.abs(A.stopX - FIN_X) < 10;
         /* на остановке-уроке пауза длиннее на сам урок: касание и блик идут
            первыми, а последние три секунды, как везде, — показ свайпа */
@@ -22180,7 +22186,11 @@ function update(dt){
       }
       if (cam.x > WORLD_END + 220) A.phase = 'fadeout';
     } else if (A.phase === 'dwell'){
-      cam.vel *= Math.pow(0.001, dt);
+      if (A.settleX != null){
+        const r2 = A.settleX - cam.x;
+        if (Math.abs(r2) < 0.05){ cam.x = A.settleX; cam.vel = 0; A.settleX = null; }
+        else cam.vel = r2 * 1.15;                     // тот же закон, что на подходе
+      } else cam.vel *= Math.pow(0.001, dt);
       A.dwell += dt;
       if (A.dwell > (A.dwellLen || CFG.attractDwell)){
         A.phase = A.atFinale ? 'fadeout' : 'cruise';   // the story ends on the packshot, then loops
@@ -22198,7 +22208,7 @@ function update(dt){
          good. It is a new tour, so it is not at the finale. */
       if (A.fade >= 1){ cam.x = INTRO_X; cam.vel = 0; cam.z = 430; cam.zTarget = 430;
                         state.introHold = true; A.phase = 'fadein'; A.beatIdx = -1;
-                        A.atFinale = false; A.stopX = null; A.lesson = null; A.dwellLen = null; }
+                        A.atFinale = false; A.stopX = null; A.lesson = null; A.dwellLen = null; A.settleX = null; }
     } else if (A.phase === 'fadein'){
       A.fade = Math.max(0, A.fade - dt*1.2);
       if (A.fade <= 0){ A.phase = 'dwell'; A.dwell = -2.2; }
