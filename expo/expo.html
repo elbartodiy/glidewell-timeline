@@ -744,16 +744,16 @@ const BEATS = [
 const CUTS = [
   // the threshold: the drawer bank and the change of wall need a bay of their
   // own, or they lean into the era that follows
-  {at: 1900, w: 700, on: true},
+  {id: 'threshold', at: 1900, w: 700, on: true},
   // the founding: Jim's own bench, standing where the year stands
-  {at: 2450, w: 2320, on: !/[?&]noplate/.test(location.search)},
+  {id: 'plate', at: 2450, w: 2320, on: !/[?&]noplate/.test(location.search)},
   // 1993: the move to Newport Beach — a model of the building, and the film the
   // company shot of it, cut inside era 2 where no two wall planes meet
-  {at: 12150, w: 1500, on: true},
+  {id: '1993', at: 12150, w: 1500, on: true},
   // 2018: the first crown designed entirely by AI, and the arm that takes it on
-  {at: 24450, w: 1500, on: true},
+  {id: '2018', at: 24450, w: 1500, on: true},
   // 2023: the month the digital impressions outnumbered the physical ones
-  {at: 26900, w: 2000, on: true},
+  {id: '2023', at: 26900, w: 2000, on: true},
   /* THE GLASS HALL, at the end of the walk. It was cut in beside 2017, which is
      where the year belongs — but the room itself is the company as it stands
      now, and it wants the last stretch: between the counter of 2020 and TODAY.
@@ -763,7 +763,7 @@ const CUTS = [
      and this room read as a corridor of empty counter, and the picture itself
      did not reach the edges of the frame. The cut starts 550 earlier and is 600
      wider, and the panel takes almost the whole of it. */
-  {at: 27050, w: 3600, on: true},
+  {id: 'glass', at: 27050, w: 3600, on: true},
   /* УЛИЦА МЕЖДУ 1989 И 1993. Между этими бухтами было 725 единиц — проём, а
      не улица. Врезка раздвигает промежуток так, чтобы между двумя корпусами
      встало ровно 2200 (две ширины просвета между колоннами бухты).
@@ -781,14 +781,24 @@ const CUTS = [
      только в сборке стенда; теперь «обнови и деплой… разница только в улице»,
      то есть сайт такой же, как стенд. Код улицы не удалён: ST_HIDDEN = false
      и врезка on: true возвращают её целиком. */
-  {at: 11750, w: 4272, on: false},
+  {id: 'street', at: 11750, w: 4272, on: false},
   /* ВОЗДУХ ПОСЛЕ 2000-ГО (Эльдар, 21.10.2026: «после 2000 до цифровой революции
      сделать расстояние между годами такое же, как между 1995 и 2000» — вариант
      1, раздвинуть зал). Годы 1995…2000 стоят через 1146, а 2002, 2005, 2007 —
      через 764: врезка 1147 перед бухтой Digital Revolution двигает её и всё
      после неё вправо, а годы 2002…2007 ставятся через тот же шаг от 2000-го
      (см. ШАГ ПОСЛЕ 2000-ГО в applyCut). Не бухта — noBay: реквизит не чистит. */
-  {at: 19100, w: 1147, on: true, noBay: true},
+  {id: 'step2000', at: 19100, w: 1147, on: true, noBay: true},
+  /* ВЫРЕЗКА ПЕРЕД 1973-м: −402 (Эльдар, 23.10.2026: «не нравится, что ты сделал
+     стол длиннее — нужно было просто сократить пустое пространство, подрезать и
+     подвинуть влево» → «делай честный сдвиг»). Отрицательная ширина — полоса
+     зала убирается: всё от 1973-го и дальше подъезжает на 402, прилавок PFM
+     кончается там же, где кончался до 23.10 (разрыв у камней снова 890 с обеих
+     сторон), а воздух между ним и камнями — как справа, до улицы 1976-го.
+     Первая попытка (на сайт не ушла) сломала порядок лет: врезки находили по
+     НОМЕРУ в списке (bayStart(2) — это 1993), и новая строка в середине списка
+     сдвинула всем номера. Теперь врезки ищут по id — см. CUT(). */
+  {id: 'trim73', at: 4000, w: -402, on: true, noBay: true},
 ];
 function SHIFT(x){
   let s = 0;
@@ -797,7 +807,25 @@ function SHIFT(x){
 }
 /* where a cut's own bay begins on the final line: its position carries the
    cuts BEFORE it, but not its own */
+/* ПРОБНАЯ ВРЕЗКА ИЗ АДРЕСА: ?cut=4000:-402 (несколько — через запятую). Сдвиг
+   зала примеряется одной загрузкой, без правки файла; qa/cut_check.mjs
+   загружает зал с пробой и без и показывает всё, что НЕ поехало вместе с залом
+   (вещь, записанная абсолютным числом). */
+(location.search.match(/[?&]cut=([-0-9.:,]+)/) || [, ''])[1].split(',').filter(Boolean).forEach((p, i) => {
+  const [at, w] = p.split(':').map(Number);
+  if (isFinite(at) && isFinite(w)) CUTS.push({id: 'probe' + i, at, w, on: true, noBay: true});
+});
+/* ВРЕЗКА ПО ИМЕНИ. Раньше код брал CUTS[1], bayStart(2) — номер строки в списке,
+   и любая новая врезка не в конце списка молча переставляла бухты (1993-й
+   улетал в начало зала). Теперь CUT('plate'), bayStart('1993'): порядок строк в
+   списке ни на что не влияет. Неизвестное имя — громкая ошибка на загрузке. */
+function CUT(id){
+  const c = CUTS.find(q => q.id === id);
+  if (!c) throw new Error('CUTS: no cut with id ' + id);
+  return c;
+}
 function bayStart(i){
+  if (typeof i === 'string') i = CUTS.indexOf(CUT(i));
   /* ПО at, А НЕ ПО ИНДЕКСУ. Сумма бралась по всем врезкам левее в СПИСКЕ, что
      верно, только пока список отсортирован по at. Врезка улицы дописана в
      конец, а её at меньше половины остальных — по индексу она выпала бы из
@@ -807,7 +835,7 @@ function bayStart(i){
   for (const c of CUTS) if (c.on && c.at < CUTS[i].at) s += c.w;
   return CUTS[i].at + s;
 }
-const GAP = CUTS[1];
+const GAP = CUT('plate');
 function applyCut(){
   if (!CUTS.some(c => c.on) || GAP.done) return;
   GAP.done = true;
@@ -831,7 +859,7 @@ function applyCut(){
     const b = BEATS.find(x => x.y === year);
     if (b && to != null && Math.abs(b.x - to) > 1){ moved.push([b.x, to]); b.x = to; }
   };
-  if (CUTS[1].on) anchor('1970', bayStart(1) + CUTS[1].w / 2);
+  if (CUT('plate').on) anchor('1970', bayStart('plate') + CUT('plate').w / 2);
   anchor('1993', (REC93_L + REC93_R) / 2);
   anchor('2018', (REC18_L + REC18_R) / 2);
   anchor('2023', (REC23_L + REC23_R) / 2);
@@ -1029,6 +1057,12 @@ function applyCut(){
   {
     const b76 = BEATS.find(b => b.y === '1976');
     if (b76){ moved.push([b76.x, b76.x - 150]); b76.x -= 150; }
+    /* 1973 ДЕРЖИТ СВОЮ УЛИЦУ. Вырезка trim73 (−402) подвинула 1976 и всё дальше,
+       а ритм эпохи раскладывает 1973 между 1970 и 1976 поровну — и отдал бы ему
+       только две трети сдвига. Камни стоят в композиции с улицей 1976-го, а не с
+       ритмом: 1220 от 1976-го, как было до вырезки (23.10.2026). */
+    const b73 = BEATS.find(b => b.y === '1973');
+    if (b73 && b76){ const to = b76.x - 1220; moved.push([b73.x, to]); b73.x = to; }
   }
   /* THE WHITE ROOM'S YEARS ARE A COMPOSITION OF FOUR, exactly as the eighties
      are a composition of three: 2009, the 2010s, 2015 and 2017 stand between
@@ -1117,7 +1151,11 @@ function applyCut(){
   /* сдвиг вычисляется от самих крайних годов, а не числом: ритм годов зависит
      от врезок, и в сборке без улицы 1988-й стоит на 22 единицы дальше — с
      постоянным −255 там вышло бы 612 и 591. Края стены — те же замеры. */
-  { const ROOM_L = 10390, ROOM_R = 13557;
+  /* края — от бухт, а не числами: 10 390 и 13 557 стояли абсолютными и не ехали
+     с врезками (вырезка trim73 сдвинула весь зал, а синяя комната осталась на
+     месте и разъехалась со своими колоннами). 10 390 = REC_R − 80, 13 557 =
+     REC3_L − 63 — те же замеры 07.10.2026. */
+  { const ROOM_L = REC_R - 80, ROOM_R = REC3_L - 63;
     const y80 = BEATS.find(b => b.y === '1980'), y88 = BEATS.find(b => b.y === '1988' && !b.minor);
     if (y80 && y88){
       const d = (ROOM_L + ROOM_R) / 2 - (y80.x + y88.x) / 2;
@@ -1143,8 +1181,10 @@ function applyCut(){
      как неровно слева и справа — слева слишком много места»). Когда фото Rose
      ушло со стены, слева от камней осталось 474 px пустоты против 88 справа
      (до плиты улицы 1976-го), замер при камере на 1973-м, 2000×1040. Левый
-     конец разрыва поднят к камням: прилавок PFM кончается на b73 − 488, правый
-     край разрыва прежний (b73 + 890). */
+     конец разрыва поднят к камням: прилавок кончается на b73 − 488, правый край
+     разрыва прежний (b73 + 890). Прилавок при этом НЕ длиннее, чем был: зал от
+     1973-го сдвинут влево вырезкой trim73 (−402), и b73 стоит на 1220 от 1976-го,
+     как до вырезки (см. «1973 ДЕРЖИТ СВОЮ УЛИЦУ»). */
   { const br = BENCH_BREAKS.find(v => v.l73), b73 = BEATS.find(b => b.y === '1973');
     if (br && b73){ const hl = 488, hr = L73_W / 2 + 440; br.x = b73.x + (hr - hl) / 2; br.half = (hr + hl) / 2; } }
   { const br = BENCH_BREAKS.find(v => v.p84), b84 = BEATS.find(b => b.y === '1984'); if (br && b84) br.x = b84.x + (699 + 884) / 2; }
@@ -1242,7 +1282,7 @@ const REC4_L = SHIFT(25940), REC4_R = SHIFT(26740);   // the 2022 fastscan recre
    here and the panel simply stands proud of a wall that runs on behind it. The
    cut is 1500 wide and the panel takes the middle 950: that leaves 725 units of
    plain wall on each side, the breathing room the other recreations have. */
-const REC93_L = bayStart(2) + 275, REC93_R = bayStart(2) + 1225;
+const REC93_L = bayStart('1993') + 275, REC93_R = bayStart('1993') + 1225;
 /* THE 1993 BAND IS ONE PIECE OF WHITE — a strip that comes down the wall, turns
    at the floor line and runs out along the ground. Wall and floor are drawn by
    different passes, so the only way they cannot slide against each other is to
@@ -1272,11 +1312,11 @@ const REC93_MID = (REC93_L + REC93_R) / 2;
 const REC93_HALF = (REC93_R - REC93_L) / 2 * (CFG.F + REC93_Z) / (CFG.F + CFG.benchDepth);
 const REC93_BL = REC93_MID - REC93_HALF, REC93_BR = REC93_MID + REC93_HALF;
 /* The 2018 bay, cut inside era 4 for the same reason: no seam to bridge. */
-const REC18_L = bayStart(3) + 300, REC18_R = bayStart(3) + 1200;
+const REC18_L = bayStart('2018') + 300, REC18_R = bayStart('2018') + 1200;
 /* The 2023 bay: the crossing. Cut inside era 4, 2000 wide, panel in the middle
    900 — 710 units of clear wall after the 2022 portal, 840 before the next. */
-const REC23_L = bayStart(4) + 550, REC23_R = bayStart(4) + 1450;
-const REC17_L = bayStart(5) + 60, REC17_R = bayStart(5) + 3540;   // the glass hall: a 3480 panel in a 3600 cut, at the end of the walk
+const REC23_L = bayStart('2023') + 550, REC23_R = bayStart('2023') + 1450;
+const REC17_L = bayStart('glass') + 60, REC17_R = bayStart('glass') + 3540;   // the glass hall: a 3480 panel in a 3600 cut, at the end of the walk
 /* The cut keeps its pacing width (3600); the OPENING in the wall is a separate
    measure, and every physical boundary — picture, counter break, metal frame —
    takes it from these two anchors. It was 3000 wide; Eldar halved it
@@ -6220,7 +6260,9 @@ const BOARD_X0 = SHIFT(29750) - 3400 + 580 + 217;   // своё место на 
    эскизе Эльдара: центр 39291, верх −20, и оно на 0,86 меньше (BOARD_S) — панель
    в этом месте шириной около 1230, полное табло (1316) из неё вылезало. Строки
    те же: масштаб берёт весь рисунок табло, а не только его рамку. */
-const BOARD_X = 39330;
+/* от FIN_X, а не числом: 39 330 стояло абсолютным и не ехало с врезками
+   (qa/cut_check.mjs, 23.10.2026). FIN_X был 42 067 → 39 330 = FIN_X − 2737. */
+const BOARD_X = FIN_X - 2737;
 const BOARD_S = 0.86;
 /* РАЗМЕРЫ ТАБЛО. Сверху его держит ореховый карниз (низ на −90), снизу —
    столешница (700). Всё, что между ними, — его полоса; залезть на карниз значит
@@ -7916,7 +7958,7 @@ const TALL_UNITS = [
      cabinet everywhere it went; it is stated here so the cabinet can be placed
      against it instead of dragging it along. The cabinet sits a little past the
      seam, so rather more than half of it stands in the light era. */
-  {x: bayStart(0) + CUTS[0].w / 2 + 295, w: 440, hw: 960, wallAt: bayStart(0) + CUTS[0].w / 2 + 220,
+  {x: bayStart('threshold') + CUT('threshold').w / 2 + 295, w: 440, hw: 960, wallAt: bayStart('threshold') + CUT('threshold').w / 2 + 220,
    cols: 2, rows: 5, top: 150},
 ];
 function drawTallUnits(){
@@ -8046,8 +8088,8 @@ function drawProgress(t){
   // 1970 is a recreation too — the founding bench stands in its own cut bay, so
   // it earns the same pip as the other portals. The gap is taken at the width
   // the others use, not the bay's full 2320, so the rule keeps its rhythm.
-  if (CUTS[1].on){
-    const fc = bayStart(1) + CUTS[1].w / 2;
+  if (CUT('plate').on){
+    const fc = bayStart('plate') + CUT('plate').w / 2;
     RECS.push([fc - 540, fc + 540]);
   }
 
@@ -10949,7 +10991,7 @@ const HALL_PED_H = 340;      // the crown's pedestal, floor to the underside of 
 const HALL_PED_Z = 420;
 /* the three plates arrive together or the room is not drawn at all — there is
    no second version of this bay to fall back on */
-const FLOOR_PHOTO_END = 39900;   // мира: за левым прилавком финала (36412…40000), см. drawRec17
+const FLOOR_PHOTO_END = FIN_X - 2167;   // мира (было 39 900 числом): за левым прилавком финала, см. drawRec17
 function hallReady(){ return PHOTO_TEX.ph_hall_wall && PHOTO_TEX.ph_hall_floor && PHOTO_TEX.ph_hall_plinth; }
 function drawRec17(t){
   if (Math.abs(cam.x - HALL_MID) > 5500 || !hallReady()) return;
@@ -12864,7 +12906,7 @@ const PHOTO_SKIN = !/[?&]skin=flat/.test(location.search);
    edge, back edge to the wall; everything else then follows, and the picture
    comes out a fifth smaller than it was. */
 const PLATES = GAP.on ? [{
-  x: bayStart(1) + CUTS[1].w / 2, sw: 1874, benchFrac: 0.611,
+  x: bayStart('plate') + CUT('plate').w / 2, sw: 1874, benchFrac: 0.611,
   layers: [{img: 'plate_bay_front.png', z: 0}],
 }] : [];
 async function loadPlates(){
@@ -13557,7 +13599,7 @@ function wallSwitchX(){
   // ahead of the founding pedestal, so that pedestal stands against the new
   // wall rather than on the threshold of it
   const u = TALL_UNITS[0];
-  return u ? (u.wallAt != null ? u.wallAt : u.x + u.w / 2) : bayStart(0);
+  return u ? (u.wallAt != null ? u.wallAt : u.x + u.w / 2) : bayStart('threshold');
 }
 function applyPhotoTextures(){
   /* ERA 1 — the stretch up to the cabinet, which is where that era ends. It is
@@ -22603,7 +22645,7 @@ function drawFinaleWall(){
   ctx.drawImage(spriteMip(sp, x1 - x0, yB - yT), x0, yT, x1 - x0, yB - yT);
 }
 /* TODAY — на ореховой панели, над табло, на глубине стены (по эскизу). */
-const TODAY_WALL = {x: 39330, yT: -300, yB: -95};
+const TODAY_WALL = {x: BOARD_X, yT: -300, yB: -95};   // над табло (было 39 330 числом)
 function todayBand(){
   if (!PROP_SPRITES.ph_finwall) return null;
   const kw = k((SEGMENTS[3].z0 || 1400) - 6);
