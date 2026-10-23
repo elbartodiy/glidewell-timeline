@@ -2346,7 +2346,15 @@ function attachMouseDriver(el){
     if (isFinger(e) && !overlayOpen() && fling.length > 1){
       const [t0, x0] = fling[0], [t1, x1] = fling[fling.length - 1];
       const ms = t1 - t0;
-      let v = ms > 40 ? -(x1 - x0) / (ms / 1000) * worldPerPx() : 0;
+      /* ПАЛЕЦ ЗАМЕР — БРОСКА НЕТ. Скорость бралась из последних движений, сколько
+         бы ни прошло с них времени. Скриншот на киоске (кнопки, удержанные секунды)
+         держит касание, и отпускание приходит потом — зал улетал в сторону со
+         скоростью, какой палец шёл ДО скриншота (Эльдар, 23.10.2026: «сайт
+         захватывается и не отпускается, и при скрине, когда кнопки отпускаются,
+         сайт двигается быстро в сторону»). Последнее движение старше 90 мс —
+         значит, палец стоял: бросать нечего. */
+      const stale = performance.now() - t1 > 90;
+      let v = (ms > 40 && !stale) ? -(x1 - x0) / (ms / 1000) * worldPerPx() : 0;
       /* ПОСАДКА БЕЗ МАГНИТА. Прежде на излёте зал хватал магнит: как только
          скорость падала ниже 120, его подтягивало пружиной к году, с рывком и
          лёгкой раскачкой. Теперь точка остановки считается заранее — зал
@@ -2393,6 +2401,10 @@ function attachMouseDriver(el){
     Input.setDragging(false);
   };
   el.addEventListener('pointercancel', cancelDrag);
+  /* система забрала экран (скриншот, шторка, другое окно) — касание отпускается
+     сразу, а не когда кнопки отпустят: иначе зал «захвачен» всё это время */
+  window.addEventListener('blur', () => { if (down) { cancelDrag(); fling = []; } });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && down) { cancelDrag(); fling = []; } });
   el.addEventListener('lostpointercapture', () => { if (down || state.ruleDrag ||
       state.seekDrag || state.spinDrag) cancelDrag(); });
   window.addEventListener('keydown', e => {
