@@ -1409,21 +1409,31 @@ function initAttractStops(){
    FILM_STOP.z, на остановке держит, на отходе (FILM_STOP.out — примерно
    столько, сколько экрану надо, чтобы уйти за край кадра) так же плавно
    отъезжает на общий план. ?filmstop=0 выключает. */
-const FILM_STOP = {on: !/[?&]filmstop=0/.test(location.search), z: 120, dwell: 3.0, in: 900, out: 1100};   // z 170 → 120: «не надо прям вплотную, слегка» — кадр крупнее на ~15 %
-const filmEngaged = () => { const v = WELCOME_TV.v; return !!(v && !v.muted && v.readyState >= 2); };
-function filmStopXs(){
+/* z 170 → 120 («не надо прям вплотную, слегка», 22.10) → 240 (Эльдар, 23.10.2026:
+   «давай сделаем зумирование больше, более явно»): кадр крупнее на ~36 %.
+   zBy — свой наезд у экранов, где 240 ломает композицию (проверено на всех
+   восьми при 2000×1040): 1970 — 0, фото-стол эпохи 1 (плита основания) на
+   наезде расходится с соседним прилавком ступенькой («стол растянуло», скрин
+   Эльдара 23.10); 2022–23 — 150, иначе цифры годов срезает верх кадра. */
+const FILM_STOP = {on: !/[?&]filmstop=0/.test(location.search), z: 240, dwell: 3.0, in: 900, out: 1100,
+                   zBy: {crt70: 0, vwall: 150}};
+/* фильм «включён» — со звуком; подгрузка (readyState < 2) его не выключает */
+const filmEngaged = () => { const v = WELCOME_TV.v; return !!(v && !v.muted); };
+function filmStops(){
   if (!FILM_STOP.on || !filmEngaged()) return [];
-  return FILM_RELAYS.map(r => r.x).filter(x => !ATTRACT_STOPS.some(sx => Math.abs(sx - x) < 200));
+  return FILM_RELAYS.filter(r => !ATTRACT_STOPS.some(sx => Math.abs(sx - r.x) < 200));
 }
+function filmStopXs(){ return filmStops().map(r => r.x); }
 function filmZoomTarget(){
   if (!FILM_STOP.on || state.mode !== 'attract' || state.introHold || state.finHold || state.focusBeat >= 0) return null;
   const A = state.attract;
   if (A.phase !== 'cruise' && A.phase !== 'dwell') return null;
-  const xs = filmStopXs(); if (!xs.length) return null;
-  let r = xs[0]; for (const x of xs) if (Math.abs(x - cam.x) < Math.abs(r - cam.x)) r = x;
-  const d = cam.x - r;
+  const rs = filmStops(); if (!rs.length) return null;
+  let r = rs[0]; for (const q of rs) if (Math.abs(q.x - cam.x) < Math.abs(r.x - cam.x)) r = q;
+  const d = cam.x - r.x;
   const u = Math.max(0, Math.min(1, d < 0 ? 1 + d / FILM_STOP.in : 1 - d / FILM_STOP.out));
-  return FILM_STOP.z * u * u * (3 - 2 * u);
+  const z = FILM_STOP.zBy[r.kind] != null ? FILM_STOP.zBy[r.kind] : FILM_STOP.z;
+  return z * u * u * (3 - 2 * u);
 }
 function segIdx(x){ for (let i = SEGMENTS.length-1; i > 0; i--) if (x >= SEGMENTS[i].x0) return i; return 0; }
 function segAt(x){ return SEGMENTS[segIdx(x)]; }
@@ -3035,7 +3045,10 @@ const cv = document.getElementById('view');
    ~1,5 с). Поворачивается холст целиком (CSS), со своим масштабом ровно на
    столько, чтобы углы не открывались: s = cos a + (W/H)·sin|a|. Страницы
    поверх зала не поворачиваются. ?tilt=0 выключает. */
-const TILT = {on: !/[?&]tilt=0/.test(location.search), max: 1.1, k: 55, c: 5.5,
+/* ВЫКЛЮЧЕН (Эльдар, 23.10.2026: «давай уберём тот лёгкий наклон при свайпах —
+   он грузит систему, как мне кажется»): пока лист повёрнут, браузер каждый кадр
+   пересэмплирует весь холст. Код оставлен спящим; ?tilt=1 включает на пробу. */
+const TILT = {on: /[?&]tilt=1/.test(location.search), max: 1.1, k: 55, c: 5.5,
               a: 0, w: 0, target: 0, shown: 0};
 function tiltGrab(dxCss, yCss){
   if (!TILT.on) return;
@@ -6098,7 +6111,11 @@ function drawDeskScreens(){
 function drawFilmRelays(){
   const v = WELCOME_TV.v;
   // the era screens light up only for the engaged film: no sound, no furniture
-  if (!v || v.muted || v.readyState < 2) return;
+  /* ПОДГРУЗКА НЕ ПРЯЧЕТ МЕБЕЛЬ. Условие было «и кадр уже есть» (readyState ≥ 2):
+     пока фильм буферизуется — на сайте и через хотспот стенда это бывает, —
+     телевизоры исчезали целиком и возвращались (Эльдар, 23.10.2026, скрин PFM
+     era без телевизора). Экран сам рисует чёрное, пока кадра нет (filmInto). */
+  if (!v || v.muted) return;
   for (const r of FILM_RELAYS){
     if (Math.abs(r.x - cam.x) > CULL_BAY) continue;
     if (r.kind === 'crt70') drawFilmCRT70(r);
