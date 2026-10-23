@@ -4070,7 +4070,14 @@ function drawSprite(sp, x, yCenter, z, wWorld, rotDeg, alpha, hit, sxRivet){
   ctx.imageSmoothingQuality = 'high';
   ctx.translate(sx, sy);
   if (rotDeg) ctx.rotate(rotDeg * Math.PI/180);
-  ctx.drawImage(sp.c, -sp.w*scale/2, -sp.h*scale/2, sp.w*scale, sp.h*scale);
+  /* ЧЕРЕЗ МИП, А НЕ ОДНИМ ШАГОМ (Эльдар, 23.10.2026, доска 1980-го: «почему такая
+     пикселизация? особенно в движении видно»). Снимок 1432 px ужимался до ~360
+     за один drawImage: canvas берёт 4 соседних пикселя из 16, тонкие линии
+     маркера рассыпались ступеньками, а на ходу ступеньки ползли. spriteMip
+     складывает вдвое столько раз, сколько нужно, и кэширует по размеру — на
+     стене размер при ходьбе не меняется, так что это одна сборка на снимок. */
+  const dw = sp.w*scale, dh = sp.h*scale;
+  ctx.drawImage(spriteMip(sp, dw, dh), -dw/2, -dh/2, dw, dh);
   ctx.restore();
 }
 
