@@ -2222,6 +2222,8 @@ function attachMouseDriver(el){
        on nothing is exactly how a page is closed. The mark now owns the release
        too. */
     if (voicesMarkHit(pt)){ if (!state.people) openPeople(); down = false; markTap = true; return; }
+    if (settingsMarkHit(pt)){ toggleSettings(); down = false; markTap = true; return; }
+    if (SETTINGS.open) closeSettings();   // касание по залу закрывает меню
     {
       const aimed = hitAt(pt.x, pt.y);
       if (aimed && aimed.type === 'inseek'){
@@ -7468,6 +7470,10 @@ function markHit(b, pt){
 function musicMarkHit(pt){ return markHit(musicMarkBox(), pt); }
 function soundMarkHit(pt){ return markHit(soundMarkBox(), pt); }
 function voicesMarkHit(pt){ return markHit(voicesMarkBox(), pt); }
+/* шестерёнка настроек — под отметкой сборки (Эльдар, 23.10.2026: «кнопка
+   настроек снизу под временем деплоя, слева сверху») */
+function settingsMarkBox(){ const s = 20 * SS; return {x: 26 * SS, y: 62 * SS + 44 * SS + 30 * SS, w: s, h: s}; }
+function settingsMarkHit(pt){ return markHit(settingsMarkBox(), pt); }
 function drawMusicMark(){
   const A = Math.max(0.25, state.ruleA);          // they live with the rule
   if (A < 0.03) return;
@@ -7567,7 +7573,75 @@ function drawMusicMark(){
     ctx.fillStyle = `rgba(${seg.ink},${(0.26 * A).toFixed(3)})`;
     ctx.fillText(BUILD.txt, bb.x, bb.y + bb.h + 19 * SS);
   }
+  // THE GEAR — the settings menu (SETTINGS)
+  {
+    const b = settingsMarkBox();
+    const hot = (settingsMarkHit(Input.hover) || SETTINGS.open) ? 1 : 0;
+    const a = 0.30 * A + 0.30 * hot;
+    ctx.strokeStyle = `rgba(${seg.ink},${a.toFixed(3)})`;
+    ctx.fillStyle = `rgba(${seg.ink},${a.toFixed(3)})`;
+    const cx = b.x + b.w / 2, cy = b.y + b.h / 2, R = b.w * 0.36;
+    ctx.lineWidth = 1.6 * SS;
+    for (let i = 0; i < 8; i++){
+      const an = i * Math.PI / 4;
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(an);
+      ctx.fillRect(-b.w * 0.07, -R - b.w * 0.14, b.w * 0.14, b.w * 0.18);
+      ctx.restore();
+    }
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.38, 0, 7); ctx.stroke();
+  }
   ctx.restore();
+}
+/* МЕНЮ НАСТРОЕК (Эльдар, 23.10.2026: «может, надо сделать меню внутри и там
+   отключать или включать функции — наклона при таче, зумирования к экранам»).
+   Обычный DOM поверх холста — он сам ловит касания, зал под ним их не получает.
+   Выбор хранится в localStorage (на стенде переживает перезагрузку); параметр в
+   адресе (?tilt=1, ?filmzoom=240) по-прежнему главнее на одну загрузку. */
+const SETTINGS = {open: false, el: null};
+const SETTINGS_ITEMS = [
+  {key: 'tilt', label: 'Tilt on swipe', get: () => TILT.on,
+   set: on => { TILT.on = on; if (!on){ TILT.a = TILT.w = TILT.target = TILT.shown = 0; cv.style.transform = ''; } }},
+  {key: 'filmzoom', label: 'Zoom to film screens (tour)', get: () => FILM_STOP.z > 0,
+   set: on => { FILM_STOP.z = on ? 240 : 0; }},
+];
+function initSettings(){
+  for (const it of SETTINGS_ITEMS){
+    let v = null;
+    try { v = localStorage.getItem('glidewell.set.' + it.key); } catch(e){}
+    if (v != null && !new RegExp('[?&]' + it.key + '=').test(location.search)) it.set(v === '1');
+  }
+}
+function toggleSettings(){ SETTINGS.open ? closeSettings() : openSettings(); }
+function closeSettings(){ SETTINGS.open = false; if (SETTINGS.el) SETTINGS.el.style.display = 'none'; }
+function openSettings(){
+  SETTINGS.open = true;
+  if (!SETTINGS.el){
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;z-index:50;padding:14px 18px 12px;border-radius:10px;' +
+      'background:rgba(20,22,26,0.86);color:#e8e6e1;font:14px/1.3 "Helvetica Neue",Arial,sans-serif;' +
+      'box-shadow:0 8px 28px rgba(0,0,0,0.35);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);';
+    el.addEventListener('pointerdown', e => e.stopPropagation());
+    document.body.appendChild(el);
+    SETTINGS.el = el;
+  }
+  const el = SETTINGS.el, dpr = H / innerHeight, b = settingsMarkBox();
+  el.style.left = Math.round(b.x / dpr) + 'px';
+  el.style.top = Math.round((b.y + b.h) / dpr + 10) + 'px';
+  el.innerHTML = '<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.55;margin-bottom:8px">Settings</div>';
+  for (const it of SETTINGS_ITEMS){
+    const row = document.createElement('label');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer;white-space:nowrap';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = it.get(); cb.style.cssText = 'width:18px;height:18px;margin:0;accent-color:#c9a86a';
+    cb.addEventListener('change', () => {
+      it.set(cb.checked);
+      try { localStorage.setItem('glidewell.set.' + it.key, cb.checked ? '1' : '0'); } catch(e){}
+    });
+    row.appendChild(cb); row.appendChild(document.createTextNode(it.label));
+    el.appendChild(row);
+  }
+  el.style.display = 'block';
 }
 /* ЧТО ИМЕННО ПОКАЗАНО: время самого ФАЙЛА, который сейчас открыт
    (Last-Modified с сервера), а не хэш коммита: хэш пришлось бы вписывать
@@ -23323,7 +23397,7 @@ function frame(){
   if (Input.hover && state.mode === 'live'){
     const aimHover = (!state.inspect && hitAt(Input.hover.x, Input.hover.y)) || null;
     state.docHot = !!(aimHover && aimHover.type === 'doc');
-    document.body.style.cursor = (musicMarkHit(Input.hover) || soundMarkHit(Input.hover) || voicesMarkHit(Input.hover)) ? 'pointer'
+    document.body.style.cursor = (musicMarkHit(Input.hover) || soundMarkHit(Input.hover) || voicesMarkHit(Input.hover) || settingsMarkHit(Input.hover)) ? 'pointer'
       : ruleHit(Input.hover) ? 'ew-resize'
       : ((!state.inspect && hitAt(Input.hover.x, Input.hover.y)) ? 'pointer' : '');
   }
@@ -23433,6 +23507,7 @@ async function boot(){
   setTimeout(initFilmRelays, 2500);
   initMusic();
   initBuildMark();   // отметка сборки в левом верхнем углу, под кнопками
+  initSettings();    // переключатели меню настроек — из localStorage
   initWhoosh();
   initDoc();
   USA_SPRITE = makeUsaSprite();
