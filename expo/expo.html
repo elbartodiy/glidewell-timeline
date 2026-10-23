@@ -6276,9 +6276,14 @@ const BOARD_X0 = SHIFT(29750) - 3400 + 580 + 217;   // своё место на 
    эскизе Эльдара: центр 39291, верх −20, и оно на 0,86 меньше (BOARD_S) — панель
    в этом месте шириной около 1230, полное табло (1316) из неё вылезало. Строки
    те же: масштаб берёт весь рисунок табло, а не только его рамку. */
-/* от FIN_X, а не числом: 39 330 стояло абсолютным и не ехало с врезками
-   (qa/cut_check.mjs, 23.10.2026). FIN_X был 42 067 → 39 330 = FIN_X − 2737. */
-const BOARD_X = FIN_X - 2737;
+/* ОТ FIN_X, А НЕ ЧИСЛОМ — И ОТ ТОГО FIN_X, ПРИ КОТОРОМ ТАБЛО ВЕШАЛИ. 39 330
+   было написано 20.10, когда FIN_X = 40 920. 21.10 врезка step2000 (+1147)
+   подвинула финал, а табло, TODAY и край фото пола остались на числах — и
+   уехали на 1147 влево с ореховой панели на белую стену (Эльдар, 23.10.2026:
+   «всё поехало в зале TODAY, неправильно коннектится деревянная линия сверху и
+   стена»). Утром 23.10 я привязал их к FIN_X, но от уже съехавшего места
+   (−2737); теперь — от места 20.10: 39 330 − 40 920 = −1590. */
+const BOARD_X = FIN_X - 1590;
 const BOARD_S = 0.86;
 /* РАЗМЕРЫ ТАБЛО. Сверху его держит ореховый карниз (низ на −90), снизу —
    столешница (700). Всё, что между ними, — его полоса; залезть на карниз значит
@@ -11007,7 +11012,7 @@ const HALL_PED_H = 340;      // the crown's pedestal, floor to the underside of 
 const HALL_PED_Z = 420;
 /* the three plates arrive together or the room is not drawn at all — there is
    no second version of this bay to fall back on */
-const FLOOR_PHOTO_END = FIN_X - 2167;   // мира (было 39 900 числом): за левым прилавком финала, см. drawRec17
+const FLOOR_PHOTO_END = FIN_X - 1020;   // мира: 39 900 при FIN_X 40 920 (21.10, до врезки step2000), см. BOARD_X
 function hallReady(){ return PHOTO_TEX.ph_hall_wall && PHOTO_TEX.ph_hall_floor && PHOTO_TEX.ph_hall_plinth; }
 function drawRec17(t){
   if (Math.abs(cam.x - HALL_MID) > 5500 || !hallReady()) return;
