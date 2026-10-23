@@ -20328,6 +20328,7 @@ function drawStudy(){
       ctx.font = K.font(PAGE.small, '700');
       try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
       ctx.fillStyle = `rgba(${K.dim},0.95)`;
+      sy += 1.5 * u;                     // воздух под шапкой: подпись не прилипает к краю обрезки
       if (sy > topClip && sy < botClip) ctx.fillText(photos.length > 1 ? 'From the album' : 'From the album', sx, sy);
       try { ctx.letterSpacing = '0px'; } catch(err){}
       sy += 3 * u;
@@ -20696,12 +20697,14 @@ function drawStudy(){
     y += 16 * SS;
   }
   const yEnd = Math.max(y, sy) + 4 * u;
+  ctx.restore();                       // рамка и подсказка — вне обрезки контента
+  ctx.save(); ctx.globalAlpha = a;
   pageEdges(K, G, S.scroll * SS, S.maxScroll * SS);
   pageFoot(K, G, yEnd, a, 'scroll to read on · tap outside to return');
   ctx.restore();
   state.cardRect = {x: G.wx0, y: G.wy0, w: G.ww, h: G.wh, r: K.r*SS};
   S.fitH = (yEnd + S.scroll * SS - G.wy0) + 4 * u;      // content, top padding included, plus air under it
-  S.maxScroll = Math.max(1, (yEnd + 5 * u + S.scroll * SS - (G.wy0 + G.wh)) / SS);
+  S.maxScroll = Math.max(1, (yEnd + 2 * u + S.scroll * SS - G.textBot) / SS);   // докручивается до подвала, а не до края листа
 }
 
 /* THE WALL OF VOICES. One page holding everyone the film talks to, shaped the
@@ -21111,8 +21114,21 @@ function pageFrame(K, a, side, meta, fitH){
      проблема»). Теперь верх обрезки — под самой метой, и сквозь неё не
      пролезает ничто: ни строки, ни плитки, ни фотографии. Чинит все страницы
      разом. */
-  const cTop = meta ? metaY + 11 * SS : wy0 + 2 * SS + bandH;
-  ctx.beginPath(); ctx.roundRect(wx0 + 2 * SS, cTop, ww - 4 * SS, wy0 + wh - 2 * SS - cTop, r); ctx.clip();
+  /* ШАПКА И ПОДВАЛ — НЕПРОЗРАЧНЫЕ ЗОНЫ, И ВОЗДУХ ПОД ШАПКОЙ (Эльдар, 23.10.2026,
+     скрин с исправленной вёрсткой: «добавлен воздух между шапкой, фотографией и
+     разделами; убрана линия по верхнему краю фотографии; header и footer —
+     непрозрачные зоны, под которыми контент обрезается при прокрутке; нижняя
+     линия больше не пересекает текст»). Обрезка сверху — на 26 под базовой
+     линией меты (было 11: фото и строки въезжали вплотную под неё; подпись
+     «From the album» опущена на 1,5u, чтобы в покое не задевать край); снизу, когда
+     текст не помещается, — по полосе подсказки (textBot + 8, запас под выносные
+     элементы строки), так что ни строки, ни фото, ни видео не заходят в подвал.
+     Линии и подсказка рисуются уже вне обрезки (pageChrome). */
+  const cTop = meta ? metaY + 22 * SS : wy0 + 2 * SS + bandH + 12 * SS;
+  const footPad = 46 * SS;
+  const overflow = !fitH || fitH > H * 0.85 - 1;
+  const clipBot = overflow ? wy0 + wh - footPad + 8 * SS : wy0 + wh - 2 * SS;
+  ctx.beginPath(); ctx.roundRect(wx0 + 2 * SS, cTop, ww - 4 * SS, clipBot - cTop, overflow ? 0 : r); ctx.clip();
   /* ПОЛОСА ПОД ПОДСКАЗКОЙ — НЕ ДЛЯ ТЕКСТА. Строки шли до самого низа листа, и
      последняя оказывалась и срезана краем, и под надписью «scroll to read on»:
      на непрозрачной бумаге её съедала дымка, а на полупрозрачной (бухты
@@ -21121,8 +21137,7 @@ function pageFrame(K, a, side, meta, fitH){
      которая в эту полосу заезжает, не рисуется вовсе, а не срезается наполовину.
      Плитки и фотографии по-прежнему живут по botClip: у них своя обрезка листом,
      и пропадать целиком на половине прокрутки им нельзя. */
-  const footPad = 46 * SS;
-  return {wx0, wy0, ww, wh, pad, left: wx0 + pad, textW, sideX: wx0 + pad + textW + gutter, side: sideW,
+  return {wx0, wy0, ww, wh, pad, clipBot, left: wx0 + pad, textW, sideX: wx0 + pad + textW + gutter, side: sideW,
           top: wy0 + bandH + PAGE.top * SS, bandH, topClip: wy0 - 80 * SS, botClip: wy0 + wh + 80 * SS,
           cTop, footPad, textBot: wy0 + wh - footPad,
           closeBot: closeY + closeR * 1.5};   // низ кольца крестика (drawCloseX рисует кольцо в 1.5 r)
@@ -21154,8 +21169,10 @@ function pageEdges(K, G, scroll, maxScroll){
      светлой, светлые на тёмной. */
   ctx.save();
   ctx.fillStyle = `rgba(${K.ink},0.26)`;
-  if (scroll > 2) ctx.fillRect(G.wx0 + inset, top, G.ww - inset * 2, 1 * SS);
-  if (more && scroll < maxScroll - 2) ctx.fillRect(G.wx0 + inset, bot - 1 * SS, G.ww - inset * 2, 1 * SS);
+  /* линии сверху больше нет — она шла по верхнему краю фото (23.10.2026);
+     нижняя — под краем обрезки, в подвале, и текст её не пересекает */
+  const lineY = G.clipBot != null ? G.clipBot + 3 * SS : bot - 1 * SS;
+  if (more && scroll < maxScroll - 2) ctx.fillRect(G.wx0 + inset, lineY, G.ww - inset * 2, 1 * SS);
   if (more){
     /* ДОРОЖКА НАЧИНАЕТСЯ ПОД КРЕСТИКОМ. Она стоит в той же вертикали, что и
        крестик, и на странице человека (меты нет — поле от самого края листа)
@@ -21188,8 +21205,9 @@ function pageFoot(K, G, yEnd, a, hint){
        пускает textBot, — а градиент поверх них был украшением, которое Эльдар
        попросил снять. Осталась только сама полоса сплошной бумагой: на
        полупрозрачном листе без неё сквозь подсказку читается зал. */
-    ctx.fillStyle = `rgba(${rgb},${al})`;
-    ctx.fillRect(G.wx0, bot, G.ww, G.wy0 + G.wh - bot);
+    /* полосу бумагой больше не закрашиваем: контент и так обрезан по ней,
+       а на стеклянном листе второй слой бумаги был виден полосой */
+    void rgb; void al;
     ctx.font = K.font(PAGE.small);
     try { ctx.letterSpacing = `${PAGE.small * TRACK.label * SS}px`; } catch(err){}
     ctx.textAlign = 'center';
@@ -21505,12 +21523,14 @@ function drawPerson(){
     }
   }
   const yEnd = Math.max(y, my) + 4 * u;
+  ctx.restore();                       // рамка и подсказка — вне обрезки контента
+  ctx.save(); ctx.globalAlpha = a;
   pageEdges(K, G, S.scroll * SS, S.maxScroll * SS);
   pageFoot(K, G, yEnd, a, 'scroll to read on · tap outside to go back');
   ctx.restore();
   state.cardRect = {x: G.wx0, y: G.wy0, w: G.ww, h: G.wh, r: K.r*SS};
   S.fitH = (yEnd + S.scroll * SS - G.wy0) + 4 * u;
-  S.maxScroll = Math.max(1, (yEnd + 5 * u + S.scroll * SS - (G.wy0 + G.wh)) / SS);
+  S.maxScroll = Math.max(1, (yEnd + 2 * u + S.scroll * SS - G.textBot) / SS);
 }
 function drawClip(){
   /* THE PLAYER IS A LAYER INSIDE THE CARD. It used to throw the clip on the
