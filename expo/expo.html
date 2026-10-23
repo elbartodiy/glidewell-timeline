@@ -16105,6 +16105,23 @@ function drawCadUI(b, gx, gy, gw, gh, vx, vy, vw, vh){
    Грани корпуса открываются по экрану — грань рисуется, только если её задняя
    кромка в кадре лежит снаружи передней (закон «видимость — по экрану»). */
 function drawCadScreen(b, kF, fade){
+  /* ВНЕ СТЕКЛА — ТЕМНЕЕ (Эльдар, 23.10.2026: «когда стекло приближается к центру —
+     то, что вне стекла, затемняется на +20 процентов; оно уже затемняется, но
+     надо ещё»). Общая вуаль тумбы 2002-го уже гасит зал; поверх неё всё, что
+     вокруг рамы, гаснет ещё на 20 % — по мере того, как стекло подходит к
+     середине кадра (полностью — в средней пятой части, ноль — у краёв). */
+  {
+    const G0 = CAD_GLASS, o0x = px(b.x - G0.w / 2, kF), o1x = px(b.x + G0.w / 2, kF);
+    const d = Math.abs((o0x + o1x) / 2 - W / 2) / (W / 2);
+    const u = Math.max(0, Math.min(1, (0.9 - d) / 0.7)), dim = 0.20 * u * u * (3 - 2 * u) * fade;
+    if (dim > 0.004){
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, 0, W, H);
+      ctx.rect(o0x, py(G0.top, kF), o1x - o0x, py(G0.bot, kF) - py(G0.top, kF));
+      ctx.fillStyle = `rgba(0,0,0,${dim.toFixed(3)})`; ctx.fill('evenodd');
+      ctx.restore();
+    }
+  }
   const cx = b.x, G = CAD_GLASS, kB = k(G.z + G.depth), kM = k(G.z + G.depth / 2);
   const X0 = cx - G.w / 2, X1 = cx + G.w / 2, Y0 = G.top, Y1 = G.bot, B = G.bezel;
   const F = (x, y) => [px(x, kF), py(y, kF)], Bk = (x, y) => [px(x, kB), py(y, kB)];
@@ -22720,7 +22737,14 @@ function drawShowroom(t){
      wood and its downlights read as one ceiling from the door onward (Eldar) */
   const x0 = px(SHOW_DRAW_L, kk) - 12 * SS;
   /* карниз кончается у стены финала: дальше потолок — её собственный */
-  const x1 = PROP_SPRITES.ph_finwall ? px(FIN_WALL.L(), kk) : px(SHOW_DRAW_R, kk);
+  /* …И ВХОДИТ В ОРЕХОВУЮ ПАНЕЛЬ, А НЕ ОБРЫВАЕТСЯ ПЕРЕД НЕЙ (Эльдар, 23.10.2026:
+     «надо как-то переделать стык деревянной балки и стены — сейчас выглядит не
+     очень»). Он кончался на левом краю рендера скруглением, а дерево в рендере
+     начинается на 38-м столбце из 2079 (замер по цвету) — между ними стояла
+     белая щель в 86 единиц. Теперь конец карниза — край панели, на плоскости
+     самой стены (чтобы стык не ездил), квадратный, на 3 px внутрь. */
+  const finJoin = PROP_SPRITES.ph_finwall ? px(FIN_WALL.L() + 38 * FIN_WALL.w / 2079, k(SEGMENTS[3].z0 || 1400)) + 3 * SS : null;
+  const x1 = finJoin != null ? finJoin : px(SHOW_DRAW_R, kk);
   if (x1 < -200 || x0 > W + 200) return;
   ctx.save();
   // the ribbon: a soffit of walnut, turned down out of the ceiling
@@ -22744,8 +22768,8 @@ function drawShowroom(t){
   const beam = new Path2D();
   beam.moveTo(xL, yT);
   beam.lineTo(x1, yT);
-  beam.lineTo(x1, yB - turn * 0.55);
-  beam.quadraticCurveTo(x1, yB, x1 - turn, yB);
+  if (finJoin != null) beam.lineTo(x1, yB);            // в панель — без скругления
+  else { beam.lineTo(x1, yB - turn * 0.55); beam.quadraticCurveTo(x1, yB, x1 - turn, yB); }
   beam.lineTo(xL, yB);
   beam.closePath();
   ctx.fill(beam);
