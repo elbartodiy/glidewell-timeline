@@ -11576,9 +11576,23 @@ function drawRec3(t){
   const w = MAP_W * kM * SS, h = w * sp.h / sp.w;
   const cx = px(mid, kM), cyS = py(MAP_CY, kM);
   rivet('map89', cx, k(R89_BAY_Z));
+  /* ПОСТЕР ВМЕСТО НАРИСОВАННОЙ КАРТЫ (Эльдар, 23.10.2026: «1989-museum-poster-
+     real-map-v6 в артефактах»): рамка, настоящий контур штатов, дуги от Orange,
+     внизу «Distance has never been a barrier · 3,500+ dentists · 95% by mail».
+     Вырезка poster_1989 1600 × 1792 со своей тенью. Вертикальный: верх — там же,
+     где был верх карты (мир 128 на плоскости стены, под подзаголовком), ширина
+     740, низ уходит за коробку на тумбе, как и раньше. Нет файла — прежняя карта. */
+  const PP = PROP_SPRITES.ph_poster89;
+  if (PP){
+    const pw = 740 * kM * SS, ph = pw * PP.h / PP.w;
+    const top = py(128, kM);
+    pushHit(cx - pw/2, top, pw, ph, {type:'study', beat: BEATS.findIndex(b => b.y === '1989')});
+    ctx.drawImage(spriteMip(PP, pw, ph), cx - pw/2, top, pw, ph);
+  } else {
   pushHit(cx - w/2, cyS - h/2, w, h, {type:'photo', sp, wx: mid, cy: MAP_CY, z: MAP_Z, w: MAP_W,
           cap: '1989 · 95% of cases arrive by mail', beat: BEATS.findIndex(b => b.y === '1989')});
   ctx.drawImage(sp.c, cx - w/2, cyS - h/2, w, h);
+  }
   for (const wxc of [REC3_L, REC3_R]){
     const kc = k(R89_BAY_Z);
     const sxc = px(wxc, kc);
@@ -13681,7 +13695,8 @@ async function loadPhotoSkin(){
        надписью Glidewell Laboratories. Вырезан по альфе: x 353…900, y 24…1253
        → 548 × 1230; прежний postbox.png остаётся в git. */
     ph_postbox: 'postbox_1989.png',  // the mailed case, open, on its own plinth
-    ph_postbox_light: 'postbox_1989_light.png',   // тот же кадр «в свете» — проступает к центру экрана (19.10.2026)
+    ph_postbox_light: 'postbox_1989_light.png',
+    ph_poster89: 'poster_1989.png',   // 1989: постер «Every Dentist Is a Neighbor» с настоящей картой — рендер Эльдара (23.10.2026)   // тот же кадр «в свете» — проступает к центру экрана (19.10.2026)
     ph_plane: 'plane_1993.png',       // and the freighter that carries it, landing at 1993
     ph_plastic: 'plastic_2000.png',   // 2000: the tooth-shaped crown boxes the injection division made
     ph_tv70: 'tv_1970.png',           // the seventies set, cut out with its tube knocked through
