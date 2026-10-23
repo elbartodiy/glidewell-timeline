@@ -342,7 +342,10 @@ const BEATS = [
       nothing about a lab that lives by post; this is the case itself — the
       carton, the postmark, the impressions in their bubble wrap — and it comes
       with the stone cap it was photographed on. */
-   ped:{photo:'ph_postbox', dx:0, low:true},
+   /* capY 708 и beam 0,65 (Эльдар, 23.10.2026: «давай тумбу чуть опустим, карту
+      чуть поднимем, лучи чуть ослабим»): тумба с коробкой на 40 ниже (low было
+      668), лучи прожекторов на 35 % слабее — постер за ними читается */
+   ped:{photo:'ph_postbox', dx:0, low:true, capY: 708, beam: 0.65},
    /* THE LINE READS OFF A BACKGROUND THAT DOES NOT CHANGE UNDER IT. Set 430
      left of the plinth it began on the steel panel, crossed the pale edge of
      the bay's step and finished on the column — three tones under three lines
@@ -11585,7 +11588,7 @@ function drawRec3(t){
   const PP = PROP_SPRITES.ph_poster89;
   if (PP){
     const pw = 740 * kM * SS, ph = pw * PP.h / PP.w;
-    const top = py(128, kM);
+    const top = py(83, kM);   // 128 → 83: на 45 выше («карту чуть поднимем», 23.10.2026)
     pushHit(cx - pw/2, top, pw, ph, {type:'study', beat: BEATS.findIndex(b => b.y === '1989')});
     ctx.drawImage(spriteMip(PP, pw, ph), cx - pw/2, top, pw, ph);
   } else {
@@ -15788,7 +15791,7 @@ function drawHallExhibit(){
 const PED_Z = -90, PED_CAP_Y = 535;
 /* верх шляпки по флагам постамента — одно место на постамент и на то, что на
    нём стоит, иначе монитор на «большом» постаменте висел бы на 5 единиц выше */
-const pedCapY = ped => ped.spin ? 620 : (ped.big ? 540 : (ped.low ? 668 : (ped.vitrine ? 625 : PED_CAP_Y)));
+const pedCapY = ped => ped.capY != null ? ped.capY : ped.spin ? 620 : (ped.big ? 540 : (ped.low ? 668 : (ped.vitrine ? 625 : PED_CAP_Y)));
 /* СТЕКЛО ПЕРЕД CAD/CAM. Эльдар (22.10.2026): «сделай на переднем плане перед
    CAD/CAM прозрачный экран шириной чуть больше проёма между столами»; «это
    стекло я хочу сделать чем-то вроде рентгена, но CAD — всё, что через него
@@ -16233,7 +16236,7 @@ function drawPedestal(b, t, hero){
       const tTable = Math.max(tAbove + 0.04, Math.min(0.95, py(700, kk) / yEnd));
       /* wider at the foot, and the power starts leaking just ABOVE the table:
          from there down it is haze, not beam */
-      softBeam(fx, xEnd, 0, yEnd, colW * 0.22, colW * 0.48, warmC, hero,
+      softBeam(fx, xEnd, 0, yEnd, colW * 0.22, colW * 0.48, warmC, hero * (ped.beam != null ? ped.beam : 1),
                [[0, 0.12], [tObj, 1], [tAbove, 0.55], [tTable, 0.26],
                 [tTable + (1 - tTable) * 0.5, 0.09], [1, 0]]);
       // the fixture itself
@@ -16243,7 +16246,7 @@ function drawPedestal(b, t, hero){
       ctx.fillRect(fx - 5*SS, 10*SS, 10*SS, 4*SS);
     }
     // the hot spot where both beams meet the exhibit
-    drawGlow(warmC, sx, yObj, objH * 1.6, 0.22 * lock * hero);
+    drawGlow(warmC, sx, yObj, objH * 1.6, 0.22 * lock * hero * (ped.beam != null ? ped.beam : 1));
   }
   /* A PHOTOGRAPHED PLINTH DRAWS ITSELF. The render carries its own cylinder
      and its own stone cap; all the hall has to do is stand it on the floor —
