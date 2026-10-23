@@ -345,7 +345,10 @@ const BEATS = [
    /* capY 708 и beam 0,65 (Эльдар, 23.10.2026: «давай тумбу чуть опустим, карту
       чуть поднимем, лучи чуть ослабим»): тумба с коробкой на 40 ниже (low было
       668), лучи прожекторов на 35 % слабее — постер за ними читается */
-   ped:{photo:'ph_postbox', dx:0, low:true, capY: 708, beam: 0.65},
+   /* beamRGB / beamFoot — «лучи чуть потеплее, ближе к белому, и чуть более
+      расширяющимися к низу» (23.10.2026): тёплый белый вместо холодного
+      голубоватого эпохи и подошва луча 0,48 → 0,68 ширины колонны */
+   ped:{photo:'ph_postbox', dx:0, low:true, capY: 708, beam: 0.65, beamRGB: '255,246,230', beamFoot: 0.68},
    /* THE LINE READS OFF A BACKGROUND THAT DOES NOT CHANGE UNDER IT. Set 430
      left of the plinth it began on the steel panel, crossed the pale edge of
      the bay's step and finished on the column — three tones under three lines
@@ -16190,7 +16193,7 @@ function drawPedestal(b, t, hero){
   const PHOTO_PED = ped.photo ? PROP_SPRITES[ped.photo] : null;
   const yTop = py(pedCapY(ped), kk);   // and it stands lower, so the piece is at the height of a hand
   pushHit(sx - colW*0.7*big, yTop - 150*kk*SS*big, colW*1.4*big, H - yTop + 150*kk*SS, {type:'focus', beat: BEATS.indexOf(b), anchor: x});
-  const warmC = era === 0 ? '255,215,140' : '225,240,255';
+  const warmC = ped.beamRGB || (era === 0 ? '255,215,140' : '225,240,255');
   // two side spotlights swing in and lock their beams exactly on the exhibit;
   // brightness peaks AT the object, then the light falls away
   /* A WHITE CROWN IN A WHITE ROOM. Standing in the glass hall the plinth used
@@ -16236,7 +16239,7 @@ function drawPedestal(b, t, hero){
       const tTable = Math.max(tAbove + 0.04, Math.min(0.95, py(700, kk) / yEnd));
       /* wider at the foot, and the power starts leaking just ABOVE the table:
          from there down it is haze, not beam */
-      softBeam(fx, xEnd, 0, yEnd, colW * 0.22, colW * 0.48, warmC, hero * (ped.beam != null ? ped.beam : 1),
+      softBeam(fx, xEnd, 0, yEnd, colW * 0.22, colW * (ped.beamFoot || 0.48), warmC, hero * (ped.beam != null ? ped.beam : 1),
                [[0, 0.12], [tObj, 1], [tAbove, 0.55], [tTable, 0.26],
                 [tTable + (1 - tTable) * 0.5, 0.09], [1, 0]]);
       // the fixture itself
