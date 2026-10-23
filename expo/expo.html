@@ -13817,6 +13817,9 @@ function initDecor(){
       /* четыре вызова R() — те же, что съел бы пропущенный предмет: иначе
          сдвинулась бы вся случайная раскладка дальше по залу */
       if (BEATS.some(bt => bt.t === 'RESEARCH AND DEVELOPMENT' && Math.abs(bt.x - x) < 700)){ R(); R(); R(); R(); continue; }
+      /* и между проектором 1993-го и телевизором 1995-го — тоже ничего
+         (Эльдар, 23.10.2026: «давай эти зубы уберём со стола») */
+      if (x > REC93_R && BEATS.some(bt => bt.y === '1995' && x < bt.x)){ R(); R(); R(); R(); continue; }
       const kinds = eraProps[si];
       PROPS.push({x, z: 45 + R()*60, kind: kinds[(R()*kinds.length)|0],
                   w: 95 + R()*60, flip: R() > 0.5});
