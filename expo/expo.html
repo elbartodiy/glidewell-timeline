@@ -21125,7 +21125,10 @@ function pageFrame(K, a, side, meta, fitH){
      элементы строки), так что ни строки, ни фото, ни видео не заходят в подвал.
      Линии и подсказка рисуются уже вне обрезки (pageChrome). */
   const cTop = meta ? metaY + 22 * SS : wy0 + 2 * SS + bandH + 12 * SS;
-  const footPad = 46 * SS;
+  /* 46 → 54 и подсказка на 18 от края (было 22): нижняя линия стояла вплотную
+     над буквами подсказки и склеивалась с ней (Эльдар, 23.10.2026) — теперь
+     между ними ~11 */
+  const footPad = 54 * SS;
   const overflow = !fitH || fitH > H * 0.85 - 1;
   const clipBot = overflow ? wy0 + wh - footPad + 8 * SS : wy0 + wh - 2 * SS;
   ctx.beginPath(); ctx.roundRect(wx0 + 2 * SS, cTop, ww - 4 * SS, clipBot - cTop, overflow ? 0 : r); ctx.clip();
@@ -21212,7 +21215,7 @@ function pageFoot(K, G, yEnd, a, hint){
     try { ctx.letterSpacing = `${PAGE.small * TRACK.label * SS}px`; } catch(err){}
     ctx.textAlign = 'center';
     ctx.fillStyle = `rgba(${K.dim},0.8)`;
-    ctx.fillText(hint || 'scroll to read on', G.wx0 + G.ww / 2, G.wy0 + G.wh - 22 * SS);
+    ctx.fillText(hint || 'scroll to read on', G.wx0 + G.ww / 2, G.wy0 + G.wh - 18 * SS);
     try { ctx.letterSpacing = '0px'; } catch(err){}
     ctx.textAlign = 'left';
   }
