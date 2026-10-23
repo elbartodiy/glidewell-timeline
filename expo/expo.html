@@ -10854,7 +10854,7 @@ function drawRec4(t){
    nosing, and a concealed strip washing the riser and a little of the floor.
    It belongs to every recreation, not to one, and each takes its own stone: the
    craft century's is warm, the later rooms are cool and pale. */
-function drawBayStep(L, R, tone, zBack, zNose, edge){
+function drawBayStep(L, R, tone, zBack, zNose, edge, noGlow){
   /* Where the block stands in depth. EVERY BAY NOW NAMES ITS OWN PILASTERS'
      PLANE, and the default is only a fallback: 1989 was riveted to its columns
      at 722 and the other two were left on the generic 590, so those two slid
@@ -10925,6 +10925,7 @@ function drawBayStep(L, R, tone, zBack, zNose, edge){
                          ctx.lineTo(xn, yStepFoot); ctx.lineTo(xb, yBackFoot); ctx.closePath(); };
     ctx.fillStyle = eg; path(); ctx.fill();
     ctx.fillStyle = 'rgba(0,0,0,0.06)'; ctx.fill();
+    if (noGlow) return;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     const eglow = ctx.createLinearGradient(0, yNose + 2 * SS, 0, yStepFoot);
@@ -10935,6 +10936,7 @@ function drawBayStep(L, R, tone, zBack, zNose, edge){
   };
   if (nx1 < bx1) endFace(bx1, nx1);   // the right end opens when the bay is left of centre
   if (nx0 > bx0) endFace(bx0, nx0);   // the left end, when it is right of centre
+  if (noGlow) return;                 // ступенька без подсветки (1979, 23.10.2026)
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   const lg = ctx.createLinearGradient(0, yNose + 2 * SS, 0, yStepFoot);
@@ -23247,7 +23249,8 @@ function frame(){
      furniture is painted later and covers the block everywhere except the
      slot, which is exactly where it is wanted. The bay's own pilasters end on
      its tread, so there is nothing of them left for it to cover. */
-  drawBayStep(REC_L, REC_R, STEP_TONE.warm, R79_BAY_Z, R79_STEP_NOSE, EDGE79);
+  // без подсветки — «давай на 1979 сделаем ту ступеньку без подсветки» (Эльдар, 23.10.2026)
+  drawBayStep(REC_L, REC_R, STEP_TONE.warm, R79_BAY_Z, R79_STEP_NOSE, EDGE79, true);
   drawMapWall(t);
   drawLabs73();
   drawTown76();
