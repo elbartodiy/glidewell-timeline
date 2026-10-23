@@ -186,7 +186,12 @@ const BEATS = [
    /* the two labs stand as models on their own stones where the counter used
       to run (drawLabs73); the photograph of the second lab hangs on the wall
       beside the year, and the line goes on the counter that follows */
-   wall:[{img:'rose', w:300, dx:-1040, cy:360, rot:0.4}],   // one photograph, well left of the models (Eldar's sketch, 2026-09-11); the building photograph was the FOURTH lab by Jim's caption and is gone from this wall
+   /* ФОТО «ROSE» УШЛО К DIRECT-MAIL (Эльдар, 23.10.2026, по показу Джиму 21.10).
+      Это не вторая лаборатория 1973-го: в книге — «Our first marketing promotion
+      at our 1722 E. Rose, Orange, CA laboratory», а Джим на показе: «one of my
+      first magazine ads… that would have been 1978 or '79… she was my office
+      girl, related to my wife». Реклама — значит, к почтовой кампании. */
+   wall:[],
    table:[], st:[]},
 
   {x:5400, y:'1976', t:'DIRECT-MAIL', yLift:95, fly:true, flyZ:380, flyLift:52,   // on 1973's line — Eldar: the years after 1973 hung low
@@ -19222,7 +19227,10 @@ let PERSON_SPRITES = {};
    file for the walls — with the captions Jim gave them in 'My Life in Pictures'
    (Constant Change, 2020). Keyed like the articles. */
 const STUDY_PHOTOS_BY_TITLE = {
-  'FOUNDED': [{img: 'jim1970', cap: 'Working as a ceramist in the early days'}],
+  /* «early 1970s», а не 1970: Джим на показе 21.10.2026 — «I remember that
+     shirt… my office, 3rd story… that would have been 1972, 73». Фото остаётся
+     главным у 1970-го (Эльдар, 23.10.2026: «первое» — оставить и подписать честно) */
+  'FOUNDED': [{img: 'jim1970', cap: 'At the bench, early 1970s'}],
   /* ЧЕТВЁРТЫЙ ЛАБ ЛЕЖАЛ В АЛЬБОМЕ ВТОРОГО. Здесь стояли два снимка лаборатории
      на 303 West Palm Avenue — а второй лаб по фотовклейке книги это 172 N. Tustin
      Avenue, другой адрес и другие годы. Четвёртый жил 1975–1984; его место у
@@ -19244,7 +19252,8 @@ const STUDY_PHOTOS_BY_TITLE = {
   'STUDY PROGRAM': [{img: 'jimlect', cap: 'Jim\u2019s first lectures'}],
   'SECOND LAB': [{img: 'lab1ext', cap: 'The first laboratory: the ground floor at 130 El Camino Real, Tustin'},
                  {img: 'lab2ext', cap: 'The second laboratory: a third-floor space at 172 North Tustin Avenue, Orange'}],
-  'DIRECT-MAIL': [{img: 'jim76', cap: 'President of the Santa Ana 20/30 Club, 1976'},
+  'DIRECT-MAIL': [{img: 'rose', cap: 'One of the first magazine ads — the marketing promotion shot at the 1722 E. Rose laboratory, Orange'},
+                  {img: 'jim76', cap: 'President of the Santa Ana 20/30 Club, 1976'},
                   {img: 'lab4ext', cap: 'The fourth lab, 303 West Palm Avenue, Orange — 4,000 sq ft, 1975–1984'},
                   {img: 'lab4int', cap: 'Inside the fourth lab, 303 West Palm Avenue — the floor the letters went out from'}],
   'CONSOLIDATION': [{img: 'lab3ext', cap: 'The third lab, 1983–1984'},
@@ -19858,7 +19867,7 @@ const CASE_ITEMS = [
          'Use: firing dental porcelain and metal-ceramic restorations'],
    body:['Before programmable furnaces became standard, technicians controlled porcelain firing by hand. Temperature, vacuum and heating rate were read off mechanical gauges and set with rotary controls.',
          'The technician’s experience was the instrument: small adjustments changed the colour, translucency, fit and strength of the finished restoration.',
-         'The furnace on the bench in the photograph of Jim’s first laboratory resembles early Ney manual firing systems. Its maker’s plate is not legible, so the model stays unconfirmed.']},
+         'The furnace on the bench in the photograph of Jim at work in the early 1970s resembles early Ney manual firing systems. Its maker’s plate is not legible, so the model stays unconfirmed.']},
   {k:'ph_obj2', t:'Belt-driven laboratory engine',
    meta:['Probable identification: Buffalo No. 16 or a comparable Emesco bench engine',
          'Date: 1960s – 1970s',
