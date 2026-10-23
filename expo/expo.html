@@ -11591,7 +11591,9 @@ function drawRec3(t){
      740, низ уходит за коробку на тумбе, как и раньше. Нет файла — прежняя карта. */
   const PP = PROP_SPRITES.ph_poster89;
   if (PP){
-    const pw = 740 * kM * SS, ph = pw * PP.h / PP.w;
+    /* 23.10.2026, позже: постер стал горизонтальным (usmap.png из артефактов,
+       «там горизонтальный постер — меняй»): 1800 × 1341, ширина 860 */
+    const pw = 860 * kM * SS, ph = pw * PP.h / PP.w;
     const top = py(83, kM);   // 128 → 83: на 45 выше («карту чуть поднимем», 23.10.2026)
     pushHit(cx - pw/2, top, pw, ph, {type:'study', beat: BEATS.findIndex(b => b.y === '1989')});
     ctx.drawImage(spriteMip(PP, pw, ph), cx - pw/2, top, pw, ph);
