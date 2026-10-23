@@ -11592,7 +11592,8 @@ function drawRec3(t){
   const PP = PROP_SPRITES.ph_poster89;
   if (PP){
     /* 23.10.2026, позже: постер стал горизонтальным (usmap.png из артефактов,
-       «там горизонтальный постер — меняй»): 1800 × 1341, ширина 860 */
+       «там горизонтальный постер — меняй»): 1800 × 1341, ширина 860;
+       затем версия 1989-museum-poster-horizontal-v7 того же размера */
     const pw = 860 * kM * SS, ph = pw * PP.h / PP.w;
     const top = py(83, kM);   // 128 → 83: на 45 выше («карту чуть поднимем», 23.10.2026)
     pushHit(cx - pw/2, top, pw, ph, {type:'study', beat: BEATS.findIndex(b => b.y === '1989')});
