@@ -1415,7 +1415,12 @@ function initAttractStops(){
    восьми при 2000×1040): 1970 — 0, фото-стол эпохи 1 (плита основания) на
    наезде расходится с соседним прилавком ступенькой («стол растянуло», скрин
    Эльдара 23.10); 2022–23 — 150, иначе цифры годов срезает верх кадра. */
-const FILM_STOP = {on: !/[?&]filmstop=0/.test(location.search), z: 240, dwell: 3.0, in: 900, out: 1100,
+/* НАЕЗДЫ СНЯТЫ (Эльдар, 23.10.2026: «отменяем зумы все — они грузят систему тоже,
+   и не всегда корректно перестраивается зал»). z 0: тур у экранов только
+   останавливается на свои 3 секунды. ?filmzoom=240 — вернуть на пробу. */
+const FILM_STOP = {on: !/[?&]filmstop=0/.test(location.search),
+                   z: +((location.search.match(/[?&]filmzoom=(\d+)/) || [])[1] || 0),
+                   dwell: 3.0, in: 900, out: 1100,
                    zBy: {crt70: 0, vwall: 150}};
 /* фильм «включён» — со звуком; подгрузка (readyState < 2) его не выключает */
 const filmEngaged = () => { const v = WELCOME_TV.v; return !!(v && !v.muted); };
@@ -1425,7 +1430,7 @@ function filmStops(){
 }
 function filmStopXs(){ return filmStops().map(r => r.x); }
 function filmZoomTarget(){
-  if (!FILM_STOP.on || state.mode !== 'attract' || state.introHold || state.finHold || state.focusBeat >= 0) return null;
+  if (!FILM_STOP.on || !FILM_STOP.z || state.mode !== 'attract' || state.introHold || state.finHold || state.focusBeat >= 0) return null;
   const A = state.attract;
   if (A.phase !== 'cruise' && A.phase !== 'dwell') return null;
   const rs = filmStops(); if (!rs.length) return null;
@@ -5991,16 +5996,32 @@ const DESK_SCREENS = [
      заходит на рамку Chairside, когда смотришь с 1999-го. */
   {beat: 'WEB · CLINICAL VOICE', dx: 273, lz: -5, w: 290, src: 'media/website_2001.mp4'},
 ];
+/* РОЛИКИ ЗАЛА КАЧАЮТСЯ, КОГДА ДО НИХ ДОХОДЯТ (Эльдар, 23.10.2026: «может,
+   качество видео подприжать, если оно так долго грузится?»). Замер на открытии
+   зала: вместе с фильмом сразу качались три петли — reel_1993 (3,3 МБ),
+   fastmill_today (1,9 МБ), website_2001 (1,25 МБ), — хотя до них полчаса
+   прогулки, и делили канал с фильмом. Теперь у них нет src, пока камера не
+   подойдёт ближе LAZY_DIST: играть они начинают на 3200–4100, так что к
+   своему месту успевают загрузиться. */
+const LAZY_VIDS = [], LAZY_DIST = 7000;
+function lazyVideo(v, src, xOf){ v.preload = 'none'; LAZY_VIDS.push({v, src, xOf, on: false}); return v; }
+function lazyVideosStep(){
+  for (const L of LAZY_VIDS){
+    if (L.on) continue;
+    const x = L.xOf();
+    if (x == null || Math.abs(x - cam.x) > LAZY_DIST) continue;
+    L.on = true; L.v.src = L.src; L.v.preload = 'auto'; L.v.load();
+  }
+}
 function initDeskScreens(){
   for (const d of DESK_SCREENS){
     const b = BEATS.find(x => x.t === d.beat);
     if (!b){ d.x = null; continue; }
     d.x = b.x + (d.dx || 0);
     const v = document.createElement('video');
-    v.src = vurl(d.src); v.muted = true; v.loop = true; v.playsInline = true;
-    v.preload = 'auto';
+    v.muted = true; v.loop = true; v.playsInline = true;
+    lazyVideo(v, vurl(d.src), () => d.x);
     v.addEventListener('loadeddata', () => { d.ready = true; });
-    v.load();
     d.v = v;
   }
 }
@@ -6236,13 +6257,11 @@ const TODAY_TV = {
 };
 function initTodayTV(){
   const v = document.createElement('video');
-  v.src = vurl(TODAY_TV.src); v.muted = true; v.loop = true; v.playsInline = true;
-  /* metadata, а не auto: файл 50 МБ, и качать его при каждом заходе в зал,
-     когда до стены финала ещё половина истории, незачем — он подтянется, когда
-     зритель подойдёт и плазма сама вызовет play() */
-  v.preload = 'metadata';
+  v.muted = true; v.loop = true; v.playsInline = true;
+  /* качать его при каждом заходе в зал, когда до стены финала ещё вся история,
+     незачем: даже preload 'metadata' тянул 1,9 МБ на открытии — см. lazyVideo */
+  lazyVideo(v, vurl(TODAY_TV.src), () => BOARD_X + TODAY_TV.dx);
   v.addEventListener('loadeddata', () => { TODAY_TV.ready = true; });
-  v.load();
   TODAY_TV.v = v;
 }
 function drawTodayTV(){
@@ -6955,8 +6974,8 @@ const PROJECTORS = [
 function initProjectors(){
   for (const p of PROJECTORS){
     const v = document.createElement('video');
-    v.src = p.src; v.muted = true; v.loop = true; v.playsInline = true;
-    v.preload = 'auto';
+    v.muted = true; v.loop = true; v.playsInline = true;
+    lazyVideo(v, p.src, () => p.x);
     v.addEventListener('loadeddata', () => {
       p.ready = true;
       // start inside the window, not at the head of the tape
@@ -6974,10 +6993,8 @@ function initProjectors(){
         p.crop = {x0: a0 / 96, x1: (a1 + 1) / 96};
       } catch(e){ p.crop = {x0: 0, x1: 1}; }
     });
-    v.play().catch(() => {                      // a browser that wants a gesture first
-      const go = () => { v.play().catch(()=>{}); window.removeEventListener('pointerdown', go); };
-      window.addEventListener('pointerdown', go);
-    });
+    /* play() — когда проектор в кадре (drawProjectors); пока src нет, звать его
+       незачем: здесь он только вешал запасной обработчик на первое касание */
     p.v = v;
   }
 }
@@ -22336,7 +22353,8 @@ function update(dt){
   }
   // dolly
   cam.z += (cam.zTarget - cam.z) * Math.min(1, dt*3);
-  tiltStep(dt);   // наклон листа под пальцем и его возврат на пружине
+  tiltStep(dt);
+  lazyVideosStep();   // ролики зала начинают качаться на подходе   // наклон листа под пальцем и его возврат на пружине
 }
 
 /* ---------------- FRAME ---------------- */
