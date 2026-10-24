@@ -311,7 +311,7 @@ const BEATS = [
      пока — над партой»). На линию строки 1984-го (778) он лёг бы на коробку
      пончиков на четвёртой парте; 618 — последняя строка на 518 px (2000×1040),
      над крышкой коробки с воздухом */
-  {x:9850, y:'1988', t:'BIOTEMPS', yLift:130, descTitle:true, deskCapFoot:618,
+  {x:9850, y:'1988', t:'BIOTEMPS', yLift:130, descTitle:true, deskCapFoot:618, capLeft:true,
    th:'A second product proves the lab can build categories, not just crowns.',
    d:'BioTemps provisional restorations — lab-made PMMA temporaries that doubled as an esthetic “blueprint” the patient could approve before the final.',
    wall:[], table:[]},
@@ -4988,7 +4988,13 @@ function drawDeskCap(b){
   const y0 = b.deskCapFoot != null
     ? py(b.deskCapFoot, kk) - (b._dT.length - 1) * DESK_CAP.lh * SS * m
     : py(208 + (b._capDrop || 0) - (b.yLift || 0), kk) + DESK_CAP.gap * SS * m;
-  b._dT.forEach((ln, i) => ctx.fillText(ln, cx, y0 + i * DESK_CAP.lh * SS * m));
+  /* capLeft — абзац по левому краю, а край там, где начиналась самая длинная
+     строка при центровке (1988, Эльдар, 23.10.2026) */
+  if (b.capLeft){
+    const wmax = Math.max(...b._dT.map(ln => ctx.measureText(ln).width));
+    ctx.textAlign = 'left';
+    b._dT.forEach((ln, i) => ctx.fillText(ln, cx - wmax / 2, y0 + i * DESK_CAP.lh * SS * m));
+  } else b._dT.forEach((ln, i) => ctx.fillText(ln, cx, y0 + i * DESK_CAP.lh * SS * m));
   noShadow();
   ctx.restore();
 }
