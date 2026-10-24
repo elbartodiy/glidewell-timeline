@@ -14278,7 +14278,9 @@ function drawCrownTester(b, t){
   /* ПЛОЩАДКА: тёмный матовый металл от пола до низа машины, на её же глубине;
      слева на ней хватает места проектору (−360 делений чертежа) */
   if (g.platform){
-    const pL = X(-360), pR = X(275), yF = py(1080, kk), yT2 = foot + 1 * SS;
+    /* +360 справа, как −360 слева: площадка выступает с обеих сторон поровну
+       («торчащим не только слева, для проектора, но и справа — для равновесия», 23.10.2026) */
+    const pL = X(-360), pR = X(360), yF = py(1080, kk), yT2 = foot + 1 * SS;
     const pg = ctx.createLinearGradient(0, yT2, 0, yF);
     pg.addColorStop(0, '#3b3f44'); pg.addColorStop(0.15, '#2c3034'); pg.addColorStop(1, '#1d2024');
     ctx.fillStyle = pg; ctx.fillRect(pL, yT2, pR - pL, yF - yT2);
