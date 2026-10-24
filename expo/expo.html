@@ -4151,7 +4151,19 @@ function drawSprite(sp, x, yCenter, z, wWorld, rotDeg, alpha, hit, sxRivet){
      складывает вдвое столько раз, сколько нужно, и кэширует по размеру — на
      стене размер при ходьбе не меняется, так что это одна сборка на снимок. */
   const dw = sp.w*scale, dh = sp.h*scale;
-  ctx.drawImage(spriteMip(sp, dw, dh), -dw/2, -dh/2, dw, dh);
+  /* …И РЕЗКО (Эльдар, 23.10.2026: «доска стала как будто размытой — раньше была
+     пикселизация, ты сделал такой вариант, но он мне тоже не очень»). Мип
+     усредняет честно, но картинка сверху ложилась ещё раз — на дробные пиксели,
+     со вторым пересэмплом, — и тонкие линии маркера расплывались. Без поворота
+     снимок кладётся на целые пиксели ровно своего размера (мип того же размера
+     — это копия 1:1), а у снимков с флагом sharp мип проходит лёгкую нерезкую
+     маску (один раз на размер, в кэше). */
+  if (!rotDeg){
+    ctx.restore(); ctx.save(); ctx.globalAlpha = alpha == null ? 1 : alpha;
+    const iw = Math.max(1, Math.round(dw)), ih = Math.max(1, Math.round(dh));
+    const m = spriteMip(sp, iw, ih, sp.sharp);
+    ctx.drawImage(m, Math.round(sx - iw / 2), Math.round(sy - ih / 2), iw, ih);
+  } else ctx.drawImage(spriteMip(sp, dw, dh), -dw/2, -dh/2, dw, dh);
   ctx.restore();
 }
 
@@ -15178,14 +15190,14 @@ function drawAlbum(b, i, t, dt){
    as long as it is on screen. */
 const MIPS = new Map();
 let MIP_SEQ = 0;
-function spriteMip(sp, w, h){
+function spriteMip(sp, w, h, sharp){
   const src = sp.c;
   const srcW = src.naturalWidth || src.width, srcH = src.naturalHeight || src.height;
   if (!srcW || !srcH) return src;
   const tw = Math.max(1, Math.round(w)), th = Math.max(1, Math.round(h));
   if (tw >= srcW * 0.8) return src;              // barely a reduction — nothing to gain
   if (!sp._mid) sp._mid = 'm' + (++MIP_SEQ);
-  const id = sp._mid + ':' + tw + 'x' + th;
+  const id = sp._mid + ':' + tw + 'x' + th + (sharp ? 's' : '');
   const had = MIPS.get(id);
   if (had) return had;
   let cur = src, cw = srcW, ch = srcH;
@@ -15197,8 +15209,25 @@ function spriteMip(sp, w, h){
     cur = c; cw = hw; ch = hh;
   }
   const c = document.createElement('canvas'); c.width = tw; c.height = th;
-  const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+  const g = c.getContext('2d', sharp ? {willReadFrequently: true} : undefined); g.imageSmoothingQuality = 'high';
   g.drawImage(cur, 0, 0, tw, th);
+  /* нерезкая маска 3×3, сила 0,6 — возвращает тонким линиям край, который
+     съело усреднение; альфу не трогает */
+  if (sharp && tw > 2 && th > 2){
+    try {
+      const im = g.getImageData(0, 0, tw, th), d = im.data, o = new Uint8ClampedArray(d), A = 0.6;
+      const rw = tw * 4;
+      for (let y = 1; y < th - 1; y++) for (let x = 1; x < tw - 1; x++){
+        const i = y * rw + x * 4;
+        for (let ch = 0; ch < 3; ch++){
+          const c0 = o[i + ch];
+          const bl = (o[i + ch - 4] + o[i + ch + 4] + o[i + ch - rw] + o[i + ch + rw]) / 4;
+          d[i + ch] = c0 + A * (c0 - bl);
+        }
+      }
+      g.putImageData(im, 0, 0);
+    } catch(e){}
+  }
   /* a zoom walks the size a pixel at a time, so the cache has to be allowed to
      hold a run of them — and when it is full it drops its oldest rather than
      emptying itself, which would throw away the ten the hall is actually using */
@@ -23867,7 +23896,7 @@ async function boot(){
      Board.png: настоящая доска с той же схемой, вырезанная по альфе. Она встаёт
      на место нарисованной (та же ширина на стене — it.w по внутренней рамке),
      с той же мягкой тенью; нарисованная остаётся запасом, если фото не пришло. */
-  { const sp = makeBoardPhoto() || makeWhiteboard(); if (sp) SPRITES.board1980 = sp; }
+  { const sp = makeBoardPhoto() || makeWhiteboard(); if (sp){ sp.sharp = true; SPRITES.board1980 = sp; } }
   { const sp = makePrismatikPlate(); if (sp) SPRITES.prismatik05 = sp; }
   PED_SPRITES.crown = makePedObj('crown');
   PED_SPRITES.logo1970 = makePedObj('logo1970');
