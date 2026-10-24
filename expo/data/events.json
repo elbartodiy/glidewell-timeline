@@ -1,61 +1,8 @@
 {
- "updated": "2026-10-23T21:27:17+00:00",
+ "updated": "2026-10-24T04:39:21+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
  "count": 78,
  "events": [
-  {
-   "title": "Techniques for Predictable Implant Surgery",
-   "from": "2026-10-23",
-   "to": "2026-10-23",
-   "city": "Houston, TX",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Paresh B. Patel",
-    "Dr. Timothy Kosinski"
-   ],
-   "duration": "One Day",
-   "price": "595.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/techniques-for-predictable-implant-surgery?variant=52759773446508"
-  },
-  {
-   "title": "Implant Surgery, Aligner Therapy and CAD/CAM Dentistry",
-   "from": "2026-10-23",
-   "to": "2026-10-24",
-   "city": "Houston, TX",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Arvind Petrie",
-    "Dr. Ben Miraglia",
-    "Dr. Danielle Brown",
-    "Dr. Darshan Patel",
-    "Dr. Jinny Bender",
-    "Dr. Justin Chi",
-    "Dr. Louis Kaufman",
-    "Dr. Paresh B. Patel",
-    "Dr. Timothy Kosinski"
-   ],
-   "duration": "Two Days",
-   "price": "1190.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/implant-surgery-aligner-therapy-and-cad-cam-dentistry?variant=67808928301420"
-  },
-  {
-   "title": "Advanced Concepts in Full-Arch Implant Restoration: FP1 Workflows",
-   "from": "2026-10-23",
-   "to": "2026-10-24",
-   "city": "Irvine, CA",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Bushra Imam",
-    "Dr. Isaac Tawil",
-    "Dr. Taylor Manalili"
-   ],
-   "duration": "Two Days",
-   "price": "1295.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/dental-sleep-medicine-snoring-and-sleep-apnea-treatment-made-easy?variant=67836896051564"
-  },
   {
    "title": "Incorporating Digital Dentistry and Aligner Therapy",
    "from": "2026-10-24",
@@ -378,6 +325,20 @@
    "url": "https://glidewelldirect.com/products/surgical-placement-of-dental-implants-a-restorative-driven-approach?variant=67808926433644"
   },
   {
+   "title": "Build Different: Designing the Practice You Want and Future You Deserve",
+   "from": "2027-02-19",
+   "to": "2027-02-20",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. David Rice"
+   ],
+   "duration": "",
+   "price": "795.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/build-different-designing-the-practice-you-want-and-future-you-deserve-1?variant=67837654761836"
+  },
+  {
    "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
    "from": "2027-02-19",
    "to": "2027-02-20",
@@ -541,6 +502,7 @@
    "city": "Louisville, KY",
    "kind": "Live course",
    "instructors": [
+    "Dr. Mary Shields",
     "Dr. Sarah Belderes"
    ],
    "duration": "One Day",
@@ -739,12 +701,25 @@
    "city": "Irvine, CA",
    "kind": "Live course",
    "instructors": [
+    "Dr. Mary Shields",
     "Dr. Sarah Belderes"
    ],
    "duration": "One Day",
    "price": "595.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/facial-esthetics-with-injectable-neuromodulators-glidewell-in-partnership-with-jeuveau?variant=67808928629100"
+  },
+  {
+   "title": "Guided Implant Surgery: Digital Workflows for Safe and Efficient Implant Placement",
+   "from": "2027-07-09",
+   "to": "2027-07-10",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [],
+   "duration": "",
+   "price": "795.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/guided-implant-surgery-digital-workflows-for-safe-and-efficient-implant-placement?variant=67837341729132"
   },
   {
    "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
@@ -1010,6 +985,7 @@
    "city": "Raleigh, NC",
    "kind": "Live course",
    "instructors": [
+    "Dr. Mary Shields",
     "Dr. Sarah Belderes"
    ],
    "duration": "One Day",
@@ -1174,6 +1150,18 @@
    "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=67836896936300"
   },
   {
+   "title": "Guided Implant Surgery: Digital Workflows for Safe and Efficient Implant Placement",
+   "from": "2027-10-22",
+   "to": "2027-10-23",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [],
+   "duration": "",
+   "price": "795.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/guided-implant-surgery-digital-workflows-for-safe-and-efficient-implant-placement?variant=67837341827436"
+  },
+  {
    "title": "Esthetic Techniques with Anterior Crowns and Veneers",
    "from": "2027-10-29",
    "to": "2027-10-29",
@@ -1231,6 +1219,7 @@
    "city": "Irvine, CA",
    "kind": "Live course",
    "instructors": [
+    "Dr. Mary Shields",
     "Dr. Sarah Belderes"
    ],
    "duration": "One Day",
