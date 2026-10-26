@@ -8303,8 +8303,7 @@ const factIdx = (F, y) => { let k = -1; (F.pts || []).forEach(([yy], i) => { if 
 const COMPANY_FACTS = () => { const y = camYear();
   return FACT_TABLE.map(F => F.years ? [String(Math.max(0, y - 1970)), 'YEARS']
                                      : [factIdx(F, y) >= 0 ? F.pts[factIdx(F, y)][1] : '—', F.label]); };
-/* блик года и след к цифре: когда камера, идя вперёд, входит в год, где цифра
-   выросла */
+/* блик на цифре: когда камера, идя вперёд, входит в год, где цифра сменилась */
 const FACT_FX = {prevY: null, prevX: null, ev: []};
 function factEvents(){
   const y = camYear(), p = FACT_FX.prevY, jump = FACT_FX.prevX != null && Math.abs(cam.x - FACT_FX.prevX) > 900;
@@ -8315,9 +8314,7 @@ function factEvents(){
     const F = FACT_TABLE[i]; if (F.years) continue;
     const a = factIdx(F, p), b2 = factIdx(F, y);
     if (b2 > a){
-      const yr = F.pts[b2][0];
-      const beat = BEATS.filter(b => beatYear(b) && beatYear(b) <= yr && b.x <= cam.x + 260 && !b.sub && !b.plaque && !b.noWall).sort((u, v) => v.x - u.x)[0];
-      FACT_FX.ev.push({i, beat, t0: state.time});
+      FACT_FX.ev.push({i, t0: state.time});
     }
   }
 }
@@ -8404,7 +8401,7 @@ function drawCompanyStrip(A){
   const F = COMPANY_FACTS(), n = F.length, c0 = W * 0.1, c1 = W * 0.9, step = (c1 - c0) / n;
   const yB = H - 30 * SS;
   factEvents();
-  const pulse = new Array(n).fill(0), numX = [];
+  const pulse = new Array(n).fill(0);
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
   for (let i = 0; i < n; i++){
     const [num, lab] = F[i];
@@ -8417,49 +8414,39 @@ function drawCompanyStrip(A){
     const gap = 12 * SS, cx = c0 + step * (i + 0.5), x = cx - (wn + gap + wl) / 2;
     ctx.font = NF();
     try { ctx.letterSpacing = '0px'; } catch(e){}
-    numX[i] = x + wn / 2;
-    for (const e of FACT_FX.ev) if (e.i === i){ const q = (state.time - e.t0 - 0.85) / 0.9; if (q > 0 && q < 1) pulse[i] = Math.max(pulse[i], Math.sin(Math.PI * q)); }
-    if (pulse[i] > 0.01) drawGlow(LC, x + wn / 2, yB - 10 * SS, 70 * SS, 0.35 * pulse[i] * A);
+    /* БЛИК И БЛЕСК НА САМОЙ ЦИФРЕ, в момент смены (Эльдар, 26.10.2026: «давай
+       звёздочки не будут падать, а будет просто блик на цифрах в момент
+       смены»; «блик и блеск»): цифра на миг светлеет, по буквам слева направо
+       проходит световая полоса, и на пике у верхнего края вспыхивает искра.
+       Следа от года к цифре больше нет. */
+    let sw = -1;
+    for (const e of FACT_FX.ev) if (e.i === i){ const q = (state.time - e.t0) / 1.1;
+      if (q > 0 && q < 1){ pulse[i] = Math.max(pulse[i], Math.sin(Math.PI * q)); sw = q; } }
+    if (pulse[i] > 0.01) drawGlow(LC, x + wn / 2, yB - 10 * SS, 70 * SS, 0.3 * pulse[i] * A);
     const PT = lt < 0.5 ? [255, 255, 255] : LC.split(',').map(Number);   // вспышка — к белому на тёмном, к свету эпохи на белом
-    ctx.fillStyle = `rgba(${NI.map((v, j) => Math.round(v + (PT[j] - v) * 0.45 * pulse[i])).join(',')},0.96)`; ctx.fillText(num, x, yB);
+    ctx.fillStyle = `rgba(${NI.map((v, j) => Math.round(v + (PT[j] - v) * 0.6 * pulse[i])).join(',')},0.96)`; ctx.fillText(num, x, yB);
+    if (sw >= 0){
+      // полоса — градиентная заливка тех же букв, так что светится только цифра
+      const bx = x - 40 * SS + (wn + 80 * SS) * sw, bw = 26 * SS;
+      const gS = ctx.createLinearGradient(bx - bw, 0, bx + bw, 0);
+      gS.addColorStop(0, 'rgba(255,255,255,0)'); gS.addColorStop(0.5, `rgba(255,253,245,${(0.9 * A).toFixed(3)})`); gS.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.save(); ctx.fillStyle = gS; ctx.fillText(num, x, yB); ctx.restore();
+      // блеск: четырёхлучевая искра у правого верхнего края, на пике
+      const tw = Math.max(0, Math.sin(Math.PI * Math.min(1, Math.max(0, (sw - 0.3) / 0.5))));
+      if (tw > 0.01){
+        const sx = x + wn - 2 * SS, sy = yB - 24 * SS, r = 15 * SS * tw;
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        drawGlow('255,250,235', sx, sy, 16 * SS, 0.6 * tw * A);
+        ctx.strokeStyle = `rgba(255,252,240,${(0.85 * tw * A).toFixed(3)})`; ctx.lineWidth = Math.max(1, 1.1 * SS); ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(sx - r, sy); ctx.lineTo(sx + r, sy); ctx.moveTo(sx, sy - r); ctx.lineTo(sx, sy + r); ctx.stroke();
+        ctx.restore();
+      }
+    }
     ctx.font = `600 ${Math.round(11.5 * SS)}px "Helvetica Neue", Arial, sans-serif`;
     try { ctx.letterSpacing = `${2.2 * SS}px`; } catch(e){}
     ctx.fillStyle = `rgba(${LBL},0.82)`; ctx.fillText(lab, x + wn + gap, yB - 1 * SS);
   }
-  /* блик на годе (0…0,6 с) и след от него к цифре (0,3…1,2 с) */
-  FACT_FX.ev = FACT_FX.ev.filter(e => state.time - e.t0 < 2);
-  for (const e of FACT_FX.ev){
-    const tt = state.time - e.t0; if (!e.beat) continue;
-    const na = NUM_AT[e.beat.y]; if (!na || state.time - na.t > 0.5) continue;
-    const ax = na.x, ay = na.y, kk = na.sz / (170 * SS);
-    const bx = numX[e.i], by = yB - 12 * SS;
-    if (tt < 0.7){
-      const g0 = Math.sin(Math.PI * tt / 0.7);
-      drawGlow('255,250,235', ax, ay, 260 * kk * SS, 0.32 * g0 * A);
-      ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      const sw = ctx.createLinearGradient(ax - 200 * kk * SS, 0, ax + 200 * kk * SS, 0);
-      sw.addColorStop(0, 'rgba(255,250,235,0)'); sw.addColorStop(0.5, `rgba(255,250,235,${(0.22 * g0 * A).toFixed(3)})`); sw.addColorStop(1, 'rgba(255,250,235,0)');
-      ctx.fillStyle = sw; ctx.fillRect(ax - 200 * kk * SS, ay - 3 * SS, 400 * kk * SS, 6 * SS);
-      ctx.restore();
-    }
-    const q = (tt - 0.3) / 0.9;
-    if (q > 0 && q < 1.25 && bx != null){
-      const cx2 = (ax + bx) / 2, cy2 = Math.min(ay, by) - 40 * SS;
-      const P = u => [(1-u)*(1-u)*ax + 2*(1-u)*u*cx2 + u*u*bx, (1-u)*(1-u)*ay + 2*(1-u)*u*cy2 + u*u*by];
-      const head = Math.min(1, q), tail = Math.max(0, q - 0.35);
-      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
-      const N = 18;
-      for (let j = 0; j < N; j++){
-        const u0 = tail + (head - tail) * j / N, u1 = tail + (head - tail) * (j + 1) / N;
-        const [x0, y0] = P(u0), [x1, y1] = P(u1);
-        ctx.strokeStyle = `rgba(${LC},${(0.32 * (j + 1) / N * (1 - Math.max(0, q - 1) / 0.25) * A).toFixed(3)})`;
-        ctx.lineWidth = (0.6 + 1.6 * (j + 1) / N) * SS;
-        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
-      }
-      if (q < 1){ const [hx, hy] = P(head); drawGlow(LC, hx, hy, 22 * SS, 0.4 * A); }
-      ctx.restore();
-    }
-  }
+  FACT_FX.ev = FACT_FX.ev.filter(e => state.time - e.t0 < 1.2);
   /* подписи «COMPANY OVERVIEW» внизу больше нет (Эльдар, 26.10.2026: «company
      overview не надо писать внизу») */
   try { ctx.letterSpacing = '0px'; } catch(e){}
