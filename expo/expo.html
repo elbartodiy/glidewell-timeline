@@ -2315,8 +2315,6 @@ function attachMouseDriver(el){
     // arm the scrub, but do not move yet: a press is not a jump. Grabbing the
     // thumb anywhere on its body keeps that grip point, so it never snaps its
     // centre under the cursor.
-    if (musicMarkHit(pt)){ toggleMusic(); down = false; markTap = true; return; }
-    if (soundMarkHit(pt)){ toggleSound(); down = false; markTap = true; return; }
     /* THE VOICES OPENED AND CLOSED IN ONE TAP. The press opened the page, then
        the release of that same tap arrived as a click on nothing — and a click
        on nothing is exactly how a page is closed. The mark now owns the release
@@ -7684,7 +7682,7 @@ function updateWhoosh(){
                 (state.person && state.person.v && !state.person.v.paused) ||
                 (state.study && state.study.railV && !state.study.railV.paused);
   const quiet = voice || state.introHold || state.study || state.person ||
-                state.people || state.inspect || state.docOpen;
+                state.people || state.inspect || state.docOpen || SFX.off;
   for (const c of WHOOSH.cues){
     if (c.x == null) continue;
     const dS = c.x - cam.x, d = Math.abs(dS);
@@ -7732,11 +7730,17 @@ const MUSIC = {src: 'audio/mus_hall.m4a', vol: 0.30, duck: 0.18, cur: 0, el: nul
    «фильм без звука» и больше нигде не читается: голоса, музыка (у неё своя
    кнопка) и звуки зала от него не зависят. */
 const SOUND = {off: localStorage.getItem('glidewell.sound') === 'off'};
+/* ЗВУКОВЫЕ ЭФФЕКТЫ — свисты на подлёте к годам (WHOOSH) и разовые звуки зала
+   (pingOnce: самолёт 1993-го и др.). Свой выключатель в настройках (Эльдар,
+   26.10.2026: «сделай ещё одну кнопку внутри настроек — включить/выключить
+   саунд-эффекты»); фильм, музыка и голоса от него не зависят. */
+const SFX = {off: (() => { try { return localStorage.getItem('glidewell.sfx') === 'off'; } catch(e){ return false; } })()};
 /* ONE-SHOT PINGS. Not a whoosh cue — those are placed on the rail and timed to
    peak on arrival. This is a sound tied to a thing that happens in the room:
    it takes its own copy of a file, plays the head of it and cuts. */
 const PINGS = {};
 function pingOnce(file, gain, cutMs){
+  if (SFX.off) return;
   let a = PINGS[file];
   if (!a){ a = PINGS[file] = new Audio('audio/whoosh/' + file + '.m4a'); a.preload = 'auto'; }
   try {
@@ -7760,7 +7764,9 @@ function toggleMusic(){
    in by the slash, not by a label. */
 function musicMarkBox(){ const s = 22 * SS; return {x: 26 * SS, y: 26 * SS, w: s, h: s}; }
 function soundMarkBox(){ const s = 22 * SS; return {x: 68 * SS, y: 26 * SS, w: s, h: s}; }
-function voicesMarkBox(){ return {x: 26 * SS, y: 62 * SS, w: 64 * SS, h: 44 * SS}; }   // under the pair, as wide as both
+/* ноты и динамика в углу больше нет (звук — в настройках, 26.10.2026): «голоса»
+   встают на их строку, отметка сборки и шестерёнка — за ними, как и были */
+function voicesMarkBox(){ return {x: 26 * SS, y: 22 * SS, w: 64 * SS, h: 44 * SS}; }
 function markHit(b, pt){
   if (!pt) return false;
   const pad = 10 * SS;
@@ -7772,7 +7778,7 @@ function soundMarkHit(pt){ return markHit(soundMarkBox(), pt); }
 function voicesMarkHit(pt){ return markHit(voicesMarkBox(), pt); }
 /* шестерёнка настроек — под отметкой сборки (Эльдар, 23.10.2026: «кнопка
    настроек снизу под временем деплоя, слева сверху») */
-function settingsMarkBox(){ const s = 20 * SS; return {x: 26 * SS, y: 62 * SS + 44 * SS + 30 * SS, w: s, h: s}; }
+function settingsMarkBox(){ const s = 20 * SS; return {x: 26 * SS, y: 22 * SS + 44 * SS + 30 * SS, w: s, h: s}; }
 function settingsMarkHit(pt){ return markHit(settingsMarkBox(), pt); }
 function drawMusicMark(){
   const A = Math.max(0.25, state.ruleA);          // they live with the rule
@@ -7781,7 +7787,7 @@ function drawMusicMark(){
   ctx.save();
   ctx.lineJoin = 'round';
   // THE NOTE — hall music, off by default (the film carries the sound)
-  {
+  if (false){   // снята из угла: переключатель в настройках (26.10.2026)
     const b = musicMarkBox();
     const hot = musicMarkHit(Input.hover) ? 1 : 0;
     const a = (MUSIC.off ? 0.30 : 0.42) * A + 0.28 * hot;
@@ -7803,7 +7809,7 @@ function drawMusicMark(){
     }
   }
   // THE SPEAKER — the background film's sound only (since 14.10.2026; voices always speak)
-  {
+  if (false){   // снят из угла: переключатель в настройках (26.10.2026)
     const b = soundMarkBox();
     const hot = soundMarkHit(Input.hover) ? 1 : 0;
     const a = (SOUND.off ? 0.30 : 0.42) * A + 0.28 * hot;
@@ -7899,7 +7905,19 @@ function drawMusicMark(){
    Выбор хранится в localStorage (на стенде переживает перезагрузку); параметр в
    адресе (?tilt=1, ?filmzoom=240) по-прежнему главнее на одну загрузку. */
 const SETTINGS = {open: false, el: null};
+/* ЗВУК — ТОЖЕ ЗДЕСЬ (Эльдар, 26.10.2026: «и вообще все звуковые кнопки
+   настройки перенеси внутрь»): нота (музыка зала) и динамик (звук фонового
+   фильма) сняты из угла. own — пункт сам хранит своё состояние под прежним
+   ключом (glidewell.music / glidewell.sound / glidewell.sfx), так что выбор,
+   сделанный раньше кнопками, не теряется. Клавиша M по-прежнему включает
+   музыку. */
 const SETTINGS_ITEMS = [
+  {key: 'music', own: true, label: 'Hall music', get: () => !MUSIC.off,
+   set: on => { if (MUSIC.off === on) toggleMusic(); }},
+  {key: 'sound', own: true, label: 'Film sound', get: () => !SOUND.off,
+   set: on => { if (SOUND.off === on) toggleSound(); }},
+  {key: 'sfx', own: true, label: 'Sound effects', get: () => !SFX.off,
+   set: on => { SFX.off = !on; try { localStorage.setItem('glidewell.sfx', on ? 'on' : 'off'); } catch(e){} }},
   {key: 'tilt', label: 'Tilt on swipe', get: () => TILT.on,
    set: on => { TILT.on = on; if (!on){ TILT.a = TILT.w = TILT.target = TILT.shown = 0; cv.style.transform = ''; } }},
   {key: 'filmzoom', label: 'Zoom to film screens (tour)', get: () => FILM_STOP.z > 0,
@@ -7907,6 +7925,7 @@ const SETTINGS_ITEMS = [
 ];
 function initSettings(){
   for (const it of SETTINGS_ITEMS){
+    if (it.own) continue;
     let v = null;
     try { v = localStorage.getItem('glidewell.set.' + it.key); } catch(e){}
     if (v != null && !new RegExp('[?&]' + it.key + '=').test(location.search)) it.set(v === '1');
@@ -7936,7 +7955,7 @@ function openSettings(){
     cb.type = 'checkbox'; cb.checked = it.get(); cb.style.cssText = 'width:18px;height:18px;margin:0;accent-color:#c9a86a';
     cb.addEventListener('change', () => {
       it.set(cb.checked);
-      try { localStorage.setItem('glidewell.set.' + it.key, cb.checked ? '1' : '0'); } catch(e){}
+      if (!it.own) try { localStorage.setItem('glidewell.set.' + it.key, cb.checked ? '1' : '0'); } catch(e){}
     });
     row.appendChild(cb); row.appendChild(document.createTextNode(it.label));
     el.appendChild(row);
@@ -24031,7 +24050,7 @@ function frame(){
   if (Input.hover && state.mode === 'live'){
     const aimHover = (!state.inspect && hitAt(Input.hover.x, Input.hover.y)) || null;
     state.docHot = !!(aimHover && aimHover.type === 'doc');
-    document.body.style.cursor = (musicMarkHit(Input.hover) || soundMarkHit(Input.hover) || voicesMarkHit(Input.hover) || settingsMarkHit(Input.hover)) ? 'pointer'
+    document.body.style.cursor = (voicesMarkHit(Input.hover) || settingsMarkHit(Input.hover)) ? 'pointer'
       : ruleHit(Input.hover) ? 'ew-resize'
       : ((!state.inspect && hitAt(Input.hover.x, Input.hover.y)) ? 'pointer' : '');
   }
