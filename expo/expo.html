@@ -5135,7 +5135,7 @@ function drawBenchDescs(){
       ctx.restore();
       const by0 = top + b._dR.length * lh + 6 * SS;
       /* подписи шагов — над линейкой века внизу кадра, а не под ней */
-      const zh = Math.min(P.y1 - 16 * SS - by0, (H * 0.915 - 26 * SS - by0) / 0.74);
+      const zh = Math.min(P.y1 - 16 * SS - by0, (Math.min(H * 0.915, RULE_Y() - 24 * SS) - 26 * SS - by0) / 0.74);
       if (zh > 60 * SS) drawZirconiaLine(P.cx - colw / 2, by0, colw, zh, state.time, dAmt);
       continue;
     }
@@ -5168,7 +5168,8 @@ function drawBenchDescs(){
      block by its foot instead: the last line always lands on the same rule, and
      longer captions grow upward. */
   {
-        const top = H * 0.905 - (b._d.length - 1) * 32 * SS;
+        const capFoot = Math.min(H * 0.905, RULE_Y() - 40 * SS);   // над линейкой, которая поднялась над полосой фактов
+        const top = capFoot - (b._d.length - 1) * 32 * SS;
         /* Some beats cannot carry their thesis under the title: at 2022 the
            whole bay is a photograph and an italic line laid over it is simply
            unreadable. Those ask for it here instead, one line above the
@@ -5185,7 +5186,7 @@ function drawBenchDescs(){
         for (const ln of b._d) wide = Math.max(wide, ctx.measureText(ln).width);
         drawCapLines(b._d, W * 0.5, top, 32 * SS);
         CAP_RECT = {x0: W/2 - CAP_COLW()/2 - 14 * SS, x1: W/2 - CAP_COLW()/2 + wide + 14 * SS,
-                    y0: top - 30 * SS, y1: H * 0.905 + 12 * SS};
+                    y0: top - 30 * SS, y1: capFoot + 12 * SS};
       }
       ctx.restore();
       continue;
@@ -5271,7 +5272,7 @@ function drawBenchDescs(){
     let capTop = py(CFG.benchY, kf) + 78*SS + slabDrop + (b.capDY || 0) * SS;
     {
       const foot = capTop + (b._d.length - 1) * 32 * SS;
-      const limit = H - 96 * SS;
+      const limit = Math.min(H - 96 * SS, RULE_Y() - 44 * SS);
       if (foot > limit) capTop = Math.max(py(CFG.benchY, kf) + 46 * SS, capTop - (foot - limit));
     }
     /* Some beats cannot carry their thesis under the title: at 2022 the whole
@@ -8038,6 +8039,12 @@ function drawRuleThumb(mx, y, tw, S, A, warm){
   ctx.restore();
 }
 
+/* ЛИНЕЙКА ВЕКА — НАД ПОЛОСОЙ О КОМПАНИИ (Эльдар, 26.10.2026: «масштабное
+   нововведение… выбрал пока самый нижний вариант, сделай его элегантным, и линия
+   прокрутки над этими данными»). Было H − 40; полоса фактов занимает низ кадра
+   (drawCompanyStrip), линейка встаёт над ней. Всё, что держалось «над
+   линейкой», считает от RULE_Y(). */
+const RULE_Y = () => H - 104 * SS;
 function ruleGeom(){
   const x0 = W * 0.13, x1 = W * 0.87;
   const W0 = INTRO_X, W1 = FIN_X;
@@ -8047,7 +8054,7 @@ function ruleGeom(){
   // the line am I looking at" — a point could never say it.
   const half = (W / 2) / (k(seg.tz || seg.z0 || 550) * SS);
   return {
-    x0, x1, y: H - 40 * SS, W0, W1, half,
+    x0, x1, y: RULE_Y(), W0, W1, half,
     at:  wx => x0 + (x1 - x0) * Math.max(0, Math.min(1, (wx - W0) / (W1 - W0))),
     toWorld: sx => W0 + (W1 - W0) * Math.max(0, Math.min(1, (sx - x0) / (x1 - x0))),
   };
@@ -8237,6 +8244,89 @@ function drawTallUnits(){
   }
 }
 
+/* ПОЛОСА «COMPANY OVERVIEW» — вариант 03 Эльдара (26.10.2026), «элегантно»;
+   «от линии вниз — градиентное затемнение, от тёмного к прозрачному»; «по
+   краям слева и справа аккуратное затемнение тоже, чтобы не резко». Тонкая
+   золотая линия, под ней — тень, гаснущая книзу и к обоим краям; пять фактов в
+   одну строку через золотые точки: число светлым, подпись — разрядкой. Годы
+   считаются от 1970 по часам устройства. Живёт и гаснет вместе с линейкой. */
+const COMPANY_FACTS = () => [
+  [String(new Date().getFullYear() - 1970), 'YEARS'],
+  ['4,000', 'EMPLOYEES'], ['1M', 'SQ FT'], ['50K+', 'CROWNS / DAY'], ['~$500M', 'EST. REVENUE']];
+let STRIP_SHADE = null;
+function stripShade(w, h){
+  if (STRIP_SHADE && STRIP_SHADE.width === w && STRIP_SHADE.height === h) return STRIP_SHADE;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  const gv = g.createLinearGradient(0, 0, 0, h);
+  /* книзу не до нуля: подписи и «Company overview» стоят в нижней половине, и на
+     белом зале без подложки их не прочесть */
+  gv.addColorStop(0, 'rgba(8,7,6,0.72)'); gv.addColorStop(0.6, 'rgba(8,7,6,0.5)'); gv.addColorStop(1, 'rgba(8,7,6,0.18)');
+  g.fillStyle = gv; g.fillRect(0, 0, w, h);
+  g.globalCompositeOperation = 'destination-in';
+  const gh = g.createLinearGradient(0, 0, w, 0);
+  gh.addColorStop(0, 'rgba(0,0,0,0)'); gh.addColorStop(0.12, 'rgba(0,0,0,1)');
+  gh.addColorStop(0.88, 'rgba(0,0,0,1)'); gh.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gh; g.fillRect(0, 0, w, h);
+  return (STRIP_SHADE = c);
+}
+/* ЦВЕТ ЛИНИИ — ПО ЭПОХЕ (Эльдар, 26.10.2026: «цвет линии соответственно эпохам
+   тоже пусть меняется»): свет эпохи из RULE_STYLE.glow — латунь ремесла, тёплый
+   свет 80-х, холодный 90-х, голубой белого зала; на стыках эпох — плавно, на
+   тысяче единиц ходьбы, как и фон */
+function stripRGB(){
+  const i = segIdx(cam.x), c = RULE_STYLE[Math.min(3, i)].glow.split(',').map(Number);
+  if (i + 1 < SEGMENTS.length){
+    const t = Math.max(0, Math.min(1, (cam.x - (SEGMENTS[i + 1].x0 - 500)) / 1000));
+    if (t > 0){ const d = RULE_STYLE[Math.min(3, i + 1)].glow.split(',').map(Number);
+      return c.map((v, j) => Math.round(v + (d[j] - v) * t)).join(','); }
+  }
+  return c.join(',');
+}
+function drawCompanyStrip(A){
+  if (A < 0.02) return;
+  const LC = stripRGB();
+  const yL = H - 76 * SS, xa = W * 0.06, xb = W * 0.94;
+  ctx.save();
+  ctx.globalAlpha = A;
+  const sh = stripShade(Math.round(xb - xa), Math.round(H - yL));
+  ctx.drawImage(sh, Math.round(xa), Math.round(yL));
+  // золотая линия, тающая к краям
+  const gl = ctx.createLinearGradient(xa, 0, xb, 0);
+  gl.addColorStop(0, `rgba(${LC},0)`); gl.addColorStop(0.1, `rgba(${LC},0.8)`);
+  gl.addColorStop(0.9, `rgba(${LC},0.8)`); gl.addColorStop(1, `rgba(${LC},0)`);
+  ctx.fillStyle = gl; ctx.fillRect(xa, Math.round(yL), xb - xa, Math.max(1, 1.2 * SS));
+  // факты
+  const F = COMPANY_FACTS(), n = F.length, c0 = W * 0.1, c1 = W * 0.9, step = (c1 - c0) / n;
+  const yB = H - 30 * SS;
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  for (let i = 0; i < n; i++){
+    const [num, lab] = F[i];
+    ctx.font = `300 ${Math.round(30 * SS)}px "Helvetica Neue", Arial, sans-serif`;
+    try { ctx.letterSpacing = '0px'; } catch(e){}
+    const wn = ctx.measureText(num).width;
+    ctx.font = `600 ${Math.round(11.5 * SS)}px "Helvetica Neue", Arial, sans-serif`;
+    try { ctx.letterSpacing = `${2.2 * SS}px`; } catch(e){}
+    const wl = ctx.measureText(lab).width;
+    const gap = 12 * SS, cx = c0 + step * (i + 0.5), x = cx - (wn + gap + wl) / 2;
+    ctx.font = `300 ${Math.round(30 * SS)}px "Helvetica Neue", Arial, sans-serif`;
+    try { ctx.letterSpacing = '0px'; } catch(e){}
+    ctx.fillStyle = 'rgba(244,238,226,0.96)'; ctx.fillText(num, x, yB);
+    ctx.font = `600 ${Math.round(11.5 * SS)}px "Helvetica Neue", Arial, sans-serif`;
+    try { ctx.letterSpacing = `${2.2 * SS}px`; } catch(e){}
+    ctx.fillStyle = 'rgba(222,206,176,0.82)'; ctx.fillText(lab, x + wn + gap, yB - 1 * SS);
+    if (i < n - 1){
+      ctx.fillStyle = `rgba(${LC},0.9)`;
+      ctx.beginPath(); ctx.arc(c0 + step * (i + 1), yB - 9 * SS, 2.2 * SS, 0, 7); ctx.fill();
+    }
+  }
+  ctx.font = `500 ${Math.round(9.5 * SS)}px "Helvetica Neue", Arial, sans-serif`;
+  try { ctx.letterSpacing = `${2.6 * SS}px`; } catch(e){}
+  ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(222,206,176,0.5)';
+  ctx.fillText('COMPANY OVERVIEW', W * 0.9, H - 10 * SS);
+  try { ctx.letterSpacing = '0px'; } catch(e){}
+  ctx.restore();
+}
 function drawProgress(t){
   const busy = state.study || state.person || state.people || state.inspect || state.clip || state.introHold;
   const hidden = Math.max(state.introFade || 0, state.finFade || 0, state.attract.fade || 0);
@@ -8244,9 +8334,10 @@ function drawProgress(t){
   state.ruleA += (want - state.ruleA) * Math.min(1, (state.dt || 0.016) * 6);
   const A = state.ruleA;
   if (A < 0.02) return;
+  drawCompanyStrip(A);
 
   const x0 = W * 0.13, x1 = W * 0.87, span = x1 - x0;
-  const y = H - 40 * SS;
+  const y = RULE_Y();
   const W0 = INTRO_X, W1 = FIN_X;
   const at = wx => x0 + span * Math.max(0, Math.min(1, (wx - W0) / (W1 - W0)));
   const RECS = [[REC_L, REC_R], [REC3_L, REC3_R], [REC93_L, REC93_R],
