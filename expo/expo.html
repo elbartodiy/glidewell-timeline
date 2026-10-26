@@ -844,6 +844,15 @@ const CUTS = [
      НОМЕРУ в списке (bayStart(2) — это 1993), и новая строка в середине списка
      сдвинула всем номера. Теперь врезки ищут по id — см. CUT(). */
   {id: 'trim73', at: 4000, w: -402, on: true, noBay: true},
+  /* ЗАЛ GLIDEWELL EDUCATION ЗА СТЕКЛЯННЫМИ ДВЕРЯМИ (Эльдар, 26.10.2026: «сделай
+     зал с людьми, который видно сквозь стеклянные двери, с аккуратным названием
+     на них… для этого придётся чуть подвинуть всё вперёд»). Врезка встаёт сразу
+     за плазмой (сырое 27100 = мир 39465 — на 65 правее начала ореха) и двигает
+     вправо весь финал: ореховую панель, TODAY, табло, стол, конец зала.
+     Откуда 1480: колонна (правая кромка 37397) + 400 воздуха + плазма 996 +
+     340 + двери 1406 (проём 1350 и два косяка по 28) + 340 = орех на 40879;
+     без врезки он начинался на 39401. См. EDU у плазмы. */
+  {id: 'edu', at: 27100, w: 1480, on: true, noBay: true},
 ];
 function SHIFT(x){
   let s = 0;
@@ -1376,6 +1385,18 @@ const HALL_GAP = REC23_L - REC4_R;
 const HALL_FRAME_L = REC23_R + HALL_GAP;
 const HALL_FRAME_R = HALL_FRAME_L + 1500;
 const HALL_MID = (HALL_FRAME_L + HALL_FRAME_R) / 2;
+/* КОЛОННЫ ПРОЁМА — ЧАСТЬ СТЕНЫ (Эльдар, 26.10.2026: «мне не нравится, что всё
+   на стене едет относительно колонн. Колонна — это часть стены»). Они стояли
+   на 992, на 400 ближе стены (1400), и плазма, ореховый карниз, светильники
+   проезжали мимо них при каждом шаге. Теперь колонна на плоскости стены, на
+   8 единиц впереди её (предметы стены висят на 1394), и не сдвигается против
+   неё ни на пиксель. Ширина 145 вместо 120 — та же видимая толщина, что была
+   на 992: 120 · k(992) / k(1392) при камере на месте = 145. Сам проём (1500)
+   не тронут, поэтому на экране он стал уже на ту же долю — это честная цена
+   того, что он теперь в стене, а не перед ней. Прилавки у проёма — прежние:
+   их разрыв (BENCH_BREAKS ниже) посчитан от старой глубины и оставлен как есть. */
+const HALL_PORTAL_Z = 1392;
+const HALL_COL_W = 145;
 
 /* Era segments: the space itself ages. Wall recedes (z grows), materials,
    light and typography change; each seam is crossed through a doorway. */
@@ -6591,7 +6612,14 @@ const TODAY_TV = {
      Замерено на кадре 1960×1160 при камере 41900: колонна 61 px, просвет был
      5 px. −1373 даёт просвет около 100 px — то есть полторы колонны, и до табло
      остаётся примерно столько же, так что экран стоит ровно между ними. */
-  dx: -1373,          // от центра табло влево
+  dx: -1373,          // (было: от центра табло влево — до 26.10.2026)
+  /* ПЛАЗМА — ПЕРВАЯ ПОСЛЕ ХОЛЛА, И ДЕРЖИТСЯ ЗА КОЛОННУ, А НЕ ЗА ТАБЛО (Эльдар,
+     26.10.2026: «экран должен идти после зала, а только после экрана стеклянные
+     двери»). Табло с TODAY уехало вправо на врезку 'edu', а плазма осталась у
+     колонны: просвет air = 400 — две с лишним толщины колонны на экране, правило
+     «не тоньше колонны» от 01.10 соблюдено с запасом. */
+  air: 400,
+  x(){ return HALL_FRAME_R + HALL_COL_W / 2 + this.air + this.w / 2; },
   w: 996, h: 560,     // 16:9
   src: 'media/fastmill_today.mp4',
   v: null, ready: false,
@@ -6601,12 +6629,12 @@ function initTodayTV(){
   v.muted = true; v.loop = true; v.playsInline = true;
   /* качать его при каждом заходе в зал, когда до стены финала ещё вся история,
      незачем: даже preload 'metadata' тянул 1,9 МБ на открытии — см. lazyVideo */
-  lazyVideo(v, vurl(TODAY_TV.src), () => BOARD_X + TODAY_TV.dx);
+  lazyVideo(v, vurl(TODAY_TV.src), () => TODAY_TV.x());
   v.addEventListener('loadeddata', () => { TODAY_TV.ready = true; });
   TODAY_TV.v = v;
 }
 function drawTodayTV(){
-  const cx = BOARD_X + TODAY_TV.dx;
+  const cx = TODAY_TV.x();
   const near = Math.abs(cam.x - cx) < CULL_BAY;
   const V = TODAY_TV.v;
   if (V){
@@ -6631,7 +6659,7 @@ function drawTodayTV(){
      глубокой стены уходит ЛЕВЕЕ неё: обрезаем экран по правой кромке колонны —
      она и есть видимый край этой стены. */
   const kc = k(HALL_PORTAL_Z);
-  const colR = px(HALL_FRAME_R, kc) + 120 * kc * SS / 2;
+  const colR = px(HALL_FRAME_R, kc) + HALL_COL_W * kc * SS / 2;
   if (colR >= x1) return;                       // экран целиком за порталом — его нет
   /* ОБРЕЗКА ДЕРЖИТСЯ НА ВЕСЬ ЭКРАН, А НЕ НА ОДНУ ОПРАВУ. В первой пробе я
      положил её внутрь save/restore, которым гасилась тень корпуса: обрезалась
@@ -6663,6 +6691,130 @@ function drawTodayTV(){
   ctx.strokeStyle = 'rgba(180,195,210,0.45)'; ctx.lineWidth = 1.4 * SS;
   ctx.beginPath(); ctx.roundRect(x0, yTop, w, h, 10 * u); ctx.stroke();
   ctx.restore();                                // снимаем обрезку по колонне
+}
+
+/* ── ЗАЛ GLIDEWELL EDUCATION · ЗА СТЕКЛЯННЫМИ ДВЕРЯМИ ──────────────────────
+   Эльдар (26.10.2026): «сделай зал с людьми, который видно сквозь стеклянные
+   двери, с аккуратным названием на них Glidewell Education… экран должен идти
+   после зала, а только после экрана стеклянные двери, сквозь которые фронтально
+   видно силуэты людей, сидящих и смотрящих на человека на сцене — сделай их в
+   два слоя, чтобы показать пространство глубины при скролле; самых ближайших
+   можешь затемнить, они слишком яркие».
+   Порядок по стене: колонна холла → плазма → двери → ореховая панель TODAY.
+   Двери — три стеклянных полотна без рам (проём 1350, косяки по 28 из той же
+   стали, что колонны), от пола до карниза: верх проёма на −36, на 54 ниже
+   низа карниза (−90), так что тень карниза ложится на стальную перемычку.
+   За стеклом — три снимка из артефактов Эльдара (Stage_04, Stage_02,
+   Stage_01, все от 26.10.2026), каждый — предмет на своей глубине: x, размер
+   и высота от одного k. Чем глубже слой, тем медленнее он едет за стеклом.
+     room — зал со сценой и докладчиком (Stage_04), z 2800, на ступень темнее;
+     far  — дальние ряды (Stage_02, строки 464…716), z 2200, яркость 0,8;
+     near — ближние ряды (Stage_01, строки 578…941), z 1600, яркость 0,36 —
+            «слишком яркие».
+   s — мировых единиц на пиксель снимка, y — мировая высота его верхней
+   строки на своей глубине. Ширины подобраны так, чтобы на кадре 2000×1040
+   край снимка не заходил в проём ни при каком положении камеры, пока двери в
+   кадре (запас = (W/2 + проём/2)·(1 − k слоя / k стены)); на широком кадре
+   срабатывает упор, как у комнаты стеклянного холла. */
+const EDU = {
+  air: 340, open: 1350, jamb: 28, gap: 10, top: -36,
+  room: {key: 'ph_edu_room', z: 2800, s: 3.2, y: -930, dim: 0.22},
+  far:  {key: 'ph_edu_far',  z: 2200, s: 2.49, y: 740},
+  near: {key: 'ph_edu_near', z: 1600, s: 1.24, y: 805},
+  /* матовая полоса с названием — высоко, над головой докладчика (ниже она его
+     закрывала); надпись — на среднем полотне, чтобы стыки стекла её не резали */
+  band: {y0: 104, y1: 214},
+};
+EDU.mid = () => TODAY_TV.x() + TODAY_TV.w / 2 + EDU.air + EDU.jamb + EDU.open / 2;
+function eduLayer(L, cx, ox0, ox1){
+  const sp = PROP_SPRITES[L.key]; if (!sp) return;
+  const kz = k(L.z);
+  const w = sp.w * L.s * kz * SS, h = sp.h * L.s * kz * SS;
+  let x = px(cx, kz) - w / 2;
+  if (w > ox1 - ox0) x = Math.min(ox0, Math.max(ox1 - w, x));   // край снимка в проём не заходит
+  const y = Math.round(py(L.y, kz));
+  ctx.drawImage(spriteMip(sp, w, h), Math.round(x), y, Math.round(w), Math.round(h));
+  /* сцена светит сама — за стеклом она на ступень темнее, иначе зал за дверью
+     ярче комнаты, из которой на него смотрят */
+  if (L.dim){ ctx.fillStyle = `rgba(4,3,5,${L.dim})`; ctx.fillRect(Math.round(x), y, Math.round(w), Math.round(h)); }
+}
+function drawEduHall(t){
+  const cx = EDU.mid();
+  if (Math.abs(cam.x - cx) > CULL_BAY) return;
+  const seg = SEGMENTS[3];
+  const kw = k((seg.z0 || 1400) - 6), u = kw * SS;
+  const ox0 = px(cx - EDU.open / 2, kw), ox1 = px(cx + EDU.open / 2, kw);
+  const jw = EDU.jamb * u;
+  if (ox1 + jw < -40 || ox0 - jw > W + 40) return;
+  const yT = py(EDU.top, kw), yB = py(1080, kw), fT = yT - jw;
+  const ow = ox1 - ox0, oh = yB - yT;
+  rivet('edu_doors', (ox0 + ox1) / 2, kw);
+  const paneX = i => ox0 + ow * i / 3;            // границы трёх полотен
+  ctx.save();
+  ctx.beginPath(); ctx.rect(ox0, yT, ow, oh); ctx.clip();
+  /* ---- зал за стеклом ---- */
+  ctx.fillStyle = '#070608'; ctx.fillRect(ox0, yT, ow, oh);
+  eduLayer(EDU.room, cx, ox0, ox1);
+  eduLayer(EDU.far, cx, ox0, ox1);
+  eduLayer(EDU.near, cx, ox0, ox1);
+  /* ---- стекло ---- светлый зал отражается в нём вуалью, сильнее у потолка */
+  const veil = ctx.createLinearGradient(0, yT, 0, yB);
+  veil.addColorStop(0, 'rgba(228,234,240,0.17)'); veil.addColorStop(0.5, 'rgba(228,234,240,0.05)');
+  veil.addColorStop(1, 'rgba(228,234,240,0.09)');
+  ctx.fillStyle = veil; ctx.fillRect(ox0, yT, ow, oh);
+  /* отражения — косые блики. Отражённое в стекле стоит за ним на том же
+     расстоянии, на каком оригинал перед ним (прилавки и зал — в 1000…1400),
+     поэтому блики живут на глубине 2600 и едут медленнее самого стекла */
+  { const kr = k(2600), sk = oh * 0.42;
+    for (const [dx, wd, a] of [[-430, 150, 0.075], [-250, 44, 0.05], [380, 200, 0.06], [560, 50, 0.04]]){
+      const sx = px(cx + dx, kr), ww = wd * kr * SS;
+      const g = ctx.createLinearGradient(sx, 0, sx + ww, 0);
+      g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, `rgba(255,255,255,${a})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(sx + sk * 0.5, yT); ctx.lineTo(sx + ww + sk * 0.5, yT);
+      ctx.lineTo(sx + ww - sk * 0.5, yB); ctx.lineTo(sx - sk * 0.5, yB); ctx.closePath(); ctx.fill();
+    } }
+  /* ---- матовая полоса и название ---- */
+  { const by0 = py(EDU.band.y0, kw), by1 = py(EDU.band.y1, kw);
+    ctx.fillStyle = 'rgba(238,241,244,0.80)';
+    ctx.fillRect(ox0, by0, ow, by1 - by0);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillRect(ox0, by0, ow, Math.max(1, 1 * u));
+    const ink = `rgba(${seg.ink},0.9)`, mx = (paneX(1) + paneX(2)) / 2;
+    ctx.textAlign = 'center'; ctx.fillStyle = ink;
+    const f1 = 44 * u, f2 = 19 * u, ls1 = f1 * 0.2, ls2 = f2 * 0.62;
+    ctx.font = eraFont(f1, '500', seg.font);
+    try { ctx.letterSpacing = `${ls1}px`; } catch(e){}
+    ctx.fillText('GLIDEWELL', mx + ls1 / 2, by0 + (by1 - by0) * 0.56);
+    ctx.font = eraFont(f2, '600', seg.font);
+    try { ctx.letterSpacing = `${ls2}px`; } catch(e){}
+    ctx.fillText('EDUCATION', mx + ls2 / 2, by0 + (by1 - by0) * 0.84);
+    try { ctx.letterSpacing = '0px'; } catch(e){}
+    ctx.textAlign = 'left'; }
+  /* ---- стыки полотен: тонкая щель и светлая кромка стекла ---- */
+  for (let i = 1; i < 3; i++){
+    const gx = paneX(i), gw = Math.max(1.5, EDU.gap * u);
+    ctx.fillStyle = 'rgba(16,18,22,0.75)'; ctx.fillRect(gx - gw / 2, yT, gw, oh);
+    ctx.fillStyle = 'rgba(214,232,228,0.45)';
+    ctx.fillRect(gx - gw / 2 - 1, yT, 1, oh); ctx.fillRect(gx + gw / 2, yT, 1, oh);
+  }
+  ctx.restore();
+  /* ---- сталь: косяки, перемычка, фурнитура среднего полотна ---- */
+  const steelV = (x0, x1) => { const g = ctx.createLinearGradient(x0, 0, x1, 0);
+    g.addColorStop(0, '#858c93'); g.addColorStop(0.2, '#cbd1d6'); g.addColorStop(0.55, '#eef1f3'); g.addColorStop(1, '#7b8289'); return g; };
+  ctx.fillStyle = steelV(ox0 - jw, ox0); ctx.fillRect(ox0 - jw, fT, jw, yB - fT);
+  ctx.fillStyle = steelV(ox1, ox1 + jw); ctx.fillRect(ox1, fT, jw, yB - fT);
+  { const g = ctx.createLinearGradient(0, fT, 0, yT);
+    g.addColorStop(0, '#cdd3d8'); g.addColorStop(0.5, '#eceff1'); g.addColorStop(1, '#8d949b');
+    ctx.fillStyle = g; ctx.fillRect(ox0 - jw, fT, ow + jw * 2, jw); }
+  // зажимы стекла по верхним углам двери
+  for (const x of [paneX(1) + 4 * u, paneX(2) - 50 * u]){
+    ctx.fillStyle = steelV(x, x + 46 * u); ctx.fillRect(x, yT, 46 * u, 30 * u);
+  }
+  // длинная ручка-скоба у правой кромки двери (стойки спереди не видны — их закрывает сама скоба)
+  { const hx = paneX(2) - 56 * u, hw = 13 * u, h0 = py(360, kw), h1 = py(800, kw);
+    ctx.fillStyle = 'rgba(10,12,14,0.35)'; ctx.fillRect(hx + hw, h0 + 4 * u, 4 * u, h1 - h0);   // тень на стекле
+    ctx.fillStyle = steelV(hx, hx + hw); ctx.fillRect(hx, h0, hw, h1 - h0); }
 }
 
 function drawEventBoard(t){
@@ -11474,7 +11626,8 @@ function drawPortalColumns(cols, yBase, floorOnly){
    wall. The wall is z=1400, so the room must be deeper than that; the old 1270
    value made it move faster than the wall and therefore look closer. The
    silver uprights stay on the nearer portal plane and reveal the depth. */
-const HALL_PORTAL_Z = 992;
+/* (они больше не ближе: с 26.10.2026 колонны стоят в стене — HALL_PORTAL_Z и
+   HALL_COL_W объявлены рядом с HALL_FRAME_L/R; глубину показывает сам зал) */
 const HALL_ROOM_Z = 1850;
 const HALL_PED_H = 340;      // the crown's pedestal, floor to the underside of its cap, in world units
 /* ONE DEPTH FOR THE PEDESTAL. It used to slide with the room plate (z 1850)
@@ -11490,7 +11643,7 @@ const FLOOR_PHOTO_END = FIN_X - 1020;   // мира: 39 900 при FIN_X 40 920 
 function hallReady(){ return PHOTO_TEX.ph_hall_wall && PHOTO_TEX.ph_hall_floor && PHOTO_TEX.ph_hall_plinth; }
 function drawRec17(t){
   if (Math.abs(cam.x - HALL_MID) > 5500 || !hallReady()) return;
-  const kc = k(HALL_PORTAL_Z), cw = 120 * kc * SS;
+  const kc = k(HALL_PORTAL_Z), cw = HALL_COL_W * kc * SS;
   const bx0 = px(HALL_FRAME_L, kc) + cw / 2, bx1 = px(HALL_FRAME_R, kc) - cw / 2;
   const bw = Math.max(1, bx1 - bx0);
   const bh = py(1080, k(SEGMENTS[3].z0));
@@ -11618,7 +11771,7 @@ function drawRec17(t){
    which made it look suspended. */
 function drawHallPortalColumns(floorOnly){
   const kc = k(HALL_PORTAL_Z), yBase = py(1080, k(SEGMENTS[3].z0));
-  const cw = 120 * kc * SS, shoeH = 18 * SS;
+  const cw = HALL_COL_W * kc * SS, shoeH = 18 * SS;
   if (![HALL_FRAME_L, HALL_FRAME_R].some(x => Math.abs(cam.x-x) < 4100)) return;
   if (floorOnly){
     ctx.save(); ctx.beginPath(); ctx.rect(0, yBase-shoeH, W, shoeH+8*SS); ctx.clip();
@@ -14139,6 +14292,8 @@ async function loadPhotoSkin(){
   const want = {
     wall_e1: 'wall_e1.jpg', wall_e1_1907: 'wall_e1_1907.jpg',
     wall_e2: 'wall_e2.jpg', wall_e3: 'wall_e3.jpg', wall_e4: 'wall_e4.jpg',
+    /* зал Glidewell Education за стеклянными дверями — Stage_04/02/01 Эльдара (26.10.2026) */
+    ph_edu_room: 'edu_room.jpg', ph_edu_far: 'edu_far.png', ph_edu_near: 'edu_near.png',
     ph_finwall: 'finale_wall.jpg',   // финал: стена «Symmetrical walnut and white showroom wall» — рендер Эльдара (20.10.2026)
     /* два корпуса улицы между 1989 и 1993: слева кирпич, справа
        каменные панели здания 4141 — бесшовные текстуры Эльдара (02.10.2026) */
@@ -14264,7 +14419,17 @@ function initDecor(){
     const bx0 = (s.x0 <= -2500 && !s.bInsetL) ? s.x0 : s.x0 + (s.bInsetL || 140);
     const bx1 = (s.x1 >= WORLD_END + 800 && !s.bInsetR) ? s.x1 : s.x1 - (s.bInsetR || 140);
     const a = Math.max(700, bx0 + 250), b = Math.min(WORLD_END - 300, bx1 - 250);
-    for (let x = a; x < b; x += 260 + R()*260){
+    /* ВРЕЗКА ЗАЛА EDUCATION ПРЕДМЕТОВ НЕ РАЗДАЁТ (26.10.2026). Раскладка идёт по
+       мировой координате, и врезка 'edu' не сдвинула её, а растянула: челюсть,
+       лежавшая перед TODAY, встала посреди стеклянных дверей, и на удлинённом
+       прилавке выпали четыре новых предмета. Шаги считаются как до врезки, а
+       всё, что за её началом, переносится на её ширину — перед дверями пусто,
+       у TODAY лежит ровно то, что лежало. */
+    const eduC = CUTS.find(c => c.id === 'edu' && c.on);
+    const eduAt = eduC ? SHIFT(eduC.at) - eduC.w : Infinity, eduW = eduC ? eduC.w : 0;
+    const bRaw = b >= eduAt + eduW ? b - eduW : b;
+    for (let xr = a; xr < bRaw; xr += 260 + R()*260){
+      const x = xr >= eduAt ? xr + eduW : xr;
       if (!eraProps[si].length) break;
       if (BEATS.some(bt => Math.abs(bt.x - x) < 520)) continue;   // 430 left a jar standing at 1976's elbow, reading as a black bottle
       /* NOTHING LOOSE ON THE OPENING COUNTER. Up to the cabinet the counter is
@@ -23535,7 +23700,8 @@ function drawFloorSheen(){
      crossover and TODAY exactly as before. (It was switched off for the whole
      white section for a while; that was a guard 5500 units wide, not a door.) */
   if (hallReady()){
-    const hx0 = px(HALL_FRAME_L, kc) + cwCol/2, hx1 = px(HALL_FRAME_R, kc) - cwCol/2;
+    const kH = k(HALL_PORTAL_Z), cwH = HALL_COL_W * kH * SS;   // колонны холла — в стене, не на 992 портала 2022-го
+    const hx0 = px(HALL_FRAME_L, kH) + cwH/2, hx1 = px(HALL_FRAME_R, kH) - cwH/2;
     const cutL = Math.max(hx0, Math.min(a0, b0)), cutR = Math.min(hx1, Math.max(a1, b1));
     if (cutR > cutL) ctx.rect(cutL, yTop, cutR - cutL, band);
   }
@@ -23772,6 +23938,7 @@ function frame(){
 
   drawTallUnits();      // furniture against the wall, before anything hung on it
   drawOutro();
+  drawEduHall(t);      // зал Glidewell Education за стеклянными дверями — между плазмой и TODAY
   drawTodayTV();       // плазма с видео, слева от табло
   drawEventBoard(t);   // расписание курсов на стене финала
   drawSheets();
@@ -24586,10 +24753,16 @@ async function boot(){
     if (typeof HALL_ROOM_Z === 'number'){
       add(HALL_ROOM_Z, 'REC', 'glass hall — room plate (wall photograph, fitted to the wall height)', HALL_FRAME_L, HALL_FRAME_R);
       add(HALL_ROOM_Z, 'FLOOR', 'glass hall — polished floor plate, under the whole late stretch', SHOW_L, SHOW_R);
-      add(HALL_PORTAL_Z, 'REC', 'glass hall — doorway uprights (steel)', HALL_FRAME_L, HALL_FRAME_R);
+      add(HALL_PORTAL_Z, 'REC', 'glass hall — doorway uprights (steel), in the wall since 2026-10-26', HALL_FRAME_L, HALL_FRAME_R);
       add(HALL_PED_Z, 'PLINTH', 'glass hall — the crown pedestal (an object in the room)', HALL_MID - 180, HALL_MID + 180);
       if (typeof CARPET_Z_FAR === 'number')
         add(CARPET_Z_NEAR, 'FLOOR', 'glass hall — red carpet, z ' + CARPET_Z_NEAR + ' … ' + CARPET_Z_FAR, HALL_MID - 800, HALL_MID + 800);
+    }
+    if (typeof EDU === 'object'){
+      const m = EDU.mid(), h = EDU.open / 2;
+      add((SEGMENTS[3].z0 || 1400) - 6, 'REC', 'Glidewell Education — glass doors and the name on them', m - h - EDU.jamb, m + h + EDU.jamb);
+      for (const [nm, L] of [['room and stage', EDU.room], ['far rows', EDU.far], ['near rows (darkened)', EDU.near]])
+        add(L.z, 'REC', 'Glidewell Education — ' + nm + ', seen through the glass', m - h, m + h);
     }
     { const b73 = BEATS.find(b => b.y === '1973'); if (b73) add(120, 'PLINTH', '1973 — the two labs on their stones', b73.x - L73_W/2, b73.x + L73_W/2); }
     add(120, 'PLINTH', '1979 — eight labs on one plinth', (REC_L + REC_R)/2 - G8_W/2, (REC_L + REC_R)/2 + G8_W/2);
