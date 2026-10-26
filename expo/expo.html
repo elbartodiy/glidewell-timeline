@@ -381,6 +381,7 @@ const BEATS = [
    /* «nine labs were consolidated into» → «the plant in Orange» (Эльдар, 23.10.2026, «3»):
       в 1984-м в Orange свели не все девять — вне здания остались две */
    d:'71,000 sq ft at 4141 MacArthur Blvd — nearly five times the floor of the plant in Orange.',
+   descPed:true,   // строка — только на лице тумбы макета, с воздухом по краям (Эльдар, 26.10.2026)
    wall:[], table:[]},
   /* ОКНО В КАБИНЕТ. Год, в котором в компании появился собственный
      стоматологический кабинет, показывает не фотографию на стене, а ДЫРУ в
@@ -558,7 +559,14 @@ const BEATS = [
       Название «Prismatik» под годом тоже снято (tHide): его говорит сама
       табличка; на листе заголовок остаётся. */
    th:'The front tooth, made rather than bought.', thWallHide:true,
-   d:'January 2005: a full line of leucite-reinforced pressed ceramics under Glidewell’s own Prismatik brand — the esthetic front tooth made in-house rather than bought in. A year later Prismatik Dentalcraft becomes a manufacturing division of its own.',
+   /* строка под столешницей сокращена до одной фразы (Эльдар, 26.10.2026: «очень
+      много внизу про призматик»); подробности — лейцит, передний зуб, отдельное
+      подразделение в 2006-м — остаются на листе (STUDY_BY_TITLE.PRISMATIK).
+      Было: «January 2005: a full line of leucite-reinforced pressed ceramics
+      under Glidewell’s own Prismatik brand — the esthetic front tooth made
+      in-house rather than bought in. A year later Prismatik Dentalcraft becomes
+      a manufacturing division of its own.» */
+   d:'January 2005: Glidewell launches Prismatik, its own line of pressed ceramics.',
    /* ТАБЛИЧКА PRISMATIK DENTALCRAFT — логотип Эльдара (16.10.2026) на белой
       пластине, на пустой стене 2005-го. Клик открывает страницу года; когда
       табличка проходит центр экрана, по ней один раз пробегает радужный блик
@@ -5142,6 +5150,27 @@ function drawBenchDescs(){
       /* подписи шагов — над линейкой века внизу кадра, а не под ней */
       const zh = Math.min(P.y1 - 16 * SS - by0, (Math.min(H * 0.915, RULE_Y() - 24 * SS) - 26 * SS - by0) / 0.74);
       if (zh > 60 * SS) drawZirconiaLine(P.cx - colw / 2, by0, colw, zh, state.time, dAmt);
+      continue;
+    }
+    /* СТРОКА НА ЛИЦЕ ТУМБЫ МАКЕТА 1993 (Эльдар, 26.10.2026: «давай этот текст
+       внизу повесим только на пространство тумбы, с воздухом по краям»): она
+       бежала с графита на светлый пол слева и справа. Колонка — ширина лица
+       тумбы минус воздух по 11 % с каждой стороны, по центру тумбы; на графите
+       (68,69,73) — светлыми чернилами, как на площадке пресса 2000-го. */
+    if (b.descPed && MODEL93 && MODEL93.ped && MODEL93.ped.frame === state.time){
+      const P = MODEL93.ped, pw = P.x1 - P.x0, colw = pw * 0.78, cxP = (P.x0 + P.x1) / 2;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.font = eraFont(23 * SS, '', seg.font);
+      if (!b._dP || b._dPw !== Math.round(colw)){ b._dP = wrapCalc(b.d, colw); b._dPw = Math.round(colw); }
+      ctx.fillStyle = `rgba(226,232,238,${(dAmt * 0.92).toFixed(3)})`;
+      ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6 * SS; ctx.shadowOffsetY = 2 * SS;
+      const lh = 32 * SS;
+      let top = P.y0 + 64 * SS;
+      const foot = top + (b._dP.length - 1) * lh, limit = Math.min(H - 96 * SS, RULE_Y() - 44 * SS);
+      if (foot > limit) top = Math.max(P.y0 + 34 * SS, top - (foot - limit));
+      b._dP.forEach((ln, j) => ctx.fillText(ln, cxP, top + j * lh));
+      ctx.restore();
       continue;
     }
     if (b.descBase && typeof CELL_Z !== 'undefined'){
@@ -9888,6 +9917,10 @@ function drawModel93(wx, lz, wWorld, topWorldY){
     const iy = yFloor - ih;
     p.oy += iy - (D[1] - 401 * sc);
     REC93_BOX = [[ix, iy], [ix + iw, iy], [ix + iw, iy + ih], [ix, iy + ih]];
+    /* лицо графитовой тумбы рендера — для подписи года (descPed): по замеру
+       model_1993.png 1217×1078 тумба во всю ширину плиты, столбцы 2…1214, её
+       лицо начинается со строки 453 (под тёмной фаской 443–451) */
+    MODEL93.ped = {x0: ix + 2 * sc, x1: ix + 1214 * sc, y0: iy + 453 * sc, y1: iy + ih, frame: state.time};
     ctx.save();
     ctx.translate(sx, yFloor); ctx.scale(1, 0.16); ctx.translate(-sx, -yFloor);
     const gs = ctx.createRadialGradient(sx, yFloor, 0, sx, yFloor, iw * 0.62);
