@@ -851,7 +851,8 @@ const CUTS = [
      вправо весь финал: ореховую панель, TODAY, табло, стол, конец зала.
      Откуда 1480: колонна (правая кромка 37397) + 400 воздуха + плазма 996 +
      340 + двери 1406 (проём 1350 и два косяка по 28) + 340 = орех на 40879;
-     без врезки он начинался на 39401. См. EDU у плазмы. */
+     без врезки он начинался на 39401. См. EDU у плазмы. (Позже в тот же день
+     двери выросли до 1733 и встали вплотную к ореху — ширина врезки та же.) */
   {id: 'edu', at: 27100, w: 1480, on: true, noBay: true},
 ];
 function SHIFT(x){
@@ -6701,9 +6702,8 @@ function drawTodayTV(){
    два слоя, чтобы показать пространство глубины при скролле; самых ближайших
    можешь затемнить, они слишком яркие».
    Порядок по стене: колонна холла → плазма → двери → ореховая панель TODAY.
-   Двери — три стеклянных полотна без рам (проём 1350, косяки по 28 из той же
-   стали, что колонны), от пола до карниза: верх проёма на −36, на 54 ниже
-   низа карниза (−90), так что тень карниза ложится на стальную перемычку.
+   Двери — три стеклянных полотна без рам, косяки из той же стали, что
+   колонны; размеры и высота — см. «ДВЕРИ ДО ВЕРХА ОРЕХОВОЙ ПОЛОСЫ» ниже.
    За стеклом — три снимка из артефактов Эльдара (Stage_04, Stage_02,
    Stage_01, все от 26.10.2026), каждый — предмет на своей глубине: x, размер
    и высота от одного k. Чем глубже слой, тем медленнее он едет за стеклом.
@@ -6716,16 +6716,42 @@ function drawTodayTV(){
    край снимка не заходил в проём ни при каком положении камеры, пока двери в
    кадре (запас = (W/2 + проём/2)·(1 − k слоя / k стены)); на широком кадре
    срабатывает упор, как у комнаты стеклянного холла. */
+/* ДВЕРИ ДО ВЕРХА ОРЕХОВОЙ ПОЛОСЫ, КРУПНЕЕ, ВПЛОТНУЮ К ОРЕХОВОЙ СТЕНЕ (Эльдар,
+   26.10.2026, вторым сообщением: «давай двери сделаем высотой в верхнюю кромку
+   деревянной линии… мы её вообще демонтируем оттуда; и двери по масштабу
+   увеличь — не только вверх, но и в стороны, и пусть они граничат с
+   деревянной стеной»). Первая версия: проём 1350, косяки 28, верх косяка на
+   −64, ореховый карниз (−330…−90) шёл над дверями. Теперь верх косяка — на
+   верхней кромке карниза (−330), а карниз над дверями снят: он кончается у
+   левого косяка (drawShowroom). Всё увеличено в одну долю — по высоте:
+   (1080 + 330) / (1080 + 64) = 1,2325 — косяки, щели, фурнитура, надпись и
+   то, что видно за стеклом (слои пересчитаны так, чтобы картинка выросла от
+   линии прилавка, где её срезает столешница). Ширина снаружи 1406 → 1733;
+   правый косяк встаёт ровно на край ореха (FIN_WALL, столбец 38 из 2079 —
+   тот же замер, что у стыка карниза), левый оказывается в 353 от плазмы. */
+const EDU_SC = 1.2325;
 const EDU = {
-  air: 340, open: 1350, jamb: 28, gap: 10, top: -36,
-  room: {key: 'ph_edu_room', z: 2800, s: 3.2, y: -930, dim: 0.22},
-  far:  {key: 'ph_edu_far',  z: 2200, s: 2.49, y: 740},
-  near: {key: 'ph_edu_near', z: 1600, s: 1.24, y: 805},
+  /* ДО ПОТОЛКА (Эльдар, 26.10.2026, третьим сообщением: «сделай двери высотой
+     до потолка и деревянную линию вообще демонтируй»): верх косяка — на линии
+     потолка у стены, −520 (стена эпохи висит от −520 до 1080; на кадре это
+     ровно серая кромка потолка). Ширина не менялась — справа орех, слева
+     плазма. Было −330, верх ореховой полосы. */
+  outer: 1733, jamb: 28 * EDU_SC, gap: 10 * EDU_SC, top: -520,   // top — верх косяка
+  /* ПОЛ СЦЕНЫ НИЖЕ — УГОЛ ЗРЕНИЯ ПОЛОЖЕ (Эльдар, 26.10.2026: «чуть уменьшить
+     угол зрения, т. е. опустить пол сцены ниже»). Зал опущен на 70 px кадра
+     (296 мировых на его глубине: −1440 → −1144), ряды — меньше, на 30 и 20 px,
+     чтобы головы не закрыли докладчика: дальние 655 → 758, ближние 766 → 822. */
+  room: {key: 'ph_edu_room', z: 2800, s: 3.2 * EDU_SC, y: -1144, dim: 0.22},
+  far:  {key: 'ph_edu_far',  z: 2200, s: 2.49 * EDU_SC, y: 758},
+  near: {key: 'ph_edu_near', z: 1600, s: 1.24 * EDU_SC, y: 822},
   /* матовая полоса с названием — высоко, над головой докладчика (ниже она его
      закрывала); надпись — на среднем полотне, чтобы стыки стекла её не резали */
-  band: {y0: 104, y1: 214},
+  band: {y0: -88, y1: 47},
 };
-EDU.mid = () => TODAY_TV.x() + TODAY_TV.w / 2 + EDU.air + EDU.jamb + EDU.open / 2;
+EDU.R = () => FIN_WALL.L() + 38 * FIN_WALL.w / 2079;   // край ореха
+EDU.L = () => EDU.R() - EDU.outer;
+EDU.open = EDU.outer - 2 * EDU.jamb;
+EDU.mid = () => EDU.R() - EDU.outer / 2;
 function eduLayer(L, cx, ox0, ox1){
   const sp = PROP_SPRITES[L.key]; if (!sp) return;
   const kz = k(L.z);
@@ -6746,7 +6772,7 @@ function drawEduHall(t){
   const ox0 = px(cx - EDU.open / 2, kw), ox1 = px(cx + EDU.open / 2, kw);
   const jw = EDU.jamb * u;
   if (ox1 + jw < -40 || ox0 - jw > W + 40) return;
-  const yT = py(EDU.top, kw), yB = py(1080, kw), fT = yT - jw;
+  const fT = py(EDU.top, kw), yB = py(1080, kw), yT = fT + jw, S = EDU_SC;
   const ow = ox1 - ox0, oh = yB - yT;
   rivet('edu_doors', (ox0 + ox1) / 2, kw);
   const paneX = i => ox0 + ow * i / 3;            // границы трёх полотен
@@ -6767,7 +6793,7 @@ function drawEduHall(t){
      поэтому блики живут на глубине 2600 и едут медленнее самого стекла */
   { const kr = k(2600), sk = oh * 0.42;
     for (const [dx, wd, a] of [[-430, 150, 0.075], [-250, 44, 0.05], [380, 200, 0.06], [560, 50, 0.04]]){
-      const sx = px(cx + dx, kr), ww = wd * kr * SS;
+      const sx = px(cx + dx * S, kr), ww = wd * S * kr * SS;
       const g = ctx.createLinearGradient(sx, 0, sx + ww, 0);
       g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, `rgba(255,255,255,${a})`); g.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = g;
@@ -6782,7 +6808,7 @@ function drawEduHall(t){
     ctx.fillRect(ox0, by0, ow, Math.max(1, 1 * u));
     const ink = `rgba(${seg.ink},0.9)`, mx = (paneX(1) + paneX(2)) / 2;
     ctx.textAlign = 'center'; ctx.fillStyle = ink;
-    const f1 = 44 * u, f2 = 19 * u, ls1 = f1 * 0.2, ls2 = f2 * 0.62;
+    const f1 = 44 * S * u, f2 = 19 * S * u, ls1 = f1 * 0.2, ls2 = f2 * 0.62;
     ctx.font = eraFont(f1, '500', seg.font);
     try { ctx.letterSpacing = `${ls1}px`; } catch(e){}
     ctx.fillText('GLIDEWELL', mx + ls1 / 2, by0 + (by1 - by0) * 0.56);
@@ -6808,12 +6834,12 @@ function drawEduHall(t){
     g.addColorStop(0, '#cdd3d8'); g.addColorStop(0.5, '#eceff1'); g.addColorStop(1, '#8d949b');
     ctx.fillStyle = g; ctx.fillRect(ox0 - jw, fT, ow + jw * 2, jw); }
   // зажимы стекла по верхним углам двери
-  for (const x of [paneX(1) + 4 * u, paneX(2) - 50 * u]){
-    ctx.fillStyle = steelV(x, x + 46 * u); ctx.fillRect(x, yT, 46 * u, 30 * u);
+  for (const x of [paneX(1) + 4 * S * u, paneX(2) - 50 * S * u]){
+    ctx.fillStyle = steelV(x, x + 46 * S * u); ctx.fillRect(x, yT, 46 * S * u, 30 * S * u);
   }
   // длинная ручка-скоба у правой кромки двери (стойки спереди не видны — их закрывает сама скоба)
-  { const hx = paneX(2) - 56 * u, hw = 13 * u, h0 = py(360, kw), h1 = py(800, kw);
-    ctx.fillStyle = 'rgba(10,12,14,0.35)'; ctx.fillRect(hx + hw, h0 + 4 * u, 4 * u, h1 - h0);   // тень на стекле
+  { const hx = paneX(2) - 56 * S * u, hw = 13 * S * u, h0 = py(81, kw), h1 = py(758, kw);   // было 360…800, выросло от прилавка
+    ctx.fillStyle = 'rgba(10,12,14,0.35)'; ctx.fillRect(hx + hw, h0 + 4 * S * u, 4 * S * u, h1 - h0);   // тень на стекле
     ctx.fillStyle = steelV(hx, hx + hw); ctx.fillRect(hx, h0, hw, h1 - h0); }
 }
 
@@ -8588,9 +8614,14 @@ function stripShade(w, h, lt){
   const gv = g.createLinearGradient(0, 0, 0, h);
   /* книзу не до нуля: подписи и «Company overview» стоят в нижней половине, и на
      белом зале без подложки их не прочесть */
-  const sc = [8, 7, 6].map((v, j) => Math.round(v + ([246, 247, 248][j] - v) * lt)).join(',');
-  // светлая дымка плотнее тени: тёмный пол под ней не должен съесть серые цифры
-  gv.addColorStop(0, `rgba(${sc},${0.72 + 0.14 * lt})`); gv.addColorStop(0.6, `rgba(${sc},${0.5 + 0.3 * lt})`); gv.addColorStop(1, `rgba(${sc},${0.18 + 0.47 * lt})`);
+  /* ДЫМКА НЕ БЕЛЕЕ ЗАЛА (Эльдар, 26.10.2026: «цифры и данные в нижней части
+     экрана выглядят слишком яркими, слишком светлыми относительно всего на
+     экране»). Светлая подложка была почти белой (246) и плотной (0,86…0,65) —
+     полоса светилась ярче прилавка. Теперь тон прилавка (228) и плотность
+     0,55…0,40: серые цифры читаются, но полоса не горит. Тень тёмных эпох
+     (lt = 0) прежняя. Было: 246/247/248 и 0,72+0,14·lt, 0,5+0,3·lt, 0,18+0,47·lt. */
+  const sc = [8, 7, 6].map((v, j) => Math.round(v + ([228, 230, 233][j] - v) * lt)).join(',');
+  gv.addColorStop(0, `rgba(${sc},${0.72 - 0.17 * lt})`); gv.addColorStop(0.6, `rgba(${sc},${0.5 - 0.05 * lt})`); gv.addColorStop(1, `rgba(${sc},${0.18 + 0.22 * lt})`);
   g.fillStyle = gv; g.fillRect(0, 0, w, h);
   g.globalCompositeOperation = 'destination-in';
   const gh = g.createLinearGradient(0, 0, w, 0);
@@ -8682,7 +8713,9 @@ function drawCompanyStrip(A){
       if (q > 0 && q < 1){ pulse[i] = Math.max(pulse[i], Math.sin(Math.PI * q)); sw = q; } }
     if (pulse[i] > 0.01) drawGlow(LC, x + wn / 2, yB - 10 * SS, 70 * SS, 0.3 * pulse[i] * A);
     const PT = lt < 0.5 ? [255, 255, 255] : LC.split(',').map(Number);   // вспышка — к белому на тёмном, к свету эпохи на белом
-    ctx.fillStyle = `rgba(${NI.map((v, j) => Math.round(v + (PT[j] - v) * 0.6 * pulse[i])).join(',')},0.96)`; ctx.fillText(num, x, yB);
+    /* и сами цифры тише: светлые чернила тёмных эпох горели на 0,96 ярче всего
+       в кадре, кроме года — теперь 0,72; тёмные на светлом — 0,9 (Эльдар, 26.10) */
+    ctx.fillStyle = `rgba(${NI.map((v, j) => Math.round(v + (PT[j] - v) * 0.6 * pulse[i])).join(',')},${(0.72 + 0.18 * lt + 0.24 * pulse[i]).toFixed(3)})`; ctx.fillText(num, x, yB);
     if (sw >= 0){
       // полоса — градиентная заливка тех же букв, так что светится только цифра
       const bx = x - 40 * SS + (wn + 80 * SS) * sw, bw = 26 * SS;
@@ -8702,7 +8735,7 @@ function drawCompanyStrip(A){
     }
     ctx.font = `600 ${Math.round(11.5 * SS)}px "Helvetica Neue", Arial, sans-serif`;
     try { ctx.letterSpacing = `${2.2 * SS}px`; } catch(e){}
-    ctx.fillStyle = `rgba(${LBL},0.82)`; ctx.fillText(lab, x + wn + gap, yB - 1 * SS);
+    ctx.fillStyle = `rgba(${LBL},${(0.6 + 0.2 * lt).toFixed(3)})`; ctx.fillText(lab, x + wn + gap, yB - 1 * SS);   // было 0,82
   }
   FACT_FX.ev = FACT_FX.ev.filter(e => state.time - e.t0 < 1.2);
   /* подписи «COMPANY OVERVIEW» внизу больше нет (Эльдар, 26.10.2026: «company
@@ -23402,6 +23435,7 @@ function timberBand(){
   const kk = k((SEGMENTS[3].z0 || 1400) - 6);
   return {yT: py(-330, kk), yB: py(-90, kk)};
 }
+const SHOW_BEAM = false;   // ореховый карниз шоурума — снят 26.10.2026, см. drawShowroom
 function drawShowroom(t){
   if (cam.x < SHOW_L - 2600 || cam.x > SHOW_DRAW_R + 2600) return;
   const seg = SEGMENTS[3], kk = k(seg.z0 - 6);
@@ -23422,9 +23456,22 @@ function drawShowroom(t){
      белая щель в 86 единиц. Теперь конец карниза — край панели, на плоскости
      самой стены (чтобы стык не ездил), квадратный, на 3 px внутрь. */
   const finJoin = PROP_SPRITES.ph_finwall ? px(FIN_WALL.L() + 38 * FIN_WALL.w / 2079, k(SEGMENTS[3].z0 || 1400)) + 3 * SS : null;
-  const x1 = finJoin != null ? finJoin : px(SHOW_DRAW_R, kk);
-  if (x1 < -200 || x0 > W + 200) return;
+  /* …А НАД ДВЕРЯМИ ЗАЛА EDUCATION ЕГО НЕТ: двери поднялись до его верхней
+     кромки, и карниз кончается у их левого косяка, на той же плоскости
+     (Эльдар, 26.10.2026: «мы её вообще демонтируем оттуда»). Возврат по
+     x1 < −200 снят: левее края кадра теперь кончается сам карниз, а кольца
+     и кессон потолка над финалом должны рисоваться и тогда. */
+  const eduJoin = typeof EDU === 'object' ? px(EDU.L(), kk) : null;
+  const x1 = eduJoin != null ? eduJoin : finJoin != null ? finJoin : px(SHOW_DRAW_R, kk);
+  if (x0 > W + 200) return;
   ctx.save();
+  /* ОРЕХОВОЙ ЛИНИИ БОЛЬШЕ НЕТ (Эльдар, 26.10.2026: «сделай двери высотой до
+     потолка и деревянную линию вообще демонтируй»). Карниз и светильники,
+     врезанные в него, сняты целиком — от колонны холла до ореховой стены
+     финала; код оставлен под SHOW_BEAM, его возвращает одна константа.
+     Режим 'lighter', в котором ниже рисуются кессон и кольца, ставился
+     вместе со светильниками — он вынесен из выключенного блока. */
+  if (SHOW_BEAM){
   // the ribbon: a soffit of walnut, turned down out of the ceiling
   /* Up where a ceiling border belongs. It was sitting at exactly the height
      the year numerals occupy, so the years were printed across a timber band —
@@ -23446,7 +23493,7 @@ function drawShowroom(t){
   const beam = new Path2D();
   beam.moveTo(xL, yT);
   beam.lineTo(x1, yT);
-  if (finJoin != null) beam.lineTo(x1, yB);            // в панель — без скругления
+  if (finJoin != null || eduJoin != null) beam.lineTo(x1, yB);   // в панель или в косяк — без скругления
   else { beam.lineTo(x1, yB - turn * 0.55); beam.quadraticCurveTo(x1, yB, x1 - turn, yB); }
   beam.lineTo(xL, yB);
   beam.closePath();
@@ -23521,7 +23568,8 @@ function drawShowroom(t){
      закруглённом торце: половина плафона висела в воздухе («вот этот крайний
      правый светильник лишний», Эльдар, 2026-10-01). Ряд кончается на полшага
      раньше, последний встаёт на 45202 и целиком лежит на дереве. */
-  const dlEnd = PROP_SPRITES.ph_finwall ? FIN_WALL.L() - 200 : SHOW_R - 400;
+  const dlEnd = Math.min(PROP_SPRITES.ph_finwall ? FIN_WALL.L() - 200 : SHOW_R - 400,
+                         typeof EDU === 'object' ? EDU.L() - 60 : Infinity);   // светильники — только в карнизе
   for (let wx = SHOW_L + 330; wx < dlEnd; wx += 660){
     const lx = px(wx, kk);
     if (lx < -260 || lx > W + 260) continue;
@@ -23543,6 +23591,8 @@ function drawShowroom(t){
     ctx.closePath(); ctx.fill();
     drawGlow('255,232,190', lx, py(30, kk), 92 * kk * SS, 0.045);
   }
+  }   // SHOW_BEAM
+  ctx.globalCompositeOperation = 'lighter';
   // the ring, with the mark inside it — the one thing in the room that is lit
   /* NO PLATE BEHIND THE YEAR. The room this is drawn from puts its words on
      white plates standing a little proud of the wall, and I built that twice.
