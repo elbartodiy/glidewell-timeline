@@ -6448,8 +6448,14 @@ function boardLoad(){
   const now = (typeof state !== 'undefined' ? state.time : 0) || 0;
   if (BOARD.tried && now - BOARD.tried < 900) return;      // раз в 15 минут
   BOARD.tried = now || 1e-6;
-  fetch('data/events.json?nc=' + Date.now())
-    .then(r => r.json())
+  /* С ФЛЕШКИ (file://) fetch файлы не читает, а XHR — читает, если браузер
+     запущен с --allow-file-access-from-files (ярлык на флешке так и делает;
+     Эльдар, 26.10.2026: тач-экран на Windows без интернета) */
+  const get = location.protocol === 'file:'
+    ? new Promise((ok, no) => { const x = new XMLHttpRequest(); x.open('GET', 'data/events.json');
+        x.onload = () => { try { ok(JSON.parse(x.responseText)); } catch(e){ no(e); } }; x.onerror = no; x.send(); })
+    : fetch('data/events.json?nc=' + Date.now()).then(r => r.json());
+  get
     .then(d => {
       /* ФАЙЛ МОЖЕТ БЫТЬ СТАРЫМ — ЗАЛ ЭТО ПЕРЕЖИВЁТ. Обновлялка ходит по
          расписанию, но день без сети или упавшая задача бывают у всех, а
