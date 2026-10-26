@@ -454,7 +454,7 @@ const BEATS = [
      не менялся: просили главную СТРАНИЦУ, а ритм годов 1998–2002 трогать не просили. */
   /* descWall — строка внизу кадра, а не на прилавке: прилавка у 1999-го с
      23.10.2026 нет, и она ложилась поверх строки 2001-го */
-  {x:14925, y:'1999', t:'VERTICAL INTEGRATION', minor:true, yLift:190, descWall:true,
+  {x:14925, y:'1999', t:'VERTICAL INTEGRATION', minor:true, yLift:190, descWall:true, descGap:true,
    th:'Do not buy what you can make.',
    /* затравка вместо пересказа страницы (Эльдар, 26.10.2026: «на линии нам нужно только небольшая затравка для раскрытия темы — про что внутри»; «го»). Было: «By the end of the nineties Glidewell makes its own almost everything — materials, parts, interiors, advertising. Not to save money: to set its own pace.» */
    d:'Glidewell starts making almost everything itself — to set its own pace.',
@@ -5200,6 +5200,47 @@ function drawBenchDescs(){
       drawCapLines(b._d, cxB, yB, 32 * SS, capColW(b));
       CAP_RECT = null;
       ctx.restore();
+      continue;
+    }
+    /* СТРОКА В ПРОЁМЕ (1999, Эльдар, 26.10.2026: «сделай его появляющимся и
+       исчезающим только внутри этого пустого пространства — не веди его на
+       полки»). Обычная descWall-строка стоит в середине кадра, а проём под ней
+       уезжает, и она ложилась на прилавок 1998-го и на площадку пресса 2000-го.
+       Теперь она лежит на полу проёма и едет вместе с ним: середина — между
+       концом прилавка слева (TABLES на k(0)) и левым краем площадки пресса
+       справа (rig._plat), всё за краями проёма срезано, а проявляется и гаснет
+       она, пока проём входит в кадр и уходит из него. */
+    if (b.descWall && b.descGap){
+      let gl = -1e9, gr = 1e9;
+      for (const tt of TABLES){
+        const l = px(tt.x0, kf), r = px(tt.x1, kf), xb = px(b.x, kf);
+        if (r <= xb) gl = Math.max(gl, r); else if (l >= xb) gr = Math.min(gr, l);
+      }
+      /* край площадки — той же формулой, что у drawCrownTester (X(−360)), а не
+         из последнего кадра: пока площадка за кадром, её не рисуют, и строка
+         прыгала бы, когда та появится */
+      const RB = BEATS.find(q => q.rig && q.rig.platform && q.x > b.x);
+      if (RB){ const g = RB.rig, kR = k(bz(g.lz ?? 150));
+        gr = Math.min(gr, px(RB.x + (g.dx || 0), kR) - 360 * (g.w || 460) * kR * SS / 520); }
+      ctx.save();
+      ctx.font = eraFont(23 * SS, '', seg.font);
+      let wide = 0;
+      for (const ln of b._d) wide = Math.max(wide, ctx.measureText(ln).width);
+      const air = 30 * SS, cxG = (Math.max(gl, -W) + Math.min(gr, 2 * W)) / 2;
+      const fit = (gr - gl) >= wide + 2 * air;
+      // в кадре — только пока весь блок на экране; проём уже строки — не показывать
+      const aE = fit ? Math.max(0, Math.min(1, Math.min((W - (cxG + wide / 2)) / (130 * SS), (cxG - wide / 2) / (130 * SS)))) : 0;
+      const aG = aE * dAmt;
+      if (aG > 0.02){
+        ctx.beginPath(); ctx.rect(gl + 8 * SS, 0, gr - gl - 16 * SS, H); ctx.clip();
+        ctx.fillStyle = `rgba(${descInk(seg)},${(aG * 0.92).toFixed(3)})`;
+        ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 2*SS;
+        const capFoot = Math.min(H * 0.905, RULE_Y() - 40 * SS);
+        const top = capFoot - (b._d.length - 1) * 32 * SS;
+        drawCapLines(b._d, cxG, top, 32 * SS, wide);
+      }
+      ctx.restore();
+      CAP_RECT = null;
       continue;
     }
     if (b.descWall){
