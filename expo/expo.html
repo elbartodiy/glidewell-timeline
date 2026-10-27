@@ -365,7 +365,7 @@ const BEATS = [
       (и beam 0,65 → 0,585 — «прозрачнее на 10 процентов»)
       голубоватого эпохи и подошва луча 0,48 → 0,68 ширины колонны */
    ped:{photo:'ph_postbox', dx:0, low:true, capY: 708, beam: 0.585, beamRGB: '255,246,230', beamFoot: 0.68,
-        beamImg: ['ph_beam89a', 'ph_beam89b'], beamImgGain: 1},   // лучи — PNG-текстура (27.10.2026), без неё — прежние softBeam
+        beamImg: ['ph_beam89a', 'ph_beam89b'], beamImgGain: 1, beamAt: 0.25},   // лучи — PNG-текстура (27.10.2026), без неё — прежние softBeam
    /* THE LINE READS OFF A BACKGROUND THAT DOES NOT CHANGE UNDER IT. Set 430
      left of the plinth it began on the steel panel, crossed the pale edge of
      the bay's step and finished on the column — three tones under three lines
@@ -17117,7 +17117,11 @@ function drawPedestal(b, t, hero){
       ? (PHOTO_PED.h * (colW * 1.5 / PP_CYLW) / PHOTO_PED.w) * PP_CAPTOP / 0.6
       : (objSprite ? 120 * (ped.big ? 1.3 : 1) * kk * SS * objSprite.h / objSprite.w
                    : 150 * kk * SS);        // голая шляпка: высота монитора
-    const yObj = yTop - objH * 0.6;
+    /* beamAt — где на предмете сходятся лучи, доля objH над шляпкой (по
+       умолчанию 0.6). 1989: «лучи не ровно на коробку светят, а чуть выше»
+       (Эльдар, 27.10.2026) — у снятой тумбы objH ~480 px при коробке ~230
+       (2000×1040), и 0.6 сводило лучи на постер над ней; 0.25 — середина коробки. */
+    const yObj = yTop - objH * (ped.beamAt != null ? ped.beamAt : 0.6);
     /* A BEAM DIES ON WHAT IT LIGHTS. Two fixtures cross their beams on the
        exhibit, which is right — but the beams ran on to halfway down the screen
        past the crossing point, and past a crossing they diverge again. Two
