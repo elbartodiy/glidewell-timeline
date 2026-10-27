@@ -21302,7 +21302,8 @@ function drawStudy(){
       if (sy > topClip && sy < botClip) ctx.fillText(photos.length > 1 ? 'From the album' : 'From the album', sx, sy);
       try { ctx.letterSpacing = '0px'; } catch(err){}
       sy += 3 * u;
-      for (const ph of photos){
+      for (let pi = 0; pi < photos.length; pi++){
+        const ph = photos[pi];
         const im = IMGS[ph.img]; if (!im || !im.el) continue;
         const pw = sw, phh = pw * im.h / im.w;
         if (sy + phh > topClip && sy < botClip){
@@ -21310,6 +21311,14 @@ function drawStudy(){
           ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 10 * SS; ctx.shadowOffsetY = 3 * SS;
           ctx.drawImage(im.el, sx, sy, pw, phh);
           ctx.restore();
+          /* КОЛОНКА — ВЫБОР, ОКНО В ТЕКСТЕ — ПОКАЗ (Эльдар, 27.10.2026). Превью
+             справа стоят всегда, все; то, что сейчас в тексте, обведено
+             акцентом. Нажатие ставит снимок в окно и везёт страницу к нему. */
+          if (pi === (S.photoIdx || 0)){
+            ctx.strokeStyle = `rgba(${K.accent},0.9)`; ctx.lineWidth = 2.5 * SS;
+            ctx.strokeRect(sx - 4 * SS, sy - 4 * SS, pw + 8 * SS, phh + 8 * SS);
+          }
+          pushHit(sx, sy, pw, phh, {type: 'pagephoto', i: pi});
         }
         /* ВОЗДУХ ПОД КАРТИНКОЙ. 1.6u прибавлялось к БАЗОВОЙ ЛИНИИ, а базовая
            линия лежит по низу букв — верх подписи приходился ровно на нижний
@@ -21549,6 +21558,43 @@ function drawStudy(){
     }
     y += rowH + 4 * u;
   };
+  /* СНИМОК В ТЕКСТЕ — ОДНО ОКНО ПОСЛЕ ВТОРОГО АБЗАЦА (Эльдар, 27.10.2026:
+     «первое фото уже встроено в текст — сразу после второго абзаца»). В окне
+     стоит S.photoIdx — по умолчанию первый снимок альбома; остальные не идут
+     в конец статьи, они превью в правой колонке. Ширина — абзац, высота не
+     больше 0.72 ширины и 70 % видимого листа: портрет встаёт по центру, а не
+     растягивается на экран. Где окно лежит, страница запоминает (S._slot) —
+     к нему её и прокручивает нажатие на превью. */
+  let photoDone = false;
+  const drawPagePhoto = () => {
+    if (photoDone || !photos || !photos.length) return;
+    photoDone = true;
+    const pi = Math.max(0, Math.min(photos.length - 1, S.photoIdx || 0));
+    const ph = photos[pi], im = IMGS[ph.img];
+    if (!im || !im.el) return;
+    y += 2 * u;
+    const maxH = Math.min(textW * 0.72, (botClip - topClip) * 0.7);
+    let pw = textW, phh = pw * im.h / im.w;
+    if (phh > maxH){ phh = maxH; pw = phh * im.w / im.h; }
+    const px0 = left + (textW - pw) / 2, top0 = y;
+    if (y + phh > topClip && y < botClip){
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 10 * SS; ctx.shadowOffsetY = 3 * SS;
+      ctx.drawImage(im.el, px0, y, pw, phh);
+      ctx.restore();
+    }
+    y += phh + 1.6 * u + PAGE.small * 0.80 * SS;   // воздух над подписью — как в колонке
+    if (ph.cap){
+      ctx.font = K.font(PAGE.small, 'italic');
+      ctx.fillStyle = `rgba(${K.dim},0.92)`;
+      ctx.textAlign = 'center';
+      if (y > topClip && y < botClip) ctx.fillText(ph.cap, left + textW / 2, y);
+      ctx.textAlign = 'left';
+      y += PAGE.small * 1.35 * SS;
+    }
+    S._slot = {y0: top0 + S.scroll * SS, h: y - top0, mid: (topClip + botClip) / 2};
+    y += 4.5 * u;                       // под подписью столько же воздуха, сколько над снимком
+  };
   if (inl && inl.boxTop) drawInlineBox();
   const bodyInk = `rgba(${K.ink},0.88)`;
   if (!more){
@@ -21557,11 +21603,12 @@ function drawStudy(){
     ctx.fillStyle = bodyInk;
     flow(b.d, PAGE.bodyLH * SS);
     y += 2 * u;
+    drawPagePhoto();
   } else {
     /* AN ARTICLE IS NOT A WALL OF TEXT. A paragraph opening with "## " is a
        subheading; a line opening with "• " is a bullet hung on its own
        indent. Everything else is a paragraph, with a paragraph's space after. */
-    let paraN = -1;
+    let paraN = -1, textN = 0;
     for (const para0 of more.split('\n\n')){
       let para = para0;
       paraN++;
@@ -21605,9 +21652,12 @@ function drawStudy(){
       }
       y += 2 * u;
       if (paraN === clipAt) drawVoiceStrip();
+      /* второй абзац ТЕКСТА: подзаголовок отдельным блоком абзацем не считается */
+      if (++textN === 2) drawPagePhoto();
     }
   }
   drawVoiceStrip();    // страницы, не назвавшие места, получают полосу здесь
+  drawPagePhoto();     // статья из одного абзаца — окно под ним
   drawInlineBox();     // pages that did not ask for it at the head get it here
   const links = STUDY_LINKS[b.t];
   if (links){
@@ -21737,6 +21787,18 @@ function pageScroll(S, inp, dt){
   if (S.scroll < 0 && !inp.dragging){
     S.scroll += (0 - S.scroll) * Math.min(1, (dt || 0.016) * 9);
     if (S.scroll > -0.4) S.scroll = 0;
+  }
+  /* ПОЕЗДКА К ОКНУ СО СНИМКОМ: нажатие на превью ставит окно в середину листа.
+     Цель считается по месту окна в прошлом кадре (S._slot) — высота окна
+     меняется вместе со снимком, и цель идёт за ней. Колесо или палец
+     поездку отменяют: страница не спорит с рукой. */
+  if (S.scrollGoal && S._slot){
+    if (inp.pan || inp.impulse) S.scrollGoal = false;
+    else {
+      const T = Math.max(0, Math.min(S.maxScroll, (S._slot.y0 + S._slot.h / 2 - S._slot.mid) / SS));
+      S.scroll += (T - S.scroll) * Math.min(1, (dt || 0.016) * 6);
+      if (Math.abs(T - S.scroll) < 0.5){ S.scroll = T; S.scrollGoal = false; }
+    }
   }
 }
 /* ЗАКРЫВАЕТ ТОЛЬКО ПУСТОТА ВОКРУГ ЛИСТА. Эльдар (07.10.2026): «при нажатии на
@@ -23133,6 +23195,8 @@ function update(dt){
             if (S.railV) try { S.railV.pause(); } catch(e){}
             S.railV = playPageClip(m4.src); S.railSrc = m4.src;
           }
+        } else if (aimed && aimed.type === 'pagephoto'){
+          S.photoIdx = aimed.i; S.scrollGoal = true;   // снимок — в окно в тексте, страница — к окну
         } else if (aimed && aimed.type === 'person' && PEOPLE[aimed.id]){
           openPerson(aimed.id);     // the name in the text goes to the person, not to a portrait
         } else if (aimed && aimed.type === 'link'){
@@ -23190,6 +23254,13 @@ function update(dt){
         openDoc();
       } else if (aimed && aimed.type === 'opencase'){
         openCaseView();                     // витрина 1970-го: шесть предметов с первого верстака
+      } else if ((aimed && (aimed.type === 'photo' || aimed.type === 'photoTable')) && !aimed.offer && aimed.beat >= 0 && BEATS[aimed.beat]){
+        /* СНИМОК В ЗАЛЕ ВЕДЁТ НА СТРАНИЦУ СВОЕГО ГОДА. Эльдар (27.10.2026): фото
+           и другие предметы, что висят у одного блока — года или события, — по
+           клику открывают страницу этого события, «не увеличивая фото в ленте».
+           Увеличенный снимок над залом остаётся только у того, что бита не
+           знает (финал, 2009), и у книги — у неё свой разворот (offer). */
+        openStudy(aimed.beat);
       } else if (aimed && aimed.type === 'photo'){
         if (aimed.offer){ bookInit(); bookReset(); }
         /* offer НАДО ПЕРЕНЕСТИ ЯВНО. Оверлей собирается здесь по полям, а не
