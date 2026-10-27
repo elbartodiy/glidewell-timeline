@@ -331,7 +331,7 @@ const BEATS = [
    d:'Lab-made temporaries that let the patient preview the final tooth.',
    wall:[], table:[]},
 
-  {x:11150, y:'1989', t:'NATIONAL LEADER', tier:1, fly:true, ink:'236,241,247', yLift:130, flyLift:70,
+  {x:11150, y:'1989', t:'NATIONAL LEADER', tier:1, fly:true, ink:'236,241,247', yLift:130, flyLift:100,
    /* the panel behind it is dark steel, so the year is LIGHT here — the era's
       ink is for the pale wall on either side. And it flies to its own lift:
       130 keeps it on the row with 1980\u20131988 while it rests on the wall, but at
@@ -339,7 +339,11 @@ const BEATS = [
       10 оказалось слишком низко: на взлёте цифра будто падает, и под ней не
       остаётся места карте. 70 — ровно половина пути между покоем и прежним
       апексом (Эльдар, 2026-09-23: «пусть поднимается чуть выше, в половину»). */
-   pinZ:728,   // the numeral is riveted to the recreation panel: it grows in place, never drifts
+   /* 680 — плоскость пилястр бухты (R89_BAY_Z), а не панели (728): на 728 год
+      ехал медленнее пилястр, и отрезки до них были равны только в центре 1989-го
+      (Эльдар, 27.10.2026, набросок: «отрезки 1 и 2 не равны или меняются с
+      движением прокрутки»; стрелка вверх — flyLift 70 → 100) */
+   pinZ:680,
    th:'',
    /* Эльдар вычеркнул «Still» в начале и всю последнюю фразу (2026-10-01):
       остаётся один факт без комментария к нему. */
