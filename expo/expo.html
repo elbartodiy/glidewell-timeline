@@ -21179,6 +21179,18 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
     // подпись в узкой плитке колонки не режется на полуслове — кончается многоточием
     const lab = fitLabel(m.label || '', tw - 28*SS);
     ctx.fillText(lab, mx + 14*SS, ty + th - 12*SS);
+    /* СТРОКА СОСТОЯНИЯ. Эльдар (27.10.2026): «на видео была строка состояния —
+       тонкая линия со скролом, который движется по ней от начала до конца, всё
+       тонко и деликатно». Только у плёнки, которая сейчас в плитке: дорожка в
+       четверть белого, пройденное — светлее, бегунок — точка 2.4. Под подписью,
+       на 5 от низа, с полями подписи — скругление рамки её не режет. */
+    if (useV && S.railV.duration > 0 && isFinite(S.railV.duration)){
+      const f = Math.max(0, Math.min(1, S.railV.currentTime / S.railV.duration));
+      const x0 = mx + 14*SS, x1 = mx + tw - 14*SS, yb = ty + th - 5*SS, xf = x0 + (x1 - x0) * f;
+      ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(x0, yb - 0.6*SS, x1 - x0, 1.2*SS);
+      ctx.fillStyle = 'rgba(255,255,255,0.78)'; ctx.fillRect(x0, yb - 0.6*SS, xf - x0, 1.2*SS);
+      ctx.beginPath(); ctx.arc(xf, yb, 2.4*SS, 0, 7); ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.fill();
+    }
     ctx.restore();
     ctx.strokeStyle = K.edge; ctx.lineWidth = 1.2*SS;
     ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 10*SS); ctx.stroke();
