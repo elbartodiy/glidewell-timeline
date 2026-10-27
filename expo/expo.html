@@ -8581,7 +8581,13 @@ function drawTallUnits(){
    — «—»; площадь — это здания, они стоят, пока не построено следующее. */
 const FACT_TABLE = [
   {label: 'YEARS', years: true},
-  {label: 'EMPLOYEES', hold: 10, pts: [[1970, '1'], [1973, '15'], [1984, '42'], [1988, '65'], [1989, '175'], [2019, '~5,000'], [2026, '5,000']]},
+  /* ramp — число не стоит ступенькой, а растёт по ходу скролла от одной точки
+     к следующей (Эльдар, 27.10.2026: «чтобы при движении скрола между разным
+     количеством сотрудников оно бы возрастало — плавно переходя от одного
+     значения к следующему»). В точках — ровно значения из источников выше;
+     между ними — счётчик, а не данные. Срока (hold 10) у сотрудников больше нет:
+     между 1989 и 2019 вместо «—» идёт счёт 175 → ~5,000. */
+  {label: 'EMPLOYEES', ramp: true, pts: [[1970, '1'], [1973, '15'], [1984, '42'], [1988, '65'], [1989, '175'], [2019, '~5,000'], [2026, '5,000']]},
   {label: 'SQ FT', pts: [[1970, '500'], [1975, '4,000'], [1984, '15,000'], [1993, '71,000'], [2001, '163,000'], [2019, '600,000'], [2026, '1M']]},
   {label: 'CROWNS / DAY', hold: 6, pts: [[1970, '20'], [2026, '50K+']]},
   {label: 'EST. REVENUE', hold: 8, pts: [[1985, '~$5M'], [1991, '$10M'], [1993, '$12M'], [2019, '~$500M']]},
@@ -8595,8 +8601,33 @@ function camYear(){
 }
 const factIdx = (F, y) => { let k = -1; (F.pts || []).forEach(([yy], i) => { if (yy <= y) k = i; });
   return k >= 0 && F.hold && y - F.pts[k][0] > F.hold ? -2 : k; };   // −2: срок цифры вышел
+/* где по ходу зала наступает год — тот же момент, что в camYear(): первый бит
+   этого года или позже, как только камера подошла к нему на 260; текущий год —
+   у финала */
+function yearX(y){
+  if (y >= new Date().getFullYear()) return FIN_X - 600;
+  let x = Infinity;
+  for (const b of BEATS){ const v = beatYear(b); if (v && v >= y) x = Math.min(x, b.x - 260); }
+  return x;
+}
+/* счётчик ramp: в точке и ещё 500 единиц после неё — ровно значение источника,
+   дальше до следующей точки — плавный счёт; третий элемент — самое широкое
+   число отрезка, чтобы подпись рядом не дёргалась от смены разрядов */
+function rampFact(F){
+  const X = F.pts.map(([yy]) => yearX(yy)), c = cam.x, n = F.pts.length;
+  const num = s => +String(s).replace(/[^\d.]/g, '');
+  if (c < X[0]) return [F.pts[0][1], F.label];   // до первого бита — как и прежде, первая точка
+  let i = 0; while (i < n - 1 && c >= X[i + 1]) i++;
+  if (i === n - 1) return [F.pts[i][1], F.label];
+  const a = num(F.pts[i][1]), b = num(F.pts[i + 1][1]), wide = F.pts[i + 1][1];
+  const hold = Math.min(500, (X[i + 1] - X[i]) * 0.4), t = (c - X[i] - hold) / (X[i + 1] - X[i] - hold);
+  if (t <= 0 || a === b) return [F.pts[i][1], F.label, wide];
+  const e = t * t * (3 - 2 * t);
+  return [Math.round(a + (b - a) * e).toLocaleString('en-US'), F.label, wide];
+}
 const COMPANY_FACTS = () => { const y = camYear();
   return FACT_TABLE.map(F => F.years ? [String(Math.max(0, y - 1970)), 'YEARS']
+                           : F.ramp ? rampFact(F)
                                      : [factIdx(F, y) >= 0 ? F.pts[factIdx(F, y)][1] : '—', F.label]); };
 /* блик на цифре: когда камера, идя вперёд, входит в год, где цифра сменилась */
 const FACT_FX = {prevY: null, prevX: null, ev: []};
@@ -8704,14 +8735,17 @@ function drawCompanyStrip(A){
   const pulse = new Array(n).fill(0);
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
   for (let i = 0; i < n; i++){
-    const [num, lab] = F[i];
+    const [num, lab, wide] = F[i];
     ctx.font = NF();
     try { ctx.letterSpacing = '0px'; } catch(e){}
-    const wn = ctx.measureText(num).width;
+    /* счётчик (ramp) стоит в коробке самого широкого числа отрезка, прижатый
+       вправо к подписи: меняются только разряды, подпись на месте */
+    const wn0 = ctx.measureText(num).width, wbox = wide ? Math.max(wn0, ctx.measureText(wide).width) : wn0;
     ctx.font = `600 ${Math.round(11.5 * SS)}px "Helvetica Neue", Arial, sans-serif`;
     try { ctx.letterSpacing = `${2.2 * SS}px`; } catch(e){}
     const wl = ctx.measureText(lab).width;
-    const gap = 12 * SS, cx = c0 + step * (i + 0.5), x = cx - (wn + gap + wl) / 2;
+    const gap = 12 * SS, cx = c0 + step * (i + 0.5), xg = cx - (wbox + gap + wl) / 2;
+    const x = xg + wbox - wn0, wn = wn0;
     ctx.font = NF();
     try { ctx.letterSpacing = '0px'; } catch(e){}
     /* БЛИК И БЛЕСК НА САМОЙ ЦИФРЕ, в момент смены (Эльдар, 26.10.2026: «давай
