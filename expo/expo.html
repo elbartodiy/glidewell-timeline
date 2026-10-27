@@ -6217,6 +6217,97 @@ function drawFilmCRT95(r){
    translucent, washed over the plaster. The picture lives in the wall layer,
    so the counter hides its lower reach; the beam and the little machine ride
    the later pass, over the furniture. */
+/* ЛУЧ ПРОЕКТОРА — ОДИН НА ОБА, ОБЪЁМОМ, А НЕ ТРЕУГОЛЬНИКАМИ. Эльдар (27.10.2026):
+   «лучи проектора давайте тоже поменяем — во-первых, у двух проекторов разные
+   лучи, во-вторых, раньше были лучи значительно лучше и реалистичнее — не было
+   видно, что это просто треугольники… они двигались по экрану, и не было
+   понятно, что это за форма». У 1993-го была одна трапеция с пылинками, у
+   1999-го — вложенные клинья к краям кадра, холоднее цветом. Теперь оба —
+   отсюда: мягкое тело от линзы до двух крайних углов кадра, внутри — десяток
+   полос света, которые медленно плывут поперёк луча и дышат вразнобой (так
+   мерцает свет, прошедший через плёнку), и дымка, которая тянется вдоль луча.
+   Всё собирается на листе в 1/6 экрана и растягивается обратно — сглаживание
+   при растяжке и есть размытие, поэтому ни одна грань не читается. Пылинок
+   нет (как и у 1989-го: «только лучи»). */
+const PBEAM = {c: null, g: null, haze: null};
+function projBeamHaze(){
+  if (PBEAM.haze) return PBEAM.haze;
+  const n = 64, c = document.createElement('canvas'); c.width = n; c.height = n;
+  const g = c.getContext('2d'), im = g.createImageData(n, n);
+  // гладкий шум: сумма нескольких синусоид, бесшовно по обеим осям
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++){
+    const X = x / n * Math.PI * 2, Y = y / n * Math.PI * 2;
+    const v = 0.5 + 0.22 * Math.sin(X * 2 + Math.sin(Y * 3) * 1.3) + 0.18 * Math.sin(Y * 4 + Math.cos(X * 3) * 1.7)
+                  + 0.10 * Math.sin((X + Y) * 5);
+    const i = (y * n + x) * 4;
+    im.data[i] = im.data[i + 1] = im.data[i + 2] = 0; im.data[i + 3] = Math.max(0, Math.min(255, v * 255));
+  }
+  g.putImageData(im, 0, 0);
+  return (PBEAM.haze = c);
+}
+function drawProjBeam(lx, ly, A, B, lamp, t, seed){
+  const S6 = 1 / 10;   // лист в 1/10 — растяжка обратно и есть размытие граней
+  const x0 = Math.min(lx, A[0], B[0]) - 30 * SS, y0 = Math.min(ly, A[1], B[1]) - 30 * SS;
+  const x1 = Math.max(lx, A[0], B[0]) + 30 * SS, y1 = Math.max(ly, A[1], B[1]) + 30 * SS;
+  const bw = Math.max(4, Math.ceil((x1 - x0) * S6)), bh = Math.max(4, Math.ceil((y1 - y0) * S6));
+  if (!PBEAM.c){ PBEAM.c = document.createElement('canvas'); PBEAM.g = PBEAM.c.getContext('2d'); }
+  const c = PBEAM.c, g = PBEAM.g;
+  if (c.width < bw || c.height < bh){ c.width = Math.max(c.width, bw); c.height = Math.max(c.height, bh); }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalCompositeOperation = 'source-over';
+  g.clearRect(0, 0, c.width, c.height);
+  g.setTransform(S6, 0, 0, S6, -x0 * S6, -y0 * S6);
+  const mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2;
+  const P = u => [A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u];
+  const RGB = '255,247,230';
+  // тело: от линзы ярче, к кадру — на нет
+  const body = g.createLinearGradient(lx, ly, mx, my);
+  body.addColorStop(0, `rgba(${RGB},${(0.30 * lamp).toFixed(3)})`);
+  body.addColorStop(0.55, `rgba(${RGB},${(0.13 * lamp).toFixed(3)})`);
+  body.addColorStop(1, `rgba(${RGB},${(0.06 * lamp).toFixed(3)})`);
+  g.fillStyle = body;
+  /* тело — четыре вложенных клина по четверти яркости: к краям луч сходит на
+     нет, и прямой грани от линзы до угла кадра не остаётся */
+  for (const wq of [1, 0.8, 0.58, 0.36]){
+    const pa = P(0.5 - wq / 2), pb = P(0.5 + wq / 2);
+    g.globalAlpha = 0.25 * (wq === 1 ? 0.7 : 1.1);
+    g.beginPath(); g.moveTo(lx, ly - 3 * SS); g.lineTo(pa[0], pa[1]); g.lineTo(pb[0], pb[1]); g.lineTo(lx, ly + 3 * SS); g.closePath(); g.fill();
+  }
+  g.globalAlpha = 1;
+  // полосы: плывут поперёк луча и дышат вразнобой
+  g.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 11; i++){
+    const ph = seed * 1.7 + i * 2.399;
+    const u = 0.08 + 0.84 * (0.5 + 0.5 * Math.sin(t * (0.11 + (i % 4) * 0.035) + ph));
+    const w = 0.025 + 0.05 * (0.5 + 0.5 * Math.sin(t * 0.23 + ph * 1.3));
+    const al = (0.06 + 0.14 * Math.pow(0.5 + 0.5 * Math.sin(t * (0.9 + (i % 5) * 0.37) + ph * 2.1), 2)) * lamp;
+    const pa = P(Math.max(0, u - w)), pb = P(Math.min(1, u + w)), pm = P(u);
+    const rg = g.createLinearGradient(lx, ly, pm[0], pm[1]);
+    rg.addColorStop(0, `rgba(${RGB},${al.toFixed(3)})`);
+    rg.addColorStop(1, `rgba(${RGB},${(al * 0.35).toFixed(3)})`);
+    g.fillStyle = rg;
+    g.beginPath(); g.moveTo(lx, ly); g.lineTo(pa[0], pa[1]); g.lineTo(pb[0], pb[1]); g.closePath(); g.fill();
+  }
+  // дымка: неровная плотность, тянется вдоль луча
+  g.globalCompositeOperation = 'destination-out';
+  const hz = projBeamHaze();
+  g.save();
+  g.globalAlpha = 0.55;
+  const ang = Math.atan2(my - ly, mx - lx), L = Math.hypot(mx - lx, my - ly);
+  g.translate(lx, ly); g.rotate(ang);
+  const tile = Math.max(60 * SS, L * 0.45), off = (t * 18 * SS) % tile;
+  const pat = g.createPattern(hz, 'repeat');
+  pat.setTransform(new DOMMatrix().translate(-off, 0).scale(tile / 64, tile / 64 * 0.6));
+  g.fillStyle = pat; g.fillRect(-20 * SS, -L, L + 40 * SS, L * 2);
+  g.restore();
+  g.globalCompositeOperation = 'source-over';
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.globalCompositeOperation = 'screen';
+  ctx.drawImage(c, 0, 0, bw, bh, x0, y0, bw / S6, bh / S6);
+  ctx.restore();
+}
 function filmProjGeom(r){
   const wz = wallZAt(r.x) - 10;
   const kk = k(wz), sx = wallSX(r.x, 0, kk);
@@ -6299,27 +6390,16 @@ function drawFilmProjector(r){
   const mw = 70 * km * SS, mh = 26 * km * SS;
   const mFoot = py(CFG.benchY - 2, km);
   const lensX = mx, lensY = mFoot - mh*0.55;
-  /* the throw in nested passes: hard-edged quads read as glass panes; layered
-     shrinking ones die away sideways like light through dust */
-  for (const [w, a] of [[1, 0.05], [0.72, 0.075], [0.42, 0.11]]){
-    const bg = ctx.createLinearGradient(lensX, lensY, g.sx, g.cy);
-    bg.addColorStop(0, `rgba(215,225,240,${(a * 2.2).toFixed(3)})`);
-    bg.addColorStop(1, `rgba(215,225,240,${(a * 0.45).toFixed(3)})`);
-    ctx.fillStyle = bg;
-    const t0 = g.py0 + g.ph * (1 - w) / 2, t1 = g.py0 + g.ph - g.ph * (1 - w) / 2;
-    const l0 = g.px0 + g.pw * (1 - w) / 2, l1 = g.px0 + g.pw - g.pw * (1 - w) / 2;
-    ctx.beginPath();
-    ctx.moveTo(lensX - 6*SS*w, lensY);
-    ctx.lineTo(l0, t0);
-    ctx.lineTo(l0, t1);
-    ctx.lineTo(lensX - 6*SS*w, lensY + 4*SS);
-    ctx.closePath(); ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(lensX + 6*SS*w, lensY);
-    ctx.lineTo(l1, t0);
-    ctx.lineTo(l1, t1);
-    ctx.lineTo(lensX + 6*SS*w, lensY + 4*SS);
-    ctx.closePath(); ctx.fill();
+  /* луч — общий с 1993-м (drawProjBeam): от линзы к двум крайним углам кадра,
+     какими их видно от лампы */
+  {
+    const cs = [[g.px0, g.py0], [g.px0 + g.pw, g.py0], [g.px0 + g.pw, g.py0 + g.ph], [g.px0, g.py0 + g.ph]];
+    const an = cs.map(c => Math.atan2(c[1] - lensY, c[0] - lensX));
+    let iA = 0, iB = 0;
+    for (let i = 1; i < 4; i++){ if (an[i] < an[iA]) iA = i; if (an[i] > an[iB]) iB = i; }
+    const tt = state.time || 0;
+    const lamp99 = 0.92 + 0.05 * Math.sin(tt * 6.1) + 0.03 * Math.sin(tt * 1.7);
+    drawProjBeam(lensX, lensY, cs[iA], cs[iB], lamp99, tt, 2);
   }
   contactShadow(mx, mFoot, mw * 0.6, 0.28);
   const mg = ctx.createLinearGradient(0, mFoot - mh, 0, mFoot);
@@ -7730,26 +7810,7 @@ function drawProjectors(t, phase){
       if (ang[i] < ang[iA]) iA = i;
       if (ang[i] > ang[iB]) iB = i;
     }
-    const beam = ctx.createLinearGradient(lx, ly, sx, sy);
-    beam.addColorStop(0, `rgba(255,246,222,${(0.20 * lamp).toFixed(3)})`);
-    beam.addColorStop(1, 'rgba(255,246,222,0.015)');
-    ctx.fillStyle = beam;
-    const nrm = Math.hypot(sx - lx, sy - ly) || 1;
-    const ox2 = -(sy - ly) / nrm * 5 * kp * SS, oy2 = (sx - lx) / nrm * 5 * kp * SS;
-    ctx.beginPath();
-    ctx.moveTo(lx + ox2, ly + oy2);
-    ctx.lineTo(lx - ox2, ly - oy2);
-    ctx.lineTo(corners[iA][0], corners[iA][1]);
-    ctx.lineTo(corners[iB][0], corners[iB][1]);
-    ctx.closePath(); ctx.fill();
-    // motes turning in the beam
-    for (let i = 0; i < 14; i++){
-      const u = ((i * 0.137 + t * 0.05) % 1);
-      const bx = mxp + (sx - mxp) * u + Math.sin(t * 0.7 + i) * 12 * SS * u;
-      const by = (myp - bh * 0.45) + (sy - (myp - bh * 0.45)) * u + Math.cos(t * 0.5 + i * 2) * 9 * SS * u;
-      ctx.fillStyle = `rgba(255,248,228,${(0.06 + 0.05 * Math.sin(t * 2 + i)).toFixed(3)})`;
-      ctx.beginPath(); ctx.arc(bx, by, (0.9 + 0.8 * u) * SS, 0, 7); ctx.fill();
-    }
+    drawProjBeam(lx, ly, corners[iA], corners[iB], lamp, t, 1);   // общий луч (см. drawProjBeam)
 
     // 2 — the picture is assembled on its own transparent sheet and then ADDED
     //     to the wall. Feathering it in place would erase the masonry with it
