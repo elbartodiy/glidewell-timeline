@@ -22625,7 +22625,10 @@ function drawAttractHint(t){
   // the rule owns the foot of the frame; the invitation stands above it
   /* SWIPE, А НЕ WHEEL. Эльдар (07.10.2026): «turn the wheel надо поменять на
      swipe, по-моему, так лучше». Колеса у киоска нет — есть палец. */
-  ctx.fillText('Swipe to travel through time', W/2, H - 78*SS);   // одним предложением, без точки-разделителя (Эльдар, 07.10.2026)
+  /* над линией прокрутки и над годом у ползунка: линия с 27.10 спустилась на
+     H − 76 и резала строку (Эльдар, 27.10.2026: «посмотри, как она пересекается
+     с линией — надо текст поднять») */
+  ctx.fillText('Swipe to travel through time', W/2, RULE_Y() - 50*SS);   // одним предложением, без точки-разделителя (Эльдар, 07.10.2026)
   ctx.restore();
 }
 
