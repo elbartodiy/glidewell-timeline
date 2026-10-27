@@ -8934,15 +8934,15 @@ function drawProgress(t){
   ctx.lineWidth = 1.4 * SS;
   pips.forEach((wx, i) => {
     const cx = at(wx), u = pips.length > 1 ? i / (pips.length - 1) : 1;
-    ctx.strokeStyle = `rgba(${LC},${((0.55 + 0.15 * u) * A).toFixed(3)})`;
-    ctx.beginPath(); ctx.moveTo(cx, y - 8 * SS); ctx.lineTo(cx, y + 8 * SS); ctx.stroke();
+    ctx.strokeStyle = `rgba(${LC},${(0.7 * (0.55 + 0.15 * u) * A).toFixed(3)})`;   // ×0,7 — «прозрачность на 0.7» (27.10.2026)
+    ctx.beginPath(); ctx.moveTo(cx, y - 5 * SS); ctx.lineTo(cx, y + 5 * SS); ctx.stroke();   // короче (Эльдар, 27.10.2026: «менее торчащими»): было 8
   });
   for (const b of BEATS){
     if (b.under) continue;
     // год, у которого свой зал, уже отмечен штрихом этого зала
     if (RECS.some(([rl, rr]) => b.x >= rl && b.x <= rr)) continue;
-    const bx = at(b.x), tall = (b.tier === 1 || b.fly) ? 6 : 4.5;
-    const al = (b.minor ? 0.3 : 0.5) * A;
+    const bx = at(b.x), tall = (b.tier === 1 || b.fly) ? 3.8 : 2.8;   // было 6 / 4,5
+    const al = 0.7 * (b.minor ? 0.3 : 0.5) * A;   // ×0,7 (27.10.2026)
     ctx.strokeStyle = `rgba(${LC},${al.toFixed(3)})`;
     ctx.beginPath(); ctx.moveTo(bx, y - tall * SS); ctx.lineTo(bx, y + tall * SS); ctx.stroke();
   }
