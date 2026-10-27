@@ -554,6 +554,14 @@ const BEATS = [
      поднимается обратно. yLiftNear / yLiftSpan читает drawBeatText. */
   {x:17600, y:'2002', t:'CAD/CAM ENTERS THE LAB', tWall:'CAD/CAM', thWallHide:true, yLift:190,
    yLiftNear:120, yLiftSpan:600, capDX:0,
+   /* СТРОКА ГОРИТ ВМЕСТЕ С РАМКОЙ. Эльдар (27.10.2026): «Scan, design on screen —
+      это к 2002? Почему она тогда не появляется вместе с рамкой и в зените не
+      горит в этот момент?» Под годом стоит постамент в раме, и строка уходит на
+      прилавок справа; в одну строку (~650 px) она в центре 2002-го вылезала за
+      правый край экрана и гасла (правило «целиком в кадре»), загоралась только
+      через 100–600 шагов после центра. В две строки по 410, на 40 от торца, она в зените целиком
+      на прилавке справа от рамки. */
+   capW:410, capKeep:40,   // 440 при keep 120 на 1240×700 ещё гасла (0.37); 380 давало три строки с висящим «digital.»
    /* 322, а не круглое число: слева от года на прилавке стоит коробка-зуб
       пластикового цеха (ph_plastic на 21680, шириной 110), а закон тяготения
       не пускает монитор левее начала пролёта прилавка — он ровно на неё и
@@ -5042,7 +5050,7 @@ function capX(b, kf){
          that is left to respect is the run itself: the line stays on one
          counter, clear of the mitred ends by the same 120 the plain panel keeps
          (Eldar, 2026-09-22: «сдвинуть к самому краю стола»). */
-      const half = capColW(b) / 2 + 18 * SS, keep = 120;
+      const half = capColW(b) / 2 + 18 * SS, keep = b.capKeep != null ? b.capKeep : 120;   // capKeep — бит может подойти к торцу ближе (2002)
       const lo = px(tt.x0 + keep, kf) + half, hi = px(tt.x1 - keep, kf) - half;
       cw = lo < hi ? Math.max(lo, Math.min(hi, cw)) : (px(tt.x0, kf) + px(tt.x1, kf)) / 2;
     }
