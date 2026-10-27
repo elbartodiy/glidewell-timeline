@@ -14418,7 +14418,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261027-playsafe';   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261027-playsafe2';   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -14498,7 +14498,7 @@ async function loadPhotoSkin(){
     ph_hall_floor: 'hall_floor.png',  // its polished floor and reflections, laid under the whole late stretch
     ph_hall_plinth: 'hall_plinth.png',// the low stone the turning crown stands on
     ph_album: 'album_cover.png',      // the family album, photographed shut on the counter
-    ph_playsafe: 'playsafe.png',      // 1995: капа PlaySafe на месте подушки (Эльдар, 27.10.2026; отражение под ней срезано)
+    ph_playsafe: 'playsafe.png',      // 1995: капа PlaySafe на месте подушки (Эльдар, 27.10.2026; рендер целиком, с тенью)
     ph_pillow: 'pillow.png',          // 1996: подушка с каппой Silent Nite — год уходит со стены, предмет остаётся
     ph_monlcd: 'monitor_lcd.png',     // монитор с сайтом у 2000-го — фото Эльдара (16.10.2026), экран вырезан под запись
     ph_board80: 'board_1980.png',     // 1980: доска со схемой Джима — фото Эльдара (16.10.2026), вместо нарисованной
@@ -14764,9 +14764,16 @@ function initDecor(){
     /* ПОДУШКА ЧУТЬ ПРАВЕЕ, НА ЕЁ МЕСТЕ — КАПА PLAYSAFE. Эльдар (27.10.2026):
        PlaySafe ушёл из заголовка 1995-го, «двигаем подушку чуть правее, а на
        её месте рисунок PlaySafe капы, и о ней уже инфа по клику на предмет».
-       Капа ведёт на страницу 1995-го — там PlaySafe в тексте. */
+       Капа ведёт на страницу 1995-го — там PlaySafe в тексте.
+       27.10.2026, второй заход: «ты на капе подрезал тень снизу — не надо было,
+       и сделай её размером в точности с капу, которая рядом на подушке». Рендер
+       лежит целиком, со своей тенью (noShadow — второй зал не рисует). Размер:
+       капа Silent Nite на подушке — ~520 из 1492 px спрайта ×442 = 154 ед.;
+       у PlaySafe сама капа 708 из 800 px → спрайт 154·800/708 = 174. Тень
+       уходит на 169 рядов (37 ед.) ниже капы. drop 61 сажал низ капы на
+       переднюю кромку («капа висит в воздухе»), 34 — на середину столешницы. */
     if (bsn) PROPS.push({x: bsn.x + PILLOW_DX, z: 26, kind: 'ph_pillow', w: 442, drop: 88, noShadow: true, study: 'SILENT NITE'});
-    if (bsn) PROPS.push({x: bsn.x + PLAYSAFE_DX, z: 26, kind: 'ph_playsafe', w: 230, drop: 24, study: 'OPERATORY PLAYSAFE'});
+    if (bsn) PROPS.push({x: bsn.x + PLAYSAFE_DX, z: 26, kind: 'ph_playsafe', w: 174, drop: 34, noShadow: true, study: 'OPERATORY PLAYSAFE'});
   }
 
   /* ПЯТНИЧНЫЕ ПОНЧИКИ НА ПРИЛАВКЕ 1984-ГО (Эльдар, 02.10.2026: «пончики тоже
@@ -21173,20 +21180,21 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
     }
     ctx.fillStyle = 'rgba(240,244,248,0.95)';
     ctx.font = K.font(18);
-    ctx.fillText(m.name, mx + 14*SS, ty + th - 34*SS);
+    ctx.fillText(m.name, mx + 14*SS, ty + th - 49*SS);   // −15: над строкой состояния (Эльдар, 27.10.2026)
     ctx.font = K.font(15, 'italic');
     ctx.fillStyle = 'rgba(200,206,214,0.85)';
     // подпись в узкой плитке колонки не режется на полуслове — кончается многоточием
     const lab = fitLabel(m.label || '', tw - 28*SS);
-    ctx.fillText(lab, mx + 14*SS, ty + th - 12*SS);
+    ctx.fillText(lab, mx + 14*SS, ty + th - 27*SS);
     /* СТРОКА СОСТОЯНИЯ. Эльдар (27.10.2026): «на видео была строка состояния —
        тонкая линия со скролом, который движется по ней от начала до конца, всё
        тонко и деликатно». Только у плёнки, которая сейчас в плитке: дорожка в
        четверть белого, пройденное — светлее, бегунок — точка 2.4. Под подписью,
-       на 5 от низа, с полями подписи — скругление рамки её не режет. */
+       на 20 от низа (было 5 — «линия очень низко, надо в четыре раза, вместе с
+       текстом»: имя и подпись поднялись на те же 15), с полями подписи. */
     if (useV && S.railV.duration > 0 && isFinite(S.railV.duration)){
       const f = Math.max(0, Math.min(1, S.railV.currentTime / S.railV.duration));
-      const x0 = mx + 14*SS, x1 = mx + tw - 14*SS, yb = ty + th - 5*SS, xf = x0 + (x1 - x0) * f;
+      const x0 = mx + 14*SS, x1 = mx + tw - 14*SS, yb = ty + th - 20*SS, xf = x0 + (x1 - x0) * f;
       ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(x0, yb - 0.6*SS, x1 - x0, 1.2*SS);
       ctx.fillStyle = 'rgba(255,255,255,0.78)'; ctx.fillRect(x0, yb - 0.6*SS, xf - x0, 1.2*SS);
       ctx.beginPath(); ctx.arc(xf, yb, 2.4*SS, 0, 7); ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.fill();
@@ -21198,7 +21206,7 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
     if (m.pid && PEOPLE[m.pid]){
       // the name on the card goes where the name in the text goes
       ctx.font = K.font(18);
-      pushHit(mx + 10*SS, ty + th - 52*SS, ctx.measureText(m.name).width + 12*SS, 28*SS,
+      pushHit(mx + 10*SS, ty + th - 67*SS, ctx.measureText(m.name).width + 12*SS, 28*SS,
       {type:'person', id: m.pid});
     }
   }
