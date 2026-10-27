@@ -364,7 +364,8 @@ const BEATS = [
       расширяющимися к низу» (23.10.2026): тёплый белый вместо холодного
       (и beam 0,65 → 0,585 — «прозрачнее на 10 процентов»)
       голубоватого эпохи и подошва луча 0,48 → 0,68 ширины колонны */
-   ped:{photo:'ph_postbox', dx:0, low:true, capY: 708, beam: 0.585, beamRGB: '255,246,230', beamFoot: 0.68},
+   ped:{photo:'ph_postbox', dx:0, low:true, capY: 708, beam: 0.585, beamRGB: '255,246,230', beamFoot: 0.68,
+        beamImg: ['ph_beam89a', 'ph_beam89b'], beamImgGain: 1},   // лучи — PNG-текстура (27.10.2026), без неё — прежние softBeam
    /* THE LINE READS OFF A BACKGROUND THAT DOES NOT CHANGE UNDER IT. Set 430
      left of the plinth it began on the steel panel, crossed the pale edge of
      the bay's step and finished on the column — three tones under three lines
@@ -3371,6 +3372,35 @@ function softBeam(xa, xb, yA, yB, halfA, halfB, rgb, peak, stops){
   }
 }
 
+/* ЛУЧ ИЗ КАРТИНКИ (Эльдар, 27.10.2026: «1989 — лучи поменять на сгенерированные
+   полупрозрачные пнг»). Тот же луч, что у softBeam — от линзы (xa, yA) к подошве
+   (xb, yB), с той же кривой яркости stops и тем же цветом, — но тело луча берётся
+   из текстуры (tools/make_beam.py): мягкая кромка, полосы от линзы, дымка,
+   пылинки. Кривая и цвет кладутся на текстуру в своём холсте (source-in), потом
+   холст ставится на сцену повёрнутым вдоль луча. Ширина листа — подошва самого
+   широкого прохода softBeam (×1.7), так что луч занимает то же место. */
+const BEAM_OC = document.createElement('canvas');
+function drawBeamImg(img, xa, xb, yA, yB, halfB, rgb, peak, stops){
+  const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+  if (!iw || !ih || peak <= 0.004) return;
+  const ow = 256, oh = 1024;
+  if (BEAM_OC.width !== ow){ BEAM_OC.width = ow; BEAM_OC.height = oh; }
+  const g = BEAM_OC.getContext('2d');
+  g.globalCompositeOperation = 'source-over';
+  g.clearRect(0, 0, ow, oh);
+  g.drawImage(img, 0, 0, ow, oh);
+  g.globalCompositeOperation = 'source-in';
+  const gr = g.createLinearGradient(0, 0, 0, oh);
+  for (const [t, m] of stops) gr.addColorStop(t, `rgba(${rgb},${Math.min(1, peak * m).toFixed(4)})`);
+  g.fillStyle = gr; g.fillRect(0, 0, ow, oh);
+  g.globalCompositeOperation = 'source-over';
+  const dx = xb - xa, dy = yB - yA, L = Math.hypot(dx, dy), wB = halfB * 1.7 * 2;
+  ctx.save();
+  ctx.translate(xa, yA);
+  ctx.rotate(-Math.atan2(dx, dy));
+  ctx.drawImage(BEAM_OC, -wB / 2, 0, wB, L);
+  ctx.restore();
+}
 function drawGlow(col, cx, cy, r, alpha, squashY){
   if (alpha <= 0.004 || r <= 0) return;
   const sy = squashY || 1;
@@ -14457,6 +14487,8 @@ async function loadPhotoSkin(){
        → 548 × 1230; прежний postbox.png остаётся в git. */
     ph_postbox: 'postbox_1989.png',  // the mailed case, open, on its own plinth
     ph_postbox_light: 'postbox_1989_light.png',
+    ph_beam89a: 'beam_1989_a.png',   // лучи 1989-го — текстура из tools/make_beam.py (27.10.2026)
+    ph_beam89b: 'beam_1989_b.png',
     ph_poster89: 'poster_1989.png',   // 1989: постер «Every Dentist Is a Neighbor» с настоящей картой — рендер Эльдара (23.10.2026)   // тот же кадр «в свете» — проступает к центру экрана (19.10.2026)
     ph_plane: 'plane_1993.png',       // and the freighter that carries it, landing at 1993
     ph_plastic: 'plastic_2000.png',   // 2000: the tooth-shaped crown boxes the injection division made
@@ -17062,9 +17094,13 @@ function drawPedestal(b, t, hero){
       const tTable = Math.max(tAbove + 0.04, Math.min(0.95, py(700, kk) / yEnd));
       /* wider at the foot, and the power starts leaking just ABOVE the table:
          from there down it is haze, not beam */
-      softBeam(fx, xEnd, 0, yEnd, colW * 0.22, colW * (ped.beamFoot || 0.48), warmC, hero * (ped.beam != null ? ped.beam : 1),
-               [[0, 0.12], [tObj, 1], [tAbove, 0.55], [tTable, 0.26],
-                [tTable + (1 - tTable) * 0.5, 0.09], [1, 0]]);
+      const BSTOPS = [[0, 0.12], [tObj, 1], [tAbove, 0.55], [tTable, 0.26],
+                      [tTable + (1 - tTable) * 0.5, 0.09], [1, 0]];
+      const bImg = ped.beamImg && PROP_SPRITES[ped.beamImg[s < 0 ? 0 : 1]];
+      if (bImg) drawBeamImg(bImg.c, fx, xEnd, 0, yEnd, colW * (ped.beamFoot || 0.48), warmC,
+                            hero * (ped.beam != null ? ped.beam : 1) * (ped.beamImgGain || 1), BSTOPS);
+      else softBeam(fx, xEnd, 0, yEnd, colW * 0.22, colW * (ped.beamFoot || 0.48), warmC, hero * (ped.beam != null ? ped.beam : 1),
+               BSTOPS);
       // the fixture itself
       ctx.fillStyle = 'rgba(20,20,22,0.9)';
       ctx.fillRect(fx - 9*SS, 0, 18*SS, 12*SS);
