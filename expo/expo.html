@@ -14516,8 +14516,10 @@ function initDecor(){
   /* силуэт за монитором с сайтом едет вместе с монитором: стоял на SHIFT(16460),
      в 51 от бита сайта, и после переезда компьютера за 1998-й (16.10.2026)
      оказался бы перед патентом R&D */
-  { const bw = BEATS.find(b => b.t === 'WEB \u00b7 CLINICAL VOICE');
-    FIGURES.push({x: bw ? bw.x + 51 + 273 : SHIFT(16460), z: 560, h: 700, sprite: makeFigure(7)}); }   // +273 — монитор сдвинут на корпус   // ~2000 · the CAD operator
+  /* СНЯТ (Эльдар, 26.10.2026: «1999 давай эту тень уберём со стены»): силуэт
+     стоял тёмной фигурой на стене посреди 1999-го. Было:
+     FIGURES.push({x: bw.x + 51 + 273, z: 560, h: 700, sprite: makeFigure(7)}),
+     bw — бит 'WEB · CLINICAL VOICE'. */
   // mills receding behind the factory line
   // the graduates' mortarboard behind the alumnae portraits
   PROPS.push({x: SHIFT(25700), z: 4, kind: 'gradcap', w: 175, late: true});   // on the plate's own plane, a hair nearer, and to its right
