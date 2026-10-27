@@ -745,6 +745,12 @@ const BEATS = [
        {img:'bianca', w:120, dx:357, lz:30, cap:'Dr. Bianca Clark · GL alum'}]},
 
   {x:26340, y:'2022', t:'FASTSCAN.IO', thBelow:true, capDX:-36,   // the bay is a photograph; the italic line cannot live on it, and the column is a shade wider than the panel
+   /* АБЗАЦ ОТ ЛЕВОЙ КОЛОННЫ (Эльдар, 26.10.2026, набросок: «тут абзац
+      начинается по линии колонны (левой её части)»; «это когда центрировано»):
+      левый край строк — на левой грани левой колонны портала. Колонна стоит
+      на REC4_L, шириной 120, на глубине R22_BAY_Z (см. drawRec4), поэтому
+      край считается на её плоскости и не съезжает с неё при ходьбе. */
+   capColL(){ return px(REC4_L - 60, k(R22_BAY_Z)); },
    tOnBay:true,   // the title is lettered on the plinth block of the render, centred on its face
    pinZ:996,   // the year stays centred over the instrument, on the bay's own plane — it does not slide behind a column
    yLift:267,  // its middle on the ceiling band, with 2018 and 2023 (Eldar, 2026-09-22)
@@ -4965,6 +4971,9 @@ function capX(b, kf){
       cw = lo < hi ? Math.max(lo, Math.min(hi, cw)) : (px(tt.x0, kf) + px(tt.x1, kf)) / 2;
     }
   }
+  /* capColL — бит называет экранный x, с которого начинается абзац (левый край
+     колонки), и колонка встаёт от него */
+  if (b.capColL) cw = b.capColL() + capColW(b) / 2;
   return cw;
 }
 let CAP_RECT = null;                 // where the caption actually landed, last frame
@@ -5193,11 +5202,13 @@ function drawBenchDescs(){
        внизу повесим только на пространство тумбы, с воздухом по краям»): она
        бежала с графита на светлый пол слева и справа. Колонка — ширина лица
        тумбы минус воздух по 11 % с каждой стороны, по центру тумбы; на графите
-       (68,69,73) — светлыми чернилами, как на площадке пресса 2000-го. */
+       (68,69,73) — светлыми чернилами, как на площадке пресса 2000-го.
+       Набор — по левому краю колонки (Эльдар, 26.10.2026: «1993 текст
+       описание — выравнивание по левому краю»), как на площадке 2000-го. */
     if (b.descPed && MODEL93 && MODEL93.ped && MODEL93.ped.frame === state.time){
-      const P = MODEL93.ped, pw = P.x1 - P.x0, colw = pw * 0.78, cxP = (P.x0 + P.x1) / 2;
+      const P = MODEL93.ped, pw = P.x1 - P.x0, colw = pw * 0.78, xL = (P.x0 + P.x1) / 2 - colw / 2;
       ctx.save();
-      ctx.textAlign = 'center';
+      ctx.textAlign = 'left';
       ctx.font = eraFont(23 * SS, '', seg.font);
       if (!b._dP || b._dPw !== Math.round(colw)){ b._dP = wrapCalc(b.d, colw); b._dPw = Math.round(colw); }
       ctx.fillStyle = `rgba(226,232,238,${(dAmt * 0.92).toFixed(3)})`;
@@ -5206,7 +5217,7 @@ function drawBenchDescs(){
       let top = P.y0 + 64 * SS;
       const foot = top + (b._dP.length - 1) * lh, limit = Math.min(H - 96 * SS, RULE_Y() - 44 * SS);
       if (foot > limit) top = Math.max(P.y0 + 34 * SS, top - (foot - limit));
-      b._dP.forEach((ln, j) => ctx.fillText(ln, cxP, top + j * lh));
+      b._dP.forEach((ln, j) => ctx.fillText(ln, xL, top + j * lh));
       ctx.restore();
       continue;
     }
