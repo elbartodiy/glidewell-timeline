@@ -720,7 +720,18 @@ const BEATS = [
      65.4 px at 90.1 px of type, so the baseline wants 103 and the lift 267. The
      three share one type plane, so one number serves all three. */
   {x:24450, y:'2018', t:'', tier:1, yLift:267,
-   pinZ:1000, descBase:true,   // its line is read off the factory's base, which is the only even surface it has
+   pinZ:1000, capFlat:true,   // фасад под строкой — ровный (швы дверей шли сквозь слова)
+   /* СТРОКА — ПОД СВОИМ ГОДОМ И В СВОЁ ВРЕМЯ. Она лежала на базе фабрики 2019-го
+      (descBase) и загоралась, когда 2018-й уже ушёл влево; Эльдар (27.10.2026):
+      «место и время как будто сдвинулись у этой надписи» — стрелкой с базы
+      роботов на прилавок под экраном 2018-го. Теперь — на белом прилавке под
+      экраном, строка по центру года (ширина меряется), едет с прилавком (k(0)). */
+   capColL(){
+     const g = CAP_MEASURE || (CAP_MEASURE = document.createElement('canvas').getContext('2d'));
+     g.font = eraFont(23, '', segAt(this.x).font);
+     const w = Math.min(capColW(this) / SS, g.measureText(this.d).width) * SS;
+     return px(this.x, k(0)) - w / 2;
+   },
    th:'',
    /* затравка вместо пересказа страницы (Эльдар, 26.10.2026: «на линии нам нужно только небольшая затравка для раскрытия темы — про что внутри»; «го»). Было: «1,500 pairs of scans, and the profile between opposing teeth that technicians find hardest. The paper, written with UC Berkeley, is called Learning Beyond Human Expertise.» */
    d:'The first crown designed by a neural network.',
@@ -5012,6 +5023,7 @@ function SS_W(b){
   }
   return SS;
 }
+let CAP_MEASURE = null;   // мерный холст для capColL (2018)
 function capX(b, kf){
   const rm = capRec(b.x);
   let cw = px((rm != null ? rm : b.x) + (b.capDX || 0), kf);
@@ -14203,7 +14215,8 @@ function drawSheetBenches(){
     for (const b of BEATS){
       if (b.under || b.descWall || !b.d) continue;
       if (Math.abs(b.x - cam.x) > 3500) continue;
-      if (capRec(b.x) != null || benchFor(b) !== tb) continue;
+      // capFlat — год в пролёте инсталляции, чья строка всё же лежит на прилавке (2018)
+      if ((capRec(b.x) != null && !b.capFlat) || benchFor(b) !== tb) continue;
       const half = capColW(b) / 2 + 40 * SS;          // the column, plus a margin of air
       const cwS = capX(b, kf);
       let w0 = cam.x + (cwS - half - W / 2) / wpp, w1 = cam.x + (cwS + half - W / 2) / wpp;
