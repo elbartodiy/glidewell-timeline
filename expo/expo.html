@@ -309,10 +309,16 @@ const BEATS = [
      Джима (интервью 21.10.2026, дважды «about 1985»); самих объявлений в архиве
      пока нет. Своя панель: в синей комнате теперь четыре года, см. «ЧЕТЫРЕ ГОДА
      В ТОЙ ЖЕ КОМНАТЕ» и benchAnchorX. Стена пока без экспоната — как у 1988-го. */
-  {x:9300, y:'1985', t:'LEARNING TO SELL', clipAt:1, /* видео — после первого абзаца текста: блок 0 тут подзаголовок */ yLift:130, descTitle:true, deskCapFoot:618, capLeft:true,
+  /* ПЛАКАТ ВМЕСТО СТРОКИ (Эльдар, 27.10.2026: «1985.png — вместо learning to
+     sell»; «описательный текст там тоже надо убрать со стены»). Плакат «The
+     Sales Secret» висит на панели так же, как снимки 1984-го (верх 148, ширина
+     560 из 736 панели); строка-описание со стены снята (descHide), на странице
+     текст прежний. */
+  {x:9300, y:'1985', t:'LEARNING TO SELL', clipAt:1, /* видео — после первого абзаца текста: блок 0 тут подзаголовок */ descHide:true,
+   yLift:130, descTitle:true, deskCapFoot:618, capLeft:true,
    th:'The lab learns to sell by mail — and the mail brings the country.',
    d:'An engineer who taught himself advertising shows Jim how to fill a page.',
-   wall:[], table:[]},
+   wall:[{img:'ad1985', w:560, dx:0, top:148, maxB:860}], table:[]},
 
   /* СТРОКА 1988-го ЖИВЁТ НА СТОЛЕ 1984-го, У ЕГО ПРАВОГО КРАЯ. Своего стола у
      этого года больше нет (см. разрыв p84 в initTables). Эльдар (06.10.2026):
@@ -25550,6 +25556,7 @@ jim1970:'assets/img/jim1970.jpg',
 jim76:'assets/img/jim76.jpg',
 jimnow:'assets/img/jimnow.jpg',
 joeha:'assets/img/joeha.jpg',
+ad1985:'assets/img/ad1985.jpg',   // плакат «The Sales Secret» — Эльдар, 27.10.2026 (Artefacts/1985.png)
 lab3ben:'assets/img/lab3ben.jpg',
 lab3ext:'assets/img/lab3ext.jpg',
 lab3rec:'assets/img/lab3rec.jpg',
