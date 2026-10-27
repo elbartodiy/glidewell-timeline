@@ -8829,7 +8829,7 @@ function drawCompanyStrip(A){
   if (pairW() > room()) SHORT = true;
   if (pairW() > room()) FS = Math.max(0.5, room() / pairW());
   const step = (c1 - c0) / n;
-  const yB = H - 30 * SS;
+  const yB = H - 35 * SS;   // на 5 выше (Эльдар, 27.10.2026), разделитель на месте
   factEvents();
   const pulse = new Array(n).fill(0);
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
@@ -8930,7 +8930,13 @@ function drawProgress(t){
      чернила 70-х на белой полосе 2020-х пропадали, а свои горели — метки
      выглядели вразнобой (Эльдар, 27.10.2026: «точки не соответствуют линии») */
   const LC = stripRGB();
-  const pips = RECS.map(([rl, rr]) => (rl + rr) / 2).sort((a, b) => a - b);
+  /* стеклянный зал — по его проёму (HALL_MID), а не по середине врезки: та на
+     1 040 правее, почти у плазмы. И финал, где тем почти нет, получает свои
+     вехи (Эльдар, 27.10.2026): плазма, двери Glidewell Education, TODAY. */
+  const b26 = BEATS.find(b => b.sign === 'TODAY');
+  const pips = RECS.map(([rl, rr]) => (rl === REC17_L ? HALL_MID : (rl + rr) / 2))
+    .concat([TODAY_TV.x(), EDU.mid()], b26 ? [b26.x] : [])
+    .sort((a, b) => a - b);
   ctx.lineWidth = 1.4 * SS;
   pips.forEach((wx, i) => {
     const cx = at(wx), u = pips.length > 1 ? i / (pips.length - 1) : 1;
@@ -8941,6 +8947,7 @@ function drawProgress(t){
     if (b.under) continue;
     // год, у которого свой зал, уже отмечен штрихом этого зала
     if (RECS.some(([rl, rr]) => b.x >= rl && b.x <= rr)) continue;
+    if (b === b26) continue;                       // TODAY — веха финала, штрих выше
     const bx = at(b.x), tall = (b.tier === 1 || b.fly) ? 3.8 : 2.8;   // было 6 / 4,5
     const al = 0.7 * (b.minor ? 0.3 : 0.5) * A;   // ×0,7 (27.10.2026)
     ctx.strokeStyle = `rgba(${LC},${al.toFixed(3)})`;
