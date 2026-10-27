@@ -5,10 +5,10 @@
 Белый луч в альфе: вершина (линза) — середина верхнего края, подошва — нижний
 край. Вдоль луча яркость РОВНАЯ: где луч горит сильнее (на экспонате) и где
 гаснет, задаёт код (drawBeamImg), он же красит в цвет beamRGB. В текстуре —
-только то, чего градиент не умеет: мягкая кромка, полосы от линзы, дымка в
-воздухе и пылинки.
+только то, чего градиент не умеет: мягкая кромка, полосы от линзы и дымка в
+воздухе (пылинки сняты 27.10.2026).
 
-    python3 expo/tools/make_beam.py      # → assets/photo/beam_1989_{a,b}.png + .webp
+    python3 expo/tools/make_beam.py      # → assets/photo/beam89_{a,b}.png + .webp
 """
 import os
 import numpy as np
@@ -60,18 +60,8 @@ def make(seed):
     smoke = 1 + 0.28 * fbm(rng, 4, 3, 10)              # дымка — длинные пряди вдоль луча
     alpha = base * streak * smoke
 
-    # пылинки: только внутри луча, ярче там, где луч ярче
-    dust = np.zeros((H, W), np.float32)
-    n = 340
-    vv = rng.uniform(0.04, 0.98, n)
-    uu = rng.uniform(-0.95, 0.95, n) * CORE * (HEAD + (1 - HEAD) * vv)
-    for py_, px_ in zip(vv * H, (uu + 1) / 2 * W):
-        r = rng.uniform(0.5, 1.5); a = rng.uniform(0.25, 0.85)
-        x0, x1 = int(px_ - 4), int(px_ + 5); y0, y1 = int(py_ - 4), int(py_ + 5)
-        if x0 < 0 or y0 < 0 or x1 > W or y1 > H: continue
-        gy, gx = np.mgrid[y0:y1, x0:x1]
-        dust[y0:y1, x0:x1] += a * np.exp(-((gx - px_) ** 2 + (gy - py_) ** 2) / (2 * r * r))
-    alpha = alpha + dust * np.clip(core * 1.2, 0, 1)
+    # пылинок нет (Эльдар, 27.10.2026: «чтобы там не было точек пыли — они
+    # статичные, плохо смотрятся — только лучи»); было 340 точек внутри ядра
 
     alpha *= 1 - smooth(0.82, 1.0, np.abs(xs))          # к краю листа — в ноль, без ступеньки
     alpha = np.clip(alpha / 0.95, 0, 1) ** 1.05
@@ -82,7 +72,7 @@ def make(seed):
 
 for name, seed in (('a', 1989), ('b', 1993)):
     im = make(seed)
-    p = os.path.join(OUT, f'beam_1989_{name}.png')
+    p = os.path.join(OUT, f'beam89_{name}.png')   # новое имя — чтобы киоск не держал из кэша лист с пылинками
     im.save(p, optimize=True)
     im.save(p[:-4] + '.webp', lossless=True, quality=100)
     print(p, os.path.getsize(p) // 1024, 'KB')
