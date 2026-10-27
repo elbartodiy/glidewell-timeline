@@ -21178,14 +21178,21 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
     ctx.lineTo(mx + tw/2 - br*0.28, bcy + br*0.52);
     ctx.closePath(); ctx.fill();
     }
+    /* ВОЗДУХ НАД СТРОКОЙ = ВОЗДУХ ПОД НЕЙ. Эльдар (27.10.2026): «от линии
+       прокрутки надо воздуха сверху под текстом ровно столько же, сколько снизу
+       до линии от края». Линия на 20 от низа — низ букв подписи (по выносным
+       элементам курсива, 'gjy()') на 20 над линией; имя — на прежние 22 выше. */
+    ctx.font = K.font(15, 'italic');
+    const capDsc = ctx.measureText('gjy()').actualBoundingBoxDescent || 0;
+    const labY = ty + th - 20*SS - 20*SS - capDsc, nameY = labY - 22*SS;
     ctx.fillStyle = 'rgba(240,244,248,0.95)';
     ctx.font = K.font(18);
-    ctx.fillText(m.name, mx + 14*SS, ty + th - 49*SS);   // −15: над строкой состояния (Эльдар, 27.10.2026)
+    ctx.fillText(m.name, mx + 14*SS, nameY);
     ctx.font = K.font(15, 'italic');
     ctx.fillStyle = 'rgba(200,206,214,0.85)';
     // подпись в узкой плитке колонки не режется на полуслове — кончается многоточием
     const lab = fitLabel(m.label || '', tw - 28*SS);
-    ctx.fillText(lab, mx + 14*SS, ty + th - 27*SS);
+    ctx.fillText(lab, mx + 14*SS, labY);
     /* СТРОКА СОСТОЯНИЯ. Эльдар (27.10.2026): «на видео была строка состояния —
        тонкая линия со скролом, который движется по ней от начала до конца, всё
        тонко и деликатно». Только у плёнки, которая сейчас в плитке: дорожка в
@@ -21206,7 +21213,7 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
     if (m.pid && PEOPLE[m.pid]){
       // the name on the card goes where the name in the text goes
       ctx.font = K.font(18);
-      pushHit(mx + 10*SS, ty + th - 67*SS, ctx.measureText(m.name).width + 12*SS, 28*SS,
+      pushHit(mx + 10*SS, nameY - 18*SS, ctx.measureText(m.name).width + 12*SS, 28*SS,
       {type:'person', id: m.pid});
     }
   }
