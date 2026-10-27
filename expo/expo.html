@@ -8930,6 +8930,10 @@ function drawProgress(t){
      чернила 70-х на белой полосе 2020-х пропадали, а свои горели — метки
      выглядели вразнобой (Эльдар, 27.10.2026: «точки не соответствуют линии») */
   const LC = stripRGB();
+  /* середина ТОЛЩИНЫ линии: разделитель кладётся от RULE_Y вниз на 1,2·SS, и
+     штрихи, центрованные по RULE_Y, торчали вверх на пиксель больше, чем вниз
+     (Эльдар, 27.10.2026: «штрихи выше длиннее, чем ниже — сделаем симметричными») */
+  const yc = y + Math.max(1, 1.2 * SS) / 2;
   /* стеклянный зал — по его проёму (HALL_MID), а не по середине врезки: та на
      1 040 правее, почти у плазмы. И финал, где тем почти нет, получает свои
      вехи (Эльдар, 27.10.2026): плазма, двери Glidewell Education, TODAY. */
@@ -8941,7 +8945,7 @@ function drawProgress(t){
   pips.forEach((wx, i) => {
     const cx = at(wx), u = pips.length > 1 ? i / (pips.length - 1) : 1;
     ctx.strokeStyle = `rgba(${LC},${(0.7 * (0.55 + 0.15 * u) * A).toFixed(3)})`;   // ×0,7 — «прозрачность на 0.7» (27.10.2026)
-    ctx.beginPath(); ctx.moveTo(cx, y - 5 * SS); ctx.lineTo(cx, y + 5 * SS); ctx.stroke();   // короче (Эльдар, 27.10.2026: «менее торчащими»): было 8
+    ctx.beginPath(); ctx.moveTo(cx, yc - 5 * SS); ctx.lineTo(cx, yc + 5 * SS); ctx.stroke();   // короче (Эльдар, 27.10.2026: «менее торчащими»): было 8
   });
   for (const b of BEATS){
     if (b.under) continue;
@@ -8951,7 +8955,7 @@ function drawProgress(t){
     const bx = at(b.x), tall = (b.tier === 1 || b.fly) ? 3.8 : 2.8;   // было 6 / 4,5
     const al = 0.7 * (b.minor ? 0.3 : 0.5) * A;   // ×0,7 (27.10.2026)
     ctx.strokeStyle = `rgba(${LC},${al.toFixed(3)})`;
-    ctx.beginPath(); ctx.moveTo(bx, y - tall * SS); ctx.lineTo(bx, y + tall * SS); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx, yc - tall * SS); ctx.lineTo(bx, yc + tall * SS); ctx.stroke();
   }
   // the thumb: not a point but the stretch of line the screen is showing
   const segNow = segAt(cam.x);
