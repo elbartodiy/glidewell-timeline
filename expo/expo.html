@@ -270,6 +270,7 @@ const BEATS = [
       показа Джиму 21.10 прежняя строка «Nine labs become one 15,000 sq ft plant»
       спорила с ним самим и с книгой (вне здания остались Lake Havasu и Riverside) */
    dWall:'Gradually, the labs come together under one roof.', deskCapFoot:778,
+   capCol:440,   // одной строкой под фото: она уже панели в 736, но в общую колонку 400 не влезала и ложилась на фото (27.10.2026)
    th:'One machine, fed nationally — the model that scales.',
    d:'Nine labs merge into one centralized plant in Orange (15,000 sq ft, 42 staff); mail now brings the majority of cases.',
    /* ОДНА ЛАБОРАТОРИЯ, СНАРУЖИ И ВНУТРИ — «Our 3rd lab: 1983–1984», все три
@@ -300,6 +301,18 @@ const BEATS = [
      INJECTION: sub — сырой x родителя, subDX — смещение от него в единицах мира. */
   {x:8750, y:'1984', t:'FRIDAY DONUTS', minor:true, sub:8750, subDX:280, under:true, underHide:true, noYear:true,
    th:'', d:'', wall:[], table:[]},
+
+  /* 1985 · LEARNING TO SELL (Эльдар, 27.10.2026: «го»). Между консолидацией
+     1984-го и национальным лидером 1989-го официальный список Элдона даёт одну
+     BioTemps — а рост от «большинства заказов по почте» (1984) к 95 % (1989)
+     объясняет реклама: Джим учится писать её у Jacob Weisberg. Год — по памяти
+     Джима (интервью 21.10.2026, дважды «about 1985»); самих объявлений в архиве
+     пока нет. Своя панель: в синей комнате теперь четыре года, см. «ЧЕТЫРЕ ГОДА
+     В ТОЙ ЖЕ КОМНАТЕ» и benchAnchorX. Стена пока без экспоната — как у 1988-го. */
+  {x:9300, y:'1985', t:'LEARNING TO SELL', yLift:130, descTitle:true, deskCapFoot:618, capLeft:true,
+   th:'The lab learns to sell by mail — and the mail brings the country.',
+   d:'An engineer who taught himself advertising shows Jim how to fill a page.',
+   wall:[], table:[]},
 
   /* СТРОКА 1988-го ЖИВЁТ НА СТОЛЕ 1984-го, У ЕГО ПРАВОГО КРАЯ. Своего стола у
      этого года больше нет (см. разрыв p84 в initTables). Эльдар (06.10.2026):
@@ -1038,10 +1051,12 @@ function applyCut(){
   {
     const b80 = BEATS.find(b => b.y === '1980'), b84 = BEATS.find(b => b.y === '1984'),
           b88 = BEATS.find(b => b.y === '1988');
-    if (b80 && b84 && b88){
+    const b85 = BEATS.find(b => b.y === '1985');
+    if (b80 && b84 && b88 && !b85){
       const to = b84.x + (b84.x - b80.x);
       if (to < b88.x) { moved.push([b88.x, to]); b88.x = to; }
     }
+    /* с 1985-м годы комнаты расставляет центровка синей комнаты ниже (четыре равные панели) */
   }
   /* 1999 — РОВНО ПОСЕРЕДИНЕ МЕЖДУ 1998 И 2000. Монитор с сайтом (бит без года
      на стене) занял в ритме свой слот, и 1999 встал вдвое дальше от 1998-го,
@@ -1220,7 +1235,20 @@ function applyCut(){
     const y80 = BEATS.find(b => b.y === '1980'), y88 = BEATS.find(b => b.y === '1988' && !b.minor);
     if (y80 && y88){
       const d = (ROOM_L + ROOM_R) / 2 - (y80.x + y88.x) / 2;
-      for (const b of BEATS) if (['1980', '1984', '1988'].includes(b.y)) b.x += d;
+      for (const b of BEATS) if (['1980', '1984', '1985', '1988'].includes(b.y)) b.x += d;
+      /* с 1985-м — четыре равные панели на прежние три: (ширина комнаты − по
+         110 воздуха с краёв) / 4 = 736 при прежних 982 */
+      const y84 = BEATS.find(b => b.y === '1984' && !b.minor), y85 = BEATS.find(b => b.y === '1985');
+      if (y84 && y85){
+        const c = (ROOM_L + ROOM_R) / 2, s = (ROOM_R - ROOM_L - 221) / 4;
+        const put = (b, to) => {
+          const dd = to - b.x;
+          // подвешенное (пончики) остаётся на своей парте: парты стоят от середины комнаты, а не от года
+          for (const q of BEATS) if (q.sub != null && Math.abs(q.sub - b.x) < 1) q.sub = to;
+          b.x = to;
+        };
+        put(y80, c - 1.5 * s); put(y84, c - 0.5 * s); put(y85, c + 0.5 * s); put(y88, c + 1.5 * s);
+      }
     } }
   // and the articles that are keyed by name go to wherever their beat now stands
   if (typeof STUDY_BY_TITLE === 'object')
@@ -1248,7 +1276,13 @@ function applyCut(){
      как до вырезки (см. «1973 ДЕРЖИТ СВОЮ УЛИЦУ»). */
   { const br = BENCH_BREAKS.find(v => v.l73), b73 = BEATS.find(b => b.y === '1973');
     if (br && b73){ const hl = 488, hr = L73_W / 2 + 440; br.x = b73.x + (hr - hl) / 2; br.half = (hr + hl) / 2; } }
-  { const br = BENCH_BREAKS.find(v => v.p84), b84 = BEATS.find(b => b.y === '1984'); if (br && b84) br.x = b84.x + (699 + 884) / 2; }
+  { const br = BENCH_BREAKS.find(v => v.p84), ax = benchAnchorX({y:'1984', y2:'1985'}); if (br && ax != null) br.x = ax + (699 + 884) / 2; }
+}
+/* точка отсчёта прилавка: год, а если задан y2 — середина между двумя годами */
+function benchAnchorX(spec){
+  const a = BEATS.find(b => b.y === spec.y && !b.minor); if (!a) return null;
+  const b2 = spec.y2 && BEATS.find(b => b.y === spec.y2 && !b.minor);
+  return b2 ? (a.x + b2.x) / 2 : a.x;
 }
 const INTRO_X = -650;
 const WORLD_END = SHIFT(29680);
@@ -1430,14 +1464,14 @@ const SEGMENTS = [
      светлый отсек 1989-го, и у него остаётся свой кусок стола — на нём стоит
      групповое фото 1988-го; срежь его, и фото падает на снимки 1984-го. */
   {x0:REC_R, x1:ST_WALL_L + 120, z0:680, z1:680, tz:680, wall:'wall2', bench:'bench2', front:'front2',
-   benchBeat:{y:'1984', from:-1019},
+   benchBeat:{y:'1984', y2:'1985', from:-1019},   // y2: отсчёт от середины между 1984 и 1985 — середины комнаты
    /* РАВНЫЕ ПАНЕЛИ, ПО ОДНОЙ НА ГОД. В фото-текстуре три панели разной ширины
       (1034 / 651 / 1072), а годы стоят через равные 971 — швы резали 1984-й и
       1988-й посередине, а 1980-й висел не по центру своей (Эльдар, 02.10.2026:
       «годы относительно друг друга и других объектов висят неоднородно»).
       Теперь из текстуры берётся одна панель с подсветкой посередине, и она
       кладётся с шагом годов, швом ровно между ними. См. regularPanel(). */
-   panel:{beats:['1980', '1984', '1988'], light:1442, erase:[770, 1255], railTop:1145},
+   panel:{beats:['1980', '1984', '1985', '1988'], light:1442, erase:[770, 1255], railTop:1145},
    font:'"Helvetica Neue", Helvetica, Arial, sans-serif',
    ink:'223,226,214', lamp:'tube', dust:false,
    rail:'rgba(24,16,10,0.26)', railInk:'rgba(198,208,202,0.7)', railTop: true,
@@ -2728,9 +2762,10 @@ function initTables(){
          на 699 правее; теперь — на том же расстоянии справа, сколько слева. */
       /* левый край — тот же, с какого initTables начнёт этот прилавок (benchBeat
          эпохи), TABLES в этот момент ещё не построены */
-      const sg = segAt(b84.x), bb0 = sg.benchBeat && BEATS.find(b => b.y === sg.benchBeat.y);
-      const x0t = bb0 && sg.benchBeat.from != null ? bb0.x + sg.benchBeat.from : null;
-      const l = x0t != null ? b84.x + (b84.x - x0t) : b84.x + 699;
+      const sg = segAt(b84.x), ax0 = sg.benchBeat ? benchAnchorX(sg.benchBeat) : null;
+      const x0t = ax0 != null && sg.benchBeat.from != null ? ax0 + sg.benchBeat.from : null;
+      const cx = ax0 != null ? ax0 : b84.x;     // середина комнаты: 1984-й, а с 1985-м — между ними
+      const l = x0t != null ? cx + (cx - x0t) : cx + 699;
       const r = b89.x + (b89.ped ? (b89.ped.dx ?? -430) : 0) - ((b89.ped && b89.ped.gapHalf) || 330);
       if (r > l){ br.x = (l + r) / 2; br.half = (r - l) / 2; }
     } }
@@ -2823,10 +2858,10 @@ function initTables(){
     if (seg.benchFrom != null) bx0 = Math.max(bx0, seg.benchFrom);
     let bx1 = (seg.x1 >= WORLD_END + 800 && !seg.bInsetR) ? seg.x1 : seg.x1 - (seg.bInsetR != null ? seg.bInsetR : -110);
     if (seg.benchBeat){
-      const bb = BEATS.find(b => b.y === seg.benchBeat.y);
-      if (bb){
-        if (seg.benchBeat.from != null) bx0 = Math.max(bx0, bb.x + seg.benchBeat.from);
-        if (seg.benchBeat.to != null)   bx1 = Math.min(bx1, bb.x + seg.benchBeat.to);
+      const ax = benchAnchorX(seg.benchBeat);
+      if (ax != null){
+        if (seg.benchBeat.from != null) bx0 = Math.max(bx0, ax + seg.benchBeat.from);
+        if (seg.benchBeat.to != null)   bx1 = Math.min(bx1, ax + seg.benchBeat.to);
       }
     }
     let start = bx0;
@@ -5018,7 +5053,9 @@ function capClashes(kf){
    1984-й укладывается в две строки и не доходит до рамы здания, а 1980-й и
    1988-й в три — над доской и над пустой панелью. Пока рендера парт нет,
    строка остаётся на прилавке, как была. */
-const DESK_CAP = {font: 19, lh: 27, col: 540, gap: 36};
+/* колонка 400: с 1985-м в комнате четыре панели по 736 единиц (≈ 420 px при
+   2000 в ширину) вместо трёх по 982 — 540 перекрывала соседний год (27.10.2026) */
+const DESK_CAP = {font: 19, lh: 27, col: 400, gap: 36};
 const deskCap = b => b.descTitle && !!PROP_SPRITES.ph_desks80;
 function drawDeskCap(b){
   const seg = segAt(b.x);
@@ -5034,7 +5071,7 @@ function drawDeskCap(b){
   if (!b._dT){
     ctx.save(); ctx.font = `100px ${seg.font}`;
     // «sq ft» не рвётся по строкам (на 1984-м «sq» оставался в конце первой)
-    b._dT = wrapCalc((b.dWall || b.d).replace(/ sq ft/g, '\u00a0sq\u00a0ft'), DESK_CAP.col * 100 / DESK_CAP.font);
+    b._dT = wrapCalc((b.dWall || b.d).replace(/ sq ft/g, '\u00a0sq\u00a0ft'), (b.capCol || DESK_CAP.col) * 100 / DESK_CAP.font);
     ctx.restore();
   }
   ctx.save();
@@ -13898,14 +13935,15 @@ function drawDesks80(tb, kf){
   const sp = PROP_SPRITES.ph_desks80, D = DESKS80, b84 = desksRun(tb);
   const U = D.w / (D.c1 - D.c0);                     // world units per image pixel
   const mid = (D.c0 + D.c1) / 2, s = U * kf * SS;
-  const x0 = px(b84.x - mid * U, kf), y0 = py(1080, kf) - D.foot * s;
+  const cx = benchAnchorX({y:'1984', y2:'1985'}) ?? b84.x;   // середина комнаты — с 1985-м между ним и 1984-м
+  const x0 = px(cx - mid * U, kf), y0 = py(1080, kf) - D.foot * s;
   const iw = sp.w * s, ih = sp.h * s;
   if (x0 > W || x0 + iw < 0) return;
   ctx.drawImage(spriteMip(sp, iw, ih), x0, y0, iw, ih);
   /* парта — дверь в свой год: ближайший к ней год этого прогона */
   const yrs = BEATS.filter(b => !b.sub && !b.minor && b.x >= tb.x0 - 200 && b.x <= tb.x1 + 200);
   for (const [a, z] of D.desks){
-    const wx = b84.x + ((a + z) / 2 - mid) * U;
+    const wx = cx + ((a + z) / 2 - mid) * U;
     let bi = -1, bd = 1e9;
     for (const b of yrs){ const d = Math.abs(b.x - wx); if (d < bd){ bd = d; bi = BEATS.indexOf(b); } }
     if (bi >= 0) pushHit(x0 + a * s, y0 + D.top * s, (z - a) * s, (D.foot - D.top) * s, {type:'study', beat: bi});
@@ -14692,7 +14730,9 @@ function initDecor(){
        строка видна (замер прогоном камеры на 2000×1040). Строка 1988-го стоит
        выше крышки коробки и с ней не встречается. */
     const b84d = BEATS.find(b => b.t === 'CONSOLIDATION');
-    const dX = b84d ? b84d.x + 900 : bdo && bdo.x + 620;
+    // от середины комнаты, а не от 1984-го: с 1985-м (27.10.2026) это разные точки, а парты стоят от середины
+    const cxR = benchAnchorX({y:'1984', y2:'1985'});
+    const dX = cxR != null ? cxR + 900 : bdo && bdo.x + 620;
     if (bdo) PROPS.push({x: dX, z: 0, kind: 'ph_donuts', w: 150, footY: 677, noShadow: true,
       study: 'FRIDAY DONUTS'});
   }
@@ -19725,7 +19765,8 @@ const STUDY_BY_TITLE = {
   "STUDY PROGRAM": "In 1980 Glidewell began flying dentists in from Japan and other countries to train in the United States — the International Study Program. For a laboratory just beginning to scale, it was an odd thing to spend money on, and it became one of the milestones that shaped the company for decades: teaching, long before teaching was a marketing channel.\n\n## Education as a bond\nJim used teaching as a way to build a relationship with the profession, not as an add-on to a product. His view is plain — in business it is critical that people like and trust you; “people don't buy from people they don't like.” Hosting dentists, teaching them a technique and having them succeed with it built something closer to a family bond than a customer list. That instinct grew into a whole education wing: the newsletter of 1998, the Chairside magazine, the courses, the symposia, and the Glidewell International Technology Center that opened in Irvine in July 2011 to train dentists from around the world.\n\n## Thirty-five, and no longer deferring\n1980 is also the year Jim describes a private turn. He was thirty-five and had stopped believing that every man older than him was wiser. “Some of these people were just middle-aged, with bad habits they'd been repeating for the past thirty years.” It is when standard operating procedures arrived in his labs — written instructions for how a task is done well — and when he took the company's advertising out of an outside agency's hands for good.\n\n## A modem, a day late\nA year later, in 1981, curious about microcomputers, he took a class at Chapman College and, with two engineers from Bechtel, spent a month designing a device that would let computers talk over a telephone line. Then they opened a magazine and found the Hayes Micromodem already on the market. “When you think about fast-moving, emerging new markets, you aren't the only one who sees the writing on the wall. You better be first, or all your efforts will be in vain.” The lesson would decide how the company handled every technology after it.\n\n“The secret? It's simple really: hire smart people, train smart people, and retain smart people.” — Jim Glidewell, Constant Change",
   "FRIDAY DONUTS": "There is no date on this one. Jim began buying donuts for the floor when the company was still small, and nobody wrote down the first Friday. The box stands here because 1984 is the year the thing it is about came into being: nine scattered laboratories became one plant, and for the first time there was a floor — one building, everybody in it on the same morning.\n\nThe tradition never stopped. It is still Friday donuts.\n\n## What it is worth\nYears later somebody found the donuts in the accounts and cancelled them. The saving looked good on paper; what it cost appeared in no account at all, and when the donuts came back the floor cheered like a war had been won. That is one story out of many the box has produced in forty years — Jim tells this one himself, above.",
   "CONSOLIDATION": "In 1983 the company was working out of a four-thousand-square-foot office. Jim bought a fifteen-thousand-square-foot building in Orange and moved forty people into it. “Naysayers predicted our doom, as they felt we'd over-expanded.” Nine scattered labs became one plant, fed by mail from across the country — the model that could finally scale.\n\n## One machine, one standard\nA single building meant a single way of doing things. Cases from anywhere arrived at one door, were made to one standard and left by one carrier. The overhead of nine managers and nine leases collapsed into one, and volume — not the location of the bench — began to set the price. It is the birth of the operating model the company still runs: centralise production, standardise it, and let scale drive the cost down.\n\n## The rule of ten per thousand\nJim's rule for a laboratory is that when headcount reaches ten people per thousand square feet, it is time to move — and to move into a building four times the size of the one you are leaving. “When you have that space available, you can grow into it. If you don't have the space and you hit a wall, you stop selling. You start turning work away without even knowing it.” The forty people in the new building grew to a hundred and fifty before the walls closed in again, and the next move, in 1993, was to Newport Beach.\n\n## The tax that came with size\nGrowth brought its own bills. From 1985 a business billing five million dollars a year for three years had to move to accrual accounting and pay tax on what it had invoiced rather than collected. Glidewell crossed that line at the moment of Jim's second divorce; the six hundred thousand dollars in receivables became taxable income overnight, and he borrowed to pay it. He lived in an apartment a block from the office, he says, so that he could walk to work if he could not afford a car.\n\n“Expand your physical facilities in advance of your anticipated growth. Add at least ten per cent more physical space every year. Even that might not be enough.” — Jim Glidewell, Constant Change",
-  "BIOTEMPS": "## What it is\n\nBioTemps are lab-fabricated provisional (temporary) crowns and bridges in tooth-colored PMMA acrylic — roughly a 6-month wear life, three-day lab turnaround. (There's also a chairside version, “BioTemps NOW,” milled in-office from PMMA blocks.)\n\nWhy it's more than a temporary. The real value is as an esthetic blueprint: the provisional's design is stored and reused for the final restoration (later a BruxZir or e.max crown), so the patient can see, wear and approve the look, bite and speech before committing — “no surprises on the final visit.” It also shapes gum tissue and restores collapsed bite height. A clean early example of the Glidewell pattern: own the whole workflow in-house and take the risk out for the dentist.\n\nBy around 2002 the BioTemps business had grown into its own dedicated fixed-ceramics lab. BioTemps showed the vertical, in-house, materials-driven model Glidewell would later scale dramatically with BruxZir zirconia.\n\n## The company in 1988, from the loading dock\nDarryl Withrow arrived that January from Maine with a degree in archaeology and enough money for a month. He applied for a delivery job in a tie, passed Jim's famous two-minute math test, and was hired. There were sixty-five employees, forty of them technicians paid by the piece. On his third day he uncovered a driver skimming twenty dollars a fill-up on the company gas card; on his fifth his own boss was fired. Within a year he could log and invoice a case, and within a few he was measuring the whole lab — and found that the “five-day turnaround” every manager swore by was being missed four times out of five. Three months of published numbers took that to one in five; today it is around four per cent.\n\n“Quality only slips without constant attention.” — Jim Glidewell, Constant Change",
+  "LEARNING TO SELL": "## What happened\n\nAround 1985 Jim paid ninety-nine dollars for a one-day business seminar at the Disneyland Hotel. About three hundred people were in the room, and the man at the front was Jacob Weisberg — an engineer who had taught himself advertising. At the end Jim walked up, handed over his card and said he wanted to hire him. Weisberg said he wasn't for hire, but he would consult a little. He spent a couple of weeks at the lab, teaching Jim how an advertising page works: what readers care about, how to catch their attention, how many words go in a paragraph, and what a headline, a photograph and a caption each have to do.\n\nFrom then on Jim wrote his own copy and sent it out to the dental trade magazines.\n\n## Why it matters\n\nMail order began as an experiment in the late seventies: a few hundred letters to dentists in Pennsylvania, five of whom became customers and stayed. Those five paid their bills, never sent a patient to the door and never asked for a visit — a better business, Jim decided, than serving the dentists down the street. In 1984, for the first time, most of the lab's cases came from outside the area. By 1989, ninety-five per cent arrived by mail, and 175 people were working for more than 3,500 dentists. The ads are how the lab reached them.\n\nJim says the push came from the people already on his payroll: to keep work on their benches he had to keep finding new doctors.\n\n“How do I get more doctors to use us so that their careers can keep growing?” — Jim Glidewell, 2026",
+  "BIOTEMPS": "## What it is\n\nBioTemps are lab-fabricated provisional (temporary) crowns and bridges in tooth-colored PMMA acrylic — roughly a 6-month wear life, three-day lab turnaround. (There's also a chairside version, “BioTemps NOW,” milled in-office from PMMA blocks.)\n\nWhy it's more than a temporary. The real value is as an esthetic blueprint: the provisional's design is stored and reused for the final restoration (later a BruxZir or e.max crown), so the patient can see, wear and approve the look, bite and speech before committing — “no surprises on the final visit.” It also shapes gum tissue and restores collapsed bite height. A clean early example of the Glidewell pattern: own the whole workflow in-house and take the risk out for the dentist.\n\nBy around 2002 the BioTemps business had grown into its own dedicated fixed-ceramics lab. BioTemps showed the vertical, in-house, materials-driven model Glidewell would later scale dramatically with BruxZir zirconia.\n\n## The company in 1988, from the loading dock\nDarryl Withrow arrived that January from Maine with a degree in archaeology and enough money for a month. He applied for a delivery job in a tie, passed Jim's famous two-minute math test, and was hired. There were sixty-five employees, forty of them technicians paid by the piece. On his third day he uncovered a driver skimming twenty dollars a fill-up on the company gas card; on his fifth his own boss was fired. Within a year he could log and invoice a case, and within a few he was measuring the whole lab — and found that the “five-day turnaround” every manager swore by was being missed four times out of five. Three months of published numbers took that to one in five; today it is around four per cent. The same year the lab hired its first production planner, Anna Ameduri; a year later she was running shipping.\n\n“Quality only slips without constant attention.” — Jim Glidewell, Constant Change",
   "NATIONAL LEADER": "By 1989 the laboratory in Orange had done something no lab was supposed to be able to do: it served dentists across the country without leaving the county. Ninety-five per cent of cases came in by mail, and the local delivery car — the belly-to-belly relationship every laboratory believed it lived on — had simply been done away with. “We at Glidewell do not own a single delivery car,” Jim still tells rooms full of lab owners, and watches their mouths drop.\n\n## What arrived in the box\nThe exhibit on this plinth is the object the whole model turned on: a mailed case, still in its trays. A dentist anywhere took the impression, packed it, posted it; a week later the crown came back the same way. The lab became a factory with a mailbox instead of a front door, and the country became its neighbourhood.\n\n## The numbers, honestly\nThe company's own history gives the lab a hundred and seventy-five people and more than three and a half thousand dentists in 1989. Jim's memoir counts differently: sixty-five employees in January 1988, a hundred and fifty at the move to Newport Beach in 1993, sales passing ten million dollars in 1991 with around five hundred active dentists. The figures come from different ledgers and different definitions of a customer; both agree on the shape of the thing — a laboratory in one town growing by mail at a rate the trade had never seen.\n\n## The founder, on the side\nEarly in 1989 Jim put twenty thousand dollars into a silver account at Merrill Lynch and six weeks later was sitting on half a million in gains — until the exchange raised margin requirements and silver collapsed overnight. He walked away with a hundred and twenty-five thousand, and used it as the down payment on a house on Evening Star Lane, on the water in Newport Beach. It is one of exactly two outside investments he admits to. “Since 1982, with a couple of exceptions, I've never invested in anything outside of my total control. It has to be a dental lab, or I have no interest.”\n\n“Most labs are tooth-makers who think they are a delivery system.” — Jim Glidewell, Constant Change",
   "1993": "In 1992 Jim bought a seventy-thousand-square-foot office building at 4141 MacArthur Boulevard in Newport Beach from the Bank of Boston, for fifty dollars a square foot. “I don't think anybody ever got a better deal in Newport Beach on an office building than I did at that time.” The banks he knew wanted three committees and a refusal; the Far East National Bank, a Chinese bank so new they were still hanging wallpaper, made him its first customer and lent him two point seven million dollars. On April 15, 1993, the company moved in — a hundred and fifty employees on the top floor of an almost empty building, doing twelve million dollars a year in sales.\n\n## The developer on the golf course\nNobody had money in 1992. Not long after the purchase, Jim met the building's developer on a golf course and told him about the deal. “That's my building!” The man's company had put its cash into it and handed the keys back to the bank when it could not make the payments. Jim let him stay on as a tenant at fifty cents a square foot; they became friends, and the developer's company prospered and moved on. The two other tenants downstairs both went bankrupt.\n\n## The article, and the men at the door\nThe Orange County Register reported the purchase, with Jim's photograph and the size of his down payment: eight hundred thousand dollars. A week later, at five on a Wednesday evening, with sixteen guests due for dinner, two well-dressed men with a police badge and a police radio came to his door in Newport Beach to “investigate a neighbour.” On the patio one of them put a nine-millimetre pistol to his ear: the money in the upstairs safe, or fifteen seconds. There was no safe and no cash — nobody buys a building with bills — and while Jim kept them talking by the boat dock, an off-duty policeman friend inside called it in. Forced to drive his own car with the gun at the back of his head, he heard the police helicopter on the intruders' scanner, waited until the gunman stepped out to talk to the second car, and floored it. The police caught up with him a minute later and put him face down on the asphalt. “I'm the victim!” The men were never caught. Dinner was served at a quarter to seven. “Visibility equals vulnerability,” he wrote; he has avoided the press ever since.\n\n## The building on the screen\nThe company still shows the film that was made of the place before it was finished: an architect's computer flythrough, cutting from the model to the completed building from the same angle. The massing model on the plinth is what that film was made from. The building appreciated six-fold; the business inside it grew forty-fold. “As it turns out, Time Warner and Federal Express weren't exactly wrong. Find and stick to your core competency.”\n\n“Own your own buildings and rent them back to yourself. I do!” — Jim Glidewell, Constant Change",
   "OPERATORY · PLAYSAFE": "In 1995 Glidewell opened a small in-house dental operatory — a working clinic inside the lab — so the company could test materials and restorations on real patients rather than only on bench models. The same year it launched PlaySafe, a line of custom-fitted athletic mouthguards\n\n## Why it matters\n\nTwo small things start here. First, R&D realism: a crown that survives a lab jig is not the same as one that survives a human bite, saliva, and a hurried dentist — putting chairs in the building meant Glidewell could see failure where it actually happens. Second, it is the company's first clear step beyond the crown, into prevention and sport. Modest in scale, but it shows the instinct that later defines the firm: control more of the chain, and don't stop at the restoration.\n\n## The people who arrived that year\nIn November 1995 a nineteen-year-old refugee from Sarajevo, in the country a few months, took a job at Glidewell as a fulfilment clerk. Leila Fejzagic worked her way through fulfilment, customer service and the technical departments, left to try science, came back to human resources, and is now the company's vice-president of human resources — one of the many who, in Jim's phrase, grew up in the business. Over thirty nationalities work at the lab; Jim's own hiring lesson from these years was to place job advertisements in Cantonese, Vietnamese and Mandarin, and to give every applicant, for any position, the same two-minute math test.\n\n“Every single hire on our payroll has passed that surprise, two-minute math test, regardless of the department or type of position for which they're applying.” — Jim Glidewell, Constant Change",
