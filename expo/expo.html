@@ -21148,9 +21148,14 @@ function drawAlbumView(){
    article. Only the layout differs, so only the layout is written twice. */
 function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
   if (!(ty + th > topClip && ty < botClip)) return;
+  /* ПЕРВЫЙ ЭКРАН КОНЧАЕТСЯ ЧИСТО (плоский лист, Эльдар 27.10.2026): пока лист
+     не тронут, плитка, которую обрезал бы низ окна, не рисуется вовсе — ни
+     половины лица, ни половины кнопки; она появится, как только лист поедет */
+  if (K.flat && S.scroll < 1 && S._clipBot != null && ty + th > S._clipBot) return;
+  const tR = K.flat ? 0 : 10 * SS;   // плоский лист — прямые углы
         {
     ctx.save();
-    ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 10*SS); ctx.clip();
+    ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, tR); ctx.clip();
     ctx.fillStyle = '#14181d';
     ctx.fillRect(mx, ty, tw, th);
     const useV = S.railV && m.src === S.railSrc && S.railV.readyState >= 2;
@@ -21186,9 +21191,16 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
        на видео во всю ширину абзаца тот же кружок читался пылинкой. Доля
        высоты, но не меньше прежних 25 — маленькие плитки не меняются. */
     const br = Math.max(25 * SS, th * 0.145), bcy = ty + th/2 - br * 0.32;
+    if (K.flat){
+      // небольшая полупрозрачная тёмная квадратная плашка и белый треугольник
+      const q = br * 1.5;
+      ctx.fillStyle = 'rgba(10,14,22,0.55)'; ctx.fillRect(mx + tw/2 - q/2, bcy - q/2, q, q);
+      ctx.fillStyle = 'rgba(255,255,255,0.96)';
+    } else {
     ctx.fillStyle = 'rgba(250,252,255,0.92)';
     ctx.beginPath(); ctx.arc(mx + tw/2, bcy, br, 0, 7); ctx.fill();
     ctx.fillStyle = '#1a2027';
+    }
     ctx.beginPath();
     ctx.moveTo(mx + tw/2 - br*0.28, bcy - br*0.52);
     ctx.lineTo(mx + tw/2 + br*0.52, bcy);
@@ -21224,8 +21236,10 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
       ctx.beginPath(); ctx.arc(xf, yb, 2.4*SS, 0, 7); ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.fill();
     }
     ctx.restore();
-    ctx.strokeStyle = K.edge; ctx.lineWidth = 1.2*SS;
-    ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, 10*SS); ctx.stroke();
+    if (!K.flat){
+      ctx.strokeStyle = K.edge; ctx.lineWidth = 1.2*SS;
+      ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, tR); ctx.stroke();
+    }
     pushHit(mx, ty, tw, th, {type:'clip', media: m, wx: b.x});
     if (m.pid && PEOPLE[m.pid]){
       // the name on the card goes where the name in the text goes
@@ -21246,6 +21260,7 @@ function drawStudy(){
   const b = S.b || BEATS[S.beat];
   const era = segIdx(b.x);
   const K = PAGE_SKINS[era];
+  const PAGE = pageOf(K);   // размеры этого листа (см. page у скина)
   // the hall dims but stays present behind the sheet — the space breathes
   ctx.fillStyle = `rgba(4,5,7,${(0.55*e).toFixed(3)})`;
   ctx.fillRect(0, 0, W, H);
@@ -21287,6 +21302,7 @@ function drawStudy(){
   const meta = b.noYear ? sentence(b.t || b.sign || '')
     : (b.pageY || b.y) + (b.pageT ? ' ' + b.pageT : b.t ? ' ' + sentence(b.t) : (b.sign ? ' ' + sentence(b.sign) : ''));
   const G = pageFrame(K, a, wantSide, meta, S.fitH);
+  S._clipBot = G.clipBot;   // низ окна — плитки плоского листа на первом экране не режутся
   S.sheet = {x: G.wx0, y: G.wy0, w: G.ww, h: G.wh};   // где лист — чтобы касание по нему не закрывало страницу
   const {left, textW, topClip, botClip} = G;
   const u = PAGE.u * SS;
@@ -21304,20 +21320,21 @@ function drawStudy(){
      в шапку значит утверждать то, чего мы не знаем (Эльдар, 02.10.2026: «этот
      год нужно убрать, там просто Friday Donuts»). Бит с noYear не печатает ни
      числа, ни года в мета-строке — только название. */
+  const HD = K.head || {};   // отступы и начертания шапки, если лист их задаёт
   if (!b.noYear){
     y += 9 * u;                                            // the year's baseline
-    ctx.font = K.font(PAGE.year);
+    ctx.font = K.font(PAGE.year, HD.yearW);
     ctx.fillStyle = `rgba(${K.ink},0.98)`;
     ctx.fillText(b.pageY || b.y, left, y);   // pageY — год на листе, если он не совпадает с местом в ленте
-    y += 7 * u;
+    y += (HD.yearTitle != null ? HD.yearTitle : 7) * u;
   } else {
     y += 7 * u;
   }
   let tSz = PAGE.title;
-  ctx.font = K.font(tSz);
+  ctx.font = K.font(tSz, HD.titleW);
   try { ctx.letterSpacing = `${tSz*TRACK.title*SS}px`; } catch(err){}
   const studyTitle = b.pageT || sentence(b.t || b.sign || '');
-  while (studyTitle && ctx.measureText(studyTitle).width > textW && tSz > 24){ tSz -= 1; ctx.font = K.font(tSz); }
+  while (studyTitle && ctx.measureText(studyTitle).width > textW && tSz > 24){ tSz -= 1; ctx.font = K.font(tSz, HD.titleW); }
   ctx.fillStyle = `rgba(${K.ink},0.92)`;
   const inkLight = K.ink.split(',').reduce((q, c) => q + (+c), 0) / 3 > 150;
   if (studyTitle && !drawTitleLogo(b.t, left, y, 'left', 1, inkLight)) ctx.fillText(studyTitle, left, y);
@@ -21328,7 +21345,7 @@ function drawStudy(){
      the picture belong together (Eldar, 2026-09-22: «эту линию отбивки уберём,
      она там не нужна»). The head closes up around it. */
   const noRule = !!(inl && inl.overRule);
-  y += (noRule ? 2.7 : 6) * u;
+  y += (noRule ? 2.7 : HD.titleLead != null ? HD.titleLead : 6) * u;
   /* the standfirst is the thesis — one line about why this year is here. The
      lede that used to sit under it repeated the article's first paragraph
      almost word for word; on a page that has an article, it is not printed. */
@@ -21336,7 +21353,7 @@ function drawStudy(){
     ctx.font = K.font(PAGE.lead);
     ctx.fillStyle = `rgba(${K.dim},0.95)`;
     flow(b.th, PAGE.leadLH * SS);
-    y += 1 * u;
+    y += (HD.leadRule != null ? HD.leadRule - 2 : 1) * u;   // −2: общий шаг до линейки ниже уже даёт 2u
   } else if (inl && inl.overRule && inl.box){
     /* the carton's caption, in the standfirst's own place — and on ONE line:
        it is set down from the standfirst's size until it fits the column,
@@ -21355,12 +21372,25 @@ function drawStudy(){
   } else {
     y += 2 * u;
     ctx.fillStyle = K.rule;
-    if (y > topClip && y < botClip) ctx.fillRect(left, y, textW, 1.5 * SS);
-    y += 5 * u;
+    if (y > topClip && y < botClip) ctx.fillRect(left, y, textW, (K.flat ? 1 : 1.5) * SS);
+    y += (HD.ruleBody != null ? HD.ruleBody : 5) * u;
   }
 
   /* ---- the right-hand column, laid alongside the head ---- */
-  let sy = G.top - S.scroll * SS;
+  /* плоский лист: верх колонки — по верху цифр года (кегль года × 0.66 ниже
+     его базовой линии на 9u, плюс высота прописных подписи колонки) */
+  let sy = G.top - S.scroll * SS + (K.flat ? 9 * u - PAGE.year * 0.66 * SS + 22 * 0.66 * SS : 0);
+  /* подпись колонки: на плоском листе — тёмная, 22, полужирная, без разрядки */
+  const sideLabel = (txt, x, yy) => {
+    if (K.flat){ ctx.font = K.font(22, '600'); ctx.fillStyle = `rgba(${K.ink},0.95)`; }
+    else {
+      ctx.font = K.font(PAGE.small, '700');
+      try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
+      ctx.fillStyle = `rgba(${K.dim},0.95)`;
+    }
+    if (yy > topClip && yy < botClip) ctx.fillText(txt, x, yy);
+    try { ctx.letterSpacing = '0px'; } catch(err){}
+  };
   if (G.side){
     const sx = G.sideX, sw = G.side;
     if (obj){
@@ -21374,13 +21404,9 @@ function drawStudy(){
       /* THE PHOTOGRAPHS OF THE MOMENT: the archive pictures that hang on the
          wall of this bay, full column width, each with Jim's own caption under
          it — the page shows what the wall can only hint at from a distance. */
-      ctx.font = K.font(PAGE.small, '700');
-      try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
-      ctx.fillStyle = `rgba(${K.dim},0.95)`;
-      sy += 1.5 * u;                     // воздух под шапкой: подпись не прилипает к краю обрезки
-      if (sy > topClip && sy < botClip) ctx.fillText(photos.length > 1 ? 'From the album' : 'From the album', sx, sy);
-      try { ctx.letterSpacing = '0px'; } catch(err){}
-      sy += 3 * u;
+      sy += K.flat ? 0 : 1.5 * u;        // воздух под шапкой: подпись не прилипает к краю обрезки
+      sideLabel('From the album', sx, sy);
+      sy += (K.flat ? 3.5 : 3) * u;
       for (let pi = 0; pi < photos.length; pi++){
         const ph = photos[pi];
         const im = IMGS[ph.img]; if (!im || !im.el) continue;
@@ -21424,16 +21450,29 @@ function drawStudy(){
       sy += 2 * u;
     }
     if (ppl && ppl.length){
-      ctx.font = K.font(PAGE.small, '700');
-      try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
-      ctx.fillStyle = `rgba(${K.dim},0.95)`;
-      if (sy > topClip && sy < botClip) ctx.fillText('People of this moment', sx, sy);
-      try { ctx.letterSpacing = '0px'; } catch(err){}
-      sy += 3 * u;
+      sideLabel('People of this moment', sx, sy);
+      sy += (K.flat ? 3.5 : 3) * u;
       for (const pid of ppl){
         const P = PEOPLE[pid]; if (!P) continue;
-        const ch = 6 * u;
-        if (sy + ch > topClip && sy < botClip){
+        const ch = (K.flat ? 7.5 : 6) * u;
+        if (K.flat && sy + ch > topClip && sy < botClip){
+          /* РАННЯЯ ВЕБ-НАВИГАЦИЯ: плоская голубая строка, тонкая яркая кромка
+             слева, имя обычным начертанием, простая синяя стрелка — без
+             скругления и без кнопки (Эльдар, 27.10.2026) */
+          ctx.fillStyle = `rgb(${K.rowBg})`; ctx.fillRect(sx, sy, sw, ch);
+          ctx.fillStyle = `rgba(${K.accent},1)`; ctx.fillRect(sx, sy, 4 * SS, ch);
+          ctx.font = K.font(22);
+          ctx.fillStyle = `rgba(${K.ink},0.95)`;
+          let nm = P.name;
+          while (ctx.measureText(nm).width > sw - 76 * SS && nm.length > 6) nm = nm.slice(0, -1);
+          ctx.fillText(nm === P.name ? nm : nm.trim() + '…', sx + 24 * SS, sy + ch * 0.62);
+          const ax = sx + sw - 26 * SS, ay = sy + ch / 2, al = 8 * SS;
+          ctx.strokeStyle = `rgba(${K.accent},1)`; ctx.lineWidth = 2 * SS; ctx.lineCap = 'butt';
+          ctx.beginPath(); ctx.moveTo(ax - al, ay); ctx.lineTo(ax + al, ay);
+          ctx.moveTo(ax + al * 0.25, ay - al * 0.75); ctx.lineTo(ax + al, ay); ctx.lineTo(ax + al * 0.25, ay + al * 0.75);
+          ctx.stroke();
+          pushHit(sx, sy, sw, ch, {type: 'person', id: pid});
+        } else if (sy + ch > topClip && sy < botClip){
           ctx.fillStyle = `rgba(${K.accent},0.10)`;
           ctx.beginPath(); ctx.roundRect(sx, sy, sw, ch, 4 * SS); ctx.fill();
           ctx.fillStyle = `rgba(${K.accent},0.95)`;
@@ -21447,20 +21486,16 @@ function drawStudy(){
           ctx.fillText('→', sx + sw - 30 * SS, sy + ch * 0.64);
           pushHit(sx, sy, sw, ch, {type: 'person', id: pid});
         }
-        sy += ch + u;
+        sy += ch + (K.flat ? 1.6 : 1) * u;
       }
       sy += 2 * u;
     }
     const sideClips = railMedia || (flowRest ? ord.slice(1).map(i2 => media[i2]) : null);
     if (sideClips){
       // воздух над заголовком — как между альбомом и людьми, а не впритык к карточке
-      if (ppl && ppl.length) sy += 2 * u;
-      ctx.font = K.font(PAGE.small, '700');
-      try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
-      ctx.fillStyle = `rgba(${K.dim},0.95)`;
-      if (sy > topClip && sy < botClip) ctx.fillText(railMedia ? (railMedia.length > 1 ? 'The voices' : 'Watch') : 'More voices', sx, sy);
-      try { ctx.letterSpacing = '0px'; } catch(err){}
-      sy += 3 * u;
+      if (ppl && ppl.length) sy += (K.flat ? 3 : 2) * u;
+      sideLabel(railMedia ? (railMedia.length > 1 ? 'The voices' : 'Watch') : 'More voices', sx, sy);
+      sy += (K.flat ? 3.5 : 3) * u;
       const th = Math.round(sw * 170 / 300);
       for (let mi = 0; mi < sideClips.length; mi++){
         studyClipTile(sideClips[mi], sx, sy, sw, th, S, K, b, topClip, botClip);
@@ -21602,16 +21637,34 @@ function drawStudy(){
        местами видео и экран монитора внутри 2001»): сначала сайты, под ними
        запись первого сайта */
     { const sites = STUDY_SITES[b.t];
-      if (sites){ y = drawSiteMonitor(S, K, sites, left, y, textW, topClip, botClip, a); y += 2 * u; } }
+      if (sites){
+        /* плоский лист, первый экран: монитор, который не влез бы целиком,
+           рисуется под пустой обрезкой — место он занимает то же, вёрстка ниже
+           не прыгает, а на экране нет его половины */
+        const mpS = PROP_SPRITES.ph_monlcd;
+        const cutMon = K.flat && S.scroll < 1 && mpS && y + 12 * u + textW * mpS.h / mpS.w > G.clipBot;
+        const nHits = HITS.length;
+        if (cutMon){ ctx.save(); ctx.beginPath(); ctx.rect(0, 0, 0, 0); ctx.clip(); }
+        y = drawSiteMonitor(S, K, sites, left, y, textW, topClip, botClip, a); y += 2 * u;
+        if (cutMon){ ctx.restore(); HITS.length = nHits; }
+      } }
+    /* плоский лист, лист не тронут, большой экран не влезает целиком — не
+       видно ни линейки, ни подписи над ним: первый экран кончается чисто */
+    const hideStrip = K.flat && S.scroll < 1 && y + 10 * u + Math.round(textW * 170 / 300) > G.clipBot;
     y += 2 * u;
     ctx.fillStyle = K.rule;
-    if (y > topClip && y < botClip) ctx.fillRect(left, y, textW, 1.5 * SS);
+    if (!hideStrip && y > topClip && y < botClip) ctx.fillRect(left, y, textW, (K.flat ? 1 : 1.5) * SS);
     y += 5 * u;
-    ctx.font = K.font(PAGE.small, '700');
-    try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
-    ctx.fillStyle = `rgba(${K.dim},0.95)`;
-    if (y > topClip && y < botClip) ctx.fillText(media.length > 1 ? 'The voices' : 'Watch', left, y);
-    try { ctx.letterSpacing = '0px'; } catch(err){}
+    if (!hideStrip){
+      if (K.flat) sideLabel(media.length > 1 ? 'The voices' : 'Watch', left, y);
+      else {
+        ctx.font = K.font(PAGE.small, '700');
+        try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
+        ctx.fillStyle = `rgba(${K.dim},0.95)`;
+        if (y > topClip && y < botClip) ctx.fillText(media.length > 1 ? 'The voices' : 'Watch', left, y);
+        try { ctx.letterSpacing = '0px'; } catch(err){}
+      }
+    }
     y += 3 * u;
     /* ПЕРВЫЙ КЛИП В ПОТОКЕ ИДЁТ ВО ВСЮ ШИРИНУ АБЗАЦА. Полоса ставила все
        плитки одного размера — с колонку на поле, — и видео сразу после
@@ -21656,7 +21709,8 @@ function drawStudy(){
     let pw = textW, phh = pw * im.h / im.w;
     if (phh > maxH){ phh = maxH; pw = phh * im.w / im.h; }
     const px0 = left + (textW - pw) / 2, top0 = y;
-    if (y + phh > topClip && y < botClip){
+    const cutNow = K.flat && S.scroll < 1 && y + phh > G.clipBot;   // первый экран кончается чисто
+    if (!cutNow && y + phh > topClip && y < botClip){
       ctx.save();
       ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 10 * SS; ctx.shadowOffsetY = 3 * SS;
       ctx.drawImage(im.el, px0, y, pw, phh);
@@ -21667,7 +21721,7 @@ function drawStudy(){
       ctx.font = K.font(PAGE.small, 'italic');
       ctx.fillStyle = `rgba(${K.dim},0.92)`;
       ctx.textAlign = 'center';
-      if (y > topClip && y < botClip) ctx.fillText(ph.cap, left + textW / 2, y);
+      if (!cutNow && y > topClip && y < botClip) ctx.fillText(ph.cap, left + textW / 2, y);
       ctx.textAlign = 'left';
       y += PAGE.small * 1.35 * SS;
     }
@@ -21838,16 +21892,19 @@ function seekPageClip(px2){
 }
 /* THE CROSS. Every page shuts on a tap outside it, but a page with no visible
    way out is a page people sit in. One cross, top right, on all of them. */
-function drawCloseX(cx, cy, r, alpha, ink){
+function drawCloseX(cx, cy, r, alpha, ink, plain){
   const hot = Input.hover && Math.hypot(Input.hover.x - cx, Input.hover.y - cy) < r * 1.5;
   const c = ink || '90,96,104';
   ctx.save();
   ctx.globalAlpha = alpha;
   // a ring you can see: the mark used to be a grey ghost in the corner
-  ctx.strokeStyle = `rgba(${c},${hot ? 0.9 : 0.45})`; ctx.lineWidth = Math.max(1, 1.2 * SS);
-  ctx.beginPath(); ctx.arc(cx, cy, r * 1.5, 0, 7); ctx.stroke();
-  ctx.strokeStyle = hot ? 'rgba(225,27,42,0.95)' : `rgba(${c},0.9)`;
-  ctx.lineWidth = Math.max(1.4, 2 * SS); ctx.lineCap = 'round';
+  // plain — простой белый X на шапке, без кольца; зона касания та же
+  if (!plain){
+    ctx.strokeStyle = `rgba(${c},${hot ? 0.9 : 0.45})`; ctx.lineWidth = Math.max(1, 1.2 * SS);
+    ctx.beginPath(); ctx.arc(cx, cy, r * 1.5, 0, 7); ctx.stroke();
+  }
+  ctx.strokeStyle = hot && !plain ? 'rgba(225,27,42,0.95)' : `rgba(${c},${plain && !hot ? 0.85 : 0.9})`;
+  ctx.lineWidth = Math.max(1.4, (plain ? 1.8 : 2) * SS); ctx.lineCap = plain ? 'butt' : 'round';
   ctx.beginPath();
   ctx.moveTo(cx - r * 0.62, cy - r * 0.62); ctx.lineTo(cx + r * 0.62, cy + r * 0.62);
   ctx.moveTo(cx + r * 0.62, cy - r * 0.62); ctx.lineTo(cx - r * 0.62, cy + r * 0.62);
@@ -22093,6 +22150,8 @@ const fontOf = (stack, mul) => (sz, st) => {
   const w = st === '700' ? '600' : (st || '');
   return `${w} ${(+(sz * (mul || 1) * SS).toFixed(2))}px ${stack}`.trim();
 };
+/* лист может уточнить размеры PAGE под себя (page) — только свои, не общие */
+const pageOf = K => (K && K.page) ? (K._P || (K._P = Object.assign({}, PAGE, K.page))) : PAGE;
 const PAGE_SKINS = [
   // the craft century reads a typewritten sheet
   {bg: 'rgba(236,224,192,0.97)', edge: 'rgba(120,96,58,0.55)', r: 3,
@@ -22102,11 +22161,24 @@ const PAGE_SKINS = [
   {bg: 'rgba(241,240,233,0.98)', edge: 'rgba(96,102,96,0.5)', r: 3, band: 'memo',
    ink: '46,52,50', dim: '96,104,100', accent: '160,52,40', rule: 'rgba(96,102,96,0.35)',
    font: fontOf('"IBM Plex Sans","Helvetica Neue",Helvetica,Arial,sans-serif')},
-  // 2000: a system window — the title bar is the period, the text is set to read
-  {bg: 'rgba(229,232,236,0.98)', edge: 'rgba(58,64,72,0.7)', r: 4, band: 'titlebar',
-   ink: '32,36,42', dim: '92,100,110', accent: '26,96,160', rule: 'rgba(58,64,72,0.3)',
-   font: fontOf('"Source Sans 3","Segoe UI",Tahoma,Verdana,sans-serif'),
-   ui: fontOf('Tahoma,Verdana,"Segoe UI",sans-serif')},
+  /* 1993–2007: МУЗЕЙНАЯ СТАТЬЯ С ЛЁГКИМ ПРИЗНАКОМ РАННЕГО ВЕБА, А НЕ ОКНО WINDOWS.
+     Эльдар (27.10.2026) прислал образец 1998-го и разбор: плоская узкая
+     navy-шапка без градиента и бликов, простой белый X без кольца, прямые углы,
+     тонкая серая рамка и лёгкая тень; год меньше, заголовок заметнее, текст
+     крупнее, сетка ~68/32, люди — плоские голубые строки с синей кромкой,
+     превью без скруглений с квадратной плашкой Play, тонкая полоска прокрутки,
+     внизу на бумаге «More below ⌄» слева и «Tap outside to close» справа.
+     Размеры — в page (поверх PAGE, только для этого листа), отступы шапки — в
+     head (в u). Замерено по образцу (1743 px ширины → 2000): год ~76, заголовок
+     ~48, подзаголовок ~30/40, текст ~24/40, колонка текста ~768 при 400 справа. */
+  {bg: 'rgba(247,249,252,0.995)', edge: 'rgba(118,128,142,0.6)', r: 1, band: 'navy', flat: true,
+   ink: '22,30,46', dim: '98,108,122', accent: '28,108,214', rule: 'rgba(22,30,46,0.14)',
+   navy: '6,55,111', rowBg: '226,237,250',
+   font: fontOf('"Source Sans 3","Segoe UI",Arial,Helvetica,sans-serif'),
+   ui: fontOf('Verdana,Tahoma,"Segoe UI",sans-serif'),
+   page: {year: 76, title: 48, lead: 30, leadLH: 40, body: 24, bodyLH: 40, measure: 32,
+          side: 400, gutter: 46, pad: 48, top: 40},
+   head: {yearW: '600', titleW: '600', yearTitle: 8.5, titleLead: 7, leadRule: -0.2, ruleBody: 6.9}},
   // the glass
   {bg: 'rgba(250,252,255,0.16)', edge: 'rgba(255,255,255,0.4)', r: 22, glass: true,
    ink: '240,244,248', dim: '196,204,212', accent: '140,205,250', rule: 'rgba(255,255,255,0.25)',
@@ -22121,6 +22193,7 @@ const PSKIN = {bg: 'rgba(252,252,251,0.985)', edge: 'rgba(26,28,30,0.16)', r: 6,
    sets the content clip and returns where things go. `side` asks for the
    right-hand column; it is dropped, not squeezed, when the window has no room. */
 function pageFrame(K, a, side, meta, fitH){
+  const PAGE = pageOf(K);
   const pad = PAGE.pad * SS;
   let textW = Math.round(PAGE.measure * PAGE.body * SS);
   let sideW = side ? PAGE.side * SS : 0, gutter = side ? PAGE.gutter * SS : 0;
@@ -22135,11 +22208,14 @@ function pageFrame(K, a, side, meta, fitH){
      the same full-height window as an article, with half a sheet of nothing
      under it. The caller passes last frame's content height; the sheet takes
      it, between two fifths of the screen and the full 85 per cent. */
-  const wh = fitH ? Math.max(H * 0.40, Math.min(H * 0.85, fitH)) : H * 0.85;
+  const hMax = 0.85;   // 85 % и у плоского листа (Эльдар, 27.10.2026: «тут не надо»)
+  const wh = fitH ? Math.max(H * 0.40, Math.min(H * hMax, fitH)) : H * hMax;
   const wy0 = (H - wh) / 2 + (1 - a) * 36 * SS;
   const r = K.r * SS;
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 42 * SS; ctx.shadowOffsetY = 14 * SS;
+  // плоский лист — лёгкая тень, без чёрного ореола
+  if (K.flat){ ctx.shadowColor = 'rgba(0,0,0,0.28)'; ctx.shadowBlur = 22 * SS; ctx.shadowOffsetY = 6 * SS; }
+  else { ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 42 * SS; ctx.shadowOffsetY = 14 * SS; }
   ctx.fillStyle = K.bg;
   ctx.beginPath(); ctx.roundRect(wx0, wy0, ww, wh, r); ctx.fill();
   ctx.restore();
@@ -22183,12 +22259,20 @@ function pageFrame(K, a, side, meta, fitH){
     ctx.fillRect(wx0, wy0, ww, wh);
     ctx.restore();
   }
-  ctx.strokeStyle = K.edge; ctx.lineWidth = (K.glass ? 1.4 : 1.5) * SS;
-  ctx.beginPath(); ctx.roundRect(wx0 + SS, wy0 + SS, ww - 2 * SS, wh - 2 * SS, r); ctx.stroke();
+  ctx.strokeStyle = K.edge; ctx.lineWidth = (K.glass ? 1.4 : K.flat ? 1 : 1.5) * SS;
+  if (K.flat){ ctx.beginPath(); ctx.rect(wx0 + 0.5 * SS, wy0 + 0.5 * SS, ww - SS, wh - SS); ctx.stroke(); }
+  else { ctx.beginPath(); ctx.roundRect(wx0 + SS, wy0 + SS, ww - 2 * SS, wh - 2 * SS, r); ctx.stroke(); }
   /* the era's one piece of chrome, and the meta line on it: year and title,
      small, sentence case — and the way out at its right end, on every skin */
   let bandH = 0, metaY, closeY, closeInk = null;
-  if (K.band === 'titlebar'){
+  if (K.band === 'navy'){
+    // узкая плоская полоса: ни градиента, ни блика, ни скругления
+    bandH = 44 * SS;
+    ctx.fillStyle = `rgb(${K.navy})`; ctx.fillRect(wx0, wy0, ww, bandH);
+    metaY = wy0 + bandH * 0.66; closeY = wy0 + bandH / 2; closeInk = '255,255,255';
+    ctx.font = K.font(19);
+    ctx.fillStyle = 'rgba(255,255,255,0.96)';
+  } else if (K.band === 'titlebar'){
     bandH = 34 * SS;
     const tb = ctx.createLinearGradient(0, wy0, 0, wy0 + bandH);
     tb.addColorStop(0, '#3f6fb8'); tb.addColorStop(0.5, '#2c569a'); tb.addColorStop(1, '#22437d');
@@ -22217,7 +22301,7 @@ function pageFrame(K, a, side, meta, fitH){
   if (meta) ctx.fillText(meta, wx0 + pad, metaY);
   try { ctx.letterSpacing = '0px'; } catch(err){}
   const closeR = 10 * SS;
-  drawCloseX(wx0 + ww - pad * 0.5, closeY, closeR, a, closeInk || K.ink);
+  drawCloseX(K.flat ? wx0 + ww - 24 * SS : wx0 + ww - pad * 0.5, closeY, closeR, a, closeInk || K.ink, K.flat);
   /* ОБРЕЗКА НАЧИНАЕТСЯ ПОД МЕТА-СТРОКОЙ, А НЕ ПО КРАЮ ЛИСТА. Мета — год и
      название в шапке — стоит внутри листа, и прокручиваемый текст ехал прямо
      по ней: две строки одна поверх другой (Эльдар, 02.10.2026: «смотри, как
@@ -22235,12 +22319,12 @@ function pageFrame(K, a, side, meta, fitH){
      текст не помещается, — по полосе подсказки (textBot + 8, запас под выносные
      элементы строки), так что ни строки, ни фото, ни видео не заходят в подвал.
      Линии и подсказка рисуются уже вне обрезки (pageChrome). */
-  const cTop = meta ? metaY + 22 * SS : wy0 + 2 * SS + bandH + 12 * SS;
+  const cTop = K.band === 'navy' ? wy0 + bandH + 2 * SS : meta ? metaY + 22 * SS : wy0 + 2 * SS + bandH + 12 * SS;
   /* 46 → 54 и подсказка на 18 от края (было 22): нижняя линия стояла вплотную
      над буквами подсказки и склеивалась с ней (Эльдар, 23.10.2026) — теперь
      между ними ~11 */
   const footPad = 54 * SS;
-  const overflow = !fitH || fitH > H * 0.85 - 1;
+  const overflow = !fitH || fitH > H * hMax - 1;
   const clipBot = overflow ? wy0 + wh - footPad + 8 * SS : wy0 + wh - 2 * SS;
   ctx.beginPath(); ctx.roundRect(wx0 + 2 * SS, cTop, ww - 4 * SS, clipBot - cTop, overflow ? 0 : r); ctx.clip();
   /* ПОЛОСА ПОД ПОДСКАЗКОЙ — НЕ ДЛЯ ТЕКСТА. Строки шли до самого низа листа, и
@@ -22273,6 +22357,7 @@ function pageFrame(K, a, side, meta, fitH){
    сколько осталось. Короче 24 единиц бегунок не делается — иначе на длинной
    статье он превращается в точку. */
 function pageEdges(K, G, scroll, maxScroll){
+  G._more = (maxScroll || 0) > 2 && scroll < (maxScroll || 0) - 2;   // для подвала плоского листа
   if (G.cTop == null) return;
   const top = G.cTop, bot = G.textBot != null ? G.textBot : G.wy0 + G.wh;
   const inset = G.pad * 0.5;
@@ -22295,18 +22380,39 @@ function pageEdges(K, G, scroll, maxScroll){
        другой элемент дизайна, надо эту линию скрола начинать под крестиком».
        Верх дорожки — низ кольца и ещё 12 единиц воздуха. */
     const rTop = G.closeBot != null ? Math.max(top, G.closeBot + 12 * SS) : top;
-    const rx = G.wx0 + G.ww - inset * 0.80, h = bot - rTop, w = 4 * SS;
+    const rx = G.wx0 + G.ww - inset * 0.80, h = bot - rTop, w = (K.flat ? 3 : 4) * SS;
     const vis = Math.max(0.06, Math.min(1, h / (h + maxScroll)));
     const th = Math.max(24 * SS, h * vis);
     const ty = rTop + (h - th) * Math.max(0, Math.min(1, scroll / maxScroll));
-    ctx.fillStyle = `rgba(${K.ink},0.13)`;
+    // плоский лист: дорожка почти невидима, бегунок — узкий серо-голубой
+    ctx.fillStyle = K.flat ? `rgba(${K.ink},0.06)` : `rgba(${K.ink},0.13)`;
     ctx.beginPath(); ctx.roundRect(rx, rTop, w, h, w / 2); ctx.fill();
-    ctx.fillStyle = `rgba(${K.ink},0.46)`;
+    ctx.fillStyle = K.flat ? 'rgba(112,136,166,0.55)' : `rgba(${K.ink},0.46)`;
     ctx.beginPath(); ctx.roundRect(rx, ty, w, th, w / 2); ctx.fill();
   }
   ctx.restore();
 }
 function pageFoot(K, G, yEnd, a, hint){
+  const PAGE = pageOf(K);
+  if (K.flat){
+    /* ПОДВАЛ ПЛОСКОГО ЛИСТА — ДВЕ ТИХИЕ ПОДСКАЗКИ НА БУМАГЕ, без полосы и рамок
+       (Эльдар, 27.10.2026): слева «More below» и стрелка вниз — пока внизу ещё
+       есть текст; справа «Tap outside to close» — всегда */
+    const yb = G.wy0 + G.wh - 20 * SS, xl = G.wx0 + G.pad, xr = G.wx0 + G.ww - G.pad;
+    ctx.save();
+    ctx.font = K.font(19);
+    if (G._more){
+      ctx.textAlign = 'left'; ctx.fillStyle = `rgba(${K.accent},0.92)`;
+      ctx.fillText('More below', xl, yb);
+      const cx = xl + ctx.measureText('More below').width + 22 * SS, cy = yb - 6 * SS, c = 6 * SS;
+      ctx.strokeStyle = `rgba(${K.accent},0.92)`; ctx.lineWidth = 2 * SS;
+      ctx.beginPath(); ctx.moveTo(cx - c, cy - c * 0.5); ctx.lineTo(cx, cy + c * 0.5); ctx.lineTo(cx + c, cy - c * 0.5); ctx.stroke();
+    }
+    ctx.textAlign = 'right'; ctx.fillStyle = `rgba(${K.dim},0.85)`;
+    ctx.fillText('Tap outside to close', xr, yb);
+    ctx.restore();
+    return;
+  }
   /* дымка кончается там же, где кончаются строки: ниже — чистая бумага под
      подсказку, и ей больше не с чем спорить */
   const bot = G.textBot != null ? G.textBot : G.wy0 + G.wh;
