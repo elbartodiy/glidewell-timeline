@@ -16869,9 +16869,10 @@ function drawCadUI(b, gx, gy, gw, gh, vx, vy, vw, vh){
   for (let i = 0; i < 9; i++){
     const yy = by0 + i * (bw + 0.6 * u);
     if (yy + bw > gy + gh) break;
-    const g2 = ctx.createLinearGradient(0, yy, 0, yy + bw);
-    g2.addColorStop(0, i === 3 ? '#4a8fd6' : '#3a78c0'); g2.addColorStop(1, i === 3 ? '#2d6fb8' : '#245a9c');
-    ctx.fillStyle = g2; ctx.fillRect(gx + 1.2 * u, yy, bw, bw);
+    /* плоская заливка, без градиента (Эльдар, 27.10.2026: «2002 кнопки слева
+       сделай проще, без градиента»); выбранная — на тон светлее */
+    ctx.fillStyle = i === 3 ? '#3d82cc' : '#2f6aae';
+    ctx.fillRect(gx + 1.2 * u, yy, bw, bw);
     // простой белый знак на каждой кнопке
     ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.lineWidth = Math.max(1, 0.25 * u);
