@@ -726,12 +726,7 @@ const BEATS = [
       «место и время как будто сдвинулись у этой надписи» — стрелкой с базы
       роботов на прилавок под экраном 2018-го. Теперь — на белом прилавке под
       экраном, строка по центру года (ширина меряется), едет с прилавком (k(0)). */
-   capColL(){
-     const g = CAP_MEASURE || (CAP_MEASURE = document.createElement('canvas').getContext('2d'));
-     g.font = eraFont(23, '', segAt(this.x).font);
-     const w = Math.min(capColW(this) / SS, g.measureText(this.d).width) * SS;
-     return px(this.x, k(0)) - w / 2;
-   },
+   capColL(){ return capUnderBeat(this); },
    th:'',
    /* затравка вместо пересказа страницы (Эльдар, 26.10.2026: «на линии нам нужно только небольшая затравка для раскрытия темы — про что внутри»; «го»). Было: «1,500 pairs of scans, and the profile between opposing teeth that technicians find hardest. The paper, written with UC Berkeley, is called Learning Beyond Human Expertise.» */
    d:'The first crown designed by a neural network.',
@@ -787,19 +782,29 @@ const BEATS = [
       левый край строк — на левой грани левой колонны портала. Колонна стоит
       на REC4_L, шириной 120, на глубине R22_BAY_Z (см. drawRec4), поэтому
       край считается на её плоскости и не съезжает с неё при ходьбе. */
-   capColL(){ return px(REC4_L - 60, k(R22_BAY_Z)); },
+   /* 27.10.2026: «текст ровняется по правой колонне только когда сканер
+      центрирован на экране — а так пусть он так же ездит, как и остальной
+      текст». Край колонны берётся в момент, когда 2022-й в центре кадра, и
+      переводится на плоскость прилавка (k(0)): в центре — ровно по колонне,
+      при ходьбе — со скоростью остального текста. */
+   capColL(){ const kB = k(R22_BAY_Z), k0 = k(0);
+     return px(this.x + (REC4_L - 60 - this.x) * kB / k0, k0); },
    tOnBay:true,   // the title is lettered on the plinth block of the render, centred on its face
    pinZ:996,   // the year stays centred over the instrument, on the bay's own plane — it does not slide behind a column
    yLift:267,  // its middle on the ceiling band, with 2018 and 2023 (Eldar, 2026-09-22)
    th:'The front door to the all-digital workflow.',
    /* затравка вместо пересказа страницы (Эльдар, 26.10.2026: «на линии нам нужно только небольшая затравка для раскрытия темы — про что внутри»; «го»). Было: «fastscan.io, built with Medit, folds an intraoral scanner into the ecosystem — no impressions, no remakes, data straight into design and mill.» */
-   d:'An intraoral scanner joins the ecosystem — no more impressions.',
+   d:'An intraoral scanner joins the ecosystem.\nNo more impressions.',   // Эльдар, 27.10.2026: тире — на точку, дальше с новой строки
    wall:[],
    table:[], pyr:{dx:730, w:460, lz:0},   // one book's width to the right, and in the middle of the worktop (Eldar, 2026-09-22)
    /* no pedestal: the scanner lives in the lit capsule on the panel */},
 
   {x:26900, y:'2023', t:'THE CROSSOVER', tHide:true, tier:1, yLift:267, railBelow:true,   // its middle on the ceiling band, with 2018 and 2022 (Eldar, 2026-09-22); it no longer centres itself in the panel's free band   // the numeral is centred in the empty band the panel publishes, not hung from yLift (Eldar, 2026-09-15)   // its voice hangs in a strip under the article, not down the side   // the panel letters the title itself; the beat carries it so its page and its inline pieces can be keyed by it
    pinZ:1000,   // the year rides the panel's own plane, so it stays centred on the white strip
+   /* «The month digital — строка появляется не там и не вовремя» (Эльдар,
+      27.10.2026): она лежала на полу пролёта 2022-го. Теперь — под своим годом,
+      на прилавке под коробками, с ровным фасадом под ней */
+   capColL(){ return capUnderBeat(this); }, capFlat:true,
    th:'',
    /* затравка вместо пересказа страницы (Эльдар, 26.10.2026: «на линии нам нужно только небольшая затравка для раскрытия темы — про что внутри»; «го»). Было: «March 2023: for the first time, more digital impressions arrive at Glidewell in a month than physical ones. Nothing announces it — it is simply the month the two lines cross, sixteen years after the first digital case came in.» */
    d:'The month digital impressions overtake physical ones.',
@@ -5023,7 +5028,18 @@ function SS_W(b){
   }
   return SS;
 }
-let CAP_MEASURE = null;   // мерный холст для capColL (2018)
+let CAP_MEASURE = null;   // мерный холст для capUnderBeat
+/* СТРОКА ПОД САМИМ ГОДОМ, НА ПРИЛАВКЕ: левый край колонки так, чтобы самая
+   длинная строка стояла по центру года; едет с прилавком (k(0)). 2018 и 2023 —
+   годы в пролётах инсталляций, чья строка уходила на чужую площадку. */
+function capUnderBeat(b){
+  const g = CAP_MEASURE || (CAP_MEASURE = document.createElement('canvas').getContext('2d'));
+  g.font = eraFont(23, '', segAt(b.x).font);
+  const lines = String(b.d || '').split('\n');
+  const wMax = Math.max(...lines.map(t => g.measureText(t).width));
+  const w = Math.min(capColW(b) / SS, wMax) * SS;
+  return px(b.x, k(0)) - w / 2;
+}
 function capX(b, kf){
   const rm = capRec(b.x);
   let cw = px((rm != null ? rm : b.x) + (b.capDX || 0), kf);
