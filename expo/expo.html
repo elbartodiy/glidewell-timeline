@@ -21481,10 +21481,10 @@ function drawStudy(){
   /* ---- the right-hand column, laid alongside the head ---- */
   /* плоский лист: верх колонки — по верху цифр года (кегль года × 0.66 ниже
      его базовой линии на 9u, плюс высота прописных подписи колонки) */
-  let sy = G.top - S.scroll * SS + (K.flat ? 9 * u - PAGE.year * 0.66 * SS + 22 * 0.66 * SS : 0);
+  let sy = G.top - S.scroll * SS + (K.page ? 9 * u - PAGE.year * 0.66 * SS + 22 * 0.66 * SS : 0);
   /* подпись колонки: на плоском листе — тёмная, 22, полужирная, без разрядки */
   const sideLabel = (txt, x, yy) => {
-    if (K.flat){ ctx.font = K.font(22, '600'); ctx.fillStyle = `rgba(${K.ink},0.95)`; }
+    if (K.page){ ctx.font = K.font(22, '600'); ctx.fillStyle = `rgba(${K.ink},0.95)`; }
     else {
       ctx.font = K.font(PAGE.small, '700');
       try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
@@ -21506,9 +21506,9 @@ function drawStudy(){
       /* THE PHOTOGRAPHS OF THE MOMENT: the archive pictures that hang on the
          wall of this bay, full column width, each with Jim's own caption under
          it — the page shows what the wall can only hint at from a distance. */
-      sy += K.flat ? 0 : 1.5 * u;        // воздух под шапкой: подпись не прилипает к краю обрезки
+      sy += K.page ? 0 : 1.5 * u;        // воздух под шапкой: подпись не прилипает к краю обрезки
       sideLabel('From the album', sx, sy);
-      sy += (K.flat ? 3.5 : 3) * u;
+      sy += (K.page ? 3.5 : 3) * u;
       for (let pi = 0; pi < photos.length; pi++){
         const ph = photos[pi];
         const im = IMGS[ph.img]; if (!im || !im.el) continue;
@@ -21553,10 +21553,10 @@ function drawStudy(){
     }
     if (ppl && ppl.length){
       sideLabel('People of this moment', sx, sy);
-      sy += (K.flat ? 3.5 : 3) * u;
+      sy += (K.page ? 3.5 : 3) * u;
       for (const pid of ppl){
         const P = PEOPLE[pid]; if (!P) continue;
-        const ch = (K.flat ? 7.5 : 6) * u;
+        const ch = (K.page ? 7.5 : 6) * u;
         if (K.flat && sy + ch > topClip && sy < botClip){
           /* РАННЯЯ ВЕБ-НАВИГАЦИЯ: плоская голубая строка, тонкая яркая кромка
              слева, имя обычным начертанием, простая синяя стрелка — без
@@ -21588,16 +21588,16 @@ function drawStudy(){
           ctx.fillText('→', sx + sw - 30 * SS, sy + ch * 0.64);
           pushHit(sx, sy, sw, ch, {type: 'person', id: pid});
         }
-        sy += ch + (K.flat ? 1.6 : 1) * u;
+        sy += ch + (K.page ? 1.6 : 1) * u;
       }
       sy += 2 * u;
     }
     const sideClips = railMedia || (flowRest ? ord.slice(1).map(i2 => media[i2]) : null);
     if (sideClips){
       // воздух над заголовком — как между альбомом и людьми, а не впритык к карточке
-      if (ppl && ppl.length) sy += (K.flat ? 3 : 2) * u;
+      if (ppl && ppl.length) sy += (K.page ? 3 : 2) * u;
       sideLabel(railMedia ? (railMedia.length > 1 ? 'The voices' : 'Watch') : 'More voices', sx, sy);
-      sy += (K.flat ? 3.5 : 3) * u;
+      sy += (K.page ? 3.5 : 3) * u;
       const th = Math.round(sw * 170 / 300);
       for (let mi = 0; mi < sideClips.length; mi++){
         studyClipTile(sideClips[mi], sx, sy, sw, th, S, K, b, topClip, botClip);
@@ -21744,7 +21744,7 @@ function drawStudy(){
     ctx.fillStyle = K.rule;
     if (y > topClip && y < botClip) ctx.fillRect(left, y, textW, (K.flat ? 1 : 1.5) * SS);
     y += 5 * u;
-    if (K.flat) sideLabel(media.length > 1 ? 'The voices' : 'Watch', left, y);
+    if (K.page) sideLabel(media.length > 1 ? 'The voices' : 'Watch', left, y);
     else {
       ctx.font = K.font(PAGE.small, '700');
       try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
@@ -22267,14 +22267,22 @@ const PAGE_SKINS = [
    navy: '6,55,111', rowBg: '226,237,250',
    font: fontOf('"Source Sans 3","Segoe UI",Arial,Helvetica,sans-serif'),
    ui: fontOf('Verdana,Tahoma,"Segoe UI",sans-serif'),
-   page: {year: 76, title: 48, lead: 30, leadLH: 40, body: 24, bodyLH: 40, measure: 32,
-          side: 400, gutter: 46, pad: 48, top: 40},
-   head: {yearW: '600', titleW: '600', yearTitle: 8.5, titleLead: 7, leadRule: -0.2, ruleBody: 6.9}},
+   head: {yearW: '600', titleW: '600'}},
   // the glass
   {bg: 'rgba(250,252,255,0.16)', edge: 'rgba(255,255,255,0.4)', r: 22, glass: true,
    ink: '240,244,248', dim: '196,204,212', accent: '140,205,250', rule: 'rgba(255,255,255,0.25)',
    font: fontOf('Inter,"Avenir Next","Helvetica Neue",Arial,sans-serif')},
 ];
+/* ВЁРСТКА ЛИСТА ЭПОХИ — ОДНА НА ВСЕ ЧЕТЫРЕ. Эльдар (27.10.2026): «дизайны
+   другие, но вёрстка должна быть единой». Размеры и сетка, отступы шапки, верх
+   колонки по цифрам года, подписи колонки, строки людей, подвал с двумя
+   подсказками — общие (сняты с образца 1998-го); бумага, шрифт, цвет, крестик,
+   полоска прокрутки, скругления и рамки — у каждой эпохи свои. Признак листа
+   эпохи в коде — K.page (у страниц людей его нет, у них своя вёрстка). */
+const ERA_PAGE = {year: 76, title: 48, lead: 30, leadLH: 40, body: 24, bodyLH: 40, measure: 32,
+                  side: 400, gutter: 46, pad: 48, top: 40};
+const ERA_HEAD = {yearTitle: 8.5, titleLead: 7, leadRule: -0.2, ruleBody: 6.9};
+for (const K of PAGE_SKINS){ K.page = ERA_PAGE; K.head = Object.assign({}, ERA_HEAD, K.head || {}); }
 const PSKIN = {bg: 'rgba(252,252,251,0.985)', edge: 'rgba(26,28,30,0.16)', r: 6,
                ink: '24,26,28', dim: '118,124,130', red: '225,27,42', accent: '225,27,42',
                rule: 'rgba(26,28,30,0.13)',
@@ -22485,7 +22493,7 @@ function pageEdges(K, G, scroll, maxScroll){
 }
 function pageFoot(K, G, yEnd, a, hint){
   const PAGE = pageOf(K);
-  if (K.flat){
+  if (K.page){
     /* ПОДВАЛ ПЛОСКОГО ЛИСТА — ДВЕ ТИХИЕ ПОДСКАЗКИ НА БУМАГЕ, без полосы и рамок
        (Эльдар, 27.10.2026): слева «More below» и стрелка вниз — пока внизу ещё
        есть текст; справа «Tap outside to close» — всегда */
