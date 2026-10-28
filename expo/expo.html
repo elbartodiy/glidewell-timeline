@@ -21824,9 +21824,14 @@ function drawStudy(){
       ctx.font = K.font(PAGE.small, 'italic');
       ctx.fillStyle = `rgba(${K.dim},0.92)`;
       ctx.textAlign = 'center';
-      if (!cutNow && y > topClip && y < botClip) ctx.fillText(ph.cap, left + textW / 2, y);
+      /* подпись переносится по ширине колонки (Эльдар, 27.10.2026, скрин 1976:
+         длинная подпись одной строкой уходила за края текста) */
+      const capLines = wrapCalc(ph.cap, Math.min(textW, pw + 80 * SS));
+      for (const ln of capLines){
+        if (!cutNow && y > topClip && y < botClip) ctx.fillText(ln, left + textW / 2, y);
+        y += PAGE.small * 1.35 * SS;
+      }
       ctx.textAlign = 'left';
-      y += PAGE.small * 1.35 * SS;
     }
     S._slot = {y0: top0 + S.scroll * SS, h: y - top0, mid: (topClip + botClip) / 2};
     y += 4.5 * u;                       // под подписью столько же воздуха, сколько над снимком
