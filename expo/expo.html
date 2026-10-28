@@ -21251,10 +21251,10 @@ function drawAlbumView(){
    article. Only the layout differs, so only the layout is written twice. */
 function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
   if (!(ty + th > topClip && ty < botClip)) return;
-  /* ПЕРВЫЙ ЭКРАН КОНЧАЕТСЯ ЧИСТО (плоский лист, Эльдар 27.10.2026): пока лист
-     не тронут, плитка, которую обрезал бы низ окна, не рисуется вовсе — ни
-     половины лица, ни половины кнопки; она появится, как только лист поедет */
-  if (K.flat && S.scroll < 1 && S._clipBot != null && ty + th > S._clipBot) return;
+  /* Плитку, которую режет низ окна, НЕ прячем: правило «первый экран кончается
+     чисто» (образец 1998-го) снято в тот же день — Эльдар (27.10.2026): «плохо,
+     что здесь не видно видео, т. к. пользователь не поймёт, что нужно ниже
+     прокрутить». Край видео внизу и есть приглашение листать. */
   const tR = K.flat ? 0 : 10 * SS;   // плоский лист — прямые углы
         {
     ctx.save();
@@ -21405,7 +21405,6 @@ function drawStudy(){
   const meta = b.noYear ? sentence(b.t || b.sign || '')
     : (b.pageY || b.y) + (b.pageT ? ' ' + b.pageT : b.t ? ' ' + sentence(b.t) : (b.sign ? ' ' + sentence(b.sign) : ''));
   const G = pageFrame(K, a, wantSide, meta, S.fitH);
-  S._clipBot = G.clipBot;   // низ окна — плитки плоского листа на первом экране не режутся
   S.sheet = {x: G.wx0, y: G.wy0, w: G.ww, h: G.wh};   // где лист — чтобы касание по нему не закрывало страницу
   const {left, textW, topClip, botClip} = G;
   const u = PAGE.u * SS;
@@ -21740,33 +21739,18 @@ function drawStudy(){
        местами видео и экран монитора внутри 2001»): сначала сайты, под ними
        запись первого сайта */
     { const sites = STUDY_SITES[b.t];
-      if (sites){
-        /* плоский лист, первый экран: монитор, который не влез бы целиком,
-           рисуется под пустой обрезкой — место он занимает то же, вёрстка ниже
-           не прыгает, а на экране нет его половины */
-        const mpS = PROP_SPRITES.ph_monlcd;
-        const cutMon = K.flat && S.scroll < 1 && mpS && y + 12 * u + textW * mpS.h / mpS.w > G.clipBot;
-        const nHits = HITS.length;
-        if (cutMon){ ctx.save(); ctx.beginPath(); ctx.rect(0, 0, 0, 0); ctx.clip(); }
-        y = drawSiteMonitor(S, K, sites, left, y, textW, topClip, botClip, a); y += 2 * u;
-        if (cutMon){ ctx.restore(); HITS.length = nHits; }
-      } }
-    /* плоский лист, лист не тронут, большой экран не влезает целиком — не
-       видно ни линейки, ни подписи над ним: первый экран кончается чисто */
-    const hideStrip = K.flat && S.scroll < 1 && y + 10 * u + Math.round(textW * 170 / 300) > G.clipBot;
+      if (sites){ y = drawSiteMonitor(S, K, sites, left, y, textW, topClip, botClip, a); y += 2 * u; } }
     y += 2 * u;
     ctx.fillStyle = K.rule;
-    if (!hideStrip && y > topClip && y < botClip) ctx.fillRect(left, y, textW, (K.flat ? 1 : 1.5) * SS);
+    if (y > topClip && y < botClip) ctx.fillRect(left, y, textW, (K.flat ? 1 : 1.5) * SS);
     y += 5 * u;
-    if (!hideStrip){
-      if (K.flat) sideLabel(media.length > 1 ? 'The voices' : 'Watch', left, y);
-      else {
-        ctx.font = K.font(PAGE.small, '700');
-        try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
-        ctx.fillStyle = `rgba(${K.dim},0.95)`;
-        if (y > topClip && y < botClip) ctx.fillText(media.length > 1 ? 'The voices' : 'Watch', left, y);
-        try { ctx.letterSpacing = '0px'; } catch(err){}
-      }
+    if (K.flat) sideLabel(media.length > 1 ? 'The voices' : 'Watch', left, y);
+    else {
+      ctx.font = K.font(PAGE.small, '700');
+      try { ctx.letterSpacing = `${PAGE.small*TRACK.label*SS}px`; } catch(err){}
+      ctx.fillStyle = `rgba(${K.dim},0.95)`;
+      if (y > topClip && y < botClip) ctx.fillText(media.length > 1 ? 'The voices' : 'Watch', left, y);
+      try { ctx.letterSpacing = '0px'; } catch(err){}
     }
     y += 3 * u;
     /* ПЕРВЫЙ КЛИП В ПОТОКЕ ИДЁТ ВО ВСЮ ШИРИНУ АБЗАЦА. Полоса ставила все
@@ -21812,8 +21796,7 @@ function drawStudy(){
     let pw = textW, phh = pw * im.h / im.w;
     if (phh > maxH){ phh = maxH; pw = phh * im.w / im.h; }
     const px0 = left + (textW - pw) / 2, top0 = y;
-    const cutNow = K.flat && S.scroll < 1 && y + phh > G.clipBot;   // первый экран кончается чисто
-    if (!cutNow && y + phh > topClip && y < botClip){
+    if (y + phh > topClip && y < botClip){
       ctx.save();
       ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 10 * SS; ctx.shadowOffsetY = 3 * SS;
       ctx.drawImage(im.el, px0, y, pw, phh);
@@ -21828,7 +21811,7 @@ function drawStudy(){
          длинная подпись одной строкой уходила за края текста) */
       const capLines = wrapCalc(ph.cap, Math.min(textW, pw + 80 * SS));
       for (const ln of capLines){
-        if (!cutNow && y > topClip && y < botClip) ctx.fillText(ln, left + textW / 2, y);
+        if (y > topClip && y < botClip) ctx.fillText(ln, left + textW / 2, y);
         y += PAGE.small * 1.35 * SS;
       }
       ctx.textAlign = 'left';
