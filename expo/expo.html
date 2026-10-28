@@ -14534,7 +14534,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261027-playsafe2';   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261027-scanst';   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -14609,6 +14609,7 @@ async function loadPhotoSkin(){
        она, а на финальном столе остаётся прежний кадр: Эльдар просил заменить
        ту, что «не на последнем самом финале, а чуть раньше» (2026-09-24). */
     ph_mill_v1: 'mill_io_v1.png',
+    ph_scanst: 'scan_station.png',    // 2017: станция fastscan.io — вырезана из final_products (x 48…596, до столешницы 662)
     ph_scanbay: 'scan_bay.jpg',       // the 2022 bay: the whole render, rectangle and all
     ph_hall_wall: 'hall_wall.png',    // the glass hall: the room's long side, frontal, fitted to the wall's height
     ph_hall_floor: 'hall_floor.png',  // its polished floor and reflections, laid under the whole late stretch
@@ -14798,7 +14799,21 @@ function initDecor(){
     /* НА ЧЕТВЕРТЬ МЕНЬШЕ (Эльдар, 19.10.2026: «милл машину на 2017 надо
        уменьшить на 1/4»): w 460 → 345; drop — доля той же фотографии, поэтому
        уменьшается вместе с ней, 36 → 27; середина машины на прежнем месте. */
-    if (b17) PROPS.push({x: b17.x + 109, z: 70, kind: 'ph_mill_v1', w: 345, drop: 27, noShadow: true});
+    /* МОНИТОР ЛЕВЕЕ ФРЕЗЫ, ПАРА — ПО ЦЕНТРУ ГОДА. Эльдар (27.10.2026): «левее
+       милл-машины поставить монитор (в конце референс в финале) и эту пару
+       сделать по центру относительно года в зените». Монитор — станция
+       fastscan.io из того же рендера финала (final_products: станция 548 px,
+       фреза 375 px, зазор 23), в масштабе здешней фрезы 345: станция 504,
+       зазор 21, пара 870 — её середина на 2017-м (фреза была на +109). Обе на
+       z 70 и с одной посадкой (drop 27 — столешница фото ниже линии зала).
+       В масштабе фрезы (504) монитор закрывал вывеску glidewell.io и край
+       плаката HT — станция ужата до 333: верх монитора под вывеской (~370 px
+       при 2000×1040), всё равно в 1.6 раза выше фрезы. */
+    if (b17){
+      const ST_W = 333, PAIR = ST_W + 21 + 345;
+      PROPS.push({x: b17.x - PAIR / 2 + ST_W / 2, z: 70, kind: 'ph_scanst', w: ST_W, drop: 27});
+      PROPS.push({x: b17.x + PAIR / 2 - 345 / 2, z: 70, kind: 'ph_mill_v1', w: 345, drop: 27, noShadow: true});
+    }
     /* the plastic-injection division's own product, on the counter at its own
        tick — right of the CAD screen, which it must not cover */
     const bpl = BEATS.find(b => b.t === 'PLASTIC INJECTION');
