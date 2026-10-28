@@ -318,7 +318,7 @@ const BEATS = [
    yLift:130, descTitle:true, deskCapFoot:618, capLeft:true,
    th:'The lab learns to sell by mail — and the mail brings the country.',
    d:'An engineer who taught himself advertising shows Jim how to fill a page.',
-   wall:[{img:'ad1985', w:560, dx:0, top:148, maxB:860}], table:[]},
+   wall:[{img:'ad1985', w:560, dx:0, top:148, maxB:860, style:'poster', satMul:0.75}], table:[]},   // без рамы, насыщенность −25 % (Эльдар, 27.10.2026)
 
   /* СТРОКА 1988-го ЖИВЁТ НА СТОЛЕ 1984-го, У ЕГО ПРАВОГО КРАЯ. Своего стола у
      этого года больше нет (см. разрыв p84 в initTables). Эльдар (06.10.2026):
@@ -1855,8 +1855,10 @@ function loadAssets(){
 /* Preprocess: tone + paper/frame + baked shadow, all into offscreen canvases. */
 function makePrint(name, opts){
   const src = IMGS[name]; if (!src) return null;
-  const style = opts.style || 'frame';    // 'frame' | 'print' | 'metal' | 'print2' | 'plastic'
-  const pad = {frame:26, print:16, metal:44, print2:14, plastic:18, white:46}[style];
+  const style = opts.style || 'frame';    // 'frame' | 'print' | 'metal' | 'print2' | 'plastic' | 'poster'
+  /* poster — лист прямо на стене: ни рамы, ни паспарту, ни стекла, тень
+     мягче (плакат 1985-го, Эльдар 27.10.2026: «не нравится рамка») */
+  const pad = {frame:26, print:16, metal:44, print2:14, plastic:18, white:46, poster:0}[style];
   const sh = 30;                                 // shadow margin
   const w = src.w + pad*2, h = src.h + pad*2;
   const c = document.createElement('canvas');
@@ -1864,11 +1866,14 @@ function makePrint(name, opts){
   const g = c.getContext('2d');
   // baked drop shadow
   g.save();
-  g.shadowColor = 'rgba(0,0,0,0.55)'; g.shadowBlur = 22; g.shadowOffsetY = 10;
+  if (style === 'poster'){ g.shadowColor = 'rgba(0,0,0,0.38)'; g.shadowBlur = 14; g.shadowOffsetY = 5; }
+  else { g.shadowColor = 'rgba(0,0,0,0.55)'; g.shadowBlur = 22; g.shadowOffsetY = 10; }
   g.fillStyle = '#000';
   g.fillRect(sh, sh, w, h);
   g.restore();
-  if (style === 'frame'){
+  if (style === 'poster'){
+    // бумага плаката и есть край — ничего вокруг
+  } else if (style === 'frame'){
     // dark wood frame with bevel
     const fg = g.createLinearGradient(sh, sh, sh, sh+h);
     fg.addColorStop(0, '#3a2a1a'); fg.addColorStop(.5, '#241708'); fg.addColorStop(1, '#170e05');
@@ -1913,7 +1918,8 @@ function makePrint(name, opts){
   g.filter = opts.tone || 'sepia(0.5) saturate(0.75) contrast(1.04) brightness(0.96)';
   g.drawImage(src.el, sh+pad, sh+pad);
   g.restore();
-  // warm glass sheen
+  // warm glass sheen — у плаката стекла нет
+  if (style === 'poster') return {c, w: c.width, h: c.height, inner: {x: sh, y: sh, w, h}};
   const sheen = g.createLinearGradient(sh, sh, sh+w*0.7, sh+h);
   sheen.addColorStop(0, 'rgba(255,235,190,0.10)'); sheen.addColorStop(.4, 'rgba(255,235,190,0.0)');
   g.fillStyle = sheen; g.fillRect(sh+pad, sh+pad, src.w, src.h);
@@ -24918,7 +24924,8 @@ async function boot(){
   const spec = {};
   for (const b of BEATS){
     const es = eraStyle[segIdx(b.x)];
-    for (const it of b.wall) spec[it.img] = {style: it.style || es.wall, tone:es.tone};
+    // satMul — снять насыщенность поверх тона эры (плакат 1985-го: −25 %)
+    for (const it of b.wall) spec[it.img] = {style: it.style || es.wall, tone: es.tone + (it.satMul ? ` saturate(${it.satMul})` : '')};
     for (const it of (b.st || [])) spec[it.img] = {style: it.style || es.wall, tone:es.tone};
     for (const it of b.table) spec[it.img] = {style:es.table, tone:es.tone};
   }
