@@ -6273,7 +6273,10 @@ function projBeamHaze(){
   g.putImageData(im, 0, 0);
   return (PBEAM.haze = c);
 }
-function drawProjBeam(lx, ly, A, B, lamp, t, seed){
+/* gain — поправка на стену: светлый луч на почти белой панели 1993-го в
+   «screen» почти не виден, и тот же луч там читался иначе, чем у 1999-го на
+   серой (Эльдар, 27.10.2026: «у двоих разные лучи — это не ок») */
+function drawProjBeam(lx, ly, A, B, lamp, t, seed, gain){
   const S6 = 1 / 10;   // лист в 1/10 — растяжка обратно и есть размытие граней
   const x0 = Math.min(lx, A[0], B[0]) - 30 * SS, y0 = Math.min(ly, A[1], B[1]) - 30 * SS;
   const x1 = Math.max(lx, A[0], B[0]) + 30 * SS, y1 = Math.max(ly, A[1], B[1]) + 30 * SS;
@@ -6333,7 +6336,11 @@ function drawProjBeam(lx, ly, A, B, lamp, t, seed){
   ctx.save();
   ctx.imageSmoothingEnabled = true;
   ctx.globalCompositeOperation = 'screen';
-  ctx.drawImage(c, 0, 0, bw, bh, x0, y0, bw / S6, bh / S6);
+  // целая часть усиления — повторный проход, дробная — альфа последнего
+  for (let gp = gain || 1; gp > 0.01; gp -= 1){
+    ctx.globalAlpha = Math.min(1, gp);
+    ctx.drawImage(c, 0, 0, bw, bh, x0, y0, bw / S6, bh / S6);
+  }
   ctx.restore();
 }
 function filmProjGeom(r){
@@ -7838,7 +7845,7 @@ function drawProjectors(t, phase){
       if (ang[i] < ang[iA]) iA = i;
       if (ang[i] > ang[iB]) iB = i;
     }
-    drawProjBeam(lx, ly, corners[iA], corners[iB], lamp, t, 1);   // общий луч (см. drawProjBeam)
+    drawProjBeam(lx, ly, corners[iA], corners[iB], lamp, t, 1, 2.6);   // общий луч (см. drawProjBeam); ×2.6 — светлая панель бухты
 
     // 2 — the picture is assembled on its own transparent sheet and then ADDED
     //     to the wall. Feathering it in place would erase the masonry with it
