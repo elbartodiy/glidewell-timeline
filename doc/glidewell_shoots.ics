@@ -93,7 +93,7 @@ UID:gw-kosinski-irvine@glidewell
 DTSTAMP:20260803T120000Z
 DTSTART;TZID=America/Los_Angeles:20261105T130000
 DTEND;TZID=America/Los_Angeles:20261105T150000
-SUMMARY:Proposed — Tim Kosinski (Irvine, before the Nov 6-7 symposium)
+SUMMARY:Shoot — Tim Kosinski (Irvine, before the Nov 6-7 symposium)
 END:VEVENT
 BEGIN:VEVENT
 UID:gw-ditolla-irvine@glidewell
