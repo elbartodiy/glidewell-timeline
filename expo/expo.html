@@ -16385,6 +16385,82 @@ function crownTurn(ay, ax){
   g = b*f - c*e; h = c*d - a*f; i = a*e - b*d;
   CROWN3D.R = [a, b, c, d, e, f, g, h, i];
 }
+/* МОЛЯР ДЛЯ ОБЛАКА 2007-ГО — ПО ФОТО, А НЕ ТЕЛО ВРАЩЕНИЯ. Эльдар (27.10.2026):
+   «2007 можешь сделать другую форму коронки, которая собирается? Более
+   реалистичную. Посмотри, какой у неё верх и вообще форма» (фото коронки
+   моляра на ладони, вид почти сверху). crownMesh — токарная сетка с четырьмя
+   одинаковыми буграми, она остаётся у тех, кто её зовёт; облако собирается
+   отсюда. План — скруглённый прямоугольник (мезиодистально 60, щёчно-язычно 54,
+   язычная сторона на 6 % уже); стенка от шейки (0.80) к экватору на трети
+   высоты (1.0) и к жевательной кромке (0.86); на жевательной поверхности пять
+   бугров — два щёчных, два язычных, дистальный пониже, — центральная фиссура
+   вдоль, щёчная и язычная борозды поперёк, ямка в центре. Координаты те же,
+   что у crownMesh (шейка y −30, верх ~+44, радиус ~60), — drawPointCloud
+   кладёт её без перемеров. Кольца: M меридианов × (16 стенки + 18 жевательной). */
+function molarMesh(){
+  if (CROWN3D.molar) return CROWN3D.molar;
+  /* СЕЧЕНИЕ НЕ КРУГЛОЕ (Эльдар, 27.10.2026: «и она не имеет идеальную круглую
+     форму в разрезе — там другая форма»): контур моляра сверху — скошенный
+     ромбоид с долями под каждым бугром и впадинами там, где щёчная и язычная
+     борозды выходят на стенку. */
+  const RX = 60, RZ = 54, EXP = 2.4;
+  const dA = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
+  const plan = a => {
+    const c = Math.cos(a), s_ = Math.sin(a);
+    let r = 1 / Math.pow(Math.pow(Math.abs(c), EXP) + Math.pow(Math.abs(s_), EXP), 1 / EXP);
+    // доли под буграми: щёчные (z > 0) и язычные, и дистальная поменьше
+    for (const [la, lh] of [[0.78, 0.10], [2.30, 0.10], [-0.80, 0.08], [-2.28, 0.08], [0.0, 0.05]])
+      r *= 1 + lh * Math.exp(-dA(a, la) * dA(a, la) / 0.10);
+    // впадины на выходе щёчной и язычной борозд
+    for (const ga of [Math.PI / 2 - 0.05, -Math.PI / 2 + 0.05]) r *= 1 - 0.10 * Math.exp(-dA(a, ga) * dA(a, ga) / 0.02);
+    let x = r * c * RX * (s_ < 0 ? 0.93 : 1), z = r * s_ * RZ;
+    x += 0.10 * z;                     // ромбоид: щёчная сторона сдвинута относительно язычной
+    return [x, z];
+  };
+  const G2 = (du, dv, w) => Math.exp(-(du * du + dv * dv) / w);
+  const CUSPS = [[-0.47, 0.46, 15, 0.12], [0.42, 0.49, 14, 0.12], [-0.45, -0.44, 16, 0.13],
+                 [0.40, -0.46, 14, 0.12], [0.80, 0.06, 9, 0.07]];
+  const occl = (u, v) => {
+    let h = 34;   // высота коронки ≈ 0.7 её ширины, как у моляра
+    for (const [cu, cv, ch, cw] of CUSPS) h += ch * G2(u - cu, v - cv, cw);
+    h -= 6.5 * Math.exp(-v * v / 0.010) * Math.max(0, 1 - Math.pow(Math.abs(u) / 0.9, 4));   // центральная фиссура
+    h -= 4.5 * Math.exp(-(u - 0.03) * (u - 0.03) / 0.008) * Math.min(1, Math.abs(v) / 0.12);   // щёчная и язычная борозды
+    h -= 3.5 * G2(u, v, 0.03);                                                                  // центральная ямка
+    h += 4 * Math.pow(Math.max(Math.abs(u), Math.abs(v)), 6);                                   // краевые валики к кромке
+    return h;
+  };
+  /* стенка — по меридианам; жевательная поверхность — РАВНОМЕРНОЙ сеткой по
+     площади (по лучам от центра точки сходились в середине узлом), и каждая
+     точка сетки уходит в «кольцо» своего угла. Облако рисует все точки
+     (step 1), прореживание уже здесь. */
+  const M = 48, PW = 9, rings = [];
+  for (let m = 0; m < M; m++){
+    const a = m / M * Math.PI * 2, [px0, pz0] = plan(a), cu = Math.cos(a), sv = Math.sin(a);
+    const ring = [];
+    const yRim = occl(cu * 0.97, sv * 0.97);
+    for (let i = 0; i < PW; i++){
+      const t = i / (PW - 1);
+      // ширина стенки: шейка 0.80 → экватор (треть высоты) 1.0 → кромка 0.86
+      const f = t < 0.33 ? 0.80 + 0.20 * Math.sin(t / 0.33 * Math.PI / 2)
+                         : 1.0 - 0.14 * Math.pow((t - 0.33) / 0.67, 1.6);
+      ring.push([px0 * f, -30 + t * (yRim + 30), pz0 * f]);
+    }
+    rings.push(ring);
+  }
+  const STEP = 5.2;   // шаг шестиугольной сетки верха, в единицах сетки
+  for (let gz = -RZ, row = 0; gz <= RZ; gz += STEP * 0.866, row++){
+    for (let gx = -RX + (row % 2) * STEP / 2; gx <= RX; gx += STEP){
+      const a = Math.atan2(gz, gx), [rx_, rz_] = plan(a);
+      const sR = Math.hypot(gx, gz) / (Math.hypot(rx_, rz_) * 0.86);
+      if (sR > 0.95) continue;
+      const u = Math.cos(a) * sR, v = Math.sin(a) * sR;
+      const m = ((Math.round(a / (Math.PI * 2) * M) % M) + M) % M;
+      rings[m].push([gx, occl(u, v), gz]);
+    }
+  }
+  CROWN3D.molar = {rings, M, P: PW, step: 1};
+  return CROWN3D.molar;
+}
 function crownMesh(){
   if (CROWN3D.mesh) return CROWN3D.mesh;
   // the profile: radius and height, foot to pole, smoothed through the same
@@ -16665,7 +16741,7 @@ function cloudHalo(){
 }
 const hash01 = n => { const h = Math.sin(n) * 43758.5453; return h - Math.floor(h); };
 function drawPointCloud(cx, footY, size, t, hero){
-  const mesh = crownMesh(), {rings, M, P} = mesh;
+  const mesh = molarMesh(), {rings, M, P} = mesh;   // моляр по фото (27.10.2026), не токарная crownMesh
   const scale = size / 122;
   const cy = footY - 34 * scale;
   const G = cloudGather(cx);
@@ -16682,9 +16758,10 @@ function drawPointCloud(cx, footY, size, t, hero){
   const dot = Math.max(0.9, 1.5 * SS);
   let bx0 = 1e9, bx1 = -1e9, by0 = 1e9, by1 = -1e9;   // the cloud's own screen box, for the relay that leaves it
   let idx = 0;
-  for (let m = 0; m < M; m += 2){
+  const stp = mesh.step || 2;   // у моляра прореживание сделано в самой сетке
+  for (let m = 0; m < M; m += stp){
     const ring = rings[m];
-    for (let pI = 0; pI < P; pI += 2){
+    for (let pI = 0; pI < (mesh.step ? ring.length : P); pI += stp){
       const v = ring[pI];
       const n = idx++;
       const x = v[0] * grow, y = v[1] * grow, z = v[2] * grow;
@@ -25542,6 +25619,7 @@ async function boot(){
       () => makeVignette(),
       () => crownGeometry(),
       () => crownMesh(),
+      () => molarMesh(),
       () => crownMask(),
       () => boxPile(),
       () => discSlots(),
