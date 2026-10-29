@@ -14661,6 +14661,7 @@ async function loadPhotoSkin(){
     /* РЕАЛИЗМ (Эльдар, 28.10.2026: «сделай всё одним махом»): набор ChatGPT из
        Artefacts/Realism_2026-10-27/final — очищен от обрывков (оставлен главный
        кусок по альфе), обрезан по альфе, ужат; r_* */
+    ph_sc0: 'r_sculpt_000.png', ph_sc1: 'r_sculpt_030.png', ph_sc2: 'r_sculpt_060.png', ph_sc3: 'r_sculpt_090.png', ph_sc4: 'r_sculpt_120.png', ph_sc5: 'r_sculpt_150.png', ph_sc6: 'r_sculpt_180.png', ph_sc7: 'r_sculpt_210.png', ph_sc8: 'r_sculpt_240.png', ph_sc9: 'r_sculpt_270.png', ph_sc10: 'r_sculpt_300.png', ph_sc11: 'r_sculpt_330.png',   // 12 кадров вращения коронки (через 30°) — стеклянный зал и TODAY
     ph_crown_a: 'r_crown_000.png', ph_crown_b: 'r_crown_030.png', ph_crown_c: 'r_crown_060.png', ph_crown_d: 'r_crown_090.png',
     ph_boxes24: 'boxes24.png',        // 2023: 24 коробки — лист Эльдара «24-box cardboard sprite sheet» (28.10.2026)
     ph_scanst: 'scan_station.png',    // 2017: станция fastscan.io — вырезана из final_products (x 48…596, до столешницы 662)
@@ -16562,7 +16563,31 @@ function crownMesh(){
   CROWN3D.mesh = {rings, M, P: prof.length};
   return CROWN3D.mesh;
 }
+/* КОРОНКА, КОТОРУЮ ВРАЩАЮТ РУКОЙ, — ФОТО. 12 кадров вращения (r_sculpt_000…330,
+   набор ChatGPT, 28.10.2026) вместо токарной сетки с плоскими гранями. Угол —
+   поворот вокруг вертикали из той же матрицы CROWN3D.R, которую крутят пальцем
+   и которая сама медленно вращается; между соседними кадрами — наложение
+   второго с долей угла. Наклон (wx) фото не показывает. Размер: сетка
+   ~118 из 122 единиц size, фото обрезано по коронке — ширина size × 0.97, низ на
+   footY, как у сетки. Без кадров — прежняя сетка. */
+function drawCrownPhoto(cx, footY, size, alpha){
+  const f0 = PROP_SPRITES.ph_sc0;
+  if (!f0) return null;
+  const R = CROWN3D.R;
+  let yaw = Math.atan2(R[2], R[0]) / (Math.PI * 2) * 12;
+  yaw = ((yaw % 12) + 12) % 12;
+  const i0 = Math.floor(yaw), i1 = (i0 + 1) % 12, w = yaw - i0;
+  const A = PROP_SPRITES['ph_sc' + i0] || f0, B = PROP_SPRITES['ph_sc' + i1] || f0;
+  const dw = size * 0.97, dh = dw * A.h / A.w, top = footY - dh;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(spriteMip(A, dw, dh), cx - dw / 2, top, dw, dh);
+  if (w > 0.02){ ctx.globalAlpha = alpha * w; const dh2 = dw * B.h / B.w; ctx.drawImage(spriteMip(B, dw, dh2), cx - dw / 2, footY - dh2, dw, dh2); }
+  ctx.restore();
+  return {top};
+}
 function drawCrown3D(cx, footY, size, alpha){
+  { const ph = drawCrownPhoto(cx, footY, size, alpha); if (ph) return ph; }
   const mesh = crownMesh(), {rings, M, P} = mesh;
   const R = CROWN3D.R;
   const scale = size / 122;                          // the mesh is ~118 wide at the bulge, 76 tall
