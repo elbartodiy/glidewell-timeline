@@ -13440,6 +13440,25 @@ function drawLamp(x, t, seed, fadeAtStone, photo){
 
 /* ---------------- MONITORS · era 3 living screens ---------------- */
 const MONS = {};    // kind -> {c, w, h, screen:{x,y,w,h}}
+/* ЭЛТ-МОНИТОР — ФОТО (набор ChatGPT, 28.10.2026). Проём экрана в нём прозрачный
+   (замер по альфе: x 160…752, y 95…544 из 900 × 817, низ подставки — 817),
+   живой CAD-экран рисуется в проём, а рамка кладётся ещё раз поверх (over) —
+   скруглённые углы проёма закрывают углы картинки. Холст с полями: рисованный
+   корпус занимал 340 из 392 своего листа, и p.w мира мерит весь лист — поля
+   держат прежний размер на экране. */
+function crtFromPhoto(){
+  const P = PROP_SPRITES.ph_crt; if (!P) return null;
+  const k0 = 392 / 340, W0 = Math.round(P.w * k0), H0 = Math.round(P.h + P.w * (k0 - 1) / 2);
+  const c = document.createElement('canvas'); c.width = W0; c.height = H0;
+  const g = c.getContext('2d'), ox = (W0 - P.w) / 2, oy = H0 - P.h;
+  // экран в покое — тёмное стекло: видно, пока живой экран ещё не нарисован
+  g.fillStyle = '#0b120c'; g.fillRect(ox + 160, oy + 95, 592, 449);
+  g.drawImage(P.c, ox, oy);
+  // рамка без стекла — для прохода поверх живого экрана
+  const o = document.createElement('canvas'); o.width = W0; o.height = H0;
+  o.getContext('2d').drawImage(P.c, ox, oy);
+  return {c, w: W0, h: H0, screen: {x: ox + 162, y: oy + 97, w: 588, h: 445}, foot: oy + 816, over: o, body: {x0: ox, x1: ox + P.w, y0: oy}};
+}
 function makeMonitor(kind){
   const sh = 26;
   const c = document.createElement('canvas');
@@ -13660,6 +13679,7 @@ function drawMonitor(p, x, z, wWorld, t){
                                        p.mesh === 'coping' ? 'coping' : 'crown');
   else drawScreenScan(ctx, r, t, prog);
   ctx.restore();
+  if (mon.over) ctx.drawImage(mon.over, dx, dy, mon.w*scale, mon.h*scale);   // рамка фото — поверх живого экрана
   // screen light spills into the room
   const glow = p.kind === 'crt' ? (p.col === 'amber' ? '235,170,80' : '110,220,150') : '110,180,255';
   const flick = 0.8 + 0.2*Math.sin(t*9 + x);
@@ -14662,6 +14682,7 @@ async function loadPhotoSkin(){
        Artefacts/Realism_2026-10-27/final — очищен от обрывков (оставлен главный
        кусок по альфе), обрезан по альфе, ужат; r_* */
     ph_sc0: 'r_sculpt_000.png', ph_sc1: 'r_sculpt_030.png', ph_sc2: 'r_sculpt_060.png', ph_sc3: 'r_sculpt_090.png', ph_sc4: 'r_sculpt_120.png', ph_sc5: 'r_sculpt_150.png', ph_sc6: 'r_sculpt_180.png', ph_sc7: 'r_sculpt_210.png', ph_sc8: 'r_sculpt_240.png', ph_sc9: 'r_sculpt_270.png', ph_sc10: 'r_sculpt_300.png', ph_sc11: 'r_sculpt_330.png',   // 12 кадров вращения коронки (через 30°) — стеклянный зал и TODAY
+    ph_crt: 'r_crt.png',              // 2002: ЭЛТ-монитор (ChatGPT), экран — прозрачный проём 160…752 × 95…544
     ph_crown_a: 'r_crown_000.png', ph_crown_b: 'r_crown_030.png', ph_crown_c: 'r_crown_060.png', ph_crown_d: 'r_crown_090.png',
     ph_boxes24: 'boxes24.png',        // 2023: 24 коробки — лист Эльдара «24-box cardboard sprite sheet» (28.10.2026)
     ph_scanst: 'scan_station.png',    // 2017: станция fastscan.io — вырезана из final_products (x 48…596, до столешницы 662)
@@ -17245,8 +17266,9 @@ function drawCadUI(b, gx, gy, gw, gh, vx, vy, vw, vh){
     /* корпус — столбцы 34…357 и верх со строки 32 из спрайта 392×382 (замер
        по альфе); весь спрайт шире на тень */
     const scale = (p.w / mon.w) * kk * SS, mh = mon.h * scale;
-    const mx0 = sx - mon.w * scale / 2 + 34 * scale, mw = (357 - 34) * scale;
-    const my0 = yCap - mon.foot * scale + 32 * scale;
+    const BD = mon.body || {x0: 34, x1: 357, y0: 32};   // у фото-монитора — его собственные края
+    const mx0 = sx - mon.w * scale / 2 + BD.x0 * scale, mw = (BD.x1 - BD.x0) * scale;
+    const my0 = yCap - mon.foot * scale + BD.y0 * scale;
     const yW = my0 - 2.6 * u;
     ctx.strokeStyle = dimCol; ctx.fillStyle = dimCol;
     ctx.beginPath(); ctx.moveTo(mx0, my0 - 0.5 * u); ctx.lineTo(mx0, yW - 0.8 * u);
@@ -25131,7 +25153,7 @@ async function boot(){
   initWhoosh();
   initDoc();
   USA_SPRITE = makeUsaSprite();
-  MONS.crt = makeMonitor('crt');
+  MONS.crt = crtFromPhoto() || makeMonitor('crt');
   MONS.lcd = makeMonitor('lcd');
   for (let i = 0; i < 3; i++) grains.push({c: noiseTile(256, 1)});
   // build sprites — tone and framing by era
