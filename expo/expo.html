@@ -9402,7 +9402,10 @@ function drawRec23(t){
 /* Forty-eight boxes at twice the size. The pile stands tall enough to cross
    the lines behind it, and that is fine: by the time it is in front of them
    most of it has already gone, and what is left is below the crossing. */
-const BOX_ROWS = [7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1];   // 48, bottom row first
+/* ДО ПОТОЛКА (Эльдар, 28.10.2026: «а можно гору из коробок сделать до потолка
+   буквально?»): 24 ряда, 108 коробок — верх уходит за верх кадра при
+   2000×1040 (ряд ~28 px, подошва ~665). Было 12 рядов, 48 коробок. */
+const BOX_ROWS = [7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 3, 3, 3, 3, 2, 2, 2];   // 108, bottom row first
 let BOX_PILE = null;
 function boxPile(){
   if (BOX_PILE) return BOX_PILE;
