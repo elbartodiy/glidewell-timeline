@@ -20699,7 +20699,8 @@ const STUDY_MEDIA_BY_TITLE = {
      07.10.2026. Две минуты, в конце анонс Glidewell Dental Symposium 2017.
      Звук пришёл на 6 дБ тише голосов зала — поднят компрессором с добором 8. */
   'CHAIRSIDE PERSPECTIVES': [{name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_06.mp4', label:'on Chairside'},
-                             {name:'Jim Glidewell', img:'jimnow', pid:'jim', src:'media/jim_chairside.mp4', label:'his message in Chairside magazine'}],
+                             {name:'Jim Glidewell', img:'jimnow', pid:'jim', src:'media/jim_chairside.mp4', label:'his message in Chairside magazine'},
+                             {name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_09.mp4', label:'on the Symposium'}],   // с glidewell.io (28.10.2026): статья — о канале обучения, «a flagship symposium»
   /* голоса вертикальной интеграции стоят теперь у своей станции, 1999. Первым — Джим:
      Эльдар просил его главным (02.10.2026), Jim_02_Verticalintegration → media/jim_02.mp4 */
   'VERTICAL INTEGRATION': [{name:'Jim Glidewell', img:'jimnow', pid:'jim', src:'media/jim_02.mp4', label:'on vertical integration'},
@@ -20743,7 +20744,9 @@ const STUDY_MEDIA_BY_TITLE = {
      лабораторию, видео не было вовсе. Эльдар (2026-10-01): «если он про
      CAD/CAM, он должен говорить на этой странице, а не где-то ещё». Обе прежние
      страницы остались без голоса — это осознанно и ждёт его решения. */
-  'CAD/CAM ENTERS THE LAB': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_03.mp4', label:'on CAD/CAM'}],
+  'CAD/CAM ENTERS THE LAB': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_03.mp4', label:'on CAD/CAM'},
+                             // первая коронка, сделанная компьютером, — это тема CAD/CAM; на странице R&D остаётся тоже (28.10.2026)
+                             {name:'Edsel Labao', img:'labao', pid:'labao', src:'media/labao_02.mp4', label:'on the first computer-made crown'}],
   /* его рассказ про монолит — на странице самого монолита (Эльдар, 2026-09-23) */
   /* У пончиков своя страница на 1984-м, там же и голос Джима (Эльдар, 02.10.2026). */
   'FRIDAY DONUTS': [{name:'Jim Glidewell', img:'jimnow', pid:'jim', src:'media/jim_03.mp4', label:'on the Friday donuts'}],
@@ -20752,6 +20755,8 @@ const STUDY_MEDIA_BY_TITLE = {
      на 10 дБ тише зала — поднят компрессором с добором 11. */
   'BRUXZIR': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_05.mp4', label:'on monolithic BruxZir'},
               {name:'Jim Glidewell', img:'jimnow', pid:'jim', src:'media/jim_bruxzir.mp4', label:'on the BruxZir rebrand, seven years on'},
+              // MASTER/Labao_03_Bruxzir (28.10.2026), речь −23.8 → −14.3 дБ (makeup 10.5)
+              {name:'Edsel Labao', img:'labao', pid:'labao', src:'media/labao_03.mp4', label:'on BruxZir'},
               /* архивный фильм 2008 года о том, как делают BruxZir — от порошка до печи,
                  ещё до роботов: это про материал, поэтому он вернулся сюда с фабрики
                  (Эльдар, 20.10.2026: «технология отдельно, роботы отдельно») */
@@ -20789,13 +20794,22 @@ const STUDY_MEDIA_BY_TITLE = {
   /* официальный ролик Glidewell (YouTube A2u-BKs_5rc, 20.03.2024): Glidewell HT —
      бывший Hahn Tapered Implant System. Эльдар прислал ссылку 20.10.2026; 640×360,
      звук поднят к уровню зала (−22,2 → −14,6 дБ, компрессор с добором 9). */
-  'HAHN TAPERED IMPLANT': [{name:'Glidewell', src:'media/glidewell_ht_2024.mp4', label:'Introduction to the Glidewell HT Implant System'}],
+  'HAHN TAPERED IMPLANT': [{name:'Glidewell', src:'media/glidewell_ht_2024.mp4', label:'Introduction to the Glidewell HT Implant System'},
+                          // MASTER/DrPaul_03_Guidingsurgery2dprint (28.10.2026): в статье — наборы для навигационной хирургии; −18.3 → −14.4 дБ
+                          {name:'Dr. Paul Feuerstein', img:'feuerstein', pid:'feuerstein', src:'media/feuerstein_03.mp4', label:'on guided surgery and 3D printing'}],
   /* Азерников про полную оцифровку встаёт ПЕРВЫМ: страница про то, как
      лаборатория въезжает в кабинет, и это ровно его предмет, а Парк на ней
      говорит про симпозиум. Первый в списке — тот, что начинает играть, когда
      страница открывается (Эльдар, 2026-09-23: «Full digitalization — в 2017»). */
   'GLIDEWELL.IO': [{name:'Sergei Azernikov, PhD', img:'azernikov', pid:'azernikov', src:'media/azernikov_04.mp4', label:'on full digitalization'},
-                   {name:'Dr. Neil Park', img:'park', pid:'park', src:'media/park_09.mp4', label:'on the Symposium'}],
+                   /* ГОЛОСА ПО ТЕМЕ (Эльдар, 28.10.2026: «Нил Парк рассказывает о симпозиуме — а там
+                      вообще не в тему»). park_09 ушёл на страницу Chairside (там статья о
+                      канале обучения и «a flagship symposium»); сюда — ролики из MASTER, чьи
+                      названия Эльдар дал по теме: DrPaul_04_Glidewellio и
+                      DrAbdul_02_Samedaycrownexperience (коронка за один визит — суть glidewell.io).
+                      Речь выровнена по залу (vprobe −14.6/−14.2; компрессор VLC, makeup 7/9). */
+                   {name:'Dr. Paul Feuerstein', img:'feuerstein', pid:'feuerstein', src:'media/feuerstein_04.mp4', label:'on glidewell.io'},
+                   {name:'Dr. Abdul Alas', src:'media/abdul_02.mp4', label:'on his same-day crown experience'}],
   /* на 2018 стоял azernikov_01 — общий рассказ о себе; страница про сеть,
      обученную на архиве случаев, и голос ей нужен про этот архив (Эльдар,
      2026-09-23). Ложится в поток после первого абзаца, как на фабрике. */
