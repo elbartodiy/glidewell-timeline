@@ -5338,6 +5338,7 @@ function capZoneGate(b){
    прежние 936: в покое она на 801, на наезде едет вниз вместе с полом и дальше 936 не
    уходит (при наезде к экспонату, 430, она бы ушла под линейку). */
 const CAP_FLOOR_ZREF = 240;
+const SLAB_INK = '238,218,197';   // камень плит семидесятых (203,186,168), поднятый до 238 — см. ЦВЕТ СТОЛЕШНИЦЫ
 function capFootFloor(){
   const foot0 = Math.min(H * 0.905, RULE_CLEAR() - 40 * SS);
   const kRef = CFG.F / (CFG.F - CAP_FLOOR_ZREF);
@@ -5443,7 +5444,8 @@ function drawBenchDescs(){
       ctx.textAlign = 'left';
       ctx.font = eraFont(23 * SS, '', seg.font);
       if (!b._dP || b._dPw !== Math.round(colw)){ b._dP = wrapCalc(b.d, colw); b._dPw = Math.round(colw); }
-      ctx.fillStyle = `rgba(226,232,238,${(dAmt * 0.92).toFixed(3)})`;
+      // у 1973-го — тумбы под камнем лабораторий, как плита 1976-го: тот же тёплый камень
+      ctx.fillStyle = `rgba(${b.descPed === 'labs73' ? SLAB_INK : '226,232,238'},${(dAmt * 0.92).toFixed(3)})`;
       ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 6 * SS; ctx.shadowOffsetY = 2 * SS;
       const lh = 32 * SS;
       let top = P.y0 + 64 * SS;
@@ -5588,7 +5590,12 @@ function drawBenchDescs(){
       /* 1979's line lies on the dark wood of the models' plinth, so it is set
          light there; every other recreation reads dark on its pale slab — and
          so does 1973's, lying across the two pale stones of its labs. */
-      ink = onModels ? '236,228,218' : '34,41,50';
+      /* ЦВЕТ СТОЛЕШНИЦЫ (Эльдар, 29.10.2026: «1976 — цвет текста чуть другой, он
+         холоднее, чем надо; я думаю, нам нужен цвет столешницы»). Было 236,228,218 —
+         серее и холоднее камня. Камень плиты над деревом по кадру 1920×1080 —
+         203,186,168; строка — его оттенок, поднятый до 238 по старшему каналу,
+         чтобы читаться на тёмном дереве: 238,218,197. Та же плита у 1979-го. */
+      ink = onModels ? SLAB_INK : '34,41,50';
       /* 205 put 1979's line most of the way down the counter's face, reading
          as something lying on the floor. It belongs just under the top of that
          face, where the brown begins. */
