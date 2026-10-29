@@ -10357,6 +10357,26 @@ function drawPendant(t){
   PENDANT_AT = {x: PENDANT_X, y: (PT + PB) / 2 - 12, z: cz};
   ctx.save();
   contactShadow(px2, Y(1080), 40 * S, 0.30);
+  /* ПУЛЬТ — ФОТО (реализм 09, Эльдар, 29.10.2026: «не все, а только там кнопку
+     отдельную… пульт на палке»; роботов и ячейки не трогать — «там надо
+     переделывать весь концепт»). Лист 320×692: коробка — строки 2…345 во всю
+     ширину, стойка — столбцы 112…162. Ширина коробки — прежние 112 (0.35 на точку),
+     верх — на PT; ось стойки — на px2. Лист обрезан на строке 600, над фланцем;
+     низ стойки уходит за прилавок. */
+  const HM = PROP_SPRITES.ph_r19hmi;
+  if (HM){
+    /* стойка на листе — столбцы 112…162 (замер альфы по строкам 360…620), ось 137;
+       ниже строки 600 лист срезан, и стойка тянется до пола полосой из самого листа
+       (строки 560…600), растянутой по высоте: та же сталь, тот же блик */
+    const sc = 112 / 320, cut = 600, ax = 137;
+    const src = spriteMip(HM, HM.w * sc * S, HM.h * sc * S);
+    const fy = (src.height || src.naturalHeight) / 692, fx = (src.width || src.naturalWidth) / 320;
+    const x0 = px2 - ax * sc * S, yTopB = Y(PT);
+    const yCut = yTopB + cut * sc * S;
+    ctx.drawImage(src, 112 * fx, 560 * fy, 51 * fx, 40 * fy, x0 + 112 * sc * S, yCut - 1, 51 * sc * S, Y(1080) - yCut + 1);
+    ctx.drawImage(src, 0, 0, src.width || src.naturalWidth, cut * fy, x0, yTopB, 320 * sc * S, cut * sc * S);    ctx.restore();
+    return;
+  }
   ctx.strokeStyle = 'rgba(168,174,180,0.9)'; ctx.lineWidth = Math.max(1, 6 * S);
   ctx.beginPath(); ctx.moveTo(px2, Y(1080)); ctx.lineTo(px2, Y(PB)); ctx.stroke();
   ctx.fillStyle = '#dcd8cf';
@@ -14940,6 +14960,7 @@ async function loadPhotoSkin(){
     ph_t00f: 'r_t00_frame.png', ph_t00x: 'r_t00_crosshead.png', ph_t00g: 'r_t00_gauge_dial.png',
     ph_t00c: 'r_t00_control.png', ph_t00p: 'r_t00_powder_press.png', ph_t00h: 'r_t00_sinter_furnace.png',
     ph_t00b: 'r_t00_conveyor.png',
+    ph_r19hmi: 'r_r19_hmi_terminal.png',   // 2019: пульт на стойке (реализм 09, только он — Эльдар, 29.10.2026)
     ph_crt: 'r_crt.png',              // 2002: ЭЛТ-монитор (ChatGPT), экран — прозрачный проём 160…752 × 95…544
     ph_crown_a: 'r_crown_000.png', ph_crown_b: 'r_crown_030.png', ph_crown_c: 'r_crown_060.png', ph_crown_d: 'r_crown_090.png',
     ph_boxes24: 'boxes24.png',        // 2023: 24 коробки — лист Эльдара «24-box cardboard sprite sheet» (28.10.2026)
