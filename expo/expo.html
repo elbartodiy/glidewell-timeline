@@ -5329,6 +5329,21 @@ function capZoneGate(b){
   const x = cam.x;
   return Math.max(0, Math.min(1, (x - z.s) / Math.max(1, z.rs), (z.e - x) / Math.max(1, z.re)));
 }
+/* СТРОКА НА ПОЛУ ЕДЕТ ВМЕСТЕ С ПОЛОМ (Эльдар, 29.10.2026: «эта надпись поднимается
+   выше, когда камера автоматом подлетает к телевизору… попробуй поставить изначально
+   надпись на её место, когда камера будет приближаться»). Строки на полу проёма (1999,
+   2007) стояли на экране (низ — 936 из 1080), а пол при наезде тура на экран фильма
+   (240, меню настроек) уходил вниз почти на сотню пикселей — строка будто всплывала.
+   Теперь её низ — точка на переднем плане, которая при наезде 240 приходит ровно на
+   прежние 936: в покое она на 801, на наезде едет вниз вместе с полом и дальше 936 не
+   уходит (при наезде к экспонату, 430, она бы ушла под линейку). */
+const CAP_FLOOR_ZREF = 240;
+function capFootFloor(){
+  const foot0 = Math.min(H * 0.905, RULE_CLEAR() - 40 * SS);
+  const kRef = CFG.F / (CFG.F - CAP_FLOOR_ZREF);
+  const Yw = CFG.horizon + (foot0 / SS - CFG.horizon) / kRef;
+  return Math.min(foot0, py(Yw, k(0)));
+}
 function drawBenchDescs(){
   CAP_RECT = null;
   const kf = k(0);
@@ -5485,7 +5500,7 @@ function drawBenchDescs(){
         ctx.beginPath(); ctx.rect(gl + 8 * SS, 0, gr - gl - 16 * SS, H); ctx.clip();
         ctx.fillStyle = `rgba(${descInk(seg)},${(aG * 0.92).toFixed(3)})`;
         ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 2*SS;
-        const capFoot = Math.min(H * 0.905, RULE_CLEAR() - 40 * SS);
+        const capFoot = capFootFloor();
         const top = capFoot - (b._d.length - 1) * 32 * SS;
         drawCapLines(b._d, cxG, top, 32 * SS, wide);
       }
@@ -5508,7 +5523,7 @@ function drawBenchDescs(){
      block by its foot instead: the last line always lands on the same rule, and
      longer captions grow upward. */
   {
-        const capFoot = Math.min(H * 0.905, RULE_CLEAR() - 40 * SS);   // над линейкой, которая поднялась над полосой фактов
+        const capFoot = capFootFloor();   // над линейкой, которая поднялась над полосой фактов; едет с полом (см. capFootFloor)
         const top = capFoot - (b._d.length - 1) * 32 * SS;
         /* Some beats cannot carry their thesis under the title: at 2022 the
            whole bay is a photograph and an italic line laid over it is simply
