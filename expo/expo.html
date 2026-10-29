@@ -14688,6 +14688,7 @@ async function loadPhotoSkin(){
        Artefacts/Realism_2026-10-27/final — очищен от обрывков (оставлен главный
        кусок по альфе), обрезан по альфе, ужат; r_* */
     ph_sc0: 'r_sculpt_000.png', ph_sc1: 'r_sculpt_030.png', ph_sc2: 'r_sculpt_060.png', ph_sc3: 'r_sculpt_090.png', ph_sc4: 'r_sculpt_120.png', ph_sc5: 'r_sculpt_150.png', ph_sc6: 'r_sculpt_180.png', ph_sc7: 'r_sculpt_210.png', ph_sc8: 'r_sculpt_240.png', ph_sc9: 'r_sculpt_270.png', ph_sc10: 'r_sculpt_300.png', ph_sc11: 'r_sculpt_330.png',   // 12 кадров вращения коронки (через 30°) — стеклянный зал и TODAY
+    ph_gradcap: 'r_gradcap.png', ph_jaw: 'r_jaw.png', ph_papers: 'r_papers.png', ph_lplinth: 'r_lplinth.png',
     ph_crt: 'r_crt.png',              // 2002: ЭЛТ-монитор (ChatGPT), экран — прозрачный проём 160…752 × 95…544
     ph_crown_a: 'r_crown_000.png', ph_crown_b: 'r_crown_030.png', ph_crown_c: 'r_crown_060.png', ph_crown_d: 'r_crown_090.png',
     ph_boxes24: 'boxes24.png',        // 2023: 24 коробки — лист Эльдара «24-box cardboard sprite sheet» (28.10.2026)
@@ -14784,10 +14785,17 @@ async function loadPhotoSkin(){
 function initDecor(){
   for (const kind of ['jar','plaster','toolbox','mailtray','box','papers','crtOff','mill','palmNear','jaw1','jaw2','gradcap'])
     PROP_SPRITES[kind] = makeProp(kind);
+  /* РЕАЛИЗМ (28.10.2026): шапочка 2019, модель челюсти и стопка бумаг — фото
+     набора ChatGPT. Челюсть и бумаги — только в эпохах 1993+ (белый гипс и
+     белая бумага не из ремесленного века; у 1907–1988 прежние рисованные). */
+  if (PROP_SPRITES.ph_gradcap) PROP_SPRITES.gradcap = PROP_SPRITES.ph_gradcap;
+  if (PROP_SPRITES.ph_jaw) PROP_SPRITES.jawPh = PROP_SPRITES.ph_jaw;
+  if (PROP_SPRITES.ph_papers) PROP_SPRITES.papersPh = PROP_SPRITES.ph_papers;
+  const JP = PROP_SPRITES.jawPh ? 'jawPh' : 'jaw2', PP2 = PROP_SPRITES.papersPh ? 'papersPh' : 'papers';
   /* the craft era loses the jar and the plaster arch: the jar renders as a
      tall black bottle against that pale counter, and the arch as three teeth
      lying loose on the table — Eldar asked for both gone. */
-  const eraProps = [['toolbox','jaw1','papers','toolbox'], ['mailtray','jaw1','box','plaster'], ['papers','jaw2','crtOff','jaw2'], ['jaw2','papers']];
+  const eraProps = [['toolbox','jaw1','papers','toolbox'], ['mailtray','jaw1','box','plaster'], [PP2, JP, 'crtOff', JP], [JP, PP2]];
   const R = rng(20260819);
   // bench props between beats
   for (let si = 0; si < SEGMENTS.length; si++){
