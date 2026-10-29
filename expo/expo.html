@@ -184,6 +184,10 @@ const BEATS = [
    th:'',
    /* затравка вместо пересказа страницы (Эльдар, 26.10.2026: «на линии нам нужно только небольшая затравка для раскрытия темы — про что внутри»; «го»). Было: «Jim opens a second lab, on the third floor at 172 N. Tustin Avenue in Orange — the one-man bench starts to multiply.» */
    d:'A second lab in Orange — the one-man bench starts to multiply.',   // the memoir's own caption; the earlier line said El Toro, which appears nowhere in the book
+   /* строка — на лице левой тумбы (29.10.2026): своего прилавка у 1973-го нет, и
+      строка садилась на прилавок семидесятых, видна была с −1558 до −168 от года и
+      гасла раньше, чем год вставал в центр */
+   descPed:'labs73',
    /* the two labs stand as models on their own stones where the counter used
       to run (drawLabs73); the photograph of the second lab hangs on the wall
       beside the year, and the line goes on the counter that follows */
@@ -5293,6 +5297,38 @@ function drawZirconiaLine(x, y, w, h, t, a){
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.restore();
 }
+/* ОДНА УХОДИТ — ДРУГАЯ ПРОЯВЛЯЕТСЯ (Эльдар, 29.10.2026: «одновременно — одна
+   уходит, другая появляется — и всё это там, где это уместно относительно их
+   нахождения на экране»). Проход по линии (1920×1080) показал: строка жила, пока
+   целиком в кадре, — и 2007-я горела рядом со строкой 2005-го, 1973-я гасла
+   раньше, чем её год вставал в центр, 2002-я появлялась, когда год уже стоял в
+   середине. Теперь у каждой строки ещё и окно своего года: не раньше 620 до него
+   и не позже 770 после (так и стоят строки под своими годами), а между соседями —
+   передача на середине пути от года к году: предыдущая гаснет на тех же шагах, на
+   которых проявляется следующая (ширина наплыва — до 300, у тесных годов — половина
+   промежутка). Кадр по-прежнему решает тоже: строка за краем не горит. 1984 и 1988
+   — вне правила (Эльдар: «там другое немного — поработаем позже над видом»). */
+const CAP_ZONE_SKIP = new Set(['1984', '1988']);
+let CAP_ZONES = null;
+function capZoneGate(b){
+  if (CAP_ZONE_SKIP.has(b.y)) return 1;
+  if (!CAP_ZONES || CAP_ZONES.n !== BEATS.length){
+    const list = BEATS.filter(q => q.d && !q.under && !q.descHide && !CAP_ZONE_SKIP.has(q.y) && !deskCap(q))
+                      .sort((p, q) => p.x - q.x);
+    CAP_ZONES = {n: BEATS.length, m: new Map()};
+    list.forEach((q, i) => {
+      const P = list[i - 1], N = list[i + 1];
+      const fP = P ? Math.min(300, (q.x - P.x) * 0.5) : 0, fN = N ? Math.min(300, (N.x - q.x) * 0.5) : 0;
+      const hP = P ? (P.x + q.x) / 2 : -Infinity, hN = N ? (q.x + N.x) / 2 : Infinity;
+      CAP_ZONES.m.set(q, {s: Math.max(hP - fP / 2, q.x - 620), rs: hP - fP / 2 >= q.x - 620 ? fP : 220,
+                          e: Math.min(hN + fN / 2, q.x + 770), re: hN + fN / 2 <= q.x + 770 ? fN : 220});
+    });
+  }
+  const z = CAP_ZONES.m.get(b);
+  if (!z) return 1;
+  const x = cam.x;
+  return Math.max(0, Math.min(1, (x - z.s) / Math.max(1, z.rs), (z.e - x) / Math.max(1, z.re)));
+}
 function drawBenchDescs(){
   CAP_RECT = null;
   const kf = k(0);
@@ -5315,7 +5351,12 @@ function drawBenchDescs(){
        position and could never come back — 1989's simply stopped appearing. */
     if (b.descHide){ b._capA = 0; continue; }   // a beat whose line the hall does not show
     if (deskCap(b)) continue;   // надпись на стене — рисуется со стеной (см. проход годов)
-    const cwP = capX(b, kf), halfC = capColW(b) / 2, fadeC = 130 * SS;
+    let cwP = capX(b, kf), halfC = capColW(b) / 2;
+    const fadeC = 130 * SS;
+    // строка на лице тумбы 1973-го входит в кадр и уходит из него вместе с тумбой
+    if (b.descPed === 'labs73' && LAB73_FACE && LAB73_FACE.frame === state.time){
+      cwP = (LAB73_FACE.x0 + LAB73_FACE.x1) / 2; halfC = (LAB73_FACE.x1 - LAB73_FACE.x0) * 0.39;
+    }
     /* A LINE AT THE FOOT OF THE FRAME BELONGS TO ITS OWN BAY. descWall lines are
        drawn in the middle of the frame, but their fade was still measured on
        capX — the counter position of their beat — and capX only nears the frame's
@@ -5332,7 +5373,8 @@ function drawBenchDescs(){
           Math.min((W - (cwP + halfC)) / fadeC, (cwP - halfC) / fadeC)));
     /* capNear [a, b] — строка видна целиком в a от года и гаснет к b: у 2022-го
        дальше ~550 она съезжала с пола пролёта на тёмный клин (обход 27.10.2026) */
-    const capWant2 = b.capNear ? capWant * Math.max(0, Math.min(1, (b.capNear[1] - Math.abs(b.x - cam.x)) / (b.capNear[1] - b.capNear[0]))) : capWant;
+    const capWant2 = (b.capNear ? capWant * Math.max(0, Math.min(1, (b.capNear[1] - Math.abs(b.x - cam.x)) / (b.capNear[1] - b.capNear[0]))) : capWant)
+                   * capZoneGate(b);
     b._capA = (b._capA || 0) + (capWant2 - (b._capA || 0)) * Math.min(1, (state.dt || 0.016) * 10);
     /* eased, so a line that loses its place walks off rather than blinking */
     b._capH = (b._capH == null ? 1 : b._capH) +
@@ -5378,7 +5420,8 @@ function drawBenchDescs(){
        описание — выравнивание по левому краю»), как на площадке 2000-го. */
     /* у 1989-го строка — на лице чёрной тумбы с коробкой: одна поверхность
        вместо тумбы и двух клиньев пола (обход 27.10.2026) */
-    const PF = b.descPed === 'photo' ? (b.ped && b.ped._face) : (MODEL93 && MODEL93.ped);
+    const PF = b.descPed === 'photo' ? (b.ped && b.ped._face)
+             : b.descPed === 'labs73' ? LAB73_FACE : (MODEL93 && MODEL93.ped);
     if (b.descPed && PF && PF.frame === state.time){
       const P = PF, pw = P.x1 - P.x0, colw = pw * 0.78, xL = (P.x0 + P.x1) / 2 - colw / 2;
       ctx.save();
@@ -12473,6 +12516,7 @@ function makeUsaSprite(){
    own counter, not as a thing put on one. */
 let X73 = null;
 const LABS73_CAP = 0.372;   // низ каменной шляпки тумб в рендере labs_1973 (замер выше, в drawLabs73)
+let LAB73_FACE = null;
 function drawLabs73(){
   const sp = PROP_SPRITES.ph_labs73;
   if (!sp) return;
@@ -12498,6 +12542,9 @@ function drawLabs73(){
      дерево. Цель кончается по низу камня. */
   { const bi = BEATS.findIndex(b => b.y === '1973');
     if (bi >= 0) pushHit(xR, yFoot - hR, wR, hR * LABS73_CAP, {type: 'study', beat: bi}); }
+  /* лицо левой тумбы — для строки года (descPed 'labs73'): столбцы 49…947 из 1962
+     (замер по альфе на 0,55 высоты), дерево — ниже латунной полосы, с 0,380 */
+  LAB73_FACE = {x0: xR + wR * 49 / 1962, x1: xR + wR * 947 / 1962, y0: yFoot - hR + hR * 0.380, frame: state.time};
 }
 
 /* 1976 · ГЛАВНАЯ УЛИЦА ОСЕНЬЮ. Эльдар (02.10.2026) прислал одну диораму вместо
