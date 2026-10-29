@@ -9415,6 +9415,17 @@ function boxPile(){
   });
   return BOX_PILE;
 }
+/* КОРОБКИ — ФОТО, НЕ ПРЯМОУГОЛЬНИКИ. Эльдар (28.10.2026) положил лист из 24
+   коробок («сможешь ли из них собрать ту гору коробок?»). Клетки листа — по
+   альфе (замер 28.10: 6 × 4, ~235 × 152, нижний ряд выше ~172); коробка слота i —
+   клетка (i·7 + r·5) mod 24, чтобы соседи не повторялись. Каждая снята спереди
+   с крышкой и правым боком, как и рисованная: ширина фото = лицо × 1.14, низ —
+   на линии ряда, кладутся снизу вверх и слева направо — верхняя закрывает
+   крышку нижней, правая — бок левой. */
+const BOX24 = [[23,95,233,152],[276,95,233,151],[527,93,233,153],[779,93,235,153],[1033,94,235,152],[1282,94,237,152],
+  [21,310,235,154],[273,309,235,155],[526,309,232,155],[777,307,238,157],[1032,309,238,155],[1283,310,236,154],
+  [23,533,233,152],[274,534,235,150],[527,531,235,154],[779,531,236,153],[1032,533,234,150],[1285,530,234,154],
+  [24,751,233,171],[271,747,240,175],[527,753,235,168],[779,750,236,170],[1031,745,239,175],[1283,748,236,172]];
 function drawBoxPile(b, t){
   const g = b.rig, kk = k(bz(g.lz ?? 150));
   const sx = px(b.x + (g.dx || 0), kk);
@@ -9442,6 +9453,14 @@ function drawBoxPile(b, t){
     ctx.save();
     ctx.globalAlpha = goingA;
     ctx.translate(bx, by); ctx.rotate(q.lean); ctx.translate(-bx, -by);
+    const BS = PROP_SPRITES.ph_boxes24;
+    if (BS){
+      const [cx0, cy0, cw, chh] = BOX24[(i * 7 + q.r * 5) % 24];
+      const dw = bw * 1.14, dh = dw * chh / cw;
+      ctx.drawImage(BS.c, cx0, cy0, cw, chh, bx - bw / 2, by - dh, dw, dh);
+      ctx.restore();
+      continue;
+    }
     // the face, the lid and the side it turns away
     ctx.fillStyle = '#d5cbb8';
     ctx.fillRect(bx - bw/2, by - bh, bw, bh);
@@ -14561,7 +14580,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261027-scanst';   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261028-boxes24';   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -14636,6 +14655,7 @@ async function loadPhotoSkin(){
        она, а на финальном столе остаётся прежний кадр: Эльдар просил заменить
        ту, что «не на последнем самом финале, а чуть раньше» (2026-09-24). */
     ph_mill_v1: 'mill_io_v1.png',
+    ph_boxes24: 'boxes24.png',        // 2023: 24 коробки — лист Эльдара «24-box cardboard sprite sheet» (28.10.2026)
     ph_scanst: 'scan_station.png',    // 2017: станция fastscan.io — вырезана из final_products (x 48…596, до столешницы 662)
     ph_scanbay: 'scan_bay.jpg',       // the 2022 bay: the whole render, rectangle and all
     ph_hall_wall: 'hall_wall.png',    // the glass hall: the room's long side, frontal, fitted to the wall's height
