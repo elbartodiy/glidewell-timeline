@@ -6354,13 +6354,26 @@ function drawProjBeam(lx, ly, A, B, lamp, t, seed, gain){
   g.restore();
   g.globalCompositeOperation = 'source-over';
   g.setTransform(1, 0, 0, 1, 0, 0);
+  /* РАСТЯЖКА В ДВА ШАГА (Эльдар, 29.10.2026: «вижу пикселизацию лучей —
+     пикселизированы, а потом разблюрены, но огромные пиксели всё равно видны»).
+     Одна билинейная растяжка ×10 оставляет сетку листа: в каждом узле — излом
+     яркости, и у 1993-го (×2.6) над серой стеной 1995-го клетки читались
+     ступеньками по 10 px. Сначала ×10/3 на промежуточный лист, потом ×3 на
+     сцену: размытие то же, изломы сглажены дважды и не видны. */
+  const S3 = 1 / 3, mw = Math.ceil(bw / S6 * S3), mh = Math.ceil(bh / S6 * S3);
+  if (!PBEAM.m){ PBEAM.m = document.createElement('canvas'); PBEAM.mg = PBEAM.m.getContext('2d'); }
+  const m = PBEAM.m, mg = PBEAM.mg;
+  if (m.width < mw || m.height < mh){ m.width = Math.max(m.width, mw); m.height = Math.max(m.height, mh); }
+  mg.clearRect(0, 0, mw, mh);
+  mg.imageSmoothingEnabled = true;
+  mg.drawImage(c, 0, 0, bw, bh, 0, 0, mw, mh);
   ctx.save();
   ctx.imageSmoothingEnabled = true;
   ctx.globalCompositeOperation = 'screen';
   // целая часть усиления — повторный проход, дробная — альфа последнего
   for (let gp = gain || 1; gp > 0.01; gp -= 1){
     ctx.globalAlpha = Math.min(1, gp);
-    ctx.drawImage(c, 0, 0, bw, bh, x0, y0, bw / S6, bh / S6);
+    ctx.drawImage(m, 0, 0, mw, mh, x0, y0, mw / S3, mh / S3);
   }
   ctx.restore();
 }
