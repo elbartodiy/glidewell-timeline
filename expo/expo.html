@@ -14854,7 +14854,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261028-realism';   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261029-tester';   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -14935,6 +14935,11 @@ async function loadPhotoSkin(){
     ph_sc0: 'r_sculpt_000.png', ph_sc1: 'r_sculpt_030.png', ph_sc2: 'r_sculpt_060.png', ph_sc3: 'r_sculpt_090.png', ph_sc4: 'r_sculpt_120.png', ph_sc5: 'r_sculpt_150.png', ph_sc6: 'r_sculpt_180.png', ph_sc7: 'r_sculpt_210.png', ph_sc8: 'r_sculpt_240.png', ph_sc9: 'r_sculpt_270.png', ph_sc10: 'r_sculpt_300.png', ph_sc11: 'r_sculpt_330.png',   // 12 кадров вращения коронки (через 30°) — стеклянный зал и TODAY
     ph_gradcap: 'r_gradcap.png', ph_jaw: 'r_jaw.png', ph_papers: 'r_papers.png', ph_lplinth: 'r_lplinth.png',
     ph_m07: 'r_m07_mill_housing.png', ph_m07disc: 'r_m07_disc_intact.png', ph_m07bur: 'r_m07_spindle_bur.png',
+    /* реализм 02 — машина R&D 2000 (29.10.2026): у манометра впечатанная стрелка
+       закрашена цветом циферблата (r_t00_gauge_dial), живую рисует зал */
+    ph_t00f: 'r_t00_frame.png', ph_t00x: 'r_t00_crosshead.png', ph_t00g: 'r_t00_gauge_dial.png',
+    ph_t00c: 'r_t00_control.png', ph_t00p: 'r_t00_powder_press.png', ph_t00h: 'r_t00_sinter_furnace.png',
+    ph_t00b: 'r_t00_conveyor.png',
     ph_crt: 'r_crt.png',              // 2002: ЭЛТ-монитор (ChatGPT), экран — прозрачный проём 160…752 × 95…544
     ph_crown_a: 'r_crown_000.png', ph_crown_b: 'r_crown_030.png', ph_crown_c: 'r_crown_060.png', ph_crown_d: 'r_crown_090.png',
     ph_boxes24: 'boxes24.png',        // 2023: 24 коробки — лист Эльдара «24-box cardboard sprite sheet» (28.10.2026)
@@ -15481,7 +15486,16 @@ function drawCrownTester(b, t){
      растворялась поверх створки (Эльдар, 2026-09-29); на настиле и под
      прессом — после всего, чтобы её не закрыла колонна. Граница проходов —
      устье тоннеля, там же, где край короба, поэтому шва не видно. ── */
-  const vDeckC = 52;
+  /* МАШИНА ИЗ ФОТО-ДЕТАЛЕЙ (реализм 02, 29.10.2026; Эльдар: «почему пресс не
+     поменял?» — «го»). Если все семь деталей загружены, рисованная машина не
+     рисуется: станина с колонной, траверса, манометр, пульт, печь слева, пресс для
+     порошка справа и лента — фото набора ChatGPT, каждая по своему замеру альфы.
+     Анимация та же: коронка выходит из печи, едет к прессу, голова давит, стрелка
+     идёт по нагрузке, три из четырёх — в осколки, целые уходят за корпус пресса.
+     Створок у коробов больше нет — на фото их не открыть. */
+  const TP = PROP_SPRITES, PH = !!(TP.ph_t00f && TP.ph_t00x && TP.ph_t00g && TP.ph_t00c && TP.ph_t00p && TP.ph_t00h && TP.ph_t00b);
+  // верх ленты: строка 35 из 210 листа ленты при 504 единицах на 1400 — (210 − 35)·0.36 = 63
+  const vDeckC = PH ? 63 : 52;
   const brokeC = !pass && ph >= TESTER.load;
   let cu = -180, cv = vDeckC, sc = 1, al = 1;
   if (ph < TESTER.outUp){ cu = -180; cv = vDeckC; sc = 0.86; al = ease(seg(0.15, TESTER.outUp)); }
@@ -15535,6 +15549,69 @@ function drawCrownTester(b, t){
     }
     ctx.restore();
   };
+  const halfC = 46 * sc * (spC ? spC.w / spC.h : 0.9) * CB.fw / CB.fh / 2;   // полуширина ВИДИМОЙ коронки, в единицах чертежа
+  const crownInPort = (cu + halfC < -108) || (cu - halfC > 108);
+  const colTop = PH ? 360 : 356;
+  if (PH){
+    const sp = (k2, u0, vTop, scl) => { const q = TP[k2]; ctx.drawImage(spriteMip(q, q.w * scl * S1, q.h * scl * S1), X(u0), Y(vTop), q.w * scl * S1, q.h * scl * S1); };
+    // станина с колонной: 359×800 при 0.45 — колонна (столбцы 91…280) 85 единиц, верх на 360, база за лентой
+    sp('ph_t00f', -359 * 0.45 / 2, 800 * 0.45, 0.45);
+    /* манометр: центр втулки (110, 111) листа 222×696 — над своей стойкой, на (−100, 212);
+       0.2364 — радиус циферблата 110 точек на 26 единиц; низ стойки (74) уходит за ленту */
+    const GS = 26 / 110;
+    sp('ph_t00g', -100 - 110 * GS, 212 + 111 * GS, GS);
+    const load = ease(seg(TESTER.down, TESTER.load)) * (1 - (pass ? ease(seg(TESTER.load + 0.5, TESTER.up)) : ease(seg(TESTER.load, TESTER.load + 0.25))));
+    {
+      // стрелка: от нижней левой риски (138°) по часовой через верх к нижней правой (402°)
+      const a = (138 + 264 * load) * Math.PI / 180, gx = X(-100), gy = Y(212), L = 19 * S1;
+      ctx.save();
+      ctx.strokeStyle = '#e0261a'; ctx.lineCap = 'round'; ctx.lineWidth = Math.max(1.2, 1.7 * S1);
+      ctx.beginPath(); ctx.moveTo(gx - Math.cos(a) * 4 * S1, gy - Math.sin(a) * 4 * S1);
+      ctx.lineTo(gx + Math.cos(a) * L, gy + Math.sin(a) * L); ctx.stroke();
+      const hub = ctx.createRadialGradient(gx - 0.8 * S1, gy - 0.8 * S1, 0, gx, gy, 2.8 * S1);
+      hub.addColorStop(0, '#f2f2f0'); hub.addColorStop(1, '#8d8b88');
+      ctx.fillStyle = hub; ctx.beginPath(); ctx.arc(gx, gy, 2.8 * S1, 0, 7); ctx.fill();
+      ctx.restore();
+    }
+    /* пульт: коробка — строки 7…265 листа 220×707, при 0.284 (62 единицы ширины) её низ
+       на 189 — над траверсой не нависает, стойка (низ 63) уходит за ленту */
+    sp('ph_t00c', 99.5 - 110 * 0.284, 189 + 265 * 0.284, 0.284);
+    /* траверса: 413×329 при 0.33 (балка 136, боёк 40); низ бойка — строка 327. В покое
+       низ бойка на 64 выше верха коронки (63 + 46), к нагрузке — вдавлен на PRESS_BITE */
+    const crownTop = vDeckC + 46;
+    const av = crownTop + 64 - (64 * ease(seg(TESTER.atPress, TESTER.down)) + PRESS_BITE * biteU) * (1 - ease(seg(TESTER.load, TESTER.up)));
+    sp('ph_t00x', -413 * 0.33 / 2, av + 327 * 0.33, 0.33);
+    // пресс для порошка справа (596×800, 138 единиц) — целые коронки уходят за него
+    sp('ph_t00p', 108, 800 * 138 / 596, 138 / 596);
+    // печь слева (558×684, 138 единиц); её окно — столбцы 219…458, строки 263…539
+    const FS = 138 / 558;
+    sp('ph_t00h', -246, 684 * FS, FS);
+    {
+      const wx = X(-246 + 338 * FS), wy = Y(684 * FS - 400 * FS), wr = 150 * FS * S1;
+      const puls = 0.75 + 0.25 * Math.sin(t * 1.7) * Math.sin(t * 0.63 + 1.1);
+      const openAmt = ease(seg(0, TESTER.outUp)) * (1 - ease(seg(TESTER.outFwd, TESTER.atPress)));
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const gw = ctx.createRadialGradient(wx, wy, 0, wx, wy, wr);
+      gw.addColorStop(0, `rgba(255,170,80,${(0.22 * puls + 0.35 * openAmt).toFixed(3)})`);
+      gw.addColorStop(1, 'rgba(255,110,40,0)');
+      ctx.fillStyle = gw; ctx.beginPath(); ctx.arc(wx, wy, wr, 0, 7); ctx.fill();
+      ctx.restore();
+    }
+    // лента: 1400×210 на 504 единицы, ноги на столешнице; по её полотну бегут планки
+    sp('ph_t00b', -252, 210 * 0.36, 0.36);
+    {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(X(-244), Y(75), 488 * S1, 19 * S1); ctx.clip();
+      ctx.strokeStyle = 'rgba(0,0,0,0.22)'; ctx.lineWidth = Math.max(1, 1.1 * S1);
+      const slat = 26, off = (t * 26) % slat;
+      for (let u = -260 + off; u < 260; u += slat){ ctx.beginPath(); ctx.moveTo(X(u), Y(75)); ctx.lineTo(X(u + 3), Y(56)); ctx.stroke(); }
+      ctx.restore();
+    }
+    // коронка, ушедшая за пресс: всё, что правее его левой кромки, закрыто корпусом
+    if (!brokeC && cu - halfC > 100){
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, X(110), H); ctx.clip(); crown(al); ctx.restore();
+    }
+  } else {
   const dTopB = 58, dTopF = 40;                      // задняя и передняя кромки верха
   /* ── СТОЙКИ ПРИБОРОВ — манометра слева и пульта справа. Они УХОДЯТ ПОД
      КОНВЕЙЕР, а не стоят на нём: «там конвейер, там не может быть ничего на
@@ -15715,14 +15792,11 @@ function drawCrownTester(b, t){
      короба, её берёт проход Б, поверх всей машины. Переключение приходится на
      момент, когда створка ещё распахнута и коронку всё равно ничто не
      закрывает, поэтому шва нет ни в кадре, ни на ходу. */
-  const halfC = 46 * sc * (spC ? spC.w / spC.h : 0.9) * CB.fw / CB.fh / 2;   // полуширина ВИДИМОЙ коронки, в единицах чертежа
-  const crownInPort = (cu + halfC < -108) || (cu - halfC > 108);
   if (!brokeC && crownInPort) crown(al);
   portFront(-1); portFront(1);
 
   /* ── КОЛОННА. Светлый корпус, внутри чёрная рифлёная направляющая, сверху
      скруглённая шапка — как на снимке Shimadzu. ── */
-  const colTop = 356;
   ctx.fillStyle = hg(-52, 52, '#f2f5f8', '#aeb6be');
   ctx.beginPath();
   ctx.moveTo(X(-52), Y(dTopB)); ctx.lineTo(X(-52), Y(colTop - 16));
@@ -15811,6 +15885,7 @@ function drawCrownTester(b, t){
   ctx.fillStyle = '#d7dde3';
   ctx.beginPath(); ctx.arc(gx, gy, gr2 * 0.1, 0, 7); ctx.fill();
 
+  }
   /* КОРОНКА СТОИТ НА НАСТИЛЕ. Она ехала на высоте столика под прессом и
      оттого висела над лентой всю дорогу (Эльдар: «коронки летают по воздуху, а
      нужно чтобы были на ленте»). Столика больше нет вовсе — на референсе его и
@@ -15818,7 +15893,7 @@ function drawCrownTester(b, t){
   /* проход Б: всё остальное время — поверх машины, тоже без обрезки */
   const vDeck = vDeckC;
   if (!brokeC){
-    if (!crownInPort) crown(al);
+    if (PH ? !(cu - halfC > 100) : !crownInPort) crown(al);
   } else {
     const u = seg(TESTER.load, TESTER.load + 1.5);
     if (u < 1){
