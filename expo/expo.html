@@ -14880,7 +14880,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261029-tester';   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261029-bzf';   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -14966,7 +14966,9 @@ async function loadPhotoSkin(){
     ph_t00f: 'r_t00_frame.png', ph_t00x: 'r_t00_crosshead.png', ph_t00g: 'r_t00_gauge_dial.png',
     ph_t00c: 'r_t00_control.png', ph_t00p: 'r_t00_powder_press.png', ph_t00h: 'r_t00_sinter_furnace.png',
     ph_t00b: 'r_t00_conveyor.png',
-    ph_r19hmi: 'r_r19_hmi_terminal.png',   // 2019: пульт на стойке (реализм 09, только он — Эльдар, 29.10.2026)
+    ph_r19hmi: 'r_r19_hmi_terminal.png',
+    // 2019: фабрика BruxZir — рендеры Эльдара «BrukZirFactory*» (29.10.2026), обрезаны по альфе
+    ph_bzfF: 'r_bzf_frame.png', ph_bzfA: 'r_bzf_axis.png', ph_bzfB: 'r_bzf_beam.png', ph_bzfG: 'r_bzf_gripper.png',   // 2019: пульт на стойке (реализм 09, только он — Эльдар, 29.10.2026)
     ph_crt: 'r_crt.png',              // 2002: ЭЛТ-монитор (ChatGPT), экран — прозрачный проём 160…752 × 95…544
     ph_crown_a: 'r_crown_000.png', ph_crown_b: 'r_crown_030.png', ph_crown_c: 'r_crown_060.png', ph_crown_d: 'r_crown_090.png',
     ph_boxes24: 'boxes24.png',        // 2023: 24 коробки — лист Эльдара «24-box cardboard sprite sheet» (28.10.2026)
@@ -19559,7 +19561,7 @@ function drawFactory(t, over){
   // shade dispenser tower, left
   const kd = k(210);
   const dx0 = px(FACT_X - 470, kd);
-  if (dx0 > -300 && dx0 < W + 300){
+  if (!bzfOn() && dx0 > -300 && dx0 < W + 300){   // башня оттенков была частью прежних кабин; рама фабрики стоит на её месте
     ctx.fillStyle = '#d5d8db';
     ctx.fillRect(dx0 - 60*kd*SS, py(700, kd), 120*kd*SS, py(1080,kd)-py(700,kd));
     for (let i = 0; i < 6; i++){
@@ -19640,8 +19642,10 @@ function drawFactory(t, over){
   if (lit > 0.01){
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    for (const [cx2, cz2] of [[cellX(0), CELL_Z], [cellX(1), CELL_Z]]){
-      const kc = k(cz2), sxc = px(cx2, kc), roof = py(408, kc);
+    const BZ = bzfOn();
+    const lamps = BZ ? [[BZF.wx(340), CELL_Z], [BZF.wx(1065), CELL_Z]] : [[cellX(0), CELL_Z], [cellX(1), CELL_Z]];
+    for (const [cx2, cz2] of lamps){
+      const kc = k(cz2), sxc = px(cx2, kc), roof = py(BZ ? BZF.wy(26) : 408, kc);
       if (sxc < -400 || sxc > W + 400) continue;
       const halfC = 150 * kc * SS;
       /* BOTH FITTINGS ARE ON ONE CEILING. Each shaft used to start at its own
@@ -19670,13 +19674,196 @@ function drawFactory(t, over){
     ctx.restore();
   }
   if (!over) drawPendant(t);       // behind the left counter — the veil pass must not paint it back in front
-  drawFactoryBase();
-  drawCell(cellX(0), CELL_Z, t, 0, true, true);
-  drawCell(cellX(1), CELL_Z, t, 2.4, false, true);
+  if (!drawBZF(t)){
+    drawFactoryBase();
+    drawCell(cellX(0), CELL_Z, t, 0, true, true);
+    drawCell(cellX(1), CELL_Z, t, 2.4, false, true);
+  }
   const kk = k(CELL_Z);
   // the factory is painted twice, under and over the counter; its target is claimed once
   if (!over) pushHit(px(FACT_X - 480, kk), py(560, kk), (960)*kk*SS, py(1080,kk)-py(560,kk),
                      {type:'focus', beat: BEATS.indexOf(b), anchor: FACT_X});
+}
+/* ФАБРИКА BRUXZIR — ОДНА МАШИНА ИЗ РЕНДЕРОВ ЭЛЬДАРА (29.10.2026: «смотри, какую
+   вкусняшку я для тебя приготовил… не уверен в правильности длины и масштабов
+   запчастей, но попробуй без меня собрать»). Вместо двух кабин с жёлтыми руками —
+   портальный робот перед рамой: слева стеллаж из десяти лотков заготовок, справа
+   восемь фрез 4 × 2 с патронами. По двум вертикальным осям (BrukZirFactory_b, на
+   внешних стойках рамы, цепью наружу) ходит вверх-вниз балка (_a), по балке —
+   захват с камерой (_c). Цикл: захват едет к лотку, берёт заготовку, несёт её в
+   патрон одной из фрез, отпускает и возвращается. Какой лоток, какая заготовка и
+   какая фреза — из хэша номера цикла, так что каждый проход тот же.
+
+   Все замеры — в точках исходников (src/pictures/Expo timeline artefacts):
+   • рама 1536×1024, альфа 99…1438 × 26…997 → шириной 1000 единиц на глубине
+     камер (CELL_Z), центр FACT_X − 25 (середина прежней пары), ножки на полу;
+     внешние стойки — столбцы 105…153 и 1382…1430 (оси 129 и 1406), верх колпаков 27,
+     низ нижней рейки 945; лотки — верх заготовок на 128, 210, 293, 375, 457, 537,
+     619, 699, 779, 854, по 15 заготовок (центры 214…508); патроны фрез — столбцы
+     873 и 1257, строки 271, 442, 619, 797 (центроид серого металла).
+   • ось 882×1784, альфа 361…552 × 14…1754, экструзия 406…462 (центр 434): от колпака
+     (27) до низа рейки (945) — 0,5276 точки рамы на точку оси.
+   • балка 2172×724, альфа 16…2154 × 152…571: торцевые плиты — центры 112 и 2055,
+     тело 270…461; тело — 56 точек рамы (0,293), гладкая середина 470…1700 без
+     болтов растягивается по длине, концы — как сняты.
+   • захват 1212×1297, альфа 308…930 × 68…1196: губки 513…697 (центр 605), кончик на
+     1196, ролики каретки на 845 — их строка садится на ось балки; 0,12 точки рамы
+     на точку (губки 22 — одна заготовка). */
+const BZF_SRC = {F: [99, 26, 1], A: [361, 14, 0.5], B: [16, 152, 0.5], G: [308, 68, 0.4]};
+const BZF = {
+  U: 1000 / 1339, X0: () => FACT_X - 25 - 500,
+  wx: fx => FACT_X - 525 + (fx - 99) * (1000 / 1339),
+  wy: fy => 1080 - (997 - fy) * (1000 / 1339),
+  T: 7.2, park: [690, 470],
+  trays: [128, 210, 293, 375, 457, 537, 619, 699, 779, 854],
+  slots: [214, 230, 245, 280, 295, 311, 344, 360, 376, 410, 426, 441, 477, 492, 508],
+  // центр патрона — ступица (по виду, 1400 → 1536 × 1.097): центроид серого металла уходил на кулачки
+  chucks: [[891, 271], [1279, 271], [891, 448], [1279, 448], [891, 629], [1279, 629], [891, 806], [1279, 806]],
+};
+const bzfOn = () => !!(PROP_SPRITES.ph_bzfF && PROP_SPRITES.ph_bzfA && PROP_SPRITES.ph_bzfB && PROP_SPRITES.ph_bzfG);
+/* ПОЛОВИНА ФРЕЗ ЗАНЯТА С САМОГО НАЧАЛА, И ЗАХВАТ ВОЗИТ ВРАЗНОБОЙ (Эльдар, 29.10.2026:
+   «рандомно этот механизм ездит, собирает блоки с полок, ставит в мил-камеры — с самого
+   начала уже должно быть заполнение 50 процентов»; «где пусто — лампочка жёлтая, где
+   загружен блок — зелёная»). Заготовка, поставленная в цикле q, стоит в патроне до
+   середины цикла q + 4 (фреза её сточила — коронка ушла дальше), так что в каждый
+   миг заняты три-четыре фрезы из восьми. Фреза цикла n — случайная из свободных: не из
+   тех, что заняли три предыдущих цикла. До нулевого цикла — четыре «прошлых» цикла, чтобы
+   половина горела зелёным уже на первом кадре. Заготовки берутся из лотков в случайном
+   порядке (одна перестановка 150 гнёзд); опустевшие гнёзда копятся, через 150 циклов
+   (18 минут) лотки снова полные. */
+const BZF_MILL = new Map();
+function bzfMill(n){
+  if (BZF_MILL.has(n)) return BZF_MILL.get(n);
+  let m;
+  if (n < -4) m = ((n % 8) + 8) % 8;
+  else {
+    const busy = new Set([bzfMill(n - 1), bzfMill(n - 2), bzfMill(n - 3)]);
+    const free = [0, 1, 2, 3, 4, 5, 6, 7].filter(q => !busy.has(q));
+    m = free[Math.floor(testerHash(n * 13 + 5) * free.length)];
+  }
+  BZF_MILL.set(n, m);
+  return m;
+}
+let BZF_ORDER = null;
+function bzfSlot(n){
+  if (!BZF_ORDER){
+    BZF_ORDER = Array.from({length: 150}, (_, q) => q);
+    for (let q = 149; q > 0; q--){ const r = Math.floor(testerHash(q * 31 + 7) * (q + 1)); [BZF_ORDER[q], BZF_ORDER[r]] = [BZF_ORDER[r], BZF_ORDER[q]]; }
+  }
+  const o = BZF_ORDER[((n % 150) + 150) % 150];
+  return {i: Math.floor(o / 15), j: o % 15};
+}
+function bzfCycle(n){ const sl = bzfSlot(n); return {i: sl.i, j: sl.j, m: bzfMill(n)}; }
+// светодиоды фрез на раме (центроид зелёного): столбцы 736 и 1119, строки 269, 447, 628, 805
+const BZF_LED = m => [m % 2 ? 1119 : 736, [269, 447, 628, 805][m >> 1]];
+function drawBZF(t){
+  if (!bzfOn()) return false;
+  const kk = k(CELL_Z), S = BZF.U * kk * SS;            // экранных точек на точку рамы
+  const FX = fx => px(BZF.wx(fx), kk), FY = fy => py(BZF.wy(fy), kk);
+  if (FX(1438) < -50 || FX(99) > W + 50) return true;
+  const [Fx0, Fy0] = BZF_SRC.F, Fs = PROP_SPRITES.ph_bzfF;
+  const piece = (sp, src, ox, oy, sx0, sy0, sw, sh, dx, dy, scale, flip) => {
+    // часть исходника (в его точках) → место на раме (в точках рамы), масштаб — точек рамы на точку исходника
+    const f = src[2], img = spriteMip(sp, sp.w * scale / f * S, sp.h * scale / f * S);
+    const kx = (img.width || img.naturalWidth) / sp.w, ky = (img.height || img.naturalHeight) / sp.h;
+    const ix = (sx0 - src[0]) * f * kx, iy = (sy0 - src[1]) * f * ky;
+    ctx.save();
+    if (flip){ ctx.translate(FX(dx) + sw * S, 0); ctx.scale(-1, 1); ctx.drawImage(img, ix, iy, sw / scale * f * kx, sh / scale * f * ky, 0, FY(dy), sw * S, sh * S); }
+    else ctx.drawImage(img, ix, iy, sw / scale * f * kx, sh / scale * f * ky, FX(dx), FY(dy), sw * S, sh * S);
+    ctx.restore();
+  };
+  // рама
+  ctx.drawImage(spriteMip(Fs, 1339 * S, 971 * S), FX(Fx0), FY(Fy0), 1339 * S, 971 * S);
+  // цикл
+  const n = Math.floor(t / BZF.T), ph = t - n * BZF.T, C = bzfCycle(n);
+  const ease = u => u * u * (3 - 2 * u), seg = (a, b) => Math.max(0, Math.min(1, (ph - a) / (b - a)));
+  const P = [BZF.slots[C.j], BZF.trays[C.i] + 6], Q = [BZF.chucks[C.m][0], BZF.chucks[C.m][1] - 6], R = BZF.park;
+  const lerp = (A, B, u) => [A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u];
+  let G;
+  if (ph < 1.5) G = lerp(R, P, ease(seg(0, 1.5)));
+  else if (ph < 2.0) G = P;
+  else if (ph < 3.8) G = lerp(P, Q, ease(seg(2.0, 3.8)));
+  else if (ph < 4.4) G = Q;
+  else if (ph < 5.8) G = lerp(Q, R, ease(seg(4.4, 5.8)));
+  else G = R;
+  /* заготовка — кусок самой рамы: первая заготовка верхнего лотка (столбцы 210…219,
+     строки 128…146), чтобы в губках и в патроне была та же, что на полке */
+  const blank = (gx, gy, a, sc2) => {
+    const f = Fs.w / 1339, w0 = 10, h0 = 19, img = spriteMip(Fs, 1339 * S, 971 * S);
+    const k2 = (img.width || img.naturalWidth) / Fs.w;
+    ctx.save(); ctx.globalAlpha = a;
+    ctx.drawImage(img, (209 - Fx0) * f * k2, (128 - Fy0) * f * k2, w0 * f * k2, h0 * f * k2,
+                  FX(gx - w0 * sc2 / 2), FY(gy - h0 * sc2 / 2), w0 * sc2 * S, h0 * sc2 * S);
+    ctx.restore();
+  };
+  // опустевшие гнёзда лотков: всё, что взято в этом круге из 150
+  ctx.fillStyle = '#1b1b1d';
+  for (let q = n - (((n % 150) + 150) % 150); q <= n; q++){
+    if (q < 0 || (q === n && ph < 1.75)) continue;
+    const c = bzfSlot(q);
+    ctx.fillRect(FX(BZF.slots[c.j] - 5), FY(BZF.trays[c.i] - 1), 10 * S, 19 * S);
+  }
+  /* заготовки в патронах — поверх рамы, под осями, балкой и захватом; и лампы:
+     жёлтая — пусто, зелёная — загружена */
+  const loaded = new Array(8).fill(0);
+  for (let q = n - 4; q <= n; q++){
+    const m = bzfMill(q);
+    const tIn = (q - n) * BZF.T + 4.0, tOut = (q + 4 - n) * BZF.T + 2.0;   // в фазах текущего цикла
+    let a = 0;
+    if (ph >= tIn && ph < tOut) a = Math.min(1, (tOut - ph) / 0.4);
+    loaded[m] = Math.max(loaded[m], a);
+  }
+  for (let m = 0; m < 8; m++){
+    const [qx, qy] = BZF.chucks[m];
+    if (loaded[m] > 0.01) blank(qx, qy, loaded[m], 1.6);
+    const [lx, ly] = BZF_LED(m), r = 7 * S;
+    if (loaded[m] < 0.5){
+      ctx.fillStyle = '#ffc21a'; ctx.beginPath(); ctx.arc(FX(lx), FY(ly), r, 0, 7); ctx.fill();
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; drawGlow('255,196,40', FX(lx), FY(ly), r * 3.2, 0.35); ctx.restore();
+      ctx.fillStyle = 'rgba(255,250,220,0.8)'; ctx.beginPath(); ctx.arc(FX(lx) - r * 0.3, FY(ly) - r * 0.3, r * 0.3, 0, 7); ctx.fill();
+    } else {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; drawGlow('60,230,80', FX(lx), FY(ly), r * 3.2, 0.30); ctx.restore();
+    }
+  }
+  /* ОСЬ И БАЛКА ОДНОЙ ТОЛЩИНЫ (Эльдар, 29.10.2026: «вертикальная перекладина должна
+     быть той же толщины, что и горизонтальная… мне кажется, они сгенерированы с разной
+     толщиной или длиной»). Так и есть: у оси экструзия 56 точек на 1740 длины, у балки
+     тело 191 на 1943 между плитами — при одной длине рамы толщины расходились вдвое.
+     Общая толщина — 43.6 точки рамы (почти стойка рамы, 48). Ось при этом длиннее рамы,
+     и из её середины (строки 500…1060) вынуты ровно десять звеньев цепи — шаг цепи 56,
+     замер автокорреляцией, — где экструзия, красная пластина и цепь одинаковы по всей
+     длине: шва не видно. (1740 − 560) · 0.778 = 918 — от колпака до низа рейки. */
+  const T_BZF = 43.6, sb = T_BZF / 56, Asp = PROP_SPRITES.ph_bzfA;
+  /* ОДНА ВЕРТИКАЛЬ, ОДНА ГОРИЗОНТАЛЬ (Эльдар, 29.10.2026: «вертикальная перекладина
+     ездит по горизонтали, а горизонтальная — по вертикали; в месте пересечения —
+     захватчик; все движения на изи-ин изи-аут»). Балка ходит вверх-вниз по внешним
+     стойкам рамы (её торцевые плиты с роликами — на стойках), ось — влево-вправо по
+     верхней и нижней рейкам (её каретки — вверху и внизу), захват — на их пересечении.
+     Ось рисуется перед балкой, захват — перед обеими. */
+  const ux = G[0] - (434 - 361) * sb;
+  const axis = () => {
+    piece(Asp, BZF_SRC.A, 0, 0, 361, 14, 191 * sb, 486 * sb, ux, 27, sb, false);
+    piece(Asp, BZF_SRC.A, 0, 0, 361, 1060, 191 * sb, 694 * sb, ux, 27 + 486 * sb - 0.5, sb, false);
+  };
+  // балка: оси 129 и 1406, тело по центру на yB
+  const sa = T_BZF / 191, Bsp = PROP_SPRITES.ph_bzfB;
+  const yB = G[1] - (1196 - 845) * 0.12, top = yB - (365.5 - 152) * sa, hh = (571 - 152) * sa;
+  const xL = 129 - (112 - 16) * sa, wL = (470 - 16) * sa;
+  const wR = (2154 - 1700) * sa, xR = 1406 + (2154 - 2055) * sa - wR;
+  piece(Bsp, BZF_SRC.B, 0, 0, 16, 152, wL, hh, xL, top, sa, false);
+  { // гладкая середина — растянута по длине
+    const f = BZF_SRC.B[2], img = spriteMip(Bsp, Bsp.w * sa / f * S, Bsp.h * sa / f * S);
+    const kx = (img.width || img.naturalWidth) / Bsp.w, ky = (img.height || img.naturalHeight) / Bsp.h;
+    ctx.drawImage(img, (470 - 16) * f * kx, 0, 1230 * f * kx, (571 - 152) * f * ky, FX(xL + wL) - 0.5, FY(top), (xR - xL - wL) * S + 1, hh * S);
+  }
+  piece(Bsp, BZF_SRC.B, 0, 0, 1700, 152, wR, hh, xR, top, sa, false);
+  axis();
+  // захват: губки на G
+  const sg = 0.12;
+  piece(PROP_SPRITES.ph_bzfG, BZF_SRC.G, 0, 0, 308, 68, (930 - 308) * sg, (1196 - 68) * sg, G[0] - (605 - 308) * sg, G[1] - (1196 - 68) * sg, sg, false);
+  // заготовка в губках
+  if (ph >= 1.75 && ph < 4.0) blank(G[0], G[1] + 3, 1, 1);
+  return true;
 }
 /* глубина потолка, на котором висят лампы фабрики: 100 — ближе камер (190…232),
    и при y −40 светильник как раз садится на верхний край кадра (k 0,9) */
