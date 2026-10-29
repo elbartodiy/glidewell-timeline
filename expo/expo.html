@@ -9478,8 +9478,8 @@ function drawRec23(t){
 /* THE PILE. Not a metaphor — the thing itself: the boxes the physical
    impressions arrived in, stacked the way they stacked in a mailroom. They go
    one at a time, from the top down, as you come through: half the pile by the
-   moment the two lines cross, and by the time you have walked on, a tenth of it
-   is left standing at the bottom. That is the whole of March 2023. */
+   moment the two lines cross, and by the time you have walked on, none of it
+   (since 29.10.2026; a tenth used to stay at the bottom). That is the whole of March 2023. */
 /* Forty-eight boxes at twice the size. The pile stands tall enough to cross
    the lines behind it, and that is fine: by the time it is in front of them
    most of it has already gone, and what is left is below the crossing. */
@@ -9548,14 +9548,14 @@ function drawBoxPile(b, t){
   const S1 = (g.w || 300) * kk * SS / 240;
   const foot = py(CFG.benchY - 2, kk);
   if (sx < -500 || sx > W + 500) return;
-  const P = boxPile(), N = P.length, HALF = N / 2, LAST = Math.round(N * 0.10);
+  const P = boxPile(), N = P.length, HALF = N / 2, LAST = 0;   // уходят все (Эльдар, 29.10.2026: «пусть все коробки уйдут до конца»); было 10 %
   const bw = 26 * S1, bh = 15 * S1, dp = 9 * S1;        // one carton
   /* КОГДА НАЧИНАЮТ УХОДИТЬ (Эльдар, 29.10.2026: «исчезать коробки начинают
      сразу как только верхняя правая коробка полностью покажется на экране»).
      Верхняя правая — верхняя коробка плеча над тремя новыми столбцами (ряд 7,
      слот 4); её правый край = W. Это зависит от ширины экрана, и так и надо:
      точка задана экраном. Дальше до кроссовера уходит ровно половина, после
-     него — ещё до десятой части, как и было (450 шагов). */
+     него — все остальные, за те же 450 шагов. */
   const ease = u => u * u * (3 - 2 * u);
   const topR = P.reduce((m, q) => (q.s >= 4 && q.r > m.r) ? q : m, {r: -1, u: 0});
   // cam.x − b.x at which that box's right edge, sx + (u + 0.64)·bw, meets W
@@ -9569,7 +9569,7 @@ function drawBoxPile(b, t){
   ctx.save();
   ctx.translate(sx, foot); ctx.scale(1, 0.20); ctx.translate(-sx, -foot);
   const csh = ctx.createRadialGradient(sx + bw * 1.6, foot, 0, sx + bw * 1.6, foot, bw * 5.6);   // the pile's middle, with the shoulder
-  csh.addColorStop(0, `rgba(0,0,0,${(0.42 * (0.35 + 0.65 * live / N)).toFixed(3)})`);
+  csh.addColorStop(0, `rgba(0,0,0,${(0.42 * (0.35 + 0.65 * live / N) * Math.min(1, live / N * 10)).toFixed(3)})`);   // и тень уходит с последними
   csh.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = csh;
   ctx.beginPath(); ctx.arc(sx + bw * 1.6, foot, bw * 5.6, 0, 7); ctx.fill();
@@ -9615,7 +9615,7 @@ function drawBoxPile(b, t){
     ctx.strokeRect(bx - bw/2, by - bh, bw, bh);
     ctx.restore();
   }
-  pushHit(sx - bw * 3.7, foot - BOX_ROWS.length * bh - dp, bw * 10.7, BOX_ROWS.length * bh + dp * 2,
+  if (live > 0) pushHit(sx - bw * 3.7, foot - BOX_ROWS.length * bh - dp, bw * 10.7, BOX_ROWS.length * bh + dp * 2,
           {type: 'openbox'});
 }
 
