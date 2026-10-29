@@ -4300,6 +4300,12 @@ function drawBench(){
     const bx = px(b.x, kf);
     if (bx > -100 && bx < W + 100){
       if (!TABLES.some(tb => b.x >= tb.x0 && b.x <= tb.x1 && !desksRun(tb))) continue;  // no table — no etched year (and none on the desks of the eighties)
+      /* ОСТАТОК СТАРОЙ ЛИНЕЙКИ (Эльдар, 29.10.2026: «на кромке стола в 1970 есть
+         линейка, а больше её нигде нет»). Засечка и год на кромке — из времён
+         нарисованных прилавков; фото-прилавки кладутся поверх этого прохода и их
+         закрывали, а прилавок основания (plate) — раньше него, и на 1970-м они
+         остались. На фото-прилавке года не гравируются. */
+      if (TABLES.some(tb => b.x >= tb.x0 && b.x <= tb.x1 && (onPlate(tb) || sheetOf(tb)))) continue;
       const seg = segAt(b.x);
       ctx.font = `${Math.round(26*SS)}px ${seg.font}`;
       ctx.fillStyle = seg.railInk;
@@ -14686,7 +14692,7 @@ function drawPlateBench(t){
     gr.addColorStop(1, `rgba(0,0,0,${0.62 * shF})`);
     ctx.fillStyle = gr;
     ctx.fillRect(cx0, rowY(PL_ROW.front), cx1 - cx0, yFloor - rowY(PL_ROW.front));
-    benchRail(seg, cx0, rowY(PL_ROW.front), cx1 - cx0);
+    // рейки года на кромке больше нет — у фото-прилавков её нет (см. ОСТАТОК СТАРОЙ ЛИНЕЙКИ)
     ctx.restore();
     /* (the two painted bands that used to stand here — a dark stripe and a
        light one, so the run «stopped rather than simply ceasing» — are gone:
