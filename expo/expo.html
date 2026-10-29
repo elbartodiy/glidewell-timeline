@@ -9898,23 +9898,24 @@ function drawAiDataField(x0, y0, w, h, t, ph, walked){
   ctx.beginPath(); ctx.roundRect(x0, y0, w, h, 4 * SS); ctx.stroke();
   ctx.restore();
 }
-/* CAD-МОДЕЛЬ КОРОНКИ ИЗ ЕЁ ЖЕ ФОТО (29.10.2026): промежуточный шаг между
-   линиями и керамикой на экране 2018-го. Форма — альфа фото, один в один; тон —
-   яркость фото, сглаженная и переложенная на ровную серо-голубую шкалу программы
-   проектирования; по форме — сетка (срезы через 1/18 высоты, рёбра через 1/14
-   ширины) и светлый контур по краю альфы. Считается один раз
-   (чтение пикселей — один раз при первом показе) и кэшируется на спрайте. */
+/* CAD-МОДЕЛЬ КОРОНКИ (29.10.2026) — промежуточный шаг между линиями и керамикой
+   на экране 2018-го. Эльдар: «я думал, ты там нарисуешь какую-то ещё модель
+   компьютерную между ними» — перекрашенное фото ею не читалось. Теперь это сетка:
+   треугольники через 1/13 высоты, со смещением рядов на полшага и лёгким
+   разбросом узлов, каждый залит одним тоном — яркостью фото в его центре,
+   сглаженной (форма без зерна и бликов глазури), на серо-голубой шкале
+   программы проектирования; рёбра светятся тонко, по краю — светлый контур.
+   Силуэт — альфа фото, один в один, поэтому фото потом проступает точно в
+   ту же форму. Считается один раз и кэшируется на спрайте. */
 function crownCAD(sp){
   if (sp._cad) return sp._cad;
   const w = sp.w, h = sp.h, c = document.createElement('canvas'); c.width = w; c.height = h;
   const g = c.getContext('2d', {willReadFrequently: true});
   g.drawImage(sp.c, 0, 0, w, h);
   const im = g.getImageData(0, 0, w, h), d = im.data, A = new Uint8Array(w * h);
-  let Lm = new Float32Array(w * h);
+  const Lm = new Float32Array(w * h), tmp = new Float32Array(w * h);
   for (let i = 0; i < w * h; i++){ A[i] = d[i * 4 + 3]; Lm[i] = (0.3 * d[i * 4] + 0.59 * d[i * 4 + 1] + 0.11 * d[i * 4 + 2]) / 255; }
-  /* тон — сглаженный (два прохода коробочного размытия радиусом h/60): у CAD нет
-     ни зерна, ни бликов глазури, только сама форма под светом */
-  const R = Math.max(2, Math.round(h / 60)), tmp = new Float32Array(w * h);
+  const R = Math.max(2, Math.round(h / 40));
   for (let pass = 0; pass < 2; pass++){
     for (let y = 0; y < h; y++){ let acc = 0, n = 0;
       for (let x = -R; x < w; x++){
@@ -9927,22 +9928,57 @@ function crownCAD(sp){
         if (y - R - 1 >= 0){ acc -= tmp[(y - R - 1) * w + x]; n--; }
         if (y >= 0) Lm[y * w + x] = acc / n; } }
   }
-  const lo = [46, 64, 86], hi = [214, 226, 238];
-  const sliceH = Math.max(3, Math.round(h / 18)), meshW = Math.max(3, Math.round(w / 14));
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
-    const i = y * w + x, o = i * 4, a = A[i];
-    if (a < 8) continue;
-    const q = Math.min(1, Math.max(0, (Lm[i] - 0.25) / 0.7));
-    const edge = (x && y && x < w - 1 && y < h - 1) &&
-      (A[i - 1] < 60 || A[i + 1] < 60 || A[i - w] < 60 || A[i + w] < 60) && a >= 60;
-    let r = lo[0] + (hi[0] - lo[0]) * q, gg = lo[1] + (hi[1] - lo[1]) * q, b = lo[2] + (hi[2] - lo[2]) * q;
-    // сетка модели: срезы по высоте и рёбра поперёк — тонко, поверх тона
-    if (y % sliceH === 0){ r = r * 0.7 + 50; gg = gg * 0.7 + 80; b = b * 0.7 + 100; }
-    else if (x % meshW === 0){ r = r * 0.82 + 30; gg = gg * 0.82 + 48; b = b * 0.82 + 62; }
-    if (edge){ r = 190; gg = 228; b = 255; }
-    d[o] = r; d[o + 1] = gg; d[o + 2] = b;
+  const Lat = (x, y) => Lm[Math.max(0, Math.min(h - 1, y | 0)) * w + Math.max(0, Math.min(w - 1, x | 0))];
+  const Aat = (x, y) => A[Math.max(0, Math.min(h - 1, y | 0)) * w + Math.max(0, Math.min(w - 1, x | 0))];
+  // узлы сетки: ряды через step, нечётные со сдвигом на полшага, разброс ±18 %
+  const step = h / 13, rows = [];
+  for (let j = 0, y0 = -step * 0.5; y0 <= h + step; j++, y0 += step * 0.866){
+    const row = [];
+    for (let i = 0, x0 = -step + (j % 2) * step / 2; x0 <= w + step; i++, x0 += step){
+      const h1 = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453, h2 = Math.sin(i * 39.346 + j * 11.135) * 24634.6345;
+      row.push([x0 + ((h1 - Math.floor(h1)) - 0.5) * step * 0.36, y0 + ((h2 - Math.floor(h2)) - 0.5) * step * 0.36]);
+    }
+    rows.push(row);
   }
-  g.putImageData(im, 0, 0);
+  const lo = [40, 58, 80], hi = [206, 220, 234];
+  g.clearRect(0, 0, w, h);
+  const tris = [];
+  for (let j = 0; j < rows.length - 1; j++){
+    const a = rows[j], b = rows[j + 1], odd = j % 2;
+    for (let i = 0; i < Math.min(a.length, b.length) - 1; i++){
+      const T = odd ? [[a[i], b[i + 1], b[i]], [a[i], a[i + 1], b[i + 1]]] : [[a[i], a[i + 1], b[i]], [a[i + 1], b[i + 1], b[i]]];
+      for (const t3 of T){
+        const cxT = (t3[0][0] + t3[1][0] + t3[2][0]) / 3, cyT = (t3[0][1] + t3[1][1] + t3[2][1]) / 3;
+        if (Aat(cxT, cyT) < 10 && t3.every(p => Aat(p[0], p[1]) < 10)) continue;
+        tris.push([t3, cxT, cyT]);
+      }
+    }
+  }
+  for (const [t3, cxT, cyT] of tris){
+    // тон грани — яркость в её центре, со своим наклоном к свету: где тон растёт к верхнему левому углу, грань светлее
+    const gx = Lat(cxT + step * 0.3, cyT) - Lat(cxT - step * 0.3, cyT), gy = Lat(cxT, cyT + step * 0.3) - Lat(cxT, cyT - step * 0.3);
+    const q = Math.min(1, Math.max(0, (Lat(cxT, cyT) - 0.22) / 0.72 - 0.9 * (gx + gy)));
+    g.fillStyle = `rgb(${lo[0] + (hi[0] - lo[0]) * q | 0},${lo[1] + (hi[1] - lo[1]) * q | 0},${lo[2] + (hi[2] - lo[2]) * q | 0})`;
+    g.beginPath(); g.moveTo(t3[0][0], t3[0][1]); g.lineTo(t3[1][0], t3[1][1]); g.lineTo(t3[2][0], t3[2][1]); g.closePath();
+    g.fill();
+  }
+  g.strokeStyle = 'rgba(150,205,255,0.42)'; g.lineWidth = Math.max(0.8, h / 420);
+  g.beginPath();
+  for (const [t3] of tris){ g.moveTo(t3[0][0], t3[0][1]); g.lineTo(t3[1][0], t3[1][1]); g.lineTo(t3[2][0], t3[2][1]); g.closePath(); }
+  g.stroke();
+  // силуэт — альфа фото
+  g.globalCompositeOperation = 'destination-in';
+  g.drawImage(sp.c, 0, 0, w, h);
+  g.globalCompositeOperation = 'source-over';
+  // светлый контур по краю альфы
+  const edge = g.getImageData(0, 0, w, h), e = edge.data;
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++){
+    const i = y * w + x;
+    if (A[i] >= 60 && (A[i - 1] < 60 || A[i + 1] < 60 || A[i - w] < 60 || A[i + w] < 60)){
+      e[i * 4] = 190; e[i * 4 + 1] = 228; e[i * 4 + 2] = 255; e[i * 4 + 3] = 255;
+    }
+  }
+  g.putImageData(edge, 0, 0);
   return (sp._cad = c);
 }
 function drawAiCrownVitrine(mid, kk, t){
