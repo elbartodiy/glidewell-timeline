@@ -14689,6 +14689,7 @@ async function loadPhotoSkin(){
        кусок по альфе), обрезан по альфе, ужат; r_* */
     ph_sc0: 'r_sculpt_000.png', ph_sc1: 'r_sculpt_030.png', ph_sc2: 'r_sculpt_060.png', ph_sc3: 'r_sculpt_090.png', ph_sc4: 'r_sculpt_120.png', ph_sc5: 'r_sculpt_150.png', ph_sc6: 'r_sculpt_180.png', ph_sc7: 'r_sculpt_210.png', ph_sc8: 'r_sculpt_240.png', ph_sc9: 'r_sculpt_270.png', ph_sc10: 'r_sculpt_300.png', ph_sc11: 'r_sculpt_330.png',   // 12 кадров вращения коронки (через 30°) — стеклянный зал и TODAY
     ph_gradcap: 'r_gradcap.png', ph_jaw: 'r_jaw.png', ph_papers: 'r_papers.png', ph_lplinth: 'r_lplinth.png',
+    ph_m07: 'r_m07_mill_housing.png', ph_m07disc: 'r_m07_disc_intact.png', ph_m07bur: 'r_m07_spindle_bur.png',
     ph_crt: 'r_crt.png',              // 2002: ЭЛТ-монитор (ChatGPT), экран — прозрачный проём 160…752 × 95…544
     ph_crown_a: 'r_crown_000.png', ph_crown_b: 'r_crown_030.png', ph_crown_c: 'r_crown_060.png', ph_crown_d: 'r_crown_090.png',
     ph_boxes24: 'boxes24.png',        // 2023: 24 коробки — лист Эльдара «24-box cardboard sprite sheet» (28.10.2026)
@@ -15622,6 +15623,15 @@ function drawDiscMill(b, t){
   ctx.beginPath(); ctx.arc(sx, foot, bw * 0.62, 0, 7); ctx.fill();
   ctx.restore();
 
+  /* РЕАЛИЗМ 07 (28.10.2026): корпус, диск и шпиндель — фото набора ChatGPT.
+     Корпус шириной прежней машины (240 S1), высота по фото; окно — прозрачный
+     проём фото (замер по альфе: x 155…510, y 122…347 из 662 × 559), внутри —
+     прежняя работа: диск (фото, круг по центру 250,263, R 212 из 460 × 495),
+     гнёзда с коронками, шпиндель с бором — слева, горизонтально. Корпус кладётся
+     поверх. Без фото — прежняя рисованная машина. */
+  const PH = PROP_SPRITES.ph_m07;
+  const hbh = PH ? bw * PH.h / PH.w : bh, hy0 = foot - hbh;
+  if (!PH){
   const bg = ctx.createLinearGradient(0, y0, 0, foot);
   bg.addColorStop(0, '#eef1f3'); bg.addColorStop(0.55, '#ccd2d6'); bg.addColorStop(1, '#a4abb1');
   ctx.fillStyle = bg;
@@ -15633,8 +15643,10 @@ function drawDiscMill(b, t){
   ctx.fillRect(x0 + 6 * S1, y0 + 3 * S1, bw - 12 * S1, 1.4 * S1);
   ctx.fillStyle = 'rgba(40,48,56,0.55)';
   ctx.fillRect(x0, foot - 9 * S1, bw, 9 * S1);
-
-  const wx = x0 + 20 * S1, wy = y0 + 20 * S1, ww = bw - 40 * S1, wh = bh - 54 * S1;
+  }
+  const hs = PH ? bw / PH.w : 0;
+  const wx = PH ? x0 + 153 * hs : x0 + 20 * S1, wy = PH ? hy0 + 120 * hs : y0 + 20 * S1;
+  const ww = PH ? 359 * hs : bw - 40 * S1, wh = PH ? 229 * hs : bh - 54 * S1;
   ctx.save();
   ctx.beginPath();
   if (ctx.roundRect) ctx.roundRect(wx, wy, ww, wh, 6 * S1); else ctx.rect(wx, wy, ww, wh);
@@ -15644,6 +15656,14 @@ function drawDiscMill(b, t){
   ctx.fillStyle = ig; ctx.fillRect(wx, wy, ww, wh);
 
   const cx2 = wx + ww / 2, cy2 = wy + wh * 0.48, R = Math.min(ww, wh) * 0.44;
+  const DPH = PROP_SPRITES.ph_m07disc;
+  if (DPH){
+    // диск — фото, вписан в круг R по своему центру
+    ctx.save(); ctx.beginPath(); ctx.arc(cx2, cy2, R, 0, 7); ctx.clip();
+    const ds = R / 212;
+    ctx.drawImage(DPH.c, cx2 - 250 * ds, cy2 - 263 * ds, DPH.w * ds, DPH.h * ds);
+    ctx.restore();
+  } else {
   const dg = ctx.createLinearGradient(cx2 - R, cy2 - R, cx2 + R, cy2 + R);
   dg.addColorStop(0, '#faf8f4'); dg.addColorStop(0.55, '#e6e2da'); dg.addColorStop(1, '#c9c4ba');
   ctx.fillStyle = dg;
@@ -15669,6 +15689,7 @@ function drawDiscMill(b, t){
   ctx.textAlign = 'left';
   ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1.1 * SS;
   ctx.beginPath(); ctx.arc(cx2, cy2, R, 0, 7); ctx.stroke();
+  }
 
   const rp = R * 0.215, rc = R * 0.148;
   let cutting = null, done = 0;
@@ -15699,6 +15720,12 @@ function drawDiscMill(b, t){
     ctx.restore();
     // the spindle enters from the LEFT, on the horizontal, the way the machine
     // is actually built — the blank faces you and the bur works across it
+    const BUR = PROP_SPRITES.ph_m07bur;
+    if (BUR){
+      // фото шпинделя: острие бора (382, 96 из 382 × 193) — на месте реза
+      const bs = (rp * 1.6) / 60, tipX = cutting.x - rp * 0.45, tipY = cutting.y;
+      ctx.drawImage(BUR.c, tipX - 382 * bs, tipY - 96 * bs, BUR.w * bs, BUR.h * bs);
+    } else {
     ctx.fillStyle = 'rgba(146,154,162,0.95)';
     ctx.beginPath();
     ctx.moveTo(wx, cutting.y - 3.4 * S1);
@@ -15708,6 +15735,7 @@ function drawDiscMill(b, t){
     ctx.closePath(); ctx.fill();
     ctx.fillStyle = 'rgba(196,202,208,0.95)';
     ctx.fillRect(wx, cutting.y - 6 * S1, 11 * S1, 12 * S1);
+    }
   }
 
   const gg = ctx.createLinearGradient(wx, wy, wx + ww * 0.7, wy + wh);
@@ -15716,10 +15744,13 @@ function drawDiscMill(b, t){
   gg.addColorStop(1, 'rgba(255,255,255,0.07)');
   ctx.fillStyle = gg; ctx.fillRect(wx, wy, ww, wh);
   ctx.restore();
+  if (PH) ctx.drawImage(spriteMip(PH, bw, hbh), x0, hy0, bw, hbh);   // корпус-фото поверх окна
+  else {
   ctx.strokeStyle = 'rgba(60,70,80,0.8)'; ctx.lineWidth = 1.3 * SS;
   ctx.beginPath();
   if (ctx.roundRect) ctx.roundRect(wx, wy, ww, wh, 6 * S1); else ctx.rect(wx, wy, ww, wh);
   ctx.stroke();
+  }
 
   ctx.fillStyle = cutting ? 'rgba(120,220,150,0.9)' : 'rgba(150,170,185,0.75)';
   ctx.beginPath(); ctx.arc(x0 + 15 * S1, foot - 22 * S1, 3 * S1, 0, 7); ctx.fill();
