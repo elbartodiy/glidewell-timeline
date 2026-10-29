@@ -5710,7 +5710,13 @@ function updateFilm(){
   /* nor is an album opening on the counter, nor an object flying up to be
      looked at: both are things happening IN the hall, and the film behind them
      goes on running with its sound (Eldar again). Only a PAGE stops it. */
-  const busy = state.clip || state.person || state.study || state.people || state.docOpen;
+  /* …НО ЕСЛИ ГОВОРИТ ДРУГОЙ ГОЛОС, ФИЛЬМ МОЛЧИТ. Карточка книги Constant Change
+     (inspect с роликом) открывалась «в зале», и фильм шёл со звуком под голос
+     Джима из карточки — два голоса сразу (Эльдар, 28.10.2026). Теперь фильм
+     отступает, пока звучит любой ролик страницы/карточки (VIDEO_EL, со звуком,
+     не на паузе) — так же, как перед страницей. */
+  const voice = (() => { for (const k in VIDEO_EL){ const c = VIDEO_EL[k]; if (c && c !== v && !c.paused && !c.muted && !c.ended) return true; } return false; })();
+  const busy = state.clip || state.person || state.study || state.people || state.docOpen || voice;
   const engaged = !v.muted;                 // sound on = a real showing
   const wanted = engaged && !T.userPaused && !busy;
   // the poster holds its frame: a not-yet-started set snaps back to the
