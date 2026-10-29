@@ -659,7 +659,15 @@ const BEATS = [
       0,896 → w 565 → 506, top 20 → 430 + (20 − 430)·0,896 = 63, maxB 700 → 672. */
    wall:[{img:'prismatik05', w:506, dx:0, top:63, maxB:672, page:true, glint:true}], table:[]},
 
+  /* СТРОКА — НА ПОЛУ ПРОЁМА ПОД ОБЛАКОМ (Эльдар, 29.10.2026: «the first case
+     arrives as a — эта фраза должна появиться только тогда, когда 2007 начинает
+     увеличиваться»; «January 2005… гаснет одновременно с появлением текста из
+     2007»). Своего прилавка у облака нет, и строка садилась на прилавок 2005-го:
+     видна была с −1394 до −4 от года, рядом со строкой 2005-го, и к центру 2007
+     уже гасла. Теперь — как у 1999-го: в проёме между прилавками, проявляется с
+     680 до 450 от года (строка 2005-го гаснет к −674) и уходит так же. */
   {x:18700, y:'2007', t:'FIRST DIGITAL CASE', fly:true, yLift:190, flyLift:66,   // the same line as 2001 and 2005, at every distance
+   descWall:true, descGap:true, wallFade:[450, 680],
    th:'Nobody called it AI training data yet — but that is what it was.',
    /* затравка вместо пересказа страницы (Эльдар, 26.10.2026: «на линии нам нужно только небольшая затравка для раскрытия темы — про что внутри»; «го»). Было: «The lab accepts its first intraoral scan instead of a physical impression — the moment the case archive starts becoming data.» */
    d:'The first case arrives as a scan, not an impression.',
@@ -5309,8 +5317,11 @@ function drawBenchDescs(){
        2022 (Eldar, 2026-09-22: «она должна исчезать, когда мы уходим из 2019»).
        It is measured from the beat now: whole within 450 units of it, gone by
        800 — which is about where the walk is halfway to the next year. */
+    /* wallFade [целиком, нет] — своё окно у строки на полу проёма (2007:
+       проявляется, когда строка 2005-го уже ушла) */
+    const WF = b.wallFade || [450, 800];
     const capWant = b.descWall
-      ? Math.max(0, Math.min(1, (800 - Math.abs(b.x - cam.x)) / 350))
+      ? Math.max(0, Math.min(1, (WF[1] - Math.abs(b.x - cam.x)) / (WF[1] - WF[0])))
       : Math.max(0, Math.min(1,
           Math.min((W - (cwP + halfC)) / fadeC, (cwP - halfC) / fadeC)));
     /* capNear [a, b] — строка видна целиком в a от года и гаснет к b: у 2022-го
