@@ -16545,6 +16545,34 @@ function molarMesh(){
     }
   }
   CROWN3D.molar = {rings, M, P: PW, step: 1};
+  /* ТА ЖЕ ФОРМА — СПЛОШНОЙ ПОВЕРХНОСТЬЮ, для коронки, которую вращают рукой
+     (Эльдар, 28.10.2026: «слишком идеальная, слишком круглая… форму можешь
+     сделать одинаковую в этих двух коронок… на трёхмерной я хотя бы буду
+     понимать точнее, какая у тебя форма»). Сетка в форме crownMesh: меридиан —
+     от точки на оси под шейкой, по стенке вверх, по жевательной поверхности к
+     центральной ямке. 72 меридиана × (1 + 14 стенки + 14 верха + 1). */
+  {
+    const MS = 72, SW = 14, SO = 14, surf = [];
+    const yC = occl(0, 0);
+    for (let m = 0; m < MS; m++){
+      const a = m / MS * Math.PI * 2, [px0, pz0] = plan(a), cu = Math.cos(a), sv = Math.sin(a);
+      const yRim = occl(cu * 0.97, sv * 0.97), ring = [[0, -30, 0]];
+      for (let i = 0; i < SW; i++){
+        const t = i / (SW - 1);
+        const f = t < 0.33 ? 0.80 + 0.20 * Math.sin(t / 0.33 * Math.PI / 2)
+                           : 1.0 - 0.14 * Math.pow((t - 0.33) / 0.67, 1.6);
+        const yFlat = -30 + t * (34 + 30), yCusp = -30 + t * (yRim + 30), tw = t * t * t;
+        ring.push([px0 * f, yFlat + (yCusp - yFlat) * tw, pz0 * f]);
+      }
+      for (let j = 1; j <= SO; j++){
+        const sR = 0.97 * (1 - j / (SO + 1));
+        ring.push([px0 * 0.86 * sR / 0.97 * 0.97, occl(cu * sR, sv * sR), pz0 * 0.86 * sR / 0.97 * 0.97]);
+      }
+      ring.push([0, yC, 0]);
+      surf.push(ring);
+    }
+    CROWN3D.molarSurf = {rings: surf, M: MS, P: SW + SO + 2};
+  }
   return CROWN3D.molar;
 }
 function crownMesh(){
@@ -16614,8 +16642,11 @@ function drawCrownPhoto(cx, footY, size, alpha){
   return {top};
 }
 function drawCrown3D(cx, footY, size, alpha){
-  { const ph = drawCrownPhoto(cx, footY, size, alpha); if (ph) return ph; }
-  const mesh = crownMesh(), {rings, M, P} = mesh;
+  /* фото-кадры (r_sculpt_*) — только по ?crownphoto=1: Эльдар (28.10.2026)
+     попросил видеть здесь ту же форму моляра, что у облака 2007-го, в 3D */
+  if (/[?&]crownphoto=1/.test(location.search)){ const ph = drawCrownPhoto(cx, footY, size, alpha); if (ph) return ph; }
+  molarMesh();
+  const mesh = CROWN3D.molarSurf || crownMesh(), {rings, M, P} = mesh;   // моляр облака 2007-го, сплошной
   const R = CROWN3D.R;
   const scale = size / 122;                          // the mesh is ~118 wide at the bulge, 76 tall
   const cy = footY - 30 * scale;                     // the foot sits at footY
