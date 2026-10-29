@@ -16615,12 +16615,25 @@ function molarMesh(){
     /* борозды гаснут к кромке: у настоящего моляра краевой валик сплошной, а
        борозда, дошедшая до края, опускала кромку на одном меридиане — ряд
        «как будто чуть ниже» при вращении (Эльдар, 28.10.2026) */
-    const rr = Math.max(Math.abs(u), Math.abs(v)), edgeF = Math.max(0, Math.min(1, (0.92 - rr) / 0.22));
+    /* «шероховатости» (Эльдар, 29.10.2026): max(|u|, |v|) давал складку по обеим
+       диагоналям верха; квадрат со скруглёнными углами (p = 4) — без складок */
+    const rr = Math.pow(Math.pow(Math.abs(u), 4) + Math.pow(Math.abs(v), 4), 0.25), edgeF = Math.max(0, Math.min(1, (0.92 - rr) / 0.22));
     h -= 6.5 * Math.exp(-v * v / 0.014) * Math.max(0, 1 - Math.pow(Math.abs(u) / 0.9, 4)) * edgeF;   // центральная фиссура
     h -= 4.5 * Math.exp(-(u - 0.03) * (u - 0.03) / 0.014) * Math.min(1, Math.abs(v) / 0.12) * edgeF;   // щёчная и язычная борозды
     h -= 3.5 * G2(u, v, 0.03);                                                                  // центральная ямка
-    h += 4 * Math.pow(Math.max(Math.abs(u), Math.abs(v)), 6);                                   // краевые валики к кромке
+    h += 4 * Math.pow(rr, 6);                                                                    // краевые валики к кромке
     return h;
+  };
+  /* КРОМКА СКРУГЛЕНА (Эльдар, 29.10.2026: «в том ряде точек наверху, который
+     объединяет верх и боковую плоскость, — слишком угловатый поворот, нужно
+     закруглить верхнюю кромку»). q — доля радиуса до стенки (1 — сама стенка);
+     последние FIL_W верха уходят вниз по четверти эллипса на FIL_D и встречают
+     стенку отвесно, а стенка кончается на FIL_D ниже прежней кромки. 7 единиц
+     при ширине ~120 — заметно круглое ребро, бугры внутри не тронуты. */
+  const FIL_D = 7, FIL_W = 0.145, Q0 = 1 - FIL_W;
+  const topY = (cu, sv, q) => {
+    const x = Math.max(0, Math.min(1, (q - Q0) / FIL_W));
+    return occl(cu * 0.97 * q, sv * 0.97 * q) - FIL_D * (1 - Math.sqrt(1 - x * x));
   };
   /* стенка — по меридианам; жевательная поверхность — РАВНОМЕРНОЙ сеткой по
      площади (по лучам от центра точки сходились в середине узлом), и каждая
@@ -16630,7 +16643,7 @@ function molarMesh(){
   for (let m = 0; m < M; m++){
     const a = m / M * Math.PI * 2, [px0, pz0] = plan(a), cu = Math.cos(a), sv = Math.sin(a);
     const ring = [];
-    const yRim = occl(cu * 0.97, sv * 0.97);
+    const yRim = topY(cu, sv, 1);
     for (let i = 0; i < PW; i++){
       const t = i / (PW - 1);
       // ширина стенки: шейка 0.80 → экватор (треть высоты) 1.0 → кромка 0.86
@@ -16641,6 +16654,8 @@ function molarMesh(){
       const yFlat = -30 + t * (34 + 30), yCusp = -30 + t * (yRim + 30), tw = t * t * t;
       ring.push([px0 * f, yFlat + (yCusp - yFlat) * tw, pz0 * f]);
     }
+    // ряд на середине скругления (φ = 45°): между верхним рядом стенки и краем сетки верха
+    { const q = Q0 + FIL_W * Math.SQRT1_2; ring.push([px0 * 0.86 * q, topY(cu, sv, q), pz0 * 0.86 * q]); }
     rings.push(ring);
   }
   const STEP = 5.2;   // шаг шестиугольной сетки верха, в единицах сетки
@@ -16648,10 +16663,9 @@ function molarMesh(){
     for (let gx = -RX + (row % 2) * STEP / 2; gx <= RX; gx += STEP){
       const a = Math.atan2(gz, gx), [rx_, rz_] = plan(a);
       const sR = Math.hypot(gx, gz) / (Math.hypot(rx_, rz_) * 0.86);
-      if (sR > 0.95) continue;
-      const u = Math.cos(a) * sR, v = Math.sin(a) * sR;
+      if (sR > Q0 + 0.01) continue;      // дальше — скругление, его держат свои ряды
       const m = ((Math.round(a / (Math.PI * 2) * M) % M) + M) % M;
-      rings[m].push([gx, occl(u, v), gz]);
+      rings[m].push([gx, topY(Math.cos(a), Math.sin(a), sR), gz]);
     }
   }
   CROWN3D.molar = {rings, M, P: PW, step: 1};
@@ -16662,11 +16676,11 @@ function molarMesh(){
      от точки на оси под шейкой, по стенке вверх, по жевательной поверхности к
      центральной ямке. 72 меридиана × (1 + 14 стенки + 14 верха + 1). */
   {
-    const MS = 72, SW = 14, SO = 14, surf = [];
+    const MS = 72, SW = 22, NF = 5, NI = 13, surf = [];   // стенка 22 ряда (было 14): ступенька тона по высоте вдвое мельче
     const yC = occl(0, 0);
     for (let m = 0; m < MS; m++){
       const a = m / MS * Math.PI * 2, [px0, pz0] = plan(a), cu = Math.cos(a), sv = Math.sin(a);
-      const yRim = occl(cu * 0.97, sv * 0.97), ring = [[0, -30, 0]];
+      const yRim = topY(cu, sv, 1), ring = [[0, -30, 0]];
       for (let i = 0; i < SW; i++){
         const t = i / (SW - 1);
         const f = t < 0.33 ? 0.80 + 0.20 * Math.sin(t / 0.33 * Math.PI / 2)
@@ -16674,14 +16688,21 @@ function molarMesh(){
         const yFlat = -30 + t * (34 + 30), yCusp = -30 + t * (yRim + 30), tw = t * t * t;
         ring.push([px0 * f, yFlat + (yCusp - yFlat) * tw, pz0 * f]);
       }
-      for (let j = 1; j <= SO; j++){
-        const sR = 0.97 * (1 - j / (SO + 1));
-        ring.push([px0 * 0.86 * sR / 0.97 * 0.97, occl(cu * sR, sv * sR), pz0 * 0.86 * sR / 0.97 * 0.97]);
+      // скругление кромки: через каждые 15° четверти эллипса
+      for (let k2 = 1; k2 <= NF; k2++){
+        const q = Q0 + FIL_W * Math.sin((90 - 15 * k2) * Math.PI / 180);
+        ring.push([px0 * 0.86 * q, topY(cu, sv, q), pz0 * 0.86 * q]);
+      }
+      // жевательная поверхность: от начала скругления к центральной ямке
+      for (let j = 0; j < NI; j++){
+        const q = Q0 * (1 - j / NI);
+        ring.push([px0 * 0.86 * q, topY(cu, sv, q), pz0 * 0.86 * q]);
       }
       ring.push([0, yC, 0]);
       surf.push(ring);
     }
-    CROWN3D.molarSurf = {rings: surf, M: MS, P: SW + SO + 2};
+    // top — первый ряд жевательной поверхности: грани с p ≥ top рисуются своей группой (см. drawCrown3D)
+    CROWN3D.molarSurf = {rings: surf, M: MS, P: 1 + SW + NF + NI + 1, top: 1 + SW + NF};
   }
   return CROWN3D.molar;
 }
@@ -16751,6 +16772,19 @@ function drawCrownPhoto(cx, footY, size, alpha){
   ctx.restore();
   return {top};
 }
+/* glazed zirconia: a cool white body, shadows going grey-blue, the rim letting
+   light through, and a slightly warmer, darker cervical margin — for one vertex
+   of face row p (V: diffuse, specular, rim per vertex, at offset o) */
+function glazeRGB(V, o, p, P){
+  const lam = V[o], spec = V[o + 1], rim = V[o + 2];
+  const sh = 0.58 + 0.42 * lam;                    // glazed white does not go dark
+  let r = 247*sh + 40*rim, g = 248*sh + 44*rim, bl = 250*sh + 52*rim;
+  r += 255*spec*0.55; g += 255*spec*0.55; bl += 255*spec*0.55;
+  if (p === 1){ r *= 0.92; g *= 0.90; bl *= 0.88; }         // the cervical margin, a shade warmer
+  if (p >= P - 3){ r *= 0.93; g *= 0.94; bl *= 0.95; }      // the fossa, a shade deeper
+  return [Math.min(255, r), Math.min(255, g), Math.min(255, bl)];
+}
+const rgbStr = (r, g, b) => `rgb(${r|0},${g|0},${b|0})`;
 function drawCrown3D(cx, footY, size, alpha){
   /* фото-кадры (r_sculpt_*) — только по ?crownphoto=1: Эльдар (28.10.2026)
      попросил видеть здесь ту же форму моляра, что у облака 2007-го, в 3D */
@@ -16786,6 +16820,33 @@ function drawCrown3D(cx, footY, size, alpha){
   const L = [-0.48, 0.72, -0.50];                    // upper left, in front
   const Ln = Math.hypot(...L); L[0]/=Ln; L[1]/=Ln; L[2]/=Ln;
   const Hh = [L[0], L[1], L[2] - 1]; const Hn = Math.hypot(...Hh); Hh[0]/=Hn; Hh[1]/=Hn; Hh[2]/=Hn;
+  /* ГЛАДКИЙ СВЕТ (Эльдар, 29.10.2026: «можно ли как-то сгладить полигоны?»).
+     Грань освещалась своей нормалью, и блик ложился квадратиками. Теперь у
+     каждой вершины нормаль по соседям по обеим осям сетки, свет считается в
+     вершинах, а грань берёт среднее своих четырёх: соседние грани делят по две
+     вершины, и тон течёт без ступенек. Полюса сетки (точка под шейкой и
+     центральная ямка) берут ось коронки. */
+  const axY = [R[1], R[4], R[7]];
+  const axV = [axY[0], axY[1] * ct - axY[2] * st, axY[1] * st + axY[2] * ct];
+  const VS = rings.map(() => new Float32Array(P * 3));   // per vertex: diffuse, specular, rim
+  for (let m = 0; m < M; m++){
+    const A = pts[(m + M - 1) % M], B = pts[(m + 1) % M], C = pts[m];
+    for (let p = 0; p < P; p++){
+      let nx, ny, nz;
+      if (p === 0 || p === P - 1){
+        const sg = p === 0 ? -1 : 1; nx = axV[0] * sg; ny = axV[1] * sg; nz = axV[2] * sg;
+      } else {
+        const ux = B[p].X - A[p].X, uy = B[p].Y - A[p].Y, uz = B[p].Z - A[p].Z;
+        const vx = C[p + 1].X - C[p - 1].X, vy = C[p + 1].Y - C[p - 1].Y, vz = C[p + 1].Z - C[p - 1].Z;
+        nx = uy*vz - uz*vy; ny = uz*vx - ux*vz; nz = ux*vy - uy*vx;
+        const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+      }
+      const o = p * 3;
+      VS[m][o] = Math.max(0, nx*L[0] + ny*L[1] + nz*L[2]);
+      VS[m][o + 1] = Math.pow(Math.max(0, nx*Hh[0] + ny*Hh[1] + nz*Hh[2]), 34);
+      VS[m][o + 2] = Math.pow(1 - Math.abs(nz), 2.2);
+    }
+  }
   const quads = [], backRuns = [];   // backRuns: runs of far faces along one meridian, one fill each
   for (let m = 0; m < M; m++){
     const m2 = (m + 1) % M;
@@ -16814,7 +16875,7 @@ function drawCrown3D(cx, footY, size, alpha){
       const vx = d.X - a.X, vy = d.Y - a.Y, vz = d.Z - a.Z;
       let nx = uy*vz - uz*vy, ny = uz*vx - ux*vz, nz = ux*vy - uy*vx;
       const nl = Math.hypot(nx, ny, nz) || 1; nx/=nl; ny/=nl; nz/=nl;
-      quads.push({a, b, c, d, nx, ny, nz, p, z: (a.z + b.z + c.z + d.z) / 4});
+      quads.push({a, b, c, d, nx, ny, nz, p, z: (a.z + b.z + c.z + d.z) / 4, V0: VS[m], V1: VS[m2]});
     }
     if (r0 >= 0) backRuns.push(m, m2, r0, P - 2);
   }
@@ -16849,6 +16910,22 @@ function drawCrown3D(cx, footY, size, alpha){
     }
   }
   quads.sort((q1, q2) => q2.z - q1.z);               // far first
+  /* ВЕРХ И СТЕНКИ — В ПОРЯДКЕ ВЗГЛЯДА (Эльдар, 29.10.2026: «3D-модель поехала,
+     и некоторые элементы, которые находятся перед другими, не видны»). Сортировка
+     по средней глубине грани путала длинную грань стенки с мелкой гранью верха:
+     снизу и сбоку склоны бугров ложились поверх передней стенки полосками. Если
+     верх виден снаружи (контур первого ряда жевательной поверхности обходится на
+     экране так же, как лицевые грани), сперва стенки, потом верх; если нет —
+     сперва верх, потом стенки, и стенка его закрывает. Внутри группы — по глубине. */
+  const TOP = mesh.top;
+  if (TOP){
+    let ar = 0;
+    for (let m = 0; m < M; m++){ const a = pts[m][TOP], b = pts[(m + 1) % M][TOP]; ar += a.x * b.y - b.x * a.y; }
+    const topSeen = ar > 0;
+    const wall = quads.filter(q => q.cap || q.p < TOP), top = quads.filter(q => !q.cap && q.p >= TOP);
+    quads.length = 0;
+    quads.push(...(topSeen ? wall.concat(top) : top.concat(wall)));
+  }
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.lineJoin = 'round';
@@ -16885,18 +16962,24 @@ function drawCrown3D(cx, footY, size, alpha){
       ctx.closePath(); ctx.fill(); ctx.stroke();
       continue;
     }
-    const lam = Math.max(0, q.nx*L[0] + q.ny*L[1] + q.nz*L[2]);
-    const spec = Math.pow(Math.max(0, q.nx*Hh[0] + q.ny*Hh[1] + q.nz*Hh[2]), 34);
-    const rim = Math.pow(1 - Math.abs(q.nz), 2.2);
-    // glazed zirconia: a cool white body, shadows going grey-blue, the rim
-    // letting light through, and a slightly warmer, darker cervical margin
-    const sh = 0.58 + 0.42 * lam;                    // glazed white does not go dark
-    let r = 247*sh + 40*rim, g = 248*sh + 44*rim, bl = 250*sh + 52*rim;
-    r += 255*spec*0.55; g += 255*spec*0.55; bl += 255*spec*0.55;
-    if (q.p === 1){ r *= 0.92; g *= 0.90; bl *= 0.88; }         // the cervical margin, a shade warmer
-    if (q.p >= P - 3){ r *= 0.93; g *= 0.94; bl *= 0.95; }      // the fossa, a shade deeper
-    const col = `rgb(${Math.min(255, r)|0},${Math.min(255, g)|0},${Math.min(255, bl)|0})`;
-    ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineWidth = 0.9;   // the stroke closes the seams
+    /* тон — в каждом углу грани, из света его вершины (см. ГЛАДКИЙ СВЕТ), и
+       грань заливается градиентом вдоль меридианов — у всех граней по одной оси,
+       иначе соседи с разными осями не сходятся на общем ребре и кромка идёт
+       гребёнкой; по высоте ступеньку делает мелкой густая сетка стенки */
+    const o0 = q.p * 3, o1 = o0 + 3, V0 = q.V0, V1 = q.V1;
+    const cA = glazeRGB(V0, o0, q.p, P), cB = glazeRGB(V1, o0, q.p, P),
+          cC = glazeRGB(V1, o1, q.p, P), cD = glazeRGB(V0, o1, q.p, P);
+    const dM = Math.abs(cB[1] + cC[1] - cA[1] - cD[1]);
+    let fs;
+    if (dM < 3) fs = rgbStr((cA[0] + cB[0] + cC[0] + cD[0]) / 4, (cA[1] + cB[1] + cC[1] + cD[1]) / 4, (cA[2] + cB[2] + cC[2] + cD[2]) / 4);
+    else {
+      const [p1, p2, c1a, c1b, c2a, c2b] = [[q.a, q.d], [q.b, q.c], cA, cD, cB, cC];
+      const gr = ctx.createLinearGradient((p1[0].x + p1[1].x) / 2, (p1[0].y + p1[1].y) / 2, (p2[0].x + p2[1].x) / 2, (p2[0].y + p2[1].y) / 2);
+      gr.addColorStop(0, rgbStr((c1a[0] + c1b[0]) / 2, (c1a[1] + c1b[1]) / 2, (c1a[2] + c1b[2]) / 2));
+      gr.addColorStop(1, rgbStr((c2a[0] + c2b[0]) / 2, (c2a[1] + c2b[1]) / 2, (c2a[2] + c2b[2]) / 2));
+      fs = gr;
+    }
+    ctx.fillStyle = fs; ctx.strokeStyle = fs; ctx.lineWidth = 0.9;   // the stroke closes the seams
     ctx.beginPath();
     ctx.moveTo(q.a.x, q.a.y); ctx.lineTo(q.b.x, q.b.y); ctx.lineTo(q.c.x, q.c.y); ctx.lineTo(q.d.x, q.d.y);
     ctx.closePath(); ctx.fill(); ctx.stroke();
