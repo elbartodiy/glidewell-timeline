@@ -14287,6 +14287,7 @@ const sheetOf = tb => {
    is touched. No caps of my own, no door laid one after another, no patches.
    The middle panel repeats with its joins faded through each other, which on a
    doorless panel leaves nothing to see. */
+const ERA1_BENCH_DROP = 1004 - (700 + (388 - 39) * 380 / 441);   // 3.28 — см. ПРИЛАВОК 1907–1979
 function drawSheetBenches(){
   const kf = k(0), wpp = kf * SS;
   const yBack = py(CFG.benchY, k(CFG.benchDepth));
@@ -14301,7 +14302,14 @@ function drawSheetBenches(){
     const U = (1080 - CFG.benchY) / (IH - sh.top);         // world units per image row
     const wOf = im => (im.naturalWidth || im.width) * U;
     const rowH = (yFloor - yFront) / (IH - sh.top);
-    const yTop = yFront - sh.top * rowH, hh = IH * rowH;
+    /* ПРИЛАВОК 1907–1979 — НА ЛИНИЮ ШКАЛЫ (Эльдар, 29.10.2026: «левые столы чуть
+       опустить, чтобы торец там совпадал с линией, а то он очень близко к ней, но не
+       совпадает, и это создаёт ощущение ошибки»). Светлая кромка под филёнками —
+       строка 388 всех трёх листов b1 (замер по яркости, пик 111–150 между 32 и 40):
+       она ложилась на 700 + (388 − 39)·380/441 = 1000,7 из 1080, линия шкалы —
+       1080 − 76 = 1004. Лист первой эпохи опущен на разницу, 3,3 единицы. */
+    const drop = sh.era === 0 ? ERA1_BENCH_DROP * kf * SS : 0;
+    const yTop = yFront - sh.top * rowH + drop, hh = IH * rowH;
     /* ?wt=1 puts the worktop back on the hall's own depth — the band above `top`
        pulled from the 23 units the render carries to the 74 this hall gives a
        counter. It is off by default because Eldar saw the pull and stopped it;
@@ -14316,8 +14324,8 @@ function drawSheetBenches(){
         ctx.save();
         if (flip){ ctx.translate(sa + sWid + 0.7, 0); ctx.scale(-1, 1); }
         const x0s = flip ? 0 : sa;
-        ctx.drawImage(im, 0, 0, IW, sh.top, x0s, yBack, sWid + 0.7, yFront - yBack);
-        ctx.drawImage(im, 0, sh.top, IW, IH - sh.top, x0s, yFront, sWid + 0.7, yFloor - yFront);
+        ctx.drawImage(im, 0, 0, IW, sh.top, x0s, yBack + drop, sWid + 0.7, yFront - yBack);
+        ctx.drawImage(im, 0, sh.top, IW, IH - sh.top, x0s, yFront + drop, sWid + 0.7, yFloor - yFront);
         ctx.restore();
         return;
       }
