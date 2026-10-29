@@ -9855,11 +9855,60 @@ function drawAiDataField(x0, y0, w, h, t, ph, walked){
   ctx.beginPath(); ctx.roundRect(x0, y0, w, h, 4 * SS); ctx.stroke();
   ctx.restore();
 }
+/* CAD-МОДЕЛЬ КОРОНКИ ИЗ ЕЁ ЖЕ ФОТО (29.10.2026): промежуточный шаг между
+   линиями и керамикой на экране 2018-го. Форма — альфа фото, один в один; тон —
+   яркость фото, сглаженная и переложенная на ровную серо-голубую шкалу программы
+   проектирования; по форме — сетка (срезы через 1/18 высоты, рёбра через 1/14
+   ширины) и светлый контур по краю альфы. Считается один раз
+   (чтение пикселей — один раз при первом показе) и кэшируется на спрайте. */
+function crownCAD(sp){
+  if (sp._cad) return sp._cad;
+  const w = sp.w, h = sp.h, c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d', {willReadFrequently: true});
+  g.drawImage(sp.c, 0, 0, w, h);
+  const im = g.getImageData(0, 0, w, h), d = im.data, A = new Uint8Array(w * h);
+  let Lm = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++){ A[i] = d[i * 4 + 3]; Lm[i] = (0.3 * d[i * 4] + 0.59 * d[i * 4 + 1] + 0.11 * d[i * 4 + 2]) / 255; }
+  /* тон — сглаженный (два прохода коробочного размытия радиусом h/60): у CAD нет
+     ни зерна, ни бликов глазури, только сама форма под светом */
+  const R = Math.max(2, Math.round(h / 60)), tmp = new Float32Array(w * h);
+  for (let pass = 0; pass < 2; pass++){
+    for (let y = 0; y < h; y++){ let acc = 0, n = 0;
+      for (let x = -R; x < w; x++){
+        if (x + R < w){ acc += Lm[y * w + x + R]; n++; }
+        if (x - R - 1 >= 0){ acc -= Lm[y * w + x - R - 1]; n--; }
+        if (x >= 0) tmp[y * w + x] = acc / n; } }
+    for (let x = 0; x < w; x++){ let acc = 0, n = 0;
+      for (let y = -R; y < h; y++){
+        if (y + R < h){ acc += tmp[(y + R) * w + x]; n++; }
+        if (y - R - 1 >= 0){ acc -= tmp[(y - R - 1) * w + x]; n--; }
+        if (y >= 0) Lm[y * w + x] = acc / n; } }
+  }
+  const lo = [46, 64, 86], hi = [214, 226, 238];
+  const sliceH = Math.max(3, Math.round(h / 18)), meshW = Math.max(3, Math.round(w / 14));
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+    const i = y * w + x, o = i * 4, a = A[i];
+    if (a < 8) continue;
+    const q = Math.min(1, Math.max(0, (Lm[i] - 0.25) / 0.7));
+    const edge = (x && y && x < w - 1 && y < h - 1) &&
+      (A[i - 1] < 60 || A[i + 1] < 60 || A[i - w] < 60 || A[i + w] < 60) && a >= 60;
+    let r = lo[0] + (hi[0] - lo[0]) * q, gg = lo[1] + (hi[1] - lo[1]) * q, b = lo[2] + (hi[2] - lo[2]) * q;
+    // сетка модели: срезы по высоте и рёбра поперёк — тонко, поверх тона
+    if (y % sliceH === 0){ r = r * 0.7 + 50; gg = gg * 0.7 + 80; b = b * 0.7 + 100; }
+    else if (x % meshW === 0){ r = r * 0.82 + 30; gg = gg * 0.82 + 48; b = b * 0.82 + 62; }
+    if (edge){ r = 190; gg = 228; b = 255; }
+    d[o] = r; d[o + 1] = gg; d[o + 2] = b;
+  }
+  g.putImageData(im, 0, 0);
+  return (sp._cad = c);
+}
 function drawAiCrownVitrine(mid, kk, t){
-  /* НА ЭКРАНЕ 2018-ГО — РИСОВАННАЯ КОРОНКА (Эльдар, 29.10.2026: «2018 нужно
-     натуральную коронку убрать с экрана — откатим её»): фото r_crown_000
-     осталось у R&D 2000 и скана 2009, сюда вернулась прежняя crown2 */
-  const V = AI_VITRINE, sp = PED_SPRITES.crown2d || PED_SPRITES.crown2;
+  /* НА ЭКРАНЕ 2018-ГО — СНОВА ФОТО (Эльдар, 29.10.2026, днём откатил к рисованной,
+     вечером: «ладно, давай оставим натуральную, но чтобы она не качалась как
+     неваляшка; и пусть она появляется не как сейчас, а постепенно и с
+     промежуточным шагом между ней и рисованными линиями — 3D-модель типа CAD/CAM»).
+     Рисованная crown2d остаётся в загрузке на случай отката. */
+  const V = AI_VITRINE, sp = PED_SPRITES.crown2;
   if (!sp) return;
   const {pts: CROWN_PTS, rows: CROWN_ROWS} = crownGeo(sp);
   const cx = px(mid, kk);
@@ -9935,21 +9984,24 @@ function drawAiCrownVitrine(mid, kk, t){
   const cw = V.crownW * kk * SS, ch = cw * sp.h / sp.w;
   const ccx = cx, ccy = py(V.crownCY, kk);
   const cTop = ccy - ch/2, cBot = ccy + ch/2;
-  // the schedule the brief asked for, read off one phase
+  /* ЧЕТЫРЕ СОСТОЯНИЯ ПО ОДНОЙ ФАЗЕ, НАПЛЫВОМ (29.10.2026). Было: точки и срезы
+     над светящейся кромкой, которая шла снизу вверх и открывала под собой готовую
+     керамику, — и потом коронка качалась (0.17·sin). Теперь каждое состояние
+     проступает сквозь предыдущее: точки → срезы и профили → CAD-модель (та же
+     форма, залитая ровным серо-голубым тоном с рёбрами, как в программе
+     проектирования) → фото. Качания нет. */
   const seg = (a, b) => Math.max(0, Math.min(1, (ph - a) / (b - a)));
-  const gather = seg(0.00, 0.25);            // points come in from the scatter
-  const rings  = seg(0.18, 0.55);            // contour slices settle
-  const solid  = seg(0.42, 0.85);            // ceramic rises through the form
+  const ease = u => u * u * (3 - 2 * u);
+  const gather = seg(0.00, 0.22);            // points come in from the scatter
+  const rings  = ease(seg(0.14, 0.40));      // contour slices settle
+  const cad    = ease(seg(0.36, 0.62));      // the CAD model fills the form
+  const photo  = ease(seg(0.60, 0.88));      // the ceramic comes up through it
   const done   = seg(0.85, 1.00);            // data thins out, the piece rests
-  const revealY = cBot - solid * ch * 1.04;  // the edge, bottom to top
-  const rock = done * 0.17 * Math.sin(t * 0.55);   // at most ~10°, and only once it is whole
   ctx.save();
   screenPath(); ctx.clip();
-  // the digital states live ABOVE the edge
-  if (ph > 0.01 && (1 - done) > 0.02){
-    ctx.save();
-    ctx.beginPath(); ctx.rect(nx0, nTop, nw, Math.max(0, revealY - nTop)); ctx.clip();
-    const aPts = (0.15 + 0.85 * gather) * (1 - done * 0.92);
+  const wire = (1 - cad * 0.85) * (1 - photo);   // the drawn lines give way to the model
+  if (ph > 0.01 && wire > 0.02){
+    const aPts = (0.15 + 0.85 * gather) * wire * (1 - rings * 0.55);
     const scatter = (1 - gather) * cw * 0.55;
     ctx.fillStyle = `rgba(${V.rim},${Math.min(1, aPts).toFixed(3)})`;
     const pr = Math.max(0.8, cw * 0.0065);
@@ -9961,7 +10013,7 @@ function drawAiCrownVitrine(mid, kk, t){
       ctx.beginPath(); ctx.arc(x, y, pr, 0, 7); ctx.fill();
     }
     if (rings > 0.01){
-      const aR = rings * (1 - done * 0.95);
+      const aR = rings * wire;
       ctx.strokeStyle = `rgba(${V.rim},${(0.55 * aR).toFixed(3)})`;
       ctx.lineWidth = Math.max(1, cw * 0.006);
       for (const [ax, bx, uy] of CROWN_ROWS){
@@ -9976,23 +10028,15 @@ function drawAiCrownVitrine(mid, kk, t){
         ctx.stroke();
       }
     }
-    ctx.restore();
   }
-  // the ceramic lives BELOW the edge
-  if (solid > 0.001){
+  // the CAD model, then the photograph through it
+  const aCad = cad * (1 - photo);
+  if (aCad > 0.01 || photo > 0.01){
     ctx.save();
-    ctx.beginPath(); ctx.rect(nx0, revealY, nw, Math.max(0, nBot - revealY)); ctx.clip();
-    ctx.translate(ccx, ccy); ctx.rotate(rock);
     ctx.shadowColor = 'rgba(40,60,80,0.22)'; ctx.shadowBlur = 10 * SS; ctx.shadowOffsetY = 4 * SS;
-    ctx.drawImage(spriteMip(sp, cw, ch), -cw/2, -ch/2, cw, ch);
+    if (aCad > 0.01){ ctx.globalAlpha = aCad; ctx.drawImage(crownCAD(sp), ccx - cw/2, ccy - ch/2, cw, ch); }
+    if (photo > 0.01){ ctx.globalAlpha = photo; ctx.drawImage(spriteMip(sp, cw, ch), ccx - cw/2, ccy - ch/2, cw, ch); }
     ctx.restore();
-    // the edge of the materialisation: one thin cool line, gone when whole
-    if (solid < 0.999 && revealY >= cTop){   // the edge exists only while it is crossing the form
-      const eg = ctx.createLinearGradient(ccx - cw * 0.7, 0, ccx + cw * 0.7, 0);
-      eg.addColorStop(0, `rgba(${V.rim},0)`); eg.addColorStop(0.5, `rgba(${V.rim},0.85)`); eg.addColorStop(1, `rgba(${V.rim},0)`);
-      ctx.fillStyle = eg;
-      ctx.fillRect(ccx - cw * 0.7, revealY - 0.8 * SS, cw * 1.4, 1.6 * SS);
-    }
   }
   if (done > 0.01) drawGlow(V.rim, ccx, ccy, cw * 0.9, 0.14 * done);
   /* ---- the instrument reading of it: reticle, scan line, readout ---- */
@@ -10313,7 +10357,7 @@ function drawAIRelay(t){
   const p = u * u * (3 - 2 * u);
   const build = latchedPhase(mid, 450);
   if (build <= 0.28 || p < 0.02) return;
-  const spR = PED_SPRITES.crown2d || PED_SPRITES.crown2;   // та же рисованная, что на экране 2018-го
+  const spR = PED_SPRITES.crown2;   // то же фото, что на экране 2018-го
   const {pts: CROWN_PTS} = crownGeo(spR);
   const V = AI_VITRINE, kv = k(1000);
   const ccx = px(mid, kv), ccy = py(V.crownCY, kv);
