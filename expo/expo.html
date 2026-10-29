@@ -9831,9 +9831,12 @@ function drawAiDataField(x0, y0, w, h, t, ph, walked){
   ctx.restore();
 }
 function drawAiCrownVitrine(mid, kk, t){
-  const V = AI_VITRINE, sp = PED_SPRITES.crown2;
+  /* НА ЭКРАНЕ 2018-ГО — РИСОВАННАЯ КОРОНКА (Эльдар, 29.10.2026: «2018 нужно
+     натуральную коронку убрать с экрана — откатим её»): фото r_crown_000
+     осталось у R&D 2000 и скана 2009, сюда вернулась прежняя crown2 */
+  const V = AI_VITRINE, sp = PED_SPRITES.crown2d || PED_SPRITES.crown2;
   if (!sp) return;
-  crownGeometry();
+  const {pts: CROWN_PTS, rows: CROWN_ROWS} = crownGeo(sp);
   const cx = px(mid, kk);
   const nw = V.w * kk * SS, nx0 = cx - nw/2;
   const nTop = py(V.top, kk), nBot = py(V.bot, kk), nh = nBot - nTop;
@@ -10285,10 +10288,11 @@ function drawAIRelay(t){
   const p = u * u * (3 - 2 * u);
   const build = latchedPhase(mid, 450);
   if (build <= 0.28 || p < 0.02) return;
-  crownGeometry();
+  const spR = PED_SPRITES.crown2d || PED_SPRITES.crown2;   // та же рисованная, что на экране 2018-го
+  const {pts: CROWN_PTS} = crownGeo(spR);
   const V = AI_VITRINE, kv = k(1000);
   const ccx = px(mid, kv), ccy = py(V.crownCY, kv);
-  const cw = V.crownW * kv * SS, ch = cw * PED_SPRITES.crown2.h / PED_SPRITES.crown2.w;
+  const cw = V.crownW * kv * SS, ch = cw * spR.h / spR.w;
   const kp = k(P.z), ex = px(P.x, kp), ey = py(P.y, kp);
   const leave = Math.min(1, (p - 0.02) / 0.12);
   const head = p * 1.45;                            // the stream is ~0.45 long; the head reaches the screen at p≈0.69
@@ -11023,7 +11027,14 @@ function drawMapWall(t){
 let CROWN_PTS = null, CROWN_ROWS = null;
 function crownGeometry(){
   if (CROWN_PTS) return;
-  const sp = PED_SPRITES.crown2;
+  const G = crownGeo(PED_SPRITES.crown2);
+  CROWN_PTS = G.pts; CROWN_ROWS = G.rows;
+}
+/* точки и срезы — по альфе СВОЕГО спрайта: у экрана 2018-го коронка снова
+   рисованная (crown2d), у остальных — фото, и каждому нужен свой контур */
+function crownGeo(sp){
+  if (sp._geo) return sp._geo;
+  let CROWN_PTS, CROWN_ROWS;
   const c = document.createElement('canvas'); c.width = sp.w; c.height = sp.h;
   const g = c.getContext('2d', {willReadFrequently: true});
   g.drawImage(sp.c, 0, 0, sp.w, sp.h);   // the sprite is authored above its layout size
@@ -11041,6 +11052,7 @@ function crownGeometry(){
     for (let x = 0; x < sp.w; x++){ if (inside(x, y)){ if (a < 0) a = x; b = x; } }
     if (a >= 0 && b - a > 3) CROWN_ROWS.push([a / sp.w - 0.5, b / sp.w - 0.5, y / sp.h - 0.5]);
   }
+  return (sp._geo = {pts: CROWN_PTS, rows: CROWN_ROWS});
 }
 /* the scan: the surface as a cloud of measured points, nothing solid yet */
 /* ТОЧКИ НА ЭКРАНЕ — ТОЛЬКО ТЕ, ЧТО УЖЕ ДОЛЕТЕЛИ. Облако на экране цифровой
@@ -25341,6 +25353,7 @@ async function boot(){
   /* коронка зала — фото (r_crown_000) вместо рисованной с овальным бликом:
      ею живут R&D 2000, скан 2009, экран 2018 и маски/облака по её альфе */
   PED_SPRITES.crown2 = PROP_SPRITES.ph_crown_a || makePedObj('crown2');
+  PED_SPRITES.crown2d = makePedObj('crown2');   // экран 2018-го — рисованная (Эльдар, 29.10.2026)
   /* fastmill.io is a photograph now, not a drawing of a machine: the same
      render Eldar cut for the vitrine's wand, cropped above its studio feet so
      it stands on whatever it is put on instead of carrying a second shadow. */
