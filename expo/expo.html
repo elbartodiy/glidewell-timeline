@@ -10374,13 +10374,16 @@ function drawPendant(t){
     /* стойка на листе — столбцы 112…162 (замер альфы по строкам 360…620), ось 137;
        ниже строки 600 лист срезан, и стойка тянется до пола полосой из самого листа
        (строки 560…600), растянутой по высоте: та же сталь, тот же блик */
-    const sc = 112 / 320, cut = 600, ax = 137;
+    /* лист достроен слева на 34 точки (r_r19_hmi_terminal_full, 354×692): левое поле
+       коробки — зеркало правого (столбцы 283…317) с винтами, аварийная кнопка дополнена
+       по своему кругу (центр 39.5, 262.5; радиус 36.5). Стойка теперь — столбцы 146…196 */
+    const sc = 112 / 320, cut = 600, ax = 171;
     const src = spriteMip(HM, HM.w * sc * S, HM.h * sc * S);
-    const fy = (src.height || src.naturalHeight) / 692, fx = (src.width || src.naturalWidth) / 320;
+    const fy = (src.height || src.naturalHeight) / 692, fx = (src.width || src.naturalWidth) / 354;
     const x0 = px2 - ax * sc * S, yTopB = Y(PT);
     const yCut = yTopB + cut * sc * S;
-    ctx.drawImage(src, 112 * fx, 560 * fy, 51 * fx, 40 * fy, x0 + 112 * sc * S, yCut - 1, 51 * sc * S, Y(1080) - yCut + 1);
-    ctx.drawImage(src, 0, 0, src.width || src.naturalWidth, cut * fy, x0, yTopB, 320 * sc * S, cut * sc * S);    ctx.restore();
+    ctx.drawImage(src, 146 * fx, 560 * fy, 51 * fx, 40 * fy, x0 + 146 * sc * S, yCut - 1, 51 * sc * S, Y(1080) - yCut + 1);
+    ctx.drawImage(src, 0, 0, src.width || src.naturalWidth, cut * fy, x0, yTopB, 354 * sc * S, cut * sc * S);    ctx.restore();
     return;
   }
   ctx.strokeStyle = 'rgba(168,174,180,0.9)'; ctx.lineWidth = Math.max(1, 6 * S);
@@ -14975,7 +14978,7 @@ async function loadPhotoSkin(){
     ph_t00f: 'r_t00_frame.png', ph_t00x: 'r_t00_crosshead.png', ph_t00g: 'r_t00_gauge_dial.png',
     ph_t00c: 'r_t00_control.png', ph_t00p: 'r_t00_powder_press.png', ph_t00h: 'r_t00_sinter_furnace.png',
     ph_t00b: 'r_t00_conveyor.png',
-    ph_r19hmi: 'r_r19_hmi_terminal.png',
+    ph_r19hmi: 'r_r19_hmi_terminal_full.png',   // левый край достроен: исходник срезан по рамке и аварийной кнопке (Эльдар, 29.10.2026)
     // 2019: фабрика BruxZir — рендеры Эльдара «BruxZirFactory*» (29.10.2026), обрезаны по альфе
     ph_bzfF: 'r_bzf_frame.png', ph_bzfA: 'r_bzf_axis.png', ph_bzfB: 'r_bzf_beam.png', ph_bzfG: 'r_bzf_gripper.png',   // 2019: пульт на стойке (реализм 09, только он — Эльдар, 29.10.2026)
     ph_crt: 'r_crt.png',              // 2002: ЭЛТ-монитор (ChatGPT), экран — прозрачный проём 160…752 × 95…544
@@ -19881,9 +19884,16 @@ function drawBZF(t){
      верхней и нижней рейкам (её каретки — вверху и внизу), захват — на их пересечении.
      Ось рисуется перед балкой, захват — перед обеими. */
   const ux = G[0] - (434 - 361) * sb;
+  /* ВЕРХНЯЯ КАРЕТКА — НА ВЕРХНЕЙ РЕЙКЕ (Эльдар, 29.10.2026: «часть вертикальной линии
+     по высоте должна находиться на уровне направляющей… нижняя часть нормально»). Каретка
+     оси (строки 178…300 листа, середина 240) стояла на 200 точках рамы, ниже рейки; теперь
+     её середина — на середине верхней рейки (69), над рамой поднимается только кабель.
+     Нижняя каретка — на прежнем месте (низ 945). Вынуто семь звеньев цепи вместо десяти
+     (504…892, 388 строк). */
+  const yA0 = 69 - (240 - 14) * sb;
   const axis = () => {
-    piece(Asp, BZF_SRC.A, 0, 0, 361, 14, 191 * sb, 486 * sb, ux, 27, sb, false);
-    piece(Asp, BZF_SRC.A, 0, 0, 361, 1060, 191 * sb, 694 * sb, ux, 27 + 486 * sb - 0.5, sb, false);
+    piece(Asp, BZF_SRC.A, 0, 0, 361, 14, 191 * sb, 490 * sb, ux, yA0, sb, false);
+    piece(Asp, BZF_SRC.A, 0, 0, 361, 892, 191 * sb, 862 * sb, ux, 945 - 862 * sb, sb, false);
   };
   // балка: оси 129 и 1406, тело по центру на yB
   const sa = T_BZF / 191, Bsp = PROP_SPRITES.ph_bzfB;
