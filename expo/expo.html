@@ -500,7 +500,7 @@ const BEATS = [
      не менялся: просили главную СТРАНИЦУ, а ритм годов 1998–2002 трогать не просили. */
   /* descWall — строка внизу кадра, а не на прилавке: прилавка у 1999-го с
      23.10.2026 нет, и она ложилась поверх строки 2001-го */
-  {x:14925, y:'1999', t:'VERTICAL INTEGRATION', minor:true, yLift:190, descWall:true, descGap:true,
+  {x:14925, y:'1999', t:'VERTICAL INTEGRATION', minor:true, yLift:190, descWall:true, descGap:true, capWallY:800,
    th:'Do not buy what you can make.',
    /* затравка вместо пересказа страницы (Эльдар, 26.10.2026: «на линии нам нужно только небольшая затравка для раскрытия темы — про что внутри»; «го»). Было: «By the end of the nineties Glidewell makes its own almost everything — materials, parts, interiors, advertising. Not to save money: to set its own pace.» */
    d:'Glidewell starts making almost everything itself — to set its own pace.',
@@ -5505,7 +5505,11 @@ function drawBenchDescs(){
         ctx.beginPath(); ctx.rect(gl + 8 * SS, 0, gr - gl - 16 * SS, H); ctx.clip();
         ctx.fillStyle = `rgba(${descInk(seg)},${(aG * 0.92).toFixed(3)})`;
         ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 8*SS; ctx.shadowOffsetY = 2*SS;
-        const capFoot = capFootFloor();
+        /* capWallY — строка на стене, а не на полу проёма (1999, Эльдар, 29.10.2026: «поднять
+           повыше, выше даже уровня столов — ближе к видео»): низ блока — точка стены на высоте
+           capWallY; при 1920×1080 это 620, между низом проекции (555) и задней кромкой
+           прилавков (626), и при наезде строка едет вместе со стеной и картиной */
+        const capFoot = b.capWallY != null ? py(b.capWallY, k(wallZAt(b.x))) : capFootFloor();
         const top = capFoot - (b._d.length - 1) * 32 * SS;
         drawCapLines(b._d, cxG, top, 32 * SS, wide);
       }
