@@ -6449,11 +6449,17 @@ function drawProjBeamWedges(lx, ly, A, B, lamp, t, seed, gain){
   const ex = (P, k) => [lx + (P[0] - lx) * k, ly + (P[1] - ly) * k];
   const A2 = ex(A, 1.04), B2 = ex(B, 1.04);
   g.beginPath(); g.moveTo(lx, ly); g.lineTo(A2[0], A2[1]); g.lineTo(B2[0], B2[1]); g.closePath(); g.fill();
-  // вдоль: от линзы ярче, к стене тише
-  const L = Math.max(Math.hypot(A[0] - lx, A[1] - ly), Math.hypot(B[0] - lx, B[1] - ly));
-  const rg = g.createRadialGradient(lx, ly, 0, lx, ly, L * 1.05);
-  rg.addColorStop(0, 'rgba(0,0,0,1)'); rg.addColorStop(0.3, 'rgba(0,0,0,0.72)');
-  rg.addColorStop(0.7, 'rgba(0,0,0,0.42)'); rg.addColorStop(1, 'rgba(0,0,0,0.26)');
+  /* ВДОЛЬ — В ПРОЗРАЧНОСТЬ ДО ЭКРАНА (Эльдар, 30.10.2026: «луч нужно в прозрачность уводить,
+     чтобы не было видно касания экрана»). Градиент идёт от линзы по перпендикуляру к хорде
+     кадра A–B и гаснет в ноль на 0,78 пути до неё: у самой картины луча уже нет, и дальний
+     край клина (прямая A–B) не виден вовсе. */
+  const vx = B[0] - A[0], vy = B[1] - A[1], vl = Math.hypot(vx, vy) || 1;
+  let nx = -vy / vl, ny = vx / vl;
+  let dd = (A[0] - lx) * nx + (A[1] - ly) * ny;
+  if (dd < 0){ nx = -nx; ny = -ny; dd = -dd; }
+  const rg = g.createLinearGradient(lx, ly, lx + nx * dd, ly + ny * dd);
+  rg.addColorStop(0, 'rgba(0,0,0,1)'); rg.addColorStop(0.3, 'rgba(0,0,0,0.62)');
+  rg.addColorStop(0.6, 'rgba(0,0,0,0.22)'); rg.addColorStop(0.78, 'rgba(0,0,0,0)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
   g.globalCompositeOperation = 'destination-in';
   g.fillStyle = rg; g.fillRect(x0, y0, bw, bh);
   g.setTransform(1, 0, 0, 1, 0, 0);
