@@ -3832,9 +3832,11 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
   if (hand){
     // коронка на плакате — (450, 450); рука вырезана с (4, 8); поворот — вокруг коронки
     const hs = s * P85.hand, cxW = b.x + P85.cx + (450 - 600) * s, cyW = P85.cy - 411 * s + 450 * s + P85.dy;
-    const hx = L + 7 / U * SS, hy = cyW - (450 - 8) * hs;
-    const hw = 553 * hs * U, hh = 743 * hs * U;
-    const pivX = X(hx) + (450 - 4) * hs * U, pivY = Y(cyW);
+    /* ×1.3 от нижнего левого угла (третий набросок: кончик пальца — до «S» в «Secret») */
+    const hy0 = cyW - (450 - 8) * hs, foot = hy0 + 743 * hs, hs2 = hs * 1.3;
+    const hx = L + 7 / U * SS, hy = foot - 743 * hs2;
+    const hw = 553 * hs2 * U, hh = 743 * hs2 * U;
+    const pivX = X(hx) + (450 - 4) * hs2 * U, pivY = Y(hy + (450 - 8) * hs2);
     /* нижняя кромка коронки — ровно по горизонтали (Эльдар, 30.10.2026): на вырезке она
        наклонена на −0,3° (замер по нижней границе светлого по 60 % ширины коронки), рука
        повёрнута на +0,3°; запястье заведено за край бумаги на 12 и обрезано по нему —
@@ -3854,17 +3856,17 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
   ctx.textBaseline = 'alphabetic';
   // заголовок ×1.8: «The Sales» от 11670, обе строки по общему правому краю, базовые 140 и 269 (под цифрами года — воздух)
   // ×1.8 → ×1.62 (второй набросок, «×0,9»: «Secret» касался кончика пальца); правый край прежний
-  const TS = 1.62, xR = 11670 + 635 * s * 1.8, fs = 150 * s * TS * U;
+  const TS = 1.46, xR = 11670 + 635 * s * 1.8, fs = 150 * s * TS * U;
   ctx.font = `900 ${fs.toFixed(1)}px "Helvetica Neue", "Arial Black", Arial, sans-serif`;
-  for (const [txt, wy, wPx] of [['The Sales', 140, 635], ['Secret', 269, 470]]){
+  for (const [txt, wy, wPx] of [['The Sales', 140, 635], ['Secret', 256, 470]]){
     const mw = ctx.measureText(txt).width, want = wPx * s * TS * U;
     ctx.save(); ctx.translate(X(xR), Y(wy)); ctx.scale(want / mw, 1); ctx.textAlign = 'right'; ctx.fillText(txt, 0, 0); ctx.restore();
   }
   // подзаголовок ×1.4 (при ×1.8 он ложился на палец) — по тому же правому краю, под «Secret»
   ctx.font = `400 ${(36 * s * 1.82 * U).toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;   // ×1.4 → ×1.82 («×1,3»)
   ctx.textAlign = 'right';
-  ctx.fillText('Jim introduces marketing', X(xR), Y(320));
-  ctx.fillText('standards that sell', X(xR), Y(355));
+  ctx.fillText('Jim introduces marketing', X(xR), Y(305));
+  ctx.fillText('standards that sell', X(xR), Y(338));
   ctx.textAlign = 'left';
   // логотип ×1.5 — над партами, правым краем у правого края заголовка
   const lg2 = PROP_SPRITES.ph_p85logo;
