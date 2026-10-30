@@ -1875,7 +1875,7 @@ function auditStatics(){
     }
   }
   for (const p of PROPS){
-    if (p.mid) continue;
+    if (p.mid || p.floor) continue;
     const half = (p.w || 120) * 0.5;
     if (!TABLES.some(tb => p.x - half >= tb.x0 - 20 && p.x + half <= tb.x1 + 20))
       bad.push(`prop off any table: ${p.kind} @${p.x|0}`);
@@ -2740,6 +2740,11 @@ const BENCH_BREAKS = [1700, 7350, 13100, 16900, 22280]
    будет короче»). Разрыв у 13100 (после сдвигов зала — 17218) расширен только вправо: конец прилавка слева — прежний
    (x − 65), начало правого — +120. Капы сдвинуты на те же 120 (PILLOW_DX, PLAYSAFE_DX). */
 { const br = BENCH_BREAKS.find(v => Math.abs(v.x - SHIFT(13100)) < 1); if (br){ br.x += 60; br.half += 60; } }   // разрыв 13100 после сдвигов зала — 17218
+/* 2015–2018 БЕЗ ПРИЛАВКА (Эльдар, 30.10.2026: «с 2015 по 2018 давай уберём стол»; «а стол убираем»).
+   Тот прогон шёл от 27965 до 31075 (после сдвигов зала) — весь он и снимается: разрыв шириной во
+   весь прогон. На его месте — витрина glidewell.io одним рендером («Complete digital dental lab
+   showcase» в артефактах): она стоит на полу, а не на столешнице. */
+BENCH_BREAKS.push({x: 29520, half: 1620});
 /* 1973: no counter — the two labs stand on their own stones, the way the nine
    do at 1979, and the counters stop short of them on both sides (Eldar,
    2026-09-11). The small joint that used to sit here (3345) is gone with it. */
@@ -15203,7 +15208,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261030-desks3';   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261030-show';   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -15297,6 +15302,7 @@ async function loadPhotoSkin(){
     ph_crt: 'r_crt2.png',             // 2002: ЭЛТ-монитор — CRTmonitor.png Эльдара (30.10.2026; был r_crt от ChatGPT с несимметричными «ушами»), 900×928, проём 116…784 × 111…616
     ph_crown_a: 'r_crown_000.png', ph_crown_b: 'r_crown_030.png', ph_crown_c: 'r_crown_060.png', ph_crown_d: 'r_crown_090.png',
     ph_boxes24: 'boxes24.png',        // 2023: 24 коробки — лист Эльдара «24-box cardboard sprite sheet» (28.10.2026)
+    ph_show: 'show_io.png',           // 2017: вся витрина glidewell.io одним рендером Эльдара (30.10.2026)
     ph_scanst: 'scan_station.png',    // 2017: станция fastscan.io — вырезана из final_products (x 48…596, до столешницы 662)
     ph_scanbay: 'scan_bay.jpg',       // the 2022 bay: the whole render, rectangle and all
     ph_hall_wall: 'hall_wall.png',    // the glass hall: the room's long side, frontal, fitted to the wall's height
@@ -15504,10 +15510,21 @@ function initDecor(){
        В масштабе фрезы (504) монитор закрывал вывеску glidewell.io и край
        плаката HT — станция ужата до 333: верх монитора под вывеской (~370 px
        при 2000×1040), всё равно в 1.6 раза выше фрезы. */
+    /* ВИТРИНА ВМЕСТО ПАРЫ НА СТОЛЕ (Эльдар, 30.10.2026): прилавка с 2015 по 2018 больше нет, и
+       вместо станции со фрезой здесь стоит весь ряд одним рендером — «Complete digital dental lab
+       showcase» (1671 × 941, обрезан по альфе до 1567 × 854): fastscan.io на тележке, fastmill.io и
+       fastprint.io на своих тумбах, перед ними низкий постамент с заготовками, борами и коронкой.
+       Рендер стоит на полу (footY 1080) и несёт свои тени. Ширину и подъём пробуем по
+       ?showw=<ширина>&showup=<подъём>: Эльдар снимет кадр и перегенерит чистовик под эти доли.
+       Было: станция 333 и фреза 345 на столешнице (z 70, drop 27). */
     if (b17){
-      const ST_W = 333, PAIR = ST_W + 21 + 345;
-      PROPS.push({x: b17.x - PAIR / 2 + ST_W / 2, z: 70, kind: 'ph_scanst', w: ST_W, drop: 27});
-      PROPS.push({x: b17.x + PAIR / 2 - 345 / 2, z: 70, kind: 'ph_mill_v1', w: 345, drop: 27, noShadow: true});
+      /* ЧЕРНОВИК ФОРМЫ (Эльдар, 30.10.2026: «это черновик, мы форму только ищем»): 620 в ширину и
+         подъём 300 — при них ряд не закрывает свою же вывеску glidewell.io, не лезет на плакат HT
+         слева и на бухту 2018 справа (её край — 30015). Тележку fastscan.io поднимать отдельно не
+         пришлось: вся группа встала на постамент. ?showw=&showup= — пробовать другие. */
+      const SW = +((location.search.match(/[?&]showw=(\d+)/) || [])[1] || 620);
+      const SUP = +((location.search.match(/[?&]showup=(\d+)/) || [])[1] || 300);
+      PROPS.push({x: b17.x, z: 60, kind: 'ph_show', w: SW, footY: 1080 - SUP, noShadow: true, floor: true, plinth: SUP > 0});
     }
     /* the plastic-injection division's own product, on the counter at its own
        tick — right of the CAD screen, which it must not cover */
@@ -15659,7 +15676,7 @@ function initDecor(){
   // or they leave the hall (background décor is optional, levitation is not)
   for (let i = PROPS.length - 1; i >= 0; i--){
     const p = PROPS[i];
-    if (p.mid) continue;                       // floor machines stand on the floor
+    if (p.mid || p.floor) continue;            // floor machines stand on the floor
     const half = (p.w || 120) * 0.5 + 16;
     if (TABLES.some(tb => p.x - half >= tb.x0 + 14 && p.x + half <= tb.x1 - 14)) continue;
     let best = null, bestD = 1e9;
@@ -16587,6 +16604,19 @@ function drawProps(midPass){
       // and the dark line where it actually meets the surface
       ctx.fillStyle = 'rgba(0,0,0,0.22)';
       ctx.fillRect(sx - pw2 * 0.30, syFoot - 1.4 * SS, pw2 * 0.60, 2.4 * SS);
+    }
+    /* ПОСТАМЕНТ ПОД ПРЕДМЕТОМ НА ПОЛУ (Эльдар, 30.10.2026: «кому надо дорисуй постаменты и подними
+       до нормального уровня по композиции»): простая плита от подошвы предмета до пола, шириной в
+       него, в материале белого зала. Чистовик Эльдар перегенерит по снимку. */
+    if (p.plinth){
+      const yF2 = py(1080, kk), top = syFoot, pw3 = pw2 * 1.02;
+      if (yF2 > top + 1){
+        const pg = ctx.createLinearGradient(0, top, 0, yF2);
+        pg.addColorStop(0, '#f2f4f6'); pg.addColorStop(0.08, '#e6e9ec'); pg.addColorStop(1, '#c9ced4');
+        ctx.fillStyle = pg; ctx.fillRect(sx - pw3 / 2, top, pw3, yF2 - top);
+        ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(sx - pw3 / 2, top, pw3, Math.max(1, 2 * SS));
+        contactShadow(sx, yF2, pw3, 0.38);
+      }
     }
     ctx.save();
     if (p.flip){ ctx.translate(sx, 0); ctx.scale(-1, 1); ctx.translate(-sx, 0); }
@@ -26523,6 +26553,7 @@ async function boot(){
   const cabR = TALL_UNITS[0] ? 2705 : -1e9;
   for (let i = PROPS.length - 1; i >= 0; i--){
     const p = PROPS[i], half = (p.w || 120) * 0.5 + 16;
+    if (p.floor) continue;   // предмет на полу прилавка не ищет (витрина glidewell.io, 30.10.2026)
     // over a gap
     if (!TABLES.some(tb => p.x - half >= tb.x0 + 12 && p.x + half <= tb.x1 - 12)){
       if (DBG) console.log('prop dropped over a gap: ' + p.kind + ' @' + (p.x | 0));
