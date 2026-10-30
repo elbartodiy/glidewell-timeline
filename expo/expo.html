@@ -7834,7 +7834,11 @@ function drawFinaleTable(t){
      свесом открылся клин фона (Эльдар увидел его сразу). */
   drawYawedTable(FIN_X, FIN_Z_FACE + FIN_DEPTH / 2, 0, FIN_W, FIN_DEPTH, 700, FIN_FACE_H,
     {side0:'#eef1f4', side1:'#c6ccd2', top:'#f7f9fb', edge:'rgba(120,130,140,0.5)',
-     lip: FIN_LIP, ov: 6, lip0:'#fdfeff', lip1:'#dfe4e9',
+     /* ovX 0 (Эльдар, 30.10.2026, скрин с кружком у левого угла столешницы): боковой свес
+        плиты торчал за левую грань корпуса полоской в 6 единиц, а торец корпуса там не
+        виден — свес читался полупрозрачным клином над красным прилавком. Свес вперёд —
+        прежний. */
+     lip: FIN_LIP, ov: 6, ovX: 0, lip0:'#fdfeff', lip1:'#dfe4e9',
      /* ГЕОМЕТРИЯ ПО ГОРИЗОНТАЛИ ОСЛАБЛЕНА (Эльдар, 20.10.2026: «финальный стол
         прям очень геометрически искажается и меняется в пространстве — может,
         ослабить эту геометрию по горизонтали?»). Торцы и дальняя кромка ходят
@@ -19259,10 +19263,11 @@ function drawYawedTable(cx, cz, yawDeg, wW, dW, topY, hW, tone){
   };
   /* СТОЛЕШНИЦА — ПЛИТА, А НЕ ЛИСТ. tone.lip — её толщина, tone.ov — свес
      над корпусом, оба в единицах мира. Без них всё как раньше. */
-  const lip = tone.lip || 0, ov = tone.ov || 0;
+  /* tone.ovX — свес вбок отдельно от свеса вперёд (по умолчанию тот же ov) */
+  const lip = tone.lip || 0, ov = tone.ov || 0, ox = tone.ovX != null ? tone.ovX : ov;
   const c1 = P(-wW/2, -dW/2), c2 = P(wW/2, -dW/2), c3 = P(wW/2, dW/2), c4 = P(-wW/2, dW/2);
-  const d1 = P(-wW/2 - ov, -dW/2 - ov), d2 = P(wW/2 + ov, -dW/2 - ov),
-        d3 = P(wW/2 + ov, dW/2 + ov), d4 = P(-wW/2 - ov, dW/2 + ov);
+  const d1 = P(-wW/2 - ox, -dW/2 - ov), d2 = P(wW/2 + ox, -dW/2 - ov),
+        d3 = P(wW/2 + ox, dW/2 + ov), d4 = P(-wW/2 - ox, dW/2 + ov);
   const top = (p) => py(topY + lip, p.kt), bot = (p) => py(topY + hW, p.kt);
   // legs/skirt: the two faces whose outer edge is nearest the camera
   const faces = [[c1, c2], [c2, c3], [c3, c4], [c4, c1]]
