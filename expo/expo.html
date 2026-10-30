@@ -14658,8 +14658,10 @@ function drawSheetBenches(){
       const IW = im.naturalWidth || im.width, u = wWorld / IW;
       const sa = px(wx + SEAM_INS * u, kf), sWid = (IW - 2 * SEAM_INS) * u * wpp;
       if (sa > W || sa + sWid < 0) return;
+      // + drop: подложка под строкой опускается вместе с прилавком первой эпохи (см. ПРИЛАВОК 1907–1979) —
+      // без него она стояла на 3,3 выше соседних панелей ступенькой (Эльдар, 29.10.2026, скрин 1907)
       ctx.drawImage(im, SEAM_INS, sh.top, IW - 2 * SEAM_INS, IH - sh.top,
-                    sa, yFront, sWid + 0.7, yFloor - yFront);
+                    sa, yFront + drop, sWid + 0.7, yFloor - yFront);
     };
     for (const b of BEATS){
       if (b.under || b.descWall || !b.d) continue;
