@@ -6466,7 +6466,12 @@ function drawProjBeam(lx, ly, A, B, lamp, t, seed, gain){
   if (!PBEAM.m){ PBEAM.m = document.createElement('canvas'); PBEAM.mg = PBEAM.m.getContext('2d'); }
   const m = PBEAM.m, mg = PBEAM.mg;
   if (m.width < mw || m.height < mh){ m.width = Math.max(m.width, mw); m.height = Math.max(m.height, mh); }
-  mg.clearRect(0, 0, mw, mh);
+  /* ЧИСТИТСЯ ВЕСЬ ЛИСТ, А НЕ ЕГО ЧАСТЬ (Эльдар, 29.10.2026: «тоненькая линия отходит от
+     проектора — вертикальная и горизонтальная, по границе лучей»). Лист растёт, но не
+     сжимается; при растяжке drawImage берёт пиксели на волос за краем своего прямоугольника,
+     и там лежал прошлый кадр — по правой и нижней кромке рамки луча светилась линия. Та же
+     ошибка, что 23.09 у цифр годов (NUM_SHEET) — внесена мной сегодня утром с этим листом. */
+  mg.clearRect(0, 0, m.width, m.height);
   mg.imageSmoothingEnabled = true;
   mg.drawImage(c, 0, 0, bw, bh, 0, 0, mw, mh);
   ctx.save();
@@ -24369,7 +24374,7 @@ function drawSheen(pick, u){
   const g = c.getContext('2d');
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.globalCompositeOperation = 'source-over';
-  g.clearRect(0, 0, ow, oh);
+  g.clearRect(0, 0, c.width, c.height);   // весь лист: край прошлого кадра иначе лезет при растяжке (см. ЧИСТИТСЯ ВЕСЬ ЛИСТ)
   // 1) свет: предмет весь на миг светлеет, и по нему наискось идёт полоса
   /* ЯРКОСТЬ — 5…10 %. Эльдар (07.10.2026): «пересвет — это потому что сто
      процентов, а надо процентов пять-десять». Первая проба (0,20 и 0,78)
@@ -25446,7 +25451,7 @@ function drawFloorSheen(){
       SHEEN.width = capW; SHEEN.height = Math.max(capH, 32);
     }
     const gs = SHEEN.getContext('2d');
-    gs.clearRect(0, 0, cw, ch);
+    gs.clearRect(0, 0, SHEEN.width, SHEEN.height);   // весь лист: при дробном sx0 drawImage берёт волос за краем (см. ЧИСТИТСЯ ВЕСЬ ЛИСТ)
     gs.drawImage(ctx.canvas, sx0, yTop - band, cw, ch, 0, 0, cw, ch);
     /* ONE FADE, NOT FOURTEEN. The band used to be laid in slices, each at its
        own alpha — and the seams between them were a stack of horizontal lines
