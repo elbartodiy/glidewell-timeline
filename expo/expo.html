@@ -12444,8 +12444,15 @@ function drawHallCrown(b){
      ornament on a stand. Its shadow stays on the stone, soft and wide. */
   const capTop = top + height * .16, crownWidth = width * .72;   // a little under the cap's width (Eldar: "чуть поменьше")
   const crownFoot = capTop - crownWidth * .62;
+  /* ТЕНЬ — ПО ЦЕНТРУ ВЕРХНЕЙ ГРАНИ (Эльдар, 29.10.2026: «меня всегда смущала эта тень
+     не по центру — относительно вертикали и вообще плоскости пьедестала»). Она стояла
+     на 0.16 высоты листа (строка 63 из 393) с полувысотой 51 строку и сползала через
+     переднее ребро на лицевую грань. Верхняя грань hall_plinth.png — строки 1…80 (ребро —
+     перепад яркости 240 → 213 на 80–81, замер по столбцу 714 — середине листа, он
+     симметричен: 78…1348 на строке 16). Центр тени — строка 40.5, полувысота — три
+     четверти глубины грани, 30 строк; по горизонтали — середина листа, как и была. */
   ctx.save();ctx.fillStyle='rgba(45,55,65,.16)';
-  ctx.beginPath();ctx.ellipse(sx,capTop+2*ko*SS,crownWidth*.42,crownWidth*.05,0,0,Math.PI*2);ctx.fill();ctx.restore();
+  ctx.beginPath();ctx.ellipse(sx,top+height*40.5/393,crownWidth*.42,height*30/393,0,0,Math.PI*2);ctx.fill();ctx.restore();
   const r=drawCrown3D(sx,crownFoot,crownWidth,1);
   pushHit(sx-crownWidth*.6,r.top,crownWidth*1.2,crownFoot-r.top,{type:'spin'});
   return true;
