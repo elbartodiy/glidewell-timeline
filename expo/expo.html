@@ -14732,8 +14732,14 @@ const BENCH_SHEETS = [
    передняя кромка столешницы (строка 66, чёрный кант) выходит тогда на 701 —
    высота прежнего прилавка (700), её никто не подгонял. Ниже 455 — мягкая тень
    самого рендера, своей тени зал не кладёт. */
-const DESKS80 = {c0: 37, c1: 2131, foot: 455, top: 16, w: 2038,
-  desks: [[59, 445], [484, 861], [897, 1273], [1308, 1686], [1725, 2108]]};
+/* НОВЫЕ ПАРТЫ (Эльдар, 30.10.2026: «сохранил новые стулья, их можно менять» — Chairs_stud.png в
+   артефактах, 2288 × 674, обрезан по альфе > 8 до 2213 × 442 с (42, 131)): это другой рендер, не те же
+   парты с новыми стульями, поэтому все места сняты заново — кромки по самой широкой строке
+   столешниц (37…43, альфа > 200): 8…2203; последняя непрозрачная строка ножек — 439, верх — 4;
+   чёрный кант передней кромки — строки 40…42. Было (Clean Five-Desk, 21.10.2026):
+   {c0: 37, c1: 2131, foot: 455, top: 16, desks: [[59, 445], [484, 861], [897, 1273], [1308, 1686], [1725, 2108]]} */
+const DESKS80 = {c0: 8, c1: 2203, foot: 440, top: 4, w: 2038,
+  desks: [[8, 427], [460, 876], [903, 1315], [1340, 1753], [1787, 2203]]};
 function desksRun(tb){
   if (tb._desks == null){
     const b = BEATS.find(q => q.y === '1984' && q.t === 'CONSOLIDATION');
@@ -15181,7 +15187,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261030-crt2';   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261030-desks2';   // 30.10.2026: новые парты 80-х из Chairs_stud.png (до этого 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -15611,7 +15617,9 @@ function initDecor(){
     // от середины комнаты, а не от 1984-го: с 1985-м (27.10.2026) это разные точки, а парты стоят от середины
     const cxR = benchAnchorX({y:'1984', y2:'1985'});
     const dX = cxR != null ? cxR + 900 : bdo && bdo.x + 620;
-    if (bdo) PROPS.push({x: dX, z: 0, kind: 'ph_donuts', w: 150, footY: 677, noShadow: true,
+    /* новые парты (30.10.2026, Chairs_stud): середина столешницы — строка 22 (верх 4, кант 40),
+       1080 − (440 − 22) · 2038/2195 ≈ 692; пятая парта — +633…+1019 от середины, коробка на +900 внутри */
+    if (bdo) PROPS.push({x: dX, z: 0, kind: 'ph_donuts', w: 150, footY: 692, noShadow: true,
       study: 'FRIDAY DONUTS'});
   }
 
