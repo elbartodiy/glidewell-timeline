@@ -10374,16 +10374,23 @@ function drawPendant(t){
     /* стойка на листе — столбцы 112…162 (замер альфы по строкам 360…620), ось 137;
        ниже строки 600 лист срезан, и стойка тянется до пола полосой из самого листа
        (строки 560…600), растянутой по высоте: та же сталь, тот же блик */
-    /* лист достроен слева на 34 точки (r_r19_hmi_terminal_full, 354×692): левое поле
-       коробки — зеркало правого (столбцы 283…317) с винтами, аварийная кнопка дополнена
-       по своему кругу (центр 39.5, 262.5; радиус 36.5). Стойка теперь — столбцы 146…196 */
-    const sc = 112 / 320, cut = 600, ax = 171;
+    /* лист — пульт целиком: Эльдар дорисовал срезанный край (кусок лежал в line_monitor),
+       29.10.2026; обрезан по альфе 34…395 × 38…730 исходника → 361×692. Коробка — строки
+       4…341, стойка — столбцы 154…204, экран прозрачный (65…294 × 72…184) — под ним
+       своё тёмное стекло. */
+    const sc = 112 / 320, cut = 600, ax = 179;
     const src = spriteMip(HM, HM.w * sc * S, HM.h * sc * S);
-    const fy = (src.height || src.naturalHeight) / 692, fx = (src.width || src.naturalWidth) / 354;
+    const fy = (src.height || src.naturalHeight) / 692, fx = (src.width || src.naturalWidth) / 361;
     const x0 = px2 - ax * sc * S, yTopB = Y(PT);
     const yCut = yTopB + cut * sc * S;
-    ctx.drawImage(src, 146 * fx, 560 * fy, 51 * fx, 40 * fy, x0 + 146 * sc * S, yCut - 1, 51 * sc * S, Y(1080) - yCut + 1);
-    ctx.drawImage(src, 0, 0, src.width || src.naturalWidth, cut * fy, x0, yTopB, 354 * sc * S, cut * sc * S);    ctx.restore();
+    ctx.drawImage(src, 154 * fx, 560 * fy, 51 * fx, 40 * fy, x0 + 154 * sc * S, yCut - 1, 51 * sc * S, Y(1080) - yCut + 1);
+    { // стекло экрана: тёмное, с несколькими строками, как на прежнем пульте
+      const ex = x0 + 63 * sc * S, ey = yTopB + 70 * sc * S, ew = 234 * sc * S, eh = 117 * sc * S;
+      ctx.fillStyle = '#16232b'; ctx.fillRect(ex, ey, ew, eh);
+      ctx.fillStyle = 'rgba(120,215,255,0.55)';
+      for (let i2 = 0; i2 < 4; i2++) ctx.fillRect(ex + ew * 0.10, ey + eh * (0.2 + i2 * 0.18), ew * (0.62 - i2 * 0.1), Math.max(1, eh * 0.05));
+    }
+    ctx.drawImage(src, 0, 0, src.width || src.naturalWidth, cut * fy, x0, yTopB, 361 * sc * S, cut * sc * S);    ctx.restore();
     return;
   }
   ctx.strokeStyle = 'rgba(168,174,180,0.9)'; ctx.lineWidth = Math.max(1, 6 * S);
@@ -14978,7 +14985,7 @@ async function loadPhotoSkin(){
     ph_t00f: 'r_t00_frame.png', ph_t00x: 'r_t00_crosshead.png', ph_t00g: 'r_t00_gauge_dial.png',
     ph_t00c: 'r_t00_control.png', ph_t00p: 'r_t00_powder_press.png', ph_t00h: 'r_t00_sinter_furnace.png',
     ph_t00b: 'r_t00_conveyor.png',
-    ph_r19hmi: 'r_r19_hmi_terminal_full.png',   // левый край достроен: исходник срезан по рамке и аварийной кнопке (Эльдар, 29.10.2026)
+    ph_r19hmi: 'r_r19_hmi_terminal_full.png',   // пульт целиком — Эльдар дорисовал срезанный край (кусок лежал в line_monitor), 29.10.2026
     // 2019: фабрика BruxZir — рендеры Эльдара «BruxZirFactory*» (29.10.2026), обрезаны по альфе
     ph_bzfF: 'r_bzf_frame.png', ph_bzfA: 'r_bzf_axis.png', ph_bzfB: 'r_bzf_beam.png', ph_bzfG: 'r_bzf_gripper.png',   // 2019: пульт на стойке (реализм 09, только он — Эльдар, 29.10.2026)
     ph_crt: 'r_crt.png',              // 2002: ЭЛТ-монитор (ChatGPT), экран — прозрачный проём 160…752 × 95…544
