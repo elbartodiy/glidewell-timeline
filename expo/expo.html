@@ -17984,7 +17984,15 @@ function drawPedestal(b, t, hero){
   /* beamR — свой радиус лучей: гаснут к beamR от постамента, а не к общим 680 вуали
      (1989, Эльдар, 29.10.2026: «лучи, когда уходят, чтобы раньше гасли — будучи уже где-то
      тут», кадр с постаментом у правого края и 1988 в кадре) */
-  if (ped.beamR){ const hb = Math.max(0, 1 - Math.abs(x - cam.x) / ped.beamR); hero = Math.min(hero, hb * hb * (3 - 2 * hb)); }
+  /* …только на уходе (Эльдар: «появление не просил менять»). Уход — камера движется от
+     постамента; признак сглажен (ped._leave), чтобы лучи не мигали при смене хода */
+  if (ped.beamR){
+    const away = Math.sign(cam.x - x) === Math.sign(cam.vel) && Math.abs(cam.vel) > 20;
+    const near = Math.abs(cam.vel) <= 20;
+    if (!near) ped._leave = (ped._leave || 0) + ((away ? 1 : 0) - (ped._leave || 0)) * Math.min(1, (state.dt || 0.016) * 6);
+    const hb = Math.max(0, 1 - Math.abs(x - cam.x) / ped.beamR), lim = hb * hb * (3 - 2 * hb);
+    hero = hero + (Math.min(hero, lim) - hero) * (ped._leave || 0);
+  }
   if (hero > 0.02 && !ped.vitrine && !inHall && !ped.points && !ped.bare){   // a vitrine glows from its own capsule, and a cloud of points is its own light source
   /* ЭКРАН СВЕТИТ САМ. Два прожектора сходятся ровно на экспонате — для зуба
      это верно, для монитора нет: лучи легли на экран и выбелили зелёный каркас
