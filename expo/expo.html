@@ -19719,8 +19719,9 @@ const BZF = {
   T: 7.2, park: [690, 470],
   trays: [128, 210, 293, 375, 457, 537, 619, 699, 779, 854],
   slots: [214, 230, 245, 280, 295, 311, 344, 360, 376, 410, 426, 441, 477, 492, 508],
-  // центр патрона — ступица (по виду, 1400 → 1536 × 1.097): центроид серого металла уходил на кулачки
-  chucks: [[891, 271], [1279, 271], [891, 448], [1279, 448], [891, 629], [1279, 629], [891, 806], [1279, 806]],
+  /* центр патрона — ступица: перемерено по увеличенным кадрам патронов (29.10.2026),
+     прежний центроид серого металла уходил на кулачки на 6…14 точек */
+  chucks: [[892, 281], [1288, 281], [892, 459], [1288, 459], [892, 639], [1288, 639], [892, 820], [1288, 820]],
 };
 const bzfOn = () => !!(PROP_SPRITES.ph_bzfF && PROP_SPRITES.ph_bzfA && PROP_SPRITES.ph_bzfB && PROP_SPRITES.ph_bzfG);
 /* ПОЛОВИНА ФРЕЗ ЗАНЯТА С САМОГО НАЧАЛА, И ЗАХВАТ ВОЗИТ ВРАЗНОБОЙ (Эльдар, 29.10.2026:
@@ -19779,7 +19780,7 @@ function drawBZF(t){
   // цикл
   const n = Math.floor(t / BZF.T), ph = t - n * BZF.T, C = bzfCycle(n);
   const ease = u => u * u * (3 - 2 * u), seg = (a, b) => Math.max(0, Math.min(1, (ph - a) / (b - a)));
-  const P = [BZF.slots[C.j], BZF.trays[C.i] + 6], Q = [BZF.chucks[C.m][0], BZF.chucks[C.m][1] - 6], R = BZF.park;
+  const P = [BZF.slots[C.j], BZF.trays[C.i] + 6], Q = [BZF.chucks[C.m][0], BZF.chucks[C.m][1] + 4], R = BZF.park;
   const lerp = (A, B, u) => [A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u];
   let G;
   if (ph < 1.5) G = lerp(R, P, ease(seg(0, 1.5)));
@@ -19817,7 +19818,20 @@ function drawBZF(t){
   }
   for (let m = 0; m < 8; m++){
     const [qx, qy] = BZF.chucks[m];
-    if (loaded[m] > 0.01) blank(qx, qy, loaded[m], 1.6);
+    /* В ПАТРОНЕ ЗАГОТОВКА СТОИТ ТОРЦОМ К НАМ (Эльдар, 29.10.2026, дорисовал её в правой
+       верхней фрезе: «то, как он должен выглядеть — фронтально, в центре»): квадрат
+       20 точек рамы по центру ступицы (её кольцо — около 24), светлая фаска сверху-слева,
+       тень снизу-справа */
+    if (loaded[m] > 0.01){
+      const e = 10, x0 = FX(qx - e), y0 = FY(qy - e), w = 2 * e * S, r = 2.2 * S;
+      ctx.save(); ctx.globalAlpha = loaded[m];
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.roundRect(x0 + 1.5 * S, y0 + 2 * S, w, w, r); ctx.fill();
+      const fg = ctx.createLinearGradient(x0, y0, x0 + w, y0 + w);
+      fg.addColorStop(0, '#fbf8f0'); fg.addColorStop(0.55, '#ece5d4'); fg.addColorStop(1, '#cfc6b2');
+      ctx.fillStyle = fg; ctx.beginPath(); ctx.roundRect(x0, y0, w, w, r); ctx.fill();
+      ctx.strokeStyle = 'rgba(120,110,90,0.45)'; ctx.lineWidth = Math.max(0.6, 0.8 * S); ctx.stroke();
+      ctx.restore();
+    }
     const [lx, ly] = BZF_LED(m), r = 7 * S;
     if (loaded[m] < 0.5){
       ctx.fillStyle = '#ffc21a'; ctx.beginPath(); ctx.arc(FX(lx), FY(ly), r, 0, 7); ctx.fill();
