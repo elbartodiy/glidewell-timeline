@@ -392,7 +392,7 @@ const BEATS = [
       голубоватого эпохи и подошва луча 0,48 → 0,68 ширины колонны */
    descPed:'photo',
    ped:{photo:'ph_postbox', dx:0, low:true, capY: 708, beam: 0.585, beamRGB: '255,246,230', beamFoot: 0.68,
-        beamImg: ['ph_beam89a', 'ph_beam89b'], beamImgGain: 1, beamAt: 0.25},   // лучи — PNG-текстура (27.10.2026), без неё — прежние softBeam
+        beamImg: ['ph_beam89a', 'ph_beam89b'], beamImgGain: 1, beamAt: 0.25, beamR: 420},   // лучи — PNG-текстура (27.10.2026), без неё — прежние softBeam
    /* THE LINE READS OFF A BACKGROUND THAT DOES NOT CHANGE UNDER IT. Set 430
      left of the plinth it began on the steel panel, crossed the pale edge of
      the bay's step and finished on the column — three tones under three lines
@@ -17981,6 +17981,10 @@ function drawPedestal(b, t, hero){
      shade of any kind: the room is already lit, and Eldar's rule for it is that
      arriving must never darken anything. */
   const inHall = x > REC17_L && x < REC17_R;
+  /* beamR — свой радиус лучей: гаснут к beamR от постамента, а не к общим 680 вуали
+     (1989, Эльдар, 29.10.2026: «лучи, когда уходят, чтобы раньше гасли — будучи уже где-то
+     тут», кадр с постаментом у правого края и 1988 в кадре) */
+  if (ped.beamR){ const hb = Math.max(0, 1 - Math.abs(x - cam.x) / ped.beamR); hero = Math.min(hero, hb * hb * (3 - 2 * hb)); }
   if (hero > 0.02 && !ped.vitrine && !inHall && !ped.points && !ped.bare){   // a vitrine glows from its own capsule, and a cloud of points is its own light source
   /* ЭКРАН СВЕТИТ САМ. Два прожектора сходятся ровно на экспонате — для зуба
      это верно, для монитора нет: лучи легли на экран и выбелили зелёный каркас
