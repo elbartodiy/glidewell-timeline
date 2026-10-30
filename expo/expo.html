@@ -10388,7 +10388,13 @@ function drawPendant(t){
     const fy = (src.height || src.naturalHeight) / 692, fx = (src.width || src.naturalWidth) / 361;
     const x0 = px2 - ax * sc * S, yTopB = Y(PT);
     const yCut = yTopB + cut * sc * S;
-    ctx.drawImage(src, 154 * fx, 560 * fy, 51 * fx, 40 * fy, x0 + 154 * sc * S, yCut - 1, 51 * sc * S, Y(1080) - yCut + 1);
+    /* СТОЙКА СТОИТ НА СВОЁМ ФЛАНЦЕ (Эльдар, 29.10.2026: «монитор просто торчит из пола —
+       разве нет у сгенерированных штук удобного основания?»). Есть — у самого пульта:
+       круглый фланец, строки 632…692 листа. Он кладётся на пол (Y(1080)), стойка между
+       срезом (600) и фланцем тянется полосой из листа. */
+    const flH = 60 * sc * S, yFl = Y(1080) - flH;
+    ctx.drawImage(src, 154 * fx, 560 * fy, 51 * fx, 40 * fy, x0 + 154 * sc * S, yCut - 1, 51 * sc * S, yFl - yCut + 2);
+    ctx.drawImage(src, 0, 632 * fy, src.width || src.naturalWidth, 60 * fy, x0, yFl, 361 * sc * S, flH);
     { /* экран пульта — то, что показывал снятый монитор линии: сетка, бегущая волна и
          подпись; та же формула волны (drawPlasmaPanel, mode 'wave') */
       const ex = x0 + 63 * sc * S, ey = yTopB + 70 * sc * S, ew = 234 * sc * S, eh = 117 * sc * S;
