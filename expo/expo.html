@@ -524,7 +524,7 @@ const BEATS = [
   {x:14925, y:'1999', t:'VERTICAL INTEGRATION', minor:true, yLift:190, descWall:true, descGap:true, capWallY:800,
    th:'Do not buy what you can make.',
    /* затравка вместо пересказа страницы (Эльдар, 26.10.2026: «на линии нам нужно только небольшая затравка для раскрытия темы — про что внутри»; «го»). Было: «By the end of the nineties Glidewell makes its own almost everything — materials, parts, interiors, advertising. Not to save money: to set its own pace.» */
-   d:'Glidewell starts making almost everything itself — to set its own pace.',
+   d:'Glidewell starts making almost everything itself —\nto set its own pace.',   // «to» — на вторую строку (Эльдар, 30.10.2026, стрелка на кадре)
    wall:[], table:[]},
 
   /* СТАНЦИЯ 2000 — ЭТО ОДИН ДОКУМЕНТ НА СТЕНЕ. Полное имя вместо аббревиатуры,
@@ -3805,7 +3805,7 @@ function drawWall(){
    была на плакате, по горизонтали, а вся рука опущена, чтобы пальцы не легли под цифры года.
    Надписи — живым шрифтом по местам плаката (масштаб плаката на стене — 573 единицы на 1200
    точек), вместе с рукой ниже на 91 и правее на 40; логотип — вырезка с плаката (r85_logo). */
-const P85 = {paper: [232, 225, 217], s: 573 / 1200, cx: 20.6, cy: 358.6, dy: 225, dx: 40, hand: 1.46};   // dy 91 → 225: рука ниже заголовка ×1.8
+const P85 = {paper: [232, 225, 217], s: 573 / 1200, cx: 20.6, cy: 358.6, dy: 150, dx: 40, hand: 1.46};   // dy 91 → 150: рука ниже заголовка ×1.8
 function drawPoster85Wall(seg, kT, yTopW, yFoot){
   const b = BEATS.find(q => q.y === '1985'); if (!b) return;
   const RP = seg._panel, n = Math.floor((b.x - RP.anchor) / RP.w);
@@ -3832,8 +3832,9 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
   if (hand){
     // коронка на плакате — (450, 450); рука вырезана с (4, 8); поворот — вокруг коронки
     const hs = s * P85.hand, cxW = b.x + P85.cx + (450 - 600) * s, cyW = P85.cy - 411 * s + 450 * s + P85.dy;
-    /* ×1.3 от нижнего левого угла (третий набросок: кончик пальца — до «S» в «Secret») */
-    const hy0 = cyW - (450 - 8) * hs, foot = hy0 + 743 * hs, hs2 = hs * 1.3;
+    /* размер прежний — руку только подняли (Эльдар, 30.10.2026: «я не просил увеличивать —
+       надо было её поднять; красным я нарисовал воздух вокруг пальца»): кончик пальца — под «S» */
+    const hy0 = cyW - (450 - 8) * hs, foot = hy0 + 743 * hs, hs2 = hs;
     const hx = L + 7 / U * SS, hy = foot - 743 * hs2;
     const hw = 553 * hs2 * U, hh = 743 * hs2 * U;
     const pivX = X(hx) + (450 - 4) * hs2 * U, pivY = Y(hy + (450 - 8) * hs2);
@@ -3843,8 +3844,8 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
        рука вплотную к краю, без клина */
     ctx.save();
     ctx.beginPath(); ctx.rect(x0, yTopW, x1 - x0, yB - yTopW); ctx.clip();
-    ctx.translate(pivX, pivY); ctx.rotate(0.3 * Math.PI / 180); ctx.translate(-pivX, -pivY);
-    ctx.drawImage(spriteMip(hand, hw, hh), X(hx) - 12 * U, Y(hy), hw, hh);
+    ctx.translate(pivX, pivY); ctx.rotate(-4 * Math.PI / 180); ctx.translate(-pivX, -pivY);   // −4° — замер по кадру: кромка шла вниз вправо на 20 из 270 (0,3° по маске было неверно: она ловила палец)
+    ctx.drawImage(spriteMip(hand, hw, hh), X(hx) - 22 * U, Y(hy) + 4 * U, hw, hh);
     ctx.restore();
   }
   // свет комнаты — поверх бумаги И руки, чтобы бумага между пальцами была того же тона; мягче прежнего
