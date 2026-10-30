@@ -13996,12 +13996,12 @@ function crtFromPhoto(){
   const c = document.createElement('canvas'); c.width = W0; c.height = H0;
   const g = c.getContext('2d'), ox = (W0 - P.w) / 2, oy = H0 - P.h;
   // экран в покое — тёмное стекло: видно, пока живой экран ещё не нарисован
-  g.fillStyle = '#0b120c'; g.fillRect(ox + 160, oy + 95, 592, 449);
+  g.fillStyle = '#0b120c'; g.fillRect(ox + 116, oy + 111, 669, 506);
   g.drawImage(P.c, ox, oy);
   // рамка без стекла — для прохода поверх живого экрана
   const o = document.createElement('canvas'); o.width = W0; o.height = H0;
   o.getContext('2d').drawImage(P.c, ox, oy);
-  return {c, w: W0, h: H0, screen: {x: ox + 162, y: oy + 97, w: 588, h: 445}, foot: oy + 816, over: o, body: {x0: ox, x1: ox + P.w, y0: oy}};
+  return {c, w: W0, h: H0, screen: {x: ox + 118, y: oy + 113, w: 664, h: 501}, foot: oy + 926, over: o, body: {x0: ox, x1: ox + P.w, y0: oy}};
 }
 function makeMonitor(kind){
   const sh = 26;
@@ -15157,7 +15157,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261030-p85';   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261030-crt2';   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -15248,7 +15248,7 @@ async function loadPhotoSkin(){
     ph_p85paper: 'r85_paper.jpg', ph_p85hand: 'r85_hand.png', ph_p85logo: 'r85_logo.png',   // пульт целиком — Эльдар дорисовал срезанный край (кусок лежал в line_monitor), 29.10.2026
     // 2019: фабрика BruxZir — рендеры Эльдара «BruxZirFactory*» (29.10.2026), обрезаны по альфе
     ph_bzfF: 'r_bzf_frame.png', ph_bzfA: 'r_bzf_axis.png', ph_bzfB: 'r_bzf_beam.png', ph_bzfG: 'r_bzf_gripper.png',   // 2019: пульт на стойке (реализм 09, только он — Эльдар, 29.10.2026)
-    ph_crt: 'r_crt.png',              // 2002: ЭЛТ-монитор (ChatGPT), экран — прозрачный проём 160…752 × 95…544
+    ph_crt: 'r_crt2.png',             // 2002: ЭЛТ-монитор — CRTmonitor.png Эльдара (30.10.2026; был r_crt от ChatGPT с несимметричными «ушами»), 900×928, проём 116…784 × 111…616
     ph_crown_a: 'r_crown_000.png', ph_crown_b: 'r_crown_030.png', ph_crown_c: 'r_crown_060.png', ph_crown_d: 'r_crown_090.png',
     ph_boxes24: 'boxes24.png',        // 2023: 24 коробки — лист Эльдара «24-box cardboard sprite sheet» (28.10.2026)
     ph_scanst: 'scan_station.png',    // 2017: станция fastscan.io — вырезана из final_products (x 48…596, до столешницы 662)
