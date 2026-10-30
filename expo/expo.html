@@ -3866,6 +3866,15 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
      верх прописных «The Sales» (HA — базовая 140 − UP минус высота прописной 82 при кегле ×1.58)
      и правый край xR на месте, всё ниже растёт вниз */
   const HS = 1.08, HA = 140 - UP - 82, HY = y => HA + (y - HA) * HS;
+  /* МЕЖСТРОЧИЕ — ПО РЕФЕРЕНСУ (Эльдар, 30.10.2026, реклама JS&A «Micro TV Breakthrough», 1979: «вторую
+     строчку поднять ближе к первой… и расстояние между заголовком и подзаголовком по референсу»).
+     Замер референса: прописные первой строки 229…273 (44 px); верх строчных второй — 294, т. е. 21 px
+     от базовой первой = 0,48 прописной; от базовой второй (331) до верха прописных подзаголовка (360)
+     — 29 px = 0,66. У нас при 2000×1040 (k 0,57): прописная 51 px, от базовой «The Sales» (170) до
+     верха строчных «Secret» (202) было 32 px = 0,63, до подзаголовка (верх 257 от базовой 239) — 18 px
+     = 0,35. Поэтому «Secret» выше на 7,5 px = 13 единиц стены, подзаголовок — на 0,66 · 51 от новой
+     базовой: от прежнего места ниже на 8 px = 14 единиц */
+  const L2 = -13, SUB = 14;
   // заголовок ×1.8: «The Sales» от 11670, обе строки по общему правому краю, базовые 140 и 269 (под цифрами года — воздух)
   // ×1.8 → ×1.62 (второй набросок, «×0,9»: «Secret» касался кончика пальца); правый край прежний
   // 1.46 → 1.58 (Эльдар, 30.10.2026: «чуть увеличь The Sales Secret, всё ещё не касаясь пальца, с воздухом между»)
@@ -3879,7 +3888,7 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
      у Helvetica Neue нет начертания 900 — браузер берёт Bold, поэтому буквы обведены своим же
      цветом на 4 % кегля; цвет — чистый чёрный */
   ctx.fillStyle = '#000'; ctx.strokeStyle = '#000'; ctx.lineJoin = 'round'; ctx.lineWidth = fs * 0.04;
-  for (const [txt, wy] of [['The Sales', HY(140 - UP)], ['Secret', HY(256 - UP)]]){ ctx.strokeText(txt, X(xR), Y(wy)); ctx.fillText(txt, X(xR), Y(wy)); }
+  for (const [txt, wy] of [['The Sales', HY(140 - UP)], ['Secret', HY(256 - UP) + L2]]){ ctx.strokeText(txt, X(xR), Y(wy)); ctx.fillText(txt, X(xR), Y(wy)); }
   ctx.fillStyle = 'rgba(14,13,12,0.96)';
   const secretW = (ctx.measureText('Secret').width + fs * 0.04) / U;
   // подзаголовок ×1.4 (при ×1.8 он ложился на палец) — по тому же правому краю, под «Secret»
@@ -3889,8 +3898,8 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
   const subF = 100 * secretW / (ctx.measureText('Jim introduces marketing').width / U);
   ctx.font = `400 ${(subF * U).toFixed(2)}px "Helvetica Neue", Arial, sans-serif`;
   ctx.textAlign = 'right';
-  ctx.fillText('Jim introduces marketing', X(xR), Y(HY(305 - UP)));
-  ctx.fillText('standards that sell', X(xR), Y(HY(305 - UP) + 33 * subF / (36 * s * 1.82)));   // межстрочие — вместе с кеглем
+  ctx.fillText('Jim introduces marketing', X(xR), Y(HY(305 - UP) + SUB));
+  ctx.fillText('standards that sell', X(xR), Y(HY(305 - UP) + SUB + 33 * subF / (36 * s * 1.82)));   // межстрочие — вместе с кеглем
   ctx.textAlign = 'left';
   // логотип ×1.5 — над партами, правым краем у правого края заголовка
   const lg2 = PROP_SPRITES.ph_p85logo;
