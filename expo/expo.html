@@ -19887,7 +19887,7 @@ function drawBZF(t){
      Блок ставится на tIn, захват уходит — дверца выезжает справа за 0,6 с; за ней блики фрезы и
      воды; к концу дверца поднимается, и патрон пуст — коронка ушла. Окна фрез по раме:
      столбцы 769…956 и 1153…1360, строки 192…349, 370…529, 551…709, 731…889. */
-  const loaded = new Array(8).fill(0), doorC = new Array(8).fill(0), act = new Array(8).fill(0), seed = new Array(8).fill(0);
+  const loaded = new Array(8).fill(0), doorC = new Array(8).fill(0), act = new Array(8).fill(0), seed = new Array(8).fill(0), feed = new Array(8).fill(0);
   for (let q = n - 4; q <= n; q++){
     const m = bzfMill(q);
     const tIn = (q - n) * BZF.T + 4.0, tOut = (q + 4 - n) * BZF.T + 2.0;   // в фазах текущего цикла
@@ -19898,6 +19898,8 @@ function drawBZF(t){
     doorC[m] = Math.max(doorC[m], close);
     act[m] = Math.max(act[m], ph >= c2 && ph < o1 ? Math.min(1, (ph - c2) / 0.5, (o1 - ph) / 0.5) : 0);
     seed[m] = q;
+    // ход среднего сверла к блоку: выдвигается за 1,2 с после закрытия, отходит за 1 с до открытия
+    feed[m] = ph >= c2 && ph < o1 ? ease(Math.min(1, (ph - c2) / 1.2)) * ease(Math.min(1, (o1 - ph) / 1.0)) : 0;
     if (ph >= o1) loaded[m] = 0.999;                       // к открытию блока уже нет
   }
   const BZF_WIN = m => [m % 2 ? 1153 : 769, [192, 370, 551, 731][m >> 1], m % 2 ? 1360 : 956, [349, 529, 709, 889][m >> 1]];
@@ -19932,6 +19934,26 @@ function drawBZF(t){
          направляющих (181,181,180), без зелени (Эльдар, 29.10.2026): 197,191,181 */
       gl.addColorStop(0, 'rgba(208,202,192,0.97)'); gl.addColorStop(0.5, 'rgba(197,191,181,0.97)'); gl.addColorStop(1, 'rgba(182,177,168,0.98)');
       ctx.fillStyle = gl; ctx.fillRect(wx0, wy0, ww, wh);
+      /* СИЛУЭТЫ ЗА СТЕКЛОМ (Эльдар, 29.10.2026: «когда дверца закрыта, там блока нет — это
+         некрасиво; нужно, чтобы был блок, и сверло по нему ходило, хотя бы центральное»).
+         Размыто, тёмным по матовому: блок в патроне и три сверла слева (по раме: держатели
+         в 17…33 от левого края окна, концы — 58, 53, 43; строки 42, 77, 110 от верха окна),
+         среднее выдвигается к блоку и водит по нему кончиком. */
+      if (loaded[m] === 1){
+        const [qx, qy] = BZF.chucks[m];
+        ctx.save();
+        ctx.filter = `blur(${Math.max(1, 2.6 * S).toFixed(1)}px)`;
+        ctx.fillStyle = 'rgba(64,68,72,0.30)';
+        ctx.fillRect(FX(qx - 10), FY(qy - 10), 20 * S, 20 * S);
+        const fd = feed[m], wig = fd * Math.sin(t * 1.6 + seed[m]) * 4, wigY = fd * Math.sin(t * 2.3 + seed[m] * 2) * 6;
+        for (const [ry, tip, mid] of [[42, 58, false], [77, 53, true], [110, 43, false]]){
+          const dx = mid ? fd * ((qx - 12) - (a0 + tip)) + wig : 0, yy = b0 + ry + (mid ? wigY * fd : 0);
+          ctx.fillStyle = 'rgba(64,68,72,0.26)';
+          ctx.fillRect(FX(a0 + 14 + dx), FY(yy - 6), 20 * S, 12 * S);           // держатель
+          ctx.fillRect(FX(a0 + 34 + dx), FY(yy - 1.5), (tip - 34) * S, 3 * S);   // сверло
+        }
+        ctx.restore();
+      }
       if (act[m] > 0.01){
         // за матовым стеклом: пятно шпинделя ходит у патрона, брызги вспыхивают и гаснут
         ctx.globalCompositeOperation = 'lighter';
