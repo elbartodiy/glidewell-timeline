@@ -19901,6 +19901,7 @@ function drawFactory(t, over){
      is painted over it — and it runs behind the counters' back edge (z 400, at
      a height that reads as the counter's) so on the right the table swallows
      it instead of the line crossing in front. */
+  if (!bzfOn()){   // лента прежних кабин; у портальной фабрики её нет — на глубине 450 она торчала полосой между рамой и прилавком
   const kc = k(400);
   const cy0 = py(760, kc);
   const c0 = px(FACT_X - 300, kc), c1 = px(FACT_X + 900, kc);
@@ -19939,6 +19940,7 @@ function drawFactory(t, over){
     }
   }
   ctx.restore();
+  }
   // two arms working out of phase
   /* Two machines standing apart, each on its own plinth, with the aisle between
      them that a shop floor has. Butted together they read as one wide box with
@@ -19961,7 +19963,7 @@ function drawFactory(t, over){
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     const BZ = bzfOn();
-    const lamps = BZ ? [[BZF.wx(340), CELL_Z], [BZF.wx(1065), CELL_Z]] : [[cellX(0), CELL_Z], [cellX(1), CELL_Z]];
+    const lamps = BZ ? [[BZF.wx(340), BZF_Z], [BZF.wx(1065), BZF_Z]] : [[cellX(0), CELL_Z], [cellX(1), CELL_Z]];
     for (const [cx2, cz2] of lamps){
       const kc = k(cz2), sxc = px(cx2, kc), roof = py(BZ ? BZF.wy(26) : 408, kc);
       if (sxc < -400 || sxc > W + 400) continue;
@@ -20027,6 +20029,7 @@ function drawFactory(t, over){
    • захват 1212×1297, альфа 308…930 × 68…1196: губки 513…697 (центр 605), кончик на
      1196, ролики каретки на 845 — их строка садится на ось балки; 0,12 точки рамы
      на точку (губки 22 — одна заготовка). */
+const BZF_Z = 450;   // глубина портальной фабрики (было на глубине кабин, CELL_Z 210)
 const BZF_SRC = {F: [99, 26, 1], A: [361, 14, 0.5], B: [16, 152, 0.5], G: [308, 68, 0.4]};
 /* КРУПНЕЕ И ПОД СВОИМ ГОДОМ (Эльдар, 29.10.2026, обвёл рамку на кадре): рама была 1000
    единиц с центром на середине прежней пары кабин (FACT_X − 25) — левее надписи «2019
@@ -20084,7 +20087,9 @@ function drawBZF(t){
   if (!bzfOn()) return false;
   /* ?bzfz=<z> — проба глубины фабрики (Эльдар, 30.10.2026: «а что если робота поставить чуть
      глубже в зал?»): размер в мире тот же, поэтому на экране она мельче */
-  const BZ_Z = +((location.search.match(/[?&]bzfz=(\d+)/) || [])[1] || CELL_Z);
+  /* 450 (Эльдар, 30.10.2026, выбрал средний из трёх кадров 210 / 450 / 700) — фабрика глубже
+     в зале, отошла от прилавка с портретами; ?bzfz=<z> — проба другой глубины */
+  const BZ_Z = +((location.search.match(/[?&]bzfz=(\d+)/) || [])[1] || BZF_Z);
   const kk = k(BZ_Z), S = BZF.U * kk * SS;            // экранных точек на точку рамы
   const FX = fx => px(BZF.wx(fx), kk), FY = fy => py(BZF.wy(fy), kk);
   if (FX(1438) < -50 || FX(99) > W + 50) return true;
