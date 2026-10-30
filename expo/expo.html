@@ -15524,7 +15524,7 @@ function initDecor(){
          пришлось: вся группа встала на постамент. ?showw=&showup= — пробовать другие. */
       const SW = +((location.search.match(/[?&]showw=(\d+)/) || [])[1] || 620);
       const SUP = +((location.search.match(/[?&]showup=(\d+)/) || [])[1] || 300);
-      PROPS.push({x: b17.x, z: 60, kind: 'ph_show', w: SW, footY: 1080 - SUP, noShadow: true, floor: true, plinth: SUP > 0});
+      PROPS.push({x: b17.x, z: 60, kind: 'ph_show', w: SW, footY: 1080 - SUP, noShadow: true, floor: true, stand: SUP > 0});
     }
     /* the plastic-injection division's own product, on the counter at its own
        tick — right of the CAD screen, which it must not cover */
@@ -16605,18 +16605,24 @@ function drawProps(midPass){
       ctx.fillStyle = 'rgba(0,0,0,0.22)';
       ctx.fillRect(sx - pw2 * 0.30, syFoot - 1.4 * SS, pw2 * 0.60, 2.4 * SS);
     }
-    /* ПОСТАМЕНТ ПОД ПРЕДМЕТОМ НА ПОЛУ (Эльдар, 30.10.2026: «кому надо дорисуй постаменты и подними
-       до нормального уровня по композиции»): простая плита от подошвы предмета до пола, шириной в
-       него, в материале белого зала. Чистовик Эльдар перегенерит по снимку. */
-    if (p.plinth){
-      const yF2 = py(1080, kk), top = syFoot, pw3 = pw2 * 1.02;
-      if (yF2 > top + 1){
-        const pg = ctx.createLinearGradient(0, top, 0, yF2);
-        pg.addColorStop(0, '#f2f4f6'); pg.addColorStop(0.08, '#e6e9ec'); pg.addColorStop(1, '#c9ced4');
-        ctx.fillStyle = pg; ctx.fillRect(sx - pw3 / 2, top, pw3, yF2 - top);
-        ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(sx - pw3 / 2, top, pw3, Math.max(1, 2 * SS));
-        contactShadow(sx, yF2, pw3, 0.38);
+    /* У КАЖДОГО СВОЯ СТОЙКА — ЕЁ И УДЛИНЯЕМ (Эльдар, 30.10.2026: «на такой постамент не пойдёт — у
+       них у каждого уже есть свои стойки, их просто нужно удлинить»; общая плита снята). Нижние
+       p.cut строк рендера — подошвы тумб и колёс — не рисуются вовсе, а полоса над ними (p.cut…
+       p.cut + p.band) растягивается от подошвы до пола: каждая тумба продолжается вниз своим
+       цветом и своей шириной, а между ними остаётся пустой пол. */
+    if (p.stand){
+      const img2 = spriteMip(sp, pw2, ph2), k3 = (img2.width || img2.naturalWidth) / sp.w;
+      const cut = (p.cut || 22), band = (p.band || 6), yF2 = py(1080, kk);
+      const vis = ph2 * (sp.h - cut) / sp.h;                       // без подошв
+      ctx.drawImage(img2, 0, 0, sp.w * k3, (sp.h - cut) * k3, sx - pw2 / 2, syFoot - vis, pw2, vis);
+      if (yF2 > syFoot + 1)
+        ctx.drawImage(img2, 0, (sp.h - cut - band) * k3, sp.w * k3, band * k3,
+                      sx - pw2 / 2, syFoot, pw2, yF2 - syFoot);
+      if (p.study){
+        const bi1 = BEATS.findIndex(bb => bb.t === p.study);
+        if (bi1 >= 0) pushHit(sx - pw2 / 2, syFoot - vis, pw2, yF2 - (syFoot - vis), {type:'study', beat: bi1});
       }
+      continue;
     }
     ctx.save();
     if (p.flip){ ctx.translate(sx, 0); ctx.scale(-1, 1); ctx.translate(-sx, 0); }
