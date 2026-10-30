@@ -472,7 +472,8 @@ const BEATS = [
       PlaySafe® mouthguards in the United States». Было: «Silent Nite anti-snoring appliances
       launch — Glidewell’s signature move into sleep and prevention.» */
    d:'Silent Nite anti-snoring appliances launch — Glidewell’s signature move into sleep and prevention. Beside it, PlaySafe, the custom sports mouthguard the lab released the year before.',
-   capDX:-100, capKeep:10,   // прилавок у 1996-го начинается левее подушки: стандартные 120 от торца держали строку правее середины между кап
+   capDX:20, capKeep:10,   // −100 → +20: вместе с капами (30.10.2026)
+     // прилавок у 1996-го начинается левее подушки: стандартные 120 от торца держали строку правее середины между кап
    wall:[], table:[]},
 
   {x:14150, y:'1998', t:'CHAIRSIDE PERSPECTIVES', minor:true, yLift:190,
@@ -2733,6 +2734,11 @@ const BENCH_STONE_TH = 2.6;
    (Эльдар, 02.10.2026). */
 const BENCH_BREAKS = [1700, 7350, 13100, 16900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
+/* ПРИЛАВОК 1996–1999 НАЧИНАЕТСЯ НА 120 ПРАВЕЕ (Эльдар, 30.10.2026: «капы и левую часть стола
+   просто сдвинь вправо — всё останется на своих местах относительно левого края стола, но стол
+   будет короче»). Разрыв у 13100 (после сдвигов зала — 17218) расширен только вправо: конец прилавка слева — прежний
+   (x − 65), начало правого — +120. Капы сдвинуты на те же 120 (PILLOW_DX, PLAYSAFE_DX). */
+{ const br = BENCH_BREAKS.find(v => Math.abs(v.x - SHIFT(13100)) < 1); if (br){ br.x += 60; br.half += 60; } }   // разрыв 13100 после сдвигов зала — 17218
 /* 1973: no counter — the two labs stand on their own stones, the way the nine
    do at 1979, and the counters stop short of them on both sides (Eldar,
    2026-09-11). The small joint that used to sit here (3345) is gone with it. */
@@ -15529,7 +15535,7 @@ function initDecor(){
      29 сентября: «чуть уменьшить на 15 процентов» — 520 × 0,85 = 442. drop не
      трогаю: он в единицах мира и от ширины предмета не зависит, посадка
      остаётся прежней. */
-  const PILLOW_DX = 300, PLAYSAFE_DX = -70;   // подушка правее на 300; капа — где лежала подушка
+  const PILLOW_DX = 420, PLAYSAFE_DX = 50;   // подушка правее на 300; капа — где лежала подушка; обе +120 вместе с краем прилавка (30.10.2026)
   {
     const bsn = BEATS.find(b => b.t === 'SILENT NITE');
     /* ПОДУШКА ЧУТЬ ПРАВЕЕ, НА ЕЁ МЕСТЕ — КАПА PLAYSAFE. Эльдар (27.10.2026):
