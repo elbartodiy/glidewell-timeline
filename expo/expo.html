@@ -6399,7 +6399,70 @@ function projBeamHaze(){
 /* gain — поправка на стену: светлый луч на почти белой панели 1993-го в
    «screen» почти не виден, и тот же луч там читался иначе, чем у 1999-го на
    серой (Эльдар, 27.10.2026: «у двоих разные лучи — это не ок») */
+/* ЛУЧ ПРОЕКТОРА — ВЛОЖЕННЫЕ ГРАДИЕНТНЫЕ КЛИНЬЯ (Эльдар, 29.10.2026: «лучи мне не нравятся,
+   особенно при движении — нереалистично… самые первые были самые лучшие, возьми их за
+   основу, и что-то более градиентное»; «у всех проекторов одинаковые лучи»). Основа —
+   первый луч 1999-го (до 27.10): вложенные клинья от линзы к краям кадра, каждый — градиент
+   вдоль луча, яркий у линзы и почти пустой у стены. Теперь вместо стопки клиньев — один
+   клин с градиентом поперёк (конический вокруг линзы) и вдоль (радиальный): край луча сходит
+   на нет плавно, без ступеней; лист в полный размер ставится один к одному, поэтому ни клеток,
+   ни линий по краю. Яркость одна у обоих проекторов (gain не берётся). Свет дышит медленно и чуть-чуть, как лампа сквозь
+   плёнку. Прежний луч (лист с полосами и дымкой) — по ?pbeam=sheet. */
+const PBEAM_SHEET = /[?&]pbeam=sheet/.test(location.search);
 function drawProjBeam(lx, ly, A, B, lamp, t, seed, gain){
+  if (!PBEAM_SHEET) return drawProjBeamWedges(lx, ly, A, B, lamp, t, seed, gain);
+  return drawProjBeamSheet(lx, ly, A, B, lamp, t, seed, gain);
+}
+const PBEAM_W = {c: null};
+function drawProjBeamWedges(lx, ly, A, B, lamp, t, seed, gain){
+  /* без ступеней: поперёк луча — конический градиент вокруг линзы (ярко посередине, на нет к
+     обоим краям кадра), вдоль — радиальный от линзы; оба кладутся на лист в полный размер и
+     ставятся в кадр один к одному — растяжки нет, клеток нет. Лист чистится целиком. */
+  const x0 = Math.floor(Math.min(lx, A[0], B[0]) - 8), y0 = Math.floor(Math.min(ly, A[1], B[1]) - 8);
+  const x1 = Math.ceil(Math.max(lx, A[0], B[0]) + 8), y1 = Math.ceil(Math.max(ly, A[1], B[1]) + 8);
+  const bw = Math.max(4, x1 - x0), bh = Math.max(4, y1 - y0);
+  if (!PBEAM_W.c) PBEAM_W.c = document.createElement('canvas');
+  const c = PBEAM_W.c;
+  if (c.width < bw || c.height < bh){ c.width = Math.max(c.width, bw); c.height = Math.max(c.height, bh); }
+  const g = c.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalCompositeOperation = 'source-over';
+  g.clearRect(0, 0, c.width, c.height);
+  g.translate(-x0, -y0);
+  const aA = Math.atan2(A[1] - ly, A[0] - lx), aB = Math.atan2(B[1] - ly, B[0] - lx);
+  let span = aB - aA; while (span > Math.PI) span -= 2 * Math.PI; while (span < -Math.PI) span += 2 * Math.PI;
+  const a0 = span >= 0 ? aA : aB, sp = Math.abs(span), turn = sp / (2 * Math.PI);
+  const breathe = 1 + 0.06 * Math.sin(t * 0.9 + seed) * Math.sin(t * 0.37 + seed * 2.1);
+  const pk = Math.min(1, 0.62 * lamp * breathe);
+  const cg = g.createConicGradient(a0, lx, ly);
+  const RGB = '255,247,230';
+  for (const [u, m] of [[0, 0], [0.08, 0.22], [0.22, 0.62], [0.4, 0.92], [0.5, 1], [0.6, 0.92], [0.78, 0.62], [0.92, 0.22], [1, 0]])
+    cg.addColorStop(u * turn, `rgba(${RGB},${(pk * m).toFixed(4)})`);
+  cg.addColorStop(Math.min(1, turn + 0.001), `rgba(${RGB},0)`);
+  cg.addColorStop(1, `rgba(${RGB},0)`);
+  g.fillStyle = cg;
+  // клин от линзы чуть дальше краёв кадра, чтобы конический спад не упирался в кромку
+  const ex = (P, k) => [lx + (P[0] - lx) * k, ly + (P[1] - ly) * k];
+  const A2 = ex(A, 1.04), B2 = ex(B, 1.04);
+  g.beginPath(); g.moveTo(lx, ly); g.lineTo(A2[0], A2[1]); g.lineTo(B2[0], B2[1]); g.closePath(); g.fill();
+  // вдоль: от линзы ярче, к стене тише
+  const L = Math.max(Math.hypot(A[0] - lx, A[1] - ly), Math.hypot(B[0] - lx, B[1] - ly));
+  const rg = g.createRadialGradient(lx, ly, 0, lx, ly, L * 1.05);
+  rg.addColorStop(0, 'rgba(0,0,0,1)'); rg.addColorStop(0.3, 'rgba(0,0,0,0.72)');
+  rg.addColorStop(0.7, 'rgba(0,0,0,0.42)'); rg.addColorStop(1, 'rgba(0,0,0,0.26)');
+  g.globalCompositeOperation = 'destination-in';
+  g.fillStyle = rg; g.fillRect(x0, y0, bw, bh);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  /* обычное наложение, не screen: на светлой стене (1993) screen почти ничего не прибавлял,
+     и луч читался ниткой у линзы — а дымка в воздухе ложится поверх и светлой, и серой стены
+     одинаково */
+  ctx.save();
+  ctx.drawImage(c, 0, 0, bw, bh, x0, y0, bw, bh);
+  ctx.globalCompositeOperation = 'screen';
+  drawGlow(RGB, lx, ly, 22 * SS, 0.18 * lamp);
+  ctx.restore();
+}
+function drawProjBeamSheet(lx, ly, A, B, lamp, t, seed, gain){
   const S6 = 1 / 10;   // лист в 1/10 — растяжка обратно и есть размытие граней
   const x0 = Math.min(lx, A[0], B[0]) - 30 * SS, y0 = Math.min(ly, A[1], B[1]) - 30 * SS;
   const x1 = Math.max(lx, A[0], B[0]) + 30 * SS, y1 = Math.max(ly, A[1], B[1]) + 30 * SS;
@@ -19971,7 +20034,8 @@ function drawBZF(t){
         const [qx, qy] = BZF.chucks[m];
         ctx.save();
         ctx.filter = `blur(${Math.max(1, 2.6 * S).toFixed(1)}px)`;
-        ctx.fillStyle = 'rgba(64,68,72,0.30)';
+        // блок — белый, светится сквозь матовое (Эльдар: «почему он чёрный? он должен отражать свет»)
+        ctx.fillStyle = 'rgba(255,253,246,0.85)';
         ctx.fillRect(FX(qx - 10), FY(qy - 10), 20 * S, 20 * S);
         const fd = feed[m], wig = fd * Math.sin(t * 1.6 + seed[m]) * 4, wigY = fd * Math.sin(t * 2.3 + seed[m] * 2) * 6;
         for (const [ry, tip, mid] of [[42, 58, false], [77, 53, true], [110, 43, false]]){
