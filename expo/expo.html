@@ -3799,7 +3799,7 @@ function drawWall(){
    была на плакате, по горизонтали, а вся рука опущена, чтобы пальцы не легли под цифры года.
    Надписи — живым шрифтом по местам плаката (масштаб плаката на стене — 573 единицы на 1200
    точек), вместе с рукой ниже на 91 и правее на 40; логотип — вырезка с плаката (r85_logo). */
-const P85 = {paper: [232, 225, 217], s: 573 / 1200, cx: 20.6, cy: 358.6, dy: 91, dx: 40, hand: 1.46};
+const P85 = {paper: [232, 225, 217], s: 573 / 1200, cx: 20.6, cy: 358.6, dy: 160, dx: 40, hand: 1.46};   // dy 91 → 160: рука ниже заголовка ×1.8
 function drawPoster85Wall(seg, kT, yTopW, yFoot){
   const b = BEATS.find(q => q.y === '1985'); if (!b) return;
   const RP = seg._panel, n = Math.floor((b.x - RP.anchor) / RP.w);
@@ -3816,38 +3816,47 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
     const tw = 570 * P85.s * 2 * U, th = 200 * P85.s * 2 * U, im = spriteMip(pap, tw, th);
     for (let yy = yTopW; yy < yB; yy += th - 1) for (let xx = x0; xx < x1; xx += tw - 1) ctx.drawImage(im, xx, yy, tw, th);
   }
-  // свет комнаты: бумага под тем же сумраком сверху и у пола, что и стена, только мягче
-  const lg = ctx.createLinearGradient(0, 0, 0, yB);
-  lg.addColorStop(0, 'rgba(20,16,10,0.40)'); lg.addColorStop(0.22, 'rgba(20,16,10,0.10)');
-  lg.addColorStop(0.75, 'rgba(20,16,10,0.04)'); lg.addColorStop(1, 'rgba(20,16,10,0.22)');
-  ctx.fillStyle = lg; ctx.fillRect(x0, yTopW, x1 - x0, yB - yTopW);
-  // плакат → стена: точка (u, v) плаката
-  const s = P85.s, PX = u => b.x + P85.cx + (u - 600) * s, PY = v => P85.cy - 411 * s + v * s;
+  /* ПРАВКИ ПО НАБРОСКУ (Эльдар, 30.10.2026): заголовок с подзаголовком ×1.8 и выше — сразу
+     под годом, «The Sales» от левого края под цифрами; логотип ×1.5 и вниз, над партами; руку
+     повернуть, чтобы низ большого пальца лёг горизонтально (по линиям наброска — 6°, на
+     наброске подписано «1°»); фон светлее — в тон бумаге, что осталась между пальцами. Места
+     сняты с наброска: панель 736,5 единицы = 469 его точек, базовая линия года — 140 − yLift 130 = 10. */
+  const s = P85.s;
   const hand = PROP_SPRITES.ph_p85hand;
   if (hand){
-    // коронка на плакате — (450, 450); рука вырезана с (4, 8)
-    const hs = s * P85.hand, cxW = PX(450), cyW = PY(450) + P85.dy;
-    const hx = cxW - (450 - 4) * hs, hy = cyW - (450 - 8) * hs;
+    // коронка на плакате — (450, 450); рука вырезана с (4, 8); поворот — вокруг коронки
+    const hs = s * P85.hand, cxW = b.x + P85.cx + (450 - 600) * s, cyW = P85.cy - 411 * s + 450 * s + P85.dy;
+    const hx = L + 7 / U * SS, hy = cyW - (450 - 8) * hs;
     const hw = 553 * hs * U, hh = 743 * hs * U;
-    ctx.drawImage(spriteMip(hand, hw, hh), X(L) + 7 * SS + (X(hx) - X(L) - 7 * SS) * 0, Y(hy), hw, hh);
+    const pivX = X(hx) + (450 - 4) * hs * U, pivY = Y(cyW);
+    ctx.save();
+    ctx.translate(pivX, pivY); ctx.rotate(-6 * Math.PI / 180); ctx.translate(-pivX, -pivY);
+    ctx.drawImage(spriteMip(hand, hw, hh), X(hx), Y(hy), hw, hh);
+    ctx.restore();
   }
-  const T = (u, v) => [X(PX(u) + P85.dx), Y(PY(v) + P85.dy)];
+  // свет комнаты — поверх бумаги И руки, чтобы бумага между пальцами была того же тона; мягче прежнего
+  const lg = ctx.createLinearGradient(0, 0, 0, yB);
+  lg.addColorStop(0, 'rgba(20,16,10,0.22)'); lg.addColorStop(0.22, 'rgba(20,16,10,0.04)');
+  lg.addColorStop(0.75, 'rgba(20,16,10,0)'); lg.addColorStop(1, 'rgba(20,16,10,0.12)');
+  ctx.fillStyle = lg; ctx.fillRect(x0, yTopW, x1 - x0, yB - yTopW);
   ctx.fillStyle = 'rgba(14,13,12,0.96)';
   ctx.textBaseline = 'alphabetic';
-  // заголовок — две строки по правому краю 1120, базовые линии 150 и 290, кегль 150 точек плаката
-  const fs = 150 * s * U;
+  // заголовок ×1.8: «The Sales» от 11670, обе строки по общему правому краю, базовые 140 и 269 (под цифрами года — воздух)
+  const fs = 150 * s * 1.8 * U, xR = 11670 + 635 * s * 1.8;
   ctx.font = `900 ${fs.toFixed(1)}px "Helvetica Neue", "Arial Black", Arial, sans-serif`;
-  for (const [txt, v, wPx] of [['The Sales', 152, 635], ['Secret', 292, 470]]){
-    const [rx, ry] = T(1120, v), mw = ctx.measureText(txt).width, want = wPx * s * U;
-    ctx.save(); ctx.translate(rx, ry); ctx.scale(want / mw, 1); ctx.textAlign = 'right'; ctx.fillText(txt, 0, 0); ctx.restore();
+  for (const [txt, wy, wPx] of [['The Sales', 140, 635], ['Secret', 269, 470]]){
+    const mw = ctx.measureText(txt).width, want = wPx * s * 1.8 * U;
+    ctx.save(); ctx.translate(X(xR), Y(wy)); ctx.scale(want / mw, 1); ctx.textAlign = 'right'; ctx.fillText(txt, 0, 0); ctx.restore();
   }
-  // подзаголовок — по левому краю 705, базовые 385 и 425
-  ctx.font = `400 ${(36 * s * U).toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;
+  // подзаголовок ×1.4 (при ×1.8 он ложился на палец) — по тому же правому краю, под «Secret»
+  ctx.font = `400 ${(36 * s * 1.4 * U).toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;
+  ctx.textAlign = 'right';
+  ctx.fillText('Jim introduces marketing', X(xR), Y(320));
+  ctx.fillText('standards that sell', X(xR), Y(347));
   ctx.textAlign = 'left';
-  for (const [txt, v] of [['Jim introduces marketing', 386], ['standards that sell', 426]]){ const [lx, ly] = T(705, v); ctx.fillText(txt, lx, ly); }
-  // логотип — вырезка (700…1130 × 660…770 плаката, обрезан по альфе с (702, 660))
+  // логотип ×1.5 — над партами, правым краем у правого края заголовка
   const lg2 = PROP_SPRITES.ph_p85logo;
-  if (lg2){ const [lx, ly] = T(702, 660); ctx.drawImage(spriteMip(lg2, 428 * s * U, 109 * s * U), lx, ly, 428 * s * U, 109 * s * U); }
+  if (lg2){ const lw = 428 * s * 1.5, lh = 109 * s * 1.5; ctx.drawImage(spriteMip(lg2, lw * U, lh * U), X(xR - lw), Y(819 - lh), lw * U, lh * U); }
   ctx.restore();
 }
 
