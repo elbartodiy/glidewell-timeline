@@ -3835,7 +3835,9 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
     const hs = s * P85.hand, cxW = b.x + P85.cx + (450 - 600) * s, cyW = P85.cy - 411 * s + 450 * s + P85.dy;
     /* размер прежний — руку только подняли (Эльдар, 30.10.2026: «я не просил увеличивать —
        надо было её поднять; красным я нарисовал воздух вокруг пальца»): кончик пальца — под «S» */
-    const hy0 = cyW - (450 - 8) * hs, foot = hy0 + 743 * hs, hs2 = hs;
+    /* ×1.1 вверх и вправо (Эльдар, 30.10.2026: «увеличь руку чуть, увеличивая вверх и вправо»):
+       низ (foot) и левый край (hx) на месте, растут верх и правый край */
+    const hy0 = cyW - (450 - 8) * hs, foot = hy0 + 743 * hs, hs2 = hs * 1.1;
     const hx = L + 7 / U * SS, hy = foot - 743 * hs2;
     const hw = 553 * hs2 * U, hh = 743 * hs2 * U;
     const pivX = X(hx) + (450 - 4) * hs2 * U, pivY = Y(hy + (450 - 8) * hs2);
@@ -3860,10 +3862,14 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
      поднимем заголовок выше»): верх «The Sales» — там, где был верх цифр 1985 (строки 209 → 116
      при 2000×1040, k 0,57 — 163 единицы стены); подзаголовок — вместе с ним, рука на месте */
   const UP = 163;
+  /* ×1.08 от верха и правого края (Эльдар, 30.10.2026: «увеличь заголовок с подзаголовком чуть»):
+     верх прописных «The Sales» (HA — базовая 140 − UP минус высота прописной 82 при кегле ×1.58)
+     и правый край xR на месте, всё ниже растёт вниз */
+  const HS = 1.08, HA = 140 - UP - 82, HY = y => HA + (y - HA) * HS;
   // заголовок ×1.8: «The Sales» от 11670, обе строки по общему правому краю, базовые 140 и 269 (под цифрами года — воздух)
   // ×1.8 → ×1.62 (второй набросок, «×0,9»: «Secret» касался кончика пальца); правый край прежний
   // 1.46 → 1.58 (Эльдар, 30.10.2026: «чуть увеличь The Sales Secret, всё ещё не касаясь пальца, с воздухом между»)
-  const TS = 1.58, xR = 11670 + 635 * s * 1.8, fs = 150 * s * TS * U;
+  const TS = 1.58 * HS, xR = 11670 + 635 * s * 1.8, fs = 150 * s * TS * U;
   ctx.font = `900 ${fs.toFixed(1)}px "Helvetica Neue", "Arial Black", Arial, sans-serif`;
   /* обе строки — одним начертанием, без растяжки по ширине (Эльдар, 30.10.2026: «начертание первой
      строки отличается от второй — это ошибка»): прежде каждую строку тянули к ширине плаката
@@ -3873,7 +3879,7 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
      у Helvetica Neue нет начертания 900 — браузер берёт Bold, поэтому буквы обведены своим же
      цветом на 4 % кегля; цвет — чистый чёрный */
   ctx.fillStyle = '#000'; ctx.strokeStyle = '#000'; ctx.lineJoin = 'round'; ctx.lineWidth = fs * 0.04;
-  for (const [txt, wy] of [['The Sales', 140 - UP], ['Secret', 256 - UP]]){ ctx.strokeText(txt, X(xR), Y(wy)); ctx.fillText(txt, X(xR), Y(wy)); }
+  for (const [txt, wy] of [['The Sales', HY(140 - UP)], ['Secret', HY(256 - UP)]]){ ctx.strokeText(txt, X(xR), Y(wy)); ctx.fillText(txt, X(xR), Y(wy)); }
   ctx.fillStyle = 'rgba(14,13,12,0.96)';
   const secretW = (ctx.measureText('Secret').width + fs * 0.04) / U;
   // подзаголовок ×1.4 (при ×1.8 он ложился на палец) — по тому же правому краю, под «Secret»
@@ -3883,8 +3889,8 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
   const subF = 100 * secretW / (ctx.measureText('Jim introduces marketing').width / U);
   ctx.font = `400 ${(subF * U).toFixed(2)}px "Helvetica Neue", Arial, sans-serif`;
   ctx.textAlign = 'right';
-  ctx.fillText('Jim introduces marketing', X(xR), Y(305 - UP));
-  ctx.fillText('standards that sell', X(xR), Y(305 - UP + 33 * subF / (36 * s * 1.82)));   // межстрочие — вместе с кеглем
+  ctx.fillText('Jim introduces marketing', X(xR), Y(HY(305 - UP)));
+  ctx.fillText('standards that sell', X(xR), Y(HY(305 - UP) + 33 * subF / (36 * s * 1.82)));   // межстрочие — вместе с кеглем
   ctx.textAlign = 'left';
   // логотип ×1.5 — над партами, правым краем у правого края заголовка
   const lg2 = PROP_SPRITES.ph_p85logo;
