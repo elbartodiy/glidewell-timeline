@@ -3857,22 +3857,28 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
   ctx.textBaseline = 'alphabetic';
   // заголовок ×1.8: «The Sales» от 11670, обе строки по общему правому краю, базовые 140 и 269 (под цифрами года — воздух)
   // ×1.8 → ×1.62 (второй набросок, «×0,9»: «Secret» касался кончика пальца); правый край прежний
-  const TS = 1.46, xR = 11670 + 635 * s * 1.8, fs = 150 * s * TS * U;
+  // 1.46 → 1.58 (Эльдар, 30.10.2026: «чуть увеличь The Sales Secret, всё ещё не касаясь пальца, с воздухом между»)
+  const TS = 1.58, xR = 11670 + 635 * s * 1.8, fs = 150 * s * TS * U;
   ctx.font = `900 ${fs.toFixed(1)}px "Helvetica Neue", "Arial Black", Arial, sans-serif`;
   for (const [txt, wy, wPx] of [['The Sales', 140, 635], ['Secret', 256, 470]]){
     const mw = ctx.measureText(txt).width, want = wPx * s * TS * U;
     ctx.save(); ctx.translate(X(xR), Y(wy)); ctx.scale(want / mw, 1); ctx.textAlign = 'right'; ctx.fillText(txt, 0, 0); ctx.restore();
   }
   // подзаголовок ×1.4 (при ×1.8 он ложился на палец) — по тому же правому краю, под «Secret»
-  ctx.font = `400 ${(36 * s * 1.82 * U).toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;   // ×1.4 → ×1.82 («×1,3»)
+  /* размер — по длине: первая строка ровно в длину «Secret» (Эльдар, 30.10.2026: «подзаголовок
+     наоборот уменьши, чтобы первая строка была одной длины со словом Secret»; было ×1.82 — на 8 % длиннее) */
+  ctx.font = `400 ${(100 * U).toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;
+  const subF = 100 * (470 * s * TS) / (ctx.measureText('Jim introduces marketing').width / U);
+  ctx.font = `400 ${(subF * U).toFixed(2)}px "Helvetica Neue", Arial, sans-serif`;
   ctx.textAlign = 'right';
   ctx.fillText('Jim introduces marketing', X(xR), Y(305));
-  ctx.fillText('standards that sell', X(xR), Y(338));
+  ctx.fillText('standards that sell', X(xR), Y(305 + 33 * subF / (36 * s * 1.82)));   // межстрочие — вместе с кеглем
   ctx.textAlign = 'left';
   // логотип ×1.5 — над партами, правым краем у правого края заголовка
   const lg2 = PROP_SPRITES.ph_p85logo;
   // ×1.5 → ×1.8 от левого нижнего угла (больше — упирается в правый шов панели) (второй набросок: стрелка из правого верхнего угла наружу)
-  if (lg2){ const l0 = xR - 428 * s * 1.5, lw = 428 * s * 1.8, lh = 109 * s * 1.8; ctx.drawImage(spriteMip(lg2, lw * U, lh * U), X(l0), Y(819 - lh), lw * U, lh * U); }
+  /* выше на треть высоты буквы (Эльдар, 30.10.2026): буквы GLIDEWELL на вырезке — строки 33…60, 28 из 109 → 28/3 строки */
+  if (lg2){ const l0 = xR - 428 * s * 1.5, lw = 428 * s * 1.8, lh = 109 * s * 1.8, up = 28 / 3 * s * 1.8; ctx.drawImage(spriteMip(lg2, lw * U, lh * U), X(l0), Y(819 - up - lh), lw * U, lh * U); }
   ctx.restore();
 }
 
