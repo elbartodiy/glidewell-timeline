@@ -335,6 +335,7 @@ const BEATS = [
    th:'Jim sets one set of rules for how the lab sells — for everyone.',
    d:'Jim sets the rules the lab\u2019s advertising follows — for everyone who writes it.',
    ink:'18,17,16',   // год — чёрным по бумаге (Эльдар, 30.10.2026)
+   yWallHide:true,   // цифры года на стене нет — плакат сам заголовок (Эльдар, 30.10.2026: «давай уберём год вообще»); на странице 1985 остаётся
    /* плакат снят — стена сама стала плакатом (drawPoster85Wall). Было:
       {img:'ad1985', w:573, dx:0, top:148, maxB:860, style:'poster', satMul:0.75} */
    wall:[], table:[]},   // без рамы, насыщенность −25 %; 573 — по высоте с доской 1980-го: 267…483 px при 2000×1040 (Эльдар, 27.10.2026: «по высоте такой же, как доска левее — единой линией»)
@@ -3855,6 +3856,10 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
   ctx.fillStyle = lg; ctx.fillRect(x0, yTopW, x1 - x0, yB - yTopW);
   ctx.fillStyle = 'rgba(14,13,12,0.96)';
   ctx.textBaseline = 'alphabetic';
+  /* ГОДА НА СТЕНЕ НЕТ — заголовок поднят на его место (Эльдар, 30.10.2026: «уберём год вообще и
+     поднимем заголовок выше»): верх «The Sales» — там, где был верх цифр 1985 (строки 209 → 116
+     при 2000×1040, k 0,57 — 163 единицы стены); подзаголовок — вместе с ним, рука на месте */
+  const UP = 163;
   // заголовок ×1.8: «The Sales» от 11670, обе строки по общему правому краю, базовые 140 и 269 (под цифрами года — воздух)
   // ×1.8 → ×1.62 (второй набросок, «×0,9»: «Secret» касался кончика пальца); правый край прежний
   // 1.46 → 1.58 (Эльдар, 30.10.2026: «чуть увеличь The Sales Secret, всё ещё не касаясь пальца, с воздухом между»)
@@ -3864,9 +3869,13 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
      строки отличается от второй — это ошибка»): прежде каждую строку тянули к ширине плаката
      (635 и 470 его точек), и «The Sales» выходила сжатой до 0,91, а «Secret» растянутой до 1,01 */
   ctx.textAlign = 'right';
-  ctx.fillText('The Sales', X(xR), Y(140));
-  ctx.fillText('Secret', X(xR), Y(256));
-  const secretW = ctx.measureText('Secret').width / U;
+  /* жирнее и чернее (Эльдар, 30.10.2026: «увеличить толщину линий заголовка… более bold and black»):
+     у Helvetica Neue нет начертания 900 — браузер берёт Bold, поэтому буквы обведены своим же
+     цветом на 4 % кегля; цвет — чистый чёрный */
+  ctx.fillStyle = '#000'; ctx.strokeStyle = '#000'; ctx.lineJoin = 'round'; ctx.lineWidth = fs * 0.04;
+  for (const [txt, wy] of [['The Sales', 140 - UP], ['Secret', 256 - UP]]){ ctx.strokeText(txt, X(xR), Y(wy)); ctx.fillText(txt, X(xR), Y(wy)); }
+  ctx.fillStyle = 'rgba(14,13,12,0.96)';
+  const secretW = (ctx.measureText('Secret').width + fs * 0.04) / U;
   // подзаголовок ×1.4 (при ×1.8 он ложился на палец) — по тому же правому краю, под «Secret»
   /* размер — по длине: первая строка ровно в длину «Secret» (Эльдар, 30.10.2026: «подзаголовок
      наоборот уменьши, чтобы первая строка была одной длины со словом Secret»; было ×1.82 — на 8 % длиннее) */
@@ -3874,8 +3883,8 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
   const subF = 100 * secretW / (ctx.measureText('Jim introduces marketing').width / U);
   ctx.font = `400 ${(subF * U).toFixed(2)}px "Helvetica Neue", Arial, sans-serif`;
   ctx.textAlign = 'right';
-  ctx.fillText('Jim introduces marketing', X(xR), Y(305));
-  ctx.fillText('standards that sell', X(xR), Y(305 + 33 * subF / (36 * s * 1.82)));   // межстрочие — вместе с кеглем
+  ctx.fillText('Jim introduces marketing', X(xR), Y(305 - UP));
+  ctx.fillText('standards that sell', X(xR), Y(305 - UP + 33 * subF / (36 * s * 1.82)));   // межстрочие — вместе с кеглем
   ctx.textAlign = 'left';
   // логотип ×1.5 — над партами, правым краем у правого края заголовка
   const lg2 = PROP_SPRITES.ph_p85logo;
@@ -4854,7 +4863,7 @@ function drawBeatText(b, focusAmt){
           ctx.fillText(txt, cx - OFF, py(yWorld - lift, kW));
         };
         const tsW = (seg.tScale || 1) * (b._ys || 1) * (b.ysMul || 1) * spread;
-        cast(b.y, eraFont(170 * (seg.yearScale || 1) * tsW * kW * SS, '', seg.fontYear || seg.font), 140);
+        if (!b.yWallHide) cast(b.y, eraFont(170 * (seg.yearScale || 1) * tsW * kW * SS, '', seg.fontYear || seg.font), 140);
         if (!b.tHide) cast(sentence(b.tWall || b.t), eraFont(46 * (seg.tScale || 1) * spread * kW * SS, '', seg.font), tY + cd0);   // снятое название не бросает и тени
         if (b.th && b._th && !b.thBelow && !b.thWallHide && WALL_THESIS){
           ctx.font = eraFont(30 * (seg.tScale || 1) * spread * kW * SS, 'italic', seg.font);
@@ -4879,7 +4888,7 @@ function drawBeatText(b, focusAmt){
         ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
         const yBase9 = mixN(py(140 - lift, kk), H*0.16, focusAmt);
         letterRelief(0.55);                 // the cut edge, and nothing else on the glyph
-        paintNumeral(b.y, cx, yBase9, ySz9, yFam9);
+        if (!b.yWallHide) paintNumeral(b.y, cx, yBase9, ySz9, yFam9);
         noShadow();
       }
       pushHit(cx - 340*kk*SS, hitTopF, 680*kk*SS, py(330, kk) - hitTopF,
@@ -4968,7 +4977,7 @@ function drawBeatText(b, focusAmt){
           } else yRest = py(140 - (b.yLift || 0), kk);
           const yBase8 = mixN(yRest, H*0.16, focusAmt);
           letterRelief(0.5);                // the cut edge, and nothing else on the glyph
-          paintNumeral(b.y, cx, yBase8, ySz8, yFam8);
+          if (!b.yWallHide) paintNumeral(b.y, cx, yBase8, ySz8, yFam8);
           noShadow();
         }
       }
