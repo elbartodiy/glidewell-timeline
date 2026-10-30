@@ -20082,7 +20082,10 @@ function bzfCycle(n){ const sl = bzfSlot(n); return {i: sl.i, j: sl.j, m: bzfMil
 const BZF_LED = m => [m % 2 ? 1119 : 736, [269, 447, 628, 805][m >> 1]];
 function drawBZF(t){
   if (!bzfOn()) return false;
-  const kk = k(CELL_Z), S = BZF.U * kk * SS;            // экранных точек на точку рамы
+  /* ?bzfz=<z> — проба глубины фабрики (Эльдар, 30.10.2026: «а что если робота поставить чуть
+     глубже в зал?»): размер в мире тот же, поэтому на экране она мельче */
+  const BZ_Z = +((location.search.match(/[?&]bzfz=(\d+)/) || [])[1] || CELL_Z);
+  const kk = k(BZ_Z), S = BZF.U * kk * SS;            // экранных точек на точку рамы
   const FX = fx => px(BZF.wx(fx), kk), FY = fy => py(BZF.wy(fy), kk);
   if (FX(1438) < -50 || FX(99) > W + 50) return true;
   const [Fx0, Fy0] = BZF_SRC.F, Fs = PROP_SPRITES.ph_bzfF;
