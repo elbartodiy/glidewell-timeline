@@ -334,7 +334,10 @@ const BEATS = [
       Написание фамилии не проверено (в расшифровках Weisberg/Riceberg). */
    th:'Jim sets one set of rules for how the lab sells — for everyone.',
    d:'Jim sets the rules the lab\u2019s advertising follows — for everyone who writes it.',
-   wall:[{img:'ad1985', w:573, dx:0, top:148, maxB:860, style:'poster', satMul:0.75}], table:[]},   // без рамы, насыщенность −25 %; 573 — по высоте с доской 1980-го: 267…483 px при 2000×1040 (Эльдар, 27.10.2026: «по высоте такой же, как доска левее — единой линией»)
+   ink:'18,17,16',   // год — чёрным по бумаге (Эльдар, 30.10.2026)
+   /* плакат снят — стена сама стала плакатом (drawPoster85Wall). Было:
+      {img:'ad1985', w:573, dx:0, top:148, maxB:860, style:'poster', satMul:0.75} */
+   wall:[], table:[]},   // без рамы, насыщенность −25 %; 573 — по высоте с доской 1980-го: 267…483 px при 2000×1040 (Эльдар, 27.10.2026: «по высоте такой же, как доска левее — единой линией»)
 
   /* СТРОКА 1988-го ЖИВЁТ НА СТОЛЕ 1984-го, У ЕГО ПРАВОГО КРАЯ. Своего стола у
      этого года больше нет (см. разрыв p84 в initTables). Эльдар (06.10.2026):
@@ -3781,8 +3784,71 @@ function drawWall(){
     gr.addColorStop(0.80, `rgba(5,2,0,${(0.16*sh).toFixed(3)})`);
     gr.addColorStop(1, `rgba(5,2,0,${(0.30*sh).toFixed(3)})`);
     ctx.fillStyle = gr; ctx.fillRect(sx0, 0, sx1 - sx0, yFoot);
+    if (seg.panel && seg._panel) drawPoster85Wall(seg, kT, yTopW, yFoot);
     ctx.restore();
   }
+}
+/* 1985 — СТЕНА САМА СТАЛА ПЛАКАТОМ (Эльдар, 30.10.2026: «возьми за референс фон плаката и
+   сделай этот фон для всего 1985; год — чёрным, контрастно; руку вырежи из плаката и,
+   увеличив, сдвинь левее, чтобы начиналась там же, где светлый участок стены; подписи
+   перепиши с плаката с тем же расположением на стене»; «сам плакат потом убрать»).
+   Панель 1985-го — плитка стены между её швами (anchor + n·w, n — та, где стоит год), на
+   плоскости рисунка стены (kT). Бумага — кусок фона плаката (r85_paper, столбцы 620…1190,
+   строки 450…650 ad1985.jpg — без текста), положенный плиткой. Рука с коронкой — вырезана
+   по тону и фактуре (r85_hand), левым краем на левом краю бумаги, ×1.46: коронка там же, где
+   была на плакате, по горизонтали, а вся рука опущена, чтобы пальцы не легли под цифры года.
+   Надписи — живым шрифтом по местам плаката (масштаб плаката на стене — 573 единицы на 1200
+   точек), вместе с рукой ниже на 91 и правее на 40; логотип — вырезка с плаката (r85_logo). */
+const P85 = {paper: [232, 225, 217], s: 573 / 1200, cx: 20.6, cy: 358.6, dy: 91, dx: 40, hand: 1.46};
+function drawPoster85Wall(seg, kT, yTopW, yFoot){
+  const b = BEATS.find(q => q.y === '1985'); if (!b) return;
+  const RP = seg._panel, n = Math.floor((b.x - RP.anchor) / RP.w);
+  const L = RP.anchor + n * RP.w, R = L + RP.w;
+  const X = wx => px(wx, kT), Y = wy => py(wy, kT), U = kT * SS;
+  const x0 = X(L) + 7 * SS, x1 = X(R) - 2 * SS;   // швы плитки остаются по краям
+  if (x1 < 0 || x0 > W) return;
+  const yB = Y(1080 - SKIRT_H);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, yTopW, x1 - x0, yB - yTopW); ctx.clip();
+  ctx.fillStyle = `rgb(${P85.paper.join(',')})`; ctx.fillRect(x0, yTopW, x1 - x0, yB - yTopW);
+  const pap = PROP_SPRITES.ph_p85paper;
+  if (pap){
+    const tw = 570 * P85.s * 2 * U, th = 200 * P85.s * 2 * U, im = spriteMip(pap, tw, th);
+    for (let yy = yTopW; yy < yB; yy += th - 1) for (let xx = x0; xx < x1; xx += tw - 1) ctx.drawImage(im, xx, yy, tw, th);
+  }
+  // свет комнаты: бумага под тем же сумраком сверху и у пола, что и стена, только мягче
+  const lg = ctx.createLinearGradient(0, 0, 0, yB);
+  lg.addColorStop(0, 'rgba(20,16,10,0.40)'); lg.addColorStop(0.22, 'rgba(20,16,10,0.10)');
+  lg.addColorStop(0.75, 'rgba(20,16,10,0.04)'); lg.addColorStop(1, 'rgba(20,16,10,0.22)');
+  ctx.fillStyle = lg; ctx.fillRect(x0, yTopW, x1 - x0, yB - yTopW);
+  // плакат → стена: точка (u, v) плаката
+  const s = P85.s, PX = u => b.x + P85.cx + (u - 600) * s, PY = v => P85.cy - 411 * s + v * s;
+  const hand = PROP_SPRITES.ph_p85hand;
+  if (hand){
+    // коронка на плакате — (450, 450); рука вырезана с (4, 8)
+    const hs = s * P85.hand, cxW = PX(450), cyW = PY(450) + P85.dy;
+    const hx = cxW - (450 - 4) * hs, hy = cyW - (450 - 8) * hs;
+    const hw = 553 * hs * U, hh = 743 * hs * U;
+    ctx.drawImage(spriteMip(hand, hw, hh), X(L) + 7 * SS + (X(hx) - X(L) - 7 * SS) * 0, Y(hy), hw, hh);
+  }
+  const T = (u, v) => [X(PX(u) + P85.dx), Y(PY(v) + P85.dy)];
+  ctx.fillStyle = 'rgba(14,13,12,0.96)';
+  ctx.textBaseline = 'alphabetic';
+  // заголовок — две строки по правому краю 1120, базовые линии 150 и 290, кегль 150 точек плаката
+  const fs = 150 * s * U;
+  ctx.font = `900 ${fs.toFixed(1)}px "Helvetica Neue", "Arial Black", Arial, sans-serif`;
+  for (const [txt, v, wPx] of [['The Sales', 152, 635], ['Secret', 292, 470]]){
+    const [rx, ry] = T(1120, v), mw = ctx.measureText(txt).width, want = wPx * s * U;
+    ctx.save(); ctx.translate(rx, ry); ctx.scale(want / mw, 1); ctx.textAlign = 'right'; ctx.fillText(txt, 0, 0); ctx.restore();
+  }
+  // подзаголовок — по левому краю 705, базовые 385 и 425
+  ctx.font = `400 ${(36 * s * U).toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;
+  ctx.textAlign = 'left';
+  for (const [txt, v] of [['Jim introduces marketing', 386], ['standards that sell', 426]]){ const [lx, ly] = T(705, v); ctx.fillText(txt, lx, ly); }
+  // логотип — вырезка (700…1130 × 660…770 плаката, обрезан по альфе с (702, 660))
+  const lg2 = PROP_SPRITES.ph_p85logo;
+  if (lg2){ const [lx, ly] = T(702, 660); ctx.drawImage(spriteMip(lg2, 428 * s * U, 109 * s * U), lx, ly, 428 * s * U, 109 * s * U); }
+  ctx.restore();
 }
 
 const SKIRT_H = 64;   // мира — высота плинтуса, как в фото стен второй и третьей эпохи
@@ -15024,7 +15090,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261029-bzf';   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261030-p85';   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -15110,7 +15176,9 @@ async function loadPhotoSkin(){
     ph_t00f: 'r_t00_frame.png', ph_t00x: 'r_t00_crosshead.png', ph_t00g: 'r_t00_gauge_dial.png',
     ph_t00c: 'r_t00_control.png', ph_t00p: 'r_t00_powder_press.png', ph_t00h: 'r_t00_sinter_furnace.png',
     ph_t00b: 'r_t00_conveyor.png',
-    ph_r19hmi: 'r_r19_hmi_terminal_full.png',   // пульт целиком — Эльдар дорисовал срезанный край (кусок лежал в line_monitor), 29.10.2026
+    ph_r19hmi: 'r_r19_hmi_terminal_full.png',
+    // 1985: стена-плакат — бумага, рука и логотип с плаката «The Sales Secret» (30.10.2026)
+    ph_p85paper: 'r85_paper.jpg', ph_p85hand: 'r85_hand.png', ph_p85logo: 'r85_logo.png',   // пульт целиком — Эльдар дорисовал срезанный край (кусок лежал в line_monitor), 29.10.2026
     // 2019: фабрика BruxZir — рендеры Эльдара «BruxZirFactory*» (29.10.2026), обрезаны по альфе
     ph_bzfF: 'r_bzf_frame.png', ph_bzfA: 'r_bzf_axis.png', ph_bzfB: 'r_bzf_beam.png', ph_bzfG: 'r_bzf_gripper.png',   // 2019: пульт на стойке (реализм 09, только он — Эльдар, 29.10.2026)
     ph_crt: 'r_crt.png',              // 2002: ЭЛТ-монитор (ChatGPT), экран — прозрачный проём 160…752 × 95…544
