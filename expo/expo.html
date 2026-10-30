@@ -20198,7 +20198,10 @@ function drawBZF(t){
     const m = bzfMill(q);
     const tIn = (q - n) * BZF.T + 4.2, tOut = (q + 4 - n) * BZF.T + 4.0;   // в фазах текущего цикла: блок поставлен на 4,2
     if (ph < tIn || ph >= tOut) continue;
-    const c1 = tIn + 0.5, c2 = tIn + 1.1, o1 = tOut - 0.9, o2 = tOut - 0.3;
+    /* дверца трогается через секунду после блока, а не через полсекунды (Эльдар, 30.10.2026:
+       «закрытие дверцы чуть начнём позже — через секунду»): захват успевает отойти, и блок
+       в патроне видно открытым. Ход тот же, 0,6 с */
+    const c1 = tIn + 1.0, c2 = tIn + 1.6, o1 = tOut - 0.9, o2 = tOut - 0.3;
     const close = ph < c2 ? ease(seg(c1, c2)) : (ph < o1 ? 1 : 1 - ease(seg(o1, o2)));
     loaded[m] = 1;                                         // фреза занята, лампа зелёная
     doorC[m] = Math.max(doorC[m], close);
