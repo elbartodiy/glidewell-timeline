@@ -19868,29 +19868,68 @@ function drawBZF(t){
      следующие, и взятая сразу сменяется той, что стояла за ней. */
   /* заготовки в патронах — поверх рамы, под осями, балкой и захватом; и лампы:
      жёлтая — пусто, зелёная — загружена */
-  const loaded = new Array(8).fill(0);
+  /* МАТОВАЯ ДВЕРЦА И ФРЕЗЕРОВКА ЗА НЕЙ (Эльдар, 29.10.2026, кадры с линии: «после того как
+     загружен блок — следом закрывается стеклянная дверца, и там размыто начинается
+     действие — вода плещет, фреза работает, но так как стекло матовое — это просто
+     блики»). Каждой фрезе в кадре: блок (a), дверца (close, сверху вниз) и работа (act).
+     Блок ставится на tIn, захват уходит — дверца едет вниз за 0,6 с; за ней блики фрезы и
+     воды; к концу дверца поднимается, и патрон пуст — коронка ушла. Окна фрез по раме:
+     столбцы 769…956 и 1153…1360, строки 192…349, 370…529, 551…709, 731…889. */
+  const loaded = new Array(8).fill(0), doorC = new Array(8).fill(0), act = new Array(8).fill(0), seed = new Array(8).fill(0);
   for (let q = n - 4; q <= n; q++){
     const m = bzfMill(q);
     const tIn = (q - n) * BZF.T + 4.0, tOut = (q + 4 - n) * BZF.T + 2.0;   // в фазах текущего цикла
-    let a = 0;
-    if (ph >= tIn && ph < tOut) a = Math.min(1, (tOut - ph) / 0.4);
-    loaded[m] = Math.max(loaded[m], a);
+    if (ph < tIn || ph >= tOut) continue;
+    const c1 = tIn + 0.5, c2 = tIn + 1.1, o1 = tOut - 0.9, o2 = tOut - 0.3;
+    const close = ph < c2 ? ease(seg(c1, c2)) : (ph < o1 ? 1 : 1 - ease(seg(o1, o2)));
+    loaded[m] = 1;                                         // фреза занята, лампа зелёная
+    doorC[m] = Math.max(doorC[m], close);
+    act[m] = Math.max(act[m], ph >= c2 && ph < o1 ? Math.min(1, (ph - c2) / 0.5, (o1 - ph) / 0.5) : 0);
+    seed[m] = q;
+    if (ph >= o1) loaded[m] = 0.999;                       // к открытию блока уже нет
   }
+  const BZF_WIN = m => [m % 2 ? 1153 : 769, [192, 370, 551, 731][m >> 1], m % 2 ? 1360 : 956, [349, 529, 709, 889][m >> 1]];
   for (let m = 0; m < 8; m++){
     const [qx, qy] = BZF.chucks[m];
     /* В ПАТРОНЕ ЗАГОТОВКА СТОИТ ТОРЦОМ К НАМ (Эльдар, 29.10.2026, дорисовал её в правой
        верхней фрезе: «то, как он должен выглядеть — фронтально, в центре»): квадрат
        20 точек рамы по центру ступицы (её кольцо — около 24), светлая фаска сверху-слева,
        тень снизу-справа */
-    if (loaded[m] > 0.01){
+    if (loaded[m] === 1 && doorC[m] < 0.999){
       const e = 10, x0 = FX(qx - e), y0 = FY(qy - e), w = 2 * e * S, r = 2.2 * S;
-      ctx.save(); ctx.globalAlpha = loaded[m];
+      ctx.save();
       ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.roundRect(x0 + 1.5 * S, y0 + 2 * S, w, w, r); ctx.fill();
       const fg = ctx.createLinearGradient(x0, y0, x0 + w, y0 + w);
       fg.addColorStop(0, '#fbf8f0'); fg.addColorStop(0.55, '#ece5d4'); fg.addColorStop(1, '#cfc6b2');
       ctx.fillStyle = fg; ctx.beginPath(); ctx.roundRect(x0, y0, w, w, r); ctx.fill();
       ctx.strokeStyle = 'rgba(120,110,90,0.45)'; ctx.lineWidth = Math.max(0.6, 0.8 * S); ctx.stroke();
       ctx.restore();
+    }
+    if (doorC[m] > 0.001){
+      const [a0, b0, a1, b1] = BZF_WIN(m), wx0 = FX(a0), wy0 = FY(b0), ww = (a1 - a0) * S, wh = (b1 - b0) * S;
+      const dh = wh * doorC[m];
+      ctx.save();
+      ctx.beginPath(); ctx.rect(wx0, wy0, ww, dh); ctx.clip();
+      const gl = ctx.createLinearGradient(wx0, wy0, wx0 + ww, wy0 + wh);
+      gl.addColorStop(0, 'rgba(214,226,222,0.88)'); gl.addColorStop(0.5, 'rgba(188,203,199,0.90)'); gl.addColorStop(1, 'rgba(160,176,172,0.92)');
+      ctx.fillStyle = gl; ctx.fillRect(wx0, wy0, ww, wh);
+      if (act[m] > 0.01){
+        // за матовым стеклом: пятно шпинделя ходит у патрона, брызги вспыхивают и гаснут
+        ctx.globalCompositeOperation = 'lighter';
+        const sq = seed[m] * 3.1, cx = FX(BZF.chucks[m][0]), cy = FY(BZF.chucks[m][1]);
+        const sxp = cx + Math.sin(t * 2.3 + sq) * 16 * S, syp = cy + Math.sin(t * 3.1 + sq * 1.7) * 11 * S;
+        drawGlow('235,245,255', sxp, syp, 34 * S, 0.30 * act[m]);
+        for (let i = 0; i < 6; i++){
+          const h1 = testerHash(seed[m] * 17 + i), u = (t * (0.7 + h1 * 0.9) + h1 * 5) % 1;
+          const bx = cx + (h1 - 0.5) * 120 * S + Math.sin(t * 1.3 + i) * 10 * S, by = cy - 40 * S + u * 90 * S;
+          drawGlow('220,238,240', bx, by, (10 + 14 * h1) * S, 0.22 * act[m] * Math.sin(Math.PI * u));
+        }
+        ctx.globalCompositeOperation = 'source-over';
+      }
+      // нижняя кромка дверцы — рамка с бликом
+      ctx.restore();
+      ctx.fillStyle = 'rgba(60,66,70,0.85)'; ctx.fillRect(wx0, wy0 + dh - 2.4 * S, ww, 2.4 * S);
+      ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.fillRect(wx0, wy0 + dh - 3.4 * S, ww, 1 * S);
     }
     const [lx, ly] = BZF_LED(m), r = 7 * S;
     if (loaded[m] < 0.5){
@@ -19924,8 +19963,17 @@ function drawBZF(t){
      Нижняя каретка — на прежнем месте (низ 945). Вынуто семь звеньев цепи вместо десяти
      (504…892, 388 строк). */
   const yA0 = 69 - (240 - 14) * sb;
+  /* ПЕТЛЯ КАБЕЛЯ ВДВОЕ НИЖЕ (Эльдар, 29.10.2026: «или укоротить петлю кабеля» — она
+     закрывала «BruxZir factory» под годом). Строки 14…178 листа оси — петля над кареткой —
+     кладутся сжатыми по высоте вдвое, нижним краем на прежнее место строки 178. */
+  const yC = yA0 + (178 - 14) * sb, loopH = (178 - 14) * sb * 0.5;
   const axis = () => {
-    piece(Asp, BZF_SRC.A, 0, 0, 361, 14, 191 * sb, 490 * sb, ux, yA0, sb, false);
+    {
+      const f = BZF_SRC.A[2], img = spriteMip(Asp, Asp.w * sb / f * S, Asp.h * sb / f * S);
+      const kx = (img.width || img.naturalWidth) / Asp.w, ky = (img.height || img.naturalHeight) / Asp.h;
+      ctx.drawImage(img, 0, 0, 191 * f * kx, 164 * f * ky, FX(ux), FY(yC - loopH), 191 * sb * S, loopH * S + 0.5);
+    }
+    piece(Asp, BZF_SRC.A, 0, 0, 361, 178, 191 * sb, 326 * sb, ux, yC, sb, false);
     piece(Asp, BZF_SRC.A, 0, 0, 361, 892, 191 * sb, 862 * sb, ux, 945 - 862 * sb, sb, false);
   };
   // балка: оси 129 и 1406, тело по центру на yB
