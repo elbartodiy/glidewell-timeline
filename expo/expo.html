@@ -19973,6 +19973,19 @@ function drawBZF(t){
       ctx.fillStyle = 'rgba(60,66,70,0.85)'; ctx.fillRect(dx0, wy0, 2.4 * S, wh);
       ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.fillRect(dx0 + 2.4 * S, wy0, 1 * S, wh);
     }
+    /* КРАСНАЯ ЛАМПА У ОКНА — ТОЛЬКО ПРИ ЗАКРЫТОЙ ДВЕРЦЕ (Эльдар, 29.10.2026: «красные будут
+       только на тех, где закрыта дверца, а там, где открыта, — зелёные»). На раме все восемь
+       нарисованы красными (центры 965 и 1368, строки 291, 470, 652, 832, радиус 6.8); у
+       открытой дверцы поверх — зелёная того же размера. */
+    {
+      const rx = m % 2 ? 1368 : 965, ry = [291, 470, 652, 832][m >> 1], rr = 7.6 * S;
+      if (doorC[m] < 0.5){
+        const lg = ctx.createRadialGradient(FX(rx) - rr * 0.3, FY(ry) - rr * 0.3, 0, FX(rx), FY(ry), rr);
+        lg.addColorStop(0, '#d8ffd0'); lg.addColorStop(0.35, '#3ee05a'); lg.addColorStop(1, '#1b8a2e');
+        ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(FX(rx), FY(ry), rr, 0, 7); ctx.fill();
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; drawGlow('60,230,80', FX(rx), FY(ry), rr * 3, 0.28); ctx.restore();
+      }
+    }
     const [lx, ly] = BZF_LED(m), r = 7 * S;
     if (loaded[m] < 0.5){
       ctx.fillStyle = '#ffc21a'; ctx.beginPath(); ctx.arc(FX(lx), FY(ly), r, 0, 7); ctx.fill();
@@ -20015,8 +20028,30 @@ function drawBZF(t){
       const kx = (img.width || img.naturalWidth) / Asp.w, ky = (img.height || img.naturalHeight) / Asp.h;
       ctx.drawImage(img, 0, 0, 191 * f * kx, 164 * f * ky, FX(ux), FY(yC - loopH), 191 * sb * S, loopH * S + 0.5);
     }
-    piece(Asp, BZF_SRC.A, 0, 0, 361, 178, 191 * sb, 326 * sb, ux, yC, sb, false);
-    piece(Asp, BZF_SRC.A, 0, 0, 361, 892, 191 * sb, 862 * sb, ux, 945 - 862 * sb, sb, false);
+    /* СКЛЕЙКА — В СЕРЕДИНЕ ОКНА ЗВЕНА, РАСТВОРЕНИЕМ (Эльдар, 29.10.2026: «склейка очень
+       явная… сделай её в середине того прямоугольника, через который виден оранжевый
+       провод, с размытием максимально широким, но не шире, чтобы не портить»). Окна звеньев
+       по листу — 476…503, 532…561, …, 926…954 (шаг 56,2, замер по оранжевому). Верхняя часть
+       идёт до строки 548,5 (окно 532…561), нижняя — с 937,3 (окно 926…954): обе точки — в
+       оранжевом, с запасом 11 строк до края окна, и при общей длине оси они совпадают на
+       экране. Нижняя ложится поверх верхней и проступает за 16 строк (±8) — внутри окна,
+       где с обеих сторон только оранжевый провод. */
+    const f = BZF_SRC.A[2], img = spriteMip(Asp, Asp.w * sb / f * S, Asp.h * sb / f * S);
+    const kx = (img.width || img.naturalWidth) / Asp.w, ky = (img.height || img.naturalHeight) / Asp.h;
+    const rowsAt = (r0, r1, yTopU, al) => {      // строки листа r0…r1 → кадр от yTopU (единицы рамы)
+      ctx.globalAlpha = al;
+      ctx.drawImage(img, 0, (r0 - 14) * f * ky, 191 * f * kx, (r1 - r0) * f * ky, FX(ux), FY(yTopU), 191 * sb * S, (r1 - r0) * sb * S);
+    };
+    const cA = 548.5, cB = 937.3, Fb = 8, yJ = yC + (cA - 178) * sb;
+    ctx.save();
+    rowsAt(178, cA + Fb, yC, 1);
+    const yB = r => yJ + (r - cB) * sb;
+    rowsAt(cB + Fb, 1754, yB(cB + Fb), 1);
+    for (let j = 0; j < 8; j++){
+      const r0 = cB - Fb + j * 2, r1 = r0 + 2;
+      rowsAt(r0, r1, yB(r0), (j + 0.5) / 8);
+    }
+    ctx.restore();
   };
   // балка: оси 129 и 1406, тело по центру на yB
   const sa = T_BZF / 191, Bsp = PROP_SPRITES.ph_bzfB;
