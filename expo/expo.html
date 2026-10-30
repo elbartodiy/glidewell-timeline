@@ -792,7 +792,10 @@ const BEATS = [
       the bay's own view: the thesis' foot is at 241 px and the roofs are at 382,
       so a 380-wide screen (117 px tall) at cy 280 stands at 254–371 with air at
       both ends — at 404 it was behind the right-hand cabin altogether. */
-   plasma:{dx:430, cy:280, w:380, mode:'wave'}},
+   /* МОНИТОР СНЯТ (Эльдар, 29.10.2026: «убери его»): после того как фабрику увеличили и
+      поставили под годом, её рама закрыла его почти целиком, а места между годом и рамой
+      для него нет. Было: plasma:{dx:430, cy:280, w:380, mode:'wave'} */
+   },
 
   /* The plate carries the three portraits that stand under it, so moving the
      BEAT moved them too. It has its own offset now: plaqueDX shifts the plate
@@ -10378,19 +10381,40 @@ function drawPendant(t){
        29.10.2026; обрезан по альфе 34…395 × 38…730 исходника → 361×692. Коробка — строки
        4…341, стойка — столбцы 154…204, экран прозрачный (65…294 × 72…184) — под ним
        своё тёмное стекло. */
-    const sc = 112 / 320, cut = 600, ax = 179;
+    /* чуть крупнее — 140 вместо 112 (Эльдар, 29.10.2026: «лучше чуть увеличь тот, что
+       слева, а вовнутрь как раз ему засунь, уменьшив этот» — волну снятого монитора линии) */
+    const sc = 140 / 320, cut = 600, ax = 179;
     const src = spriteMip(HM, HM.w * sc * S, HM.h * sc * S);
     const fy = (src.height || src.naturalHeight) / 692, fx = (src.width || src.naturalWidth) / 361;
     const x0 = px2 - ax * sc * S, yTopB = Y(PT);
     const yCut = yTopB + cut * sc * S;
     ctx.drawImage(src, 154 * fx, 560 * fy, 51 * fx, 40 * fy, x0 + 154 * sc * S, yCut - 1, 51 * sc * S, Y(1080) - yCut + 1);
-    { // стекло экрана: тёмное, с несколькими строками, как на прежнем пульте
+    { /* экран пульта — то, что показывал снятый монитор линии: сетка, бегущая волна и
+         подпись; та же формула волны (drawPlasmaPanel, mode 'wave') */
       const ex = x0 + 63 * sc * S, ey = yTopB + 70 * sc * S, ew = 234 * sc * S, eh = 117 * sc * S;
-      ctx.fillStyle = '#16232b'; ctx.fillRect(ex, ey, ew, eh);
-      ctx.fillStyle = 'rgba(120,215,255,0.55)';
-      for (let i2 = 0; i2 < 4; i2++) ctx.fillRect(ex + ew * 0.10, ey + eh * (0.2 + i2 * 0.18), ew * (0.62 - i2 * 0.1), Math.max(1, eh * 0.05));
+      ctx.save();
+      ctx.fillStyle = '#0c0f14'; ctx.fillRect(ex, ey, ew, eh);
+      ctx.beginPath(); ctx.rect(ex, ey, ew, eh); ctx.clip();
+      const chartBot = ey + eh * 0.74;
+      ctx.strokeStyle = 'rgba(90,210,255,0.22)'; ctx.lineWidth = Math.max(0.5, 0.6 * S);
+      for (let i2 = 1; i2 < 4; i2++){ const yy = ey + (chartBot - ey) * i2 / 4; ctx.beginPath(); ctx.moveTo(ex, yy); ctx.lineTo(ex + ew, yy); ctx.stroke(); }
+      ctx.strokeStyle = 'rgba(110,225,255,0.9)'; ctx.lineWidth = Math.max(0.8, eh * 0.025);
+      ctx.beginPath();
+      for (let i2 = 0; i2 <= 40; i2++){
+        const xx = ex + ew * i2 / 40, ph2 = t * 2.2 + i2 * 0.5;
+        const yy = ey + (chartBot - ey) * 0.5 + Math.sin(ph2) * eh * 0.16 + Math.sin(ph2 * 0.37 + 1) * eh * 0.09;
+        i2 ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(90,200,250,0.3)'; ctx.lineWidth = Math.max(0.5, 0.6 * S);
+      ctx.beginPath(); ctx.moveTo(ex, chartBot); ctx.lineTo(ex + ew, chartBot); ctx.stroke();
+      ctx.fillStyle = 'rgba(140,225,255,0.8)';
+      ctx.font = `${(eh * 0.13).toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.fillText('BruxZir robotic line live', ex + ew * 0.05, ey + eh * 0.91);
+      ctx.restore();
     }
-    ctx.drawImage(src, 0, 0, src.width || src.naturalWidth, cut * fy, x0, yTopB, 361 * sc * S, cut * sc * S);    ctx.restore();
+    ctx.drawImage(src, 0, 0, src.width || src.naturalWidth, cut * fy, x0, yTopB, 361 * sc * S, cut * sc * S);   // рамка экрана — поверх    ctx.restore();
     return;
   }
   ctx.strokeStyle = 'rgba(168,174,180,0.9)'; ctx.lineWidth = Math.max(1, 6 * S);
