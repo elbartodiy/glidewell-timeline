@@ -15524,7 +15524,8 @@ function initDecor(){
          пришлось: вся группа встала на постамент. ?showw=&showup= — пробовать другие. */
       const SW = +((location.search.match(/[?&]showw=(\d+)/) || [])[1] || 620);
       const SUP = +((location.search.match(/[?&]showup=(\d+)/) || [])[1] || 300);
-      PROPS.push({x: b17.x, z: 60, kind: 'ph_show', w: SW, footY: 1080 - SUP, noShadow: true, floor: true, stand: SUP > 0});
+      PROPS.push({x: b17.x, z: 60, kind: 'ph_show', w: SW, footY: 1080 - SUP, noShadow: true, floor: true,
+        stand: SUP > 0 ? [{x0: 0, x1: 470, cut: 149, post: [244, 282]}, {x0: 470, x1: 1567, cut: 22}] : null});
     }
     /* the plastic-injection division's own product, on the counter at its own
        tick — right of the CAD screen, which it must not cover */
@@ -16611,16 +16612,30 @@ function drawProps(midPass){
        p.cut + p.band) растягивается от подошвы до пола: каждая тумба продолжается вниз своим
        цветом и своей шириной, а между ними остаётся пустой пол. */
     if (p.stand){
+      /* НЕ ТЯНУТЬ ТО, У ЧЕГО ЕСТЬ СВОЯ ПРОПОРЦИЯ (Эльдар, 30.10.2026: «у предметов с
+         нерастягиваемым соотношением сторон нужно подходить с умом»; и про первый заход —
+         «лол, стойка на колёсах»). Рендер делится на куски по столбцам, у каждого своя линия
+         реза и своя стойка; сам предмет рисуется в своём масштабе, вниз тянется только ровная
+         полоса стойки — у цилиндра и у колонны бок одинаков по всей высоте, поэтому растяжение
+         по ним не читается. Тележке fastscan.io крестовина с колёсами отрезана совсем (рез по
+         705-й строке, под чёрным блоком), и вниз идёт одна её центральная стойка (столбцы
+         244…282 — замер по альфе на строках 730…760). */
       const img2 = spriteMip(sp, pw2, ph2), k3 = (img2.width || img2.naturalWidth) / sp.w;
-      const cut = (p.cut || 22), band = (p.band || 6), yF2 = py(1080, kk);
-      const vis = ph2 * (sp.h - cut) / sp.h;                       // без подошв
-      ctx.drawImage(img2, 0, 0, sp.w * k3, (sp.h - cut) * k3, sx - pw2 / 2, syFoot - vis, pw2, vis);
-      if (yF2 > syFoot + 1)
-        ctx.drawImage(img2, 0, (sp.h - cut - band) * k3, sp.w * k3, band * k3,
-                      sx - pw2 / 2, syFoot, pw2, yF2 - syFoot);
+      const yF2 = py(1080, kk), xL = sx - pw2 / 2, sc = pw2 / sp.w;
+      for (const g of p.stand){
+        const cutY = sp.h - g.cut, band = g.band || 6;
+        ctx.drawImage(img2, g.x0 * k3, 0, (g.x1 - g.x0) * k3, cutY * k3,
+                      xL + g.x0 * sc, syFoot - ph2 * cutY / sp.h, (g.x1 - g.x0) * sc, ph2 * cutY / sp.h);
+        if (yF2 <= syFoot + 1) continue;
+        const px0 = g.post ? g.post[0] : g.x0, px1 = g.post ? g.post[1] : g.x1;
+        ctx.drawImage(img2, px0 * k3, (cutY - band) * k3, (px1 - px0) * k3, band * k3,
+                      xL + px0 * sc, syFoot, (px1 - px0) * sc, yF2 - syFoot);
+        // стойка стоит на полу, а не кончается в воздухе
+        contactShadow(xL + (px0 + px1) / 2 * sc, yF2, (px1 - px0) * sc, 0.34);
+      }
       if (p.study){
         const bi1 = BEATS.findIndex(bb => bb.t === p.study);
-        if (bi1 >= 0) pushHit(sx - pw2 / 2, syFoot - vis, pw2, yF2 - (syFoot - vis), {type:'study', beat: bi1});
+        if (bi1 >= 0) pushHit(xL, syFoot - ph2, pw2, yF2 - (syFoot - ph2), {type:'study', beat: bi1});
       }
       continue;
     }
