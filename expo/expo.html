@@ -20216,12 +20216,26 @@ function drawBZF(t){
        20 точек рамы по центру ступицы (её кольцо — около 24), светлая фаска сверху-слева,
        тень снизу-справа */
     if (loaded[m] === 1 && doorC[m] < 0.999){
-      const e = 10, x0 = FX(qx - e), y0 = FY(qy - e), w = 2 * e * S, r = 2.2 * S;
+      /* ФОРМА — ПО ФОТО ЗАХВАТА (Эльдар, 30.10.2026: «посмотри, какая форма у блока именно так —
+         только белая часть; он должен выглядеть в милл-камерах; по высоте у тебя сейчас ок, а по
+         ширине — смотри реф»). Замер по фото (1024 × 1536, кремовая заготовка в губках): вся белая
+         часть 992…1180 — 188 точек высоты; тело цилиндра 464…555 (91 = 0,48 высоты) идёт до 1105
+         (0,60 высоты), ниже воротник 454…566 (112 = 0,60 высоты). Высота прежняя — 20 точек рамы;
+         ширина была те же 20 (квадрат), стала 12 по воротнику и 9,7 по телу. */
+      const h = 20, wB = h * 0.484, wC = h * 0.596, hB = h * 0.60;
+      const x0 = FX(qx - wC / 2), y0 = FY(qy - h / 2), wc = wC * S, wb = wB * S, hh = h * S, hb = hB * S;
+      const dx = (wc - wb) / 2, r = 1.4 * S;
+      const path = (ox, oy) => {
+        ctx.beginPath();
+        ctx.roundRect(x0 + dx + ox, y0 + oy, wb, hb + r, [r, r, 0, 0]);
+        ctx.roundRect(x0 + ox, y0 + hb + oy, wc, hh - hb, [0, 0, r, r]);
+      };
       ctx.save();
-      ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.roundRect(x0 + 1.5 * S, y0 + 2 * S, w, w, r); ctx.fill();
-      const fg = ctx.createLinearGradient(x0, y0, x0 + w, y0 + w);
-      fg.addColorStop(0, '#fbf8f0'); fg.addColorStop(0.55, '#ece5d4'); fg.addColorStop(1, '#cfc6b2');
-      ctx.fillStyle = fg; ctx.beginPath(); ctx.roundRect(x0, y0, w, w, r); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'; path(1.5 * S, 2 * S); ctx.fill();
+      // цилиндр: блик слева, тень справа — как на фото
+      const fg = ctx.createLinearGradient(x0, 0, x0 + wc, 0);
+      fg.addColorStop(0, '#ded5c0'); fg.addColorStop(0.3, '#fbf8f0'); fg.addColorStop(0.72, '#ece5d4'); fg.addColorStop(1, '#cfc6b2');
+      ctx.fillStyle = fg; path(0, 0); ctx.fill();
       ctx.strokeStyle = 'rgba(120,110,90,0.45)'; ctx.lineWidth = Math.max(0.6, 0.8 * S); ctx.stroke();
       ctx.restore();
     }
