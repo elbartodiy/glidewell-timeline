@@ -9767,6 +9767,32 @@ function drawBoxPile(b, t){
   ctx.beginPath(); ctx.arc(sx + bw * 1.6, foot, bw * 5.6, 0, 7); ctx.fill();
   ctx.restore();
 
+  /* ЦИФРОВОЙ СЛЕД (Эльдар, 30.10.2026: «после исчезновения коробок после каждой на секунду
+     останется цифровой исчезающий след нулей и единиц — лёгкий, едва заметный; так же, как
+     это сделано внутри страницы, но с учётом масштаба»). Как drawBits на странице коробки:
+     цифры поднимаются из места коробки и гаснут, только их десяток, а не двести, и в размер
+     коробки. Уход коробки — функция камеры, поэтому миг ухода запоминается на ней (q._gt) и
+     забывается, если камера вернула её обратно. */
+  const nowT = state.time || 0;
+  for (let i = 0; i < N; i++){
+    const q = P[i];
+    if (q.go >= gone){ q._gt = null; continue; }
+    if (q._gt == null){ q._gt = q._seen ? nowT : -10; }
+    const u0 = (nowT - q._gt) / 1.1;
+    if (u0 >= 1 || u0 < 0) continue;
+    const bx = sx + q.u * bw, by = foot - q.r * bh, R = rng(q.go * 7919 + 13);
+    ctx.save(); ctx.textAlign = 'center';
+    for (let d = 0; d < 8; d++){
+      const ch = R() < 0.5 ? '0' : '1', ox = (R() - 0.5) * bw * 1.05, oy = R() * bh, dl = R() * 0.35, sp = 0.6 + R() * 0.8;
+      const u = (u0 - dl) / (1 - dl);
+      if (u <= 0 || u >= 1) continue;
+      ctx.font = `${(bh * (0.30 + 0.18 * R())).toFixed(1)}px monospace`;
+      ctx.fillStyle = `rgba(40,96,150,${(0.20 * Math.sin(Math.PI * u)).toFixed(3)})`;
+      ctx.fillText(ch, bx + ox, by - oy - u * u * bh * 1.6 * sp);
+    }
+    ctx.restore();
+  }
+  for (let i = 0; i < N; i++) P[i]._seen = true;
   for (let i = 0; i < N; i++){
     const q = P[i];
     if (q.go < gone) continue;
