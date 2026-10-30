@@ -20258,8 +20258,10 @@ function drawBZF(t){
         ctx.save();
         ctx.filter = `blur(${Math.max(1, 2.6 * S).toFixed(1)}px)`;
         // блок — белый, светится сквозь матовое (Эльдар: «почему он чёрный? он должен отражать свет»)
+        /* той же формы, что и сам блок в патроне (Эльдар, 30.10.2026): 20 точек рамы в высоту,
+           13,6 в ширину — иначе за стеклом светился квадрат, а в открытой фрезе стоял блок */
         ctx.fillStyle = 'rgba(255,253,246,0.85)';
-        ctx.fillRect(FX(qx - 10), FY(qy - 10), 20 * S, 20 * S);
+        ctx.beginPath(); ctx.roundRect(FX(qx - 20 * 0.679 / 2), FY(qy - 10), 20 * 0.679 * S, 20 * S, 0.16 * 20 * 0.679 * S); ctx.fill();
         const fd = feed[m], wig = fd * Math.sin(t * 1.6 + seed[m]) * 4, wigY = fd * Math.sin(t * 2.3 + seed[m] * 2) * 6;
         for (const [ry, tip, mid] of [[42, 58, false], [77, 53, true], [110, 43, false]]){
           const dx = mid ? fd * ((qx - 12) - (a0 + tip)) + wig : 0, yy = b0 + ry + (mid ? wigY * fd : 0);
