@@ -14969,7 +14969,7 @@ async function loadPhotoSkin(){
     ph_t00c: 'r_t00_control.png', ph_t00p: 'r_t00_powder_press.png', ph_t00h: 'r_t00_sinter_furnace.png',
     ph_t00b: 'r_t00_conveyor.png',
     ph_r19hmi: 'r_r19_hmi_terminal.png',
-    // 2019: фабрика BruxZir — рендеры Эльдара «BrukZirFactory*» (29.10.2026), обрезаны по альфе
+    // 2019: фабрика BruxZir — рендеры Эльдара «BruxZirFactory*» (29.10.2026), обрезаны по альфе
     ph_bzfF: 'r_bzf_frame.png', ph_bzfA: 'r_bzf_axis.png', ph_bzfB: 'r_bzf_beam.png', ph_bzfG: 'r_bzf_gripper.png',   // 2019: пульт на стойке (реализм 09, только он — Эльдар, 29.10.2026)
     ph_crt: 'r_crt.png',              // 2002: ЭЛТ-монитор (ChatGPT), экран — прозрачный проём 160…752 × 95…544
     ph_crown_a: 'r_crown_000.png', ph_crown_b: 'r_crown_030.png', ph_crown_c: 'r_crown_060.png', ph_crown_d: 'r_crown_090.png',
@@ -15445,6 +15445,7 @@ function crownAlphaBox(sp){
 }
 /* A counter machine is a data row, not an edit inside the frame loop. */
 const RIGS = {};
+let TBOX = [];   // корпуса и окна печи и пресса машины R&D 2000 этого кадра (см. ОКНА КОРОБОВ)
 /* ── СТАНЦИЯ R&D · МАШИНА, КОТОРАЯ ЛОМАЕТ КОРОНКИ ─────────────────────────
    В лаборатории стоит Shimadzu: коронку кладут под пресс и давят, пока она не
    лопнет. Три четверти образцов не доживают до нормы — на этом и стоит весь
@@ -15528,13 +15529,15 @@ function drawCrownTester(b, t){
   // верх ленты: строка 35 из 210 листа ленты при 504 единицах на 1400 — (210 − 35)·0.36 = 63
   const vDeckC = PH ? 63 : 52;
   const brokeC = !pass && ph >= TESTER.load;
-  let cu = -180, cv = vDeckC, sc = 1, al = 1;
-  if (ph < TESTER.outUp){ cu = -180; cv = vDeckC; sc = 0.86; al = ease(seg(0.15, TESTER.outUp)); }
+  // концы пути — середины окон печи и пресса (фото-машина) или устья тоннелей (рисованная)
+  const uIn = PH ? -246 + 338.5 * 138 / 558 : -180, uOut = PH ? 108 + 264 * 0.29 : 180;
+  let cu = uIn, cv = vDeckC, sc = 1, al = 1;
+  if (ph < TESTER.outUp){ cu = uIn; cv = vDeckC; sc = 0.86; al = ease(seg(0.15, TESTER.outUp)); }
   else if (ph < TESTER.outFwd){ const u = ease(seg(TESTER.outUp, TESTER.outFwd)); sc = 0.86 + 0.14 * u; }
-  else if (ph < TESTER.atPress){ cu = -180 + 180 * ease(seg(TESTER.outFwd, TESTER.atPress)); }
+  else if (ph < TESTER.atPress){ cu = uIn - uIn * ease(seg(TESTER.outFwd, TESTER.atPress)); }
   else if (ph < TESTER.toRight){ cu = 0; }
-  else if (ph < TESTER.inRight){ cu = 180 * ease(seg(TESTER.toRight, TESTER.inRight)); }
-  else { const u = ease(seg(TESTER.inRight, TESTER.shut)); cu = 180; sc = 1 - 0.14 * u; }
+  else if (ph < TESTER.inRight){ cu = uOut * ease(seg(TESTER.toRight, TESTER.inRight)); }
+  else { const u = ease(seg(TESTER.inRight, TESTER.shut)); cu = uOut; sc = 1 - 0.14 * u; al = PH ? 1 - u : 1; }
   const spC = PED_SPRITES.crown2;
   /* КОРОНКА ВЫЕЗЖАЕТ ИЗ ПЕЧИ РАСКАЛЁННОЙ и остывает по дороге к прессу:
      пока она в печи и на выходе — hot = 1, к прессу сходит в ноль. */
@@ -15612,13 +15615,23 @@ function drawCrownTester(b, t){
     const crownTop = vDeckC + 46;
     const av = crownTop + 64 - (64 * ease(seg(TESTER.atPress, TESTER.down)) + PRESS_BITE * biteU) * (1 - ease(seg(TESTER.load, TESTER.up)));
     sp('ph_t00x', -413 * 0.33 / 2, av + 327 * 0.33, 0.33);
-    // пресс для порошка справа (596×800, 138 единиц) — целые коронки уходят за него
-    sp('ph_t00p', 108, 800 * 138 / 596, 138 / 596);
-    // печь слева (558×684, 138 единиц); её окно — столбцы 219…458, строки 263…539
-    const FS = 138 / 558;
-    sp('ph_t00h', -246, 684 * FS, FS);
+    /* ОКНА КОРОБОВ — НА ЛЕНТЕ (Эльдар, 29.10.2026: «почему криво — вторая камера
+       меньше размером и спряталась, коронка туда не заедет просто»). Пресс был 138 в
+       ширину, и его окно (столбцы 162…366, строки 379…589 листа 596×800) уходило низом
+       за ленту, печь стояла на столе, и её окно (219…458 × 263…539 листа 558×684) тоже
+       начиналось под полотном. Теперь у обоих низ окна — на верху ленты (63), корпуса
+       одной высоты с печью: пресс 0.29 (173 в ширину), его ноги — за лентой, и коронка
+       въезжает в его окно; вне окна её закрывает корпус (TBOX). У печи окно стоит выше
+       ленты (185…373 × 176…320 по виду) — опустить его на ленту можно, только загнав
+       пульт печи под стол, поэтому печь стоит, как стояла, а коронка появляется на ленте
+       перед ней. */
+    const PS = 0.29, pBot = vDeckC - (800 - 589) * PS;
+    sp('ph_t00p', 108, pBot + 800 * PS, PS);
+    const FS = 138 / 558, fBot = 0;   // печь стоит на столе: её окно (185…373 × 176…320) выше ленты, коронка появляется перед ней
+    sp('ph_t00h', -246, fBot + 684 * FS, FS);
+    TBOX = [[108, pBot, 108 + 596 * PS, pBot + (800 - 250) * PS, 108 + 162 * PS, vDeckC, 108 + 366 * PS, pBot + (800 - 379) * PS]];
     {
-      const wx = X(-246 + 338 * FS), wy = Y(684 * FS - 400 * FS), wr = 150 * FS * S1;
+      const wx = X(-246 + 338 * FS), wy = Y(fBot + (684 - 400) * FS), wr = 150 * FS * S1;
       const puls = 0.75 + 0.25 * Math.sin(t * 1.7) * Math.sin(t * 0.63 + 1.1);
       const openAmt = ease(seg(0, TESTER.outUp)) * (1 - ease(seg(TESTER.outFwd, TESTER.atPress)));
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -15637,10 +15650,6 @@ function drawCrownTester(b, t){
       const slat = 26, off = (t * 26) % slat;
       for (let u = -260 + off; u < 260; u += slat){ ctx.beginPath(); ctx.moveTo(X(u), Y(75)); ctx.lineTo(X(u + 3), Y(56)); ctx.stroke(); }
       ctx.restore();
-    }
-    // коронка, ушедшая за пресс: всё, что правее его левой кромки, закрыто корпусом
-    if (!brokeC && cu - halfC > 100){
-      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, X(110), H); ctx.clip(); crown(al); ctx.restore();
     }
   } else {
   const dTopB = 58, dTopF = 40;                      // задняя и передняя кромки верха
@@ -15924,7 +15933,15 @@ function drawCrownTester(b, t){
   /* проход Б: всё остальное время — поверх машины, тоже без обрезки */
   const vDeck = vDeckC;
   if (!brokeC){
-    if (PH ? !(cu - halfC > 100) : !crownInPort) crown(al);
+    if (PH){
+      // всё, кроме корпусов печи и пресса, но с их окнами
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, H);
+      for (const [a0, b0, a1, b1, w0, v0, w1, v1] of TBOX){
+        ctx.rect(X(a0), Y(b1), (a1 - a0) * S1, (b1 - b0) * S1);
+        ctx.rect(X(w0), Y(v1), (w1 - w0) * S1, (v1 - v0) * S1);
+      }
+      ctx.clip('evenodd'); crown(al); ctx.restore();
+    } else if (!crownInPort) crown(al);
   } else {
     const u = seg(TESTER.load, TESTER.load + 1.5);
     if (u < 1){
@@ -19690,7 +19707,7 @@ function drawFactory(t, over){
    вкусняшку я для тебя приготовил… не уверен в правильности длины и масштабов
    запчастей, но попробуй без меня собрать»). Вместо двух кабин с жёлтыми руками —
    портальный робот перед рамой: слева стеллаж из десяти лотков заготовок, справа
-   восемь фрез 4 × 2 с патронами. По двум вертикальным осям (BrukZirFactory_b, на
+   восемь фрез 4 × 2 с патронами. По двум вертикальным осям (BruxZirFactory_b, на
    внешних стойках рамы, цепью наружу) ходит вверх-вниз балка (_a), по балке —
    захват с камерой (_c). Цикл: захват едет к лотку, берёт заготовку, несёт её в
    патрон одной из фрез, отпускает и возвращается. Какой лоток, какая заготовка и
