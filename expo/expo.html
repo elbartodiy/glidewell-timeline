@@ -19934,7 +19934,9 @@ function drawBZF(t){
       /* матовее (Эльдар, 29.10.2026: «стекло поматовей, блюр поплотнее, чтобы не было видно,
          что там происходит; блики слишком контрастные и быстрые — замедлить и размыть»):
          стекло почти непрозрачное, патрона за ним не видно */
-      gl.addColorStop(0, 'rgba(206,218,215,0.97)'); gl.addColorStop(0.5, 'rgba(192,206,202,0.97)'); gl.addColorStop(1, 'rgba(176,191,187,0.98)');
+      /* цвет — посередине между светом окна фрезы (замер по раме 213,201,181) и серым
+         направляющих (181,181,180), без зелени (Эльдар, 29.10.2026): 197,191,181 */
+      gl.addColorStop(0, 'rgba(208,202,192,0.97)'); gl.addColorStop(0.5, 'rgba(197,191,181,0.97)'); gl.addColorStop(1, 'rgba(182,177,168,0.98)');
       ctx.fillStyle = gl; ctx.fillRect(wx0, wy0, ww, wh);
       if (act[m] > 0.01){
         // за матовым стеклом: пятно шпинделя ходит у патрона, брызги вспыхивают и гаснут
@@ -19942,11 +19944,11 @@ function drawBZF(t){
         const sq = seed[m] * 3.1, cx = FX(BZF.chucks[m][0]), cy = FY(BZF.chucks[m][1]);
         // втрое медленнее, вдвое шире и вдвое тише прежнего
         const sxp = cx + Math.sin(t * 0.75 + sq) * 14 * S, syp = cy + Math.sin(t * 1.0 + sq * 1.7) * 9 * S;
-        drawGlow('235,245,255', sxp, syp, 70 * S, 0.13 * act[m]);
+        drawGlow('245,242,236', sxp, syp, 70 * S, 0.13 * act[m]);
         for (let i = 0; i < 4; i++){
           const h1 = testerHash(seed[m] * 17 + i), u = (t * (0.22 + h1 * 0.25) + h1 * 5) % 1;
           const bx = cx + (h1 - 0.5) * 100 * S + Math.sin(t * 0.45 + i) * 10 * S, by = cy - 35 * S + u * 75 * S;
-          drawGlow('225,240,242', bx, by, (26 + 22 * h1) * S, 0.09 * act[m] * Math.sin(Math.PI * u));
+          drawGlow('240,238,232', bx, by, (26 + 22 * h1) * S, 0.09 * act[m] * Math.sin(Math.PI * u));
         }
         ctx.globalCompositeOperation = 'source-over';
       }
