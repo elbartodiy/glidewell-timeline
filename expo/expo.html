@@ -19734,25 +19734,7 @@ function drawFactory(t, over){
     ctx.restore();
   }
   if (!over) drawPendant(t);       // behind the left counter — the veil pass must not paint it back in front
-  /* МАШИНА — ЗА ПРИЛАВКАМИ И ВО ВТОРОМ ПРОХОДЕ (Эльдар, 29.10.2026, скрин: рама легла
-     поверх прилавка «Guiding leaders» и его строки). Увеличенная и сдвинутая под год, она
-     заходит за правый прилавок, и первый проход это и показывает — прилавок рисуется
-     после. А второй, поверх пелены катарсиса, клал её на прилавок. Теперь во втором
-     проходе из неё вырезаны оба соседних прилавка — от их задней кромки донизу. */
-  ctx.save();
-  if (over){
-    const kf0 = k(0), yBk = py(CFG.benchY, k(CFG.benchDepth));
-    ctx.beginPath(); ctx.rect(0, 0, W, H);
-    for (const tb of TABLES){
-      if (tb.x1 < FACT_X - 1500 || tb.x0 > FACT_X + 1500) continue;
-      const a = px(tb.x0, kf0), b2 = px(tb.x1, kf0);
-      ctx.rect(a, yBk, b2 - a, H - yBk);
-    }
-    ctx.clip('evenodd');
-  }
-  const drawnBZF = drawBZF(t);
-  ctx.restore();
-  if (!drawnBZF){
+  if (!drawBZF(t)){
     drawFactoryBase();
     drawCell(cellX(0), CELL_Z, t, 0, true, true);
     drawCell(cellX(1), CELL_Z, t, 2.4, false, true);
@@ -25802,7 +25784,11 @@ function frame(){
      сантиметра затемняют изображение, а когда приближаешься — светлеет опять»
      (Эльдар, 02.10.2026). Фабрика (FACT_X) свою вуаль сохраняет: там есть что
      гасить — живая линия с роботами. */
-  for (const hx of [FACT_X]){
+  /* …кроме портальной фабрики (Эльдар, 29.10.2026): машина стоит за прилавком «Guiding
+     leaders», и второй её проход поверх вуали клал её на портреты, а вырез под прилавок
+     оставлял тёмный клин по кромке стола и её след. Её вуали больше нет — она рисуется
+     один раз, на своей глубине, и прилавок с портретами всегда перед ней. */
+  for (const hx of (bzfOn() ? [] : [FACT_X])){
     const h = Math.max(0, 1 - Math.abs(hx - cam.x)/680);
     hero = Math.max(hero, h*h*(3-2*h) * 0.7);
   }
@@ -25836,7 +25822,7 @@ function frame(){
      exactly the way the pedestals climb back out of the dark */
   {
     const hF = Math.max(0, 1 - Math.abs(FACT_X - cam.x)/680);
-    if (hF > 0.02) drawFactory(t, true);
+    if (hF > 0.02 && !bzfOn()) drawFactory(t, true);
   }
   drawMapHero(t, hMap);
   drawRec2Front(t);      // the milled crown belongs to the near plane, in front of its portal
