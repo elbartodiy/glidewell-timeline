@@ -15208,7 +15208,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261030-show';   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261030-show2';   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -15303,6 +15303,7 @@ async function loadPhotoSkin(){
     ph_crown_a: 'r_crown_000.png', ph_crown_b: 'r_crown_030.png', ph_crown_c: 'r_crown_060.png', ph_crown_d: 'r_crown_090.png',
     ph_boxes24: 'boxes24.png',        // 2023: 24 коробки — лист Эльдара «24-box cardboard sprite sheet» (28.10.2026)
     ph_show: 'show_io.png',           // 2017: вся витрина glidewell.io одним рендером Эльдара (30.10.2026)
+    ph_show2: 'show_io2.png',         // 2017: он же, перегенерённый с уже удлинёнными стойками (GlidewellIoPreview, 30.10.2026)
     ph_scanst: 'scan_station.png',    // 2017: станция fastscan.io — вырезана из final_products (x 48…596, до столешницы 662)
     ph_scanbay: 'scan_bay.jpg',       // the 2022 bay: the whole render, rectangle and all
     ph_hall_wall: 'hall_wall.png',    // the glass hall: the room's long side, frontal, fitted to the wall's height
@@ -15530,7 +15531,16 @@ function initDecor(){
       const SW = +((location.search.match(/[?&]showw=(\d+)/) || [])[1] || 845);
       const SUP = +((location.search.match(/[?&]showup=(\d+)/) || [])[1] || 300);   // выше — задний монитор лезет на вывеску
       const SZ = +((location.search.match(/[?&]showz=(\d+)/) || [])[1] || 350);
-      PROPS.push({x: b17.x, z: SZ, mid: true, kind: 'ph_show', w: SW, footY: 1080 - SUP, noShadow: true, floor: true,
+      /* ПЕРЕГЕНЕРЁННЫЙ РЕНДЕР (Эльдар, 30.10.2026: «проверь, если это поставить вместо всей группы
+         GlidewellIoPreview»): в нём стойки уже вытянуты — ни резать, ни тянуть не нужно, вся группа
+         стоит на полу одним куском. 1254 × 1254, обрезан по альфе до 1191 × 1092. Ширина 642 — в
+         прежний экранный размер (845 · 1191/1567: прежний рендер был шире по столбцам). Прежний
+         остаётся под ?show=1 вместе со всей резкой. */
+      const NEW2 = PROP_SPRITES.ph_show2 && !/[?&]show=1/.test(location.search);
+      if (NEW2){
+        const S2W = +((location.search.match(/[?&]showw=(\d+)/) || [])[1] || 800);   // 642 было в прежний экранный размер, 800 — как Эльдар смотрел
+        PROPS.push({x: b17.x, z: SZ, mid: true, kind: 'ph_show2', w: S2W, footY: 1080, noShadow: true, floor: true});
+      } else PROPS.push({x: b17.x, z: SZ, mid: true, kind: 'ph_show', w: SW, footY: 1080 - SUP, noShadow: true, floor: true,
         /* три куска: крестовина тележки на полу, сама тележка наверху со своей выдвинутой
            стойкой, и тумбы справа. Высота крестовины в мире — SW·(854−673)/1567: до неё и
            доходит стойка. Тележка стоит на своём месте (пересечение с белой тумбой не мешает:
