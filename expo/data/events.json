@@ -1,58 +1,8 @@
 {
- "updated": "2026-10-30T22:23:35+00:00",
+ "updated": "2026-10-31T05:44:13+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 77,
+ "count": 74,
  "events": [
-  {
-   "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
-   "from": "2026-10-30",
-   "to": "2026-10-31",
-   "city": "Irvine, CA",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Timothy Kosinski"
-   ],
-   "duration": "Two Days",
-   "price": "795.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/surgical-placement-of-dental-implants-a-restorative-driven-approach?variant=67808926335340"
-  },
-  {
-   "title": "Techniques for Predictable Implant Surgery",
-   "from": "2026-10-30",
-   "to": "2026-10-30",
-   "city": "Miami, FL",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Paresh B. Patel",
-    "Dr. Timothy Kosinski"
-   ],
-   "duration": "One Day",
-   "price": "595.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/techniques-for-predictable-implant-surgery?variant=52759775150444"
-  },
-  {
-   "title": "Implant Surgery, Aligner Therapy and CAD/CAM Dentistry",
-   "from": "2026-10-30",
-   "to": "2026-10-31",
-   "city": "Miami, FL",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Arvind Petrie",
-    "Dr. Ben Miraglia",
-    "Dr. Danielle Brown",
-    "Dr. Darshan Patel",
-    "Dr. Jinny Bender",
-    "Dr. Justin Chi",
-    "Dr. Paresh B. Patel",
-    "Dr. Timothy Kosinski"
-   ],
-   "duration": "Two Days",
-   "price": "1190.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/implant-surgery-aligner-therapy-and-cad-cam-dentistry?variant=67808928366956"
-  },
   {
    "title": "Incorporating Digital Dentistry and Aligner Therapy",
    "from": "2026-10-31",
