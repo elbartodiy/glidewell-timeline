@@ -764,6 +764,7 @@ const BEATS = [
    th:'Future: the lab moves into the chair.',
    /* затравка вместо пересказа страницы (Эльдар, 26.10.2026: «на линии нам нужно только небольшая затравка для раскрытия темы — про что внутри»; «го»). Было: «Announced November 2017: scanner, fastdesign.io and the fastmill.io mill on the dentist’s own counter, cutting BruxZir NOW — zirconia that needs no firing. A crown in one visit. The barrier was never the technique; it was the inconvenience.» */
    d:'The lab’s whole workflow on the dentist’s counter — a crown in one visit.',
+   descHide:true,   // строку со стены снять совсем — на её месте стоит витрина (Эльдар, 30.10.2026: «текст этот убери совсем»); на странице 2017 текст остаётся
    wall:[],
    table:[],
    /* the mill is not on a plinth any more: it stands on this year's own
@@ -15539,7 +15540,10 @@ function initDecor(){
       const NEW2 = PROP_SPRITES.ph_show2 && !/[?&]show=1/.test(location.search);
       if (NEW2){
         const S2W = +((location.search.match(/[?&]showw=(\d+)/) || [])[1] || 800);   // 642 было в прежний экранный размер, 800 — как Эльдар смотрел
-        PROPS.push({x: b17.x, z: SZ, mid: true, kind: 'ph_show2', w: S2W, footY: 1080, noShadow: true, floor: true});
+        /* ниже на SDR мира (Эльдар, 30.10.2026: «чуть ниже спусти всю группу на уровень тех двух
+           строк под ней»): 95 единиц на глубине 350 — около 70 px при 2000×1040 */
+        const SDR = +((location.search.match(/[?&]showdrop=(\d+)/) || [])[1] || 95);
+        PROPS.push({x: b17.x, z: SZ, mid: true, kind: 'ph_show2', w: S2W, footY: 1080 + SDR, noShadow: true, floor: true});
       } else PROPS.push({x: b17.x, z: SZ, mid: true, kind: 'ph_show', w: SW, footY: 1080 - SUP, noShadow: true, floor: true,
         /* три куска: крестовина тележки на полу, сама тележка наверху со своей выдвинутой
            стойкой, и тумбы справа. Высота крестовины в мире — SW·(854−673)/1567: до неё и
@@ -16603,7 +16607,7 @@ function drawProps(midPass){
        геометрия зала, и предмет читается висящим над ней. По умолчанию нуля,
        то есть для всех остальных ничего не меняется. */
     /* p.footY — своя высота опоры в мире (пончики стоят на парте, а не на прилавке) */
-    const syFoot = (p.mid && midPass !== 'late') ? py(1080, kk)
+    const syFoot = (p.mid && midPass !== 'late') ? py(p.footY != null ? p.footY : 1080, kk)
                  : p.footY != null ? py(p.footY, kk)
                  : py(CFG.benchY - 2 - p._lifted + (p.drop || 0), kk);
     /* The join. Every one of these was a single drawImage with nothing under
@@ -23411,11 +23415,18 @@ function drawStudy(){
            между строк. Риска держится у самого заголовка, а не уезжает с
            отступом. */
         y += 6 * u;
-        ctx.fillStyle = `rgba(${K.accent},0.9)`;
-        if (y > topClip && y < botClip) ctx.fillRect(left, y - 2.4 * u - 2 * SS, 5 * u, 2 * SS);
+        /* РИСКА — ОТ ВЕРХА ПРОПИСНЫХ, А НЕ ОТ СЕТКИ (Эльдар, 30.10.2026: «синие линии налезают на
+           текст, почему?»). Она стояла на 2,4 u выше базовой линии — мерка, снятая при кегле
+           текста 22. Лист эпохи (ERA_PAGE) поднял кегль до 24, а u осталось 8, и прописные
+           доросли до риски. Теперь риска считается от самого заголовка: его верх меряется у
+           шрифта, и над ним всегда 5 точек воздуха, какой бы кегль лист ни задал. */
         ctx.font = K.font(PAGE.body, '600');
+        const hTx = sentence(head), hM = ctx.measureText(hTx);
+        const hCap = hM.actualBoundingBoxAscent || PAGE.body * 0.72 * SS;
+        ctx.fillStyle = `rgba(${K.accent},0.9)`;
+        if (y > topClip && y < botClip) ctx.fillRect(left, y - hCap - 7 * SS, 5 * u, 2 * SS);
         ctx.fillStyle = `rgba(${K.ink},0.95)`;
-        if (y > topClip && y < botClip) ctx.fillText(sentence(head), left, y);
+        if (y > topClip && y < botClip) ctx.fillText(hTx, left, y);
         y += 5.5 * u;
         if (nl < 0) continue;
         para = para.slice(nl + 1);
