@@ -808,7 +808,13 @@ const BEATS = [
      2022, у которых yLift 267: в сентябре год фабрики держали ниже строки нарочно
      (22.09.2026), но с тех пор под ним встала портальная рама, и разнобой читается
      сбоем, а не умыслом. */
+  /* КОНТРАСТНЫЕ ЧЕРНИЛА НА ТЁМНОЙ СТЕНЕ (Эльдар, 02.11.2026: «цвет текста года и
+     подписи сделай контрастной относительно фона»). Стена этой бухты теперь в тоне
+     тёмного пола (drawBayWall2019), и тёмно-серые чернила эпохи (55,64,76) на ней
+     пропадали. stripInk оставляет нижней полосе прежние чернила эпохи — иначе она
+     теряет свою светлую подложку (см. NUM_INK_AS). */
   {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true, descHide:true, blockDX:145, yLift:267,
+   ink:'232,236,241', stripInk:'55,64,76',
    /* тезис снят (Эльдар, 02.10.2026): «The analog→digital climax: robots make
       crowns» — фраза говорила то же, что и сама бухта, гораздо хуже её */
    th:'',
@@ -4878,8 +4884,16 @@ let NUM_SHEET = null;
 /* где цифра года стоит на экране в этом кадре — по ней садится блик полосы
    фактов (drawCompanyStrip) */
 const NUM_AT = {};
+/* ЧЕМ ГОД НАПИСАН И ЧТО ИЗ ЭТОГО БЕРЁТ НИЖНЯЯ ПОЛОСА — РАЗНЫЕ ВЕЩИ. Полоса
+   фактов красится чернилами ближайшего года (stripInk, решение Эльдара от
+   26.10.2026) и по их светлоте выбирает себе подложку: тёмные чернила —
+   светлая подложка. У года на тёмной стене (2019) чернила светлые, и полоса
+   вместе с ними теряла подложку — цифры повисали прямо на полу. NUM_INK_AS
+   даёт биту сказать полосе другие чернила, не трогая того, чем он написан на
+   стене (b.stripInk). */
+let NUM_INK_AS = null;
 function paintNumeral(str, cx, yBase, sizePx, fam){
-  NUM_AT[str] = {x: cx, y: yBase - sizePx * 0.36, sz: sizePx, t: state.time, fam, ink: ctx.fillStyle};
+  NUM_AT[str] = {x: cx, y: yBase - sizePx * 0.36, sz: sizePx, t: state.time, fam, ink: NUM_INK_AS || ctx.fillStyle};
   // small type is rasterised finely enough that the snapped row does not show
   if (!(sizePx > 26) || sizePx > 1400){ ctx.fillText(str, cx, yBase); return; }
   if (!NUM_SHEET) NUM_SHEET = document.createElement('canvas');
@@ -5048,7 +5062,9 @@ function drawBeatText(b, focusAmt){
         ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
         const yBase9 = mixN(py(140 - lift, kk), H*0.16, focusAmt);
         letterRelief(0.55);                 // the cut edge, and nothing else on the glyph
+        NUM_INK_AS = b.stripInk ? `rgba(${b.stripInk},1)` : null;
         if (!b.yWallHide) paintNumeral(b.y, cx, yBase9, ySz9, yFam9);
+        NUM_INK_AS = null;
         noShadow();
       }
       pushHit(cx - 340*kk*SS, hitTopF, 680*kk*SS, py(330, kk) - hitTopF,
@@ -5137,7 +5153,9 @@ function drawBeatText(b, focusAmt){
           } else yRest = py(140 - (b.yLift || 0), kk);
           const yBase8 = mixN(yRest, H*0.16, focusAmt);
           letterRelief(0.5);                // the cut edge, and nothing else on the glyph
+          NUM_INK_AS = b.stripInk ? `rgba(${b.stripInk},1)` : null;
           if (!b.yWallHide) paintNumeral(b.y, cx, yBase8, ySz8, yFam8);
+          NUM_INK_AS = null;
           noShadow();
         }
       }
@@ -20303,15 +20321,23 @@ function drawFactory(t, over){
    • захват 1212×1297, альфа 308…930 × 68…1196: губки 513…697 (центр 605), кончик на
      1196, ролики каретки на 845 — их строка садится на ось балки; 0,12 точки рамы
      на точку (губки 22 — одна заготовка). */
-const BZF_Z = 450;   // глубина портальной фабрики (было на глубине кабин, CELL_Z 210)
+/* ФАБРИКА СТОИТ В ПЛОСКОСТИ КОЛОНН (Эльдар, 02.11.2026: «подвинь всю конструкцию
+   робота в плоскость колонн»). Было 450 — своя глубина перед ними (30.10.2026,
+   выбрал средний из трёх кадров 210 / 450 / 700). Пилястры стоят на 994 и 992;
+   берём 993. Ширина пересчитана так, чтобы НА ЭКРАНЕ машина осталась прежнего
+   размера: 1100 · k(450)/k(993) = 1542. Центр — середина просвета между
+   внутренними гранями пилястр (30973 и 32645), то есть 31809: при такой ширине
+   до колонн остаётся по 65 единиц с каждой стороны, и перекос в полсотни единиц
+   от прежнего центра читался бы как касание одной колонны. */
+const BZF_Z = 993;
 const BZF_SRC = {F: [99, 26, 1], A: [361, 14, 0.5], B: [16, 152, 0.5], G: [308, 68, 0.4]};
 /* КРУПНЕЕ И ПОД СВОИМ ГОДОМ (Эльдар, 29.10.2026, обвёл рамку на кадре): рама была 1000
    единиц с центром на середине прежней пары кабин (FACT_X − 25) — левее надписи «2019
    BruxZir factory», которая стоит на blockDX 145. Теперь 1100 в ширину (рамка Эльдара —
    1,07 по ширине и 1,15 по высоте от прежней), центр — под годом, FACT_X + 145 − 25,
    ножки на полу, как были. */
-const BZF_W = +((location.search.match(/[?&]bzfw=(\d+)/) || [])[1] || 1100);
-const BZF_CX = () => { const q = location.search.match(/[?&]bzfcx=(\d+)/); return q ? +q[1] : FACT_X + 120; };
+const BZF_W = +((location.search.match(/[?&]bzfw=(\d+)/) || [])[1] || 1542);
+const BZF_CX = () => { const q = location.search.match(/[?&]bzfcx=(\d+)/); return q ? +q[1] : (REC18_R + 58 + REC4_L - 60) / 2; };
 const BZF = {
   U: BZF_W / 1339,
   wx: fx => BZF_CX() - BZF_W / 2 + (fx - 99) * (BZF_W / 1339),
