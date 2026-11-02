@@ -803,7 +803,12 @@ const BEATS = [
      stays in the data because the reading page is keyed to it */
   /* видео ложится в поток сразу после первого абзаца, а не в колонку и не в
      конец: страница должна привлекать им (Эльдар, 2026-09-23) */
-  {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true, descHide:true, blockDX:145, yLift:120,
+  /* ГОД 2019 — НА ОДНОЙ ЛИНИИ С СОСЕДЯМИ (Эльдар, 02.11.2026: «подвинь год с роботами
+     на тот же уровень, где находятся годы справа и слева»). Было 120 — ниже 2018 и
+     2022, у которых yLift 267: в сентябре год фабрики держали ниже строки нарочно
+     (22.09.2026), но с тех пор под ним встала портальная рама, и разнобой читается
+     сбоем, а не умыслом. */
+  {x:24870, y:'2019', t:'BRUXZIR FACTORY', descWall:true, descHide:true, blockDX:145, yLift:267,
    /* тезис снят (Эльдар, 02.10.2026): «The analog→digital climax: robots make
       crowns» — фраза говорила то же, что и сама бухта, гораздо хуже её */
    th:'',
@@ -3924,6 +3929,117 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
   /* выше на треть высоты буквы (Эльдар, 30.10.2026): буквы GLIDEWELL на вырезке — строки 33…60, 28 из 109 → 28/3 строки */
   if (lg2){ const l0 = xR - 428 * s * 1.5, lw = 428 * s * 1.8, lh = 109 * s * 1.8, up = 28 / 3 * s * 1.8; ctx.drawImage(spriteMip(lg2, lw * U, lh * U), X(l0), Y(819 - RISE - up - lh), lw * U, lh * U); }
   ctx.restore();
+}
+
+
+/* СТЕНА ЗА ФАБРИКОЙ — ТОГО ЖЕ ТЁМНОГО МЕТАЛЛА, ЧТО ЕЁ ПОЛ (Эльдар, 02.11.2026:
+   «фон на этой части этого года — стену — сделай цвета тёмного пола»). У бухты
+   2019 пол уже тёмный (FLOOR_TONES.rec.f2019 = #5a6068 → #1c1f23, 20.10.2026:
+   «там роботы и как бы завод»), а стена за ним оставалась белой стеной эпохи —
+   машина стояла на тёмном полу перед светлым фоном. Полоса идёт по внутренним
+   граням пилястр (левая 2018 — центр REC18_R, ширина 116; правая 2022 — центр
+   REC4_L, ширина 120), на глубине стены эпохи, от её верха до подошвы: сверху
+   дальний тон пола, книзу темнее, как сам пол уходит к зрителю. */
+function drawBayWall2019(){
+  const Z = SEGMENTS[3].z0 || 1400, kw = k(Z);
+  const XL = REC18_R + 58, XR = REC4_L - 60;
+  const x0 = px(XL, kw), x1 = px(XR, kw);
+  if (x1 < -40 || x0 > W + 40) return;
+  /* от собственного верха стены (−520, как у drawWall), а не от верха кадра:
+     потолок зала выше неё и тёмным становиться не должен */
+  const y0 = py(-520, kw), y1 = py(1080, kw);
+  const g = ctx.createLinearGradient(0, y0, 0, y1);
+  g.addColorStop(0, '#5a6068'); g.addColorStop(0.62, '#464b52'); g.addColorStop(1, '#30343a');
+  ctx.fillStyle = g;
+  ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+}
+
+/* ============================================================================
+   ПРЕВЬЮ: НАСТОЯЩИЙ ПРОЁМ ВОКРУГ ФАБРИКИ 2019 (?niche=1)
+   Эльдар, 02.11.2026, по рендеру ГПТ: бухта 2019 должна быть не плоской стеной
+   с двумя пилястрами, а нишей — с откосами, верхней гранью и светом в карнизе.
+   КАРТИНКОЙ ЭТО СДЕЛАТЬ НЕЛЬЗЯ: рендер рамы верен ровно из одной точки, а зал
+   едет вдоль x непрерывно — откос обязан считаться каждый кадр. Поэтому ниша
+   здесь геометрия: четыре плоскости, у каждой своя глубина и свой k(z).
+
+   Устье — на плоскости пилястр (993), по их внутренним граням: левая пилястра
+   2018 (центр REC18_R, ширина 116) и правая пилястра 2022 (центр REC4_L,
+   ширина 120), значит x от REC18_R + 58 до REC4_L − 60. Дно — стена эпохи
+   (1400). Пол ниши — тот же тёмный слэб f2019, он уже нарисован.
+   Пробные числа: ?ntop=<y верха устья> ?nglow=<0..100 сила карниза>.
+   ============================================================================ */
+function drawNiche2019(){
+  if (!/[?&]niche=1/.test(location.search)) return;
+  const ZM = 993, ZB = SEGMENTS[3].z0 || 1400;
+  const XL = REC18_R + 58, XR = REC4_L - 60;
+  const TOP = +((location.search.match(/[?&]ntop=(-?\d+)/) || [])[1] || -150);
+  const GLOW = +((location.search.match(/[?&]nglow=(\d+)/) || [])[1] || 55) / 100;
+  const kM = k(ZM), kB = k(ZB);
+  if (px(XR, kM) < -300 || px(XL, kM) > W + 300) return;
+  const PX = (x, z) => px(x, k(z)), PY = (y, z) => py(y, k(z));
+  const quad = (pts, fill) => {
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
+  };
+  const FLOOR = 1080;
+
+  /* 1 · ДНО НИШИ — графит, светлее вверху: это свет карниза, упавший на стену */
+  const bx0 = PX(XL, ZB), bx1 = PX(XR, ZB), by0 = PY(TOP, ZB), by1 = PY(FLOOR, ZB);
+  const bg = ctx.createLinearGradient(0, by0, 0, by1);
+  bg.addColorStop(0, '#45484c'); bg.addColorStop(0.28, '#34373b'); bg.addColorStop(1, '#232629');
+  ctx.fillStyle = bg; ctx.fillRect(bx0, by0, bx1 - bx0, by1 - by0);
+
+  /* 2 · ОТКОСЫ. Плоскость x = const от устья до дна. Видно тот откос, который
+     камера обходит сбоку: знак экранной ширины четырёхугольника и решает —
+     по экранной намотке, а не по нормали (закон зала). */
+  for (const [X, side] of [[XL, -1], [XR, 1]]){
+    const a = [PX(X, ZM), PY(TOP, ZM)], b = [PX(X, ZB), PY(TOP, ZB)],
+          c = [PX(X, ZB), PY(FLOOR, ZB)], d = [PX(X, ZM), PY(FLOOR, ZM)];
+    if ((b[0] - a[0]) * side <= 0) continue;          // откос отвёрнут от камеры
+    const g = ctx.createLinearGradient(a[0], 0, b[0], 0);
+    g.addColorStop(0, '#e8e0d2'); g.addColorStop(0.5, '#cfc5b3'); g.addColorStop(1, '#8f8778');
+    quad([a, b, c, d], g);
+    // свет карниза вдоль верха откоса
+    const gl = ctx.createLinearGradient(0, PY(TOP, ZM), 0, PY(TOP + 260, ZM));
+    gl.addColorStop(0, `rgba(255,228,180,${0.5 * GLOW})`); gl.addColorStop(1, 'rgba(255,228,180,0)');
+    quad([a, b, [b[0], PY(TOP + 260, ZB)], [a[0], PY(TOP + 260, ZM)]], gl);
+  }
+
+  /* 3 · ВЕРХНЯЯ ГРАНЬ — тёмная, её видно только снизу, и она всегда есть */
+  quad([[PX(XL, ZM), PY(TOP, ZM)], [PX(XR, ZM), PY(TOP, ZM)],
+        [PX(XR, ZB), PY(TOP, ZB)], [PX(XL, ZB), PY(TOP, ZB)]], '#2b2d30');
+
+  /* 4 · КАРНИЗ: полоса света у самого устья и её засветка вниз по дну */
+  const cx0 = PX(XL, ZM), cx1 = PX(XR, ZM), cy = PY(TOP, ZM), hM = k(ZM) * SS;
+  ctx.fillStyle = `rgba(255,236,200,${0.85 * GLOW})`;
+  ctx.fillRect(cx0, cy, cx1 - cx0, Math.max(1, 5 * hM));
+  const wash = ctx.createLinearGradient(0, by0, 0, PY(TOP + 420, ZB));
+  wash.addColorStop(0, `rgba(255,228,180,${0.30 * GLOW})`); wash.addColorStop(1, 'rgba(255,228,180,0)');
+  ctx.fillStyle = wash; ctx.fillRect(bx0, by0, bx1 - bx0, PY(TOP + 420, ZB) - by0);
+
+  /* 4b · ПОЛ: латунные вставки по краям тёмной дорожки, на плоскости устья и
+     до переднего плана — две мировые прямые x = const, как у откосов */
+  for (const X of [XL + 26, XR - 26]){
+    const a = [PX(X, ZM), PY(FLOOR, ZM)], b = [PX(X, -60), PY(FLOOR, -60)];
+    ctx.strokeStyle = 'rgba(206,176,118,0.85)';
+    ctx.lineWidth = Math.max(1, 3 * k(-60) * SS);
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+  }
+
+  /* 5 · ЛАТУННЫЙ КАНТ ПО УСТЬЮ — на плоскости пилястр, шириной 14 единиц */
+  const bead = 14 * hM;
+  const bg2 = ctx.createLinearGradient(0, cy - bead, 0, cy + bead);
+  bg2.addColorStop(0, '#d8bd87'); bg2.addColorStop(0.5, '#b89a68'); bg2.addColorStop(1, '#8e7444');
+  ctx.fillStyle = bg2; ctx.fillRect(cx0 - bead, cy - bead, cx1 - cx0 + bead * 2, bead);
+  for (const X of [XL, XR]){
+    const sx = PX(X, ZM);
+    const vg = ctx.createLinearGradient(sx - bead, 0, sx + bead, 0);
+    vg.addColorStop(0, '#8e7444'); vg.addColorStop(0.5, '#d8bd87'); vg.addColorStop(1, '#8e7444');
+    ctx.fillStyle = vg;
+    ctx.fillRect(sx - bead / 2 + (X === XL ? -bead / 2 : bead / 2), cy - bead, bead, PY(FLOOR, ZM) - cy + bead);
+  }
 }
 
 const SKIRT_H = 64;   // мира — высота плинтуса, как в фото стен второй и третьей эпохи
@@ -20185,7 +20301,8 @@ const BZF_SRC = {F: [99, 26, 1], A: [361, 14, 0.5], B: [16, 152, 0.5], G: [308, 
    BruxZir factory», которая стоит на blockDX 145. Теперь 1100 в ширину (рамка Эльдара —
    1,07 по ширине и 1,15 по высоте от прежней), центр — под годом, FACT_X + 145 − 25,
    ножки на полу, как были. */
-const BZF_W = 1100, BZF_CX = () => FACT_X + 120;
+const BZF_W = +((location.search.match(/[?&]bzfw=(\d+)/) || [])[1] || 1100);
+const BZF_CX = () => { const q = location.search.match(/[?&]bzfcx=(\d+)/); return q ? +q[1] : FACT_X + 120; };
 const BZF = {
   U: BZF_W / 1339,
   wx: fx => BZF_CX() - BZF_W / 2 + (fx - 99) * (BZF_W / 1339),
@@ -26059,6 +26176,8 @@ function frame(){
      мировыми прямыми x = const, теми самыми, на которых стоят откосы. */
   ctx.save(); stCutHall('floor'); drawFloor(); ctx.restore();
   drawWall();   // проём улицы каждая полоса стены вырезает сама, на своей глубине
+  drawBayWall2019();   // стена за фабрикой — в тоне её тёмного пола
+  drawNiche2019();   // ПРЕВЬЮ (?niche=1): настоящий проём вокруг фабрики 2019
   drawFinaleWall();   // стена финала — рендер, поверх белой стены эпохи
   drawFilmVideoWall();   // the film backdrop sits directly on the deep wall
   drawFilmProjectorWall();   // and the 1999 throw washes over the plaster
