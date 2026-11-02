@@ -3835,10 +3835,17 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
      наброске подписано «1°»); фон светлее — в тон бумаге, что осталась между пальцами. Места
      сняты с наброска: панель 736,5 единицы = 469 его точек, базовая линия года — 140 − yLift 130 = 10. */
   const s = P85.s;
+  /* ВЕСЬ БЛОК ПЛАКАТА ВЫШЕ (Эльдар, 02.11.2026, набросок: зелёная линия по подписям соседних
+     лет — «Consolidation» и «BioTemps», стрелки вверх с обоих краёв, скобка вокруг всего
+     плаката, «на сколько поднять все элементы блока»). Мерка снята с его же кадра: базовые
+     линии «The Sales» и «Secret» на нём 170 и 235 точек = 112,3 единицы стены, значит
+     0,579 точки на единицу; стрелки — 67 и 55 точек, то есть 116 и 95 единиц. Берём 105 —
+     и поднимаем на них заголовок, подзаголовок, руку и логотип одним числом. */
+  const RISE = +((location.search.match(/[?&]p85up=(-?\d+)/) || [])[1] || 105);
   const hand = PROP_SPRITES.ph_p85hand;
   if (hand){
     // коронка на плакате — (450, 450); рука вырезана с (4, 8); поворот — вокруг коронки
-    const hs = s * P85.hand, cxW = b.x + P85.cx + (450 - 600) * s, cyW = P85.cy - 411 * s + 450 * s + P85.dy;
+    const hs = s * P85.hand, cxW = b.x + P85.cx + (450 - 600) * s, cyW = P85.cy - 411 * s + 450 * s + P85.dy - RISE;
     /* размер прежний — руку только подняли (Эльдар, 30.10.2026: «я не просил увеличивать —
        надо было её поднять; красным я нарисовал воздух вокруг пальца»): кончик пальца — под «S» */
     /* ×1.1 вверх и вправо (Эльдар, 30.10.2026: «увеличь руку чуть, увеличивая вверх и вправо»):
@@ -3871,7 +3878,7 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
   /* ГОДА НА СТЕНЕ НЕТ — заголовок поднят на его место (Эльдар, 30.10.2026: «уберём год вообще и
      поднимем заголовок выше»): верх «The Sales» — там, где был верх цифр 1985 (строки 209 → 116
      при 2000×1040, k 0,57 — 163 единицы стены); подзаголовок — вместе с ним, рука на месте */
-  const UP = 163;
+  const UP = 163 + RISE;
   /* ×1.08 от верха и правого края (Эльдар, 30.10.2026: «увеличь заголовок с подзаголовком чуть»):
      верх прописных «The Sales» (HA — базовая 140 − UP минус высота прописной 82 при кегле ×1.58)
      и правый край xR на месте, всё ниже растёт вниз */
@@ -3915,7 +3922,7 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
   const lg2 = PROP_SPRITES.ph_p85logo;
   // ×1.5 → ×1.8 от левого нижнего угла (больше — упирается в правый шов панели) (второй набросок: стрелка из правого верхнего угла наружу)
   /* выше на треть высоты буквы (Эльдар, 30.10.2026): буквы GLIDEWELL на вырезке — строки 33…60, 28 из 109 → 28/3 строки */
-  if (lg2){ const l0 = xR - 428 * s * 1.5, lw = 428 * s * 1.8, lh = 109 * s * 1.8, up = 28 / 3 * s * 1.8; ctx.drawImage(spriteMip(lg2, lw * U, lh * U), X(l0), Y(819 - up - lh), lw * U, lh * U); }
+  if (lg2){ const l0 = xR - 428 * s * 1.5, lw = 428 * s * 1.8, lh = 109 * s * 1.8, up = 28 / 3 * s * 1.8; ctx.drawImage(spriteMip(lg2, lw * U, lh * U), X(l0), Y(819 - RISE - up - lh), lw * U, lh * U); }
   ctx.restore();
 }
 
@@ -22996,7 +23003,18 @@ function drawStudy(){
   while (studyTitle && ctx.measureText(studyTitle).width > textW && tSz > 24){ tSz -= 1; ctx.font = K.font(tSz, HD.titleW); }
   ctx.fillStyle = `rgba(${K.ink},0.92)`;
   const inkLight = K.ink.split(',').reduce((q, c) => q + (+c), 0) / 3 > 150;
-  if (studyTitle && !drawTitleLogo(b.t, left, y, 'left', 1, inkLight)) ctx.fillText(studyTitle, left, y);
+  /* НАЗВАНИЕ НА ЛИСТЕ НЕ ПОВТОРЯЕТСЯ ДВАЖДЫ. Шапочная строка над годом («1985
+     Learning to sell») лежит на хроме листа, не прокручивается и видна всегда,
+     а под годом то же название стояло вторым кеглем — один и тот же текст два
+     раза на одном экране (Эльдар, 02.11.2026: «Learning to sell можно удалить
+     здесь тоже»). У листа с годом название печатает только шапочная строка.
+     Бита без года это не касается (Friday Donuts: в шапочной строке у него как
+     раз название, и больше его нигде нет), а логотип-название (BruxZir и
+     прочие) — не повтор текста, его рисуем по-прежнему. */
+  const titleDup = !b.noYear && !!K.page;
+  const titleLogo = !!studyTitle && drawTitleLogo(b.t, left, y, 'left', 1, inkLight);
+  const titleCut = !!studyTitle && !titleLogo && titleDup;
+  if (studyTitle && !titleLogo && !titleCut) ctx.fillText(studyTitle, left, y);
   try { ctx.letterSpacing = '0px'; } catch(err){}
   /* A PAGE WHOSE FIGURE IS THE SUBJECT HAS NO RULE. On the crossover the rule
      sat between a one-line caption and the carton that caption names, and it
@@ -23004,7 +23022,7 @@ function drawStudy(){
      the picture belong together (Eldar, 2026-09-22: «эту линию отбивки уберём,
      она там не нужна»). The head closes up around it. */
   const noRule = !!(inl && inl.overRule);
-  y += (noRule ? 2.7 : HD.titleLead != null ? HD.titleLead : 6) * u;
+  y += (titleCut ? 0.6 : noRule ? 2.7 : HD.titleLead != null ? HD.titleLead : 6) * u;
   /* the standfirst is the thesis — one line about why this year is here. The
      lede that used to sit under it repeated the article's first paragraph
      almost word for word; on a page that has an article, it is not printed. */
@@ -23034,6 +23052,13 @@ function drawStudy(){
     if (y > topClip && y < botClip) ctx.fillRect(left, y, textW, (K.flat ? 1 : 1.5) * SS);
     y += (HD.ruleBody != null ? HD.ruleBody : 5) * u;
   }
+  /* ВОЗДУХ ПОД ЛИНЕЙКОЙ ШАПКИ — ТОЛЬКО ЕЁ СОБСТВЕННЫЙ. Под линейкой уже стоит
+     ruleBody (6,9u), и если статья открывается подзаголовком, его собственные
+     6u ложились сверху: под линейкой получалось 12,9u, а над ней — 4,8u, и
+     полоса пустоты читалась дырой (Эльдар, 02.11.2026: «почему такие большие
+     пробелы?»). Первый подзаголовок, если над ним ничего, кроме линейки, нет,
+     своего отступа не берёт. */
+  const flowTop = y;
 
   /* ---- the right-hand column, laid alongside the head ---- */
   /* плоский лист: верх колонки — по верху цифр года (кегль года × 0.66 ниже
@@ -23289,6 +23314,11 @@ function drawStudy(){
      страница может позвать в любом месте потока: b.clipAt — номер абзаца,
      после которого она ложится. Без clipAt всё как было, в конце. */
   let voicesDone = false;
+  /* ЧТО СТОИТ НАД ЛИНЕЙКОЙ. После абзаца y уже опущен на целую пустую строку
+     (flowText отдаёт базовую линию плюс межстрочный) плюс абзацный шаг 2u —
+     линейке добавлять к этому ещё 2u не нужно. После снимка или монитора —
+     нужно: у них своей пустой строки нет. */
+  let flowTail = 'text';
   const drawVoiceStrip = () => {
     if (voicesDone || !(media && media.length && inFlow)) return;
     voicesDone = true;
@@ -23296,8 +23326,8 @@ function drawStudy(){
        местами видео и экран монитора внутри 2001»): сначала сайты, под ними
        запись первого сайта */
     { const sites = !b.sitesTop && STUDY_SITES[b.t];   // sitesTop — монитор уже стоит под шапкой
-      if (sites){ y = drawSiteMonitor(S, K, sites, left, y, textW, topClip, botClip, a); y += 2 * u; } }
-    y += 2 * u;
+      if (sites){ y = drawSiteMonitor(S, K, sites, left, y, textW, topClip, botClip, a); y += 2 * u; flowTail = 'block'; } }
+    y += (flowTail === 'text' ? -2 : 2) * u;
     ctx.fillStyle = K.rule;
     if (y > topClip && y < botClip) ctx.fillRect(left, y, textW, (K.flat ? 1 : 1.5) * SS);
     y += 5 * u;
@@ -23375,6 +23405,7 @@ function drawStudy(){
     }
     S._slot = {y0: top0 + S.scroll * SS, h: y - top0, mid: (topClip + botClip) / 2};
     y += 4.5 * u;                       // под подписью столько же воздуха, сколько над снимком
+    flowTail = 'block';
   };
   if (inl && inl.boxTop) drawInlineBox();
   /* МОНИТОР С САЙТАМИ — СРАЗУ ПОД ПОДЗАГОЛОВКОМ, ТЕКСТ ПОТОМ (Эльдар, 27.10.2026:
@@ -23392,6 +23423,7 @@ function drawStudy(){
     ctx.fillStyle = bodyInk;
     flow(b.d, PAGE.bodyLH * SS);
     y += 2 * u;
+    flowTail = 'text';
     drawPagePhoto();
   } else {
     /* AN ARTICLE IS NOT A WALL OF TEXT. A paragraph opening with "## " is a
@@ -23414,7 +23446,7 @@ function drawStudy(){
            Стало 64 и 44 — иерархия видна, и под заголовком просторнее, чем
            между строк. Риска держится у самого заголовка, а не уезжает с
            отступом. */
-        y += 6 * u;
+        if (y > flowTop + 0.5) y += 6 * u;   // сразу под линейкой шапки — без своего отступа
         /* РИСКА — ОТ ВЕРХА ПРОПИСНЫХ, А НЕ ОТ СЕТКИ (Эльдар, 30.10.2026: «синие линии налезают на
            текст, почему?»). Она стояла на 2,4 u выше базовой линии — мерка, снятая при кегле
            текста 22. Лист эпохи (ERA_PAGE) поднял кегль до 24, а u осталось 8, и прописные
@@ -23448,6 +23480,7 @@ function drawStudy(){
         } else flow(rawLine, PAGE.bodyLH * SS, bodyInk);
       }
       y += 2 * u;
+      flowTail = 'text';
       if (paraN === clipAt) drawVoiceStrip();
       /* второй абзац ТЕКСТА: подзаголовок отдельным блоком абзацем не считается */
       if (++textN === 2) drawPagePhoto();
