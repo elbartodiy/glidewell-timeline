@@ -10782,7 +10782,12 @@ function drawPendant(t){
      counter's own span, and the counter is painted after it — so the stalk
      goes down behind the table and only the box shows above the edge, from
      every camera position alike. */
-  const cz = 400, kk = k(cz), S = kk * SS;
+  /* ПУЛЬТ СТОИТ БЛИЖЕ К РОБОТУ (Эльдар, 02.11.2026: «уменьши его немного и подними выше,
+     чтобы стоял ближе к роботу»). Было 400 — сразу за задней кромкой левого прилавка;
+     фабрика стоит на 993, и пульт уходит к ней. Это одно число, а не три правки: с
+     глубиной перспектива сама и уменьшает пульт, и поднимает его подошву к горизонту.
+     ?pendz=<z> — проба другой глубины. */
+  const cz = +((location.search.match(/[?&]pendz=(\d+)/) || [])[1] || 850), kk = k(cz), S = kk * SS;
   const X = wx => px(wx, kk), Y = wy => py(wy, kk);
   const px2 = X(PENDANT_X);
   if (px2 < -200 || px2 > W + 200) return;
@@ -20292,19 +20297,21 @@ function drawFactory(t, over){
     }
     ctx.restore();
   }
-  if (!over) drawPendant(t);       // behind the left counter — the veil pass must not paint it back in front
-  /* ВТОРАЯ ФАБРИКА РЯДОМ — ВРЕМЕННО, НА ВРЕМЯ ВЫБОРА (Эльдар, 02.11.2026: «желательно двух
-     рядом поставить временно, чтобы сравнивать в процессе»; «одну новую фабрику поставь
-     куда надо, а вторую — просто рядом, не целься: мы её всё равно уберём после выбора»).
-     Близнец рисуется тем же кодом с другим набором деталей и центром на 1680 правее —
-     он заходит на бухту 2022 года, и это принято: место ему не искали. Снять сравнение —
-     убрать эти три строки и BZF_TWIN. */
+  /* ВТОРАЯ ФАБРИКА РЯДОМ — ПО ФЛАГУ ?bzftwin= (Эльдар, 02.11.2026: «желательно двух рядом
+     поставить временно, чтобы сравнивать в процессе»). Близнец рисуется тем же кодом с
+     другим набором деталей и центром на 1680 правее; выбор сделан, по умолчанию его нет. */
   if (BZF_TWIN){ BZF_DX = BZF_TWIN.dx; drawBZF(t, BZF_TWIN.kit); BZF_DX = 0; }
   if (!drawBZF(t)){
     drawFactoryBase();
     drawCell(cellX(0), CELL_Z, t, 0, true, true);
     drawCell(cellX(1), CELL_Z, t, 2.4, false, true);
   }
+  /* ПУЛЬТ — ПОСЛЕ ФАБРИКИ, ПЕРЕД ПРИЛАВКОМ. Он рисовался до неё: на прежней глубине 400
+     он почти не налезал на машину, и порядок не читался. С переездом к роботу (850 против
+     993 у фабрики) он стал ближе неё, и машина начала его закрывать — на кадре от 2017-го
+     от пульта оставался край коробки слева от стойки. Теперь между ними: фабрика (993) →
+     пульт (850) → прилавок (0…340, пишется в проходе over). */
+  if (!over) drawPendant(t);       // the veil pass must not paint it back in front of the counter
   const kk = k(CELL_Z);
   // the factory is painted twice, under and over the counter; its target is claimed once
   if (!over) pushHit(px(FACT_X - 480, kk), py(560, kk), (960)*kk*SS, py(1080,kk)-py(560,kk),
