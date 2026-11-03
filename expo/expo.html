@@ -789,7 +789,12 @@ const BEATS = [
    capColL(){ return capUnderBeat(this); },
    th:'',
    /* затравка вместо пересказа страницы (Эльдар, 26.10.2026: «на линии нам нужно только небольшая затравка для раскрытия темы — про что внутри»; «го»). Было: «1,500 pairs of scans, and the profile between opposing teeth that technicians find hardest. The paper, written with UC Berkeley, is called Learning Beyond Human Expertise.» */
-   d:'The first crown designed by a neural network.',
+   /* СТРОКА СНЯТА (Эльдар, 03.11.2026: «это удалим вообще»). Витрина 2018-го уже
+      подписана на стене бухты — «The first AI crown», — и строка под экраном
+      повторяла её другими словами. Было: «The first crown designed by a neural
+      network.» Страницы это не касается: статья берётся по ключу '2018' из
+      STUDY_BY_TITLE, а b.d уходит в страницу только когда статьи нет. */
+   d:'',
    wall:[], table:[]},   // the design-station monitor is gone: the crown itself is the exhibit now
   /* the block is centred on the wall between the 2018 bay's right pilaster and
      the 2022 bay's left one — (REC18_R + REC4_L)/2 — and lifted clear of the
