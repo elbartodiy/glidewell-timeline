@@ -1376,6 +1376,13 @@ function applyCut(){
     if (typeof STUDY_BY_TITLE === 'object' && STUDY_BY_TITLE[DR_PAGE.t]) STUDY_MORE[DR_PAGE.x] = STUDY_BY_TITLE[DR_PAGE.t];
     if (typeof STUDY_MEDIA_BY_TITLE === 'object' && STUDY_MEDIA_BY_TITLE[DR_PAGE.t]) STUDY_MEDIA[DR_PAGE.x] = STUDY_MEDIA_BY_TITLE[DR_PAGE.t];
   }
+  /* стойка Glidewell TV стоит между колонной холла и дверями Education —
+     её середина и есть ключ страницы (Эльдар, 03.11.2026) */
+  if (typeof GTV_PAGE === 'object'){
+    GTV_PAGE.x = TODAY_TV.x();
+    if (typeof STUDY_BY_TITLE === 'object' && STUDY_BY_TITLE[GTV_PAGE.t]) STUDY_MORE[GTV_PAGE.x] = STUDY_BY_TITLE[GTV_PAGE.t];
+    if (typeof STUDY_MEDIA_BY_TITLE === 'object' && STUDY_MEDIA_BY_TITLE[GTV_PAGE.t]) STUDY_MEDIA[GTV_PAGE.x] = STUDY_MEDIA_BY_TITLE[GTV_PAGE.t];
+  }
   for (const it of FG_ITEMS) it.x = SHIFT(it.x);
   /* the 1973 stones stand where the 1973 beat finally stands — the rhythm pass
      moves the seventies, and the counters must part around the stones, not
@@ -7368,8 +7375,35 @@ const TODAY_TV = {
      двери»). Табло с TODAY уехало вправо на врезку 'edu', а плазма осталась у
      колонны: просвет air = 400 — две с лишним толщины колонны на экране, правило
      «не тоньше колонны» от 01.10 соблюдено с запасом. */
-  air: 400,
-  x(){ return HALL_FRAME_R + HALL_COL_W / 2 + this.air + this.w / 2; },
+  air: 400,   // историческое: с 03.11.2026 панель центрируется в просвете, см. ниже
+  /* ── СТОЙКА GLIDEWELL TV ───────────────────────────────────────────────────
+     Эльдар (03.11.2026, кадром этой самой плазмы): «Нам нужно сделать стойку
+     Glidewell TV… на ленте стоять она будет тут — можешь ли ты сам сделать её».
+     Образец — зарядная стойка GTV в здании компании (фото IMG_6398 в
+     src/pictures/Reference real photos): панель со скруглёнными углами,
+     подсветка по контуру, объёмный знак G▷TV с красным ореолом, экран, три
+     полки с розетками и красная полоса «Made by GLIDEWELL MILLWORKS» внизу.
+     «Но мы убираем эти полки и увеличиваем экран почти до краёв слева и
+     справа, оставив воздуха столько, сколько над большими красными буквами,
+     вместо которых… надо поставить логотип… Форма с закруглёнными краями
+     узнаваемая, подсветка под ней.»
+     ВОЗДУХ ОДИН НА ВСЮ ПАНЕЛЬ — pad. На фото воздух над буквами 50 px при
+     ширине панели 740, то есть 6,76 %; при экране 996 это даёт pad = 78 и
+     панель 1152. Ширину Эльдар отдал мне («ширину сделай сам, на свой вкус…
+     со всеми законами композиции и пространства»), и панель встала ПО СЕРЕДИНЕ
+     ПРОСВЕТА между колонной стеклянного холла (правая кромка 37397,5) и
+     косяком дверей Glidewell Education (EDU.L() = 39147,9): воздуха поровну,
+     по 299, вместо прежних 400 слева и 353 справа. Экран при этом сместился
+     всего на 23 влево и остался на одной линии с табло.
+     logoW — доля ширины панели под знак: на фото три строки занимают 0,615
+     панели, здесь знак один, и 0,46 держит его соразмерным экрану.
+     gapLogo — просвет от знака до экрана; padBot больше бокового поля, иначе
+     тяжёлый верх валит панель вперёд. rad — радиус угла: 8,1 % ширины, как на
+     фото (60 px из 740). Экран НЕ меняется: на нём тот же ролик зала
+     (Эльдар: «на самом экране… здесь снаружи всё так же показывается наш
+     основной ролик»). */
+  pad: 78, logoW: 0.46, gapLogo: 92, padBot: 117, rad: 94,
+  x(){ return (HALL_FRAME_R + HALL_COL_W / 2 + EDU.L()) / 2; },
   w: 996, h: 560,     // 16:9
   src: 'media/fastmill_today.mp4',
   v: null, ready: false,
@@ -7398,27 +7432,73 @@ function drawTodayTV(){
   const u = kw * SS;
   const vCen = BOARD_TOP + BOARD_H * BOARD_S / 2;       // одна линия с табло
   const x0 = px(cx - TODAY_TV.w / 2, kw), x1 = px(cx + TODAY_TV.w / 2, kw);
-  if (x1 < -40 || x0 > W + 40) return;
   const yTop = py(vCen - TODAY_TV.h / 2, kw), yBot = py(vCen + TODAY_TV.h / 2, kw);
   const w = x1 - x0, h = yBot - yTop;
+  /* ПАНЕЛЬ СТОЙКИ СЧИТАЕТСЯ В МИРОВЫХ ЕДИНИЦАХ И ПРОЕЦИРУЕТСЯ ТЕМ ЖЕ k, что и
+     экран: панель, знак и экран — один предмет на одной глубине, и ни один их
+     размер не берётся с кадра. Высота панели складывается сверху вниз:
+     поле — знак — просвет — экран — нижнее поле. */
+  const PW = TODAY_TV.w + 2 * TODAY_TV.pad;
+  const sp = PROP_SPRITES.ph_gtv;
+  const lw = TODAY_TV.logoW * PW, lh = sp ? lw * sp.h / sp.w : 0;
+  const pTop = vCen - TODAY_TV.h / 2 - (TODAY_TV.gapLogo + lh + TODAY_TV.pad);
+  const pBot = vCen + TODAY_TV.h / 2 + TODAY_TV.padBot;
+  const bx0 = px(cx - PW / 2, kw), bx1 = px(cx + PW / 2, kw);
+  const by0 = py(pTop, kw), by1 = py(pBot, kw);
+  if (bx1 < -60 || bx0 > W + 60) return;
+  const bw = bx1 - bx0, bh = by1 - by0, rad = TODAY_TV.rad * u;
   rivet('today_tv', (x0 + x1) / 2, kw);
-  /* ПЛАЗМА КОНЧАЕТСЯ ТАМ, ГДЕ КОНЧАЕТСЯ СТЕНА. Левее портала стеклянного холла
+  rivet('gtv_panel', (bx0 + bx1) / 2, kw);
+  /* СТОЙКА КОНЧАЕТСЯ ТАМ, ГДЕ КОНЧАЕТСЯ СТЕНА. Левее портала стеклянного холла
      стены финала нет — там фотография другой комнаты, и экран, занесённый туда
      параллаксом, висел прямо в холле (Эльдар, 2026-10-01, кадр из-за колонны).
      Колонна портала стоит ближе стены, поэтому при взгляде слева проекция
-     глубокой стены уходит ЛЕВЕЕ неё: обрезаем экран по правой кромке колонны —
+     глубокой стены уходит ЛЕВЕЕ неё: обрезаем по правой кромке колонны —
      она и есть видимый край этой стены. */
   const kc = k(HALL_PORTAL_Z);
   const colR = px(HALL_FRAME_R, kc) + HALL_COL_W * kc * SS / 2;
-  if (colR >= x1) return;                       // экран целиком за порталом — его нет
-  /* ОБРЕЗКА ДЕРЖИТСЯ НА ВЕСЬ ЭКРАН, А НЕ НА ОДНУ ОПРАВУ. В первой пробе я
-     положил её внутрь save/restore, которым гасилась тень корпуса: обрезалась
+  if (colR >= bx1) return;                      // стойка целиком за порталом — её нет
+  /* ОБРЕЗКА ДЕРЖИТСЯ НА ВСЮ СТОЙКУ, А НЕ НА ОДНУ ОПРАВУ. В первой пробе она
+     лежала внутри save/restore, которым гасилась тень корпуса: обрезалась
      только тёмная рамка, а видео и обводка рисовались уже после restore —
-     и экран по-прежнему заходил в холл (Эльдар, 2026-10-01, второй кадр).
-     Теперь обрезка охватывает всю отрисовку, а тень гасится вложенной парой. */
+     и экран по-прежнему заходил в холл (Эльдар, 2026-10-01, второй кадр). */
   ctx.save();
-  if (colR > x0){ ctx.beginPath(); ctx.rect(colR, 0, W - colR, H); ctx.clip(); }
-  /* корпус — та же тёмная оправа, что у табло: это два экрана одной стены */
+  if (colR > bx0){ ctx.beginPath(); ctx.rect(colR, 0, W - colR, H); ctx.clip(); }
+  /* ПОДСВЕТКА ИЗ-ПОД ПАНЕЛИ («подсветка под ней»): на фото между панелью и
+     стеной светится полоса по всему контуру. Рисуется тенью собственной формы
+     панели в два прохода — широкий ореол и узкий, у самой кромки; заливка под
+     ними всё равно перекрывается самой панелью. */
+  ctx.save();
+  ctx.shadowColor = 'rgba(255,241,221,0.60)'; ctx.shadowBlur = 56 * u;
+  ctx.fillStyle = 'rgba(255,250,240,1)';
+  ctx.beginPath(); ctx.roundRect(bx0, by0, bw, bh, rad); ctx.fill();
+  ctx.shadowBlur = 18 * u; ctx.fill();
+  ctx.restore();
+  /* ПАНЕЛЬ. Столярка, а не стена: она на палец светлее стены финала, с едва
+     заметным перепадом сверху вниз и собственной тенью — тогда скруглённый
+     угол читается как кромка щита, а не как пятно краски. */
+  ctx.save();
+  ctx.shadowColor = 'rgba(18,24,32,0.22)'; ctx.shadowBlur = 24 * u; ctx.shadowOffsetY = 11 * u;
+  const g = ctx.createLinearGradient(0, by0, 0, by1);
+  g.addColorStop(0, '#fdfefe'); g.addColorStop(0.55, '#f6f8fa'); g.addColorStop(1, '#ebeef2');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.roundRect(bx0, by0, bw, bh, rad); ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(150,164,180,0.30)'; ctx.lineWidth = 1.2 * SS;
+  ctx.beginPath(); ctx.roundRect(bx0, by0, bw, bh, rad); ctx.stroke();
+  /* ЗНАК КАНАЛА — ПОДСВЕЧЕН СЗАДИ, КАК НА СТОЙКЕ. Ореол даёт тень по альфе
+     самого знака: два прохода, дальний и ближний. */
+  if (sp){
+    const lwS = lw * u, lhS = lh * u, lyS = py(pTop + TODAY_TV.pad, kw);
+    const img = spriteMip(sp, lwS, lhS);
+    ctx.save();
+    ctx.shadowColor = 'rgba(226,32,48,0.50)'; ctx.shadowBlur = 30 * u;
+    ctx.drawImage(img, (bx0 + bx1) / 2 - lwS / 2, lyS, lwS, lhS);
+    ctx.shadowBlur = 11 * u;
+    ctx.drawImage(img, (bx0 + bx1) / 2 - lwS / 2, lyS, lwS, lhS);
+    ctx.restore();
+  }
+  /* корпус экрана — та же тёмная оправа, что у табло: это два экрана одной стены */
   ctx.save();
   ctx.shadowColor = 'rgba(16,22,30,0.30)'; ctx.shadowBlur = 30 * u; ctx.shadowOffsetY = 10 * u;
   ctx.fillStyle = '#12161b';
@@ -7441,6 +7521,11 @@ function drawTodayTV(){
   ctx.strokeStyle = 'rgba(180,195,210,0.45)'; ctx.lineWidth = 1.4 * SS;
   ctx.beginPath(); ctx.roundRect(x0, yTop, w, h, 10 * u); ctx.stroke();
   ctx.restore();                                // снимаем обрезку по колонне
+  /* ПО СТОЙКЕ ОТКРЫВАЕТСЯ СТРАНИЦА (Эльдар, 03.11.2026: «видео с сайта…
+     поставить внутрь страницы… и QR-код добавить из фото референсного»).
+     Кликабельна вся панель, обрезанная тем же порталом. */
+  const hx = Math.max(bx0, colR);
+  pushHit(hx, by0, bx1 - hx, bh, {type: 'study', beat: GTV_PAGE});
 }
 
 /* ── ЗАЛ GLIDEWELL EDUCATION · ЗА СТЕКЛЯННЫМИ ДВЕРЯМИ ──────────────────────
@@ -15381,7 +15466,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261102-bzf3';   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261103-gtv';   // 03.11.2026: логотип Glidewell TV и QR на приложение (до этого 20261102-bzf3)   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -15479,6 +15564,8 @@ async function loadPhotoSkin(){
     ph_bzfF2: 'r_bzf_frame2.png',                                  // «Industrial Rack with Modular Chambers and Trays»
     ph_bzfA2: 'r_bzf_axis2.png', ph_bzfB2: 'r_bzf_beam2.png',      // «Vertical Gantry Guide Column» + «Champagne aluminum gantry beam»
     ph_bzfA3: 'r_bzf_axis3.png', ph_bzfB3: 'r_bzf_beam3.png',      // «Champagne-white dental motion column» + «Champagne-white precision gantry beam»
+    // Glidewell TV: знак канала для стойки финала — иконка приложения из App Store, выбита в альфу (tools/cut_gtv.py, 03.11.2026)
+    ph_gtv: 'r_gtv_logo.png',
     ph_crt: 'r_crt2.png',             // 2002: ЭЛТ-монитор — CRTmonitor.png Эльдара (30.10.2026; был r_crt от ChatGPT с несимметричными «ушами»), 900×928, проём 116…784 × 111…616
     ph_crown_a: 'r_crown_000.png', ph_crown_b: 'r_crown_030.png', ph_crown_c: 'r_crown_060.png', ph_crown_d: 'r_crown_090.png',
     ph_boxes24: 'boxes24.png',        // 2023: 24 коробки — лист Эльдара «24-box cardboard sprite sheet» (28.10.2026)
@@ -21762,6 +21849,14 @@ function drawBookVideo(I, V, tx, ty, sc, a){
    subheading; a line that opens with '• ' is a bullet. Where the two sources
    disagree on a figure, the article says so rather than choosing. */
 const STUDY_BY_TITLE = {
+  /* Страница стойки Glidewell TV (Эльдар, 03.11.2026). Всё, что здесь сказано,
+     взято со страницы glidewelldental.com/company/tv, снятой 03.11.2026: годовщина
+     («just turned one», красная дорожка 11.05.2026 → канал вышел в 2025), строка
+     «55+ years of clinical expertise, now streaming», описания каналов, список
+     платформ, «Download for free», адрес tv@glidewell.com. Про саму стойку —
+     с фото IMG_6398 (Reference real photos), включая надпись «Made by Glidewell
+     Millworks» у её подножия. Ничего не дописано сверх источников. */
+  "GLIDEWELL TV": "Glidewell TV is the company’s own streaming channel, and it is free. It went live in 2025; in May 2026 the site marked the first year — “over a year of on-demand clinical education, leadership growth, practice management content, and patient-facing programming all in one place, built on decades of real-world dental experience.” The line the company puts on the channel itself is shorter: fifty-five years of clinical expertise, now streaming.\n\n## What plays on it\nClinical 360 — “a comprehensive perspective bringing thoughtful planning, clinical execution, and restorative strategy together.” Dental Tech Now — “emerging technologies shaping the future of digital dentistry.” Guiding Leaders — “professional growth from clinicians shaping the future of dentistry.” Clinical Tips — “quick clinical insights you can apply in your practice immediately.” Beside them run the talking shows — Office Hours, The Dentalpreneur, The Mediocre Dentist — and Glidewell Solutions, on the laboratory’s own products. The catalogue is cut two ways: under twenty minutes, and over twenty.\n\n## Where it plays\nPhone and tablet, Apple TV, Fire TV, Roku and Google TV, Windows and macOS — “anytime, between patients, after hours, or on demand, across all major devices.” Downloading it costs nothing. The code on this page opens the channel; the address for help is tv@glidewell.com.\n\n## The stand in this hall\nThe charging station this one is built from stands inside the Glidewell building: a millwork panel with rounded corners, the channel’s mark lit from behind, a screen, and three shelves of sockets for the phones of whoever is waiting. The small print at its foot reads “Made by Glidewell Millworks” — the company builds its own casework too. Here the shelves are left out and the screen is taken almost to the edges of the panel.",
   "LOST-WAX CASTING": "In 1907 William H. Taggart demonstrated a practical lost-wax casting method for dental restorations — molten gold cast into a mold formed around a hand-carved wax pattern. The technique made precisely fitting cast crowns and inlays reproducible, and it defined the craft for the rest of the century: every restoration began as wax shaped by hand, one case at a time, days or weeks per mouth. This is the analog baseline the whole tour measures itself against — the world Glidewell was born into, and the one it would spend fifty years making faster, cheaper and more precise.\n\n## What a crown cost, in hands\nFor the whole of the century that follows, a crown is made the way Taggart made it: a wax pattern carved by hand, invested, burned out, cast in gold, then fitted, layered with porcelain, fired, glazed and polished. Every step is a person, and every person is a place where the case can go wrong. A restoration is days of one technician's attention, and a laboratory is as good as the hands it can hire.\n\n## Why the hall starts here\nEverything Glidewell will do is measured against this bench. The mail, the merger of nine labs into one, the digital scan, the milled crown, the robot — each one removes a pair of hands from the chain, or moves them to where they matter. The founder learned the craft at exactly this bench, and spent fifty years automating it.\n\n“If you make crowns the old analog way, fair warning: you'd better be old enough to retire, because you will not survive.” — Jim Glidewell, Constant Change",
   "FOUNDED": "In January 1970 Jim Glidewell opened his own dental laboratory in Tustin, California: a ground-floor space of about five hundred square feet at 130 El Camino Real, fitted out with four thousand dollars of used equipment and a porcelain furnace a fellow sold him for three hundred. He was twenty-four, a Navy veteran of the Tonkin Gulf, and a year out of the dental technology program at Orange Coast College, where he had graduated in a class of thirteen.\n\n## How a lab begins on a Friday night\nHe had not planned to be an owner. He was working for Dr. Bill Stanley, the dentist who had taught him the trade, when Stanley was locked out of his office for three months' unpaid rent and took a job in Los Angeles. “There's no ‘we’ in this equation,” Stanley told him. Jim was out of work on a Friday. By Monday he was running his own lab, with enough cash in his pocket to pay three months' rent in advance. A second dentist, Dr. Bob Hubbert, sent him his first customers — and kept sending them. “It seemed as if every time the door opened to my small lab, he was standing there with another dentist.” Within weeks Jim was working for twenty dentists.\n\n## Eighteen months without a day off\nFrom January 6, 1970, until August 1971 he did not take a day off: an average of a hundred and twenty hours a week, forty-hour stretches at the bench, six hours' sleep on the lab couch, home twice a week to shower. He could work as much as three people, he reasoned, and the two salaries he did not pay went back into equipment. His first employee, Joyce, a classmate from Orange Coast, quit a month in by throwing a bowl of plaster at his head. “My first employee Joyce was a doll and I was a jerk. Wherever you are, Joyce, I apologize!” His second wife, Sandi, a hairdresser and artist, sat at a bench whenever a ceramist tried to hold the little company hostage.\n\n## The goal was two hundred dollars a week\nHe did not set out to build the largest dental laboratory in the world; he set out to make two hundred dollars a week and feed his family. The first year the business earned thirty-nine thousand dollars, the second seventy — more than his father had made in a lifetime on the railroad. And yet his college roommate had already told him, in his first year of school: “You'd make a lot more friends if you weren't always telling people that you're going to build the biggest dental lab in the world.”\n\n## What he brought from Kentucky\nJim was born in Las Vegas in May 1945 and raised, from four to nine, on his grandparents' farm near Burkesville, Kentucky, without electricity, running water or indoor plumbing, in a one-room schoolhouse where he was the only child in his grade. His father, a Depression-era railroad conductor, once stopped the truck to pick a rusty wrench out of the dirt. Fifty years later the founder of a five-thousand-person company drives a fourteen-year-old Hummer, buys used equipment, and explains it the same way: he will not drive a car his average employee cannot afford.\n\n“There are no extraordinary men, only ordinary men with extraordinary reactions to ordinary circumstances.” — Jim Glidewell, Constant Change",
   "SECOND LAB": "Growth, in the seventies, meant another room. Jim's second laboratory was a third-floor space at 172 North Tustin Avenue in Orange, a few miles from the first. Over the next decade the company would occupy a run of small addresses in Orange — 1722 East Rose, where the first marketing promotion was photographed; 303 West Palm Avenue, four thousand square feet, home from 1975 to 1984 — and then, one by one, labs in other towns.\n\n## Addition before system\nThis is what a young laboratory did: it grew by adding places. Each new lab was a new set of benches, a new manager, a new set of overheads and habits, and no two of them worked the same way. Jim was in his late twenties, younger than some of the men he hired to run them, and for a while he deferred to their age. “I remember walking into a lab in Torrance and seeing a fair number of empty beer cans all over the floor.” Employees came back from lunch legally drunk. It took him weeks to put his foot down and say the obvious: they were making medical devices for real patients, and patients deserved sober hands.\n\n## What the second lab taught\nTwo things came out of those rooms. The first was standard operating procedures — the realization that a task done well in one lab was done differently in the next unless someone wrote it down. The second was a habit that never left the company: try an idea in one small place before you bet the whole business on it. “Having multiple dental labs has allowed me to try out ideas on one small lab, before implementing anything on a larger scale.”\n\n## The years\nBy 1975 the company was in its four-thousand-square-foot lab on West Palm Avenue and Jim, thirty, had been made a pilot and president of the Santa Ana 20/30 Club. It was, he says, big enough by then that people assumed he had inherited it.\n\n“Hope is not a business plan.” — Jim Glidewell, Constant Change",
@@ -22170,6 +22265,13 @@ let PERSON_SPRITES = {};
    file for the walls — with the captions Jim gave them in 'My Life in Pictures'
    (Constant Change, 2020). Keyed like the articles. */
 const STUDY_PHOTOS_BY_TITLE = {
+  /* QR с таблички у стойки (фото IMG_6398). Сам код с фотографии не читается —
+     по его правой трети идёт блик от окна и выжжен правый верхний «глаз»; код
+     сгенерирован заново (уровень коррекции H) на тот же смарт-линк приложения,
+     что стоит под всеми кнопками «смотреть» на glidewelldental.com/company/tv:
+     https://glidewell.onelink.me/lsZv/71uc23ju — Эльдар подтвердил догадку
+     03.11.2026 («линк веди тот, что нашёл — правильная догадка»). */
+  'GLIDEWELL TV': [{img: 'gtvqr', cap: 'Download the Glidewell TV app'}],
   /* «early 1970s», а не 1970: Джим на показе 21.10.2026 — «I remember that
      shirt… my office, 3rd story… that would have been 1972, 73». Фото остаётся
      главным у 1970-го (Эльдар, 23.10.2026: «первое» — оставить и подписать честно) */
@@ -22239,6 +22341,11 @@ function pagePeople(b){
   return out;
 }
 const STUDY_MEDIA_BY_TITLE = {
+  /* Ролик канала с самой страницы сайта (Download_Promo_2_V3.mp4, 4K, 12,4 с) —
+     Эльдар, 03.11.2026: «если видео с сайта по ссылке качнуть и поставить внутрь
+     страницы — было бы отлично». Перегнан в 960×540 (2,2 МБ) и выровнен по залу:
+     речь −22,3 → −15,2 дБ (vprobe; зал держит −14,5 ±1,5). */
+  'GLIDEWELL TV': [{name: 'Glidewell TV', src: 'media/gtv_promo.mp4', label: 'The Dental Streaming Network'}],
   /* Первым на странице — значит ляжет во всю ширину сразу после первого абзаца.
      Джим рассказывает не про сам 1970-й, а про то, что к нему привело: середина
      1969-го, работа на трёх-четырёх дантистов, доктор Стэнли закрывает практику,
@@ -22468,6 +22575,15 @@ const DR_PAGE = {x: 0, y: '2002 – 2009', t: 'THE DIGITAL REVOLUTION', virtual:
    колонки — сам рендер капы (exhibit). */
 const PLAYSAFE_PAGE = {x: 0, y: '1995', t: 'PLAYSAFE', pageT: 'PlaySafe', virtual: true, exhibit: 'ph_playsafe',
   th: 'The lab\u2019s first step beyond the crown \u2014 into prevention.'};
+/* СТРАНИЦА GLIDEWELL TV — ПО КЛИКУ НА СТОЙКУ В ФИНАЛЕ (Эльдар, 03.11.2026:
+   «если видео с сайта по ссылке качнуть и поставить внутрь страницы — было бы
+   отлично»; «внутрь страницы кстати надо и QR-код добавить из фото
+   референсного»). Как DR_PAGE и PLAYSAFE_PAGE — объект в форме бита вне
+   BEATS: года на стене у него нет, x ставится в applyCut по центру стойки.
+   Экспонат колонки — сам знак канала. */
+const GTV_PAGE = {x: 0, y: '2025', t: 'GLIDEWELL TV', pageT: 'Glidewell TV', virtual: true, exhibit: 'ph_gtv',
+  photosLabel: 'Scan to watch',
+  th: 'The laboratory put its own channel on the air \u2014 and gave it away.'};
 const VIDEO_EL = {};
 /* ПРЕВЬЮ — ГОТОВЫЙ КАДР ИЗ САМОГО РОЛИКА. Раньше кадр вынимался на лету:
    под каждую плитку заводился свой скрытый <video>, грузил тот же ролик и
@@ -23374,7 +23490,9 @@ function drawStudy(){
          wall of this bay, full column width, each with Jim's own caption under
          it — the page shows what the wall can only hint at from a distance. */
       sy += K.page ? 0 : 1.5 * u;        // воздух под шапкой: подпись не прилипает к краю обрезки
-      sideLabel('From the album', sx, sy);
+      /* шапка колонки — своя, если страница ставит не архивное фото
+         (у Glidewell TV это QR, а не снимок; Эльдар, 03.11.2026) */
+      sideLabel(b.photosLabel || 'From the album', sx, sy);
       sy += (K.page ? 3.5 : 3) * u;
       for (let pi = 0; pi < photos.length; pi++){
         const ph = photos[pi];
@@ -27502,6 +27620,7 @@ jimlect:'assets/img/jim_lectures.jpg',
 donuts2026:'assets/img/donuts2026.jpg',
 lab2ext:'assets/img/lab2ext.jpg',
 qr:'assets/img/qr.png',
+gtvqr:'assets/img/gtv_qr.png',
 rella:'assets/img/rella.jpg',
 rose:'assets/img/rose.jpg',
 todayai:'assets/img/todayai.jpg',
