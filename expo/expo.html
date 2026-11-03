@@ -15359,7 +15359,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261030-show2';   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261102-bzf2';   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -15450,6 +15450,13 @@ async function loadPhotoSkin(){
     ph_p85paper: 'r85_paper.jpg', ph_p85hand: 'r85_hand.png', ph_p85logo: 'r85_logo.png',   // пульт целиком — Эльдар дорисовал срезанный край (кусок лежал в line_monitor), 29.10.2026
     // 2019: фабрика BruxZir — рендеры Эльдара «BruxZirFactory*» (29.10.2026), обрезаны по альфе
     ph_bzfF: 'r_bzf_frame.png', ph_bzfA: 'r_bzf_axis.png', ph_bzfB: 'r_bzf_beam.png', ph_bzfG: 'r_bzf_gripper.png',   // 2019: пульт на стойке (реализм 09, только он — Эльдар, 29.10.2026)
+    /* ПЕРЕГЕНЕРЁННЫЕ ДЕТАЛИ ФАБРИКИ (Эльдар, 02.11.2026: «я тут обновил детали — можешь
+       показать, как будет выглядеть робот в этом случае?»). Пять файлов 02.11.2026 в
+       артефактах, нарезаны tools/cut_bzf2.py: стеллаж один на оба набора, балка и ось —
+       по две, двумя разными стилями (шампань-индустриальный и гладкий белый). */
+    ph_bzfF2: 'r_bzf_frame2.png',                                  // «Industrial Rack with Modular Chambers and Trays»
+    ph_bzfA2: 'r_bzf_axis2.png', ph_bzfB2: 'r_bzf_beam2.png',      // «Vertical Gantry Guide Column» + «Champagne aluminum gantry beam»
+    ph_bzfA3: 'r_bzf_axis3.png', ph_bzfB3: 'r_bzf_beam3.png',      // «Champagne-white dental motion column» + «Champagne-white precision gantry beam»
     ph_crt: 'r_crt2.png',             // 2002: ЭЛТ-монитор — CRTmonitor.png Эльдара (30.10.2026; был r_crt от ChatGPT с несимметричными «ушами»), 900×928, проём 116…784 × 111…616
     ph_crown_a: 'r_crown_000.png', ph_crown_b: 'r_crown_030.png', ph_crown_c: 'r_crown_060.png', ph_crown_d: 'r_crown_090.png',
     ph_boxes24: 'boxes24.png',        // 2023: 24 коробки — лист Эльдара «24-box cardboard sprite sheet» (28.10.2026)
@@ -20286,6 +20293,13 @@ function drawFactory(t, over){
     ctx.restore();
   }
   if (!over) drawPendant(t);       // behind the left counter — the veil pass must not paint it back in front
+  /* ВТОРАЯ ФАБРИКА РЯДОМ — ВРЕМЕННО, НА ВРЕМЯ ВЫБОРА (Эльдар, 02.11.2026: «желательно двух
+     рядом поставить временно, чтобы сравнивать в процессе»; «одну новую фабрику поставь
+     куда надо, а вторую — просто рядом, не целься: мы её всё равно уберём после выбора»).
+     Близнец рисуется тем же кодом с другим набором деталей и центром на 1680 правее —
+     он заходит на бухту 2022 года, и это принято: место ему не искали. Снять сравнение —
+     убрать эти три строки и BZF_TWIN. */
+  if (BZF_TWIN){ BZF_DX = BZF_TWIN.dx; drawBZF(t, BZF_TWIN.kit); BZF_DX = 0; }
   if (!drawBZF(t)){
     drawFactoryBase();
     drawCell(cellX(0), CELL_Z, t, 0, true, true);
@@ -20331,13 +20345,73 @@ function drawFactory(t, over){
    от прежнего центра читался бы как касание одной колонны. */
 const BZF_Z = 993;
 const BZF_SRC = {F: [99, 26, 1], A: [361, 14, 0.5], B: [16, 152, 0.5], G: [308, 68, 0.4]};
+/* ТРИ НАБОРА ДЕТАЛЕЙ, ДВА СТОЯТ РЯДОМ (Эльдар, 02.11.2026: «я тут обновил детали — можешь
+   показать, как будет выглядеть робот в этом случае?» и «одну новую фабрику поставь куда
+   надо, а вторую — просто рядом, не целься: мы её всё равно уберём после выбора»).
+   Пять новых файлов складываются в два стиля, и выбирать Эльдару между ними:
+   • champ — «Industrial Rack» + «Champagne aluminum gantry beam» + «Vertical Gantry Guide
+     Column»: та же машина, перекрашенная в шампань. Промерена по тем же приметам, что и
+     старая, и приметы совпали до пикселя — зелёные лампы 735/1120 на строках 269, 447, 628,
+     805 (было 736/1119, те же строки), красный баннер 102…174 (было 97…173), колпаки стоек
+     106…154 и 1382…1428 (было 112…151 и 1385…1425), окна звеньев цепи 477…504, 534…561…
+     (было 478…503, 535…561…), тело балки 268…462 (было то же). Поэтому все замеры старой
+     фабрики — лотки, гнёзда, патроны, лампы, окна фрез — переносятся как есть, меняются
+     только картинки. Силуэт стеллажа чуть шире: альфа 86…1450 × 24…1002 против 99…1437 ×
+     26…996, и он кладётся по своей альфе в той же системе координат — внутренности от
+     этого не сдвигаются, а ножки уходят на 6 точек рамы (3 экранных) ниже линии пола.
+   • white — тот же стеллаж + «Champagne-white precision gantry beam» + «Champagne-white
+     dental motion column»: гладкие белые брусья без роликов и без цепи. У них нет кареток,
+     которыми старая балка держится за стойки, поэтому концы просто садятся серединами
+     колпаков на оси стоек (129 и 1406), а середина растягивается — она по всей длине
+     одинакова (красная полоса в белом профиле), шва не видно.
+   • old — то, что стоит в зале с 29.10.2026; остаётся под ?bzfkit=old, чтобы было с чем
+     сравнить.
+   Захват (ph_bzfG) Эльдар не перегенерировал — он во всех наборах прежний. */
+const BZF_KITS = {
+  old: {
+    F: 'ph_bzfF', Fsrc: BZF_SRC.F, Fw: 1339, Fh: 971,
+    B: 'ph_bzfB', Bsrc: BZF_SRC.B, beam: 'roller',
+    A: 'ph_bzfA', Asrc: BZF_SRC.A, axis: 'chain',
+  },
+  champ: {
+    F: 'ph_bzfF2', Fsrc: [86, 24, 1], Fw: 1365, Fh: 979,
+    B: 'ph_bzfB2', Bsrc: BZF_SRC.B, beam: 'roller',
+    A: 'ph_bzfA2', Asrc: BZF_SRC.A, axis: 'chain',
+  },
+  white: {
+    F: 'ph_bzfF2', Fsrc: [86, 24, 1], Fw: 1365, Fh: 979,
+    /* брус 2172×724, альфа 18…2154 × 276…444: тело по центру 287…435 (148 строк — это и
+       есть толщина 43.6), колпаки — столбцы 49…139 и 2033…2122, их центры 94 и 2077.5;
+       красная полоса 377…384. Концы режутся по 400 и 1770 — вне колпаков и вне их теней. */
+    B: 'ph_bzfB3', Bsrc: [16, 274, 0.5], beam: 'bar',
+    bar: {body: 148, mid: 361, capL: 94, capR: 2077.5, L: 400, R: 1770, x0: 16, x1: 2156, y0: 274, y1: 446},
+    /* колонна 724×2172, альфа 257…466 × 21…2152: ствол 264…460 (196 — толщина 43.6),
+       колпаки шире (210) на строках 82…259 и 1995…2119, красный паз 308…2006. Режется
+       на 420 и 1900 — внутри паза, где по всей длине одно и то же. */
+    A: 'ph_bzfA3', Asrc: [255, 19, 0.5], axis: 'bar',
+    col: {shaft: 196, box: 214, cx: 361.5, T: 420, B: 1900, y0: 19, y1: 2155},
+  },
+};
+/* ?bzfkit=<old|champ|white> — какой набор стоит НА СВОЁМ МЕСТЕ, ?bzftwin=<…> — какой рядом,
+   ?bzftwin=no — без второй машины. По умолчанию на месте новый шампань, рядом — старая
+   машина целиком: Эльдар (02.11.2026) «у тебя основные элементы там стоят одинаковые и я не
+   могу сравнить в итоге» — сперва рядом стояли два новых стеллажа, и сравнивать было нечего.
+   Белый набор смотрится так: ?bzfkit=white или ?bzftwin=white. */
+const bzfKit = (q, d) => BZF_KITS[(location.search.match(new RegExp('[?&]' + q + '=(\\w+)')) || [])[1]] || d;
+const BZF_KIT = bzfKit('bzfkit', BZF_KITS.champ);
+const BZF_TWIN_KIT = /[?&]bzftwin=no/.test(location.search) ? null : bzfKit('bzftwin', BZF_KITS.old);
+const BZF_TWIN = BZF_TWIN_KIT && {kit: BZF_TWIN_KIT, dx: 1680};   // «просто рядом, не целься» — справа, впритык
 /* КРУПНЕЕ И ПОД СВОИМ ГОДОМ (Эльдар, 29.10.2026, обвёл рамку на кадре): рама была 1000
    единиц с центром на середине прежней пары кабин (FACT_X − 25) — левее надписи «2019
    BruxZir factory», которая стоит на blockDX 145. Теперь 1100 в ширину (рамка Эльдара —
    1,07 по ширине и 1,15 по высоте от прежней), центр — под годом, FACT_X + 145 − 25,
    ножки на полу, как были. */
 const BZF_W = +((location.search.match(/[?&]bzfw=(\d+)/) || [])[1] || 1542);
-const BZF_CX = () => { const q = location.search.match(/[?&]bzfcx=(\d+)/); return q ? +q[1] : (REC18_R + 58 + REC4_L - 60) / 2; };
+/* BZF_DX — сдвиг для близнеца-сравнения: на время выбора вторая фабрика рисуется тем же
+   кодом, просто с другим центром (02.11.2026). Лампы на потолке считают свой центр через
+   BZF.wx и остаются над главной машиной, потому что вне drawBZF сдвиг всегда ноль. */
+let BZF_DX = 0;
+const BZF_CX = () => { const q = location.search.match(/[?&]bzfcx=(\d+)/); return (q ? +q[1] : (REC18_R + 58 + REC4_L - 60) / 2) + BZF_DX; };
 const BZF = {
   U: BZF_W / 1339,
   wx: fx => BZF_CX() - BZF_W / 2 + (fx - 99) * (BZF_W / 1339),
@@ -20349,7 +20423,7 @@ const BZF = {
      прежний центроид серого металла уходил на кулачки на 6…14 точек */
   chucks: [[892, 281], [1288, 281], [892, 459], [1288, 459], [892, 639], [1288, 639], [892, 820], [1288, 820]],
 };
-const bzfOn = () => !!(PROP_SPRITES.ph_bzfF && PROP_SPRITES.ph_bzfA && PROP_SPRITES.ph_bzfB && PROP_SPRITES.ph_bzfG);
+const bzfOn = (kit = BZF_KIT) => !!(PROP_SPRITES[kit.F] && PROP_SPRITES[kit.A] && PROP_SPRITES[kit.B] && PROP_SPRITES.ph_bzfG);
 /* ПОЛОВИНА ФРЕЗ ЗАНЯТА С САМОГО НАЧАЛА, И ЗАХВАТ ВОЗИТ ВРАЗНОБОЙ (Эльдар, 29.10.2026:
    «рандомно этот механизм ездит, собирает блоки с полок, ставит в мил-камеры — с самого
    начала уже должно быть заполнение 50 процентов»; «где пусто — лампочка жёлтая, где
@@ -20384,8 +20458,8 @@ function bzfSlot(n){
 function bzfCycle(n){ const sl = bzfSlot(n); return {i: sl.i, j: sl.j, m: bzfMill(n)}; }
 // светодиоды фрез на раме (центроид зелёного): столбцы 736 и 1119, строки 269, 447, 628, 805
 const BZF_LED = m => [m % 2 ? 1119 : 736, [269, 447, 628, 805][m >> 1]];
-function drawBZF(t){
-  if (!bzfOn()) return false;
+function drawBZF(t, kit = BZF_KIT){
+  if (!bzfOn(kit)) return false;
   /* ?bzfz=<z> — проба глубины фабрики (Эльдар, 30.10.2026: «а что если робота поставить чуть
      глубже в зал?»): размер в мире тот же, поэтому на экране она мельче */
   /* 450 (Эльдар, 30.10.2026, выбрал средний из трёх кадров 210 / 450 / 700) — фабрика глубже
@@ -20393,8 +20467,8 @@ function drawBZF(t){
   const BZ_Z = +((location.search.match(/[?&]bzfz=(\d+)/) || [])[1] || BZF_Z);
   const kk = k(BZ_Z), S = BZF.U * kk * SS;            // экранных точек на точку рамы
   const FX = fx => px(BZF.wx(fx), kk), FY = fy => py(BZF.wy(fy), kk);
-  if (FX(1438) < -50 || FX(99) > W + 50) return true;
-  const [Fx0, Fy0] = BZF_SRC.F, Fs = PROP_SPRITES.ph_bzfF;
+  if (FX(kit.Fsrc[0] + kit.Fw) < -50 || FX(kit.Fsrc[0]) > W + 50) return true;
+  const [Fx0, Fy0] = kit.Fsrc, Fs = PROP_SPRITES[kit.F], FW = kit.Fw, FH = kit.Fh;
   const piece = (sp, src, ox, oy, sx0, sy0, sw, sh, dx, dy, scale, flip) => {
     // часть исходника (в его точках) → место на раме (в точках рамы), масштаб — точек рамы на точку исходника
     const f = src[2], img = spriteMip(sp, sp.w * scale / f * S, sp.h * scale / f * S);
@@ -20406,7 +20480,7 @@ function drawBZF(t){
     ctx.restore();
   };
   // рама
-  ctx.drawImage(spriteMip(Fs, 1339 * S, 971 * S), FX(Fx0), FY(Fy0), 1339 * S, 971 * S);
+  ctx.drawImage(spriteMip(Fs, FW * S, FH * S), FX(Fx0), FY(Fy0), FW * S, FH * S);
   // цикл
   const n = Math.floor(t / BZF.T), ph = t - n * BZF.T, C = bzfCycle(n);
   const ease = u => u * u * (3 - 2 * u), seg = (a, b) => Math.max(0, Math.min(1, (ph - a) / (b - a)));
@@ -20426,7 +20500,7 @@ function drawBZF(t){
   /* заготовка — кусок самой рамы: первая заготовка верхнего лотка (столбцы 210…219,
      строки 128…146), чтобы в губках и в патроне была та же, что на полке */
   const blank = (gx, gy, a, sc2) => {
-    const f = Fs.w / 1339, w0 = 10, h0 = 19, img = spriteMip(Fs, 1339 * S, 971 * S);
+    const f = Fs.w / FW, w0 = 10, h0 = 19, img = spriteMip(Fs, FW * S, FH * S);
     const k2 = (img.width || img.naturalWidth) / Fs.w;
     ctx.save(); ctx.globalAlpha = a;
     ctx.drawImage(img, (209 - Fx0) * f * k2, (128 - Fy0) * f * k2, w0 * f * k2, h0 * f * k2,
@@ -20576,7 +20650,7 @@ function drawBZF(t){
      и из её середины (строки 500…1060) вынуты ровно десять звеньев цепи — шаг цепи 56,
      замер автокорреляцией, — где экструзия, красная пластина и цепь одинаковы по всей
      длине: шва не видно. (1740 − 560) · 0.778 = 918 — от колпака до низа рейки. */
-  const T_BZF = 43.6, sb = T_BZF / 56, Asp = PROP_SPRITES.ph_bzfA;
+  const T_BZF = 43.6, sb = T_BZF / 56, Asp = PROP_SPRITES[kit.A];
   /* ОДНА ВЕРТИКАЛЬ, ОДНА ГОРИЗОНТАЛЬ (Эльдар, 29.10.2026: «вертикальная перекладина
      ездит по горизонтали, а горизонтальная — по вертикали; в месте пересечения —
      захватчик; все движения на изи-ин изи-аут»). Балка ходит вверх-вниз по внешним
@@ -20595,9 +20669,9 @@ function drawBZF(t){
      закрывала «BruxZir factory» под годом). Строки 14…178 листа оси — петля над кареткой —
      кладутся сжатыми по высоте вдвое, нижним краем на прежнее место строки 178. */
   const yC = yA0 + (178 - 14) * sb, loopH = (178 - 14) * sb * 0.5;
-  const axis = () => {
+  const axisChain = () => {
     {
-      const f = BZF_SRC.A[2], img = spriteMip(Asp, Asp.w * sb / f * S, Asp.h * sb / f * S);
+      const f = kit.Asrc[2], img = spriteMip(Asp, Asp.w * sb / f * S, Asp.h * sb / f * S);
       const kx = (img.width || img.naturalWidth) / Asp.w, ky = (img.height || img.naturalHeight) / Asp.h;
       ctx.drawImage(img, 0, 0, 191 * f * kx, 164 * f * ky, FX(ux), FY(yC - loopH), 191 * sb * S, loopH * S + 0.5);
     }
@@ -20609,7 +20683,7 @@ function drawBZF(t){
        оранжевом, с запасом 11 строк до края окна, и при общей длине оси они совпадают на
        экране. Нижняя ложится поверх верхней и проступает за 16 строк (±8) — внутри окна,
        где с обеих сторон только оранжевый провод. */
-    const f = BZF_SRC.A[2], img = spriteMip(Asp, Asp.w * sb / f * S, Asp.h * sb / f * S);
+    const f = kit.Asrc[2], img = spriteMip(Asp, Asp.w * sb / f * S, Asp.h * sb / f * S);
     const kx = (img.width || img.naturalWidth) / Asp.w, ky = (img.height || img.naturalHeight) / Asp.h;
     const rowsAt = (r0, r1, yTopU, al) => {      // строки листа r0…r1 → кадр от yTopU (единицы рамы)
       ctx.globalAlpha = al;
@@ -20626,19 +20700,54 @@ function drawBZF(t){
     }
     ctx.restore();
   };
-  // балка: оси 129 и 1406, тело по центру на yB
-  const sa = T_BZF / 191, Bsp = PROP_SPRITES.ph_bzfB;
-  const yB = G[1] - (1196 - 845) * 0.12, top = yB - (365.5 - 152) * sa, hh = (571 - 152) * sa;
-  const xL = 129 - (112 - 16) * sa, wL = (470 - 16) * sa;
-  const wR = (2154 - 1700) * sa, xR = 1406 + (2154 - 2055) * sa - wR;
-  piece(Bsp, BZF_SRC.B, 0, 0, 16, 152, wL, hh, xL, top, sa, false);
-  { // гладкая середина — растянута по длине
-    const f = BZF_SRC.B[2], img = spriteMip(Bsp, Bsp.w * sa / f * S, Bsp.h * sa / f * S);
-    const kx = (img.width || img.naturalWidth) / Bsp.w, ky = (img.height || img.naturalHeight) / Bsp.h;
-    ctx.drawImage(img, (470 - 16) * f * kx, 0, 1230 * f * kx, (571 - 152) * f * ky, FX(xL + wL) - 0.5, FY(top), (xR - xL - wL) * S + 1, hh * S);
+  /* ГЛАДКАЯ КОЛОННА ВМЕСТО ОСИ С ЦЕПЬЮ (набор white, 02.11.2026). У белой колонны нет ни
+     цепи, ни кареток — ей нечего цеплять за рейки, поэтому она просто идёт от колпаков
+     стоек (27) до низа нижней рейки (945), те же 918 точек рамы, что и у оси. При толщине
+     ствола в 43.6 её лист даёт в длину всего 475, так что середина — строки 420…1900,
+     внутри красного паза, одинаковые по всей длине — растягивается вдвое с лишним; на
+     гладком профиле с ровной полосой растяжка не читается. */
+  const axisBar = () => {
+    const C = kit.col, sc = T_BZF / C.shaft;
+    const hTop = (C.T - C.y0) * sc, hBot = (C.y1 - C.B) * sc;
+    const w = C.box * sc, xs = G[0] - (C.cx - kit.Asrc[0]) * sc;
+    const f = kit.Asrc[2], img = spriteMip(Asp, Asp.w * sc / f * S, Asp.h * sc / f * S);
+    const kx = (img.width || img.naturalWidth) / Asp.w, ky = (img.height || img.naturalHeight) / Asp.h;
+    const band = (r0, r1, yTop, h) => ctx.drawImage(img, 0, (r0 - C.y0) * f * ky, C.box * f * kx, (r1 - r0) * f * ky,
+                                                    FX(xs), FY(yTop) - 0.5, w * S, h * S + 1);
+    band(C.y0, C.T, 27, hTop);
+    band(C.T, C.B, 27 + hTop, 918 - hTop - hBot);
+    band(C.B, C.y1, 945 - hBot, hBot);
+  };
+  // балка: оси стоек 129 и 1406, тело по центру на yB
+  const Bsp = PROP_SPRITES[kit.B], yB = G[1] - (1196 - 845) * 0.12;
+  if (kit.beam === 'roller'){
+    const sa = T_BZF / 191, top = yB - (365.5 - 152) * sa, hh = (571 - 152) * sa;
+    const xL = 129 - (112 - 16) * sa, wL = (470 - 16) * sa;
+    const wR = (2154 - 1700) * sa, xR = 1406 + (2154 - 2055) * sa - wR;
+    piece(Bsp, kit.Bsrc, 0, 0, 16, 152, wL, hh, xL, top, sa, false);
+    { // гладкая середина — растянута по длине
+      const f = kit.Bsrc[2], img = spriteMip(Bsp, Bsp.w * sa / f * S, Bsp.h * sa / f * S);
+      const kx = (img.width || img.naturalWidth) / Bsp.w, ky = (img.height || img.naturalHeight) / Bsp.h;
+      ctx.drawImage(img, (470 - 16) * f * kx, 0, 1230 * f * kx, (571 - 152) * f * ky, FX(xL + wL) - 0.5, FY(top), (xR - xL - wL) * S + 1, hh * S);
+    }
+    piece(Bsp, kit.Bsrc, 0, 0, 1700, 152, wR, hh, xR, top, sa, false);
+  } else {
+    /* ГЛАДКИЙ БРУС: у него нет торцевых плит с роликами, поэтому на оси стоек садятся
+       середины колпаков (94 и 2077.5), а не центры плит; середина 400…1770 тянется. */
+    const B = kit.bar, sa = T_BZF / B.body;
+    const top = yB - (B.mid - B.y0) * sa, hh = (B.y1 - B.y0) * sa;
+    const xL = 129 - (B.capL - B.x0) * sa, wL = (B.L - B.x0) * sa;
+    const wR = (B.x1 - B.R) * sa, xR = 1406 + (B.x1 - B.capR) * sa - wR;
+    piece(Bsp, kit.Bsrc, 0, 0, B.x0, B.y0, wL, hh, xL, top, sa, false);
+    {
+      const f = kit.Bsrc[2], img = spriteMip(Bsp, Bsp.w * sa / f * S, Bsp.h * sa / f * S);
+      const kx = (img.width || img.naturalWidth) / Bsp.w, ky = (img.height || img.naturalHeight) / Bsp.h;
+      ctx.drawImage(img, (B.L - B.x0) * f * kx, 0, (B.R - B.L) * f * kx, (B.y1 - B.y0) * f * ky,
+                    FX(xL + wL) - 0.5, FY(top), (xR - xL - wL) * S + 1, hh * S);
+    }
+    piece(Bsp, kit.Bsrc, 0, 0, B.R, B.y0, wR, hh, xR, top, sa, false);
   }
-  piece(Bsp, BZF_SRC.B, 0, 0, 1700, 152, wR, hh, xR, top, sa, false);
-  axis();
+  (kit.axis === 'chain' ? axisChain : axisBar)();
   // захват: губки на G
   const sg = 0.12;
   piece(PROP_SPRITES.ph_bzfG, BZF_SRC.G, 0, 0, 308, 68, (930 - 308) * sg, (1196 - 68) * sg, G[0] - (605 - 308) * sg, G[1] - (1196 - 68) * sg, sg, false);
