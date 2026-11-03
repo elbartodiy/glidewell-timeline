@@ -15359,7 +15359,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261102-bzf2';   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261102-bzf3';   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -20392,15 +20392,15 @@ const BZF_KITS = {
     col: {shaft: 196, box: 214, cx: 361.5, T: 420, B: 1900, y0: 19, y1: 2155},
   },
 };
-/* ?bzfkit=<old|champ|white> — какой набор стоит НА СВОЁМ МЕСТЕ, ?bzftwin=<…> — какой рядом,
-   ?bzftwin=no — без второй машины. По умолчанию на месте новый шампань, рядом — старая
-   машина целиком: Эльдар (02.11.2026) «у тебя основные элементы там стоят одинаковые и я не
-   могу сравнить в итоге» — сперва рядом стояли два новых стеллажа, и сравнивать было нечего.
-   Белый набор смотрится так: ?bzfkit=white или ?bzftwin=white. */
+/* ВЫБРАН ВТОРОЙ НАБОР (Эльдар, 02.11.2026, посмотрев три машины подряд: «оставь второй из
+   своих скриншотов»): стеллаж Industrial Rack, балка Champagne aluminum, ось Vertical
+   Gantry. Сравнение двух машин рядом снято — оно было нужно на время выбора.
+   ?bzfkit=<old|champ|white> — какой набор стоит на своём месте, ?bzftwin=<…> — поставить
+   вторую машину рядом (на 1680 правее), чтобы снова что-нибудь сличить. */
 const bzfKit = (q, d) => BZF_KITS[(location.search.match(new RegExp('[?&]' + q + '=(\\w+)')) || [])[1]] || d;
 const BZF_KIT = bzfKit('bzfkit', BZF_KITS.champ);
-const BZF_TWIN_KIT = /[?&]bzftwin=no/.test(location.search) ? null : bzfKit('bzftwin', BZF_KITS.old);
-const BZF_TWIN = BZF_TWIN_KIT && {kit: BZF_TWIN_KIT, dx: 1680};   // «просто рядом, не целься» — справа, впритык
+const BZF_TWIN_KIT = bzfKit('bzftwin', null);
+const BZF_TWIN = BZF_TWIN_KIT && {kit: BZF_TWIN_KIT, dx: 1680};
 /* КРУПНЕЕ И ПОД СВОИМ ГОДОМ (Эльдар, 29.10.2026, обвёл рамку на кадре): рама была 1000
    единиц с центром на середине прежней пары кабин (FACT_X − 25) — левее надписи «2019
    BruxZir factory», которая стоит на blockDX 145. Теперь 1100 в ширину (рамка Эльдара —
