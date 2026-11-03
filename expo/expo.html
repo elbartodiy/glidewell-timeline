@@ -10774,7 +10774,11 @@ function drawPendant(t){
   /* the counter's end is drawn flat, at its front edge's screen x for every
      depth — so a thing at z 400 must stand well inside the span, or from the
      right side of the aisle it shows in the gap past the end */
-  PENDANT_X = FACT_X - 625;                 // half way from the 2018 screen to the first cell (Eldar), still inside the left counter's run
+  /* НА ДИАМЕТР СВОЕГО ФЛАНЦА ПРАВЕЕ (Эльдар, 02.11.2026: «сдвинь его ещё чуть правее,
+     буквально на диаметр его базы»). Фланец на листе — столбцы 105…258 строк 632…692,
+     то есть 154 точки листа; при масштабе 140/320 мира на точку это 67 единиц. Было
+     FACT_X − 625 (половина пути от экрана 2018-го до первой ячейки). */
+  PENDANT_X = FACT_X - 558;                 // still inside the left counter's run
   if (Math.abs(cam.x - PENDANT_X) > 3800) return;
   /* BEHIND THE COUNTER. It stood on the near plane for a day and Eldar sent it
      back — "за стол": it stands on the floor BEHIND the left counter's back
