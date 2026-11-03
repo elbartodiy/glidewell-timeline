@@ -1,7 +1,7 @@
 {
- "updated": "2026-11-02T15:57:05+00:00",
+ "updated": "2026-11-03T01:00:22+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 73,
+ "count": 80,
  "events": [
   {
    "title": "Practical Chairside 3D Printing: A Hands-On Approach Chicago, IL | 5 CE",
@@ -260,6 +260,20 @@
    "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=67836896543084"
   },
   {
+   "title": "Clear Aligner Therapy Simplified",
+   "from": "2027-02-27",
+   "to": "2027-02-27",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Ben Miraglia"
+   ],
+   "duration": "One Day",
+   "price": "195.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/introduction-to-clear-aligner-therapy-made-easy?variant=68050801000812"
+  },
+  {
    "title": "All-on-X Fundamentals: Modern Full-Arch Workflow",
    "from": "2027-03-05",
    "to": "2027-03-06",
@@ -330,6 +344,20 @@
    "price": "795.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/surgical-placement-of-dental-implants-a-restorative-driven-approach?variant=67808926531948"
+  },
+  {
+   "title": "Clear Aligner Therapy Simplified",
+   "from": "2027-03-27",
+   "to": "2027-03-27",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Ben Miraglia"
+   ],
+   "duration": "One Day",
+   "price": "195.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/introduction-to-clear-aligner-therapy-made-easy?variant=68050801066348"
   },
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -456,6 +484,20 @@
    "price": "795.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67836897296748"
+  },
+  {
+   "title": "Clear Aligner Therapy Simplified",
+   "from": "2027-05-22",
+   "to": "2027-05-22",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Ben Miraglia"
+   ],
+   "duration": "One Day",
+   "price": "195.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/introduction-to-clear-aligner-therapy-made-easy?variant=68050801131884"
   },
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -665,6 +707,20 @@
    "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=67836896837996"
   },
   {
+   "title": "Clear Aligner Therapy Simplified",
+   "from": "2027-07-24",
+   "to": "2027-07-24",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Ben Miraglia"
+   ],
+   "duration": "One Day",
+   "price": "195.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/introduction-to-clear-aligner-therapy-made-easy?variant=68050801197420"
+  },
+  {
    "title": "Techniques for Predictable Implant Surgery",
    "from": "2027-07-30",
    "to": "2027-07-30",
@@ -734,6 +790,20 @@
    "price": "1295.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/all-on-x-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=67836895887724"
+  },
+  {
+   "title": "Clear Aligner Therapy Simplified",
+   "from": "2027-08-21",
+   "to": "2027-08-21",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Ben Miraglia"
+   ],
+   "duration": "One Day",
+   "price": "195.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/introduction-to-clear-aligner-therapy-made-easy?variant=68050801262956"
   },
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -1053,6 +1123,20 @@
    "url": "https://glidewelldirect.com/products/guided-implant-surgery-digital-workflows-for-safe-and-efficient-implant-placement?variant=67837341827436"
   },
   {
+   "title": "Clear Aligner Therapy Simplified",
+   "from": "2027-10-23",
+   "to": "2027-10-23",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Ben Miraglia"
+   ],
+   "duration": "One Day",
+   "price": "195.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/introduction-to-clear-aligner-therapy-made-easy?variant=68050801328492"
+  },
+  {
    "title": "Esthetic Techniques with Anterior Crowns and Veneers",
    "from": "2027-10-29",
    "to": "2027-10-29",
@@ -1165,6 +1249,20 @@
    "price": "1295.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/all-on-x-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=67836895986028"
+  },
+  {
+   "title": "Clear Aligner Therapy Simplified",
+   "from": "2027-12-11",
+   "to": "2027-12-11",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Ben Miraglia"
+   ],
+   "duration": "One Day",
+   "price": "195.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/introduction-to-clear-aligner-therapy-made-easy?variant=68050801394028"
   }
  ]
 }
