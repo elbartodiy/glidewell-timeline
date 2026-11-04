@@ -7427,21 +7427,31 @@ const TODAY_TV = {
      (при 58 она уже 1007 > 996). Высота строки и поля подрезаны так, чтобы
      четвёртая строка не увела низ панели за прилавок. */
   gapTag: 84, tagSize: 56, tagLH: 74, padBot: 96, markDim: 0.45,
+  /* ЩИТ СВЕТЛЫЙ, НО ТЕМНЕЕ СВЕЧЕНИЯ (Эльдар, 03.11.2026: «у тебя очень тёмный
+     стенд, он должен быть светлым, но темнее свечения букв лого»). Графит
+     03.11 был моей догадкой под его же «подложка нужна темнее стены» — на
+     фотографии щит белый, и темнее он не стены, а СВЕТА. Отсюда числа: панель
+     держится ниже стены финала (≈209 по кадру), чтобы ореолу осталось куда
+     расти, и всё равно читается светлой столяркой. Низ темнее верха — щит
+     стоит в собственной тени, как и на фото. */
+  panel: ['#dfe1e3', '#d0d3d6', '#bec2c6'],
+  edge: 'rgba(120,132,146,0.34)',
+  tagInk: 'rgba(44,50,58,0.86)',
   tag: 'Clinical education, leadership growth, practice management content, and patient-facing programming. All in one place.',
   x(){ return (HALL_FRAME_R + HALL_COL_W / 2 + EDU.L()) / 2; },
   w: 996, h: 560,     // 16:9
-  src: 'media/fastmill_today.mp4',
+  /* НА ЭКРАНЕ — ОСНОВНОЙ ФИЛЬМ, КАК НА ВСЕХ ЭКРАНАХ ЗАЛА (Эльдар, 03.11.2026:
+     «и на экране пусть крутится основное видео (которое на всех экранах),
+     реклама мила машины, которая на нём, пусть пока не крутится»). Свой ролик
+     (media/fastmill_today.mp4, 1,9 МБ) снят совсем: он больше не грузится и не
+     играет, файл остаётся в media на случай, если Эльдар вернёт его. Экран
+     берёт тот же поток, что телевизоры эпох, через filmInto — одна лента на
+     весь зал, одна полоса трафика. Грейд 'soft', как у плазмы 2009-го: это
+     сегодняшний экран, а не кинескоп. Пока фильм не запущен, экран чёрный —
+     как и остальные экраны зала. */
   v: null, ready: false,
 };
-function initTodayTV(){
-  const v = document.createElement('video');
-  v.muted = true; v.loop = true; v.playsInline = true;
-  /* качать его при каждом заходе в зал, когда до стены финала ещё вся история,
-     незачем: даже preload 'metadata' тянул 1,9 МБ на открытии — см. lazyVideo */
-  lazyVideo(v, vurl(TODAY_TV.src), () => TODAY_TV.x());
-  v.addEventListener('loadeddata', () => { TODAY_TV.ready = true; });
-  TODAY_TV.v = v;
-}
+function initTodayTV(){}
 /* ПЕРЕНОС ПО СЛОВОСОЧЕТАНИЯМ, А НЕ ПО СЛОВАМ (Эльдар, 03.11.2026: «текст можно
    по два словосочетания на строку, чтобы не делить внутри запятых»). Фраза
    режется на куски по запятым и точкам — знак остаётся при своём куске, — и на
@@ -7471,12 +7481,6 @@ function wrapPhrases(text, maxW){
 function drawTodayTV(){
   const cx = TODAY_TV.x();
   const near = Math.abs(cam.x - cx) < CULL_BAY;
-  const V = TODAY_TV.v;
-  if (V){
-    const wanted = near && !state.clip;
-    if (wanted && V.paused) V.play().catch(()=>{});
-    else if (!wanted && !V.paused) V.pause();
-  }
   if (!near) return;
   const seg = SEGMENTS[3];
   const kw = k((seg.z0 || 1400) - 6);
@@ -7548,14 +7552,14 @@ function drawTodayTV(){
      заметным перепадом сверху вниз и собственной тенью — тогда скруглённый
      угол читается как кромка щита, а не как пятно краски. */
   ctx.save();
-  ctx.shadowColor = 'rgba(14,18,24,0.34)'; ctx.shadowBlur = 26 * u; ctx.shadowOffsetY = 12 * u;
+  ctx.shadowColor = 'rgba(18,24,32,0.26)'; ctx.shadowBlur = 26 * u; ctx.shadowOffsetY = 12 * u;
   const g = ctx.createLinearGradient(0, by0, 0, by1);
-  g.addColorStop(0, '#2b3038'); g.addColorStop(0.55, '#20242b'); g.addColorStop(1, '#161a20');
+  g.addColorStop(0, TODAY_TV.panel[0]); g.addColorStop(0.55, TODAY_TV.panel[1]); g.addColorStop(1, TODAY_TV.panel[2]);
   ctx.fillStyle = g;
   ctx.beginPath(); ctx.roundRect(bx0, by0, bw, bh, rad); ctx.fill();
   ctx.restore();
-  // кромка щита: светлая сверху, где на неё падает свет зала, и тёмная по низу
-  ctx.strokeStyle = 'rgba(226,234,244,0.16)'; ctx.lineWidth = 1.2 * SS;
+  // кромка щита — тонкая тень по периметру: щит отделён от стены, а не впечатан
+  ctx.strokeStyle = TODAY_TV.edge; ctx.lineWidth = 1.2 * SS;
   ctx.beginPath(); ctx.roundRect(bx0, by0, bw, bh, rad); ctx.stroke();
   /* ЗНАК КАНАЛА — ПОДСВЕЧЕН СЗАДИ, КАК НА СТОЙКЕ (Эльдар, 03.11.2026:
      «свечение у логотипа больше — посмотри по референсу, там выглядит хорошо,
@@ -7631,22 +7635,19 @@ function drawTodayTV(){
   const bez = 9 * u;
   ctx.beginPath(); ctx.roundRect(x0 + bez, yTop + bez, w - bez * 2, h - bez * 2, 5 * u); ctx.clip();
   ctx.fillStyle = '#05070a'; ctx.fillRect(x0 + bez, yTop + bez, w - bez * 2, h - bez * 2);
-  if (TODAY_TV.ready && V && V.videoWidth){
-    /* кадр вписывается ПО ВЫСОТЕ и режется по бокам: вытягивать чужую
-       пропорцию по экрану нельзя — закон для любого снимка в этом зале */
-    const iw = w - bez * 2, ih = h - bez * 2;
-    const r = V.videoWidth / V.videoHeight;
-    let dw = ih * r, dh = ih;
-    if (dw < iw){ dw = iw; dh = iw / r; }
-    ctx.drawImage(V, x0 + bez + (iw - dw) / 2, yTop + bez + (ih - dh) / 2, dw, dh);
-  }
+  /* кадр фильма вписывается по большей стороне и режется — так же, как на
+     телевизорах эпох: вытягивать чужую пропорцию по экрану нельзя. Хит
+     'welcomevid', который кладёт filmInto, перекрывается хитом панели ниже по
+     коду (hitAt идёт с конца) — по стойке открывается страница, а не пауза. */
+  const FV = WELCOME_TV.v;
+  if (FV && !FV.muted) filmInto(x0 + bez, yTop + bez, w - bez * 2, h - bez * 2, 0.97, 'soft');
   ctx.restore();
   ctx.strokeStyle = 'rgba(180,195,210,0.45)'; ctx.lineWidth = 1.4 * SS;
   ctx.beginPath(); ctx.roundRect(x0, yTop, w, h, 10 * u); ctx.stroke();
   /* строка канала — по центру экрана, шрифтом этой эпохи; первая база на 0,72
      строки ниже верха блока, дальше через tagLH */
   ctx.font = `500 ${(TODAY_TV.tagSize * u).toFixed(1)}px ${seg.font}`;
-  ctx.fillStyle = 'rgba(214,223,234,0.78)';
+  ctx.fillStyle = TODAY_TV.tagInk;
   ctx.textAlign = 'center';
   const tagTop = vCen + TODAY_TV.h / 2 + TODAY_TV.gapTag;
   for (let i = 0; i < tagLines.length; i++)
