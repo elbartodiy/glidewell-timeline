@@ -7413,8 +7413,21 @@ const TODAY_TV = {
      экраном, слова его: Clinical education, leadership growth, practice
      management content, and patient-facing programming all in one place. */
   pad: 78, logoW: 0.46, gapLogo: 92, rad: 94,
-  gapTag: 96, tagSize: 44, tagLH: 60, padBot: 110,
-  tag: 'Clinical education, leadership growth, practice management content, and patient-facing programming all in one place',
+  /* СТРОКА КАНАЛА КРУПНЕЕ, С ТОЧКОЙ И ПО СЛОВОСОЧЕТАНИЯМ (Эльдар, 03.11.2026:
+     «текст под видео на стенде надо сделать крупнее и точка после programming»,
+     «текст можно по два словосочетания на строку, чтобы не делить внутри
+     запятых»). 44 → 56: строка читается от прилавка, а не только в упор. Точка
+     возвращает фразе её настоящий вид — перечисление и вывод, два предложения.
+     Перенос считает не слова, а куски между запятыми: на строку кладётся
+     столько ЦЕЛЫХ кусков, сколько влезает в ширину экрана, и ни один не рвётся.
+     При 56 это даёт 972 / 787 / 854 / 412 мировых единиц при экране 996 —
+     первая строка как раз из двух словосочетаний, остальные по одному: они
+     сами по себе шире половины экрана. Размер выбран наибольшим из тех, при
+     которых «Clinical education, leadership growth,» ещё стоит одной строкой
+     (при 58 она уже 1007 > 996). Высота строки и поля подрезаны так, чтобы
+     четвёртая строка не увела низ панели за прилавок. */
+  gapTag: 84, tagSize: 56, tagLH: 74, padBot: 96, markDim: 0.45,
+  tag: 'Clinical education, leadership growth, practice management content, and patient-facing programming. All in one place.',
   x(){ return (HALL_FRAME_R + HALL_COL_W / 2 + EDU.L()) / 2; },
   w: 996, h: 560,     // 16:9
   src: 'media/fastmill_today.mp4',
@@ -7428,6 +7441,32 @@ function initTodayTV(){
   lazyVideo(v, vurl(TODAY_TV.src), () => TODAY_TV.x());
   v.addEventListener('loadeddata', () => { TODAY_TV.ready = true; });
   TODAY_TV.v = v;
+}
+/* ПЕРЕНОС ПО СЛОВОСОЧЕТАНИЯМ, А НЕ ПО СЛОВАМ (Эльдар, 03.11.2026: «текст можно
+   по два словосочетания на строку, чтобы не делить внутри запятых»). Фраза
+   режется на куски по запятым и точкам — знак остаётся при своём куске, — и на
+   строку кладётся столько ЦЕЛЫХ кусков, сколько влезает. Кусок шире строки
+   (такого в нынешнем тексте нет) переносится по словам, чтобы правило никогда
+   не оборачивалось выездом за панель. Ширина меряется текущим шрифтом ctx. */
+function wrapPhrases(text, maxW){
+  const parts = text.match(/[^,.]+[,.]?\s*/g) || [text];
+  const out = [];
+  let cur = '';
+  for (let raw of parts){
+    const p = raw.trim();
+    if (!p) continue;
+    const join = cur ? cur + ' ' + p : p;
+    if (!cur) { cur = p; continue; }
+    if (ctx.measureText(join).width <= maxW) cur = join;
+    else { out.push(cur); cur = p; }
+  }
+  if (cur) out.push(cur);
+  const fit = [];
+  for (const line of out){
+    if (ctx.measureText(line).width <= maxW) fit.push(line);
+    else for (const w of wrapCalc(line, maxW)) fit.push(w);
+  }
+  return fit;
 }
 function drawTodayTV(){
   const cx = TODAY_TV.x();
@@ -7457,7 +7496,7 @@ function drawTodayTV(){
      строк, столько панель и прибавит снизу. Ширина переноса — по экрану,
      чтобы строка стояла в его колонне, а не шире его. */
   ctx.font = `500 ${(TODAY_TV.tagSize * u).toFixed(1)}px ${seg.font}`;
-  const tagLines = wrapCalc(TODAY_TV.tag, TODAY_TV.w * u);
+  const tagLines = wrapPhrases(TODAY_TV.tag, TODAY_TV.w * u);
   const tagH = tagLines.length * TODAY_TV.tagLH;
   const pTop = vCen - TODAY_TV.h / 2 - (TODAY_TV.gapLogo + lh + TODAY_TV.pad);
   const pBot = vCen + TODAY_TV.h / 2 + TODAY_TV.gapTag + tagH + TODAY_TV.padBot;
@@ -7482,15 +7521,28 @@ function drawTodayTV(){
      и экран по-прежнему заходил в холл (Эльдар, 2026-10-01, второй кадр). */
   ctx.save();
   if (colR > bx0){ ctx.beginPath(); ctx.rect(colR, 0, W - colR, H); ctx.clip(); }
-  /* ПОДСВЕТКА ИЗ-ПОД ПАНЕЛИ («подсветка под ней»): на фото между панелью и
-     стеной светится полоса по всему контуру. Рисуется тенью собственной формы
-     панели в два прохода — широкий ореол и узкий, у самой кромки; заливка под
-     ними всё равно перекрывается самой панелью. */
+  /* ПОДСВЕТКА ИЗ-ПОД ПАНЕЛИ («подсветка под ней»; Эльдар, 03.11.2026: «и
+     свечение вокруг самого стенда — смотри реф»). Промерено по фотографии
+     (IMG_6398, кадр 1050 точек в ширину, панель 740): у самой кромки стена
+     вспыхивает до 242 при теле панели 120 — вдвое, — и гаснет до своего
+     уровня (105) за 110 точек, то есть за 0,15 ширины панели. В мировых
+     единицах при PW = 1152 это 170 на разлёт и около 60 на яркое ядро.
+     ТРИ ПРОХОДА, И ВСЕ СКЛАДЫВАЮТСЯ СВЕТОМ ('lighter'), а не кроют друг друга:
+     заливка чёрная — под 'lighter' она не прибавляет ничего, на стену ложится
+     только тень, то есть сам ореол. Стена финала куда светлее стены на фото,
+     запаса по яркости почти нет, поэтому широкий разлёт даётся ТЁПЛЫМ, а не
+     белым: красный упирается в 255, синий поднимается слабее, и полоса читается
+     кремовой, а не выбеленной. Яркую кромку держит контраст с графитом
+     панели — ровно та белая щель, что видна на фото по всему контуру. */
   ctx.save();
-  ctx.shadowColor = 'rgba(255,243,226,0.52)'; ctx.shadowBlur = 50 * u;
-  ctx.fillStyle = 'rgba(255,250,240,1)';
-  ctx.beginPath(); ctx.roundRect(bx0, by0, bw, bh, rad); ctx.fill();
-  ctx.shadowBlur = 16 * u; ctx.fill();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = '#000';
+  for (const [col, blur, a] of [['rgba(255,214,170,1)', 170, 0.17],
+                                ['rgba(255,232,200,1)',  62, 0.34],
+                                ['rgba(255,246,232,1)',  20, 0.85]]){
+    ctx.globalAlpha = a; ctx.shadowColor = col; ctx.shadowBlur = blur * u;
+    ctx.beginPath(); ctx.roundRect(bx0, by0, bw, bh, rad); ctx.fill();
+  }
   ctx.restore();
   /* ПАНЕЛЬ. Столярка, а не стена: она на палец светлее стены финала, с едва
      заметным перепадом сверху вниз и собственной тенью — тогда скруглённый
@@ -7505,24 +7557,69 @@ function drawTodayTV(){
   // кромка щита: светлая сверху, где на неё падает свет зала, и тёмная по низу
   ctx.strokeStyle = 'rgba(226,234,244,0.16)'; ctx.lineWidth = 1.2 * SS;
   ctx.beginPath(); ctx.roundRect(bx0, by0, bw, bh, rad); ctx.stroke();
-  /* ЗНАК КАНАЛА — ПОДСВЕЧЕН СЗАДИ, КАК НА СТОЙКЕ. Ореол даёт тень по альфе
-     самого знака: два прохода, дальний и ближний. */
+  /* ЗНАК КАНАЛА — ПОДСВЕЧЕН СЗАДИ, КАК НА СТОЙКЕ (Эльдар, 03.11.2026:
+     «свечение у логотипа больше — посмотри по референсу, там выглядит хорошо,
+     а у тебя фейково и дёшево»). Так и было: два узких прохода давали ровный
+     контур толщиной в волос — наклейка, а не свет.
+     КАК СВЕТИТ НАСТОЯЩИЙ ЗНАК (промерено по IMG_6398, высота букв ≈ 190 точек
+     кадра): у самой кромки стена выбелена почти добела, на 0,2 высоты букв она
+     уже розовая, и красный отсвет тянется примерно на 0,6 высоты — то есть
+     разлёт соизмерим с самими буквами, а не с их обводкой. Отсюда четыре
+     прохода, каждый шире и слабее предыдущего, и цвет по дороге уходит от
+     белого к красному — ровно то, что Эльдар и описал.
+     СКЛАДЫВАЮТСЯ СВЕТОМ. Рисовать сам знак четырежды нельзя — он сам бы
+     сложился и выгорел; поэтому тень отбрасывает ЧЁРНЫЙ СИЛУЭТ знака: под
+     'lighter' чёрное не прибавляет ничего, на панель ложится только ореол.
+     Силуэт делается один раз на спрайт ('source-in' по его же альфе).
+     ОРЕОЛ НЕ ВЫХОДИТ ЗА ПАНЕЛЬ: свет лежит на щите, и за его кромкой его нет —
+     на фото розовое так же обрывается скруглённым углом. */
   if (sp){
     const lwS = lw * u, lhS = lh * u, lyS = py(pTop + TODAY_TV.pad, kw);
-    const img = spriteMip(sp, lwS, lhS);
     const lx = (bx0 + bx1) / 2 - lwS / 2;
+    /* БУКВЫ ТЕМНЕЕ СВЕЧЕНИЯ (Эльдар, 03.11.2026: «смотри короче реф»). На
+       фотографии знак — объёмные буквы с НЕподсвеченным лицом: бордовые, а
+       светится стена вокруг них. Ярко-красный знак из иконки приложения спорит
+       с ореолом — красное на красном, и свет не читается. Лицо гасится
+       умножением на (1 − markDim): тон остаётся фирменным красным, меняется
+       только светлота, как у снятого на фото щита. markDim = 0 вернёт знак
+       в его исходную яркость одним числом. */
+    if (TODAY_TV.markDim > 0 && !sp._dim){
+      const src = sp.c, sw = src.naturalWidth || src.width, sh = src.naturalHeight || src.height;
+      const c = document.createElement('canvas'); c.width = sw; c.height = sh;
+      const g = c.getContext('2d');
+      g.drawImage(src, 0, 0);
+      g.globalCompositeOperation = 'source-atop';
+      g.fillStyle = 'rgba(0,0,0,' + TODAY_TV.markDim + ')'; g.fillRect(0, 0, sw, sh);
+      sp._dim = {c, _mid: null, w: sp.w, h: sp.h};
+    }
+    const face = TODAY_TV.markDim > 0 ? sp._dim : sp;
+    const img = spriteMip(face, lwS, lhS);
+    if (!sp._sil){
+      const src = sp.c, sw = src.naturalWidth || src.width, sh = src.naturalHeight || src.height;
+      const c = document.createElement('canvas'); c.width = sw; c.height = sh;
+      const g = c.getContext('2d');
+      g.drawImage(src, 0, 0);
+      g.globalCompositeOperation = 'source-in';
+      g.fillStyle = '#000'; g.fillRect(0, 0, sw, sh);
+      sp._sil = c;
+    }
     ctx.save();
-    // сначала широкий красный ореол — он уходит в панель
-    ctx.shadowColor = 'rgba(226,32,48,0.62)'; ctx.shadowBlur = 44 * u;
-    ctx.drawImage(img, lx, lyS, lwS, lhS);
-    ctx.shadowBlur = 26 * u;
-    ctx.drawImage(img, lx, lyS, lwS, lhS);
-    // поверх него — узкое белое у самых букв: так свет из-за знака и выглядит
-    ctx.shadowColor = 'rgba(255,238,236,0.85)'; ctx.shadowBlur = 13 * u;
-    ctx.drawImage(img, lx, lyS, lwS, lhS);
-    ctx.shadowBlur = 6 * u;
-    ctx.drawImage(img, lx, lyS, lwS, lhS);
+    ctx.beginPath(); ctx.roundRect(bx0, by0, bw, bh, rad); ctx.clip();
+    ctx.globalCompositeOperation = 'lighter';
+    /* Четвёртое число — сколько раз проход повторяется. Одного мазка мало:
+       тень размывается ядром Гаусса, и у самой кромки её всё равно не хватает
+       до белого, а на фото там именно белое. Ближние проходы кладутся по два и
+       по три раза и складываются светом — тогда у букв свет выбит в белое, на
+       0,2 высоты он розовый, и только дальше остаётся красный. */
+    for (const [col, blur, a, n] of [['rgba(190,24,42,1)',   1.05, 0.50, 1],
+                                     ['rgba(228,40,58,1)',   0.60, 0.80, 2],
+                                     ['rgba(255,120,132,1)', 0.32, 0.85, 3],
+                                     ['rgba(255,226,224,1)', 0.15, 0.95, 3]]){
+      ctx.globalAlpha = a; ctx.shadowColor = col; ctx.shadowBlur = lhS * blur;
+      for (let i = 0; i < n; i++) ctx.drawImage(sp._sil, lx, lyS, lwS, lhS);
+    }
     ctx.restore();
+    ctx.drawImage(img, lx, lyS, lwS, lhS);
   }
   /* корпус экрана — та же тёмная оправа, что у табло: это два экрана одной стены */
   ctx.save();
@@ -21930,7 +22027,7 @@ const STUDY_BY_TITLE = {
      привязывался к 2007 через nearestBeat — с перевесом в сотню единиц над
      2009. Теперь у пролёта своя страница, и она отвечает на вопрос, который
      пролёт задаёт: революция — это не дата, это четыре (Эльдар, 2026-09-23). */
-  "THE DIGITAL REVOLUTION": "A revolution is easier to name than to date. This one has no single year — it has four, and this stretch of the hall walks you through all of them.\n\n## The four moments\n• 2002 — the mill arrives. The laboratory takes up outside CAD/CAM systems, Cercon and Wol-Ceram: a technician scans the stone model, designs the coping on a screen and mills it. The dentist's end of the job has not changed at all.\n• 2006 — the system becomes its own. Prismatik CZ: Glidewell's own milling and software, paired with a 3Shape scanner, built to a brief of a zirconia substructure at a PFM price.\n• 2007 — the case stops being a thing. The first intraoral scan arrives straight from a practice, with no impression and no model behind it. From here every case leaves a record.\n• 2009 — the crown becomes one piece. BruxZir: full-contour zirconia milled from a solid blank, with no porcelain to chip — the point at which the digital laboratory stops making the old crown a better way and starts making a different crown.\n\n## Two different things, five years apart\nThe word digital covers how a crown is MADE and how a case ARRIVES, and they did not happen together. Production went first: wax and casting gave way to a screen and a mill, while the impression still came in a box. The case followed in 2007 — and that one turned out to matter more, because a file leaves a record and a stone model does not. The thirty-million-case archive behind today's automatic design begins on the day the box stopped coming.\n\n## The wall in front of you\n“The impression becomes a scan. The crown becomes a file.” Both sentences are true of this whole stretch, not of one year in it. The crown turning on the plinth is being read, designed and cut in the same breath, which is what the decade was for. The man who later automated that design, Sergei Azernikov, is the voice on this page.\n\n“The machine won't replace you — someone who knows how to use it will.” — Sergei Azernikov, interview, July 2026",
+  "THE DIGITAL REVOLUTION": "A revolution is easier to name than to date. This one has no single year — it has four, and this stretch of the hall walks you through all of them.\n\n## The four moments\n• 2002 — the mill arrives. The laboratory takes up outside CAD/CAM systems, Cercon and Wol-Ceram: a technician scans the stone model, designs the coping on a screen and mills it. The dentist's end of the job has not changed at all.\n• 2006 — the system becomes its own. Prismatik CZ: Glidewell's own milling and software, paired with a 3Shape scanner, built to a brief of a zirconia substructure at a PFM price.\n• 2007 — the case stops being a thing. The first intraoral scan arrives straight from a practice, with no impression and no model behind it. From here every case leaves a record.\n• 2009 — the crown becomes one piece. BruxZir: full-contour zirconia milled from a solid blank, with no porcelain to chip — the point at which the digital laboratory stops making the old crown a better way and starts making a different crown.\n\n## Two different things, five years apart\nThe word digital covers how a crown is MADE and how a case ARRIVES, and they did not happen together. Production went first: wax and casting gave way to a screen and a mill, while the impression still came in a box. The case followed in 2007 — and that one turned out to matter more, because a file leaves a record and a stone model does not. The thirty-million-case archive behind today's automatic design begins on the day the box stopped coming.\n\n## The wall in front of you\n“The impression becomes a scan. The crown becomes a file.” Both sentences are true of this whole stretch, not of one year in it. The crown turning on the plinth is being read, designed and cut in the same breath, which is what the decade was for. The man who later automated that design is Sergei Azernikov.\n\n“The machine won't replace you — someone who knows how to use it will.” — Sergei Azernikov, interview, July 2026",
 
   "PRISMATIK": "In January 2005 Glidewell launched Prismatik, its own line of leucite-reinforced pressed ceramics — the esthetic front tooth made in-house rather than bought in. A year later Prismatik Dentalcraft became a manufacturing division in its own right, and the name would go on to stand for everything the company machines and mixes for itself: milling systems, titanium implant components, zirconia.\n\n## The material was half of it\nThe machine was the other half, and it was already running: the milling laboratory had been built out from 2002, and in 2006 this same Prismatik name went onto Prismatik CZ, the company's own milling-and-software system — the station before this one on the wall. Here the name means what it meant first: a material poured, pressed and fired in-house rather than bought in by the case.\n\n## e.max, Obsidian and a friend across a lawsuit\nThe company also became one of the largest users of Ivoclar's IPS e.max, the lithium-disilicate crown that finally gave the metal-free front tooth its material — thirty-five hundred units a week even today, down from six thousand before zirconia. When Glidewell developed its own glass ceramic, Obsidian lithium silicate, engineered around Ivoclar's patents, Ivoclar sued anyway. “Bob, we didn't violate your patents,” Jim told its chief executive, Robert Ganley. The two remain friends; Obsidian found its own ground bonded to metal frameworks for long-span bridges, and e.max kept its playground. “Litigation is the burden of every successful company.”\n\n“Our motto is and always will be: do things faster, better, and less expensive than the competition.” — Jim Glidewell, Constant Change",
   "FIRST DIGITAL CASE": "In 2007 the laboratory took in its first digital impression — an intraoral scan sent straight from a practice — instead of a silicone impression in a box or a poured stone model. Most of the industry was still pouring impressions. The company dates the start of its digital case database to that moment.\n\n## The quietest, most consequential beat on the line\nEverything visible about it was convenience: no goop, no shipping a physical model. The invisible part was the real one. From then on every case left behind a digital record, and two decades later that archive is more than thirty million cases — the training data behind the systems that now design crowns and mark margins automatically. The moat was not the software; it was starting to collect twenty years early. Behind the number stand the eighty-four certified dental technicians, with clinicians, material scientists and engineers, whose judgement shaped what the system learned: the machine learned from named craftspeople, not from nowhere.\n\n## The chain it starts\n• 2007 — the first digital case, when most of the industry was still pouring impressions.\n• 2016 — machine learning built into the design software.\n• 2017 — the first crown designed by a generative adversarial network is milled and seated.\n• Today — more than ninety-five per cent of the lab's restoration designs are proposed by the model, on thirty million cases and counting.\n\n## Why a dentist buys a scanner\nJim's explanation of the whole transition fits in a sentence: “Dentists don't want to buy a scan, they want to buy a crown.” A crown from a digital scan costs the dentist less than one from an elastomeric impression, so to reach the cheaper crown the practice buys the scanner. The cloud of points on this plinth is the case that arrived that year, read as what it really was — data — and as you walk on, it leaves for the screen ahead.\n\n“Let's continue to make quality crowns untouched by technicians and charge less for the effort.” — Jim Glidewell, Constant Change",
@@ -21941,9 +22038,9 @@ const STUDY_BY_TITLE = {
   "GLIDEWELL.IO": "In November 2017, at its first Glidewell Dental Symposium in Dallas, Glidewell unveiled glidewell.io — a complete in-office ecosystem that put the lab's whole workflow on the dentist's own counter. Three pieces: an intraoral scanner (the iTero Element, through a partnership with Align), fastdesign.io software that uses machine-learning to propose the crown design, and the fastmill.io in-office mill. The breakthrough material was BruxZir NOW — a fully-sintered zirconia block that comes out of the mill finished, with no firing oven required. The promise: scan, design, mill and seat a single crown in roughly one visit — about an hour — instead of sending an impression to a lab and bringing the patient back in two weeks.\n\n## Why it matters\n\nFor decades the lab was a separate place: you took an impression, mailed it, waited, called back the patient. glidewell.io collapses that distance — the lab's capability now lives inside the operatory. Access, again: fewer visits for the patient, less travel, faster care.\n\nWho it reaches is the test of it. Paresh Patel works the cheap end of the same argument — five thousand implants placed, three and a half thousand of them mini implants, which exist for the patient who cannot afford the conventional case or cannot take the surgery. The mill on the counter and the small implant are one idea in two pieces of hardware.\n\n## A division that competes with the company\nA chairside mill cuts the laboratory out of the crown. For a laboratory to build one looks like an unnatural act, and Jim describes it exactly that way — and as the only way to survive. “Sears could have outcompeted Amazon, but they failed to see the future in online sales. By nature, it's hard to start a division that competes against your core business.” If same-visit milling is the inevitable future, the choice is to build it or watch someone else build it. “Rest assured that if we don't develop it, someone else will. Chairside milling might as well be our next innovative transformation.” The memoir ends on that page, with one word: Onward!",
   "2018": "In 2018 the laboratory milled and seated the first crown designed by a generative adversarial network — a neural network trained on fifteen hundred pairs of scans to propose the surface between opposing teeth that technicians find hardest to draw. The paper, written with the University of California, Berkeley, is called “Learning Beyond Human Expertise.” To the company's knowledge it was the first time anyone had generated a physical object with the technique.\n\n## What the network learned from\nThe training data was the archive that had been quietly accumulating since the first digital case in 2007: by then millions of scanned cases and the designs that eighty-four certified technicians had made for them. The model did not invent a tooth; it learned what a good one looks like from people who had made hundreds of thousands. Sergei Azernikov, who leads the company's CAD/CAM software, describes what followed as a closed loop — every case the lab ships trains the next design, so the system gets better without a new factory or a new hire. Today more than ninety-five per cent of the lab's restoration designs come out of the model, and a technician is the first human to see the case, mostly to approve it.\n\n## From one crown to the default path\n• 2016 — machine learning is built into the design software.\n• 2017–18 — the first GAN-designed crown is milled and placed in a mouth.\n• 2019 — the automated factory: designs routed straight to robotic mills.\n• Today — CrownAI and MarginAI propose the crown and its margin line; a designer went from about fifty crowns a day to about two hundred, and the job became quality control.\n\n## The company in 2018\nThe same year Glidewell bought two more office buildings — a quarter of a million square feet, about eighty-eight million dollars — to have room to grow into, launched BruxZir Esthetic, and said goodbye to Jim Shuck, the marketer who had worked beside Jim for twenty-five years and taken the company from ten million dollars in sales to over four hundred. Jim's projection at the time: ten thousand employees by 2025.\n\n“The machine won't replace you — someone who knows how to use it will.” — Sergei Azernikov, interview, July 2026",
   "BRUXZIR FACTORY": "In 2019 Glidewell crossed the line from digital-assisted to digital-native production: fully automated, AI-designed, robotic manufacturing of monolithic zirconia crowns. Designs are proposed by the generative model, routed to production lines where robotic arms feed BruxZir blanks into banks of interconnected mills, and every restoration is checked by automated metrology before it ships. No hand-waxing, no manual nudging of the CAD. The machine designs the tooth and the machine makes it.\n\n## Set against the first bench\nThis is the climax of the arc the hall has been walking since 1907. There: a technician, wax, casting, a fired porcelain layer, hours of judgement per unit. Here: software draws the crown, a robot cuts it, a sensor checks it. The goal is the same — a tooth that fits and looks right — and the labour, the variability and the cost are transformed. Automation is how the best dentistry gets made affordable and brought to scale: not by cutting corners but by removing variability and the human bottleneck.\n\n## The man and the dog\nJim likes the line of the organisational scholar Warren Bennis: “The factory of the future will have only two employees, a man and a dog. The man will be there to feed the dog. The dog will be there to keep the man from touching the equipment.” In the same breath he warns the small laboratories he speaks to: every day three of them close; the analog talent they spent a life acquiring is being made useless by digital engineering; go digital, learn digital, think digital. The factory on this floor is that warning, built.\n\n## Who made it\nDavid Leeson, the company's vice-president of engineering, is the architect of the automated line — the robots, the mills, the micro-CT check. Azernikov's software imagines the tooth; Leeson's metal makes it real. Behind them, in 2019, stood 2,851 people in dental production and 75 in research, in a company of about five thousand.\n\n“Digital manufacturing has erased the errors caused by humans!” — Jim Glidewell, Constant Change",
-  "GUIDING LEADERS": "In 2019 Glidewell launched Guiding Leaders — a free leadership and practice-development program built and run by Bobbie Norton at the Irvine campus. It was created as the profession tipped toward a new majority: women now make up more than half of graduating dentists, and clinical school teaches none of the business, communication and leadership skills a practice owner actually needs. Guiding Leaders fills that gap at no cost to the dentist. It has around a hundred alumni, each cohort earning up to about eighty continuing-education units between the spring start and the autumn graduation.\n\n## The thesis, turned outward\nJim spent fifty years making the best dentistry affordable for patients. Guiding Leaders is the same instinct pointed at the profession itself — removing the cost barrier to the skills that let a dentist own, grow and survive. It is reinvestment, not marketing: the company gives away the playbook and asks nothing clinical in return, and it reframes a laboratory that sells crowns into one that grows the people who place them.\n\n## Let your good people run\nThe program is the outward face of how the company has always been run inside. Jim does not micromanage — “telling an employee what they have to do every step of the way ruins them” — and promotes from within on ability rather than seniority; one of Darryl Withrow's managers, now running a hundred-and-ten-person facilities team, started as a cabinet installer. Every hire, for any job, passes the same two-minute math test; job advertisements run in Cantonese, Vietnamese and Mandarin; and the managers who write about him in his own book — a refugee from Bosnia who became VP of lab operations, a fulfilment clerk who became VP of human resources, a delivery boy who became VP of operations — are the proof he offers that go-getters with a sharp mind, given room, rise.\n\n## The faces on the counter\nThree of the alumni stand on the counter of this bay: Ellen Paulisick, who built a new practice entirely on the Glidewell system; Nadia Rodriguez, a young cosmetic dentist in New York; Bianca Clark, working in 3D printing. Their pages are a tap away.\n\n“Management is having employees accomplish the company's objectives for their own selfish reasons.” — Jim Glidewell, Constant Change",
+  "GUIDING LEADERS": "In 2019 Glidewell launched Guiding Leaders — a free leadership and practice-development program built and run by Bobbie Norton at the Irvine campus. It was created as the profession tipped toward a new majority: women now make up more than half of graduating dentists, and clinical school teaches none of the business, communication and leadership skills a practice owner actually needs. Guiding Leaders fills that gap at no cost to the dentist. It has around a hundred alumni, each cohort earning up to about eighty continuing-education units between the spring start and the autumn graduation.\n\n## The thesis, turned outward\nJim spent fifty years making the best dentistry affordable for patients. Guiding Leaders is the same instinct pointed at the profession itself — removing the cost barrier to the skills that let a dentist own, grow and survive. It is reinvestment, not marketing: the company gives away the playbook and asks nothing clinical in return, and it reframes a laboratory that sells crowns into one that grows the people who place them.\n\n## Let your good people run\nThe program is the outward face of how the company has always been run inside. Jim does not micromanage — “telling an employee what they have to do every step of the way ruins them” — and promotes from within on ability rather than seniority; one of Darryl Withrow's managers, now running a hundred-and-ten-person facilities team, started as a cabinet installer. Every hire, for any job, passes the same two-minute math test; job advertisements run in Cantonese, Vietnamese and Mandarin; and the managers who write about him in his own book — a refugee from Bosnia who became VP of lab operations, a fulfilment clerk who became VP of human resources, a delivery boy who became VP of operations — are the proof he offers that go-getters with a sharp mind, given room, rise.\n\n## The faces on the counter\nThree of the alumni stand on the counter of this bay: Ellen Paulisick, who built a new practice entirely on the Glidewell system; Nadia Rodriguez, a young cosmetic dentist in New York; Bianca Clark, working in 3D printing.\n\n“Management is having employees accomplish the company's objectives for their own selfish reasons.” — Jim Glidewell, Constant Change",
   "FASTSCAN.IO": "In 2022 fastscan.io, built with Medit, folded an intraoral scanner into the Glidewell ecosystem — the front door to the all-digital workflow. Capturing the mouth digitally is the cheapest possible front of the flywheel: no physical impressions, no remakes, data straight into the box that designs and mills the crown. With fastdesign and fastmill already in the operatory, the scanner completed the set — from the first look at the tooth to the finished restoration, the case never leaves the digital chain.\n\n## Three moves in three years\nThe scanner arrived at the end of a turn at the top of the house. In December 2020 Jim published his memoir, “Constant Change: Adventures in Business and Life — My Journey from Start-Up to 5,000 Employees” — his own account of the Kentucky farm, the Navy, the Tustin lab, and the decision, again and again, never to sell or go public. And fastscan.io, built with Medit, put the company's own scanner at the front of its digital flow.\n\n## The spring the cases stopped\nThe book was finished in December 2019. Its addendum was written after the spring of 2020. The first two weeks of March were the strongest in the company's history — a hundred thousand units a week. By the third week the incoming count had fallen to five thousand, and Jim was in hospital with the virus, two weeks on eight litres of oxygen, thirty-two pounds lighter when he came out. While he was there his managers furloughed two and a half thousand people, then fifteen hundred more, and the CFO secured a thirty-seven-million-dollar credit line with one phone call. Sales fell from fifty million a month to five. By June they had recovered completely; eighty million dollars and about three hundred positions were lost for good. “It is the lowest point in my professional career.” The memoir's title was chosen before any of it.\n\n“Never have an exit strategy. You owe it to your employees to never sell your company.” — Jim Glidewell, Constant Change",
-  "THE CROSSOVER": "In March 2023, for the first time, more digital impressions arrived at Glidewell in a month than physical ones. Nothing announced it. It is simply the month the two lines crossed — sixteen years after the first digital case came in, in 2007.\n\n## What crosses\nOn one side, the case the mail was built on: two impressions in their trays, wrapped and boxed, posted, opened, poured into stone, trimmed, mounted, and only then read by a technician. On the other, a file: a scan taken at the chair, sent in a second, opened in the design software the same hour, with no model to pour and no box to lose. The carton on this page is the physical one, and you can do to it what the month did.\n\n## Why the line moved\nJim had explained the mechanism years before it happened. “Dentists don't want to buy a scan, they want to buy a crown. But a crown produced from a digital scan, rather than an elastomeric impression, costs them less. So, for a dentist to access these cheaper crowns, they need to buy a scanner.” The scanner makers — Align, 3Shape, Medit, Sirona and, from 2022, Glidewell itself — did the rest. He also saw where it led: an intraoral scanner lets a dentist send a digitised impression to a laboratory anywhere in the world and get a finished crown back overnight. The delivery car, the local lab's oldest advantage, is gone with the box.\n\n## What it changed in the building\nThe model-and-die room — the least valued and, Jim insists, the most critical department in any laboratory, where most remakes are born — shrinks as the cases that need it shrink. A designer opens a scan instead of a stone model. The data that trains the design software arrives already digital. And the appliances the company built its categories on follow the same path: the Silent Nite of 1996 is now the Silent Nite 3D, designed and printed from a scan.\n\n“Intraoral scanners will allow a dentist to send his digitized impression to a laboratory anywhere in the world and receive a finished crown back overnight.” — Jim Glidewell, Constant Change",
+  "THE CROSSOVER": "In March 2023, for the first time, more digital impressions arrived at Glidewell in a month than physical ones. Nothing announced it. It is simply the month the two lines crossed — sixteen years after the first digital case came in, in 2007.\n\n## What crosses\nOn one side, the case the mail was built on: two impressions in their trays, wrapped and boxed, posted, opened, poured into stone, trimmed, mounted, and only then read by a technician. On the other, a file: a scan taken at the chair, sent in a second, opened in the design software the same hour, with no model to pour and no box to lose.\n\n## Why the line moved\nJim had explained the mechanism years before it happened. “Dentists don't want to buy a scan, they want to buy a crown. But a crown produced from a digital scan, rather than an elastomeric impression, costs them less. So, for a dentist to access these cheaper crowns, they need to buy a scanner.” The scanner makers — Align, 3Shape, Medit, Sirona and, from 2022, Glidewell itself — did the rest. He also saw where it led: an intraoral scanner lets a dentist send a digitised impression to a laboratory anywhere in the world and get a finished crown back overnight. The delivery car, the local lab's oldest advantage, is gone with the box.\n\n## What it changed in the building\nThe model-and-die room — the least valued and, Jim insists, the most critical department in any laboratory, where most remakes are born — shrinks as the cases that need it shrink. A designer opens a scan instead of a stone model. The data that trains the design software arrives already digital. And the appliances the company built its categories on follow the same path: the Silent Nite of 1996 is now the Silent Nite 3D, designed and printed from a scan.\n\n“Intraoral scanners will allow a dentist to send his digitized impression to a laboratory anywhere in the world and receive a finished crown back overnight.” — Jim Glidewell, Constant Change",
   "2026": "This is the present — 2026. Automated monolithic milling, the same-visit zirconia crown Glidewell helped push to scale, is no longer remarkable; it is simply how chairside dentistry runs. The frontier has moved to three converging fronts: AI that reads scans and drafts restoration designs, robotics that guide the hand in surgery, and the single-visit promise extended from the crown to the whole treatment. By late 2025, AI-assisted CAD tools were reported to cut design time by 30–45 minutes per case and reduce remakes by roughly 18 percent, while Neocis cleared its next-generation Yomi S implant robot with FDA, its planning AI auto-segmenting anatomy from CBCT scans — a system now reachable by general dentists, not just specialists.\n\n## Why it matters\n\nThe 2026 frontier is that same throughline, now carried by software and machines. AI design and chairside automation compress chair time, labor, and remakes — and cost follows time. Nobody here “invented” single-visit or robotic dentistry; the claim is that the tools are being made the default and brought within reach of the everyday practice, which is exactly where access lives or dies.\n\n## Growth or death\nJim's own reading of the present is biological. A company is a living organism; the moment it stops growing it begins to die, because the best people leave first. His target is fifteen per cent a year; his practice is to carry a few per cent more staff and ten per cent more space than the business needs, to reinvest every pre-tax dollar, and to build the division that competes with the core before a competitor does. “No business lasts forever. But you can transform and grow a company by keeping some of the old parts while you start up new viable divisions.”\n\n## The unfinished part\nFor all the millions of smiles the laboratory and the industry have restored, about half the United States population is priced out of dentistry or afraid of it, and in Jim's own words dentistry and medicine ought to be treated as non-profit enterprises — though he does not claim to know how. The ninety-nine-dollar crown, the seventy-nine-dollar crown, the same-visit crown and the crown a model designs in seconds are his answer so far. The story, as his book says, has no definitive ending.\n\n“Either the sun will rise tomorrow, or it will not. Everything in between can be negotiated.” — Jim Glidewell, Constant Change",
   "AI SCALE": "By the early 2020s Glidewell folds generative AI design into the heart of its lab — tools like CrownAI and MarginAI that propose a finished crown and its margin line automatically, rather than waiting for a technician to draw every case from scratch. This sits on top of staggering volume: a reported about 500,000 restorations a month, more than 5,000 staff, and the standing of the largest dental lab in the world. Glidewell did not invent AI; it brought AI design to scale and made it the default path for routine cases. Sergei Azernikov, VP of CAD/CAM Software and the de-facto AI lead, describes a closed quality loop: millions of cloud cases train a generative model that now produces more than 95% of the lab's restoration designs (Glidewell, 2025–26) — the design is good enough that a human rarely needs to touch it.\n\n## Why it matters\n\nAI design is where that flywheel becomes visible and undeniable. When a model designs the crown in seconds — now more than 95% of restoration designs — across roughly half a million units a month, the cost of the single most labor-intensive step collapses — and scale plus AI becomes the affordability proof, not a slogan. Access is the throughline, and here it stops being aspiration and becomes arithmetic.",
 };
