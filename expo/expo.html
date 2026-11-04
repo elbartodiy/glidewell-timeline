@@ -8606,17 +8606,26 @@ function drawProjectors(t, phase){
        post — and Eldar sent the real thing: a nineties LCD data projector on
        its own adjustable stand, shot against nothing. It goes in whole, foot on
        the floor, and the beam is made to leave ITS glass: the lens sits at
-       (0.845, 0.055) of the cut-out, measured off the file. */
+       (0.845, 0.055) of the cut-out, measured off the file.
+       ЛИНЗА ПЕРЕМЕРЕНА ПО ФАЙЛУ (Эльдар, 04.11.2026, кадром с двумя стрелками:
+       «красная точка показывает, откуда сейчас идёт пучок, а зелёная — откуда
+       он должен идти; суть — он идёт из центра линзы, а не из-под неё»).
+       Тёмный эллипс объектива в proj_1993.png (585 × 1294) лежит по строкам
+       18…83 и шире всего на 52-й, от 489 до 506 — то есть его центр (497,5;
+       50,5), доли 0,850 и 0,039. Стояло 0,845 и 0,055: по вертикали это 71-я
+       строка — на двадцать пикселей ниже центра и у самого низа оправы, пучок
+       и выходил из-под стекла. По горизонтали расхождение было в три пикселя
+       файла, поправлено заодно. */
     const pjs = PROP_SPRITES.ph_prj93;
     let ph93 = null;
     if (pjs){
       const hW93 = 470;                                  // floor to the top of the head, in world units
       const shp = hW93 * kp * SS, swp = shp * pjs.w / pjs.h;
       const fy93 = py(1080, kp);
-      const lensU = p.mirror ? 0.155 : 0.845;   // the lens crosses with the machine
+      const lensU = p.mirror ? 0.150 : 0.850;   // the lens crosses with the machine
       ph93 = {sp: pjs, x0: mxp - swp / 2, y0: fy93 - shp, w: swp, h: shp, foot: fy93,
               flip: !!p.mirror,
-              lx: mxp - swp / 2 + swp * lensU, ly: fy93 - shp + shp * 0.055};
+              lx: mxp - swp / 2 + swp * lensU, ly: fy93 - shp + shp * 0.039};
     }
 
     /* A MACHINE ON THE FLOOR IS BEHIND THE FURNITURE. The projectors used to
