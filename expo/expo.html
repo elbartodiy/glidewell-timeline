@@ -716,7 +716,11 @@ const BEATS = [
      2026-09-22: «увеличивается вверх и пересекает линию потолка — нужно чуть
      вперёд и ниже»). 420 is a third of the way in instead of two thirds, and
      the lift it takes out in the air is a third of the one it rests at. */
-  {x:21080, y:'2009', t:'BRUXZIR', tier:1, fly:true, yLift:120, flyZ:420, flyLift:30,
+  /* ПОДПИСЬ ГОДА СНЯТА: ЕЁ ГОВОРИТ ВЫВЕСКА (04.11.2026). Под цифрами года
+     стояло набранное «BruxZir», и ровно туда Эльдар попросил поставить
+     глянцевую вывеску — слово оказалось написано дважды, одно поверх другого.
+     Бит название сохраняет: по нему ключуются страница и её куски. */
+  {x:21080, y:'2009', t:'BRUXZIR', tHide:true, tier:1, fly:true, yLift:120, flyZ:420, flyLift:30,
    th:'Revolution: the best, made affordable — and the default.',
    /* затравка вместо пересказа страницы (Эльдар, 26.10.2026: «на линии нам нужно только небольшая затравка для раскрытия темы — про что внутри»; «го»). Было: «June 2009: the monolithic solid-zirconia crown goes mainstream and becomes the #1 brand. In the same month Glidewell opens the Authorized BruxZir Lab program and lets rival laboratories mill it too — the surest way to make a thing ordinary is to stop owning it alone.» */
    /* ТИРЕ СНЯТО (Эльдар, 04.11.2026: «убери вообще тире оттуда — мне кажется
@@ -11368,73 +11372,47 @@ function drawAIRelay(t){
   ctx.restore();
 }
 
-/* ТАБЛИЧКА «BRUXZIR COMING SOON» — ВРЕМЕННАЯ, И ЭТО ВИДНО.
-   Эльдар (2026-09-30) прислал неоновую вывеску и попросил повесить её на
-   2009-й «как under construction, криво, будто на ниточке»: сам BruxZir он
-   будет делать большим объектом и, скорее всего, связанным с Digital
-   Revolution. Значит щит не должен выглядеть законченной частью стены — он
-   висит на одном гвозде, на нитке, с перекосом, и этим говорит «здесь ещё не
-   сделано». Висит на плоскости стены (wallSX — закон заклёпки), размер в
-   мировых единицах, перекос — поворот вокруг точки подвеса. */
-const BZ_SOON = {
-  /* Висит ЛЕВЕЕ такта — там, где BruxZir ещё не появился, — и настолько
-     крупная, что заходит на колонну слева и на нижний край цифр «2009». */
-  dx: -545,     // точка подвеса, в мировых единицах от середины такта
-  top: 60,      // мировая высота точки подвеса: у самых цифр, чуть ниже их верха
-  w: 1180,      // ширина щита в мировых единицах — вдвое против первой пробы
-  tilt: -0.07,  // перекос, радианы — около 4°
-  hang: 0.34,   // где нитка держит щит: доля ширины от левого края
-  cord: 160,    // длина нитки в мировых единицах
+/* ВЫВЕСКА BRUXZIR® НА СТЕНЕ 2009-го.
+   Было: неоновый щит «BRUXZIR COMING SOON», повешенный на гвоздь с ниткой и
+   с перекосом — «как under construction, криво, будто на ниточке» (Эльдар,
+   2026-09-30), левее такта и поверх колонны, чтобы читалось «здесь ещё не
+   сделано». Коронка с тех пор сделана и стоит в зале, а временный щит остался.
+   Стало (Эльдар, 04.11.2026): «Glossy Blue BruxZir® Logo в артефактах —
+   замени старую табличку коминг сун на новую», «только не так криво на этот
+   раз», «ровно под годом». Значит это уже не времянка на нитке, а вывеска:
+   ни гвоздя, ни нитки, ни перекоса, середина — на середине такта, то есть
+   ровно под цифрами года. Висит на плоскости стены (wallSX — закон заклёпки),
+   размер в мировых единицах. Прежний щит (bruxzir_soon.png) остался в assets,
+   но больше не рисуется. */
+const BZ_LOGO = {
+  dx: 0,        // ровно под годом
+  top: 92,      // мировая высота верха вывески: цифры года кончаются на 23, под ними воздух и вывеска
+  w: 820,       // ширина в мировых единицах; пропорция — из самого файла
 };
 function drawBruxZirSoon(){
-  const sp = PROP_SPRITES.ph_bz_soon; if (!sp) return;
+  const sp = PROP_SPRITES.ph_bz_logo; if (!sp) return;
   const b = BEATS.find(q => q.t === 'BRUXZIR'); if (!b) return;
   const kk = k(exhibitZ(b.x));
-  const sx = wallSX(b.x, BZ_SOON.dx);
-  const w = BZ_SOON.w * kk * SS, h = w * sp.h / sp.w;
-  if (sx < -w * 2 || sx > W + w * 2) return;
-  const yHang = py(BZ_SOON.top, kk);
-  const yNail = py(BZ_SOON.top - BZ_SOON.cord, kk);
-  rivet('bz_soon', sx, kk);
-  // гвоздь и нитка
+  const sx = wallSX(b.x, BZ_LOGO.dx);
+  const w = BZ_LOGO.w * kk * SS, h = w * sp.h / sp.w;
+  if (sx < -w || sx > W + w) return;
+  const yTop = py(BZ_LOGO.top, kk);
+  rivet('bz_logo', sx, kk);
+  const x0 = sx - w / 2;
+  /* СНАЧАЛА СВЕТ НА СТЕНЕ, ПОТОМ САМИ БУКВЫ. Вывеска глянцевая и подсвечена
+     изнутри: вокруг неё стена отдаёт синим, а под ней — мягкая тень, потому
+     что она стоит в сантиметрах от стены, а не наклеена на неё. */
+  drawGlow('90,160,255', sx, yTop + h * 0.5, w * 0.62, 0.16);
   ctx.save();
-  ctx.strokeStyle = 'rgba(28,32,38,0.55)';
-  ctx.lineWidth = Math.max(1, 2.2 * kk * SS);
-  ctx.beginPath(); ctx.moveTo(sx, yNail); ctx.lineTo(sx, yHang); ctx.stroke();
-  ctx.fillStyle = 'rgba(32,36,42,0.8)';
-  ctx.beginPath(); ctx.arc(sx, yNail, Math.max(1.2, 4 * kk * SS), 0, 7); ctx.fill();
+  ctx.shadowColor = 'rgba(10,14,20,0.38)';
+  ctx.shadowBlur = 18 * kk * SS;
+  ctx.shadowOffsetY = 7 * kk * SS;
+  ctx.drawImage(spriteMip(sp, w, h), x0, yTop, w, h);
   ctx.restore();
-  // щит: поворот вокруг точки подвеса
-  ctx.save();
-  ctx.translate(sx, yHang);
-  ctx.rotate(BZ_SOON.tilt);
-  const x0 = -w * BZ_SOON.hang;
-  // мягкая тень на стене — щит висит в сантиметрах от неё, а не наклеен
-  ctx.save();
-  ctx.shadowColor = 'rgba(10,14,20,0.42)';
-  ctx.shadowBlur = 22 * kk * SS;
-  ctx.shadowOffsetX = 6 * kk * SS;
-  ctx.shadowOffsetY = 9 * kk * SS;
-  ctx.fillStyle = 'rgba(0,0,0,1)';
-  ctx.fillRect(x0, 0, w, h);
-  ctx.restore();
-  ctx.drawImage(spriteMip(sp, w, h), x0, 0, w, h);
-  ctx.restore();
-  /* ТАБЛИЧКА ОТКРЫВАЕТ СВОЙ ГОД. Эльдар (07.10.2026): «табличка BruxZir пусть
-     тоже будет кликабельной и ведёт на страницу 2009». Щит повёрнут вокруг
-     гвоздя, поэтому зона касания — рамка, описанная вокруг его четырёх
-     повёрнутых углов, а не прямоугольник до поворота. */
-  {
-    const c = Math.cos(BZ_SOON.tilt), s = Math.sin(BZ_SOON.tilt);
-    let hx0 = Infinity, hy0 = Infinity, hx1 = -Infinity, hy1 = -Infinity;
-    for (const [u, v] of [[x0, 0], [x0 + w, 0], [x0, h], [x0 + w, h]]){
-      const X = sx + u * c - v * s, Y = yHang + u * s + v * c;
-      hx0 = Math.min(hx0, X); hx1 = Math.max(hx1, X); hy0 = Math.min(hy0, Y); hy1 = Math.max(hy1, Y);
-    }
-    pushHit(hx0, hy0, hx1 - hx0, hy1 - hy0, {type: 'study', beat: BEATS.indexOf(b)});
-  }
-  // свечение неона ложится на стену вокруг щита
-  drawGlow('90,160,255', sx + w * (0.5 - BZ_SOON.hang), yHang + h * 0.5, w * 0.72, 0.13);
+  /* ВЫВЕСКА ОТКРЫВАЕТ СВОЙ ГОД. Эльдар (07.10.2026): «табличка BruxZir пусть
+     тоже будет кликабельной и ведёт на страницу 2009». Перекоса больше нет,
+     поэтому зона касания — сам прямоугольник букв. */
+  pushHit(x0, yTop, w, h, {type: 'study', beat: BEATS.indexOf(b)});
 }
 
 /* 1993 · NEWPORT BEACH. The one bay in the hall whose film the company shot
@@ -15759,7 +15737,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261104-plant';   // 04.11.2026: монстера на прилавке перед табло TODAY (до этого 20261103-gtv)   // 03.11.2026: логотип Glidewell TV и QR на приложение (до этого 20261102-bzf3)   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261104-bzlogo';   // 04.11.2026: глянцевая вывеска BruxZir на стене 2009 (до этого 20261104-plant)   // 04.11.2026: монстера на прилавке перед табло TODAY (до этого 20261103-gtv)   // 03.11.2026: логотип Glidewell TV и QR на приложение (до этого 20261102-bzf3)   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -15880,7 +15858,8 @@ async function loadPhotoSkin(){
     ph_quote76: 'quote_1976.jpg',     // 1976: табличка «Those guys mail anyway…» — дерево с гравировкой, фото Эльдара
     ph_gio: 'glidewell_io.png',       // 2017: логотип glidewell.io из вектора (.ai Эльдара) — вместо набранного имени
     ph_gio_rev: 'glidewell_io_rev.png',// он же вывороткой: белые буквы, красные точки — для тёмного листа
-    ph_bz_soon: 'bruxzir_soon.png',   // 2009: неоновая табличка BruxZir COMING SOON — временная, висит на ниточке
+    ph_bz_soon: 'bruxzir_soon.png',   // 2009: неоновая табличка BruxZir COMING SOON — временная, висела на ниточке (с 04.11.2026 не рисуется)
+    ph_bz_logo: 'r_bruxzir_logo.png',  // 2009: глянцевая вывеска BruxZir® на стене (tools/cut_bruxzir_logo.py, 04.11.2026)
     ph_pfm1: 'pfm_1.png', ph_pfm2: 'pfm_2.png', ph_pfm3: 'pfm_3.png',   // the six PFM stages, cut apart
     ph_pfm4: 'pfm_4.png', ph_pfm5: 'pfm_5.png', ph_pfm6: 'pfm_6.png',
     ph_pfmrow: 'pfm_row.png',         // and the whole line, for the screen-filling look
