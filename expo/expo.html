@@ -738,7 +738,7 @@ const BEATS = [
      units, so 180 leaves a clear gap and still ends 30 units short of where
      the counter itself ends (26735). */
   {x:21930, y:'2009–13', t:'SCREW-RETAINED', minor:true,
-   plaque:true, plaqueLz:18, plaqueBenchDX:180,
+   plaque:true, plaqueLz:18, plaqueBenchDX:1348,   // 180 + SR_DX: табличка переехала на правый стол вместе с имплантами (Эльдар, 04.11.2026)
    th:'The barrier wasn’t the technique — it was the price of the parts.',
    /* затравка вместо пересказа страницы (Эльдар, 26.10.2026: «на линии нам нужно только небольшая затравка для раскрытия темы — про что внутри»; «го»). Было: «Own-made Ti-bases, abutments and screws plus a flat lab fee — and BruxZir bonded to the Ti-base in the lab, so no cement goes in the patient’s mouth. It arrives as the Inclusive Tooth Replacement System (2012), a patient-specific case in one box, and ends in the BruxZir Full-Arch Prosthesis (Nov 2013): a whole arch milled from one blank.» */
    d:'Implant crowns without cement — parts, price and process made in-house.',
@@ -2757,14 +2757,7 @@ const BENCH_STONE_TH = 2.6;
    помещается в один экран, и два стола с просветом посередине выглядели
    неуклюже. Там теперь один стол, см. benchBeat у второго сегмента
    (Эльдар, 02.10.2026). */
-/* СТЫК 22280 СНЯТ (Эльдар, 04.11.2026: перечеркнул левый кусок на присланном
-   кадре и провёл стрелку к правому — то есть «один стол, а не два»). После
-   того как прилавок довели до витрины glidewell.io, этот стык (на нынешнем
-   ритме 27900) остался за 744 до нового торца, и от него до конца стола
-   висел короткий обрубок с просветом в 130 — он читался не стыком столярки,
-   а обломом. Остальные четыре стыка на месте: они стоят в глубине прогонов,
-   где кусок с каждой стороны длиннее самой витрины. */
-const BENCH_BREAKS = [1700, 7350, 13100, 16900]
+const BENCH_BREAKS = [1700, 7350, 13100, 16900, 22280]
   .map(x => ({x: SHIFT(x), half: 65}));
 /* ПРИЛАВОК 1996–1999 НАЧИНАЕТСЯ НА 120 ПРАВЕЕ (Эльдар, 30.10.2026: «капы и левую часть стола
    просто сдвинь вправо — всё останется на своих местах относительно левого края стола, но стол
@@ -2790,6 +2783,15 @@ const BENCH_BREAKS = [1700, 7350, 13100, 16900]
    стеллажа, но не лезет под него. Справа разрыв кончается там же, где кончался
    (31140), — перед бухтой 2018. Было: {x: 29520, half: 1620}. */
 BENCH_BREAKS.push({x: 29924, half: 1215});   // 28709 … 31139: витрина и пол за ней до бухты 2018
+/* ДЛИННЫЙ ПРОГОН 2009–2010s СНЯТ (Эльдар, 04.11.2026: перечеркнул его на кадре,
+   «именно он перечёркнут, и всё, что на нём, надо переложить на правый стол»).
+   Он шёл от конца разрыва линии BruxZir (25430) до стыка 22280 (27835) и
+   оставался единственным глухим пролётом прилавка на весь этот зал. Снимается
+   целиком одним разрывом; стык 22280 при этом остаётся на месте и становится
+   левым торцом того короткого стола, который 04.11 довели до витрины
+   glidewell.io, — он и есть «правый стол». Импланты и табличка Screw-retained
+   переезжают на него, см. SR_DX. */
+BENCH_BREAKS.push({x: 26632, half: 1203});   // 25429 … 27835
 /* 1973: no counter — the two labs stand on their own stones, the way the nine
    do at 1979, and the counters stop short of them on both sides (Eldar,
    2026-09-11). The small joint that used to sit here (3345) is gone with it. */
@@ -6005,13 +6007,33 @@ function wrapCalc(text, maxW){
      «через точку и с новой строки»); каждая часть переносится сама по себе */
   if (text.includes('\n')) return text.split('\n').flatMap(t => wrapCalc(t, maxW));
   const words = text.split(' ');
-  let line = '', lines = [];
-  for (const w of words){
-    const test = line ? line + ' ' + w : w;
-    if (ctx.measureText(test).width > maxW && line){ lines.push(line); line = w; }
-    else line = test;
+  const lines = [];
+  /* ТИРЕ НЕ ОТРЫВАЕТСЯ ОТ ТОГО, ЧТО ВВОДИТ (Эльдар, 04.11.2026, кадром подписи
+     BruxZir: «после тире в этом случае перенеси на следующую строку, так как
+     иначе ты разрываешь смысл»). Жадный перенос дотягивал строку до
+     «…zirconia — and», и союз оставался висеть при первой строке, оторванный
+     от своего же придатка: «and» читается концом одной мысли, а начинает
+     другую. Правило узкое и потому безопасное: если строка кончается ОДНИМ
+     словом сразу после тире, это слово уходит вниз, а тире остаётся концом
+     строки — ровно так его и ставят. Два и больше слов после тире уже кусок
+     фразы, их не трогаем; и строка никогда не ужимается до одного тире —
+     для этого в ней должно остаться хотя бы два слова. Тире считается любое:
+     длинное, среднее и дефис, стоящий отдельным словом. */
+  const DASH = w => w === '\u2014' || w === '\u2013' || w === '-';
+  let i = 0;
+  while (i < words.length){
+    let line = words[i], j = i + 1;
+    while (j < words.length){
+      const test = line + ' ' + words[j];
+      if (ctx.measureText(test).width > maxW) break;
+      line = test; j++;
+    }
+    if (j < words.length && j - i >= 3 && DASH(words[j - 2])){
+      j--; line = words.slice(i, j).join(' ');
+    }
+    lines.push(line);
+    i = j;
   }
-  if (line) lines.push(line);
   return lines;
 }
 function drawLines(lines, cx, y, lh){
@@ -16119,8 +16141,15 @@ function initDecor(){
        half the counter's own height (1080 floor − 700 bench = 380), so it
        reads as this bay's exhibit beside the 139-tall mill at 2017. No
        caption: a tap opens the beat's page, which is where its story is. */
+    /* НА ПРАВЫЙ СТОЛ (Эльдар, 04.11.2026). Прогон, на котором стояли импланты,
+       снят целиком, и вещи с него переезжают на короткий стол у витрины
+       glidewell.io: он идёт от стыка 22280 (27965) до 28709, середина 28337.
+       Бит Screw-retained стоит на 27169, отсюда и сдвиг — 1168. Он задан от
+       БИТА, а не числом: и бит, и оба разрыва считаются от SHIFT, то есть
+       любая новая врезка двигает их вместе. */
+    const SR_DX = 1168;
     const bsr = BEATS.find(b => b.t === 'SCREW-RETAINED');
-    if (bsr) PROPS.push({x: bsr.x, z: 60, kind: 'ph_implant', w: 70, study: 'SCREW-RETAINED'});
+    if (bsr) PROPS.push({x: bsr.x + SR_DX, z: 60, kind: 'ph_implant', w: 70, study: 'SCREW-RETAINED'});
     /* AND THE TWO BARE SCREWS BESIDE IT, LYING DOWN. Eldar's second render
        (implant2.png) is photographed from above with the two implants crossed,
        so it cannot stand up on the counter the way the assembly does — it is
@@ -16133,7 +16162,7 @@ function initDecor(){
     /* z 55, а не 18: на 18 лежащая пара свешивалась с передней кромки прилавка —
        «подними левые импланты чуть выше, чтобы они не падали со стола»
        (Эльдар, 07.10.2026). Глубже на столешнице — значит и выше в кадре. */
-    if (bsr) PROPS.push({x: bsr.x - 120, z: 55, kind: 'ph_implant2', w: 115, lay: true, study: 'SCREW-RETAINED'});
+    if (bsr) PROPS.push({x: bsr.x + SR_DX - 120, z: 55, kind: 'ph_implant2', w: 115, lay: true, study: 'SCREW-RETAINED'});
   }
 
   /* 1996 — ПОДУШКА ВМЕСТО ГОДА. Silent Nite — первое, что компания сделала не
