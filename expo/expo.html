@@ -8986,7 +8986,12 @@ function musicMarkBox(){ const s = 22 * SS; return {x: 26 * SS, y: 26 * SS, w: s
 function soundMarkBox(){ const s = 22 * SS; return {x: 68 * SS, y: 26 * SS, w: s, h: s}; }
 /* ноты и динамика в углу больше нет (звук — в настройках, 26.10.2026): «голоса»
    встают на их строку, отметка сборки и шестерёнка — за ними, как и были */
-function voicesMarkBox(){ return {x: 26 * SS, y: 22 * SS, w: 64 * SS, h: 44 * SS}; }
+/* ЗНАЧОК ГОЛОСОВ КРУПНЕЕ (Эльдар, 04.11.2026: «увеличь иконку героев слева
+   вверху и сделай её более заметной»). 64 × 44 → 84 × 58, то есть в 1,32 раза:
+   на этой кнопке держится вся дверь к людям зала, а она читалась как пылинка
+   в углу. Угол прежний — 26 / 22, растёт значок вправо и вниз, и всё, что под
+   ним (отметка сборки, шестерёнка), считается от его же высоты. */
+function voicesMarkBox(){ return {x: 26 * SS, y: 22 * SS, w: 84 * SS, h: 58 * SS}; }
 function markHit(b, pt){
   if (!pt) return false;
   const pad = 10 * SS;
@@ -8998,7 +9003,8 @@ function soundMarkHit(pt){ return markHit(soundMarkBox(), pt); }
 function voicesMarkHit(pt){ return markHit(voicesMarkBox(), pt); }
 /* шестерёнка настроек — под отметкой сборки (Эльдар, 23.10.2026: «кнопка
    настроек снизу под временем деплоя, слева сверху») */
-function settingsMarkBox(){ const s = 20 * SS; return {x: 26 * SS, y: 22 * SS + 44 * SS + 30 * SS, w: s, h: s}; }
+function settingsMarkBox(){ const s = 20 * SS, b = voicesMarkBox();
+  return {x: 26 * SS, y: b.y + b.h + 30 * SS, w: s, h: s}; }   // от высоты значка, а не числом: значок растёт — шестерёнка едет за ним
 function settingsMarkHit(pt){ return markHit(settingsMarkBox(), pt); }
 function drawMusicMark(){
   const A = Math.max(0.25, state.ruleA);          // they live with the rule
@@ -9067,12 +9073,14 @@ function drawMusicMark(){
   {
     const b = voicesMarkBox();
     const hot = voicesMarkHit(Input.hover) ? 1 : 0;
-    const a = 0.34 * A + 0.30 * hot;
+    /* И ЗАМЕТНЕЕ: 0,34 → 0,58 от яркости линейки (наведение прибавляет те же
+       0,30). Толщина линий привязана к высоте значка — иначе выросший значок
+       рисуется прежним волоском и выглядит бледнее, а не крупнее. */
+    const a = 0.58 * A + 0.30 * hot;
+    const cx = b.x + b.w * 0.5, cy = b.y + b.h * 0.5, sq = b.h, lw = sq / 44;
     ctx.strokeStyle = `rgba(${seg.ink},${a.toFixed(3)})`;
     ctx.fillStyle = `rgba(${seg.ink},${a.toFixed(3)})`;
-    ctx.lineWidth = 1.7 * SS;
-    const cx = b.x + b.w * 0.5, cy = b.y + b.h * 0.5, sq = b.h;
-    ctx.lineWidth = 2.2 * SS;
+    ctx.lineWidth = 2.2 * SS * lw;
     ctx.beginPath(); ctx.arc(cx, cy - sq * 0.20, sq * 0.19, 0, 7); ctx.fill();
     ctx.beginPath();
     ctx.arc(cx, cy + sq * 0.42, sq * 0.38, Math.PI * 1.08, Math.PI * 1.92);
