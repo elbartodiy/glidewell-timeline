@@ -1,7 +1,7 @@
 {
- "updated": "2026-11-04T06:25:30+00:00",
+ "updated": "2026-11-04T19:49:16+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 80,
+ "count": 82,
  "events": [
   {
    "title": "Practical Chairside 3D Printing: A Hands-On Approach Chicago, IL | 5 CE",
@@ -500,6 +500,22 @@
    "url": "https://glidewelldirect.com/products/introduction-to-clear-aligner-therapy-made-easy?variant=68050801131884"
   },
   {
+   "title": "All-on-X Advanced Concepts: Modern Full-Arch Workflow",
+   "from": "2027-06-04",
+   "to": "2027-06-05",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Bushra Imam",
+    "Dr. Isaac Tawil",
+    "Dr. Taylor Manalili"
+   ],
+   "duration": "Two Days",
+   "price": "1295.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/all-on-x-advanced?variant=67836896051564"
+  },
+  {
    "title": "Techniques for Predictable Implant Surgery",
    "from": "2027-06-11",
    "to": "2027-06-11",
@@ -859,6 +875,22 @@
    "price": "595.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/incorporating-aligner-therapy-and-cad-cam-dentistry?variant=67808927940972"
+  },
+  {
+   "title": "All-on-X Advanced Concepts: Modern Full-Arch Workflow",
+   "from": "2027-09-10",
+   "to": "2027-09-11",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Bushra Imam",
+    "Dr. Isaac Tawil",
+    "Dr. Taylor Manalili"
+   ],
+   "duration": "Two Days",
+   "price": "1295.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/all-on-x-advanced?variant=68059716878700"
   },
   {
    "title": "Effective and Practical Implant Overdentures",
