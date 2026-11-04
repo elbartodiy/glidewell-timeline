@@ -7402,7 +7402,19 @@ const TODAY_TV = {
      фото (60 px из 740). Экран НЕ меняется: на нём тот же ролик зала
      (Эльдар: «на самом экране… здесь снаружи всё так же показывается наш
      основной ролик»). */
-  pad: 78, logoW: 0.46, gapLogo: 92, padBot: 117, rad: 94,
+  /* ТЁМНАЯ ПАНЕЛЬ И БЕЛО-КРАСНОЕ СВЕЧЕНИЕ (Эльдар, 03.11.2026): «свечение
+     красного цвета вокруг букв портит вид — там на самом деле от букв идёт
+     сначала белое свечение, а потом оно как бы затухает к красному; чтобы
+     белое свечение было видно, сама подложка — стенд — нужно чтоб был темнее,
+     а не наоборот светлее стены». Панель на фото белая; здесь она графитовая
+     намеренно — по его решению, ради знака. Свечение рисуется в два слоя:
+     широкий красный ореол и узкий белый у самых букв.
+     И «нужно продлить стенд вниз и там добавить текст» — строка канала под
+     экраном, слова его: Clinical education, leadership growth, practice
+     management content, and patient-facing programming all in one place. */
+  pad: 78, logoW: 0.46, gapLogo: 92, rad: 94,
+  gapTag: 96, tagSize: 44, tagLH: 60, padBot: 110,
+  tag: 'Clinical education, leadership growth, practice management content, and patient-facing programming all in one place',
   x(){ return (HALL_FRAME_R + HALL_COL_W / 2 + EDU.L()) / 2; },
   w: 996, h: 560,     // 16:9
   src: 'media/fastmill_today.mp4',
@@ -7441,8 +7453,14 @@ function drawTodayTV(){
   const PW = TODAY_TV.w + 2 * TODAY_TV.pad;
   const sp = PROP_SPRITES.ph_gtv;
   const lw = TODAY_TV.logoW * PW, lh = sp ? lw * sp.h / sp.w : 0;
+  /* СТРОКА ВНИЗУ МЕРЯЕТСЯ ДО ТОГО, КАК СТРОИТСЯ ПАНЕЛЬ: сколько она займёт
+     строк, столько панель и прибавит снизу. Ширина переноса — по экрану,
+     чтобы строка стояла в его колонне, а не шире его. */
+  ctx.font = `500 ${(TODAY_TV.tagSize * u).toFixed(1)}px ${seg.font}`;
+  const tagLines = wrapCalc(TODAY_TV.tag, TODAY_TV.w * u);
+  const tagH = tagLines.length * TODAY_TV.tagLH;
   const pTop = vCen - TODAY_TV.h / 2 - (TODAY_TV.gapLogo + lh + TODAY_TV.pad);
-  const pBot = vCen + TODAY_TV.h / 2 + TODAY_TV.padBot;
+  const pBot = vCen + TODAY_TV.h / 2 + TODAY_TV.gapTag + tagH + TODAY_TV.padBot;
   const bx0 = px(cx - PW / 2, kw), bx1 = px(cx + PW / 2, kw);
   const by0 = py(pTop, kw), by1 = py(pBot, kw);
   if (bx1 < -60 || bx0 > W + 60) return;
@@ -7469,33 +7487,41 @@ function drawTodayTV(){
      панели в два прохода — широкий ореол и узкий, у самой кромки; заливка под
      ними всё равно перекрывается самой панелью. */
   ctx.save();
-  ctx.shadowColor = 'rgba(255,241,221,0.60)'; ctx.shadowBlur = 56 * u;
+  ctx.shadowColor = 'rgba(255,243,226,0.52)'; ctx.shadowBlur = 50 * u;
   ctx.fillStyle = 'rgba(255,250,240,1)';
   ctx.beginPath(); ctx.roundRect(bx0, by0, bw, bh, rad); ctx.fill();
-  ctx.shadowBlur = 18 * u; ctx.fill();
+  ctx.shadowBlur = 16 * u; ctx.fill();
   ctx.restore();
   /* ПАНЕЛЬ. Столярка, а не стена: она на палец светлее стены финала, с едва
      заметным перепадом сверху вниз и собственной тенью — тогда скруглённый
      угол читается как кромка щита, а не как пятно краски. */
   ctx.save();
-  ctx.shadowColor = 'rgba(18,24,32,0.22)'; ctx.shadowBlur = 24 * u; ctx.shadowOffsetY = 11 * u;
+  ctx.shadowColor = 'rgba(14,18,24,0.34)'; ctx.shadowBlur = 26 * u; ctx.shadowOffsetY = 12 * u;
   const g = ctx.createLinearGradient(0, by0, 0, by1);
-  g.addColorStop(0, '#fdfefe'); g.addColorStop(0.55, '#f6f8fa'); g.addColorStop(1, '#ebeef2');
+  g.addColorStop(0, '#2b3038'); g.addColorStop(0.55, '#20242b'); g.addColorStop(1, '#161a20');
   ctx.fillStyle = g;
   ctx.beginPath(); ctx.roundRect(bx0, by0, bw, bh, rad); ctx.fill();
   ctx.restore();
-  ctx.strokeStyle = 'rgba(150,164,180,0.30)'; ctx.lineWidth = 1.2 * SS;
+  // кромка щита: светлая сверху, где на неё падает свет зала, и тёмная по низу
+  ctx.strokeStyle = 'rgba(226,234,244,0.16)'; ctx.lineWidth = 1.2 * SS;
   ctx.beginPath(); ctx.roundRect(bx0, by0, bw, bh, rad); ctx.stroke();
   /* ЗНАК КАНАЛА — ПОДСВЕЧЕН СЗАДИ, КАК НА СТОЙКЕ. Ореол даёт тень по альфе
      самого знака: два прохода, дальний и ближний. */
   if (sp){
     const lwS = lw * u, lhS = lh * u, lyS = py(pTop + TODAY_TV.pad, kw);
     const img = spriteMip(sp, lwS, lhS);
+    const lx = (bx0 + bx1) / 2 - lwS / 2;
     ctx.save();
-    ctx.shadowColor = 'rgba(226,32,48,0.50)'; ctx.shadowBlur = 30 * u;
-    ctx.drawImage(img, (bx0 + bx1) / 2 - lwS / 2, lyS, lwS, lhS);
-    ctx.shadowBlur = 11 * u;
-    ctx.drawImage(img, (bx0 + bx1) / 2 - lwS / 2, lyS, lwS, lhS);
+    // сначала широкий красный ореол — он уходит в панель
+    ctx.shadowColor = 'rgba(226,32,48,0.62)'; ctx.shadowBlur = 44 * u;
+    ctx.drawImage(img, lx, lyS, lwS, lhS);
+    ctx.shadowBlur = 26 * u;
+    ctx.drawImage(img, lx, lyS, lwS, lhS);
+    // поверх него — узкое белое у самых букв: так свет из-за знака и выглядит
+    ctx.shadowColor = 'rgba(255,238,236,0.85)'; ctx.shadowBlur = 13 * u;
+    ctx.drawImage(img, lx, lyS, lwS, lhS);
+    ctx.shadowBlur = 6 * u;
+    ctx.drawImage(img, lx, lyS, lwS, lhS);
     ctx.restore();
   }
   /* корпус экрана — та же тёмная оправа, что у табло: это два экрана одной стены */
@@ -7520,6 +7546,15 @@ function drawTodayTV(){
   ctx.restore();
   ctx.strokeStyle = 'rgba(180,195,210,0.45)'; ctx.lineWidth = 1.4 * SS;
   ctx.beginPath(); ctx.roundRect(x0, yTop, w, h, 10 * u); ctx.stroke();
+  /* строка канала — по центру экрана, шрифтом этой эпохи; первая база на 0,72
+     строки ниже верха блока, дальше через tagLH */
+  ctx.font = `500 ${(TODAY_TV.tagSize * u).toFixed(1)}px ${seg.font}`;
+  ctx.fillStyle = 'rgba(214,223,234,0.78)';
+  ctx.textAlign = 'center';
+  const tagTop = vCen + TODAY_TV.h / 2 + TODAY_TV.gapTag;
+  for (let i = 0; i < tagLines.length; i++)
+    ctx.fillText(tagLines[i], (bx0 + bx1) / 2, py(tagTop + TODAY_TV.tagLH * (0.72 + i), kw));
+  ctx.textAlign = 'left';
   ctx.restore();                                // снимаем обрезку по колонне
   /* ПО СТОЙКЕ ОТКРЫВАЕТСЯ СТРАНИЦА (Эльдар, 03.11.2026: «видео с сайта…
      поставить внутрь страницы… и QR-код добавить из фото референсного»).
@@ -21865,7 +21900,7 @@ const STUDY_BY_TITLE = {
      платформ, «Download for free», адрес tv@glidewell.com. Про саму стойку —
      с фото IMG_6398 (Reference real photos), включая надпись «Made by Glidewell
      Millworks» у её подножия. Ничего не дописано сверх источников. */
-  "GLIDEWELL TV": "Glidewell TV is the company’s own streaming channel, and it is free. It went live in 2025; in May 2026 the site marked the first year — “over a year of on-demand clinical education, leadership growth, practice management content, and patient-facing programming all in one place, built on decades of real-world dental experience.” The line the company puts on the channel itself is shorter: fifty-five years of clinical expertise, now streaming.\n\n## What plays on it\nClinical 360 — “a comprehensive perspective bringing thoughtful planning, clinical execution, and restorative strategy together.” Dental Tech Now — “emerging technologies shaping the future of digital dentistry.” Guiding Leaders — “professional growth from clinicians shaping the future of dentistry.” Clinical Tips — “quick clinical insights you can apply in your practice immediately.” Beside them run the talking shows — Office Hours, The Dentalpreneur, The Mediocre Dentist — and Glidewell Solutions, on the laboratory’s own products. The catalogue is cut two ways: under twenty minutes, and over twenty.\n\n## Where it plays\nPhone and tablet, Apple TV, Fire TV, Roku and Google TV, Windows and macOS — “anytime, between patients, after hours, or on demand, across all major devices.” Downloading it costs nothing. The code on this page opens the channel; the address for help is tv@glidewell.com.\n\n## The stand in this hall\nThe charging station this one is built from stands inside the Glidewell building: a millwork panel with rounded corners, the channel’s mark lit from behind, a screen, and three shelves of sockets for the phones of whoever is waiting. The small print at its foot reads “Made by Glidewell Millworks” — the company builds its own casework too. Here the shelves are left out and the screen is taken almost to the edges of the panel.",
+  "GLIDEWELL TV": "Glidewell TV is the company’s own channel, and watching it costs nothing. It went live in 2025, and a year later the site totted up what had gathered on it: clinical education, leadership growth, practice management, and programming made for the patient in the chair. The line the company puts on the channel itself is shorter — fifty-five years of clinical expertise, now streaming.\n\n## What plays on it\n• Clinical 360 — “a comprehensive perspective bringing thoughtful planning, clinical execution, and restorative strategy together.”\n• Dental Tech Now — “emerging technologies shaping the future of digital dentistry.”\n• Guiding Leaders — “professional growth from clinicians shaping the future of dentistry.”\n• Clinical Tips\n• Office Hours\n• The Dentalpreneur\n• The Mediocre Dentist\n• Glidewell Solutions\nThe catalogue is cut two ways: under twenty minutes, and over twenty.\n\n## Where it plays\nPhone and tablet, Apple TV, Fire TV, Roku, Google TV, Windows and macOS — “anytime, between patients, after hours, or on demand, across all major devices.”\n\n## The stand\nThe charging station this one is built from stands in the Glidewell building: a panel with rounded corners, the channel’s mark lit from behind, a screen, and three shelves of sockets for the phones of whoever is waiting. The small print at its foot reads “Made by Glidewell Millworks” — the company builds its own casework. Here the shelves are left out and the screen runs almost to the edges.",
   "LOST-WAX CASTING": "In 1907 William H. Taggart demonstrated a practical lost-wax casting method for dental restorations — molten gold cast into a mold formed around a hand-carved wax pattern. The technique made precisely fitting cast crowns and inlays reproducible, and it defined the craft for the rest of the century: every restoration began as wax shaped by hand, one case at a time, days or weeks per mouth. This is the analog baseline the whole tour measures itself against — the world Glidewell was born into, and the one it would spend fifty years making faster, cheaper and more precise.\n\n## What a crown cost, in hands\nFor the whole of the century that follows, a crown is made the way Taggart made it: a wax pattern carved by hand, invested, burned out, cast in gold, then fitted, layered with porcelain, fired, glazed and polished. Every step is a person, and every person is a place where the case can go wrong. A restoration is days of one technician's attention, and a laboratory is as good as the hands it can hire.\n\n## Why the hall starts here\nEverything Glidewell will do is measured against this bench. The mail, the merger of nine labs into one, the digital scan, the milled crown, the robot — each one removes a pair of hands from the chain, or moves them to where they matter. The founder learned the craft at exactly this bench, and spent fifty years automating it.\n\n“If you make crowns the old analog way, fair warning: you'd better be old enough to retire, because you will not survive.” — Jim Glidewell, Constant Change",
   "FOUNDED": "In January 1970 Jim Glidewell opened his own dental laboratory in Tustin, California: a ground-floor space of about five hundred square feet at 130 El Camino Real, fitted out with four thousand dollars of used equipment and a porcelain furnace a fellow sold him for three hundred. He was twenty-four, a Navy veteran of the Tonkin Gulf, and a year out of the dental technology program at Orange Coast College, where he had graduated in a class of thirteen.\n\n## How a lab begins on a Friday night\nHe had not planned to be an owner. He was working for Dr. Bill Stanley, the dentist who had taught him the trade, when Stanley was locked out of his office for three months' unpaid rent and took a job in Los Angeles. “There's no ‘we’ in this equation,” Stanley told him. Jim was out of work on a Friday. By Monday he was running his own lab, with enough cash in his pocket to pay three months' rent in advance. A second dentist, Dr. Bob Hubbert, sent him his first customers — and kept sending them. “It seemed as if every time the door opened to my small lab, he was standing there with another dentist.” Within weeks Jim was working for twenty dentists.\n\n## Eighteen months without a day off\nFrom January 6, 1970, until August 1971 he did not take a day off: an average of a hundred and twenty hours a week, forty-hour stretches at the bench, six hours' sleep on the lab couch, home twice a week to shower. He could work as much as three people, he reasoned, and the two salaries he did not pay went back into equipment. His first employee, Joyce, a classmate from Orange Coast, quit a month in by throwing a bowl of plaster at his head. “My first employee Joyce was a doll and I was a jerk. Wherever you are, Joyce, I apologize!” His second wife, Sandi, a hairdresser and artist, sat at a bench whenever a ceramist tried to hold the little company hostage.\n\n## The goal was two hundred dollars a week\nHe did not set out to build the largest dental laboratory in the world; he set out to make two hundred dollars a week and feed his family. The first year the business earned thirty-nine thousand dollars, the second seventy — more than his father had made in a lifetime on the railroad. And yet his college roommate had already told him, in his first year of school: “You'd make a lot more friends if you weren't always telling people that you're going to build the biggest dental lab in the world.”\n\n## What he brought from Kentucky\nJim was born in Las Vegas in May 1945 and raised, from four to nine, on his grandparents' farm near Burkesville, Kentucky, without electricity, running water or indoor plumbing, in a one-room schoolhouse where he was the only child in his grade. His father, a Depression-era railroad conductor, once stopped the truck to pick a rusty wrench out of the dirt. Fifty years later the founder of a five-thousand-person company drives a fourteen-year-old Hummer, buys used equipment, and explains it the same way: he will not drive a car his average employee cannot afford.\n\n“There are no extraordinary men, only ordinary men with extraordinary reactions to ordinary circumstances.” — Jim Glidewell, Constant Change",
   "SECOND LAB": "Growth, in the seventies, meant another room. Jim's second laboratory was a third-floor space at 172 North Tustin Avenue in Orange, a few miles from the first. Over the next decade the company would occupy a run of small addresses in Orange — 1722 East Rose, where the first marketing promotion was photographed; 303 West Palm Avenue, four thousand square feet, home from 1975 to 1984 — and then, one by one, labs in other towns.\n\n## Addition before system\nThis is what a young laboratory did: it grew by adding places. Each new lab was a new set of benches, a new manager, a new set of overheads and habits, and no two of them worked the same way. Jim was in his late twenties, younger than some of the men he hired to run them, and for a while he deferred to their age. “I remember walking into a lab in Torrance and seeing a fair number of empty beer cans all over the floor.” Employees came back from lunch legally drunk. It took him weeks to put his foot down and say the obvious: they were making medical devices for real patients, and patients deserved sober hands.\n\n## What the second lab taught\nTwo things came out of those rooms. The first was standard operating procedures — the realization that a task done well in one lab was done differently in the next unless someone wrote it down. The second was a habit that never left the company: try an idea in one small place before you bet the whole business on it. “Having multiple dental labs has allowed me to try out ideas on one small lab, before implementing anything on a larger scale.”\n\n## The years\nBy 1975 the company was in its four-thousand-square-foot lab on West Palm Avenue and Jim, thirty, had been made a pilot and president of the Santa Ana 20/30 Club. It was, he says, big enough by then that people assumed he had inherited it.\n\n“Hope is not a business plan.” — Jim Glidewell, Constant Change",
@@ -24309,6 +24344,7 @@ const PSKIN = {bg: 'rgba(252,252,251,0.985)', edge: 'rgba(26,28,30,0.16)', r: 6,
    screen inwards — draws the chrome (shadow, body, the era's band, the frost),
    sets the content clip and returns where things go. `side` asks for the
    right-hand column; it is dropped, not squeezed, when the window has no room. */
+const CLOSE_M = 34;   // поле крестика от верха и от правого края листа — одно и то же (см. ниже)
 function pageFrame(K, a, side, meta, fitH){
   const PAGE = pageOf(K);
   const pad = PAGE.pad * SS;
@@ -24414,7 +24450,14 @@ function pageFrame(K, a, side, meta, fitH){
       ctx.fillStyle = `rgba(${K.accent},0.9)`; ctx.fillRect(wx0, wy0, ww, bandH + 2 * SS);
       ctx.restore();
     }
-    metaY = wy0 + bandH + 36 * SS; closeY = wy0 + bandH + 30 * SS;
+    /* КРЕСТИК — НА РАВНОМ ПОЛЕ ОТ ОБОИХ КРАЁВ (Эльдар, 03.11.2026: «он слишком
+       близко к краю, и разное расстояние от верха до правой стороны выглядит
+       плохо»). Было 30 сверху и 24 справа: кольцо радиусом 15 оставляло
+       15 воздуха сверху и 9 справа — угол читался перекошенным. Теперь одно
+       число на оба поля, 34, и воздуха по 19 с обеих сторон. У листов с
+       заголовочной полосой (navy, titlebar) крестик по-прежнему стоит по
+       середине полосы — там он элемент окна, а не угла бумаги. */
+    metaY = wy0 + bandH + 36 * SS; closeY = wy0 + bandH + CLOSE_M * SS;
     ctx.font = K.font(PAGE.small);
     try { ctx.letterSpacing = `${PAGE.small * TRACK.label * SS}px`; } catch(err){}
     ctx.fillStyle = `rgba(${K.dim},0.9)`;
@@ -24423,7 +24466,10 @@ function pageFrame(K, a, side, meta, fitH){
   if (meta) ctx.fillText(meta, wx0 + pad, metaY);
   try { ctx.letterSpacing = '0px'; } catch(err){}
   const closeR = 10 * SS;
-  drawCloseX(K.flat ? wx0 + ww - 24 * SS : wx0 + ww - pad * 0.5, closeY, closeR, a, closeInk || K.ink, K.flat);
+  const closeX = K.band === 'navy' ? wx0 + ww - bandH / 2
+                : K.band === 'titlebar' ? wx0 + ww - 2 * SS - bandH / 2
+                : wx0 + ww - CLOSE_M * SS;
+  drawCloseX(closeX, closeY, closeR, a, closeInk || K.ink, K.flat);
   /* ОБРЕЗКА НАЧИНАЕТСЯ ПОД МЕТА-СТРОКОЙ, А НЕ ПО КРАЮ ЛИСТА. Мета — год и
      название в шапке — стоит внутри листа, и прокручиваемый текст ехал прямо
      по ней: две строки одна поверх другой (Эльдар, 02.10.2026: «смотри, как
