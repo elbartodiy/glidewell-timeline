@@ -2757,7 +2757,14 @@ const BENCH_STONE_TH = 2.6;
    помещается в один экран, и два стола с просветом посередине выглядели
    неуклюже. Там теперь один стол, см. benchBeat у второго сегмента
    (Эльдар, 02.10.2026). */
-const BENCH_BREAKS = [1700, 7350, 13100, 16900, 22280]
+/* СТЫК 22280 СНЯТ (Эльдар, 04.11.2026: перечеркнул левый кусок на присланном
+   кадре и провёл стрелку к правому — то есть «один стол, а не два»). После
+   того как прилавок довели до витрины glidewell.io, этот стык (на нынешнем
+   ритме 27900) остался за 744 до нового торца, и от него до конца стола
+   висел короткий обрубок с просветом в 130 — он читался не стыком столярки,
+   а обломом. Остальные четыре стыка на месте: они стоят в глубине прогонов,
+   где кусок с каждой стороны длиннее самой витрины. */
+const BENCH_BREAKS = [1700, 7350, 13100, 16900]
   .map(x => ({x: SHIFT(x), half: 65}));
 /* ПРИЛАВОК 1996–1999 НАЧИНАЕТСЯ НА 120 ПРАВЕЕ (Эльдар, 30.10.2026: «капы и левую часть стола
    просто сдвинь вправо — всё останется на своих местах относительно левого края стола, но стол
@@ -25289,23 +25296,44 @@ function drawClip(){
   ctx.restore();
 }
 
-/* THE INVITATION BELONGS TO THE PROLOGUE. It is read once, before the company
-   exists; past the founding the visitor is already travelling and the line
-   would only nag. It fades out over the last stretch before 1970 and is never
-   drawn beyond it — so its ink is the craft era's warm ink, and nothing else.
-   The attract tour itself runs the whole hall as before. */
-let FOUND_X = null;
+/* THE INVITATION BELONGED TO THE PROLOGUE — и больше нет. Она читалась один
+   раз, до основания компании: «past the founding the visitor is already
+   travelling and the line would only nag», поэтому гасла к 1970-му и дальше не
+   рисовалась вовсе, а чернила у неё были тёплые, краеведческие.
+   С 04.11.2026 она привязана к жесту (см. drawAttractHint) и потому нигде не
+   «нагает»: её видно ровно те пять секунд, когда зал сам показывает свайп.
+   FOUND_X с его отсчётом до бита FOUNDED снят вместе с прежним правилом. */
 function drawAttractHint(t){
-  if (state.mode !== 'attract') return;
-  if (FOUND_X == null){ const fb = BEATS.find(b => b.t === 'FOUNDED'); FOUND_X = fb ? fb.x : Infinity; }
-  const near = Math.max(0, Math.min(1, (FOUND_X - cam.x) / 400));
-  if (near <= 0) return;
-  const a = (0.35 + 0.2*Math.sin(t*1.8)) * near;
+  /* СТРОКА ЖИВЁТ ПО ЧАСАМ ЖЕСТА (Эльдар, 04.11.2026: «Swipe to travel through
+     time — эта надпись пусть появляется за секунду до свайп-рекомендации и
+     светится всё время, пока она идёт, и секунду после»). Было: строка висела
+     весь пролог, до бита FOUNDED, и там пульсировала сама по себе — слова жили
+     отдельно от жеста, который их объясняет. Теперь они одно: за секунду до
+     жеста строка проявляется, все три его секунды горит ровно, и секунду
+     после гаснет.
+     «Секунда после» берётся не из T: пауза кончается ровно на T = 3, дальше
+     фаза уже не 'dwell' и часов жеста нет. Поэтому последний кадр, когда жест
+     шёл, помечается временем (A.cueSeen), и от него отсчитывается угасание —
+     единственная память во всей этой паре, всё остальное по-прежнему чистая
+     функция от часов.
+     Цвет берётся у эпохи: строка теперь появляется по всему залу, а не только
+     в тёплом прологе, и песочные чернила кое-где легли бы на свой же тон. */
+  const T = swipeCueT();
+  const A = state.attract || {};
+  let a = 0;
+  if (T != null && T >= 0 && T <= 3){ A.cueSeen = state.time; a = 1; }
+  else if (T != null && T > -1 && T < 0) a = 1 + T;
+  else {
+    const since = state.time - (A.cueSeen != null ? A.cueSeen : -1e9);
+    if (since >= 0 && since < 1) a = 1 - since;
+  }
+  a *= 0.85;
+  if (a <= 0.01) return;
   ctx.save();
   ctx.textAlign = 'center';
   ctx.font = eraFont(24*SS);
   try { ctx.letterSpacing = `${24*TRACK.label*SS}px`; } catch(e){}
-  ctx.fillStyle = `rgba(225,198,155,${a.toFixed(3)})`;
+  ctx.fillStyle = `rgba(${segAt(cam.x).ink},${a.toFixed(3)})`;
   // the rule owns the foot of the frame; the invitation stands above it
   /* SWIPE, А НЕ WHEEL. Эльдар (07.10.2026): «turn the wheel надо поменять на
      swipe, по-моему, так лучше». Колеса у киоска нет — есть палец. */
@@ -25339,20 +25367,26 @@ function drawAttractHint(t){
 
    Движение пальца — справа налево: ведёшь лист влево, приходит следующий. Это
    та же рука, что и у настоящего свайпа (см. МАХ ПО ОВЕРЛЕЮ в драйвере). */
+/* ЧАСЫ ЖЕСТА — ОДНИ НА ДВОИХ. По ним живёт и сам жест, и строка-приглашение
+   под ним (drawAttractHint): T — секунды от начала трёх последних секунд
+   паузы, отрицательное до них. Отсюда же все запреты: в финале жеста нет
+   («там мы уже приехали куда надо и свайпать дальше некуда», Эльдар,
+   07.10.2026), у экрана фильма нет (смотрят фильм), и под открытым листом
+   нет. Пауза у экспоната бывает длиннее трёх секунд, поэтому отсчёт идёт от
+   КОНЦА паузы, а не от её начала. */
+function swipeCueT(){
+  const A = state.attract;
+  if (!A || state.mode !== 'attract' || A.phase !== 'dwell' || overlayOpen()) return null;
+  if (A.atFinale || A.film) return null;
+  return A.dwell - ((A.dwellLen || CFG.attractDwell) - 3);
+}
 function drawSwipeCue(t){
   const A = state.attract;
   /* часы подсказки: T — секунды от начала её трёх последних секунд паузы.
      Пауза у экспоната бывает длиннее трёх секунд (на уроке, в финале), поэтому
      отсчёт идёт от КОНЦА паузы, а не от её начала. */
-  const live = state.mode === 'attract' && A.phase === 'dwell' && !overlayOpen();
-  if (!live) return;
-  /* в финале жеста нет: «там мы уже приехали куда надо и свайпать дальше
-     некуда» (Эльдар, 07.10.2026). Из финала тур не едет дальше, а гаснет
-     и начинается сначала (phase 'fadeout'). */
-  if (A.atFinale) return;
-  if (A.film) return;   // у экрана фильма — смотрят фильм, свайп не показываем
-  const T = A.dwell - ((A.dwellLen || CFG.attractDwell) - 3);
-  if (T < 0 || T > 3) return;
+  const T = swipeCueT();
+  if (T == null || T < 0 || T > 3) return;
 
   /* ВСЁ — ЧИСТАЯ ФУНКЦИЯ ОТ ЧАСОВ ПАУЗЫ, А НЕ ОТ ВРЕМЕНИ КАДРА. Эльдар
      (07.10.2026): «финальный тап, когда прокрутка происходит, — эта метка так
