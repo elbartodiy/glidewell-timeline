@@ -11886,7 +11886,23 @@ function drawMapWall(t){
          so its own stone top lands on the hall's bench line. */
       const kR = k(120), TOP = 0.16;
       const wR = G8_W * kR * SS, hR = wR * g8.h / g8.w;
-      const yBench = py(CFG.benchY, kR), yFoot = yBench + hR * (1 - TOP);
+      /* ПЛИТА СТОИТ НА ПОЛУ, А НЕ НА ПРОПОРЦИИ РЕНДЕРА (Эльдар, 04.11.2026:
+         «смотри, как стол чуть-чуть выше на несколько пикселей, чем линия
+         времени — спусти его, чтобы они совпадали»). Высота плиты бралась от
+         её ширины, а низ — от каменной столешницы, посаженной на линию
+         прилавка: 700 + h·(1 − 0,16). На сегодняшнем рендере (1886 × 606) это
+         давало подошву на 1077,8 вместо 1080 — на 2,2 единицы, 2,5 точки
+         кадра выше пола. Пол в покое и есть линия шкалы (RULE_Y = (1080 − 76)·SS
+         при py(1080) = H), поэтому под плитой светилась полоска пола, и зазор
+         читался ошибкой — ровно то же, что чинил ERA1_BENCH_DROP для прилавков
+         первой эпохи 29.10. Теперь подошва берётся от пола на СВОЕЙ глубине,
+         а каменная столешница уходит на те же 2,2 единицы ниже линии прилавка:
+         два пикселя на макетах не видит никто, полоска под плитой — видна.
+         Ширина и пропорции рендера не тронуты: плита не растянута.
+         Плюс толщина самой линии (1,2·SS): линия рисуется ВНИЗ от RULE_Y, и
+         подошва ровно на RULE_Y оставляла под собой ещё одну строку пола —
+         теперь линия лежит НА кромке плиты, а не в щели под ней. */
+      const yFoot = py(1080, kR) + 1.2 * SS;
       const xR = px(mid, kR) - wR / 2;
       /* NO SHADOW UNDER THIS ONE. Its foot is set by the render's own
          proportions rather than by the floor line, so a smear drawn there lands
@@ -15215,7 +15231,7 @@ const sheetOf = tb => {
    is touched. No caps of my own, no door laid one after another, no patches.
    The middle panel repeats with its joins faded through each other, which on a
    doorless panel leaves nothing to see. */
-const ERA1_BENCH_DROP = 1004 - (700 + (388 - 39) * 380 / 441);   // 3.28 — см. ПРИЛАВОК 1907–1979
+const ERA1_BENCH_DROP = 1004 - (700 + (388 - 39) * 380 / 441);   // 3.28 — см. ПРИЛАВОК 1907–1979   // 3.28 — см. ПРИЛАВОК 1907–1979
 function drawSheetBenches(){
   const kf = k(0), wpp = kf * SS;
   const yBack = py(CFG.benchY, k(CFG.benchDepth));
@@ -23469,6 +23485,47 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
     }
   }
 }
+/* МИКРО-ЗНАК НА БЕГУНКЕ ВИДЕО-ОКНА (Эльдар, 04.11.2026: «давай вместо точки,
+   которая едет по таймлайну на видео-окнах, сделаем микро логотип G»). Знак —
+   первый квадрат фирменной вывески glidewell_logo.svg: красный квадрат с белым
+   G, 166,786 из 731,787 единиц её viewBox, то есть первые LG.h точек растра —
+   квадрат, и его сторона равна высоте всей вывески, поэтому вырезка не считает
+   никаких долей. Под знаком белая рамка в 1,2·SS: дорожка проигранного сама
+   красная, и красный квадрат без неё с ней сливается. Пока вывеска не
+   загрузилась — прежняя точка, чтобы бегунок не пропадал. */
+function drawGKnob(cx, cy, s){
+  const LG = IMGS.glidewelllogo;
+  if (!LG || !LG.h){
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.beginPath(); ctx.arc(cx, cy, s * 0.5, 0, 7); ctx.fill();
+    return;
+  }
+  const r = s * 0.1, m = 1.4 * SS, x = cx - s/2, y = cy - s/2;
+  ctx.save();
+  ctx.shadowColor = 'rgba(12,16,22,0.38)'; ctx.shadowBlur = s * 0.34; ctx.shadowOffsetY = s * 0.06;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.roundRect(x - m, y - m, s + 2*m, s + 2*m, r + m);
+  ctx.fill();
+  ctx.restore();
+  /* ЗНАК РАСТРИРУЕТСЯ ОДИН РАЗ В 128 ТОЧЕК И ТОЛЬКО ПОТОМ УМЕНЬШАЕТСЯ. Если
+     рисовать svg сразу в 16 точек, Chrome растрирует его в этом размере: тонкая
+     перекладина G пропадает, и на её месте остаётся белая полоса. Квадрат —
+     первая LG.h ширины вывески (её сторона равна её же высоте), поэтому вся
+     вывеска кладётся на буфер шириной в квадрат и за ним обрезается. */
+  if (!LG._gm){
+    const n = 128, c = document.createElement('canvas');
+    c.width = n; c.height = n;
+    const g = c.getContext('2d');
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(LG.el, 0, 0, n * LG.w / LG.h, n);
+    LG._gm = c;
+  }
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(x, y, s, s, r); ctx.clip();
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(LG._gm, x, y, s, s);
+  ctx.restore();
+}
 function drawStudy(){
   const S = state.study; if (!S) return;
   S.amt += ((S.closing ? 0 : 1) - S.amt) * Math.min(1, (state.dt || 0.016) * 5);
@@ -24875,8 +24932,7 @@ function drawPerson(){
         ctx.fillStyle = `rgba(${K.red},0.95)`;
         ctx.fillRect(left, barY3, vw3 * frac3, barH3);
         if (v3 && v3.duration){
-          ctx.fillStyle = `rgba(${K.red},1)`;
-          ctx.beginPath(); ctx.arc(left + vw3 * frac3, barY3 + barH3/2, 6.5*SS, 0, 7); ctx.fill();
+          drawGKnob(left + vw3 * frac3, barY3 + barH3/2, 16*SS);
           pushHit(left - 8*SS, barY3 - 13*SS, vw3 + 16*SS, 30*SS,
                   {type:'inseek', src: c3.src, x0: left, w: vw3});
         }
@@ -25116,8 +25172,7 @@ function drawClip(){
     ctx.fillStyle = 'rgba(225,27,42,0.95)';
     ctx.fillRect(x0, barY, vw * frac, barH);
     if (v && v.duration){
-      ctx.fillStyle = 'rgba(255,255,255,0.95)';
-      ctx.beginPath(); ctx.arc(x0 + vw * frac, barY + barH/2, 6.5*SS, 0, 7); ctx.fill();
+      drawGKnob(x0 + vw * frac, barY + barH/2, 16*SS);
       pushHit(x0 - 8*SS, barY - 13*SS, vw + 16*SS, 30*SS,
               {type:'inseek', src: C.src, x0: x0, w: vw});
     }
