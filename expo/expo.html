@@ -261,7 +261,7 @@ const BEATS = [
       верхом блока фото 1984-го */
    /* maxB 700 → 579: размер доски держался высотой места (700 − 268 = 432);
       поднятая, она получила бы на 121 больше и выросла — предел едет вместе с ней */
-   wall:[{img:'board1980', w:700, dx:0, top:147, maxB:579, study:'media/common_sense_2020.mp4'}],
+   wall:[{img:'board1980', w:700, dx:0, top:147, maxB:579, study:'media/common_sense_2020.mp4', clipBay79:true}],
    table:[]},
 
   /* СТРОКА НА СТЕНЕ — ОДНА И ПОД ФОТО (Эльдар, 22.10.2026: «1984 — сократить
@@ -273,7 +273,10 @@ const BEATS = [
    /* «Постепенно лаборатории объединяются в одно здание» (Эльдар, 23.10.2026): после
       показа Джиму 21.10 прежняя строка «Nine labs become one 15,000 sq ft plant»
       спорила с ним самим и с книгой (вне здания остались Lake Havasu и Riverside) */
-   dWall:'Gradually, the labs come together under one roof.', deskCapFoot:778,
+   /* «Gradually,» снято (Эльдар, 04.11.2026, перечеркнул слово вместе с
+      запятой). Слово ничего не прибавляло: год на стене и так говорит, когда
+      это было, а «постепенно» только оттягивало начало фразы. */
+   dWall:'The labs come together under one roof.', deskCapFoot:778,
    capCol:440,   // одной строкой под фото: она уже панели в 736, но в общую колонку 400 не влезала и ложилась на фото (27.10.2026)
    th:'One machine, fed nationally — the model that scales.',
    d:'Nine labs merge into one centralized plant in Orange (15,000 sq ft, 42 staff); mail now brings the majority of cases.',
@@ -748,7 +751,7 @@ const BEATS = [
      units, so 180 leaves a clear gap and still ends 30 units short of where
      the counter itself ends (26735). */
   {x:21930, y:'2009–13', t:'SCREW-RETAINED', minor:true,
-   plaque:true, plaqueLz:18, plaqueBenchDX:911,   // 180 + SR_DX (731): табличка переехала на правый стол вместе с имплантами и держит прежние 180 правее сборки (Эльдар, 04.11.2026)
+   plaque:true, plaqueLz:18, plaqueBenchDX:707,   // 180 + SR_DX (731): табличка переехала на правый стол вместе с имплантами и держит прежние 180 правее сборки (Эльдар, 04.11.2026)
    th:'The barrier wasn’t the technique — it was the price of the parts.',
    /* затравка вместо пересказа страницы (Эльдар, 26.10.2026: «на линии нам нужно только небольшая затравка для раскрытия темы — про что внутри»; «го»). Было: «Own-made Ti-bases, abutments and screws plus a flat lab fee — and BruxZir bonded to the Ti-base in the lab, so no cement goes in the patient’s mouth. It arrives as the Inclusive Tooth Replacement System (2012), a patient-specific case in one box, and ends in the BruxZir Full-Arch Prosthesis (Nov 2013): a whole arch milled from one blank.» */
    d:'Implant crowns without cement — parts, price and process made in-house.',
@@ -2797,7 +2800,7 @@ const BENCH_BREAKS = [1700, 7350, 13100, 16900]
    28709, то есть 60 воздуха до левого края витрины (28769): стол доходит до
    стеллажа, но не лезет под него. Справа разрыв кончается там же, где кончался
    (31140), — перед бухтой 2018. Было: {x: 29520, half: 1620}. */
-BENCH_BREAKS.push({x: 29738, half: 1401});   // 28337 … 31139: витрина и пол за ней до бухты 2018
+BENCH_BREAKS.push({x: 29636, half: 1503});   // 28133 … 31139: витрина и пол за ней до бухты 2018
 /* ДЛИННЫЙ ПРОГОН 2009–2010s СНЯТ (Эльдар, 04.11.2026: перечеркнул его на кадре,
    «именно он перечёркнут, и всё, что на нём, надо переложить на правый стол»).
    Он шёл от конца разрыва линии BruxZir (25430) до стыка 22280 (27835) и
@@ -2808,10 +2811,15 @@ BENCH_BREAKS.push({x: 29738, half: 1401});   // 28337 … 31139: витрина 
    …И СТОЛ ВСТАЛ ПО ЦЕНТРУ (Эльдар, 04.11.2026, обвёл зелёным, где он должен
    стоять, красным — где стоял). Длина осталась прежней, 874, а середина ушла
    с 28272 на 27900 — ровно посередине между годами 2010s (27477) и 2015
-   (28323), то есть в центр того блока стены, что между ними. Стол 27463…28337:
-   до витрины glidewell.io он больше не достаёт, зато стоит в своём пролёте
-   симметрично, как Эльдар и обвёл. */
-BENCH_BREAKS.push({x: 26446, half: 1017});   // 25429 … 27463
+   (28323). Эльдар обвёл ещё раз: нужно левее. Сдвиг снят с его рамки — на
+   кадре известна красная (это и есть стол 27463…28337, 874 единицы на 800
+   точек кадра, то есть 0,915 точки на единицу), и зелёная стоит на 197 левее
+   по левой кромке и на 213 по правой; средние 205 и взяты. Стол 27258…28132,
+   середина 27695. Это уже не геометрическая середина между годами, а то
+   место, которое при камере этой бухты читается серединой на глаз: годы стоят
+   на дальней плоскости, стол — на ближней, и их середины на экране не
+   совпадают. */
+BENCH_BREAKS.push({x: 26344, half: 915});   // 25429 … 27259
 /* 1973: no counter — the two labs stand on their own stones, the way the nine
    do at 1979, and the counters stop short of them on both sides (Eldar,
    2026-09-11). The small joint that used to sit here (3345) is gone with it. */
@@ -16162,13 +16170,13 @@ function initDecor(){
        reads as this bay's exhibit beside the 139-tall mill at 2017. No
        caption: a tap opens the beat's page, which is where its story is. */
     /* НА ПРАВЫЙ СТОЛ (Эльдар, 04.11.2026). Прогон, на котором стояли импланты,
-       снят целиком, и вещи с него переезжают на короткий стол, что стоит по
-       центру между годами 2010s и 2015: он идёт от 27463 до 28337, середина
-       27900. Бит Screw-retained стоит на 27169, отсюда и сдвиг — 731. Он задан
+       снят целиком, и вещи с него переезжают на короткий стол: он идёт от 27259
+       до 28133, середина 27696. Бит Screw-retained стоит на 27169, отсюда и
+       сдвиг — 527. Он задан
        от БИТА, а не числом: и бит, и оба разрыва считаются от SHIFT, то есть
        любая новая врезка двигает их вместе. Сборка имплантов встаёт на саму
        середину стола, пара лежачих винтов — на прежние 120 левее. */
-    const SR_DX = 731;
+    const SR_DX = 527;
     const bsr = BEATS.find(b => b.t === 'SCREW-RETAINED');
     if (bsr) PROPS.push({x: bsr.x + SR_DX, z: 60, kind: 'ph_implant', w: 70, study: 'SCREW-RETAINED'});
     /* AND THE TWO BARE SCREWS BESIDE IT, LYING DOWN. Eldar's second render
@@ -25379,11 +25387,18 @@ function drawAttractHint(t){
   }
   a *= 0.85;
   if (a <= 0.01) return;
+  /* ГАРНИТУРА — ТОЖЕ ЭПОХИ (Эльдар, 04.11.2026: «Swipe to travel — начертание
+     шрифта то же, что и начертание эпохи»). eraFont без третьего довода берёт
+     шрифт ПЕРВОЙ эпохи — антикву пролога; пока строка жила только до 1970-го,
+     это и было правильно. Теперь она появляется по всему залу, и в белом зале
+     антиква посреди гротеска читалась чужой строкой. Берём шрифт той эпохи,
+     над чьим прилавком строка сейчас стоит, — как берут его подписи и годы. */
+  const hseg = segAt(cam.x);
   ctx.save();
   ctx.textAlign = 'center';
-  ctx.font = eraFont(24*SS);
+  ctx.font = eraFont(24*SS, '', hseg.font);
   try { ctx.letterSpacing = `${24*TRACK.label*SS}px`; } catch(e){}
-  ctx.fillStyle = `rgba(${segAt(cam.x).ink},${a.toFixed(3)})`;
+  ctx.fillStyle = `rgba(${hseg.ink},${a.toFixed(3)})`;
   // the rule owns the foot of the frame; the invitation stands above it
   /* SWIPE, А НЕ WHEEL. Эльдар (07.10.2026): «turn the wheel надо поменять на
      swipe, по-моему, так лучше». Колеса у киоска нет — есть палец. */
@@ -25424,6 +25439,21 @@ function drawAttractHint(t){
    07.10.2026), у экрана фильма нет (смотрят фильм), и под открытым листом
    нет. Пауза у экспоната бывает длиннее трёх секунд, поэтому отсчёт идёт от
    КОНЦА паузы, а не от её начала. */
+/* ЧЕРНИЛА ПОДПИСЕЙ НА ПРИЛАВКЕ — ОДНИ НА ВСЕХ (Эльдар, 04.11.2026: «знак,
+   рекомендующий свайп, и стрелка тоже должны быть цвета текста — тех
+   надписей, которые на столе возникают»). Правило взято оттуда же, где его
+   применяют сами подписи: в белом зале они набраны тёмным (55,61,69), в
+   остальных эпохах — светлыми чернилами эпохи, поднятыми до читаемых на
+   тёмном лице прилавка (descInk). Второе значение — подсветка под штрихом:
+   тёмному знаку нужен светлый ореол, светлому — тёмный, иначе он пропадает
+   на своём же фоне. */
+function benchCapInk(){
+  const seg = segAt(cam.x);
+  const ink = segIdx(cam.x) === 3 ? '55,61,69' : descInk(seg);
+  const c = ink.split(',').map(Number);
+  const dark = (c[0] + c[1] + c[2]) / 3 < 150;
+  return {ink, halo: dark ? '255,255,255' : '0,0,0'};
+}
 function swipeCueT(){
   const A = state.attract;
   if (!A || state.mode !== 'attract' || A.phase !== 'dwell' || overlayOpen()) return null;
@@ -25488,25 +25518,32 @@ function drawSwipeCue(t){
   /* БЕЛЫМ С ТЕНЬЮ, А НЕ СВЕТОМ ПО СВЕТУ. Первая проба рисовала жест режимом
      lighter цветом эпохи — и он утонул: середина кадра это ровно то место, где
      стоит освещённый прожекторами экспонат, и светлое по светлому не читается
-     вовсе. Жест — не часть зала, он поверх него, поэтому белый, и под ним
-     мягкая тень, которая отделяет его от любого фона. */
+     вовсе. Жест — не часть зала, он поверх него, поэтому под ним мягкая тень,
+     которая отделяет его от любого фона.
+     …И ЧЕРНИЛАМИ ПОДПИСЕЙ, А НЕ БЕЛЫМ (Эльдар, 04.11.2026: «знак,
+     рекомендующий свайп, и стрелка тоже должны быть цвета текста — тех
+     надписей, которые на столе возникают»). Белое стояло со времён первой
+     пробы и в белом зале читалось как засветка. Теперь знак берёт те же
+     чернила, что подписи прилавка (benchCapInk), а подсветка под ним
+     переворачивается вместе с ними: тёмному знаку — светлый ореол. */
+  const CUE = benchCapInk();
   ctx.save();
-  ctx.shadowColor = `rgba(0,0,0,${(0.55 * Math.max(a, 0.2)).toFixed(3)})`;
+  ctx.shadowColor = `rgba(${CUE.halo},${(0.55 * Math.max(a, 0.2)).toFixed(3)})`;
   ctx.shadowBlur = 12 * SS;
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
 
   if (a > 0.01 && fx < x0 - 1){
     // след: от начала пути до пальца, гаснет к хвосту
     const g = ctx.createLinearGradient(x0, 0, fx, 0);
-    g.addColorStop(0, 'rgba(255,255,255,0)');
-    g.addColorStop(1, `rgba(255,255,255,${(0.5 * a).toFixed(3)})`);
+    g.addColorStop(0, `rgba(${CUE.ink},0)`);
+    g.addColorStop(1, `rgba(${CUE.ink},${(0.5 * a).toFixed(3)})`);
     ctx.strokeStyle = g; ctx.lineWidth = 3.4 * SS;
     ctx.beginPath(); ctx.moveTo(x0, cy); ctx.lineTo(fx, cy); ctx.stroke();
   }
   // наконечник пути — куда ведут; держится всю подсказку, а не мигает с пальцем
   const tipA = 0.5 * Math.min(1, T / 0.15) * Math.min(1, (3 - T) / 0.15);
   const tipX = cx - L / 2;
-  ctx.strokeStyle = `rgba(255,255,255,${tipA.toFixed(3)})`;
+  ctx.strokeStyle = `rgba(${CUE.ink},${tipA.toFixed(3)})`;
   ctx.lineWidth = 3 * SS;
   ctx.beginPath();
   ctx.moveTo(tipX + 12 * SS, cy - 11 * SS);
@@ -25516,25 +25553,27 @@ function drawSwipeCue(t){
 
   // волна нажатия — из ТОЧКИ касания, она не едет вслед за пальцем
   if (ring >= 0 && ring < 1){
-    ctx.strokeStyle = `rgba(255,255,255,${(0.75 * (1 - ring)).toFixed(3)})`;
+    ctx.strokeStyle = `rgba(${CUE.ink},${(0.75 * (1 - ring)).toFixed(3)})`;
     ctx.lineWidth = 3 * SS * (1 - ring);
     ctx.beginPath(); ctx.arc(x0, cy, r + 56 * SS * ring, 0, 7); ctx.stroke();
   }
-  if (a > 0.01) drawCueFinger(fx, cy, r, a, pr, true);
+  if (a > 0.01) drawCueFinger(fx, cy, r, a, pr, true, CUE);
   ctx.restore();
 }
 /* ПАЛЕЦ ПОДСКАЗКИ — ОДИН НА ОБА ЖЕСТА: свайп и касание. Белое ядро, кольцо и,
    на нажатии, расходящаяся волна. Рисуется внутри save/restore вызывающего, с
    его тенью. a — видимость, pr — сила нажатия (1 в миг касания, гаснет к 0). */
-function drawCueFinger(fx, cy, r, a, pr, noRing){
-  ctx.fillStyle = `rgba(255,255,255,${(0.22 * a + 0.6 * pr).toFixed(3)})`;
+function drawCueFinger(fx, cy, r, a, pr, noRing, cue){
+  /* чернила те же, что у подписей прилавка; без них (старые вызовы) — белый */
+  const INK = (cue && cue.ink) || '255,255,255';
+  ctx.fillStyle = `rgba(${INK},${(0.22 * a + 0.6 * pr).toFixed(3)})`;
   ctx.beginPath(); ctx.arc(fx, cy, r * 0.78, 0, 7); ctx.fill();
-  ctx.strokeStyle = `rgba(255,255,255,${(0.9 * a).toFixed(3)})`;
+  ctx.strokeStyle = `rgba(${INK},${(0.9 * a).toFixed(3)})`;
   ctx.lineWidth = 2.6 * SS;
   ctx.beginPath(); ctx.arc(fx, cy, r, 0, 7); ctx.stroke();
   if (pr > 0.02 && !noRing){
     const e = 1 - pr;
-    ctx.strokeStyle = `rgba(255,255,255,${(0.75 * pr).toFixed(3)})`;
+    ctx.strokeStyle = `rgba(${INK},${(0.75 * pr).toFixed(3)})`;
     ctx.lineWidth = 3 * SS * pr;
     ctx.beginPath(); ctx.arc(fx, cy, r + 52 * SS * e, 0, 7); ctx.stroke();
   }
@@ -26923,10 +26962,23 @@ function frame(){
       const ax = it.pz != null ? px(b.x + it.dx, k(it.pz))
                                : wallSX(b.x, it.dx, k(wz));
       rivet('wall:' + (it.img || '') + ':' + b.x, ax, k(it.pz != null ? it.pz : exhibitZ(b.x)));
+      /* ДОСКА НЕ НАЛЕЗАЕТ НА ТО, ЧТО СТОИТ ПЕРЕД НЕЙ (Эльдар, 04.11.2026:
+         «доска не должна налезать на объекты перед ней» — кадр, где доска
+         1980-го перекрыла флаг и крышу макета 1979-го). Настенный слой
+         рисуется ПОСЛЕ бухты с макетами, поэтому далёкая доска ложилась
+         поверх ближнего предмета. Порядок не трогаем — он верен для всего
+         остального, — а вещь с флагом clipBay79 обрезается по внешней грани
+         правой колонны бухты 1979-го: взята та же плоскость и та же ширина
+         колонны (R79_BAY_Z, 120), что и у света этой бухты в drawMapHero.
+         Всё, что левее этой грани, принадлежит бухте, и настенной вещи там
+         делать нечего при любой камере. */
+      const clipB = it.clipBay79 ? (() => { const kc = k(R79_BAY_Z); return px(REC_R, kc) + 60 * kc * SS; })() : null;
+      if (clipB != null){ ctx.save(); ctx.beginPath(); ctx.rect(clipB, 0, Math.max(0, W - clipB), H); ctx.clip(); }
       drawSprite(sp, b.x + it.dx, it.cy, wz, it.w, it.rot || 0, null,
                  it.study || it.page ? {type:'study', beat: i, mainSrc: it.study || undefined}
                           : {type:'photo', sp, wx: b.x + it.dx, cy: it.cy, z: wz, w: it.w, cap: it.cap, link: it.link, beat: i}, ax);
       if (it.glint) drawPrismGlint(it, sp, ax, py(it.cy, k(wz)), (it.w / sp.inner.w) * k(wz) * SS);
+      if (clipB != null) ctx.restore();
       if (it.cap){
         const kk = k(wz);
         const seg = segAt(b.x);
