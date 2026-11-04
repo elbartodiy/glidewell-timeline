@@ -6720,6 +6720,32 @@ function projBeamHaze(){
    ни линий по краю. Яркость одна у обоих проекторов (gain не берётся). Свет дышит медленно и чуть-чуть, как лампа сквозь
    плёнку. Прежний луч (лист с полосами и дымкой) — по ?pbeam=sheet. */
 const PBEAM_SHEET = /[?&]pbeam=sheet/.test(location.search);
+/* КРАЯ ЛУЧА МЕНЯЮТСЯ ПЕРЕХОДОМ, А НЕ В СТЫК (Эльдар, 04.11.2026: «лучи
+   проектора меняются в зависимости от угла зрения и меняются они в стык —
+   давай будем менять их в дисолв, на всех проекторах»). Луч от лампы на
+   прямоугольник ограничен двумя КРАЙНИМИ по углу вершинами кадра, какими их
+   видно ОТ ЛАМПЫ. Зритель идёт по залу, лампа смещается относительно кадра —
+   и крайней становится другая вершина. В момент смены обе лежат на одном
+   луче: углы у них равны, а расстояния разные, поэтому дальний край луча
+   прыгал по этому лучу из одной вершины в другую — это и был стык.
+   Переход даётся не по времени, а по самому углу: чем ближе углы двух
+   кандидатов, тем ближе взятая точка к их середине, а середина в этот момент
+   лежит на том же луче. Направление кромки не дёргается ни на кадр, меняется
+   только длина — прыжок становится плавным ходом, и смотреть можно с любой
+   скоростью камеры. BEAM_SPAN — ширина зоны перехода по углу; 0,06 радиана
+   это примерно три с половиной градуса. */
+const BEAM_SPAN = 0.06;
+function beamEdge(lx, ly, cs, cmp){
+  const an = cs.map(c => Math.atan2(c[1] - ly, c[0] - lx));
+  let i0 = 0;
+  for (let i = 1; i < cs.length; i++) if ((an[i] - an[i0]) * cmp > 0) i0 = i;
+  let i1 = -1;
+  for (let i = 0; i < cs.length; i++)
+    if (i !== i0 && (i1 < 0 || (an[i] - an[i1]) * cmp > 0)) i1 = i;
+  if (i1 < 0) return cs[i0];
+  const w = 0.5 + 0.5 * Math.min(1, Math.abs(an[i0] - an[i1]) / BEAM_SPAN);
+  return [cs[i0][0] * w + cs[i1][0] * (1 - w), cs[i0][1] * w + cs[i1][1] * (1 - w)];
+}
 function drawProjBeam(lx, ly, A, B, lamp, t, seed, gain){
   if (!PBEAM_SHEET) return drawProjBeamWedges(lx, ly, A, B, lamp, t, seed, gain);
   return drawProjBeamSheet(lx, ly, A, B, lamp, t, seed, gain);
@@ -6950,12 +6976,9 @@ function drawFilmProjector(r){
      какими их видно от лампы */
   {
     const cs = [[g.px0, g.py0], [g.px0 + g.pw, g.py0], [g.px0 + g.pw, g.py0 + g.ph], [g.px0, g.py0 + g.ph]];
-    const an = cs.map(c => Math.atan2(c[1] - lensY, c[0] - lensX));
-    let iA = 0, iB = 0;
-    for (let i = 1; i < 4; i++){ if (an[i] < an[iA]) iA = i; if (an[i] > an[iB]) iB = i; }
     const tt = state.time || 0;
     const lamp99 = 0.92 + 0.05 * Math.sin(tt * 6.1) + 0.03 * Math.sin(tt * 1.7);
-    drawProjBeam(lensX, lensY, cs[iA], cs[iB], lamp99, tt, 2);
+    drawProjBeam(lensX, lensY, beamEdge(lensX, lensY, cs, -1), beamEdge(lensX, lensY, cs, 1), lamp99, tt, 2);
   }
   contactShadow(mx, mFoot, mw * 0.6, 0.28);
   const mg = ctx.createLinearGradient(0, mFoot - mh, 0, mFoot);
@@ -8598,13 +8621,8 @@ function drawProjectors(t, phase){
     const lx = ph93 ? ph93.lx : mxp, ly = ph93 ? ph93.ly : myp - bh * 0.45;
     const corners = [[sx - vw/2, sy - vh/2], [sx + vw/2, sy - vh/2],
                      [sx + vw/2, sy + vh/2], [sx - vw/2, sy + vh/2]];
-    const ang = corners.map(c => Math.atan2(c[1] - ly, c[0] - lx));
-    let iA = 0, iB = 0;
-    for (let i = 1; i < 4; i++){
-      if (ang[i] < ang[iA]) iA = i;
-      if (ang[i] > ang[iB]) iB = i;
-    }
-    drawProjBeam(lx, ly, corners[iA], corners[iB], lamp, t, 1, 2.6);   // общий луч (см. drawProjBeam); ×2.6 — светлая панель бухты
+    drawProjBeam(lx, ly, beamEdge(lx, ly, corners, -1), beamEdge(lx, ly, corners, 1),
+                 lamp, t, 1, 2.6);   // общий луч и общий переход краёв (см. beamEdge); ×2.6 — светлая панель бухты
 
     // 2 — the picture is assembled on its own transparent sheet and then ADDED
     //     to the wall. Feathering it in place would erase the masonry with it
@@ -10072,10 +10090,16 @@ function drawRec23(t){
   const cx = px(mid, kk);
   ctx.save();
   ctx.textAlign = 'center';
-  ctx.font = eraFont(58 * kk * SS, '700', SEGMENTS[3].font);
-  try { ctx.letterSpacing = `${58*TRACK.title*kk*SS}px`; } catch(e){}
+  /* ЗАГОЛОВОК ВЫШЕ И КРУПНЕЕ (Эльдар, 04.11.2026: «The crossover поднять и
+     увеличить, следующую строчку сократить и увеличить»). 58 → 74 и база с 46
+     на 36: на ширине бухты (411 точек кадра при камере в её середине) строка
+     занимает 225 вместо 177 — чуть больше половины, воздух по краям остаётся.
+     Год над ней стоит в свободной полосе, которую панель публикует сама
+     (BAY_FREE ниже), и поднимается вместе с заголовком. */
+  ctx.font = eraFont(74 * kk * SS, '700', SEGMENTS[3].font);
+  try { ctx.letterSpacing = `${74*TRACK.title*kk*SS}px`; } catch(e){}
   ctx.fillStyle = 'rgba(32,42,54,0.96)';
-  ctx.fillText('The crossover', cx, py(46, kk));
+  ctx.fillText('The crossover', cx, py(36, kk));
   /* THE PANEL PUBLISHES ITS EMPTY BAND. The year over this bay is not drawn
      here — it is the hall's own numeral, on the era's type plane — so the only
      way it can sit centred in the white above the title is for the panel to
@@ -10083,14 +10107,20 @@ function drawRec23(t){
      not off its baseline, so the band is what the eye actually sees.
      (Eldar, 2026-09-15: "год должен быть в центре по вертикали внутри
      свободного пространства".) */
-  BAY_FREE['2023'] = {top: 0, bot: py(46, kk) - ctx.measureText('The crossover').actualBoundingBoxAscent,
+  BAY_FREE['2023'] = {top: 0, bot: py(36, kk) - ctx.measureText('The crossover').actualBoundingBoxAscent,
                       frame: state.time};
   try { ctx.letterSpacing = '0px'; } catch(e){}
-  ctx.font = eraFont(30 * kk * SS, '', SEGMENTS[3].font);
+  /* ПОДПИСЬ КОРОЧЕ И КРУПНЕЕ (тот же разбор Эльдара). Было 30 кеглем и
+     «march 2023 the digital impressions outnumber the physical» — 369 точек из
+     411, строка шла от края до края бухты и на ближней камере выезжала за неё.
+     Стало «march 2023 digital passes physical»: тот же факт в 34 знаках вместо
+     56, и 38-м кеглем это 274 точки — две трети бухты, с полями. Месяц остался
+     в строке: на ходовой камере подпись оси схемы закрыта штабелем коробок, и
+     без него дата в бухте не называлась бы нигде. База 96 → 98: под 74-м
+     заголовком свисающим хвостам нужно 44, плюс воздух. */
+  ctx.font = eraFont(38 * kk * SS, '', SEGMENTS[3].font);
   ctx.fillStyle = 'rgba(60,70,84,0.95)';
-  /* twenty units under a fifty-eight unit line is not a gap, it is a collision:
-     the sub sat inside the descenders of the title. It gets its own air now. */
-  ctx.fillText('march 2023 the digital impressions outnumber the physical', cx, py(96, kk));
+  ctx.fillText('march 2023 digital passes physical', cx, py(98, kk));
   ctx.restore();
 
   const ph = crossPhase(mid);
