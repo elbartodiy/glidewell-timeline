@@ -3471,19 +3471,48 @@ function tiltGrab(dxCss, yCss){
   TILT.target = TILT.max * Math.tanh(-arm * (dxCss / innerWidth) * 2.4);
 }
 function tiltRelease(){ TILT.target = 0; }
+/* ВСТРЯСКА ВСЕГО КАДРА (Эльдар, 04.11.2026: «в момент удара, когда она
+   касается пола, пусть ещё всё вот так трясётся, прям буквально одну секунду,
+   чтобы весь экран встряснулся»).
+   Трясётся не мир, а готовый кадр: холст сдвигается стилем, как его уже
+   поворачивает наклон (TILT). Рисовать зал со сдвигом нельзя — по файлу
+   полторы сотни мест сами зовут setTransform, и общий сдвиг они бы стёрли.
+   Сдвиг обнажил бы края, поэтому вместе с ним идёт еле заметный масштаб:
+   ровно столько, чтобы самый большой уход не показал из-под холста страницу.
+   Затухание квадратичное, частота высокая: это удар, а не качка. */
+const SHAKE = {t: 0, len: 1, amp: 0, ph: 0};
+function shakeFrame(amp, len){ SHAKE.t = len; SHAKE.len = len; SHAKE.amp = amp; SHAKE.ph = Math.random() * 6.28; }
+let CV_TX = null;
+function cvTransform(){
+  const deg = TILT.on ? TILT.a : 0;
+  let tx = 0, ty = 0, grow = 1;
+  if (SHAKE.t > 0){
+    const u = SHAKE.t / SHAKE.len, d = u * u;            // 1 → 0, квадратично
+    const w = (1 - u) * SHAKE.len * 54;
+    tx = Math.sin(w + SHAKE.ph) * SHAKE.amp * d;
+    ty = Math.sin(w * 1.37 + SHAKE.ph * 1.7) * SHAKE.amp * d * 1.3;
+    grow = 1 + 2.4 * SHAKE.amp / Math.max(1, Math.min(innerWidth, innerHeight));
+  }
+  let sc = 1;
+  if (deg !== 0){
+    const r = Math.abs(deg) * Math.PI / 180;
+    sc = Math.cos(r) + Math.max(innerWidth / innerHeight, innerHeight / innerWidth) * Math.sin(r);
+  }
+  const s = (deg === 0 && SHAKE.t <= 0) ? 'translateZ(0)'
+    : `translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px) rotate(${deg.toFixed(3)}deg) scale(${(sc * grow).toFixed(4)})`;
+  if (s !== CV_TX){ CV_TX = s; cv.style.transform = s; }
+}
 function tiltStep(dt){
-  if (!TILT.on) return;
-  if (overlayOpen()) TILT.target = 0;
-  const h = Math.min(dt, 0.05);
-  TILT.w += (TILT.k * (TILT.target - TILT.a) - TILT.c * TILT.w) * h;
-  TILT.a += TILT.w * h;
-  if (Math.abs(TILT.a) < 0.002 && Math.abs(TILT.w) < 0.01 && TILT.target === 0){ TILT.a = 0; TILT.w = 0; }
-  if (Math.abs(TILT.a - TILT.shown) < 0.001) return;
-  TILT.shown = TILT.a;
-  if (TILT.a === 0){ cv.style.transform = ''; return; }
-  const r = Math.abs(TILT.a) * Math.PI / 180;
-  const sc = Math.cos(r) + Math.max(innerWidth / innerHeight, innerHeight / innerWidth) * Math.sin(r);
-  cv.style.transform = `rotate(${TILT.a.toFixed(3)}deg) scale(${sc.toFixed(4)})`;
+  if (SHAKE.t > 0) SHAKE.t = Math.max(0, SHAKE.t - dt);
+  if (TILT.on){
+    if (overlayOpen()) TILT.target = 0;
+    const h = Math.min(dt, 0.05);
+    TILT.w += (TILT.k * (TILT.target - TILT.a) - TILT.c * TILT.w) * h;
+    TILT.a += TILT.w * h;
+    if (Math.abs(TILT.a) < 0.002 && Math.abs(TILT.w) < 0.01 && TILT.target === 0){ TILT.a = 0; TILT.w = 0; }
+    TILT.shown = TILT.a;
+  }
+  cvTransform();
 }
 // pin the canvas to its own compositor layer (anti-ghosting). ?noz=1 takes it
 // off again, for a machine where the compositor tears the frame into bands.
@@ -11530,188 +11559,193 @@ function drawBruxZirSoon(){
 
 /* ======================= РЕКРЕАЦИЯ 2009 · BRUXZIR ==========================
    Самый важный такт компании стоял пустым: год, глянцевая вывеска и рекламная
-   карточка на стене — и больше ничего. Прилавок перед ним Эльдар снял 04.11.2026,
-   и между 25429 и 27463 открылось 2034 единицы чистого пола.
+   карточка на стене — и больше ничего. Прилавок перед ним Эльдар снял
+   04.11.2026, и между 25429 и 27463 открылось 2034 единицы чистого пола.
 
-   ЧТО ЗДЕСЬ СТОИТ. Коронка ростом в человека, разрезанная пополам. Левая
-   половина — старая работа: металлический колпачок, слои фарфора поверх него и
-   свежий скол на бугре, через который видно металл. Правая — BruxZir: один
-   кусок циркония от края до края, и он светится изнутри. Ни слова на стене не
-   нужно: зритель видит, из чего коронка была и из чего стала.
+   ЧТО ЗДЕСЬ ПРОИСХОДИТ. На полу стоят две коронки ростом по 1,63 м, у обеих
+   одинаково вырезан передний сектор. Слева металлокерамика: в срезе видно
+   серый металлический колпачок и слои фарфора на нём. Справа BruxZir: тот же
+   срез, но один материал от края до края, без колпачка и без слоёв. Сверху
+   из-за кадра входит кувалда, бьёт один раз — кадр встряхивает, левая коронка
+   превращается в кучу осколков с помятым колпачком посередине, правая стоит
+   нетронутой и после удара наливается тёплым светом. Ни слова не нужно.
 
-   КАК ЭТО СОБРАНО (Эльдар, 04.11.2026: «из каких составляющих? какой
-   механизм?»). Зажечь свет внутри картинки нельзя, поэтому состояний два, и
-   оба — один и тот же рендер: Эльдар сгенерировал их одним кадром, чтобы
-   геометрия совпала. Замерено на файле: силуэты расходятся на 0,55 %, левая
-   половина предмета в двух состояниях отличается на 8 единиц цвета, правая —
-   на 30 (см. tools/cut_bruxzir_crown.py). Зал держит оба слоя и проявляет
-   верхний сквозь мягкую вертикальную полосу, которая едет слева направо: пока
-   она идёт по слоёной половине — не меняется ничего, перешла шов — монолит
-   загорается. Скол при этом виден всё время, в обоих состояниях.
+   ЭТО НЕ ВЫДУМКА. Коронку в компании так и проверяли — молотком, на камеру;
+   это известный ролик DiTolla. Зал повторяет проверку в масштабе зала.
 
-   ПОЧЕМУ НИША. Эпоха — белая комната, и янтарь на белой стене не читается.
-   Чёрный карман, вырезанный в белой стене, — единственное тёмное место в своей
-   эпохе, и свет в нём виден через весь зал. Глубина ниши берётся настоящей
-   проекцией: задняя плита считается на 430 глубже плоскости экспозиции, и
-   откосы — это трапеции между устьем и задней плитой. Поэтому, проходя мимо,
-   зритель заглядывает ей в бок, как в настоящий проём.
+   КАК СОБРАНО. Четыре рендера Эльдара (04.11.2026), все с альфой, режутся
+   tools/cut_bz_hammer.py: две коронки сняты ОДНИМ кадром, поэтому режутся одной
+   вертикальной рамкой — иначе подошвы встанут на разной высоте; кувалда снята
+   бойком вниз с рукоятью вверх, поэтому входит в кадр как есть, без поворота;
+   осколки сняты тем же светом и теми же материалами, что металлокерамика.
+   Зал не рисует ничего из этого руками: он только двигает, подменяет и светит.
 
-   ЗАКОН ЗАКЛЁПКИ. Устье ниши привязано к плоскости экспозиции (wallSX, k
-   0,5725) — как год, вывеска и карточки этой эпохи. Задняя плита считается от
-   настоящей глубины: её снос и есть параллакс проёма, и он виден только пока
-   ниша в кадре.
+   ПОЧЕМУ НЕТ ЧЁРНОЙ НИШИ. Она была — графитовый карман в белой стене, с
+   откосами и задней плитой. Эльдар снял её 04.11.2026 («убираем чёрный фон») и
+   поставил предмет на колонну между «The digital revolution» и BruxZir: колонна
+   тёмная и вертикальная и служит предметам рамой сама.
+
+   МЕСТО. Колонна замерена С ДВУХ КАМЕР, и это важно. По одному кадру (камера
+   26631, окно 2000×1040) её полоса лежит на экранных 550…611, и если считать её
+   стоящей на плоскости пролёта k(970), выходит середина 25723. Второй кадр
+   (камера 25720) кладёт ту же полосу в середину 1032, а не 1000 — значит
+   плоскость была угадана. Два уравнения на одну полосу дают и плоскость, и
+   место: k = 451,5 / (911 · SS) = 0,5147, то есть z ≈ 849 — глубина СТЕНЫ
+   третьей эпохи (850), а не пролёта; и середина 25782. А 25785 — это и REC2_R,
+   и начало белого зала (SEGMENTS[3].x0): колонна стоит ровно на шве двух эпох.
 
    РЕКЛАМНАЯ КАРТОЧКА 2009-го СНЯТА. Она висела на bx('2009', 178) шириной 550 —
-   ровно там, где теперь стоит коронка, и на экране попадала внутрь ниши, белым
-   прямоугольником поверх тёмного кармана и перед головой предмета. Стена
-   2009-го и так говорит BruxZir глянцевыми буквами, а строку «The best
-   dentistry — made affordable» зал произносит в другом месте. Строка карточки
-   сохранена в BANNERS закомментированной — вернуть её одним движением.
+   там, где теперь стоят коронки. Строка сохранена в BANNERS закомментированной.
 
-   ЧИСЛА (все мировые, замерены на зале):
-     такт 2009 на 26631, плоскость экспозиции z 672 (k 0,5725);
-     пол 1080, низ вывески 260,8 — верх ниши на 300, то есть под вывеской;
-     коронка 700 ростом (1,66 м) и 705 шириной (пропорция из файла 637×633),
-     подошва на полу, голова на 380 — под верхом ниши с запасом;
-     ниша ±560 от такта: 2010s на 27477, до него остаётся больше трёхсот
-     единиц, а по бокам предмета — по сотне экранных точек темноты. */
+   ЧИСЛА (мировые): пол 1080; коронка 690 ростом (1,63 м при метре в 422
+   единицы: прилавок 700…1080 = 90 см) и 763 шириной (пропорция из файла
+   802×725); зазор между ними 0,22 ширины; плоскость z 560. */
 const BZ09 = {
-  /* МЕСТО — КОЛОННА МЕЖДУ «THE DIGITAL REVOLUTION» И BRUXZIR (Эльдар,
-     04.11.2026: «располагаем коронку ровно на месте колонны между цифровой
-     революцией и бруксзир»).
-
-     ЗАМЕРЕНО С ДВУХ КАМЕР, И ЭТО ВАЖНО. По одному кадру (камера 26631, окно
-     2000×1040) тёмная полоса колонны занимает экранные 550…611, и если считать
-     её стоящей на плоскости пролёта k(970), получается середина 25723. Второй
-     кадр (камера 25720) кладёт ту же полосу на 1003…1061, то есть в середину
-     1032, а не 1000 — значит плоскость была угадана неверно. Два уравнения на
-     одну полосу дают и плоскость, и место: k = 451,5 / (911 · SS) = 0,5147,
-     то есть z ≈ 849 — это глубина СТЕНЫ третьей эпохи (850), а не пролёта; и
-     середина 25782. А 25785 — это и REC2_R, и начало белого зала
-     (SEGMENTS[3].x0): колонна стоит ровно на шве двух эпох. Отсюда якорь. */
-  x: () => REC2_R,
-  z: 560,         // коронка стоит в зале, перед колонной
-  h: 690,         // рост коронки: 1,63 м при метре в 422 единицы (прилавок 700…1080 = 90 см)
-  band: 0.30,     // ширина мягкой полосы проявки, в долях ширины предмета
-  /* ЧАСЫ КАТАРСИСА. Цикл идёт, пока зритель рядом, и начинается заново при
-     каждом приходе: в зале перед предметом люди оказываются в разное время. */
-  lead: 1.0, sweep: 2.6, hold: 3.4, fade: 1.6, rest: 2.0,
-  cath: 0,        // 0…1 — сколько монолита горит; им же красится нижняя полоса
-  _t: -1, _in: false, _m: null
+  x: () => REC2_R,   // середина пары — на колонне (см. замер выше)
+  z: 560,            // коронки стоят в зале, перед колонной
+  h: 690,            // рост каждой: 1,63 м
+  gap: 0.22,         // зазор между ними в долях ширины коронки
+  /* ЧАСЫ. Цикл идёт, пока зритель рядом, и начинается заново при каждом
+     приходе: в зале перед предметом люди оказываются в разное время.
+     Порядок: тишина — кувалда падает — удар (встряска, вспышка, пыль, подмена
+     осколками) — кувалда уходит — BruxZir стоит и наливается светом — всё
+     возвращается. */
+  lead: 0.9, fall: 0.38, rise: 1.0, hold: 3.6, fade: 1.6, rest: 2.0,
+  shakeAmp: 0.013,   // доля меньшей стороны окна: на 1040 это 13,5 точки
+  shakeLen: 1.0,     // «прям буквально одну секунду» (Эльдар)
+  cath: 0,           // 0…1 — насколько BruxZir горит; им же красится нижняя полоса
+  _t: -1, _in: false
 };
 function bz09Beat(){ return BEATS.find(q => q.t === 'BRUXZIR'); }
-/* часы: один проход за 10,6 с, пока камера стоит у предмета */
 function bz09Clock(bx){
   const near = Math.abs(cam.x - bx) < 1150;
   if (near && !BZ09._in) BZ09._t = 0;
   BZ09._in = near;
   if (!near){ BZ09._t = -1; BZ09.cath = 0; return null; }
-  const Z = BZ09, tot = Z.lead + Z.sweep + Z.hold + Z.fade + Z.rest;
+  const Z = BZ09;
+  const tHit = Z.lead + Z.fall, tUp = tHit + Z.rise;     // миг удара и миг, когда кувалды уже нет
+  const tot = tUp + Z.hold + Z.fade + Z.rest;
+  const prev = Z._t < 0 ? -1 : Z._t;
   Z._t = (Z._t < 0 ? 0 : Z._t + (state.dt || 0.016)) % tot;
   const t = Z._t;
-  let u, a;                                   // u — где полоса, a — сила верхнего слоя
-  if (t < Z.lead){ u = 0; a = 1; }
-  else if (t < Z.lead + Z.sweep){ u = (t - Z.lead) / Z.sweep; a = 1; }
-  else if (t < Z.lead + Z.sweep + Z.hold){ u = 1; a = 1; }
-  else if (t < Z.lead + Z.sweep + Z.hold + Z.fade){ u = 1; a = 1 - (t - Z.lead - Z.sweep - Z.hold) / Z.fade; }
-  else { u = 0; a = 0; }
-  /* центр полосы едет от −band до 1+band; доля зажжённого монолита меряется по
-     середине правой половины — оттуда и берётся цвет нижней полосы */
-  const c = -Z.band + u * (1 + 2 * Z.band);
-  const lit = Math.max(0, Math.min(1, (c + Z.band - 0.72) / (0.28 + Z.band))) * a;
+  /* МИГ УДАРА ЛОВИТСЯ ПО ПЕРЕСЕЧЕНИЮ, А НЕ ПО РАВЕНСТВУ: шаг кадра плавает, и
+     сравнение «t === tHit» не сработает ни разу. Цикл закольцован, поэтому
+     перескок через ноль (prev > t) ударом не считается. */
+  if (prev >= 0 && prev < t && prev < tHit && t >= tHit)
+    shakeFrame(Z.shakeAmp * Math.min(innerWidth, innerHeight), Z.shakeLen);
+  let ham = null, broke = 0, lit = 0, flash = 0;
+  if (t < Z.lead){ /* тишина */ }
+  else if (t < tHit){ ham = {d: Math.pow((t - Z.lead) / Z.fall, 2)}; }
+  else {
+    broke = 1; flash = Math.max(0, 1 - (t - tHit) / 0.24);
+    if (t < tUp){ const up = (t - tHit) / Z.rise; ham = {d: 1 - up * (2 - up)}; lit = up * up; }
+    else if (t < tUp + Z.hold) lit = 1;
+    else if (t < tUp + Z.hold + Z.fade){ const f = (t - tUp - Z.hold) / Z.fade; lit = 1 - f; broke = 1 - f; }
+    else { broke = 0; lit = 0; }
+  }
   const pres = Math.max(0, Math.min(1, 1 - Math.abs(cam.x - bx) / 1100));
   Z.cath = lit * (pres * pres * (3 - 2 * pres));
-  return {c, a, lit};
+  return {ham, broke, lit, flash};
 }
-/* ---- КОРОНКА: стоит на полу, в среднем плане, перед нишей и за прилавками ----
-   Предмет стоит ВПЕРЕДИ устья (z 560 против 672 плоскости экспозиции): он
-   выходит из кармана в зал, его подошва на 28 экранных точек ниже пола ниши, и
-   поэтому карман читается как глубина, а не как чёрный прямоугольник на стене.
-   Снос предмета относительно ниши при ходьбе — 25 точек на 600 единиц пути,
-   при запасе в 180 точек по бокам: это настоящий параллакс проёма, и он тут к
-   месту.
-   СКЛЕЙКА ДВУХ СОСТОЯНИЙ И ОТРАЖЕНИЕ СЧИТАЮТСЯ НА СВОЁМ ХОЛСТЕ. Мягкий край
-   бегущей полосы нельзя получить обрезкой — обрезка даёт ступеньку ровно там,
-   где взгляд. А затухание отражения нельзя стереть прямо на полотне зала:
-   destination-out выест не только отражение, но и пол под ним (проверено —
-   первая сборка оставила под коронкой чёрную дыру на весь клип). */
+/* ---- ДВЕ КОРОНКИ, КУВАЛДА И ОСКОЛКИ: средний план, перед колонной и за
+   прилавками. Предметы стоят ВПЕРЕДИ плоскости экспозиции (z 560 против 672),
+   поэтому выходят из плоскости колонны в зал, а снос относительно неё при
+   ходьбе — настоящий параллакс. */
 function drawBZ09Crown(t){
   const b = bz09Beat(); if (!b) return;
-  const dead = PROP_SPRITES.ph_bz_dead, live = PROP_SPRITES.ph_bz_live;
-  if (!dead || !live) return;
-  const X = BZ09.x();
-  const kC = k(BZ09.z);
-  const h = BZ09.h * kC * SS, w = h * dead.w / dead.h;
-  const cx = px(X, kC), yFoot = py(1080, kC), x0 = cx - w / 2, yTop = yFoot - h;
-  if (cx < -w || cx > W + w){ BZ09.cath = 0; BZ09._in = false; BZ09._t = -1; return; }
-  const ph = bz09Clock(X) || {c: -1, a: 0, lit: 0};
-  /* 1 · СВЕТ НА ЗАДНЕЙ ПЛИТЕ. Рисуется здесь, а не с нишей: между ними лежат
-     световые пятна, стеновые вещи и фигуры, и ореол из ниши был бы ими закрыт. */
+  const pfm = PROP_SPRITES.ph_bz_pfm, zir = PROP_SPRITES.ph_bz_zir;
+  const ham = PROP_SPRITES.ph_bz_hammer, shr = PROP_SPRITES.ph_bz_shards;
+  if (!pfm || !zir) return;
+  const X = BZ09.x(), kC = k(BZ09.z);
+  const h = BZ09.h * kC * SS, w = h * pfm.w / pfm.h;
+  const cx = px(X, kC), yFoot = py(1080, kC), yTop = yFoot - h;
+  const pairW = w * (2 + BZ09.gap);
+  if (cx < -pairW || cx > W + pairW){ BZ09.cath = 0; BZ09._in = false; BZ09._t = -1; return; }
+  const ph = bz09Clock(X) || {ham: null, broke: 0, lit: 0, flash: 0};
+  /* левые края коронок: пара шириной 2w + gap·w стоит серединой на cx */
+  const xL = cx - pairW / 2, xR = xL + w * (1 + BZ09.gap);
+  const cL = xL + w / 2, cR = xR + w / 2;                                      // их середины
+  /* 1 · СВЕТ ВОКРУГ УЦЕЛЕВШЕЙ. Ореол на белой стене держим скромным: на чёрном
+     фоне ниши он был светом, здесь прежняя сила читалась бы пятном краски. */
   if (ph.lit > 0.004){
-    /* ЧЁРНОГО ФОНА БОЛЬШЕ НЕТ (Эльдар, 04.11.2026: «убираем чёрный фон»), и
-       ореол ложится на белую стену — на ней прежние 0,26 и 0,30 читались
-       жёлтым пятном краски. Убавлено вдвое: свет остаётся светом предмета, а
-       не подсветкой стены. */
-    drawGlow('255,168,72', cx + w * 0.26, yTop + h * 0.56, w * 1.10, 0.13 * ph.lit);
-    drawGlow('255,214,150', cx + w * 0.24, yTop + h * 0.54, w * 0.52, 0.17 * ph.lit);
+    drawGlow('255,168,72', cR, yTop + h * 0.58, w * 1.25, 0.13 * ph.lit);
+    drawGlow('255,214,150', cR, yTop + h * 0.54, w * 0.58, 0.17 * ph.lit);
   }
-  /* 2 · ХОЛОДНЫЙ ЛУЧ НА СКОЛ. Горит всегда: это он показывает, что левая
-     половина мертва, и он не зависит от часов катарсиса. */
-  drawGlow('150,185,225', cx - w * 0.30, yTop + h * 0.21, w * 0.30, 0.10);
-  /* 3 · СКЛЕЙКА СОСТОЯНИЙ НА СВОЁМ ХОЛСТЕ */
-  const W2 = Math.max(2, Math.round(w)), H2 = Math.max(2, Math.round(h));
-  let M = BZ09._m;
-  if (!M || M.w !== W2 || M.h !== H2){
-    const c = document.createElement('canvas'); c.width = W2; c.height = H2;
-    const r = document.createElement('canvas'); r.width = W2; r.height = Math.max(2, Math.round(H2 * 0.42));
-    M = BZ09._m = {c, g: c.getContext('2d'), r, rg: r.getContext('2d'), w: W2, h: H2, key: null};
-  }
-  const key = Math.round(ph.c * 260) + ':' + Math.round(ph.a * 60);
-  if (M.key !== key){
-    M.key = key;
-    const g = M.g; g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over';
-    g.clearRect(0, 0, W2, H2);
-    g.drawImage(spriteMip(dead, w, h), 0, 0, W2, H2);
-    if (ph.a > 0.01 && ph.c > -BZ09.band){
-      const e1 = Math.max(0, Math.min(1, ph.c + BZ09.band)), e0 = Math.max(0, e1 - BZ09.band * 0.9);
-      const t2 = document.createElement('canvas'); t2.width = W2; t2.height = H2;
-      const g2 = t2.getContext('2d');
-      g2.drawImage(spriteMip(live, w, h), 0, 0, W2, H2);
-      g2.globalCompositeOperation = 'destination-in';
-      const lg = g2.createLinearGradient(0, 0, W2, 0);
-      lg.addColorStop(0, 'rgba(0,0,0,1)');
-      if (e0 > 0.001) lg.addColorStop(e0, 'rgba(0,0,0,1)');
-      lg.addColorStop(Math.min(1, Math.max(e0 + 0.002, e1)), 'rgba(0,0,0,0)');
-      lg.addColorStop(1, 'rgba(0,0,0,0)');
-      g2.fillStyle = lg; g2.fillRect(0, 0, W2, H2);
-      g.globalAlpha = ph.a; g.drawImage(t2, 0, 0); g.globalAlpha = 1;
+  /* 2 · ОТРАЖЕНИЯ В ПОЛУ — у того, что сейчас стоит */
+  const refl = (sp, x0r, wr, hr) => {
+    const RW = Math.max(2, Math.round(wr)), RH = Math.max(2, Math.round(hr * 0.42));
+    let M = sp._refl;
+    if (!M || M.w !== RW || M.h !== RH){
+      const c = document.createElement('canvas'); c.width = RW; c.height = RH;
+      M = sp._refl = {c, g: c.getContext('2d'), w: RW, h: RH};
+      const g = M.g;
+      g.save(); g.translate(0, RH); g.scale(1, -1);
+      g.globalAlpha = 0.22; g.drawImage(spriteMip(sp, wr, hr), 0, RH - Math.round(hr), RW, Math.round(hr));
+      g.restore();
+      g.globalCompositeOperation = 'destination-in';
+      const gr = g.createLinearGradient(0, 0, 0, RH);
+      gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.45, 'rgba(0,0,0,0.42)');
+      gr.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = gr; g.fillRect(0, 0, RW, RH);
+      g.globalCompositeOperation = 'source-over';
     }
-    /* отражение: тот же склеенный кадр, перевёрнутый и затухающий книзу —
-       гасится ВНУТРИ своего холста, полотно зала не трогается */
-    const rh = M.r.height, rg = M.rg;
-    rg.setTransform(1, 0, 0, 1, 0, 0); rg.globalCompositeOperation = 'source-over';
-    rg.clearRect(0, 0, W2, rh);
-    rg.save(); rg.translate(0, rh); rg.scale(1, -1);
-    rg.globalAlpha = 0.22; rg.drawImage(M.c, 0, rh - H2, W2, H2); rg.restore();
-    rg.globalCompositeOperation = 'destination-in';
-    const rgr = rg.createLinearGradient(0, 0, 0, rh);
-    rgr.addColorStop(0, 'rgba(0,0,0,1)'); rgr.addColorStop(0.45, 'rgba(0,0,0,0.42)');
-    rgr.addColorStop(1, 'rgba(0,0,0,0)');
-    rg.fillStyle = rgr; rg.fillRect(0, 0, W2, rh);
-    rg.globalCompositeOperation = 'source-over';
-  }
-  ctx.drawImage(M.r, x0, yFoot, w, M.r.height * (w / W2));
-  contactShadow(cx, yFoot, w * 0.74, 0.42);
-  ctx.drawImage(M.c, x0, yTop, w, h);
-  /* 4 · ГРЕБЕНЬ СВЕТА НА КРОМКЕ ПОЛОСЫ — тонкая тёплая черта там, где свет
-     сейчас идёт по срезу; без неё проход читается как смена картинки. */
-  if (ph.a > 0.01 && ph.c > -BZ09.band && ph.c < 1 + BZ09.band && ph.lit < 0.999){
-    const ex = x0 + w * Math.max(0, Math.min(1, ph.c + BZ09.band * 0.4));
-    ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    drawGlow('255,196,120', ex, yTop + h * 0.5, w * 0.09, 0.45 * ph.a, 3.6);
+    ctx.drawImage(M.c, x0r, yFoot, wr, RH * (wr / RW));
+  };
+  if (ph.broke < 0.999) refl(pfm, xL, w, h);
+  refl(zir, xR, w, h);
+  contactShadow(cL, yFoot, w * 0.74, 0.42 * (1 - ph.broke * 0.5));
+  contactShadow(cR, yFoot, w * 0.74, 0.42);
+  /* 3 · ЛЕВАЯ: целая металлокерамика или куча осколков */
+  if (ph.broke < 0.999){
+    ctx.save(); ctx.globalAlpha = 1 - ph.broke;
+    ctx.drawImage(spriteMip(pfm, w, h), xL, yTop, w, h);
     ctx.restore();
   }
-  pushHit(x0, yTop, w, h, {type: 'study', beat: BEATS.indexOf(b)});
+  if (ph.broke > 0.001 && shr){
+    const sw = w * 1.32, sh = sw * shr.h / shr.w;
+    ctx.save(); ctx.globalAlpha = Math.min(1, ph.broke);
+    contactShadow(cL, yFoot, sw * 0.62, 0.34);
+    ctx.drawImage(spriteMip(shr, sw, sh), cL - sw / 2, yFoot - sh, sw, sh);
+    ctx.restore();
+  }
+  /* 4 · ПРАВАЯ: стоит всегда */
+  ctx.drawImage(spriteMip(zir, w, h), xR, yTop, w, h);
+  /* 5 · КУВАЛДА. Рендер снят бойком вниз, рукоятью вверх, поэтому кладётся как
+     есть: низ спрайта — боёк. Ширина головки чуть больше пары: при d = 1 боёк
+     стоит на макушках обеих коронок, при d = 0 спрайт целиком над кадром. */
+  if (ph.ham && ham){
+    const hw = pairW * 1.10, hh = hw * ham.h / ham.w;
+    /* ХОД СЧИТАЕТСЯ ПО ГОЛОВКЕ, А НЕ ПО ВСЕМУ СПРАЙТУ. Рукоять в файле длиннее
+       головки втрое, и если вести путь от верха спрайта, кувалда проходит две
+       высоты кадра за те же доли секунды — на экране она просто мелькает.
+       Замерено на файле: головка занимает нижние 407 строк из 1502, то есть
+       0,271 высоты; путь идёт от «головка целиком над кадром» до «боёк на
+       макушках коронок», а рукоять просто уходит выше за край. */
+    const HEAD = 0.271;
+    const d = Math.max(0, Math.min(1, ph.ham.d));
+    const faceY = -hh * HEAD + d * (yTop + hh * HEAD);
+    ctx.save();
+    ctx.shadowColor = 'rgba(10,14,20,0.30)'; ctx.shadowBlur = 26 * kC * SS; ctx.shadowOffsetY = 10 * kC * SS;
+    ctx.drawImage(spriteMip(ham, hw, hh), cx - hw / 2, faceY - hh, hw, hh);
+    ctx.restore();
+  }
+  /* 6 · ВСПЫШКА И ПЫЛЬ НА МИГ КАСАНИЯ */
+  if (ph.flash > 0.01){
+    const f = ph.flash;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    drawGlow('255,246,228', cx, yTop, pairW * 0.55 * (1 + (1 - f) * 0.8), 0.46 * f, 0.30);
+    ctx.restore();
+    ctx.save(); ctx.globalAlpha = 0.30 * f;
+    ctx.fillStyle = 'rgba(214,210,200,1)';
+    for (let i = 0; i < 9; i++){
+      const sgn = i % 2 ? 1 : -1, j = (i + 1) / 9;
+      const dx = sgn * pairW * (0.10 + 0.42 * j) * (1 + (1 - f) * 0.8);
+      const r = w * 0.075 * (0.5 + j) * (1 + (1 - f));
+      ctx.beginPath(); ctx.ellipse(cx + dx, yFoot - r * 0.25, r, r * 0.42, 0, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+  }
+  pushHit(xL, yTop, pairW, h, {type: 'study', beat: BEATS.indexOf(b)});
 }
 
 /* 1993 · NEWPORT BEACH. The one bay in the hall whose film the company shot
@@ -16036,7 +16070,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261104-bz09';   // 04.11.2026: два состояния разрезанной коронки для рекреации 2009 (до этого 20261104-bzlogo)   // 04.11.2026: глянцевая вывеска BruxZir на стене 2009 (до этого 20261104-plant)   // 04.11.2026: монстера на прилавке перед табло TODAY (до этого 20261103-gtv)   // 03.11.2026: логотип Glidewell TV и QR на приложение (до этого 20261102-bzf3)   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261104-bzham';   // 04.11.2026: две коронки, кувалда и осколки для удара на 2009 (до этого 20261104-bz09)   // 04.11.2026: два состояния разрезанной коронки для рекреации 2009 (до этого 20261104-bzlogo)   // 04.11.2026: глянцевая вывеска BruxZir на стене 2009 (до этого 20261104-plant)   // 04.11.2026: монстера на прилавке перед табло TODAY (до этого 20261103-gtv)   // 03.11.2026: логотип Glidewell TV и QR на приложение (до этого 20261102-bzf3)   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -16158,8 +16192,13 @@ async function loadPhotoSkin(){
     ph_gio: 'glidewell_io.png',       // 2017: логотип glidewell.io из вектора (.ai Эльдара) — вместо набранного имени
     ph_gio_rev: 'glidewell_io_rev.png',// он же вывороткой: белые буквы, красные точки — для тёмного листа
     ph_bz_soon: 'bruxzir_soon.png',   // 2009: неоновая табличка BruxZir COMING SOON — временная, висела на ниточке (с 04.11.2026 не рисуется)
-    ph_bz_dead: 'r_bz_crown_dead.png',  // 2009: разрезанная коронка, свет выключен (tools/cut_bruxzir_crown.py, 04.11.2026)
-    ph_bz_live: 'r_bz_crown_live.png',  // 2009: она же, монолит горит изнутри — второй слой прохода света
+    /* 2009 · удар кувалдой: две коронки, кувалда и осколки (tools/cut_bz_hammer.py, 04.11.2026).
+       Прежняя пара r_bz_crown_dead/live (одна коронка с проходом света по срезу) больше не
+       рисуется — Эльдар заменил замысел на две коронки и удар; файлы оставлены в assets. */
+    ph_bz_pfm:    'r_bz_pfm.png',       // слева: металлокерамика, в срезе колпачок и слои
+    ph_bz_zir:    'r_bz_zir.png',       // справа: BruxZir, в срезе один материал насквозь
+    ph_bz_hammer: 'r_bz_hammer.png',    // кувалда бойком вниз, рукоять уходит за кадр
+    ph_bz_shards: 'r_bz_shards.png',    // что остаётся от металлокерамики после удара
     ph_bz_logo: 'r_bruxzir_logo.png',  // 2009: глянцевая вывеска BruxZir® на стене (tools/cut_bruxzir_logo.py, 04.11.2026)
     ph_pfm1: 'pfm_1.png', ph_pfm2: 'pfm_2.png', ph_pfm3: 'pfm_3.png',   // the six PFM stages, cut apart
     ph_pfm4: 'pfm_4.png', ph_pfm5: 'pfm_5.png', ph_pfm6: 'pfm_6.png',
