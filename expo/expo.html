@@ -11546,10 +11546,21 @@ function drawBruxZirSoon(){
      ниша ±560 от такта: 2010s на 27477, до него остаётся больше трёхсот
      единиц, а по бокам предмета — по сотне экранных точек темноты. */
 const BZ09 = {
-  hw: 700,        // полуширина ниши, мировые единицы: 2010s на 27477, до него остаётся больше трёхсот
-  top: 310,       // верх ниши (низ вывески на 260,8 — карман начинается под ней, с запасом в 27 точек)
-  deep: 300,      // насколько задняя плита утоплена за плоскость устья
-  z: 560,         // коронка стоит ВПЕРЕДИ устья и выходит из кармана в зал
+  /* МЕСТО — КОЛОННА МЕЖДУ «THE DIGITAL REVOLUTION» И BRUXZIR (Эльдар,
+     04.11.2026: «располагаем коронку ровно на месте колонны между цифровой
+     революцией и бруксзир»).
+
+     ЗАМЕРЕНО С ДВУХ КАМЕР, И ЭТО ВАЖНО. По одному кадру (камера 26631, окно
+     2000×1040) тёмная полоса колонны занимает экранные 550…611, и если считать
+     её стоящей на плоскости пролёта k(970), получается середина 25723. Второй
+     кадр (камера 25720) кладёт ту же полосу на 1003…1061, то есть в середину
+     1032, а не 1000 — значит плоскость была угадана неверно. Два уравнения на
+     одну полосу дают и плоскость, и место: k = 451,5 / (911 · SS) = 0,5147,
+     то есть z ≈ 849 — это глубина СТЕНЫ третьей эпохи (850), а не пролёта; и
+     середина 25782. А 25785 — это и REC2_R, и начало белого зала
+     (SEGMENTS[3].x0): колонна стоит ровно на шве двух эпох. Отсюда якорь. */
+  x: () => REC2_R,
+  z: 560,         // коронка стоит в зале, перед колонной
   h: 690,         // рост коронки: 1,63 м при метре в 422 единицы (прилавок 700…1080 = 90 см)
   band: 0.30,     // ширина мягкой полосы проявки, в долях ширины предмета
   /* ЧАСЫ КАТАРСИСА. Цикл идёт, пока зритель рядом, и начинается заново при
@@ -11582,46 +11593,6 @@ function bz09Clock(bx){
   Z.cath = lit * (pres * pres * (3 - 2 * pres));
   return {c, a, lit};
 }
-/* ---- НИША: рисуется со своей эпохой, до всего, что висит на стене ---- */
-function drawBZ09Niche(t){
-  const b = bz09Beat(); if (!b) return;
-  const kE = k(exhibitZ(b.x)), kB = k(exhibitZ(b.x) + BZ09.deep);
-  const mC = px(b.x, kE), bC = px(b.x, kB);
-  const mL = mC - BZ09.hw * kE * SS, mR = mC + BZ09.hw * kE * SS;
-  if (mR < -240 || mL > W + 240) return;
-  rivet('bz09_niche', mC, kE);
-  const bL = bC - BZ09.hw * kB * SS, bR = bC + BZ09.hw * kB * SS;
-  const mT = py(BZ09.top, kE), mBo = py(1080, kE);
-  const bT = py(BZ09.top, kB), bBo = py(1080, kB);
-  ctx.save();
-  /* сперва весь проём залит самым тёмным — чтобы между трапециями откосов и
-     задней плитой не осталось светлой нитки стены на субпиксельных стыках */
-  ctx.beginPath(); ctx.moveTo(mL, mT); ctx.lineTo(mR, mT); ctx.lineTo(mR, mBo); ctx.lineTo(mL, mBo); ctx.closePath();
-  ctx.fillStyle = '#121417'; ctx.fill();
-  const quad = (p, fill) => { ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(p[2], p[3]);
-    ctx.lineTo(p[4], p[5]); ctx.lineTo(p[6], p[7]); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); };
-  /* откосы светлее задней плиты — они смотрят в зал и ловят его свет */
-  const ret = (xa, xb) => { const q = ctx.createLinearGradient(xa, 0, xb, 0);
-    q.addColorStop(0, '#0b0d10'); q.addColorStop(1, '#30363d'); return q; };
-  if (bL > mL) quad([mL, mT, bL, bT, bL, bBo, mL, mBo], ret(bL, mL));
-  if (mR > bR) quad([bR, bT, mR, mT, mR, mBo, bR, bBo], ret(bR, mR));
-  if (bT > mT){ const q = ctx.createLinearGradient(0, bT, 0, mT);
-    q.addColorStop(0, '#0d0f12'); q.addColorStop(1, '#383f47');     // верхний откос светлеет к устью
-    quad([mL, mT, mR, mT, bR, bT, bL, bT], q); }
-  /* задняя плита: графит с мягким падением книзу */
-  const g = ctx.createLinearGradient(0, bT, 0, bBo);
-  g.addColorStop(0, '#15181c'); g.addColorStop(0.62, '#0e1013'); g.addColorStop(1, '#08090b');
-  quad([bL, bT, bR, bT, bR, bBo, bL, bBo], g);
-  /* пол кармана: от задней плиты вперёд, до устья — темнее пола зала */
-  const gf = ctx.createLinearGradient(0, bBo, 0, mBo);
-  gf.addColorStop(0, '#0a0c0e'); gf.addColorStop(1, '#141719');
-  quad([bL, bBo, bR, bBo, mR, mBo, mL, mBo], gf);
-  /* тонкая кромка проёма: вырез в штукатурке, а не наклейка */
-  ctx.lineWidth = Math.max(1, 1.2 * kE * SS);
-  ctx.strokeStyle = 'rgba(255,255,255,0.10)';
-  ctx.beginPath(); ctx.moveTo(mL, mBo); ctx.lineTo(mL, mT); ctx.lineTo(mR, mT); ctx.lineTo(mR, mBo); ctx.stroke();
-  ctx.restore();
-}
 /* ---- КОРОНКА: стоит на полу, в среднем плане, перед нишей и за прилавками ----
    Предмет стоит ВПЕРЕДИ устья (z 560 против 672 плоскости экспозиции): он
    выходит из кармана в зал, его подошва на 28 экранных точек ниже пола ниши, и
@@ -11638,20 +11609,25 @@ function drawBZ09Crown(t){
   const b = bz09Beat(); if (!b) return;
   const dead = PROP_SPRITES.ph_bz_dead, live = PROP_SPRITES.ph_bz_live;
   if (!dead || !live) return;
+  const X = BZ09.x();
   const kC = k(BZ09.z);
   const h = BZ09.h * kC * SS, w = h * dead.w / dead.h;
-  const cx = px(b.x, kC), yFoot = py(1080, kC), x0 = cx - w / 2, yTop = yFoot - h;
+  const cx = px(X, kC), yFoot = py(1080, kC), x0 = cx - w / 2, yTop = yFoot - h;
   if (cx < -w || cx > W + w){ BZ09.cath = 0; BZ09._in = false; BZ09._t = -1; return; }
-  const ph = bz09Clock(b.x) || {c: -1, a: 0, lit: 0};
+  const ph = bz09Clock(X) || {c: -1, a: 0, lit: 0};
   /* 1 · СВЕТ НА ЗАДНЕЙ ПЛИТЕ. Рисуется здесь, а не с нишей: между ними лежат
      световые пятна, стеновые вещи и фигуры, и ореол из ниши был бы ими закрыт. */
   if (ph.lit > 0.004){
-    drawGlow('255,168,72', cx + w * 0.26, yTop + h * 0.58, w * 1.30, 0.26 * ph.lit);
-    drawGlow('255,214,150', cx + w * 0.24, yTop + h * 0.55, w * 0.60, 0.30 * ph.lit);
+    /* ЧЁРНОГО ФОНА БОЛЬШЕ НЕТ (Эльдар, 04.11.2026: «убираем чёрный фон»), и
+       ореол ложится на белую стену — на ней прежние 0,26 и 0,30 читались
+       жёлтым пятном краски. Убавлено вдвое: свет остаётся светом предмета, а
+       не подсветкой стены. */
+    drawGlow('255,168,72', cx + w * 0.26, yTop + h * 0.56, w * 1.10, 0.13 * ph.lit);
+    drawGlow('255,214,150', cx + w * 0.24, yTop + h * 0.54, w * 0.52, 0.17 * ph.lit);
   }
   /* 2 · ХОЛОДНЫЙ ЛУЧ НА СКОЛ. Горит всегда: это он показывает, что левая
      половина мертва, и он не зависит от часов катарсиса. */
-  drawGlow('150,185,225', cx - w * 0.30, yTop + h * 0.21, w * 0.32, 0.15);
+  drawGlow('150,185,225', cx - w * 0.30, yTop + h * 0.21, w * 0.30, 0.10);
   /* 3 · СКЛЕЙКА СОСТОЯНИЙ НА СВОЁМ ХОЛСТЕ */
   const W2 = Math.max(2, Math.round(w)), H2 = Math.max(2, Math.round(h));
   let M = BZ09._m;
@@ -23819,6 +23795,7 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
      что здесь не видно видео, т. к. пользователь не поймёт, что нужно ниже
      прокрутить». Край видео внизу и есть приглашение листать. */
   const tR = K.flat ? 0 : 10 * SS;   // плоский лист — прямые углы
+  let barHit = null;                 // дорожка ЭТОЙ плитки, если она играет — для зоны перемотки ниже
         {
     ctx.save();
     ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, tR); ctx.clip();
@@ -23899,7 +23876,14 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
       const x0 = mx + 14*SS, x1 = mx + tw - 14*SS, yb = ty + th - 20*SS, xf = x0 + (x1 - x0) * f;
       ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(x0, yb - 0.6*SS, x1 - x0, 1.2*SS);
       ctx.fillStyle = 'rgba(255,255,255,0.78)'; ctx.fillRect(x0, yb - 0.6*SS, xf - x0, 1.2*SS);
-      ctx.beginPath(); ctx.arc(xf, yb, 2.4*SS, 0, 7); ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.fill();
+      /* И ЗДЕСЬ ТОЖЕ ЗНАК, А НЕ ТОЧКА (Эльдар, 04.11.2026: обвёл бегунок на
+         карточке Азерникова и подписал «G»). Правка 04.11.2026 дошла до двух
+         проигрывателей с перемоткой, а этот — третий, в плитке колонки, и его
+         дорожка осталась с прежней точкой 2,4. Знак здесь мельче, чем у тех
+         двух (16·SS): дорожка тут волосяная, 1,2·SS, и шестнадцать точек
+         накрыли бы её целиком. Было: ctx.arc(xf, yb, 2.4*SS). */
+      drawGKnob(xf, yb, 11*SS);
+      barHit = {x0, w: x1 - x0, yb, src: m.src};
     }
     ctx.restore();
     if (!K.flat){
@@ -23907,6 +23891,16 @@ function studyClipTile(m, mx, ty, tw, th, S, K, b, topClip, botClip){
       ctx.beginPath(); ctx.roundRect(mx, ty, tw, th, tR); ctx.stroke();
     }
     pushHit(mx, ty, tw, th, {type:'clip', media: m, wx: b.x});
+    /* ДОРОЖКУ МОЖНО ПЕРЕМАТЫВАТЬ (Эльдар, 04.11.2026: «вообще почему нельзя
+       перематывать?»). У двух других проигрывателей зала зона inseek была с
+       самого начала, а у плитки колонки — нет: её дорожка только отчитывалась.
+       Зона кладётся ПОСЛЕ зоны всей плитки: hitAt перебирает список с конца,
+       поэтому палец на дорожке берёт перемотку, а палец по кадру — стоп/пуск.
+       Высота зоны 30·SS при волосяной дорожке в 1,2 — в неё надо попадать
+       пальцем, а не курсором. */
+    if (barHit)
+      pushHit(barHit.x0 - 8*SS, barHit.yb - 15*SS, barHit.w + 16*SS, 30*SS,
+              {type:'inseek', src: barHit.src, x0: barHit.x0, w: barHit.w});
     if (m.pid && PEOPLE[m.pid]){
       // the name on the card goes where the name in the text goes
       ctx.font = K.font(18);
@@ -25150,10 +25144,13 @@ function pageEdges(K, G, scroll, maxScroll){
      светлой, светлые на тёмной. */
   ctx.save();
   ctx.fillStyle = `rgba(${K.ink},0.26)`;
-  /* линии сверху больше нет — она шла по верхнему краю фото (23.10.2026);
-     нижняя — под краем обрезки, в подвале, и текст её не пересекает */
-  const lineY = G.clipBot != null ? G.clipBot + 3 * SS : bot - 1 * SS;
-  if (more && scroll < maxScroll - 2) ctx.fillRect(G.wx0 + inset, lineY, G.ww - inset * 2, 1 * SS);
+  /* НИЖНЕЙ ЛИНИИ ТОЖЕ БОЛЬШЕ НЕТ (Эльдар, 04.11.2026: «эта линия там лишняя —
+     наверно, во всех страницах»). Верхняя ушла ещё 23.10 — она шла по верхнему
+     краю фото; нижняя стояла под краем обрезки, над подвалом, и отделяла
+     «More below» от текста. Отделять нечего: подвал плоского листа и задуман
+     без полосы и рамок, а «сколько осталось» говорит дорожка с бегунком
+     справа. Было: const lineY = G.clipBot != null ? G.clipBot + 3*SS : bot - 1*SS;
+     if (more && scroll < maxScroll - 2) ctx.fillRect(G.wx0 + inset, lineY, G.ww - inset*2, 1*SS); */
   if (more){
     /* ДОРОЖКА НАЧИНАЕТСЯ ПОД КРЕСТИКОМ. Она стоит в той же вертикали, что и
        крестик, и на странице человека (меты нет — поле от самого края листа)
@@ -26213,7 +26210,20 @@ function update(dt){
           /* NO SEPARATE VIDEO PAGE. A preview used to open a player over the
              article; it plays where it hangs now, and a second tap stops it. */
           const m4 = aimed.media;
-          if (S.railSrc === m4.src && S.railV && !S.railV.paused){ try { S.railV.pause(); } catch(e){} }
+          /* ВТОРОЕ КАСАНИЕ ПРОДОЛЖАЕТ С ТОГО ЖЕ МЕСТА (Эльдар, 04.11.2026:
+             «при нажатии на кнопку стоп и плей видео сбрасывается на начало —
+             это ошибка»). Ветка «тот же ролик» ловила только ИДУЩУЮ плёнку, а
+             остановленная уходила в общую ветку, то есть в playPageClip, а он
+             первым делом ставит currentTime = 0 — он ведь написан для ЗАПУСКА
+             нового голоса. Теперь свой остановленный ролик просто продолжает;
+             заново — только если он доигран до конца. */
+          if (S.railSrc === m4.src && S.railV){
+            if (!S.railV.paused){ try { S.railV.pause(); } catch(e){} }
+            else {
+              if (S.railV.ended) try { S.railV.currentTime = 0; } catch(e){}
+              S.railV.muted = false; S.railV.play().catch(()=>{});
+            }
+          }
           else {
             /* ВЫБРАННЫЙ ПЕРЕЕЗЖАЕТ НА БОЛЬШОЙ ЭКРАН. Прежде ролик начинал
                говорить прямо в своей плитке — то есть в превьюшке под текстом, —
@@ -27226,7 +27236,6 @@ function frame(){
   drawRec18(t);
   drawRec23(t);
   drawRec4(t);
-  drawBZ09Niche(t);   // тёмный карман в белой стене 2009-го — за всем, что на стене
 
   // lamp pools on wall (behind photos) — one per ceiling fixture
   for (let i = 0; i < LIGHT_GRID.length; i++)
