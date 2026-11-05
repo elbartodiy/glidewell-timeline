@@ -6514,6 +6514,9 @@ function drawFilmPanel(x, wWorld, welcome){
   pushHit(vx, vy, sw, sh, {type: 'welcomevid'});
   return {sx, kk, footY, top};
 }
+/* кегль строки «Glidewell history tour →» — один дом на две строки: по нему же
+   равняется «Swipe to travel through time» на первом экране (04.11.2026) */
+const INTRO_TOUR_FS = 15;
 let LOGO26_SP = null;   // the mark is a 200px JPEG shown at ~26: it needs its mip chain
 function drawWelcomeTV(){
   const T = WELCOME_TV;
@@ -6548,9 +6551,15 @@ function drawWelcomeTV(){
   // the tour line stands where the foot used to: between the panel and the
   // counter, and it is there from the very first frame
   ctx.textAlign = 'center';
-  ctx.font = eraFont(15 * kk * SS);
-  try { ctx.letterSpacing = `${15*TRACK.label*kk*SS}px`; } catch(e){}
-  ctx.fillStyle = 'rgba(214,186,144,0.85)';
+  ctx.font = eraFont(INTRO_TOUR_FS * kk * SS);
+  try { ctx.letterSpacing = `${INTRO_TOUR_FS*TRACK.label*kk*SS}px`; } catch(e){}
+  /* ЦВЕТ — ЧЕРНИЛА ЭПОХИ, КАК У СТРОКИ ПРО СВАЙП (Эльдар, 04.11.2026: «эти
+     надписи написаны разными цветами почему-то»). Было жёстко вписанное
+     214,186,144 против 232,205,160 у строки «Swipe to travel through time» —
+     на первом экране они стоят одна под другой, и разница читалась. Чернила
+     берутся у эпохи, как их берут годы и подписи; кегль этой строки —
+     INTRO_TOUR_FS, по нему же равняется строка про свайп. */
+  ctx.fillStyle = `rgba(${segAt(T.x).ink},0.85)`;
   ctx.fillText('Glidewell history tour \u2192', sx, footY - 9 * kk * SS);
   try { ctx.letterSpacing = '0px'; } catch(e){}
 }
@@ -25669,8 +25678,18 @@ function drawAttractHint(t){
   const hseg = segAt(cam.x);
   ctx.save();
   ctx.textAlign = 'center';
-  ctx.font = eraFont(24*SS, '', hseg.font);
-  try { ctx.letterSpacing = `${24*TRACK.label*SS}px`; } catch(e){}
+  /* НА ПЕРВОМ ЭКРАНЕ — ОДНОГО КЕГЛЯ СО СТРОКОЙ «GLIDEWELL HISTORY TOUR»
+     (Эльдар, 04.11.2026: «надо, чтобы они ещё были одного размера на этом
+     первом экране»). Та строка живёт на глубине киноэкрана (k(8)) и потому
+     растёт вместе с наездом: при cam.z 430 её кегль 15·1,883 = 28,2, а у этой
+     был свой постоянный 24 — на интро они стояли одна под другой разного
+     размера. Теперь кегль ведётся тем же наездом zf, что уже поднимает строку
+     к столешнице: при полном наезде он равен кеглю той строки, без наезда —
+     прежним 24. Трекинг идёт за кеглем, иначе разъедется разрядка. */
+  const zf = Math.max(0, Math.min(1, cam.z / 430));
+  const fs = 24*SS + (INTRO_TOUR_FS * k(8) * SS - 24*SS) * zf;
+  ctx.font = eraFont(fs, '', hseg.font);
+  try { ctx.letterSpacing = `${fs*TRACK.label}px`; } catch(e){}
   ctx.fillStyle = `rgba(${hseg.ink},${a.toFixed(3)})`;
   // the rule owns the foot of the frame; the invitation stands above it
   /* SWIPE, А НЕ WHEEL. Эльдар (07.10.2026): «turn the wheel надо поменять на
@@ -25683,7 +25702,6 @@ function drawAttractHint(t){
      прилавка (py(benchY) на глубине прилавка) опускается ровно на RULE_Y − 50:
      строка ложилась на тёмный шов. Чем ближе наезд, тем ближе строка к
      столешнице — на 34 выше кромки; без наезда она там же, где была. */
-  const zf = Math.max(0, Math.min(1, cam.z / 430));
   const yRule = RULE_Y() - 50*SS, yLip = py(CFG.benchY, k(bz(0))) - 34*SS;
   ctx.fillText('Swipe to travel through time', W/2, yRule + (yLip - yRule) * zf);   // одним предложением, без точки-разделителя (Эльдар, 07.10.2026)
   ctx.restore();
