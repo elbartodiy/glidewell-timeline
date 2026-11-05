@@ -1593,6 +1593,24 @@ const SEGMENTS = [
   {x0:-3450, x1:REC_L, z0:550, z1:550, tz:550, wall:'wall1', bench:'bench1', front:'front1', skirt:'wood',
    plateBench: true,     // this era's counter IS the centrepiece photograph, stretched
    font:'Georgia, "Iowan Old Style", "Palatino Linotype", serif',
+   /* ПОДПИСЬ ГОДА — В ШИРИНУ САМОГО ГОДА (Эльдар, 04.11.2026: «этот Second Lab
+      хочу увеличить настолько, чтобы она была по длине такой же, как длина
+      года… и этот размер букв применить ко всем, хотя бы в этой эпохе, до
+      9 Labs включительно»). Замерено на шрифте эпохи: «1973» в своём кегле 170
+      занимает 348,5, а «Second lab» в прежних 46 с её разрядкой — 229,7.
+      Отношение 1,517, значит кегль 46 · 1,517 = 69,8 — ставим 70. Размер один
+      на всю эпоху, не подгоняется под каждую подпись: шесть разных кеглей в
+      одном коридоре читались бы как шесть разных вещей. Эпоха кончается ровно
+      на 1979 «Nine labs» — дальше бухта 1979-го и другой разбор.
+      Для справки, что получается в этом кегле против ширины своего года:
+      1907 «Lost-wax casting» 540 против 359 (единственная шире года),
+      1970 «Founded» 284 / 359, 1970s «PFM era» 273 / 432,
+      1973 «Second lab» 348,5 / 348,5, 1976 «Direct-mail» 369 / 351,
+      1979 «Nine labs» 303 / 351. */
+   tSize: 70,
+   /* и кромка букв толще и темнее — на тёплой штукатурке одного пикселя не
+      хватало, подпись «плохо читается очень» */
+   relief: {a: 0.72, px: 2},
    ink:'232,205,160', lamp:'bulb', dust:true,
    rail:'rgba(190,150,80,0.55)', railInk:'rgba(230,195,130,0.7)',
    light:{pool:'255,186,96', poolR:640, poolA:0.44},
@@ -4843,6 +4861,8 @@ function drawBenchPlaque(b){
    capitals were drawn to stand inside lower-case words and crowd each other
    when set alone. Now that nothing in the hall is shouted, almost nothing
    needs the wide end of that range. */
+/* кегль подписи под годом: у эпохи может быть свой (см. SEGMENTS[0].tSize) */
+const TSZ = seg => (seg && seg.tSize) || 46;
 const TRACK = {title: 0.02, label: 0.03, plate: 0.05};   // display and caps went unused once the hall stopped setting anything in capitals
 /* NOTHING IS SHOUTED. The hall was set in full capitals throughout — titles,
    plates, headings, buttons — and Eldar's rule is plain: a word gets one
@@ -4930,16 +4950,26 @@ function sentence(str){
    blur: enough to give the letter an edge, not enough to read as a drop shadow.
    (The soft pool the flying years cast on the plaster is a different thing and
    stays where it is.) Eldar's note. */
-function letterRelief(a){
+function letterRelief(a, dpx){
   /* ONE PIXEL. Not one reference pixel scaled by SS, not a blur of one pixel —
      one device pixel of hard shadow, down and a hair to the left, so the letter
      has an edge and nothing more. Anything wider reads as a drop shadow and
      anything blurred reads as a second, rounder letter behind the first. */
+  /* ...И ВСЁ ЖЕ У ЭПОХИ МОЖЕТ БЫТЬ СВОЯ ТОЛЩИНА (Эльдар, 04.11.2026: «чтобы
+     была тень темнее, чуть тень побольше от букв — боковая, самая тонкая по
+     буквам; я про цифры и про буквы, потому что она сейчас плохо читается»).
+     На тёплой стене ремесленного века чернила 232,205,160 лежат на светлой
+     штукатурке, и одного устройственного пикселя кромке не хватало. Толщина
+     по-прежнему в УСТРОЙСТВЕННЫХ пикселях и без размытия — то есть кромка, а
+     не падающая тень. См. seg.relief. */
+  const d = dpx || 1;
   ctx.shadowColor = `rgba(0,0,0,${(a == null ? 0.45 : a).toFixed(2)})`;
   ctx.shadowBlur = 0;
-  ctx.shadowOffsetX = -1;
-  ctx.shadowOffsetY = 1;
+  ctx.shadowOffsetX = -d;
+  ctx.shadowOffsetY = d;
 }
+/* рельеф эпохи: своя сила и своя толщина кромки, иначе общая по залу */
+function segRelief(seg, a){ const R = seg && seg.relief; return R ? letterRelief(R.a, R.px) : letterRelief(a); }
 function noShadow(){
   ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
   ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
@@ -5116,7 +5146,7 @@ function drawBeatText(b, focusAmt){
         };
         const tsW = (seg.tScale || 1) * (b._ys || 1) * (b.ysMul || 1) * spread;
         if (!b.yWallHide) cast(b.y, eraFont(170 * (seg.yearScale || 1) * tsW * kW * SS, '', seg.fontYear || seg.font), 140);
-        if (!b.tHide) cast(sentence(b.tWall || b.t), eraFont(46 * (seg.tScale || 1) * spread * kW * SS, '', seg.font), tY + cd0);   // снятое название не бросает и тени
+        if (!b.tHide) cast(sentence(b.tWall || b.t), eraFont(TSZ(seg) * (seg.tScale || 1) * spread * kW * SS, '', seg.font), tY + cd0);   // снятое название не бросает и тени
         if (b.th && b._th && !b.thBelow && !b.thWallHide && WALL_THESIS){
           ctx.font = eraFont(30 * (seg.tScale || 1) * spread * kW * SS, 'italic', seg.font);
           b._th.forEach((ln, i) => {
@@ -5139,7 +5169,7 @@ function drawBeatText(b, focusAmt){
         ctx.font = eraFont(ySz9, '', yFam9);
         ctx.fillStyle = `rgba(${seg.ink},${Math.min(1, 0.5 + 0.6*near)})`;
         const yBase9 = mixN(py(140 - lift, kk), H*0.16, focusAmt);
-        letterRelief(0.55);                 // the cut edge, and nothing else on the glyph
+        segRelief(seg, 0.55);               // the cut edge, and nothing else on the glyph
         NUM_INK_AS = b.stripInk ? `rgba(${b.stripInk},1)` : null;
         if (!b.yWallHide) paintNumeral(b.y, cx, yBase9, ySz9, yFam9);
         NUM_INK_AS = null;
@@ -5148,12 +5178,12 @@ function drawBeatText(b, focusAmt){
       pushHit(cx - 340*kk*SS, hitTopF, 680*kk*SS, py(330, kk) - hitTopF,
               {type:'study', beat: BEATS.indexOf(b)});
       const cd = b._capDrop || 0;
-      ctx.font = eraFont(46 * (seg.tScale || 1) * kk * SS, '', seg.font);
-      try { ctx.letterSpacing = `${46*(seg.tScale||1)*TRACK.title*kk*SS}px`; } catch(e){}
+      ctx.font = eraFont(TSZ(seg) * (seg.tScale || 1) * kk * SS, '', seg.font);
+      try { ctx.letterSpacing = `${TSZ(seg)*(seg.tScale||1)*TRACK.title*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near) * 0.92})`;
       const LB = b.tOnBay && BAY_LABELS[b.y];
-      letterRelief(0.55);
-      if (LB) ctx.fillText(sentence(b.tWall || b.t), LB.x, LB.y + 46 * 0.36 * kk * SS);
+      segRelief(seg, 0.55);
+      if (LB) ctx.fillText(sentence(b.tWall || b.t), LB.x, LB.y + TSZ(seg) * 0.36 * kk * SS);
       else if (!b.tHide) ctx.fillText(sentence(b.tWall || b.t), cx, mixN(py(tY + cd - lift, kk), H*0.16 + 62*SS, focusAmt));
       noShadow();
       try { ctx.letterSpacing = '0px'; } catch(e){}
@@ -5230,7 +5260,7 @@ function drawBeatText(b, focusAmt){
             yRest = (fb.top + fb.bot) / 2 + (m8.actualBoundingBoxAscent - m8.actualBoundingBoxDescent) / 2;
           } else yRest = py(140 - (b.yLift || 0), kk);
           const yBase8 = mixN(yRest, H*0.16, focusAmt);
-          letterRelief(0.5);                // the cut edge, and nothing else on the glyph
+          segRelief(seg, 0.5);              // the cut edge, and nothing else on the glyph
           NUM_INK_AS = b.stripInk ? `rgba(${b.stripInk},1)` : null;
           if (!b.yWallHide) paintNumeral(b.y, cx, yBase8, ySz8, yFam8);
           NUM_INK_AS = null;
@@ -5240,16 +5270,16 @@ function drawBeatText(b, focusAmt){
       pushHit(cx - 320*kk*SS, hitTop, 640*kk*SS, py(330, kk) - hitTop,
               {type:'study', beat: BEATS.indexOf(b)});
       const cd = b._capDrop || 0;
-      ctx.font = eraFont(46 * sc * (seg.tScale||1) * kk * SS, '', seg.font);
-      try { ctx.letterSpacing = `${46*sc*(seg.tScale||1)*TRACK.title*kk*SS}px`; } catch(e){}
+      ctx.font = eraFont(TSZ(seg) * sc * (seg.tScale||1) * kk * SS, '', seg.font);
+      try { ctx.letterSpacing = `${TSZ(seg)*sc*(seg.tScale||1)*TRACK.title*kk*SS}px`; } catch(e){}
       ctx.fillStyle = `rgba(${seg.ink},${(0.45 + 0.5*near)*0.92})`;
       /* a title lettered on the bay photograph's plinth: it takes the picture's
          own point every frame, so it cannot drift against the render */
       const LB = b.tOnBay && BAY_LABELS[b.y];
       /* a bay whose picture already carries the name does not get it printed on
          the wall as well (2017: the render letters its own plinth) */
-      letterRelief(0.55);
-      if (LB) ctx.fillText(sentence(b.tWall || b.t), LB.x, LB.y + 46 * sc * 0.36 * kk * SS);
+      segRelief(seg, 0.55);
+      if (LB) ctx.fillText(sentence(b.tWall || b.t), LB.x, LB.y + TSZ(seg) * sc * 0.36 * kk * SS);
       else if (!b.tHide){
         const tYb = mixN(py((tMinor(b) ? tY + 4 : tY) + cd - (b.yLift || 0), kk), H*0.16 + 62*SS, focusAmt);
         if (TITLE_LOGOS[b.t]){ noShadow(); try { ctx.letterSpacing = '0px'; } catch(e){} }
