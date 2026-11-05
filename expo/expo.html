@@ -740,7 +740,13 @@ const BEATS = [
       то есть 450 единиц влево. Через три дня он обвёл её на новом месте, рядом
       нарисовал такую же рамку правее вплотную и подписал «×1»: вернуть вправо
       ровно на одну свою ширину. Ширина коробки 240, значит −460. */
-   rig:{kind:'disc', dx:-460, lz:150, w:240}},
+   /* ФРЕЗЕР С ДИСКОМ СНЯТ (Эльдар, 04.11.2026: «давай этот прибор кикнем — он
+      вообще случайный, такого нет»). Он стоял на прилавке 2009-го; прилавок
+      под ним Эльдар снял тем же утром, и машина осталась висеть в воздухе
+      посреди пустого пола — ровно там, где теперь стоит рекреация. Было:
+      rig:{kind:'disc', dx:-460, lz:150, w:240}. drawDiscMill остаётся в файле,
+      но больше ниоткуда не вызывается. */
+   },
 
   /* THIS BEAT IS AN OBJECT, NOT A YEAR. The implant stands on the counter here
      (initDecor) and the beat's name lies beside it on the same counter, on the
@@ -9357,7 +9363,60 @@ const RULE_STYLE = [
   {thumb: '226,229,228', edge: '246,249,248', glow: '200,228,246', form: 'frame', tick: 'line'},
   {thumb: '242,248,252', edge: '255,255,255', glow: '150,215,255', form: 'glass', tick: 'dot'},
 ];
-function ruleStyle(){ return RULE_STYLE[Math.max(0, Math.min(3, segIdx(cam.x)))]; }
+/* ЛИНЕЙКА МЕНЯЕТ ЭПОХУ НА ГОДЕ, А НЕ НА ШВЕ СТЕН, И МЕНЯЕТ ЕЁ ЦЕЛИКОМ
+   (Эльдар, 04.11.2026: «1993 не должен иметь того старого лука — линия меняется
+   вместе со сменой года»; «ползунок уже сменился, а линия нет — выглядит не оч»;
+   «100 проц на остальных годах та же ошибка»).
+
+   Было две разные ручки на одно событие. Железо ползунка бралось как
+   RULE_STYLE[segIdx(cam.x)] — то есть переключалось МГНОВЕННО на шве стен, а
+   цвет линии (stripRGB) полз тысячу единиц вокруг того же шва. Поэтому на любом
+   стыке эпох ползунок уже был новый, а линия под ним — ещё старая.
+   И отдельно про 1993: такт стоит на 15518, а шов стен — на 15598, в восьмидесяти
+   единицах за ним. Год 1993 оказывался по ту сторону переключателя, и у него
+   был ПРЕЖНИЙ, стальной ползунок эпохи почтовых заказов — хотя 1993-й открывает
+   холодную эпоху: новое здание, цифровая лаборатория, своя бухта.
+
+   Стало: у линейки свои точки смены — ближайший к шву ГОД, и переход
+   ЗАКАНЧИВАЕТСЯ на нём, а не центрируется по шву. Значит год, открывающий
+   эпоху, уже носит её железо, а сама смена приходится на прогон между двумя
+   годами — «вместе со сменой года». Цвет линии, цвет ползунка и его форма
+   идут по одному и тому же ходу: форма — диссолвом, двумя проходами на
+   встречных прозрачностях (так же, как разводятся лучи проекторов).
+   Замерено: 1993 на 15518, шов на 15598 — переход идёт 14518…15518, то есть
+   между 1989 (13768) и 1993; на белом зале шов 25785, ближайший год 2009
+   (26631) — переход 25631…26631, между 2007 и 2009. */
+const RULE_RAMP = 1000;          // длина перехода в единицах хода — она же была у цвета линии
+let RULE_SWAP = null;
+function ruleSwapX(n){
+  if (!RULE_SWAP) RULE_SWAP = SEGMENTS.map((sg, i) => {
+    if (i === 0) return -1e9;
+    let bx = sg.x0, bd = 1e9;
+    for (const b of BEATS){ if (!b.y) continue; const d = Math.abs(b.x - sg.x0); if (d < bd){ bd = d; bx = b.x; } }
+    return bx;
+  });
+  return RULE_SWAP[n];
+}
+function ruleEra(){
+  let i = 0;
+  for (let n = 1; n < SEGMENTS.length; n++) if (cam.x >= ruleSwapX(n)) i = n;
+  i = Math.min(3, i);
+  const j = Math.min(3, i + 1);
+  if (j > i){
+    const t = Math.max(0, Math.min(1, (cam.x - (ruleSwapX(j) - RULE_RAMP)) / RULE_RAMP));
+    if (t > 0) return {i, j, t};
+  }
+  return {i, j: i, t: 0};
+}
+const mixInk = (a, b, t) => { const x = a.split(',').map(Number), y = b.split(',').map(Number);
+  return x.map((v, n) => Math.round(v + (y[n] - v) * t)).join(','); };
+function ruleStyle(){
+  const B = ruleEra(), A = RULE_STYLE[B.i], Z = RULE_STYLE[B.j];
+  if (B.t <= 0) return A;
+  return {thumb: mixInk(A.thumb, Z.thumb, B.t), edge: mixInk(A.edge, Z.edge, B.t),
+          glow: mixInk(A.glow, Z.glow, B.t), form: B.t < 0.5 ? A.form : Z.form,
+          tick: B.t < 0.5 ? A.tick : Z.tick};
+}
 /* how far the rule has turned white at a point along it (0..1 of its length):
    untouched through the first half of the hall, white by the end */
 function ruleWhite(u){
@@ -9782,14 +9841,22 @@ function stripShade(w, h, lt){
    тоже пусть меняется»): свет эпохи из RULE_STYLE.glow — латунь ремесла, тёплый
    свет 80-х, холодный 90-х, голубой белого зала; на стыках эпох — плавно, на
    тысяче единиц ходьбы, как и фон */
+/* …И В МОМЕНТ КАТАРСИСА КОРОНКИ (Эльдар, 04.11.2026: «давай сделаем смену
+   цвета нижней полосы в момент катарсиса коронки»). Когда свет проходит по
+   срезу и монолит загорается, линия времени и все её штрихи берут тот же
+   янтарь: событие в зале доходит до самой нижней полосы. Сила — BZ09.cath,
+   она уже сложена из того, сколько монолита горит и насколько зритель близко,
+   так что вдали от такта полоса своего цвета не меняет вовсе. 0,78 — чтобы
+   янтарь был узнаваем, но линия не теряла связь с цветом эпохи. */
+const BZ_CATH_INK = [255, 176, 74];
+function bz09Strip(c){
+  const a = (typeof BZ09 === 'object' ? BZ09.cath : 0) * 0.78;
+  return (a < 0.004 ? c : c.map((v, j) => v + (BZ_CATH_INK[j] - v) * a)).map(Math.round);
+}
+/* …и цвет линии идёт по тому же ходу, что и железо ползунка: один ruleEra() на
+   оба, иначе они снова разъедутся (04.11.2026) */
 function stripRGB(){
-  const i = segIdx(cam.x), c = RULE_STYLE[Math.min(3, i)].glow.split(',').map(Number);
-  if (i + 1 < SEGMENTS.length){
-    const t = Math.max(0, Math.min(1, (cam.x - (SEGMENTS[i + 1].x0 - 500)) / 1000));
-    if (t > 0){ const d = RULE_STYLE[Math.min(3, i + 1)].glow.split(',').map(Number);
-      return c.map((v, j) => Math.round(v + (d[j] - v) * t)).join(','); }
-  }
-  return c.join(',');
+  return bz09Strip(ruleStyle().glow.split(',').map(Number)).join(',');
 }
 /* ЦИФРЫ — ЦВЕТОМ И НАЧЕРТАНИЕМ ГОДА (Эльдар, 26.10.2026: «цифры должны быть
    того цвета, какого у нас цвета год… и начертание соответствует начертанию
@@ -9994,9 +10061,15 @@ function drawProgress(t){
   const tx0 = g.at(cam.x - g.half), tx1 = g.at(cam.x + g.half);
   const mx = (tx0 + tx1) / 2, tw = Math.max(14 * SS, tx1 - tx0);
   const warm = ruleHit(Input.hover) || state.ruleDrag ? 1 : 0;
-  const S = ruleStyle();
+  const S = ruleStyle(), B = ruleEra();
   drawGlow(S.glow, mx, y, tw + 90 * SS, (0.20 + 0.14 * warm) * A);
-  drawRuleThumb(mx, y, tw, S, A, warm);
+  /* железо эпохи разводится диссолвом: на переходе оба корпуса рисуются на
+     встречных прозрачностях, и ни один не появляется в стык */
+  if (B.t <= 0 || RULE_STYLE[B.i].form === RULE_STYLE[B.j].form) drawRuleThumb(mx, y, tw, S, A, warm);
+  else {
+    drawRuleThumb(mx, y, tw, {...S, form: RULE_STYLE[B.i].form}, A * (1 - B.t), warm);
+    drawRuleThumb(mx, y, tw, {...S, form: RULE_STYLE[B.j].form}, A * B.t, warm);
+  }
   const nb = nearestBeat(cam.x);
   if (nb.i >= 0 && BEATS[nb.i].y){
     ctx.font = eraFont(17 * SS, '', segNow.font);
@@ -11413,6 +11486,216 @@ function drawBruxZirSoon(){
   /* ВЫВЕСКА ОТКРЫВАЕТ СВОЙ ГОД. Эльдар (07.10.2026): «табличка BruxZir пусть
      тоже будет кликабельной и ведёт на страницу 2009». Перекоса больше нет,
      поэтому зона касания — сам прямоугольник букв. */
+  pushHit(x0, yTop, w, h, {type: 'study', beat: BEATS.indexOf(b)});
+}
+
+/* ======================= РЕКРЕАЦИЯ 2009 · BRUXZIR ==========================
+   Самый важный такт компании стоял пустым: год, глянцевая вывеска и рекламная
+   карточка на стене — и больше ничего. Прилавок перед ним Эльдар снял 04.11.2026,
+   и между 25429 и 27463 открылось 2034 единицы чистого пола.
+
+   ЧТО ЗДЕСЬ СТОИТ. Коронка ростом в человека, разрезанная пополам. Левая
+   половина — старая работа: металлический колпачок, слои фарфора поверх него и
+   свежий скол на бугре, через который видно металл. Правая — BruxZir: один
+   кусок циркония от края до края, и он светится изнутри. Ни слова на стене не
+   нужно: зритель видит, из чего коронка была и из чего стала.
+
+   КАК ЭТО СОБРАНО (Эльдар, 04.11.2026: «из каких составляющих? какой
+   механизм?»). Зажечь свет внутри картинки нельзя, поэтому состояний два, и
+   оба — один и тот же рендер: Эльдар сгенерировал их одним кадром, чтобы
+   геометрия совпала. Замерено на файле: силуэты расходятся на 0,55 %, левая
+   половина предмета в двух состояниях отличается на 8 единиц цвета, правая —
+   на 30 (см. tools/cut_bruxzir_crown.py). Зал держит оба слоя и проявляет
+   верхний сквозь мягкую вертикальную полосу, которая едет слева направо: пока
+   она идёт по слоёной половине — не меняется ничего, перешла шов — монолит
+   загорается. Скол при этом виден всё время, в обоих состояниях.
+
+   ПОЧЕМУ НИША. Эпоха — белая комната, и янтарь на белой стене не читается.
+   Чёрный карман, вырезанный в белой стене, — единственное тёмное место в своей
+   эпохе, и свет в нём виден через весь зал. Глубина ниши берётся настоящей
+   проекцией: задняя плита считается на 430 глубже плоскости экспозиции, и
+   откосы — это трапеции между устьем и задней плитой. Поэтому, проходя мимо,
+   зритель заглядывает ей в бок, как в настоящий проём.
+
+   ЗАКОН ЗАКЛЁПКИ. Устье ниши привязано к плоскости экспозиции (wallSX, k
+   0,5725) — как год, вывеска и карточки этой эпохи. Задняя плита считается от
+   настоящей глубины: её снос и есть параллакс проёма, и он виден только пока
+   ниша в кадре.
+
+   РЕКЛАМНАЯ КАРТОЧКА 2009-го СНЯТА. Она висела на bx('2009', 178) шириной 550 —
+   ровно там, где теперь стоит коронка, и на экране попадала внутрь ниши, белым
+   прямоугольником поверх тёмного кармана и перед головой предмета. Стена
+   2009-го и так говорит BruxZir глянцевыми буквами, а строку «The best
+   dentistry — made affordable» зал произносит в другом месте. Строка карточки
+   сохранена в BANNERS закомментированной — вернуть её одним движением.
+
+   ЧИСЛА (все мировые, замерены на зале):
+     такт 2009 на 26631, плоскость экспозиции z 672 (k 0,5725);
+     пол 1080, низ вывески 260,8 — верх ниши на 300, то есть под вывеской;
+     коронка 700 ростом (1,66 м) и 705 шириной (пропорция из файла 637×633),
+     подошва на полу, голова на 380 — под верхом ниши с запасом;
+     ниша ±560 от такта: 2010s на 27477, до него остаётся больше трёхсот
+     единиц, а по бокам предмета — по сотне экранных точек темноты. */
+const BZ09 = {
+  hw: 700,        // полуширина ниши, мировые единицы: 2010s на 27477, до него остаётся больше трёхсот
+  top: 310,       // верх ниши (низ вывески на 260,8 — карман начинается под ней, с запасом в 27 точек)
+  deep: 300,      // насколько задняя плита утоплена за плоскость устья
+  z: 560,         // коронка стоит ВПЕРЕДИ устья и выходит из кармана в зал
+  h: 690,         // рост коронки: 1,63 м при метре в 422 единицы (прилавок 700…1080 = 90 см)
+  band: 0.30,     // ширина мягкой полосы проявки, в долях ширины предмета
+  /* ЧАСЫ КАТАРСИСА. Цикл идёт, пока зритель рядом, и начинается заново при
+     каждом приходе: в зале перед предметом люди оказываются в разное время. */
+  lead: 1.0, sweep: 2.6, hold: 3.4, fade: 1.6, rest: 2.0,
+  cath: 0,        // 0…1 — сколько монолита горит; им же красится нижняя полоса
+  _t: -1, _in: false, _m: null
+};
+function bz09Beat(){ return BEATS.find(q => q.t === 'BRUXZIR'); }
+/* часы: один проход за 10,6 с, пока камера стоит у предмета */
+function bz09Clock(bx){
+  const near = Math.abs(cam.x - bx) < 1150;
+  if (near && !BZ09._in) BZ09._t = 0;
+  BZ09._in = near;
+  if (!near){ BZ09._t = -1; BZ09.cath = 0; return null; }
+  const Z = BZ09, tot = Z.lead + Z.sweep + Z.hold + Z.fade + Z.rest;
+  Z._t = (Z._t < 0 ? 0 : Z._t + (state.dt || 0.016)) % tot;
+  const t = Z._t;
+  let u, a;                                   // u — где полоса, a — сила верхнего слоя
+  if (t < Z.lead){ u = 0; a = 1; }
+  else if (t < Z.lead + Z.sweep){ u = (t - Z.lead) / Z.sweep; a = 1; }
+  else if (t < Z.lead + Z.sweep + Z.hold){ u = 1; a = 1; }
+  else if (t < Z.lead + Z.sweep + Z.hold + Z.fade){ u = 1; a = 1 - (t - Z.lead - Z.sweep - Z.hold) / Z.fade; }
+  else { u = 0; a = 0; }
+  /* центр полосы едет от −band до 1+band; доля зажжённого монолита меряется по
+     середине правой половины — оттуда и берётся цвет нижней полосы */
+  const c = -Z.band + u * (1 + 2 * Z.band);
+  const lit = Math.max(0, Math.min(1, (c + Z.band - 0.72) / (0.28 + Z.band))) * a;
+  const pres = Math.max(0, Math.min(1, 1 - Math.abs(cam.x - bx) / 1100));
+  Z.cath = lit * (pres * pres * (3 - 2 * pres));
+  return {c, a, lit};
+}
+/* ---- НИША: рисуется со своей эпохой, до всего, что висит на стене ---- */
+function drawBZ09Niche(t){
+  const b = bz09Beat(); if (!b) return;
+  const kE = k(exhibitZ(b.x)), kB = k(exhibitZ(b.x) + BZ09.deep);
+  const mC = px(b.x, kE), bC = px(b.x, kB);
+  const mL = mC - BZ09.hw * kE * SS, mR = mC + BZ09.hw * kE * SS;
+  if (mR < -240 || mL > W + 240) return;
+  rivet('bz09_niche', mC, kE);
+  const bL = bC - BZ09.hw * kB * SS, bR = bC + BZ09.hw * kB * SS;
+  const mT = py(BZ09.top, kE), mBo = py(1080, kE);
+  const bT = py(BZ09.top, kB), bBo = py(1080, kB);
+  ctx.save();
+  /* сперва весь проём залит самым тёмным — чтобы между трапециями откосов и
+     задней плитой не осталось светлой нитки стены на субпиксельных стыках */
+  ctx.beginPath(); ctx.moveTo(mL, mT); ctx.lineTo(mR, mT); ctx.lineTo(mR, mBo); ctx.lineTo(mL, mBo); ctx.closePath();
+  ctx.fillStyle = '#121417'; ctx.fill();
+  const quad = (p, fill) => { ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(p[2], p[3]);
+    ctx.lineTo(p[4], p[5]); ctx.lineTo(p[6], p[7]); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); };
+  /* откосы светлее задней плиты — они смотрят в зал и ловят его свет */
+  const ret = (xa, xb) => { const q = ctx.createLinearGradient(xa, 0, xb, 0);
+    q.addColorStop(0, '#0b0d10'); q.addColorStop(1, '#30363d'); return q; };
+  if (bL > mL) quad([mL, mT, bL, bT, bL, bBo, mL, mBo], ret(bL, mL));
+  if (mR > bR) quad([bR, bT, mR, mT, mR, mBo, bR, bBo], ret(bR, mR));
+  if (bT > mT){ const q = ctx.createLinearGradient(0, bT, 0, mT);
+    q.addColorStop(0, '#0d0f12'); q.addColorStop(1, '#383f47');     // верхний откос светлеет к устью
+    quad([mL, mT, mR, mT, bR, bT, bL, bT], q); }
+  /* задняя плита: графит с мягким падением книзу */
+  const g = ctx.createLinearGradient(0, bT, 0, bBo);
+  g.addColorStop(0, '#15181c'); g.addColorStop(0.62, '#0e1013'); g.addColorStop(1, '#08090b');
+  quad([bL, bT, bR, bT, bR, bBo, bL, bBo], g);
+  /* пол кармана: от задней плиты вперёд, до устья — темнее пола зала */
+  const gf = ctx.createLinearGradient(0, bBo, 0, mBo);
+  gf.addColorStop(0, '#0a0c0e'); gf.addColorStop(1, '#141719');
+  quad([bL, bBo, bR, bBo, mR, mBo, mL, mBo], gf);
+  /* тонкая кромка проёма: вырез в штукатурке, а не наклейка */
+  ctx.lineWidth = Math.max(1, 1.2 * kE * SS);
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+  ctx.beginPath(); ctx.moveTo(mL, mBo); ctx.lineTo(mL, mT); ctx.lineTo(mR, mT); ctx.lineTo(mR, mBo); ctx.stroke();
+  ctx.restore();
+}
+/* ---- КОРОНКА: стоит на полу, в среднем плане, перед нишей и за прилавками ----
+   Предмет стоит ВПЕРЕДИ устья (z 560 против 672 плоскости экспозиции): он
+   выходит из кармана в зал, его подошва на 28 экранных точек ниже пола ниши, и
+   поэтому карман читается как глубина, а не как чёрный прямоугольник на стене.
+   Снос предмета относительно ниши при ходьбе — 25 точек на 600 единиц пути,
+   при запасе в 180 точек по бокам: это настоящий параллакс проёма, и он тут к
+   месту.
+   СКЛЕЙКА ДВУХ СОСТОЯНИЙ И ОТРАЖЕНИЕ СЧИТАЮТСЯ НА СВОЁМ ХОЛСТЕ. Мягкий край
+   бегущей полосы нельзя получить обрезкой — обрезка даёт ступеньку ровно там,
+   где взгляд. А затухание отражения нельзя стереть прямо на полотне зала:
+   destination-out выест не только отражение, но и пол под ним (проверено —
+   первая сборка оставила под коронкой чёрную дыру на весь клип). */
+function drawBZ09Crown(t){
+  const b = bz09Beat(); if (!b) return;
+  const dead = PROP_SPRITES.ph_bz_dead, live = PROP_SPRITES.ph_bz_live;
+  if (!dead || !live) return;
+  const kC = k(BZ09.z);
+  const h = BZ09.h * kC * SS, w = h * dead.w / dead.h;
+  const cx = px(b.x, kC), yFoot = py(1080, kC), x0 = cx - w / 2, yTop = yFoot - h;
+  if (cx < -w || cx > W + w){ BZ09.cath = 0; BZ09._in = false; BZ09._t = -1; return; }
+  const ph = bz09Clock(b.x) || {c: -1, a: 0, lit: 0};
+  /* 1 · СВЕТ НА ЗАДНЕЙ ПЛИТЕ. Рисуется здесь, а не с нишей: между ними лежат
+     световые пятна, стеновые вещи и фигуры, и ореол из ниши был бы ими закрыт. */
+  if (ph.lit > 0.004){
+    drawGlow('255,168,72', cx + w * 0.26, yTop + h * 0.58, w * 1.30, 0.26 * ph.lit);
+    drawGlow('255,214,150', cx + w * 0.24, yTop + h * 0.55, w * 0.60, 0.30 * ph.lit);
+  }
+  /* 2 · ХОЛОДНЫЙ ЛУЧ НА СКОЛ. Горит всегда: это он показывает, что левая
+     половина мертва, и он не зависит от часов катарсиса. */
+  drawGlow('150,185,225', cx - w * 0.30, yTop + h * 0.21, w * 0.32, 0.15);
+  /* 3 · СКЛЕЙКА СОСТОЯНИЙ НА СВОЁМ ХОЛСТЕ */
+  const W2 = Math.max(2, Math.round(w)), H2 = Math.max(2, Math.round(h));
+  let M = BZ09._m;
+  if (!M || M.w !== W2 || M.h !== H2){
+    const c = document.createElement('canvas'); c.width = W2; c.height = H2;
+    const r = document.createElement('canvas'); r.width = W2; r.height = Math.max(2, Math.round(H2 * 0.42));
+    M = BZ09._m = {c, g: c.getContext('2d'), r, rg: r.getContext('2d'), w: W2, h: H2, key: null};
+  }
+  const key = Math.round(ph.c * 260) + ':' + Math.round(ph.a * 60);
+  if (M.key !== key){
+    M.key = key;
+    const g = M.g; g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over';
+    g.clearRect(0, 0, W2, H2);
+    g.drawImage(spriteMip(dead, w, h), 0, 0, W2, H2);
+    if (ph.a > 0.01 && ph.c > -BZ09.band){
+      const e1 = Math.max(0, Math.min(1, ph.c + BZ09.band)), e0 = Math.max(0, e1 - BZ09.band * 0.9);
+      const t2 = document.createElement('canvas'); t2.width = W2; t2.height = H2;
+      const g2 = t2.getContext('2d');
+      g2.drawImage(spriteMip(live, w, h), 0, 0, W2, H2);
+      g2.globalCompositeOperation = 'destination-in';
+      const lg = g2.createLinearGradient(0, 0, W2, 0);
+      lg.addColorStop(0, 'rgba(0,0,0,1)');
+      if (e0 > 0.001) lg.addColorStop(e0, 'rgba(0,0,0,1)');
+      lg.addColorStop(Math.min(1, Math.max(e0 + 0.002, e1)), 'rgba(0,0,0,0)');
+      lg.addColorStop(1, 'rgba(0,0,0,0)');
+      g2.fillStyle = lg; g2.fillRect(0, 0, W2, H2);
+      g.globalAlpha = ph.a; g.drawImage(t2, 0, 0); g.globalAlpha = 1;
+    }
+    /* отражение: тот же склеенный кадр, перевёрнутый и затухающий книзу —
+       гасится ВНУТРИ своего холста, полотно зала не трогается */
+    const rh = M.r.height, rg = M.rg;
+    rg.setTransform(1, 0, 0, 1, 0, 0); rg.globalCompositeOperation = 'source-over';
+    rg.clearRect(0, 0, W2, rh);
+    rg.save(); rg.translate(0, rh); rg.scale(1, -1);
+    rg.globalAlpha = 0.22; rg.drawImage(M.c, 0, rh - H2, W2, H2); rg.restore();
+    rg.globalCompositeOperation = 'destination-in';
+    const rgr = rg.createLinearGradient(0, 0, 0, rh);
+    rgr.addColorStop(0, 'rgba(0,0,0,1)'); rgr.addColorStop(0.45, 'rgba(0,0,0,0.42)');
+    rgr.addColorStop(1, 'rgba(0,0,0,0)');
+    rg.fillStyle = rgr; rg.fillRect(0, 0, W2, rh);
+    rg.globalCompositeOperation = 'source-over';
+  }
+  ctx.drawImage(M.r, x0, yFoot, w, M.r.height * (w / W2));
+  contactShadow(cx, yFoot, w * 0.74, 0.42);
+  ctx.drawImage(M.c, x0, yTop, w, h);
+  /* 4 · ГРЕБЕНЬ СВЕТА НА КРОМКЕ ПОЛОСЫ — тонкая тёплая черта там, где свет
+     сейчас идёт по срезу; без неё проход читается как смена картинки. */
+  if (ph.a > 0.01 && ph.c > -BZ09.band && ph.c < 1 + BZ09.band && ph.lit < 0.999){
+    const ex = x0 + w * Math.max(0, Math.min(1, ph.c + BZ09.band * 0.4));
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    drawGlow('255,196,120', ex, yTop + h * 0.5, w * 0.09, 0.45 * ph.a, 3.6);
+    ctx.restore();
+  }
   pushHit(x0, yTop, w, h, {type: 'study', beat: BEATS.indexOf(b)});
 }
 
@@ -15738,7 +16021,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261104-bzlogo';   // 04.11.2026: глянцевая вывеска BruxZir на стене 2009 (до этого 20261104-plant)   // 04.11.2026: монстера на прилавке перед табло TODAY (до этого 20261103-gtv)   // 03.11.2026: логотип Glidewell TV и QR на приложение (до этого 20261102-bzf3)   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261104-bz09';   // 04.11.2026: два состояния разрезанной коронки для рекреации 2009 (до этого 20261104-bzlogo)   // 04.11.2026: глянцевая вывеска BruxZir на стене 2009 (до этого 20261104-plant)   // 04.11.2026: монстера на прилавке перед табло TODAY (до этого 20261103-gtv)   // 03.11.2026: логотип Glidewell TV и QR на приложение (до этого 20261102-bzf3)   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -15860,6 +16143,8 @@ async function loadPhotoSkin(){
     ph_gio: 'glidewell_io.png',       // 2017: логотип glidewell.io из вектора (.ai Эльдара) — вместо набранного имени
     ph_gio_rev: 'glidewell_io_rev.png',// он же вывороткой: белые буквы, красные точки — для тёмного листа
     ph_bz_soon: 'bruxzir_soon.png',   // 2009: неоновая табличка BruxZir COMING SOON — временная, висела на ниточке (с 04.11.2026 не рисуется)
+    ph_bz_dead: 'r_bz_crown_dead.png',  // 2009: разрезанная коронка, свет выключен (tools/cut_bruxzir_crown.py, 04.11.2026)
+    ph_bz_live: 'r_bz_crown_live.png',  // 2009: она же, монолит горит изнутри — второй слой прохода света
     ph_bz_logo: 'r_bruxzir_logo.png',  // 2009: глянцевая вывеска BruxZir® на стене (tools/cut_bruxzir_logo.py, 04.11.2026)
     ph_pfm1: 'pfm_1.png', ph_pfm2: 'pfm_2.png', ph_pfm3: 'pfm_3.png',   // the six PFM stages, cut apart
     ph_pfm4: 'pfm_4.png', ph_pfm5: 'pfm_5.png', ph_pfm6: 'pfm_6.png',
@@ -20202,7 +20487,11 @@ function initBanners(){
      implant card — which is why that one barely moves. That gives +178 from
      2009, -122 from 2015 and -453 from 2017. */
   BANNERS = [
-    {x: bx('2009', 178), w: 550, sp: makeBanner('BruxZir\u00ae', 'The best dentistry \u2014 made affordable', 'The #1 crown')},
+    /* КАРТОЧКА 2009-го СНЯТА ПОД РЕКРЕАЦИЮ (04.11.2026). Она висела ровно там,
+       где теперь стоит разрезанная коронка, и на экране попадала внутрь тёмной
+       ниши — белым прямоугольником перед головой предмета. Стена 2009-го и так
+       говорит BruxZir глянцевыми буквами. Вернуть — расскомментировать строку:
+       {x: bx('2009', 178), w: 550, sp: makeBanner('BruxZir\u00ae', 'The best dentistry \u2014 made affordable', 'The #1 crown')}, */
     /* карточка Glidewell HT — настоящая, «glidewellht.png» из артефактов
        (Эльдар, 20.10.2026: «поставь его на постер нужный»); набранная — запасная */
     /* РОВНО ПОД 2015, НИЗ НА ПРЕЖНЕЙ ВЫСОТЕ, РАЗМЕРОМ С ПЛАЗМУ (Эльдар, 20.10.2026).
@@ -26919,6 +27208,7 @@ function frame(){
   drawRec18(t);
   drawRec23(t);
   drawRec4(t);
+  drawBZ09Niche(t);   // тёмный карман в белой стене 2009-го — за всем, что на стене
 
   // lamp pools on wall (behind photos) — one per ceiling fixture
   for (let i = 0; i < LIGHT_GRID.length; i++)
@@ -27061,6 +27351,7 @@ function frame(){
   drawPlateBench(t);  // and the founding bay, cut from its centrepiece
   drawProjectors(t, 'machineGround');   // a machine standing on the floor goes behind the counters
   drawHallExhibit();  // the pedestal and its crown stand in the room, behind the counters (Eldar)
+  drawBZ09Crown(t);   // разрезанная коронка 2009-го стоит на полу перед своей нишей
   drawBench();        // reflection can never be laid over the furniture
 /* THE COUNTERS COME AFTER THE HALL'S FLOOR. Laid before it, the glass hall's
      red carpet — which runs a couple of hundred units past the counter's end on
