@@ -20584,7 +20584,9 @@ function drawCamRig(t){
    СОСТОЯНИЯ: ask → камера спрошена; ready → живой кадр и кнопка; count → 3,2,1;
    rec → пишем REC_LEN секунд; review → смотрим, что вышло; denied → отказ. */
 const CAMREC = {
-  len: 5,            // секунд на приветствие
+  /* ТРИДЦАТЬ СЕКУНД (Эльдар, 06.11.2026: «нужно сделать это длиной в 30
+     секунд»). Было 5 — хватало на имя и город, но не на историю. */
+  len: 30,           // секунд на приветствие
   count: 3,          // отсчёт между бейджем и приветствием
   badgeMax: 25,      // сколько ждём бейдж, прежде чем предложить пропустить
   scanEvery: 0.25,   // как часто смотрим в кадр в поисках кода, секунды
@@ -20695,6 +20697,24 @@ function camRecKeep(S){
    открыта: приглашать туда, где человек уже стоит, незачем. Отсчёт идёт от
    времени зала, а не от открытия страницы, поэтому пауза ровная. */
 const REC_CUE = {every: 60, hold: 8, fade: 0.6};
+/* ПРИГЛАШЕНИЕ — ЗНАК ЗАЛА, А НЕ ВЕБ-ПЛАШКА (Эльдар, 06.11.2026: «мне не
+   нравится шрифт, мне не нравится, как она выглядит, она выглядит
+   неподходяще этому дизайну… нужно, чтобы при появлении на ней был блик,
+   такой бэмс, чтобы привлёк внимание»).
+   Что было не так. Кегль брался шрифтом ЭПОХИ (seg.font), поэтому на дереве
+   первой эпохи приглашение выходило антиквой — читалось как баннер о куках;
+   сама плашка — полупрозрачный тёмный прямоугольник с волосяной белой
+   обводкой, то есть ровно язык веба, а не зала. Шрифт теперь один на все
+   эпохи — тот же Outfit, которым набрана вся служебная графика, — и слова те
+   же, что на кнопке страниц: одно действие, одна фраза.
+   Три вида, переключаются с адреса ?cue=1|2|3:
+     1 — латунная табличка: графит, золотая волосяная рамка, золотой набор;
+     2 — музейная этикетка: светлая бумага, тёмные чернила, мягкая тень;
+     3 — без плашки: золотая черта и слова под ней с тёмным ореолом.
+   БЛИК. Первую секунду показа по табличке слева направо проходит световая
+   полоса, а на её гребне вспыхивает четырёхлучевая искра — тот же приём, что
+   на цифрах нижней полосы в момент смены. */
+const CUE_V = (() => { const m = /[?&]cue=([123])/.exec(location.search); return m ? +m[1] : 1; })();
 function drawRecCue(t){
   if (state.camrec || overlayOpen() || state.docOpen) return;
   if (state.mode === 'intro' || (state.attract && state.attract.film)) return;
@@ -20702,27 +20722,115 @@ function drawRecCue(t){
   if (ph > REC_CUE.hold) return;
   const a = Math.min(1, ph / REC_CUE.fade) * Math.min(1, (REC_CUE.hold - ph) / REC_CUE.fade);
   if (a <= 0.02) return;
-  const seg = segAt(cam.x);
+  const lab = 'Tell your story';
   ctx.save();
   ctx.globalAlpha = a;
-  const fs = Math.round(21 * SS);
-  ctx.font = eraFont(fs, '', seg.font);
-  const label = 'Put yourself in the story';
-  const tw = ctx.measureText(label).width;
-  const padX = 20 * SS, dot = 7 * SS, gap = 13 * SS;
-  const bw = padX * 2 + dot * 2 + gap + tw, bh = 46 * SS;
+  ctx.textBaseline = 'alphabetic';
+  const fs = Math.round(22 * SS);
+  ctx.font = eraFont(fs, '', SEGMENTS[3].font);
+  const TR = fs * 0.02;
+  try { ctx.letterSpacing = `${TR}px`; } catch(e){}
+  const tw = ctx.measureText(lab).width + TR;
+  const padX = 24 * SS, dot = 6 * SS, gap = 14 * SS;
+  const bw = padX * 2 + dot * 2 + gap + tw, bh = 48 * SS;
   const bx = W - bw - 26 * SS, by = 22 * SS;
-  ctx.fillStyle = 'rgba(16,19,23,0.62)';
-  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, bh / 2); ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = Math.max(1, SS);
-  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, bh / 2); ctx.stroke();
+  const rad = CUE_V === 3 ? 0 : bh / 2;
+  const plate = () => { ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, rad); };
   const puls = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(t * 2.4));
-  drawGlow('235,40,46', bx + padX + dot, by + bh / 2, dot * 4.5, 0.34 * puls * a);
-  ctx.fillStyle = `rgba(255,70,72,${(0.8 + 0.2 * puls).toFixed(2)})`;
-  ctx.beginPath(); ctx.arc(bx + padX + dot, by + bh / 2, dot, 0, 7); ctx.fill();
-  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = 'rgba(244,246,249,0.95)';
-  ctx.fillText(label, bx + padX + dot * 2 + gap, by + bh * 0.63);
+  const dx = bx + padX + dot, dy = by + bh / 2;
+  const tx = bx + padX + dot * 2 + gap, ty = by + bh * 0.635;
+  if (CUE_V === 1){
+    /* ЛАТУНЬ. Плита непрозрачная: сквозь прежнюю просвечивала колонна, и знак
+       читался грязным пятном на светлой стене. Рамка и набор — золото зала
+       (тот же набор остановок, что у плашки с именами на «The voices»). */
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 18 * SS; ctx.shadowOffsetY = 4 * SS;
+    const pg = ctx.createLinearGradient(0, by, 0, by + bh);
+    pg.addColorStop(0, '#2c3034'); pg.addColorStop(1, '#16191c');
+    ctx.fillStyle = pg; plate(); ctx.fill();
+    ctx.restore();
+    const eg = ctx.createLinearGradient(bx, 0, bx + bw, 0);
+    eg.addColorStop(0, 'rgba(214,178,94,0.25)'); eg.addColorStop(0.5, 'rgba(240,214,150,0.85)');
+    eg.addColorStop(1, 'rgba(214,178,94,0.25)');
+    ctx.strokeStyle = eg; ctx.lineWidth = Math.max(1, 1.2 * SS); plate(); ctx.stroke();
+    drawGlow('235,40,46', dx, dy, dot * 4.2, 0.30 * puls);
+    ctx.fillStyle = `rgba(255,78,80,${(0.82 + 0.18 * puls).toFixed(2)})`;
+    ctx.beginPath(); ctx.arc(dx, dy, dot, 0, 7); ctx.fill();
+    const tg = ctx.createLinearGradient(0, ty - fs * 0.78, 0, ty + fs * 0.22);
+    for (const [q, c] of [[0, '#7a5c25'], [0.28, '#d9b25e'], [0.46, '#fff2c4'], [0.62, '#d3a851'], [1, '#8a6a2c']]) tg.addColorStop(q, c);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillText(lab, tx, ty + 1.1 * SS);
+    ctx.fillStyle = tg; ctx.fillText(lab, tx, ty);
+  } else if (CUE_V === 2){
+    /* МУЗЕЙНАЯ ЭТИКЕТКА — та же бумага, что у листов чтения и у таблички
+       перед книгами: светлая плашка, тёмные чернила, мягкая тень. */
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.38)'; ctx.shadowBlur = 20 * SS; ctx.shadowOffsetY = 5 * SS;
+    const pg = ctx.createLinearGradient(0, by, 0, by + bh);
+    pg.addColorStop(0, '#fcfcfb'); pg.addColorStop(1, '#eceeec');
+    ctx.fillStyle = pg; plate(); ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(70,76,84,0.22)'; ctx.lineWidth = Math.max(1, SS); plate(); ctx.stroke();
+    drawGlow('215,36,42', dx, dy, dot * 4.0, 0.26 * puls);
+    ctx.fillStyle = `rgba(206,32,38,${(0.86 + 0.14 * puls).toFixed(2)})`;
+    ctx.beginPath(); ctx.arc(dx, dy, dot, 0, 7); ctx.fill();
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(42,47,54,0.95)'; ctx.fillText(lab, tx, ty);
+  } else {
+    /* БЕЗ ПЛАШКИ — золотая черта и слова под ней, как подпись на стене. Ореол
+       держит их читаемыми и на дереве, и на белой штукатурке. */
+    const eg = ctx.createLinearGradient(bx, 0, bx + bw, 0);
+    eg.addColorStop(0, 'rgba(214,178,94,0)'); eg.addColorStop(0.35, 'rgba(240,214,150,0.9)');
+    eg.addColorStop(1, 'rgba(214,178,94,0.25)');
+    ctx.fillStyle = eg; ctx.fillRect(bx, by, bw, Math.max(1, 1.4 * SS));
+    drawGlow('235,40,46', dx, dy + 2 * SS, dot * 4.2, 0.30 * puls);
+    ctx.fillStyle = `rgba(255,78,80,${(0.82 + 0.18 * puls).toFixed(2)})`;
+    ctx.beginPath(); ctx.arc(dx, dy + 2 * SS, dot, 0, 7); ctx.fill();
+    ctx.textAlign = 'left';
+    ctx.save();
+    ctx.shadowColor = 'rgba(8,8,10,0.75)'; ctx.shadowBlur = 10 * SS;
+    ctx.fillStyle = 'rgba(248,244,236,0.96)'; ctx.fillText(lab, tx, ty + 2 * SS);
+    ctx.restore();
+  }
+  /* БЛИК — первую секунду показа: световая полоса идёт по табличке слева
+     направо, на гребне — искра. Полоса обрезана силуэтом таблички, поэтому
+     ничего вокруг не задевает. */
+  const gw = Math.min(1, ph / 1.05);
+  if (gw < 1){
+    const e = Math.sin(Math.PI * gw);                 // ярче всего в середине хода
+    const band = bw * 0.26, cxb = bx - band + (bw + band * 2) * gw;
+    ctx.save();
+    if (CUE_V === 3) { ctx.beginPath(); ctx.rect(bx, by - 2 * SS, bw, bh + 4 * SS); ctx.clip(); }
+    else { plate(); ctx.clip(); }
+    ctx.globalCompositeOperation = CUE_V === 2 ? 'source-over' : 'lighter';
+    const sg = ctx.createLinearGradient(cxb - band, by, cxb + band, by + bh);
+    /* гребень тише, чем был: на 0,85 полоса съедала золото набора — слова
+       на миг пропадали, а блик должен привлекать к ним, а не прятать их */
+    const peak = (CUE_V === 2 ? 0.42 : 0.60) * e;
+    sg.addColorStop(0, 'rgba(255,250,235,0)');
+    sg.addColorStop(0.5, `rgba(255,251,238,${peak.toFixed(3)})`);
+    sg.addColorStop(1, 'rgba(255,250,235,0)');
+    ctx.fillStyle = sg; ctx.fillRect(bx, by - 2 * SS, bw, bh + 4 * SS);
+    ctx.restore();
+    // искра на гребне полосы
+    const sp = Math.max(0, Math.sin(Math.PI * Math.min(1, Math.max(0, (gw - 0.25) / 0.5))));
+    if (sp > 0.02){
+      const L = bh * (0.42 + 0.5 * sp), sx2 = Math.min(bx + bw - 4 * SS, Math.max(bx + 4 * SS, cxb));
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (const [ax, ay] of [[1, 0], [0, 1]]){
+        const g2 = ctx.createLinearGradient(sx2 - ax * L, dy - ay * L, sx2 + ax * L, dy + ay * L);
+        g2.addColorStop(0, 'rgba(255,255,255,0)');
+        g2.addColorStop(0.5, `rgba(255,252,240,${(0.9 * sp).toFixed(3)})`);
+        g2.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.strokeStyle = g2; ctx.lineWidth = Math.max(1, 1.6 * SS); ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(sx2 - ax * L, dy - ay * L); ctx.lineTo(sx2 + ax * L, dy + ay * L); ctx.stroke();
+      }
+      drawGlow('255,250,235', sx2, dy, bh * 0.7, 0.30 * sp);
+      ctx.restore();
+    }
+  }
+  try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.restore();
   if (a > 0.5) pushHit(bx, by, bw, bh, {type: 'camrig'});
 }
