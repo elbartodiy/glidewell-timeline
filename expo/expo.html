@@ -4052,7 +4052,7 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
   // ×1.8 → ×1.62 (второй набросок, «×0,9»: «Secret» касался кончика пальца); правый край прежний
   // 1.46 → 1.58 (Эльдар, 30.10.2026: «чуть увеличь The Sales Secret, всё ещё не касаясь пальца, с воздухом между»)
   const TS = 1.58 * HS, xR = 11670 + 635 * s * 1.8, fs = 150 * s * TS * U;
-  ctx.font = `900 ${fs.toFixed(1)}px "Helvetica Neue", "Arial Black", Arial, sans-serif`;
+  ctx.font = `600 ${fs.toFixed(1)}px Inter, "Helvetica Neue", "Arial Black", Arial, sans-serif`;
   /* обе строки — одним начертанием, без растяжки по ширине (Эльдар, 30.10.2026: «начертание первой
      строки отличается от второй — это ошибка»): прежде каждую строку тянули к ширине плаката
      (635 и 470 его точек), и «The Sales» выходила сжатой до 0,91, а «Secret» растянутой до 1,01 */
@@ -4067,9 +4067,9 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
   // подзаголовок ×1.4 (при ×1.8 он ложился на палец) — по тому же правому краю, под «Secret»
   /* размер — по длине: первая строка ровно в длину «Secret» (Эльдар, 30.10.2026: «подзаголовок
      наоборот уменьши, чтобы первая строка была одной длины со словом Secret»; было ×1.82 — на 8 % длиннее) */
-  ctx.font = `400 ${(100 * U).toFixed(1)}px "Helvetica Neue", Arial, sans-serif`;
+  ctx.font = `400 ${(100 * U).toFixed(1)}px Inter, "Helvetica Neue", Arial, sans-serif`;
   const subF = 100 * secretW / (ctx.measureText('Jim introduces marketing').width / U);
-  ctx.font = `400 ${(subF * U).toFixed(2)}px "Helvetica Neue", Arial, sans-serif`;
+  ctx.font = `400 ${(subF * U).toFixed(2)}px Inter, "Helvetica Neue", Arial, sans-serif`;
   ctx.textAlign = 'right';
   ctx.fillText('Jim introduces marketing', X(xR), Y(HY(305 - UP) + SUB));
   ctx.fillText('standards that sell', X(xR), Y(HY(305 - UP) + SUB + 33 * subF / (36 * s * 1.82)));   // межстрочие — вместе с кеглем
