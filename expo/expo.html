@@ -20990,15 +20990,94 @@ function drawCamRec(t){
     ctx.font = eraFont(Math.round(sw * 0.021), '', SEGMENTS[3].font);
     ctx.fillText(S.noScan ? 'Show the badge — we will film it' : 'Looking for your badge…', cx, by2 + bs + pad * 0.6);
   }
+  /* КОД ПРОЧИТАН — ЗНАК, А НЕ ПЛАКАТ (Эльдар, 06.11.2026: «очень крупно и
+     выглядит как баг, особенно с длинным текстом, который не помещается»).
+     Плашка занимала 84 % ширины окна и 20 % высоты поперёк лица, а обрезка
+     мерила ОДНО значение бейджа, забывая про приставку «Badge read: », — на
+     длинном коде строка вылезала за плашку. Теперь это узкая полоска по низу
+     кадра, шириной ровно по содержимому: зелёный кружок с галкой и значение
+     бейджа. Мерится вся строка целиком, и длинный код честно сходит на
+     многоточие. Сам прицел в этот миг тоже становится зелёным — глазу этого
+     хватает раньше, чем он прочитает текст. */
   if (S.st === 'found'){
-    ctx.fillStyle = 'rgba(16,140,86,0.92)';
-    ctx.beginPath(); ctx.roundRect(vx + vw * 0.08, vy + vh * 0.40, vw * 0.84, vh * 0.20, 8 * SS); ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = eraFont(Math.round(sw * 0.026), '', SEGMENTS[3].font);
-    let bl = S.badge.replace(/\s+/g, ' ').trim();
-    while (ctx.measureText(bl).width > vw * 0.78 && bl.length > 8) bl = bl.slice(0, -1);
-    ctx.fillText('Badge read: ' + bl + (bl.length < S.badge.trim().length ? '…' : ''), cx, vy + vh * 0.53);
+    /* ПРИЦЕЛ ВСПЫХИВАЕТ И СХЛОПЫВАЕТСЯ К ЦЕНТРУ (Эльдар, 06.11.2026). Полсекунды
+       на ход: рамка идёт от своего размера к четверти его, углы на ходу
+       укорачиваются, в середине — зелёная вспышка, и к концу всё гаснет. Глаз
+       ловит это раньше, чем успевает прочитать строку внизу. */
+    const u = Math.min(1, (state.time - S.t0) / 0.5);
+    const e = u * u * (3 - 2 * u);
+    const al = 1 - Math.max(0, (u - 0.5) / 0.5);
+    const gs = Math.min(vw, vh) * 0.46 * (1 - 0.74 * e), gx = cx - gs / 2, gy = vy + vh / 2 - gs / 2;
+    drawGlow('86,226,154', cx, vy + vh / 2, Math.min(vw, vh) * 0.42, 0.42 * (1 - e) * al);
+    ctx.save();
+    ctx.globalAlpha = a * al;
+    ctx.strokeStyle = 'rgba(96,235,160,0.98)'; ctx.lineWidth = Math.max(2, 3.4 * SS); ctx.lineCap = 'round';
+    const GL = gs * (0.22 + 0.16 * e);
+    for (const [ox, oy] of [[0,0],[1,0],[0,1],[1,1]]){
+      const px3 = gx + ox * gs, py3 = gy + oy * gs, sx3 = ox ? -1 : 1, sy3 = oy ? -1 : 1;
+      ctx.beginPath();
+      ctx.moveTo(px3 + sx3 * GL, py3); ctx.lineTo(px3, py3); ctx.lineTo(px3, py3 + sy3 * GL);
+      ctx.stroke();
+    }
+    ctx.restore();
+    const fsB = Math.round(sw * 0.022);
+    ctx.font = eraFont(fsB, '', SEGMENTS[3].font);
+    /* значение бейджа — одной строкой, без схемы адреса: на бейджах обычно QR
+       со ссылкой, и «https://» в подтверждении не говорит ничего */
+    let bl = String(S.badge).replace(/\s+/g, ' ').replace(/^https?:\/\//i, '').trim();
+    const dotR = fsB * 0.42, gapB = fsB * 0.55, padB = fsB * 0.8;
+    const roomB = vw * 0.74 - dotR * 2 - gapB - padB * 2;
+    if (ctx.measureText(bl).width > roomB){
+      while (bl.length > 4 && ctx.measureText(bl + '…').width > roomB) bl = bl.slice(0, -1);
+      bl += '…';
+    }
+    const twB = ctx.measureText(bl).width;
+    const bwB = padB * 2 + dotR * 2 + gapB + twB, bhB = fsB * 2.0;
+    const bxB = cx - bwB / 2, byB = vy + vh - bhB - vh * 0.06;
+    ctx.fillStyle = 'rgba(14,104,66,0.92)';
+    ctx.beginPath(); ctx.roundRect(bxB, byB, bwB, bhB, bhB / 2); ctx.fill();
+    const ccx = bxB + padB + dotR, ccy = byB + bhB / 2;
+    ctx.fillStyle = 'rgba(86,226,154,0.98)';
+    ctx.beginPath(); ctx.arc(ccx, ccy, dotR, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#0d4a30'; ctx.lineWidth = Math.max(1.4, dotR * 0.34); ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(ccx - dotR * 0.44, ccy + dotR * 0.03);
+    ctx.lineTo(ccx - dotR * 0.10, ccy + dotR * 0.38);
+    ctx.lineTo(ccx + dotR * 0.48, ccy - dotR * 0.40);
+    ctx.stroke();
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(240,255,246,0.98)';
+    ctx.fillText(bl, ccx + dotR + gapB, byB + bhB * 0.66);
+    ctx.textAlign = 'center';
     if (state.time - S.t0 > 1.4){ S.st = 'count'; S.t0 = state.time; }
+  }
+  /* О ЧЁМ ГОВОРИТЬ — СПИСКОМ, ПОСЛЕ УДАЧНОГО СКАНА (Эльдар, 06.11.2026: «добавь
+     там вопросы после того, как бейдж сосканирован — как тебя зовут? откуда ты?
+     расскажи о своей специализации и опыте»). Стоит с отсчёта и всю запись: за
+     тридцать секунд человек успевает забыть, с чего начал, а список всё время
+     перед глазами. Внизу слева, над полосой записи, на тихой подложке — чтобы
+     не закрывать лицо в кадре. */
+  if (S.st === 'count' || S.st === 'rec'){
+    const qs = ['What is your name?', 'Where are you from?',
+                'Tell us about your specialty and experience'];
+    const fq = Math.round(sw * 0.021), lh = fq * 1.72;
+    ctx.font = eraFont(fq, '', SEGMENTS[3].font);
+    let qw = 0; for (const q of qs) qw = Math.max(qw, ctx.measureText(q).width);
+    const nw = ctx.measureText('3.').width + fq * 0.5;
+    const padQ = fq * 0.95;
+    const pw = Math.min(vw - pad, padQ * 2 + nw + qw), ph2 = padQ * 1.4 + qs.length * lh;
+    const qx = vx + pad * 0.45, qy = vy + vh - ph2 - 16 * SS;
+    ctx.fillStyle = 'rgba(8,11,15,0.52)';
+    ctx.beginPath(); ctx.roundRect(qx, qy, pw, ph2, 10 * SS); ctx.fill();
+    ctx.textAlign = 'left';
+    for (let qi = 0; qi < qs.length; qi++){
+      const yq = qy + padQ * 0.7 + lh * (qi + 0.72);
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.fillText((qi + 1) + '.', qx + padQ, yq);
+      ctx.fillStyle = 'rgba(248,250,253,0.94)';
+      ctx.fillText(qs[qi], qx + padQ + nw, yq);
+    }
+    ctx.textAlign = 'center';
   }
   /* отсчёт и полоса записи — поверх кадра */
   if (S.st === 'count'){
