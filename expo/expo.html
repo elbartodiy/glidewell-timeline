@@ -457,7 +457,10 @@ const BEATS = [
       низ рамы 716. В мире: проём 1316 × 902, верх 57, dx −68 (было 960 × 662, верх 95, dx 110). */
    win:{dx:-68, w:1316, h:902, top:57, z:1330},
    th:'Test where dentists work.',   // «— and step beyond the crown» ушло к PlaySafe (Эльдар, 27.10.2026)
-   d:'An in-house operatory opens to test materials on real patients.',
+   /* ПЕРЕНОС ЗАДАН РУКОЙ (Эльдар, 05.11.2026): «opens» кончает первую строку,
+      «to test materials on real patients» идёт второй. Жадный перенос дотягивал
+      первую строку до «opens to» и отрывал предлог от того, что он вводит. */
+   d:'An in-house operatory opens\nto test materials on real patients.',
    wall:[], table:[],
    /* ДВА ЭКРАНА НА ОДНОМ ПРОЛЁТЕ — ОДИН ЛИШНИЙ. Слева стоял янтарный CAD-монитор
       (dx −160), справа киноэкран девяностых. Эльдар (2026-09-25): «убери левый и
@@ -5933,7 +5936,7 @@ function drawBenchDescs(){
       ctx.font = eraFont(23 * SS, '', seg.font);
       ctx.fillStyle = `rgba(226,234,242,${(dAmt * 0.95).toFixed(3)})`;
       ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 7 * SS; ctx.shadowOffsetY = 2 * SS;
-      drawCapLines(b._d, cxB, yB, 32 * SS, capColW(b));
+      drawCapLines(b._d, cxB, yB, CAP_LH(), capColW(b));
       CAP_RECT = null;
       ctx.restore();
       continue;
@@ -5977,7 +5980,7 @@ function drawBenchDescs(){
            прилавков (626), и при наезде строка едет вместе со стеной и картиной */
         const capFoot = b.capWallY != null ? py(b.capWallY, k(wallZAt(b.x))) : capFootFloor();
         const top = capFoot - (b._d.length - 1) * 32 * SS;
-        drawCapLines(b._d, cxG, top, 32 * SS, wide);
+        drawCapLines(b._d, cxG, top, CAP_LH(), wide);
       }
       ctx.restore();
       CAP_RECT = null;
@@ -6014,7 +6017,7 @@ function drawBenchDescs(){
         }
         let wide = 0;
         for (const ln of b._d) wide = Math.max(wide, ctx.measureText(ln).width);
-        drawCapLines(b._d, W * 0.5, top, 32 * SS);
+        drawCapLines(b._d, W * 0.5, top, CAP_LH());
         CAP_RECT = {x0: W/2 - CAP_COLW()/2 - 14 * SS, x1: W/2 - CAP_COLW()/2 + wide + 14 * SS,
                     y0: top - 30 * SS, y1: capFoot + 12 * SS};
       }
@@ -6106,7 +6109,7 @@ function drawBenchDescs(){
        units before SS, like every other offset here. */
     let capTop = py(CFG.benchY, kf) + 78*SS + slabDrop + (b.capDY || 0) * SS;
     {
-      const foot = capTop + (b._d.length - 1) * 32 * SS;
+      const foot = capTop + (b._d.length - 1) * CAP_LH();
       const limit = Math.min(H - 96 * SS, RULE_CLEAR() - 44 * SS);
       if (foot > limit) capTop = Math.max(py(CFG.benchY, kf) + 46 * SS, capTop - (foot - limit));
     }
@@ -6122,9 +6125,9 @@ function drawBenchDescs(){
     }
     let capW = 0;
     for (const ln of b._d) capW = Math.max(capW, ctx.measureText(ln).width);
-    drawCapLines(b._d, cw, capTop, 32 * SS, capColW(b));
+    drawCapLines(b._d, cw, capTop, CAP_LH(), capColW(b));
     CAP_RECT = {x0: cw - capColW(b)/2 - 14 * SS, x1: cw - capColW(b)/2 + capW + 14 * SS,
-                y0: capTop - 30 * SS, y1: capTop + b._d.length * 32 * SS};
+                y0: capTop - 30 * SS, y1: capTop + b._d.length * CAP_LH()};
     ctx.restore();
   }
 }
@@ -6147,6 +6150,19 @@ function wrapCalc(text, maxW){
      для этого в ней должно остаться хотя бы два слова. Тире считается любое:
      длинное, среднее и дефис, стоящий отдельным словом. */
   const DASH = w => w === '\u2014' || w === '\u2013' || w === '-';
+  /* ЧИСЛО НЕ ОТРЫВАЕТСЯ ОТ ТОГО, ЧТО ОНО МЕРЯЕТ (Эльдар, 05.11.2026, кадром
+     подписи 1993: «71,000 sq ft at 4141 / MacArthur Blvd»). Адрес разорван
+     посередине: номер дома остался на одной строке, улица ушла на другую.
+     Это старое наборное правило — число и его единица или имя идут одним
+     куском: «71,000 sq ft», «4141 MacArthur», «15,000 sq». Склейка ставится
+     ПЕРЕД переносом, поэтому дальше такая пара меряется и переносится как
+     одно слово. */
+  const NUMLIKE = w => /^[\u2116#$]?[0-9][0-9,.\u00a0]*$/.test(w);
+  const TINY_SET = new Set(['a','an','the','at','to','of','in','on','by','for','and','or','as','is','its','it','with','from','into','that','this','than','per']);
+  const TINY = w => TINY_SET.has(w.toLowerCase().replace(/[^a-z]/g, ''));
+  for (let n = words.length - 2; n >= 0; n--)
+    if (NUMLIKE(words[n]) && words[n + 1] && !DASH(words[n + 1]))
+      words.splice(n, 2, words[n] + '\u00a0' + words[n + 1]);
   let i = 0;
   while (i < words.length){
     let line = words[i], j = i + 1;
@@ -6158,8 +6174,35 @@ function wrapCalc(text, maxW){
     if (j < words.length && j - i >= 3 && DASH(words[j - 2])){
       j--; line = words.slice(i, j).join(' ');
     }
+    /* СТРОКА НЕ КОНЧАЕТСЯ СЛУЖЕБНЫМ СЛОВОМ (Эльдар, 05.11.2026, та же подпись
+       1993: «71,000 sq ft at / 4141 MacArthur Blvd»). Предлог, артикль или союз
+       в конце строки висит в пустоте: он ничего не говорит сам и оторван от
+       того, что вводит. Старое наборное правило — такие слова уходят вниз, к
+       своему слову. Условие узкое: в строке должно остаться хотя бы два слова,
+       и правило не трогает последнюю строку абзаца, где переносить некуда. */
+    else if (j < words.length && j - i >= 3 && TINY(words[j - 1])){
+      /* откат идёт ЦИКЛОМ, а не одним шагом: служебные слова ходят парами
+         («dentists in from»), и сняв одно, упираешься в следующее. */
+      while (j - i >= 3 && TINY(words[j - 1])) j--;
+      line = words.slice(i, j).join(' ');
+    }
     lines.push(line);
     i = j;
+  }
+  /* ПОСЛЕДНЯЯ СТРОКА НЕ ОСТАЁТСЯ ОДНИМ СЛОВОМ (та же подпись 1993: «…in /
+     Orange.»). Одинокое слово под полным абзацем — наборная «вдова»: блок
+     теряет нижнюю кромку и читается как обрывок. Лечится не растяжкой, а
+     переносом: из предпоследней строки вниз уходит её последнее слово, и
+     обе нижние строки становятся по два слова. Делается только если в
+     предпоследней строке остаётся хотя бы два слова — иначе лекарство хуже
+     болезни. Слово со склейкой (число + единица) считается одним. */
+  if (lines.length > 1){
+    const last = lines[lines.length - 1].split(' ');
+    const prev = lines[lines.length - 2].split(' ');
+    if (last.length === 1 && prev.length >= 3){
+      lines[lines.length - 2] = prev.slice(0, -1).join(' ');
+      lines[lines.length - 1] = prev[prev.length - 1] + ' ' + last[0];
+    }
   }
   return lines;
 }
@@ -6171,7 +6214,16 @@ function drawLines(lines, cx, y, lh){
    the start of each line. The block keeps the place it always had (its column
    is still centred under the beat) but the words hang off one invisible left
    line, the one the first line already started on. */
-const CAP_COLW = () => 23 * SS * 700 / 26;   // the width b._d was wrapped to
+/* МЕЖСТРОЧИЕ ПОДПИСЕЙ — ОДНО ЧИСЛО НА ВЕСЬ ЗАЛ (Эльдар, 05.11.2026: «вот это
+   начертание, межстрочный интервал — прям какая-то ошибка, очень некомфортно
+   видится»). Было 32 при кегле 23, то есть 1,39 — это нижняя граница нормы, и
+   она годится для тёмного по светлому. Но подписи зала почти всюду СВЕТЛЫЕ ПО
+   ТЁМНОМУ, а светлая буква на тёмном оптически разбухает и строки сходятся:
+   такому набору нужно больше воздуха, 1,45…1,55. Ставим 34 — ровно 1,48. Число
+   живёт здесь, рядом с шириной колонки, а не пятью копиями по файлу. */
+const CAP_FS = 23;                           // кегль подписи, опорные точки
+const CAP_LH = () => 34 * SS;                // межстрочие: 1,48 кегля
+const CAP_COLW = () => CAP_FS * SS * 700 / 26;   // the width b._d was wrapped to
 function drawCapLines(lines, cx, y, lh, colw){
   const x = cx - (colw != null ? colw : CAP_COLW()) / 2;
   const prev = ctx.textAlign;
@@ -20110,6 +20162,8 @@ function drawWallWindow(b){
 
   pushHit(x0, y0, w, h, {type: 'study', beat: BEATS.indexOf(b)});
 }
+/* показная версия зала: листок открытых вопросов не висит на стене (05.11.2026) */
+const DOC_CARD_OFF = !/[?&]doc=1/.test(location.search);
 function drawDocCard(b, bi){
   const d = b.doc;
   const wz = (segAt(b.x).tz || wallZAt(b.x)) - 12, kk = k(wz);
@@ -27562,7 +27616,13 @@ function frame(){
   for (let i = 0; i < BEATS.length; i++){
     const b = BEATS[i];
     if (Math.abs(b.x - cam.x) > CULL_BEAT) continue;
-    if (b.doc) drawDocCard(b, i);
+    /* ЛИСТОК «OPEN ITEMS» СНЯТ СО СТЕНЫ НА ВРЕМЯ ПОКАЗА (Эльдар, 05.11.2026:
+       «давай эту штуку мы спрячем сейчас, уберём оттуда этот листочек, который
+       у нас за фоткой спрятан, и вернёмся к нему потом — потому что мы сейчас
+       готовим версию для показа»). Сам листок, его карточка и записка целы:
+       вернуть — убрать DOC_CARD_OFF. Открыть записку по-прежнему можно с
+       адреса ?doc=1. */
+    if (b.doc && !DOC_CARD_OFF) drawDocCard(b, i);
     if (b.patent) drawPatentCard(b);
     if (b.win) drawWallWindow(b);
     for (const it of b.wall){
