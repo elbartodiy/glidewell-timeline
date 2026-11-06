@@ -928,7 +928,11 @@ const BEATS = [
       more impressions.» (27.10.2026: тире — на точку, дальше с новой строки). */
    d:'An intraoral scanner joins the ecosystem.',
    wall:[],
-   table:[], pyr:{dx:730, w:460, lz:0},   // one book's width to the right, and in the middle of the worktop (Eldar, 2026-09-22)
+   /* ШИРИНА 530 И dx 695, А НЕ 460 / 730: в каждом ряду слева прибавилась книга
+      (см. makeBookPyramid, EXTL), горка стала на 70 единиц шире, и её середина
+      ушла влево на 35 — чтобы ПРАВЫЙ склон и стоящая книга остались на месте.
+      Табличка привязана к этой середине, поэтому её сдвиг компенсирован в SIGN.dx. */
+   table:[], pyr:{dx:695, w:530, lz:0},   // one book's width to the right, and in the middle of the worktop (Eldar, 2026-09-22)
    /* no pedestal: the scanner lives in the lit capsule on the panel */},
 
   {x:26900, y:'2023', t:'THE CROSSOVER', tHide:true, tier:1, yLift:267, railBelow:true,   // its middle on the ceiling band, with 2018 and 2022 (Eldar, 2026-09-22); it no longer centres itself in the panel's free band   // the numeral is centred in the empty band the panel publishes, not hung from yLift (Eldar, 2026-09-15)   // its voice hangs in a strip under the article, not down the side   // the panel letters the title itself; the beat carries it so its page and its inline pieces can be keyed by it
@@ -3046,7 +3050,7 @@ function initTables(){
      its own gap, the same air on both hands. */
   {
     const b22 = BEATS.find(b => b.y === '2022');
-    const bookL = (b22 && b22.pyr ? b22.x + b22.pyr.dx : REC4_R + 640) - ((/[?&]bookl=(\d+)/.exec(location.search) || [])[1] || 270);
+    const bookL = (b22 && b22.pyr ? b22.x + b22.pyr.dx : REC4_R + 640) - ((/[?&]bookl=(\d+)/.exec(location.search) || [])[1] || 300);   // 270 → 300: горка стала шире влево на 35, прилавок начинается раньше ровно на столько же плюс запас
     if (bookL > REC4_L + 200)
       BENCH_BREAKS.push({x: (REC4_L + bookL) / 2, half: (bookL - REC4_L) / 2});
   }
@@ -21211,9 +21215,19 @@ function makeBookPyramid(){
      ширины холста, а от wRef — прежних 420·S, — поэтому сама горка осталась
      того же размера и на том же месте. */
   const PAD = 20 * S;
-  const c = document.createElement('canvas'); c.width = 420 * S + PAD * 2; c.height = 360 * S + PAD * 2;
+  /* ЛЕВЫЙ СКЛОН ДЛИННЕЕ ПРАВОГО (Эльдар, 06.11.2026, красным по всему левому
+     флангу горки — от верхнего ряда до нижнего, и штрихи выходят левее самой
+     горки: «чтобы на левой стороне было их чуть больше»). Пирамида была
+     симметричной, и слева она короче правого склона ровно настолько, насколько
+     её закрывает табличка. Теперь в КАЖДОМ ряду слева лежит ещё одна книга:
+     склон становится на книгу длиннее и выходит из-за таблички. Холст
+     раздвинут влево на эту книгу, масштаб берётся от wRef, и сама горка
+     остаётся того же размера — шире становится только её левая половина. */
+  const EXTL = 1;                                   // лишних книг слева в каждом ряду
+  const PADL = PAD + 64 * S * EXTL;                 // 64·S — ширина корешка (bw ниже)
+  const c = document.createElement('canvas'); c.width = 420 * S + PAD * 2 + 64 * S * EXTL; c.height = 360 * S + PAD * 2;
   const g = c.getContext('2d');
-  g.translate(PAD, PAD);
+  g.translate(PADL, PAD);
   const spine = IMGS.bookspine, front = IMGS.bookfront;
   const asp = spine ? spine.w / spine.h : 10.6;
   /* КНИГА ТОЛЩЕ СНИМКА КОРЕШКА. Эльдар (16.10.2026): «книга толще». Снимок —
@@ -21227,13 +21241,14 @@ function makeBookPyramid(){
   g.save();
   g.filter = 'blur(' + (7 * S) + 'px)';
   g.fillStyle = 'rgba(0,0,0,0.30)';
-  g.beginPath(); g.ellipse(210 * S + dp / 2, base + 4 * S, 6 * bw / 2 + 14 * S, 11 * S, 0, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.ellipse(210 * S + dp / 2 - EXTL * bw / 2, base + 4 * S, (6 + EXTL) * bw / 2 + 14 * S, 11 * S, 0, 0, Math.PI * 2); g.fill();
   g.restore();
   let topY = base;
-  rows.forEach((n, r) => {
+  rows.forEach((n0, r) => {
+    const n = n0 + EXTL;                            // лишняя книга — слева
     const y = base - (r + 1) * bh;                  // верх корешка этого ряда
     for (let i = 0; i < n; i++){
-      const x = 210 * S - n * bw / 2 + i * bw + ((r * 5) % 3 - 1) * S;
+      const x = 210 * S - n0 * bw / 2 - EXTL * bw + i * bw + ((r * 5) % 3 - 1) * S;
       // крышка — обложка сверху, тёмная, с бликом к дальнему краю
       const tg = g.createLinearGradient(0, y - rise, 0, y);
       tg.addColorStop(0, '#2a2e33'); tg.addColorStop(1, '#141619');
@@ -21312,7 +21327,7 @@ function makeBookPyramid(){
     g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = S;
     g.strokeRect(sx + 0.5 * S, sy + 0.5 * S, fw - S, fh - S);
   }
-  return {c, w: c.width, h: c.height, base: base + PAD, wRef: 420 * S};
+  return {c, w: c.width, h: c.height, base: base + PAD, wRef: 420 * S + 64 * S * EXTL};
 }
 /* the book card: cover, story, code — a product card without the price tag */
 let BOOK_CARD = null;
@@ -21518,7 +21533,7 @@ function drawBookPyramid(b, t){
    полуширина горки 230, полуширина доски 99, то есть ?signdx=-350&bookl=600. */
 const SIGN_N = (k2, d) => { const m = new RegExp('[?&]' + k2 + '=(-?[0-9.]+)').exec(location.search); return m ? +m[1] : d; };
 const SIGN = {
-  dx: SIGN_N('signdx', -120),          // от середины горки, в единицах мира: доска кончается в 63 единицах от левого торца прилавка (он обрывается на pyr.dx − 270)
+  dx: SIGN_N('signdx', -85),    // −120 + 35: середина горки уехала влево на 35, доска осталась на прежнем месте          // от середины горки, в единицах мира: доска кончается в 63 единицах от левого торца прилавка (он обрывается на pyr.dx − 270)
   w: SIGN_N('signw', 198),   // ширина ВСЕГО холста таблички; сама доска — 640 из 720 его колонок
   line1: 'Don\u2019t forget',   // апостроф типографский, как во всех подписях зала
   line2: 'to sign a book'
