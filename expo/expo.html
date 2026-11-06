@@ -23874,9 +23874,15 @@ function peopleRoster(){
   return rest;
 }
 const PEOPLE_AFTER_ALAS = ['ditolla', 'rella', 'gordon', 'farran', 'kosinski', 'ameduri', 'norton', 'leeson'];
+/* БЕЗ ЛИЦА — НЕ НА СТЕНЕ (Эльдар, 06.11.2026: «тех людей, чьи фото не нашлись,
+   просто убираем из общей этой страницы»). Сняты трое: 'june' и 'joan' — в
+   данных только имя без фамилии, опознать публично нечем; 'labar' (Paula
+   LaBar) — публично ничего. Сами записи в PEOPLE остались: появится снимок —
+   довольно вернуть id в этот список. Счётчик в шапке страницы считает по
+   этому же списку и сам показывает 35. */
 const PEOPLE_ORDER = [
-  'jim', 'alas', 'marie', 'june', 'ellen', 'nadia', 'bianca', 'jimlam',
-  'julio', 'joan', 'labar', 'sohn', 'wali', 'venard', 'ditolla', 'ceranic',
+  'jim', 'alas', 'marie', 'ellen', 'nadia', 'bianca', 'jimlam',
+  'julio', 'sohn', 'wali', 'venard', 'ditolla', 'ceranic',
   'fejzagic', 'withrow', 'friebauer', 'gordon', 'rella', 'kois', 'spear', 'manalili',
   'resnik', 'kosinski', 'chi', 'patel', 'azernikov', 'leeson', 'farran', 'feuerstein',
   'brenneise', 'ameduri', 'labao', 'park', 'dorfman', 'norton'
@@ -23936,10 +23942,10 @@ const NAME_FORMS = [
      when the list runs to thirty-eight people */
   ['alas', ['Dr. Abdul Alas', 'Abdul Alas']],
   ['marie', ['Marie Alejandrino-Buell, DMD', 'Marie Alejandrino-Buell']],
-  ['june', ['Dr. June']],
+  /* ['june', ['Dr. June']] и ['labar', ['Paula LaBar']] сняты вместе с их
+     карточками: ссылка вела бы на страницу без лица (06.11.2026) */
   ['jimlam', ['Jim Lam, DDS', 'Jim Lam']],
   ['julio', ['Julio Terra, DDS', 'Julio Terra']],
-  ['labar', ['Paula LaBar']],
   ['sohn', ['Joon Woo Sohn, DMD', 'Joon Woo Sohn']],
   ['wali', ['Teena Wali, DDS', 'Teena Wali']],
   ['venard', ['Phil Venard']],
