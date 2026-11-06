@@ -132,7 +132,13 @@ const BEATS = [
 
   {x:2450, y:'1970', t:'FOUNDED', tier:1, fly:true, yLift:96, flyZ:380,   // clear of the bench lamp; the apex stops short of the pendant above
    th:'One man, one bench — betting that affordable was a business model.',
-   d:'Jim, a hand technician, founds a one-man ceramics lab in Orange County, CA.',
+   /* ПОЛНОЕ ИМЯ (Эльдар, 05.11.2026: «здесь на 1970-м написано Jim — давай
+      напишем Jim Glidewell»). Это первое его появление в зале: дальше по
+      коридору он уже «Jim», а знакомиться надо по имени и фамилии. */
+   /* и перенос задан рукой: жадный кончал первую строку на «a one-man» и
+      отрывал определение от своей лаборатории. Приложение «a hand technician»
+      стоит отдельной строкой — так его и ставят */
+   d:'Jim Glidewell, a hand technician,\nfounds a one-man ceramics lab in Orange County, CA.',
    /* Jim at the bench hangs on the walk-up: a full photo-width of clear wall
       between the cabinet and the frame, then the family album on the counter */
    /* raised, and grown on its left: its right edge holds the line it had, so
@@ -9932,7 +9938,14 @@ const FACT_TABLE = [
      значения к следующему»). В точках — ровно значения из источников выше;
      между ними — счётчик, а не данные. Срока (hold 10) у сотрудников больше нет:
      между 1989 и 2019 вместо «—» идёт счёт 175 → ~5,000. */
-  {label: 'EMPLOYEES', ramp: true, pts: [[1970, '1'], [1973, '15'], [1984, '42'], [1988, '65'], [1989, '175'], [2010, '2,600'], [2017, '~3,800'], [2019, '~5,000'], [2026, '5,000']]},
+  /* В 1970-м СОТРУДНИКОВ НОЛЬ, А НЕ ОДИН (Эльдар, 05.11.2026: «когда ты пишешь
+     one employees — это, во-первых, ошибка, а во-вторых, ты имеешь в виду, что
+     он работал сам один, но он же не employee»). И он прав дважды. Владелец
+     не числится у самого себя сотрудником: в 1970-м Джим работал один, нанятых
+     у него не было — значит ноль. Отсюда же и ошибка в числе: «1 employees»
+     не бывает, и метка теперь знает единственное число (см. ниже).
+     Ноль, кстати, сильнее единицы: полоса читается «0 → 5 000». */
+  {label: 'EMPLOYEES', ramp: true, pts: [[1970, '0'], [1973, '15'], [1984, '42'], [1988, '65'], [1989, '175'], [2010, '2,600'], [2017, '~3,800'], [2019, '~5,000'], [2026, '5,000']]},
   {label: 'SQ FT', pts: [[1970, '500'], [1975, '4,000'], [1984, '15,000'], [1993, '71,000'], [2001, '163,000'], [2019, '600,000'], [2026, '1M']]},
   {label: 'CROWNS / DAY', hold: 6, pts: [[1970, '20'], [2026, '50K+']]},
   {label: 'EST. REVENUE', hold: 8, pts: [[1985, '~$5M'], [1991, '$10M'], [1993, '$12M'], [2019, '~$500M']]},
@@ -10116,7 +10129,11 @@ function drawCompanyStrip(A){
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
   for (let i = 0; i < n; i++){
     const [num, lab0, wide] = F[i];
-    const lab = SHORT ? (FACT_SHORT[lab0] || lab0) : lab0;
+    /* ЕДИНСТВЕННОЕ ЧИСЛО У МЕТКИ (Эльдар, 05.11.2026). Счётчик сотрудников
+       проходит через единицу, и на ней стояло «1 EMPLOYEES». Метка снимает «S»,
+       когда число ровно единица — и только у меток, которые считают штуки. */
+    let lab = SHORT ? (FACT_SHORT[lab0] || lab0) : lab0;
+    if (String(num).trim() === '1' && /S$/.test(lab) && !/SQ FT|\//.test(lab)) lab = lab.slice(0, -1);
     ctx.font = NF();
     try { ctx.letterSpacing = '0px'; } catch(e){}
     /* счётчик (ramp) стоит в коробке самого широкого числа отрезка, прижатый
