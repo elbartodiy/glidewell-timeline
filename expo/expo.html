@@ -6160,8 +6160,13 @@ function wrapCalc(text, maxW){
   const NUMLIKE = w => /^[\u2116#$]?[0-9][0-9,.\u00a0]*$/.test(w);
   const TINY_SET = new Set(['a','an','the','at','to','of','in','on','by','for','and','or','as','is','its','it','with','from','into','that','this','than','per']);
   const TINY = w => TINY_SET.has(w.toLowerCase().replace(/[^a-z]/g, ''));
+  /* И ЗВАНИЕ НЕ ОТРЫВАЕТСЯ ОТ ИМЕНИ (Эльдар, 05.11.2026: «есть ли какие-то
+     правила, чтобы было прям качественно по всем текстам?»). «Dr.» или
+     инициал в конце строки — такая же висячая половина слова, как предлог.
+     Склейка та же: звание или инициал и следующее слово меряются как одно. */
+  const TITLEW = w => /^(Dr|Mr|Mrs|Ms|Prof|St|Mt|Sr|Jr)\.?$/i.test(w) || /^[A-Z]\.$/.test(w);
   for (let n = words.length - 2; n >= 0; n--)
-    if (NUMLIKE(words[n]) && words[n + 1] && !DASH(words[n + 1]))
+    if ((NUMLIKE(words[n]) || TITLEW(words[n])) && words[n + 1] && !DASH(words[n + 1]))
       words.splice(n, 2, words[n] + '\u00a0' + words[n + 1]);
   let i = 0;
   while (i < words.length){
@@ -20209,6 +20214,100 @@ function drawDocCard(b, bi){
   pushHit(ax - w/2, cy - h/2, w, h, {type:'doc'});
 }
 
+/* ======================= КАМЕРА НА ШТАТИВЕ · «ВПИШИ СЕБЯ» ==================
+   Эльдар (05.11.2026): «пусть видеокамера стоит как бы за прилавком, где-то
+   между Glidewell TV и залом, между колонной и этой GTV-штукой, там белое
+   пространство, на трайподе; камера на уровне нижней кромки видео, которое на
+   Glidewell TV; стоит на трёх ногах и снимает в сторону зрителя. И при нажатии
+   на эту камеру открывается возможность записать своё приветствие».
+
+   ГДЕ. Просвет между правым краем колонны (37470) и левым краем плиты GTV
+   (37697) — 227 единиц по СТЕНЕ. Но камера стоит не на стене, а в зале, на
+   своей глубине, поэтому место берётся экранное: её середина ставится на
+   середину этого просвета, посчитанную на плоскости стены, и переводится на
+   плоскость камеры. Так она попадает в белое поле и не наезжает ни на колонну,
+   ни на плиту при любой камере зала.
+
+   НА КАКОЙ ВЫСОТЕ. Объектив — на нижней кромке экрана GTV. Кромка живёт на
+   стене (мировая 578 при k 0,3913); чтобы на экране совпало, на плоскости
+   камеры это 430 + (578 − 430) · 0,3913 / k(CAM_Z). Пересчёт делается каждый
+   кадр, а не вписан числом: подвинется плита — поедет и камера.
+
+   Размер и глубину можно примерить с адреса: ?camz=<глубина>&camw=<ширина>. */
+const CAM_RIG = {
+  z: (() => { const m = /[?&]camz=([0-9.]+)/.exec(location.search); return m ? +m[1] : 300; })(),
+  w: (() => { const m = /[?&]camw=([0-9.]+)/.exec(location.search); return m ? +m[1] : 150; })(),
+  /* сдвиг от середины просвета, в долях своей ширины: корпус шире самого
+     просвета, и без сдвига он одинаково налезал и на колонну, и на плиту */
+  dx: (() => { const m = /[?&]camdx=(-?[0-9.]+)/.exec(location.search); return m ? +m[1] : -0.26; })(),
+};
+function camRigX(){
+  /* середина просвета, посчитанная на стене и приведённая к плоскости камеры:
+     берём экранный снос от середины GTV и делим на свою перспективу */
+  const kw = k((SEGMENTS[3].z0 || 1400) - 6), kc = k(CAM_RIG.z);
+  const gapMid = (HALL_FRAME_R + HALL_COL_W + TODAY_TV.x() - TODAY_TV.w / 2 - TODAY_TV.pad) / 2;
+  return TODAY_TV.x() + (gapMid - TODAY_TV.x()) * kw / kc + CAM_RIG.dx * CAM_RIG.w;
+}
+function drawCamRig(t){
+  const kc = k(CAM_RIG.z), kw = k((SEGMENTS[3].z0 || 1400) - 6);
+  const X = camRigX(), sx = px(X, kc);
+  const W2 = CAM_RIG.w * kc * SS;
+  if (sx < -W2 * 3 || sx > W + W2 * 3) return;
+  /* объектив на нижней кромке экрана GTV — высота пересчитывается с плоскости
+     стены на свою, чтобы совпало именно НА ЭКРАНЕ */
+  const vTV = BOARD_TOP + BOARD_H * BOARD_S / 2 + TODAY_TV.h / 2;
+  const vCam = CFG.horizon + (vTV - CFG.horizon) * kw / kc;
+  const yEye = py(vCam, kc), yFloor = py(1080, kc), S2 = kc * SS;
+  const bw = W2, bh = bw * 0.60;                       // корпус
+  const bx = sx - bw / 2, by = yEye - bh * 0.52;
+  /* ── ШТАТИВ: три ноги, задняя по оси, две передние врозь ── */
+  ctx.save();
+  ctx.lineCap = 'round';
+  const legW = Math.max(1.4, bw * 0.045);
+  const headY = by + bh + bw * 0.10;
+  for (const dx of [-0.42, 0.42, 0.06]){
+    const spread = dx === 0.06 ? 0.10 : dx;
+    const gx = sx + spread * bw * 1.65;
+    const gr = ctx.createLinearGradient(sx, 0, gx, 0);
+    gr.addColorStop(0, '#9aa2aa'); gr.addColorStop(0.5, '#dfe4e8'); gr.addColorStop(1, '#878f97');
+    ctx.strokeStyle = gr; ctx.lineWidth = legW;
+    ctx.beginPath(); ctx.moveTo(sx, headY); ctx.lineTo(gx, yFloor); ctx.stroke();
+  }
+  // центральная колонка и головка
+  ctx.strokeStyle = '#b9c0c7'; ctx.lineWidth = legW * 1.5;
+  ctx.beginPath(); ctx.moveTo(sx, headY); ctx.lineTo(sx, headY + bh * 0.42); ctx.stroke();
+  ctx.fillStyle = '#6f777f';
+  ctx.beginPath(); ctx.roundRect(sx - bw * 0.11, headY - bw * 0.05, bw * 0.22, bw * 0.12, bw * 0.03); ctx.fill();
+  contactShadow(sx, yFloor, bw * 1.5, 0.30);
+  /* ── КОРПУС: тёмный, со скруглением, с биркой и объективом в наш зал ── */
+  const bg = ctx.createLinearGradient(0, by, 0, by + bh);
+  bg.addColorStop(0, '#3c4147'); bg.addColorStop(0.45, '#2a2e33'); bg.addColorStop(1, '#1b1e22');
+  ctx.fillStyle = bg;
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, bw * 0.07); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fillRect(bx + bw * 0.06, by + bh * 0.08, bw * 0.88, Math.max(1, S2 * 1.2));
+  // козырёк сверху и ручка
+  ctx.fillStyle = '#23272c';
+  ctx.beginPath(); ctx.roundRect(bx + bw * 0.18, by - bh * 0.16, bw * 0.50, bh * 0.17, bw * 0.03); ctx.fill();
+  // объектив: смотрит в зал, поэтому виден как круг
+  const lr = bh * 0.34, lx = sx + bw * 0.04, ly = by + bh * 0.52;
+  const lg = ctx.createRadialGradient(lx - lr * 0.3, ly - lr * 0.3, lr * 0.1, lx, ly, lr);
+  lg.addColorStop(0, '#6b7a86'); lg.addColorStop(0.45, '#20262c'); lg.addColorStop(1, '#0c0f12');
+  ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(lx, ly, lr, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(210,220,230,0.35)'; ctx.lineWidth = Math.max(1, S2 * 1.6);
+  ctx.beginPath(); ctx.arc(lx, ly, lr, 0, 7); ctx.stroke();
+  // блик в стекле
+  ctx.fillStyle = 'rgba(190,220,255,0.30)';
+  ctx.beginPath(); ctx.ellipse(lx - lr * 0.34, ly - lr * 0.36, lr * 0.26, lr * 0.16, -0.6, 0, 7); ctx.fill();
+  /* красный огонёк: он и есть приглашение — дышит медленно */
+  const puls = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(t * 2.1));
+  const tx = bx + bw * 0.10, ty = by + bh * 0.26, tr = Math.max(1.2, bw * 0.035);
+  drawGlow('235,40,46', tx, ty, tr * 5, 0.30 * puls);
+  ctx.fillStyle = `rgba(255,${(60 + 40 * puls) | 0},60,${(0.75 + 0.25 * puls).toFixed(2)})`;
+  ctx.beginPath(); ctx.arc(tx, ty, tr, 0, 7); ctx.fill();
+  ctx.restore();
+  pushHit(bx - bw * 0.1, by - bh * 0.3, bw * 1.2, bh * 1.5 + (yFloor - (by + bh)), {type: 'camrig'});
+}
+
 /* ---------------- PLASMAS · living wall screens of the white room ---------------- */
 /* ДЕРЕВЯННАЯ ТАБЛИЧКА С ЗОЛОТОМ. Эльдар (02.10.2026): «цитату в золото и на
    табличку деревянную на стену под тот год». Это не plaque-бит: там плашка
@@ -27748,6 +27847,7 @@ function frame(){
   drawPlateBench(t);  // and the founding bay, cut from its centrepiece
   drawProjectors(t, 'machineGround');   // a machine standing on the floor goes behind the counters
   drawHallExhibit();  // the pedestal and its crown stand in the room, behind the counters (Eldar)
+  drawCamRig(t);      // камера на штативе у Glidewell TV — «впиши себя в историю»
   drawBZ09Crown(t);   // разрезанная коронка 2009-го стоит на полу перед своей нишей
   drawBench();        // reflection can never be laid over the furniture
 /* THE COUNTERS COME AFTER THE HALL'S FLOOR. Laid before it, the glass hall's
