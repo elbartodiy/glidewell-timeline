@@ -2589,6 +2589,14 @@ function attachMouseDriver(el){
        the release of that same tap arrived as a click on nothing — and a click
        on nothing is exactly how a page is closed. The mark now owns the release
        too. */
+    /* НАЖАТИЕ НА ПРИГЛАШЕНИЕ ЗАПОМИНАЕТСЯ (Эльдар, 06.11.2026: «на кнопку справа
+       должен нажимать курсор с пальцем, и она как бы должна нажиматься»).
+       Зал рисуется в канве, у него нет :active — поэтому момент касания
+       отмечается здесь, а drawRecCue по нему рисует вдавленное состояние.
+       Держат палец — держится и вид; короткий тап всё равно виден REC_CUE.hold
+       секунды, иначе на быстром клике вдавливания не разглядеть. */
+    { const aimCue = hitAt(pt.x, pt.y);
+      if (aimCue && aimCue.type === 'camrig'){ REC_CUE.down = true; REC_CUE.downT = state.time; } }
     if (voicesMarkHit(pt)){ if (!state.people) openPeople(); down = false; markTap = true; return; }
     if (settingsMarkHit(pt)){ toggleSettings(); down = false; markTap = true; return; }
     if (SETTINGS.open) closeSettings();   // касание по залу закрывает меню
@@ -2685,6 +2693,7 @@ function attachMouseDriver(el){
     Input.push(-dx * 30);
   });
   el.addEventListener('pointerup', e => {
+    REC_CUE.down = false;
     state.touchHeld = false;
     tiltRelease();
     if (state.seekDrag){ state.seekDrag = null; markTap = false; down = false; Input.setDragging(false); return; }
@@ -2760,7 +2769,7 @@ function attachMouseDriver(el){
     down = false; markTap = false; moved = 0;
     Input.setDragging(false);
   };
-  el.addEventListener('pointercancel', cancelDrag);
+  el.addEventListener('pointercancel', e => { REC_CUE.down = false; cancelDrag(e); });
   /* система забрала экран (скриншот, шторка, другое окно) — касание отпускается
      сразу, а не когда кнопки отпустят: иначе зал «захвачен» всё это время */
   window.addEventListener('blur', () => { if (down) { cancelDrag(); fling = []; } });
@@ -20740,7 +20749,7 @@ function camRecKeep(S){
    когда зал закрыт страницей или витриной, когда идёт фильм и когда запись уже
    открыта: приглашать туда, где человек уже стоит, незачем. Отсчёт идёт от
    времени зала, а не от открытия страницы, поэтому пауза ровная. */
-const REC_CUE = {every: 60, hold: 8, fade: 0.6};
+const REC_CUE = {every: 60, hold: 8, fade: 0.6, press: 0.16, down: false, downT: -9};
 /* ПРИГЛАШЕНИЕ — ЗНАК ЗАЛА, А НЕ ВЕБ-ПЛАШКА (Эльдар, 06.11.2026: «мне не
    нравится шрифт, мне не нравится, как она выглядит, она выглядит
    неподходяще этому дизайну… нужно, чтобы при появлении на ней был блик,
@@ -20783,7 +20792,19 @@ function drawRecCue(t){
   const tw = ctx.measureText(lab).width + TR;
   const padX = 24 * SS, dot = 6 * SS, gap = 14 * SS;
   const bw = padX * 2 + dot * 2 + gap + tw, bh = 48 * SS;
-  const bx = W - bw - 26 * SS, by = 22 * SS;
+  const bx = W - bw - 26 * SS;
+  /* ПОД КУРСОРОМ ПОДНИМАЕТСЯ, ПОД НАЖАТИЕМ САДИТСЯ (Эльдар, 06.11.2026: «на
+     кнопку справа должен нажимать курсор с пальцем, и она как бы должна
+     нажиматься, приглашая»). Палец у курсора зал даёт сам — любой прямоугольник
+     нажатия включает cursor:pointer, а у таблички он есть. Не хватало ответа
+     самой таблички: в канве нет :hover и :active, поэтому вид считается здесь.
+     Наведение — доска на полтора пикселя выше и тень глубже; нажатие — на два
+     ниже и тень почти в край, как у настоящей клавиши. */
+  const hv = Input.hover ? hitAt(Input.hover.x, Input.hover.y) : null;
+  const hot = !!(hv && hv.type === 'camrig');
+  const pressed = REC_CUE.down || (state.time - REC_CUE.downT) < REC_CUE.press;
+  const by = 22 * SS + (pressed ? 3 * SS : hot ? -1.5 * SS : 0);
+  const shB = (pressed ? 7 : hot ? 26 : 18) * SS, shY = (pressed ? 1.5 : hot ? 8 : 4) * SS;
   const rad = CUE_V === 3 ? 0 : bh / 2;
   const plate = () => { ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, rad); };
   const puls = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(t * 2.4));
@@ -20794,9 +20815,11 @@ function drawRecCue(t){
        читался грязным пятном на светлой стене. Рамка и набор — золото зала
        (тот же набор остановок, что у плашки с именами на «The voices»). */
     ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 18 * SS; ctx.shadowOffsetY = 4 * SS;
+    ctx.shadowColor = `rgba(0,0,0,${pressed ? 0.5 : 0.45})`; ctx.shadowBlur = shB; ctx.shadowOffsetY = shY;
     const pg = ctx.createLinearGradient(0, by, 0, by + bh);
-    pg.addColorStop(0, '#2c3034'); pg.addColorStop(1, '#16191c');
+    if (pressed){ pg.addColorStop(0, '#202428'); pg.addColorStop(1, '#101316'); }
+    else if (hot){ pg.addColorStop(0, '#343940'); pg.addColorStop(1, '#1a1e22'); }
+    else { pg.addColorStop(0, '#2c3034'); pg.addColorStop(1, '#16191c'); }
     ctx.fillStyle = pg; plate(); ctx.fill();
     ctx.restore();
     const eg = ctx.createLinearGradient(bx, 0, bx + bw, 0);
@@ -20815,9 +20838,11 @@ function drawRecCue(t){
     /* МУЗЕЙНАЯ ЭТИКЕТКА — та же бумага, что у листов чтения и у таблички
        перед книгами: светлая плашка, тёмные чернила, мягкая тень. */
     ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.38)'; ctx.shadowBlur = 20 * SS; ctx.shadowOffsetY = 5 * SS;
+    ctx.shadowColor = `rgba(0,0,0,${pressed ? 0.42 : 0.38})`; ctx.shadowBlur = shB; ctx.shadowOffsetY = shY;
     const pg = ctx.createLinearGradient(0, by, 0, by + bh);
-    pg.addColorStop(0, '#fcfcfb'); pg.addColorStop(1, '#eceeec');
+    if (pressed){ pg.addColorStop(0, '#eef0ee'); pg.addColorStop(1, '#dfe2e0'); }
+    else if (hot){ pg.addColorStop(0, '#ffffff'); pg.addColorStop(1, '#f3f5f3'); }
+    else { pg.addColorStop(0, '#fcfcfb'); pg.addColorStop(1, '#eceeec'); }
     ctx.fillStyle = pg; plate(); ctx.fill();
     ctx.restore();
     ctx.strokeStyle = 'rgba(70,76,84,0.22)'; ctx.lineWidth = Math.max(1, SS); plate(); ctx.stroke();
@@ -20830,9 +20855,9 @@ function drawRecCue(t){
     /* БЕЗ ПЛАШКИ — золотая черта и слова под ней, как подпись на стене. Ореол
        держит их читаемыми и на дереве, и на белой штукатурке. */
     const eg = ctx.createLinearGradient(bx, 0, bx + bw, 0);
-    eg.addColorStop(0, 'rgba(214,178,94,0)'); eg.addColorStop(0.35, 'rgba(240,214,150,0.9)');
+    eg.addColorStop(0, 'rgba(214,178,94,0)'); eg.addColorStop(0.35, `rgba(240,214,150,${hot ? 1 : 0.9})`);
     eg.addColorStop(1, 'rgba(214,178,94,0.25)');
-    ctx.fillStyle = eg; ctx.fillRect(bx, by, bw, Math.max(1, 1.4 * SS));
+    ctx.fillStyle = eg; ctx.fillRect(bx, by, bw, Math.max(1, (hot ? 2 : 1.4) * SS));
     drawGlow('235,40,46', dx, dy + 2 * SS, dot * 4.2, 0.30 * puls);
     ctx.fillStyle = `rgba(255,78,80,${(0.82 + 0.18 * puls).toFixed(2)})`;
     ctx.beginPath(); ctx.arc(dx, dy + 2 * SS, dot, 0, 7); ctx.fill();
@@ -21283,7 +21308,14 @@ function makeBookPyramid(){
   });
   if (front){
     const fw = 96 * S, fh = fw * front.h / front.w;
-    const sx = 210 * S - fw / 2 + dp * 0.5, sy = topY - fh + rise * 0.55;
+    /* СТОЯЩАЯ КНИГА — ПО СЕРЕДИНЕ ТОГО РЯДА, НА КОТОРОМ СТОИТ (Эльдар,
+       06.11.2026: «верхнюю книгу только поставь по центру относительно книги,
+       на которой она стоит»). Она центровалась по номинальной середине горки
+       (210·S), а с тех пор в каждом ряду слева прибавилась книга (EXTL), и
+       верхний ряд уехал влево на полкниги — стоящая оказалась правее своего
+       основания ровно на EXTL·bw/2. Середина верхнего ряда и есть
+       210·S − EXTL·bw/2: при n0 книг и EXTL добавленных она не зависит от n0. */
+    const sx = 210 * S - EXTL * bw / 2 - fw / 2 + dp * 0.5, sy = topY - fh + rise * 0.55;
     g.save();
     g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = 14 * S; g.shadowOffsetY = 7 * S;
     g.drawImage(front.el, sx, sy, fw, fh);
