@@ -1648,7 +1648,7 @@ const SEGMENTS = [
       Теперь из текстуры берётся одна панель с подсветкой посередине, и она
       кладётся с шагом годов, швом ровно между ними. См. regularPanel(). */
    panel:{beats:['1980', '1984', '1985', '1988'], light:1442, erase:[770, 1255], railTop:1145},
-   font:'"Helvetica Neue", Helvetica, Arial, sans-serif',
+   font:'Inter, "Helvetica Neue", Helvetica, Arial, sans-serif',   // Inter — свой, из assets/fonts (05.11.2026); системные остались запасными
    ink:'223,226,214', lamp:'tube', dust:false,
    rail:'rgba(24,16,10,0.26)', railInk:'rgba(198,208,202,0.7)', railTop: true,
    /* the line along the counter's edge was a pale blue-grey band sitting 6 units
@@ -1683,7 +1683,7 @@ const SEGMENTS = [
    light:{pool:'218,232,252', poolR:1250, poolA:0.13},
    bgc:[26,29,34], grain:0},
   {x0:REC2_R, x1:WORLD_END+2800, z0:1400, z1:1400, tz:680, wall:'wall4', bench:'bench4', front:'front4', skirt:'white',
-   font:'"Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif',
+   font:'"Hanken Grotesk", "Avenir Next", "Helvetica Neue", Arial, sans-serif',   // Hanken Grotesk — свой, выбран Эльдаром 05.11.2026; системные остались запасными
    ink:'55,64,76', lamp:'tube', dust:false,
    rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
    light:{pool:'225,240,255', poolR:1350, poolA:0.12},
@@ -4052,7 +4052,7 @@ function drawPoster85Wall(seg, kT, yTopW, yFoot){
   // ×1.8 → ×1.62 (второй набросок, «×0,9»: «Secret» касался кончика пальца); правый край прежний
   // 1.46 → 1.58 (Эльдар, 30.10.2026: «чуть увеличь The Sales Secret, всё ещё не касаясь пальца, с воздухом между»)
   const TS = 1.58 * HS, xR = 11670 + 635 * s * 1.8, fs = 150 * s * TS * U;
-  ctx.font = `600 ${fs.toFixed(1)}px Inter, "Helvetica Neue", "Arial Black", Arial, sans-serif`;
+  ctx.font = `800 ${fs.toFixed(1)}px Inter, "Helvetica Neue", "Arial Black", Arial, sans-serif`;
   /* обе строки — одним начертанием, без растяжки по ширине (Эльдар, 30.10.2026: «начертание первой
      строки отличается от второй — это ошибка»): прежде каждую строку тянули к ширине плаката
      (635 и 470 его точек), и «The Sales» выходила сжатой до 0,91, а «Secret» растянутой до 1,01 */
@@ -16265,7 +16265,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261105-finprod';   // 05.11.2026: натюрморт финала целиком, со своей столешницей (до этого 20261104-bzham)   // 04.11.2026: две коронки, кувалда и осколки для удара на 2009 (до этого 20261104-bz09)   // 04.11.2026: два состояния разрезанной коронки для рекреации 2009 (до этого 20261104-bzlogo)   // 04.11.2026: глянцевая вывеска BruxZir на стене 2009 (до этого 20261104-plant)   // 04.11.2026: монстера на прилавке перед табло TODAY (до этого 20261103-gtv)   // 03.11.2026: логотип Glidewell TV и QR на приложение (до этого 20261102-bzf3)   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261105-fonts';   // 05.11.2026: свои шрифты эпох — Inter и Hanken Grotesk (до этого 20261105-finprod)   // 05.11.2026: натюрморт финала целиком, со своей столешницей (до этого 20261104-bzham)   // 04.11.2026: две коронки, кувалда и осколки для удара на 2009 (до этого 20261104-bz09)   // 04.11.2026: два состояния разрезанной коронки для рекреации 2009 (до этого 20261104-bzlogo)   // 04.11.2026: глянцевая вывеска BruxZir на стене 2009 (до этого 20261104-plant)   // 04.11.2026: монстера на прилавке перед табло TODAY (до этого 20261103-gtv)   // 03.11.2026: логотип Glidewell TV и QR на приложение (до этого 20261102-bzf3)   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -16938,6 +16938,8 @@ let TBOX = [];   // корпуса и окна печи и пресса маши
    под прессом. Номер цикла прогоняется через хэш, и 75 из 100 идут в осколки.
    Осколки тоже не случайны: их разлёт считается от номера цикла, поэтому
    картинка повторяема и её можно снять на скриншот дважды подряд. */
+/* высота подставок под печью и прессом, в делениях чертежа; ?tl= для примерки */
+const T_LIFT = (() => { const m = /[?&]tl=(-?[0-9.]+)/.exec(location.search); return m ? +m[1] : 46; })();
 const TESTER = {
   T: 8.4,              // весь цикл, секунды
   outUp: 0.5,          // створка поднялась
@@ -17069,7 +17071,18 @@ function drawCrownTester(b, t){
     /* манометр: центр втулки (110, 111) листа 222×696 — над своей стойкой, на (−100, 212);
        0.2364 — радиус циферблата 110 точек на 26 единиц; низ стойки (74) уходит за ленту */
     const GS = 26 / 110;
-    sp('ph_t00g', -100 - 110 * GS, 212 + 111 * GS, GS);
+    /* приборы рядом поднимаются на ту же высоту, а их стойки дорисовываются
+       вниз до столешницы — в листе прут кончается там, где он кончался на
+       прежней высоте (Эльдар: «поднять и растянуть их металлические пруты») */
+    const rod = (u, vTop, wUnits) => {
+      if (T_LIFT <= 0.5) return;
+      const x0 = X(u - wUnits / 2), yT = Y(vTop), yB = Y(0);
+      const rg = ctx.createLinearGradient(x0, 0, x0 + wUnits * S1, 0);
+      rg.addColorStop(0, '#7d848b'); rg.addColorStop(0.35, '#cfd5da'); rg.addColorStop(1, '#6d747b');
+      ctx.fillStyle = rg; ctx.fillRect(x0, yT, wUnits * S1, yB - yT);
+    };
+    rod(-100, 74 + T_LIFT, 7);
+    sp('ph_t00g', -100 - 110 * GS, 212 + 111 * GS + T_LIFT, GS);
     const load = ease(seg(TESTER.down, TESTER.load)) * (1 - (pass ? ease(seg(TESTER.load + 0.5, TESTER.up)) : ease(seg(TESTER.load, TESTER.load + 0.25))));
     {
       // стрелка: от нижней левой риски (138°) по часовой через верх к нижней правой (402°)
@@ -17085,7 +17098,8 @@ function drawCrownTester(b, t){
     }
     /* пульт: коробка — строки 7…265 листа 220×707, при 0.284 (62 единицы ширины) её низ
        на 189 — над траверсой не нависает, стойка (низ 63) уходит за ленту */
-    sp('ph_t00c', 99.5 - 110 * 0.284, 189 + 265 * 0.284, 0.284);
+    rod(99.5, 63 + T_LIFT, 7);
+    sp('ph_t00c', 99.5 - 110 * 0.284, 189 + 265 * 0.284 + T_LIFT, 0.284);
     /* траверса: 413×329 при 0.33 (балка 136, боёк 40); низ бойка — строка 327. В покое
        низ бойка на 64 выше верха коронки (63 + 46), к нагрузке — вдавлен на PRESS_BITE */
     const crownTop = vDeckC + 46;
@@ -17101,11 +17115,31 @@ function drawCrownTester(b, t){
        ленты (185…373 × 176…320 по виду) — опустить его на ленту можно, только загнав
        пульт печи под стол, поэтому печь стоит, как стояла, а коронка появляется на ленте
        перед ней. */
-    const PS = 0.29, pBot = vDeckC - (800 - 589) * PS;
+    /* ПЕЧЬ И ПРЕСС — НА СВОИХ ПОДСТАВКАХ (Эльдар, 05.11.2026: «эти две слева и
+       справа, печка и что там ещё справа, должны стоять выше, на такой же
+       подложке, как этот серый куб… сейчас дверцы прячутся за конвейером»).
+       Короба стояли низом на столе и на ленте, и их окна резались полотном.
+       Теперь оба подняты на T_LIFT делений чертежа и стоят на тёмных матовых
+       тумбах того же металла, что площадка под всей машиной: короб виден
+       целиком, окно открыто над лентой. Высоту можно примерить с адреса:
+       ?tl=<делений>. */
+    const PS = 0.29, pBot = vDeckC - (800 - 589) * PS + T_LIFT;
+    const FS = 138 / 558, fBot = T_LIFT;
+    /* тумбы рисуются ДО коробов: короб садится на свою тумбу, а не висит над ней */
+    const plinth = (u0, u1, vTop) => {
+      if (vTop <= 0.5) return;
+      const x0 = X(u0), x1 = X(u1), yT = Y(vTop), yB = Y(0);
+      const pg2 = ctx.createLinearGradient(0, yT, 0, yB);
+      pg2.addColorStop(0, '#454a50'); pg2.addColorStop(0.18, '#32373c'); pg2.addColorStop(1, '#232629');
+      ctx.fillStyle = pg2; ctx.fillRect(x0, yT, x1 - x0, yB - yT);
+      ctx.fillStyle = 'rgba(205,215,225,0.26)'; ctx.fillRect(x0, yT, x1 - x0, Math.max(1, 1.5 * S1));
+      ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(x1 - 3 * S1, yT, 3 * S1, yB - yT);
+    };
+    plinth(-246 + 8 * FS, -246 + 550 * FS, fBot);
+    plinth(108 + 10 * PS, 108 + 586 * PS, pBot);
     sp('ph_t00p', 108, pBot + 800 * PS, PS);
-    const FS = 138 / 558, fBot = 0;   // печь стоит на столе: её окно (185…373 × 176…320) выше ленты, коронка появляется перед ней
     sp('ph_t00h', -246, fBot + 684 * FS, FS);
-    TBOX = [[108, pBot, 108 + 596 * PS, pBot + (800 - 250) * PS, 108 + 162 * PS, vDeckC, 108 + 366 * PS, pBot + (800 - 379) * PS]];
+    TBOX = [[108, pBot, 108 + 596 * PS, pBot + (800 - 250) * PS, 108 + 162 * PS, pBot + (800 - 589) * PS, 108 + 366 * PS, pBot + (800 - 379) * PS]];
     {
       const wx = X(-246 + 338 * FS), wy = Y(fBot + (684 - 400) * FS), wr = 150 * FS * S1;
       const puls = 0.75 + 0.25 * Math.sin(t * 1.7) * Math.sin(t * 0.63 + 1.1);
@@ -25127,6 +25161,18 @@ const PAGE_FONTS = [
   ['IBM Plex Sans', 'ibm_plex_sans_400.woff2', {}], ['IBM Plex Sans', 'ibm_plex_sans_600.woff2', {weight: '600'}], ['IBM Plex Sans', 'ibm_plex_sans_400i.woff2', {style: 'italic'}],
   ['Source Sans 3', 'source_sans_3_400.woff2', {}], ['Source Sans 3', 'source_sans_3_600.woff2', {weight: '600'}], ['Source Sans 3', 'source_sans_3_400i.woff2', {style: 'italic'}],
   ['Inter', 'inter_400.woff2', {}], ['Inter', 'inter_600.woff2', {weight: '600'}], ['Inter', 'inter_400i.woff2', {style: 'italic'}],
+  /* ШРИФТЫ ЭПОХ ТЕПЕРЬ ТОЖЕ СВОИ (Эльдар, 05.11.2026). Зал просил системные:
+     восьмидесятые — «Helvetica Neue», белый зал — «Avenir Next». Обе есть
+     только на маке; на киоске Windows подставлял Arial, и половина зала была
+     набрана не тем, что видит Эльдар. Inter встаёт вместо Helvetica Neue,
+     Hanken Grotesk — вместо Avenir Next: выбран им на сравнении четырёх
+     кандидатов прямо на кадрах зала («четвёртый вариант, там мне нравится
+     начертание девятки»). Inter 800 — для заголовка плаката 1985: Эльдар
+     просил его пожирнее, а в стеке было только 600. */
+  ['Inter', 'inter_800.woff2', {weight: '800'}],
+  ['Hanken Grotesk', 'hanken_grotesk_400.woff2', {}],
+  ['Hanken Grotesk', 'hanken_grotesk_600.woff2', {weight: '600'}],
+  ['Hanken Grotesk', 'hanken_grotesk_400i.woff2', {style: 'italic'}],
   // the nineties' numerals on the wall: Roboto Flex at its widest and heaviest — a Helvetica-like grotesk
   // pulled out wide, with a plain '1' (Archivo's had a foot; Eldar sent it back)
   ['Nineties Wide', 'nineties_wide.woff2', {weight: '900'}],
