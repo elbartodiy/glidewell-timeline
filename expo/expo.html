@@ -7141,9 +7141,15 @@ function filmProjGeom(r){
   return {kk, sx, pw, ph, px0: sx - pw/2, py0: cy - ph/2, cy};
 }
 let PROJ_SHEET = null;
+  /* КАДРА НЕТ — ЭКРАН ОСТАЁТСЯ (Эльдар, 06.11.2026: «2010 — видео закончилось и
+     началось сначала, и на этой паузе телевизор просто исчез, даже не чёрный
+     экран»). При зацикливании readyState на мгновение проседает ниже 2, и
+     условие «v.readyState < 2 → ничего не рисуем» снимало не картинку, а весь
+     прибор вместе с корпусом. filmInto сам заливает чёрным, пока кадра нет, —
+     ровно так это чинилось 23.10 для остальных экранов (drawFilmRelays). */
 function drawFilmProjectorWall(){
   const v = WELCOME_TV.v;
-  if (!v || v.muted || v.readyState < 2) return;
+  if (!v || v.muted) return;
   const r = FILM_RELAYS.find(q => q.kind === 'proj');
   if (!r || Math.abs(r.x - cam.x) > 4600) return;
   const g = filmProjGeom(r);
@@ -7268,9 +7274,15 @@ function drawFilmLCD05(r){
   ctx.beginPath(); ctx.arc(sx + bw/2 - 14*kk*SS, y0 + bh - bez*0.45, 2*kk*SS, 0, 7); ctx.fill();
 }
 /* a wall-mounted plasma — no foot, thin frame, straight onto the wall */
+  /* КАДРА НЕТ — ЭКРАН ОСТАЁТСЯ (Эльдар, 06.11.2026: «2010 — видео закончилось и
+     началось сначала, и на этой паузе телевизор просто исчез, даже не чёрный
+     экран»). При зацикливании readyState на мгновение проседает ниже 2, и
+     условие «v.readyState < 2 → ничего не рисуем» снимало не картинку, а весь
+     прибор вместе с корпусом. filmInto сам заливает чёрным, пока кадра нет, —
+     ровно так это чинилось 23.10 для остальных экранов (drawFilmRelays). */
 function drawFilmWallPlasma(){
   const v = WELCOME_TV.v;
-  if (!v || v.muted || v.readyState < 2) return;
+  if (!v || v.muted) return;
   const r = FILM_RELAYS.find(q => q.kind === 'plasma');
   if (!r || Math.abs(r.x - cam.x) > CULL_BAY) return;
   const wz = wallZAt(r.x) - 16;
@@ -7317,9 +7329,15 @@ function ambiColor(v){
    deep wall — the 2022 column, the 2023 crossing, the years and the counter
    all stand IN FRONT of it, and the bench hides its lower edge. Drawn right
    after the wall itself, before everything else. */
+  /* КАДРА НЕТ — ЭКРАН ОСТАЁТСЯ (Эльдар, 06.11.2026: «2010 — видео закончилось и
+     началось сначала, и на этой паузе телевизор просто исчез, даже не чёрный
+     экран»). При зацикливании readyState на мгновение проседает ниже 2, и
+     условие «v.readyState < 2 → ничего не рисуем» снимало не картинку, а весь
+     прибор вместе с корпусом. filmInto сам заливает чёрным, пока кадра нет, —
+     ровно так это чинилось 23.10 для остальных экранов (drawFilmRelays). */
 function drawFilmVideoWall(){
   const v = WELCOME_TV.v;
-  if (!v || v.muted || v.readyState < 2) return;
+  if (!v || v.muted) return;
   const r = FILM_RELAYS.find(q => q.kind === 'vwall');
   if (!r || Math.abs(r.x - cam.x) > 4600) return;
   /* the same plane as the walnut soffit above it — measured against those
@@ -16856,10 +16874,24 @@ function initDecor(){
        70 units, so one screw is ~16 units across; the pair in the new render is
        about seven screw-widths wide, which puts it at 115. It sits 120 units
        left of the assembly, at the front of the worktop. */
-    /* z 55, а не 18: на 18 лежащая пара свешивалась с передней кромки прилавка —
-       «подними левые импланты чуть выше, чтобы они не падали со стола»
-       (Эльдар, 07.10.2026). Глубже на столешнице — значит и выше в кадре. */
-    if (bsr) PROPS.push({x: bsr.x + SR_DX - 120, z: 55, kind: 'ph_implant2', w: 115, lay: true, study: 'SCREW-RETAINED'});
+    /* ШИРИНА 53 И ПОДЪЁМ 7 — ЧТОБЫ ПАРА ЦЕЛИКОМ ЛЕЖАЛА НА СТОЛЕШНИЦЕ (Эльдар,
+       06.11.2026: «их нужно подвинуть вглубь стола немножко, потому что они
+       прямо на краю падают уже… край сиреневого импланта должен упираться в
+       стол, а не в воздух… можешь их уменьшить немного»).
+       ГЛУБИНА ЗДЕСЬ НЕ РЫЧАГ: всё, что стоит на прилавке, идёт через bz(z) =
+       min(z, 18) — закон болта, — поэтому и z 55, и z 110 рисуются на одной
+       глубине 18, и прежний комментарий про «z 55, а не 18» был неверен.
+       Рычагов два: ширина и drop. Мерено на камере 27900 при 2000×1040 по
+       кадру без этой пары: столешница занимает ровно y 636…676 (выше — стена,
+       ниже — передняя грань тумбы), то есть 40 px. Снимок пары при 115
+       единицах выходил 78 px высотой и нижними 18 px лежал на самой грани.
+       Высота снимка = 0.679·w px, и он центруется по линии прилавка (0.62
+       сверху от неё), которая сама проходит у ПЕРЕДНЕГО края столешницы.
+       При w 53 высота 36 px, а drop −7 (мир) поднимает линию на 6.8 px: пара
+       встаёт от 638 до 674 — вся внутри полосы, сиреневый торец упирается в
+       стол. Всё множится на SS, посадка держится на любом экране. Стоящая
+       сборка осталась на своих 70 — её Эльдар не называл. */
+    if (bsr) PROPS.push({x: bsr.x + SR_DX - 120, z: 55, drop: -7, kind: 'ph_implant2', w: 53, lay: true, study: 'SCREW-RETAINED'});
   }
 
   /* 1996 — ПОДУШКА ВМЕСТО ГОДА. Silent Nite — первое, что компания сделала не
@@ -17884,8 +17916,17 @@ function drawProps(midPass){
     const sp = PROP_SPRITES[p.kind];
     const kk = k(p.mid ? p.z : bz(p.z));
     const sx = px(p.x, kk);
-    if (sx < -260 || sx > W + 260) continue;
     const scale = (p.w / sp.w) * kk * SS;
+    /* ОТСЕЧКА — ПО СОБСТВЕННОЙ ШИРИНЕ ПРЕДМЕТА, А НЕ ПО ПОСТОЯННЫМ 260 px
+       (Эльдар, 06.11.2026: «2017 — эта вся компания приборов исчезает, ещё
+       пока не ушла с экрана»). Группа glidewell.io рисуется шириной 800
+       единиц на глубине 350: на экране это 800·0,72·SS ≈ 555 px, полуширина
+       277 — БОЛЬШЕ прежнего запаса в 260. Когда её середина отходила за край
+       на 265 px, правая её треть ещё стояла в кадре, и группа пропадала
+       целиком. Теперь запас берётся от самого спрайта плюс 40 px, поэтому
+       предмет любой ширины уходит за край, а не гаснет на нём. */
+    const halfW = sp.w * scale / 2 + 40 * SS;
+    if (sx < -halfW || sx > W + halfW) continue;
     /* p.drop — насколько предмет садится НИЖЕ линии прилавка, в единицах мира.
        Нужен там, где столешница на фотографии лежит не там, где её считает
        геометрия зала, и предмет читается висящим над ней. По умолчанию нуля,
