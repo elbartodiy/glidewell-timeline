@@ -2772,6 +2772,7 @@ const cam = { x: INTRO_X, vel: 0, z: 430, zTarget: 430 };   // the tour opens zo
 const state = {
   seekDrag: null,         // the hand on a clip's timeline inside a page
   albumView: null,        // the album, open in front of you, a spread at a time
+  camrec: null,           // страница записи приветствия, когда её открыли
   docOpen: false,         // the working note is up: the hall keeps its hands off
   docHot: false,
   mode: 'attract',        // 'attract' | 'live'
@@ -9746,7 +9747,7 @@ function ruleHit(pt){
 /* Что считается «зал закрыт оверлеем»: всё, что перехватывает нажатие на себя. */
 function overlayOpen(){
   return !!(state.caseView || state.albumView || state.inspect || state.study ||
-            state.person || state.people || state.openBox || state.pfmView);
+            state.person || state.people || state.openBox || state.pfmView || state.camrec);
 }
 function ruleSeek(pt, instant, grabOff){
   const g = ruleGeom();
@@ -20362,6 +20363,193 @@ function drawCamRig(t){
   pushHit(bx - bw * 0.1, by - bh * 0.3, bw * 1.2, bh * 1.5 + (yFloor - (by + bh)), {type: 'camrig'});
 }
 
+/* ================= СТРАНИЦА ЗАПИСИ · «СТАНЬ ЧАСТЬЮ ИСТОРИИ» ================
+   Эльдар (05.11.2026): «при нажатии на камеру появляется страничка: 3, 2, 1,
+   давай, запиши видео, стань частью истории Glidewell, запиши видео о себе —
+   имя, откуда ты. Пятисекундное видео. Нажать на кнопку внутри страницы».
+
+   Всё живёт в браузере: getUserMedia берёт камеру, MediaRecorder пишет файл.
+   Ни интернета, ни стороннего софта. Живой кадр рисуется НА ПОЛОТНО ЗАЛА, как
+   и всякое другое видео здесь, — поэтому лист выглядит частью зала, а не
+   окном браузера поверх него.
+
+   ЧЕГО ЭТА СТРАНИЦА ТРЕБУЕТ ОТ КИОСКА. Chrome отдаёт камеру только
+   «защищённому источнику»: https или localhost. Если зал открыт двойным кликом
+   по файлу, камеры не будет — и страница это честно скажет, а не застынет.
+   Лечится строкой в батнике: сперва локальный сервер, потом Chrome на
+   localhost (см. README на флешке).
+
+   СОСТОЯНИЯ: ask → камера спрошена; ready → живой кадр и кнопка; count → 3,2,1;
+   rec → пишем REC_LEN секунд; review → смотрим, что вышло; denied → отказ. */
+const CAMREC = {
+  len: 5,            // секунд записи
+  count: 3,          // отсчёт перед записью
+  w: 1180, h: 880,   // лист, опорные единицы
+};
+function openCamRec(){
+  if (state.camrec) return;
+  const S = {st: 'ask', t0: state.time, amt: 0, closing: false, stream: null,
+             v: null, rec: null, chunks: [], blobURL: null, rv: null, err: null};
+  state.camrec = S;
+  const md = navigator.mediaDevices;
+  if (!md || !md.getUserMedia){ S.st = 'denied'; S.err = 'This machine cannot open a camera from here.'; return; }
+  md.getUserMedia({video: {width: {ideal: 1280}, height: {ideal: 720}, facingMode: 'user'}, audio: true})
+    .then(stream => {
+      if (!state.camrec || state.camrec !== S){ stream.getTracks().forEach(tr => tr.stop()); return; }
+      S.stream = stream;
+      const v = document.createElement('video');
+      v.srcObject = stream; v.muted = true; v.playsInline = true;
+      v.play().catch(() => {});
+      S.v = v; S.st = 'ready';
+    })
+    .catch(err => {
+      S.st = 'denied';
+      S.err = (err && err.name === 'NotAllowedError')
+        ? 'The camera was not allowed. Ask the stand attendant.'
+        : 'No camera found on this machine.';
+    });
+}
+function camRecStop(S){
+  try { if (S.rec && S.rec.state === 'recording') S.rec.stop(); } catch(e){}
+  try { if (S.stream) S.stream.getTracks().forEach(tr => tr.stop()); } catch(e){}
+  if (S.blobURL) try { URL.revokeObjectURL(S.blobURL); } catch(e){}
+  S.stream = null; S.v = null; S.rec = null; S.rv = null; S.blobURL = null;
+}
+function camRecBegin(S){
+  if (!S.stream) return;
+  S.chunks = [];
+  let mt = '';
+  for (const c of ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'])
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported(c)){ mt = c; break; }
+  try { S.rec = mt ? new MediaRecorder(S.stream, {mimeType: mt}) : new MediaRecorder(S.stream); }
+  catch(e){ S.st = 'denied'; S.err = 'This browser cannot record video.'; return; }
+  S.rec.ondataavailable = e => { if (e.data && e.data.size) S.chunks.push(e.data); };
+  S.rec.onstop = () => {
+    const blob = new Blob(S.chunks, {type: S.chunks[0] ? S.chunks[0].type : 'video/webm'});
+    S.blobURL = URL.createObjectURL(blob);
+    const rv = document.createElement('video');
+    rv.src = S.blobURL; rv.loop = true; rv.muted = false; rv.playsInline = true;
+    rv.play().catch(() => {});
+    S.rv = rv; S.st = 'review';
+  };
+  S.rec.start();
+  S.st = 'rec'; S.t0 = state.time;
+}
+function camRecKeep(S){
+  if (!S.blobURL) return;
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  const name = `glidewell_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.webm`;
+  const a = document.createElement('a');
+  a.href = S.blobURL; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  S.st = 'saved'; S.t0 = state.time;
+}
+function drawCamRec(t){
+  const S = state.camrec; if (!S) return;
+  S.amt += ((S.closing ? 0 : 1) - S.amt) * Math.min(1, (state.dt || 0.016) * 9);
+  if (S.closing && S.amt < 0.03){ camRecStop(S); state.camrec = null; return; }
+  const a = S.amt;
+  ctx.save();
+  ctx.fillStyle = `rgba(6,8,11,${(0.74 * a).toFixed(3)})`; ctx.fillRect(0, 0, W, H);
+  /* лист: та же бумага, что у страниц чтения белого зала */
+  const sw = Math.min(W * 0.92, CAMREC.w * SS), sh = Math.min(H * 0.92, CAMREC.h * SS);
+  const sx = (W - sw) / 2, sy = (H - sh) / 2 + (1 - a) * 28 * SS;
+  ctx.globalAlpha = a;
+  ctx.fillStyle = '#f4f6f8';
+  ctx.beginPath(); ctx.roundRect(sx, sy, sw, sh, 10 * SS); ctx.fill();
+  const pad = sw * 0.055, cx = sx + sw / 2;
+  /* заголовок и просьба */
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(40,46,54,0.95)';
+  ctx.font = eraFont(Math.round(sw * 0.044), '', SEGMENTS[3].font);
+  ctx.fillText('Put yourself in the Glidewell story', cx, sy + pad * 1.15);
+  ctx.fillStyle = 'rgba(96,104,114,0.95)';
+  ctx.font = eraFont(Math.round(sw * 0.023), '', SEGMENTS[3].font);
+  ctx.fillText('Say your name and where you are from.', cx, sy + pad * 1.85);
+  ctx.fillText(`${CAMREC.len} seconds, and you are part of it.`, cx, sy + pad * 2.45);
+  /* ОКНО КАМЕРЫ 16:9, НО НЕ ШИРЕ ТОГО, ЧТО ОСТАЛОСЬ ОТ ЛИСТА. Сперва я брал
+     ширину по листу и высоту по пропорции — и кнопка вылезала наружу, под
+     нижнюю кромку. Теперь сначала считается, сколько места остаётся под
+     заголовком и над кнопками, и окно вписывается В НЕГО; если по высоте тесно,
+     оно сужается, сохраняя 16:9. */
+  const bhB = sw * 0.062;                        // высота кнопки — она же мера нижнего блока
+  const topB = pad * 3.0, botB = bhB + pad * 1.7;
+  const availH = Math.max(40 * SS, sh - topB - botB);
+  let vw = sw - pad * 2, vh = vw * 9 / 16;
+  if (vh > availH){ vh = availH; vw = vh * 16 / 9; }
+  const vx = sx + (sw - vw) / 2, vy = sy + topB;
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(vx, vy, vw, vh, 8 * SS); ctx.clip();
+  ctx.fillStyle = '#12161b'; ctx.fillRect(vx, vy, vw, vh);
+  const live = S.st === 'review' || S.st === 'saved' ? S.rv : S.v;
+  if (live && live.videoWidth){
+    const s2 = Math.max(vw / live.videoWidth, vh / live.videoHeight);
+    const dw = live.videoWidth * s2, dh = live.videoHeight * s2;
+    ctx.save();
+    if (S.st !== 'review' && S.st !== 'saved'){ ctx.translate(vx + vw, 0); ctx.scale(-1, 1); ctx.translate(-vx, 0); }  // живой кадр — зеркало, как в зеркале
+    ctx.drawImage(live, vx + (vw - dw) / 2, vy + (vh - dh) / 2, dw, dh);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = 'rgba(190,200,212,0.5)';
+    ctx.font = eraFont(Math.round(sw * 0.022), '', SEGMENTS[3].font);
+    ctx.fillText(S.st === 'denied' ? (S.err || 'No camera') : 'Looking for the camera…', cx, vy + vh / 2);
+  }
+  /* отсчёт и полоса записи — поверх кадра */
+  if (S.st === 'count'){
+    const left = Math.max(0, CAMREC.count - (state.time - S.t0));
+    const n = Math.ceil(left), frac = n - left;
+    ctx.globalAlpha = a * (0.35 + 0.65 * (1 - frac));
+    ctx.fillStyle = 'rgba(255,255,255,0.96)';
+    ctx.font = eraFont(Math.round(vh * 0.52), '', SEGMENTS[3].font);
+    ctx.fillText(String(n), cx, vy + vh * 0.68);
+    ctx.globalAlpha = a;
+    if (left <= 0) camRecBegin(S);
+  }
+  if (S.st === 'rec'){
+    const left = Math.max(0, CAMREC.len - (state.time - S.t0));
+    const u = 1 - left / CAMREC.len;
+    ctx.fillStyle = 'rgba(0,0,0,0.30)'; ctx.fillRect(vx, vy + vh - 7 * SS, vw, 7 * SS);
+    ctx.fillStyle = 'rgba(232,42,48,0.95)'; ctx.fillRect(vx, vy + vh - 7 * SS, vw * u, 7 * SS);
+    const puls = 0.5 + 0.5 * Math.sin(t * 7);
+    ctx.fillStyle = `rgba(232,42,48,${(0.65 + 0.35 * puls).toFixed(2)})`;
+    ctx.beginPath(); ctx.arc(vx + 26 * SS, vy + 26 * SS, 9 * SS, 0, 7); ctx.fill();
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.font = eraFont(Math.round(sw * 0.022), '', SEGMENTS[3].font);
+    ctx.fillText(String(Math.ceil(left)), vx + 44 * SS, vy + 33 * SS);
+    ctx.textAlign = 'center';
+    if (left <= 0 && S.rec && S.rec.state === 'recording') S.rec.stop();
+  }
+  ctx.restore();
+  /* кнопки */
+  const by = vy + vh + pad * 0.75, bh = bhB;
+  const button = (label, bx, bw2, fill, ink, payload) => {
+    ctx.fillStyle = fill;
+    ctx.beginPath(); ctx.roundRect(bx, by, bw2, bh, bh / 2); ctx.fill();
+    ctx.fillStyle = ink;
+    ctx.font = eraFont(Math.round(sw * 0.024), '', SEGMENTS[3].font);
+    ctx.fillText(label, bx + bw2 / 2, by + bh * 0.64);
+    if (a > 0.6) pushHit(bx, by, bw2, bh, payload);
+  };
+  if (S.st === 'ready')
+    button('Record', cx - sw * 0.17, sw * 0.34, 'rgba(232,42,48,0.95)', '#fff', {type: 'camrec', do: 'start'});
+  else if (S.st === 'review'){
+    button('Keep it', cx - sw * 0.355, sw * 0.34, 'rgba(40,46,54,0.95)', '#fff', {type: 'camrec', do: 'keep'});
+    button('Again',   cx + sw * 0.015, sw * 0.34, 'rgba(0,0,0,0.08)', 'rgba(40,46,54,0.95)', {type: 'camrec', do: 'again'});
+  } else if (S.st === 'saved'){
+    ctx.fillStyle = 'rgba(40,46,54,0.95)';
+    ctx.font = eraFont(Math.round(sw * 0.026), '', SEGMENTS[3].font);
+    ctx.fillText('Saved. Thank you — you are in it now.', cx, by + bh * 0.64);
+  } else if (S.st === 'denied'){
+    button('Close', cx - sw * 0.17, sw * 0.34, 'rgba(0,0,0,0.08)', 'rgba(40,46,54,0.95)', {type: 'camrec', do: 'close'});
+  }
+  /* крестик */
+  drawCloseX(sx + sw - 26 * SS, sy + 26 * SS, 11 * SS, a, '90,96,104');
+  if (a > 0.6) pushHit(sx + sw - 46 * SS, sy + 6 * SS, 40 * SS, 40 * SS, {type: 'camrec', do: 'close'});
+  if (a > 0.6) pushHit(sx, sy, sw, sh, {type: 'camrecsheet'});
+  ctx.restore();
+}
+
 /* ---------------- PLASMAS · living wall screens of the white room ---------------- */
 /* ДЕРЕВЯННАЯ ТАБЛИЧКА С ЗОЛОТОМ. Эльдар (02.10.2026): «цитату в золото и на
    табличку деревянную на стену под тот год». Это не plaque-бит: там плашка
@@ -26655,6 +26843,25 @@ function update(dt){
         else if (tapOutsideSheet(S, inp.action)) S.closing = true;
       } else if (inp.action === true) S.closing = true;   // scrolling past the top does NOT close it
       cam.vel = 0;
+    } else if (state.camrec){
+      /* СТРАНИЦА ЗАПИСИ ЗАБИРАЕТ ВСЕ НАЖАТИЯ НА СЕБЯ. Мимо листа — закрыть;
+         по кнопке — её дело. Прокрутка зала при этом молчит. */
+      const S2 = state.camrec;
+      if (inp.action && typeof inp.action === 'object'){
+        const aimed = hitAt(inp.action.x, inp.action.y);
+        if (aimed && aimed.type === 'camrec'){
+          if (aimed.do === 'close') S2.closing = true;
+          else if (aimed.do === 'start' && S2.st === 'ready'){ S2.st = 'count'; S2.t0 = state.time; }
+          else if (aimed.do === 'keep') camRecKeep(S2);
+          else if (aimed.do === 'again'){
+            if (S2.rv) try { S2.rv.pause(); } catch(e){}
+            if (S2.blobURL) try { URL.revokeObjectURL(S2.blobURL); } catch(e){}
+            S2.blobURL = null; S2.rv = null; S2.chunks = [];
+            S2.st = S2.stream ? 'ready' : 'denied';
+          }
+        } else if (!aimed || aimed.type !== 'camrecsheet') S2.closing = true;
+      } else if (inp.action === true) S2.closing = true;
+      cam.vel = 0;
     } else if (state.caseView){
       const V = state.caseView;
       const turn = d2 => {
@@ -26817,9 +27024,11 @@ function update(dt){
       state.pfmView.closing = true;
     } else if (inp.action && state.openBox && !state.openBox.closing){
       state.openBox.closing = true;
-    } else if (inp.action && !state.inspect && !state.study && !state.person && !state.people && !state.openBox && !state.caseView){
+    } else if (inp.action && !state.inspect && !state.study && !state.person && !state.people && !state.openBox && !state.caseView && !state.camrec){
       const aimed = (typeof inp.action === 'object') ? hitAt(inp.action.x, inp.action.y) : null;
-      if (aimed && aimed.type === 'doc'){
+      if (aimed && aimed.type === 'camrig'){
+        openCamRec();            // камера у Glidewell TV — «стань частью истории»
+      } else if (aimed && aimed.type === 'doc'){
         openDoc();
       } else if (aimed && aimed.type === 'opencase'){
         openCaseView();                     // витрина 1970-го: шесть предметов с первого верстака
@@ -28100,6 +28309,7 @@ function frame(){
   drawDebug();
   drawAlbumView();   // the album, open on the table in front of you
   drawCaseView();    // и витрина 1970-го, когда её открыли
+  drawCamRec(t);     // страница записи приветствия, когда нажали камеру
   drawStudy();
   drawPeople();    // the wall of voices
   drawPerson();    // one voice's own page, over whatever sent you to it
