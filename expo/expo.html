@@ -1692,7 +1692,7 @@ const SEGMENTS = [
    light:{pool:'218,232,252', poolR:1250, poolA:0.13},
    bgc:[26,29,34], grain:0},
   {x0:REC2_R, x1:WORLD_END+2800, z0:1400, z1:1400, tz:680, wall:'wall4', bench:'bench4', front:'front4', skirt:'white',
-   font:'"Hanken Grotesk", "Avenir Next", "Helvetica Neue", Arial, sans-serif',   // Hanken Grotesk — свой, выбран Эльдаром 05.11.2026; системные остались запасными
+   font:'Outfit, "Avenir Next", "Helvetica Neue", Arial, sans-serif',   // Outfit — свой, выбран Эльдаром 06.11.2026 на сравнении шести вариантов; системные остались запасными
    ink:'55,64,76', lamp:'tube', dust:false,
    rail:'rgba(120,132,142,0.5)', railInk:'rgba(70,80,92,0.8)',
    light:{pool:'225,240,255', poolR:1350, poolA:0.12},
@@ -16377,7 +16377,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261105-fonts';   // 05.11.2026: свои шрифты эпох — Inter и Hanken Grotesk (до этого 20261105-finprod)   // 05.11.2026: натюрморт финала целиком, со своей столешницей (до этого 20261104-bzham)   // 04.11.2026: две коронки, кувалда и осколки для удара на 2009 (до этого 20261104-bz09)   // 04.11.2026: два состояния разрезанной коронки для рекреации 2009 (до этого 20261104-bzlogo)   // 04.11.2026: глянцевая вывеска BruxZir на стене 2009 (до этого 20261104-plant)   // 04.11.2026: монстера на прилавке перед табло TODAY (до этого 20261103-gtv)   // 03.11.2026: логотип Glidewell TV и QR на приложение (до этого 20261102-bzf3)   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261106-outfit';   // 06.11.2026: белый зал набран Outfit (до этого 20261105-fonts)   // 05.11.2026: свои шрифты эпох — Inter и Hanken Grotesk (до этого 20261105-finprod)   // 05.11.2026: натюрморт финала целиком, со своей столешницей (до этого 20261104-bzham)   // 04.11.2026: две коронки, кувалда и осколки для удара на 2009 (до этого 20261104-bz09)   // 04.11.2026: два состояния разрезанной коронки для рекреации 2009 (до этого 20261104-bzlogo)   // 04.11.2026: глянцевая вывеска BruxZir на стене 2009 (до этого 20261104-plant)   // 04.11.2026: монстера на прилавке перед табло TODAY (до этого 20261103-gtv)   // 03.11.2026: логотип Glidewell TV и QR на приложение (до этого 20261102-bzf3)   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -25575,9 +25575,15 @@ const PAGE_FONTS = [
      начертание девятки»). Inter 800 — для заголовка плаката 1985: Эльдар
      просил его пожирнее, а в стеке было только 600. */
   ['Inter', 'inter_800.woff2', {weight: '800'}],
-  ['Hanken Grotesk', 'hanken_grotesk_400.woff2', {}],
-  ['Hanken Grotesk', 'hanken_grotesk_600.woff2', {weight: '600'}],
-  ['Hanken Grotesk', 'hanken_grotesk_400i.woff2', {style: 'italic'}],
+  /* БЕЛЫЙ ЗАЛ — OUTFIT (Эльдар, 06.11.2026: посмотрел шесть вариантов на самой
+     стене и выбрал четвёртый). Hanken Grotesk, выбранный накануне, ему не
+     понравился на годах — «2017, 2015 надо поменять». Outfit геометричнее и
+     ближе к Avenir по рисунку нуля и двойки. Курсива у Outfit нет вовсе — в
+     семействе только прямые начертания; тезисы эпохи браузер наклонит сам,
+     и это честнее, чем подставлять чужой курсив. Файлы Hanken оставлены в
+     assets: вернуться — одна строка. */
+  ['Outfit', 'outfit_400.woff2', {}],
+  ['Outfit', 'outfit_600.woff2', {weight: '600'}],
   // the nineties' numerals on the wall: Roboto Flex at its widest and heaviest — a Helvetica-like grotesk
   // pulled out wide, with a plain '1' (Archivo's had a foot; Eldar sent it back)
   ['Nineties Wide', 'nineties_wide.woff2', {weight: '900'}],
