@@ -8283,7 +8283,24 @@ function drawEventBoard(t){
   ctx.restore();
 }
 
-const FIN_UP = (() => { const m = /[?&]finup=(-?[0-9.]+)/.exec(location.search); return m ? +m[1] : 90; })();
+const FIN_NUM = (k2, d) => { const m = new RegExp('[?&]' + k2 + '=(-?[0-9.]+)').exec(location.search); return m ? +m[1] : d; };
+const FIN_UP = FIN_NUM('finup', 60);       // Эльдар выбрал второй вариант из четырёх (0 / 60 / 90 / 130)
+/* ВОЗДУХ МЕЖДУ ЗНАКОМ И ТЕКСТОМ (Эльдар, 06.11.2026: «у тебя слился текст и
+   логотип, между ними нет воздуха»). Мерено на первом экране, с которым финал
+   рифмуется: там знак 42 при кегле 54, базовая линия первой строки на 82
+   единицы ниже центра знака, то есть от низа знака до верха прописных —
+   82 − 21 − 0,70·54 = 23,2 единицы, 0,43 кегля. У финала кегль 84, знак 64:
+   те же 0,43 кегля дают 32 + 36,1 + 58,8 = 127 единиц от центра знака до
+   базовой линии. Стояло 92 — знак лежал на прописных вплотную (0,015 кегля). */
+const FIN_MARK = FIN_NUM('finmark', 127);
+/* МЕЖСТРОЧНЫЙ (Эльдар: «межстрочный интервал всё так же страдает»). Было 96 при
+   кегле 84 — 1,14. У Outfit большой рост строчных и выносная вниз в 0,22 кегля:
+   от низа «y» в dentistry до верха прописных второй строки оставалось
+   1,14 − 0,22 − 0,70 = 0,22 кегля, то есть строки читались одним пятном.
+   1,32 кегля (111 единиц) даёт между ними 0,40 кегля — тот же воздух, что и
+   под знаком. Первый экран пока набран прежними 1,148: он не назван, трогать
+   его без слова Эльдара не стал. */
+const FIN_LEAD = FIN_NUM('finlead', 111);
 function drawOutro(){
   // the finale is the mirror of the welcome: the mark under the ceiling,
   // the closing line, and a lit still life of today's products below
@@ -8338,7 +8355,7 @@ function drawOutro(){
      FIN_UP единиц мира — стена над ним пустая до самой диагонали панели.
      Пробовать другую высоту: ?finup=<единиц>. */
   if (IMGS.logo2026){
-    const ms = 64 * kw * SS, my = py(108 - FIN_UP, kw);
+    const ms = 64 * kw * SS, my = py(200 - FIN_UP - FIN_MARK, kw);
     ctx.save();
     ctx.beginPath(); ctx.roundRect(cx - ms / 2, my - ms / 2, ms, ms, 5 * kw * SS); ctx.clip();
     if (!LOGO26_SP) LOGO26_SP = {c: IMGS.logo2026.el};
@@ -8350,7 +8367,7 @@ function drawOutro(){
   ctx.font = eraFont(fs * kw * SS, '', seg.font);
   try { ctx.letterSpacing = `${fs*TRACK.title*kw*SS}px`; } catch(e){}
   ctx.fillText('The best dentistry', cx, py(200 - FIN_UP, kw));
-  ctx.fillText('made affordable', cx, py(296 - FIN_UP, kw));
+  ctx.fillText('made affordable', cx, py(200 - FIN_UP + FIN_LEAD, kw));
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.restore();
 }
@@ -10069,7 +10086,12 @@ const FACT_TABLE = [
      у него не было — значит ноль. Отсюда же и ошибка в числе: «1 employees»
      не бывает, и метка теперь знает единственное число (см. ниже).
      Ноль, кстати, сильнее единицы: полоса читается «0 → 5 000». */
-  {label: 'EMPLOYEES', ramp: true, pts: [[1970, '0'], [1973, '15'], [1984, '42'], [1988, '65'], [1989, '175'], [2010, '2,600'], [2017, '~3,800'], [2019, '~5,000'], [2026, '5,000']]},
+  /* БЕЗ «~» (Эльдар, 06.11.2026: «на employees иногда появляется знак
+     „примерно“ — он там не нужен, потому что у нас все данные по employees
+     примерные»). Тильда стояла у 2017 и 2019; источники в комментарии выше
+     не изменились: 3,838 премированных в 2016-м — нижняя граница, «nearly
+     5,000» в книге. Полоса между точками и так счётчик, а не перепись. */
+  {label: 'EMPLOYEES', ramp: true, pts: [[1970, '0'], [1973, '15'], [1984, '42'], [1988, '65'], [1989, '175'], [2010, '2,600'], [2017, '3,800'], [2019, '5,000'], [2026, '5,000']]},
   {label: 'SQ FT', pts: [[1970, '500'], [1975, '4,000'], [1984, '15,000'], [1993, '71,000'], [2001, '163,000'], [2019, '600,000'], [2026, '1M']]},
   {label: 'CROWNS / DAY', hold: 6, pts: [[1970, '20'], [2026, '50K+']]},
   {label: 'EST. REVENUE', hold: 8, pts: [[1985, '~$5M'], [1991, '$10M'], [1993, '$12M'], [2019, '~$500M']]},
@@ -10253,6 +10275,15 @@ function drawCompanyStrip(A){
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
   for (let i = 0; i < n; i++){
     const [num, lab0, wide] = F[i];
+    /* НЕТ ДАННЫХ — НЕТ И ПОДПИСИ (Эльдар, 06.11.2026: «надпись crowns per day и
+       revenue уберём — просто она прям исчезает там, где нет данных, чтобы её
+       не было на экране; там, где данные появляются, пусть остаётся»). Стояло
+       «— CROWNS / DAY»: тире сообщало об отсутствии, которое и так видно по
+       пустому месту. Ячейка пропускается, но СВОЁ МЕСТО СОХРАНЯЕТ: если
+       пересчитывать шаг по числу заполненных, все остальные цифры ездили бы
+       по полосе при каждом шаге камеры. Пустыми бывают только эти две — у
+       лет, сотрудников и площади значение есть с 1970-го. */
+    if (String(num).trim() === '\u2014') continue;
     /* ЕДИНСТВЕННОЕ ЧИСЛО У МЕТКИ (Эльдар, 05.11.2026). Счётчик сотрудников
        проходит через единицу, и на ней стояло «1 EMPLOYEES». Метка снимает «S»,
        когда число ровно единица — и только у меток, которые считают штуки. */
@@ -24851,6 +24882,33 @@ function drawAlbumView(){
   pushHit(x0, y0, w, h, {type: 'albumpage', d: 1});   // the spread itself turns forward
   ctx.restore();
 }
+/* «РАССКАЖИ СВОЮ ИСТОРИЮ» — КНОПКА НА КАЖДОЙ СТРАНИЦЕ (Эльдар, 06.11.2026:
+   «нужно на каждую страницу сделать кнопку, наверное, в правой части, там, где
+   видео и фотографии… „Расскажи свою историю“, и при нажатии открывается опять
+   окошко с возможностью записи видео»). Стоит ПЕРВОЙ в правой колонке: ниже
+   неё — альбом, люди и голоса, и до них надо листать, а приглашение должно
+   быть видно сразу. Красная точка — та же, что у кнопки записи и у всплывающей
+   плашки в зале, чтобы все три читались одним жестом.
+   Возвращает высоту, которую заняла, — колонка сама сдвигает свой курсор. */
+function tellStoryButton(sx, sy, sw, K, topClip, botClip){
+  const bh = 46 * SS, r = K.flat ? 4 * SS : bh / 2;
+  if (!(sy + bh > topClip && sy < botClip)) return bh;
+  const hv = Input.hover ? hitAt(Input.hover.x, Input.hover.y) : null;
+  const hot = !!(hv && hv.type === 'tellstory');
+  ctx.save();
+  ctx.fillStyle = `rgba(${K.accent},${hot ? 1 : 0.92})`;
+  ctx.beginPath(); ctx.roundRect(sx, sy, sw, bh, r); ctx.fill();
+  const dr = 5.5 * SS, dx = sx + 22 * SS;
+  ctx.fillStyle = 'rgba(255,255,255,0.96)';
+  ctx.beginPath(); ctx.arc(dx, sy + bh / 2, dr, 0, 7); ctx.fill();
+  ctx.font = K.font(20, '700');
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(255,255,255,0.98)';
+  ctx.fillText('Tell your story', dx + dr + 14 * SS, sy + bh * 0.64);
+  ctx.restore();
+  pushHit(sx, sy, sw, bh, {type: 'tellstory'});
+  return bh;
+}
 /* ONE TILE, TWO RAILS. The clip previews are the same small cards wherever
    they hang: down the right-hand side of a page, or in a strip under the
    article. Only the layout differs, so only the layout is written twice. */
@@ -25177,6 +25235,7 @@ function drawStudy(){
   };
   if (G.side){
     const sx = G.sideX, sw = G.side;
+    sy += tellStoryButton(sx, sy, sw, K, topClip, botClip) + (K.page ? 3 : 2.4) * u;
     if (obj){
       // the exhibit: photographed on the page's own paper, no frame, no wrap
       const ow = sw * 0.78, oh = ow * obj.h / obj.w;
@@ -25291,6 +25350,11 @@ function drawStudy(){
     }
   }
 
+  /* СТРАНИЦА БЕЗ ПРАВОЙ КОЛОНКИ ТОЖЕ ПОЛУЧАЕТ КНОПКУ — в основном столбце, под
+     шапкой. Колонку ради одной кнопки не заводим: на листе вроде 1907-го, где
+     ни снимков, ни голосов, она стояла бы пустым полем в полэкрана, а текст
+     сузился бы вдвое. */
+  if (!G.side) y += tellStoryButton(left, y, Math.min(textW, 300 * SS), K, topClip, botClip) + 3.6 * u;
   /* ---- the body ---- */
   let boxDone = false;
   const drawInlineBox = () => {
@@ -26405,6 +26469,8 @@ function drawPerson(){
     y += 4 * u;
     ctx.fillStyle = `rgba(${K.red},1)`;
     ctx.fillRect(left, y, 5 * u, 2*SS); y += 6 * u;
+    // у человека без портрета и без плёнок правой колонки нет — кнопка идёт в текст
+    if (!G.side) y += tellStoryButton(left, y, Math.min(textW, 300 * SS), K, topClip, botClip) + 3 * u;
     const seen = new Set([S.id]);   // his own name is not a link to himself
     let playerDone = false;
     /* THE PLAYER IS PART OF THE ARTICLE, and it sits where the reader has just
@@ -26536,8 +26602,9 @@ function drawPerson(){
 
   // THE RAIL. It scrolls with the page, and it chooses what the player shows.
   let my = top0 - S.scroll * SS;
-  if (G.side && (clips.length || face)){
+  if (G.side){
     const mx = G.sideX;
+    my += tellStoryButton(mx, my, G.side, K, topClip, botClip) + 30 * SS;
     if (face){
       const fw = G.side, fh = fw * 1.22;
       if (my + fh > topClip && my < botClip){
@@ -27219,6 +27286,7 @@ function update(dt){
           if (S.v){ try { S.v.paused ? S.v.play() : S.v.pause(); } catch(e){} }
         }
         else if (aimed && aimed.type === 'person' && aimed.id !== S.id) openPerson(aimed.id);
+        else if (aimed && aimed.type === 'tellstory'){ S.closing = true; openCamRec(); }
         else if (aimed && aimed.type === 'voices'){ S.closing = true; if (!state.people) openPeople(); }
         else if (tapOutsideSheet(S, inp.action)) S.closing = true;
       } else if (inp.action === true) S.closing = true;   // scrolling past the top does NOT close it
@@ -27359,6 +27427,8 @@ function update(dt){
           S.photoIdx = aimed.i; S.scrollGoal = true;   // снимок — в окно в тексте, страница — к окну
         } else if (aimed && aimed.type === 'person' && PEOPLE[aimed.id]){
           openPerson(aimed.id);     // the name in the text goes to the person, not to a portrait
+        } else if (aimed && aimed.type === 'tellstory'){
+          S.closing = true; openCamRec();   // «Tell your story» — страница уходит, открывается запись
         } else if (aimed && aimed.type === 'link'){
           try { window.open(aimed.url, '_blank', 'noopener'); } catch(e){}   // the page stays open behind it
         } else if (aimed && aimed.type === 'sitenext'){
