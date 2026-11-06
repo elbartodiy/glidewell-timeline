@@ -16451,7 +16451,7 @@ const PHOTO_TEX = {};
 /* the skin's files are re-cut under the same names as the room is tuned, so a
    browser that has already seen one keeps serving it back; every photo asset
    carries the build stamp and a new cut is fetched the moment it exists */
-const ASSET_V = '20261106-fsio';   // 06.11.2026: знак fastscan.io для бухты 2022 (до этого 20261106-outfit)   // 06.11.2026: белый зал набран Outfit (до этого 20261105-fonts)   // 05.11.2026: свои шрифты эпох — Inter и Hanken Grotesk (до этого 20261105-finprod)   // 05.11.2026: натюрморт финала целиком, со своей столешницей (до этого 20261104-bzham)   // 04.11.2026: две коронки, кувалда и осколки для удара на 2009 (до этого 20261104-bz09)   // 04.11.2026: два состояния разрезанной коронки для рекреации 2009 (до этого 20261104-bzlogo)   // 04.11.2026: глянцевая вывеска BruxZir на стене 2009 (до этого 20261104-plant)   // 04.11.2026: монстера на прилавке перед табло TODAY (до этого 20261103-gtv)   // 03.11.2026: логотип Glidewell TV и QR на приложение (до этого 20261102-bzf3)   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
+const ASSET_V = '20261106-sign';   // 06.11.2026: подпись Джима для таблички у книг (до этого 20261106-fsio)   // 06.11.2026: знак fastscan.io для бухты 2022 (до этого 20261106-outfit)   // 06.11.2026: белый зал набран Outfit (до этого 20261105-fonts)   // 05.11.2026: свои шрифты эпох — Inter и Hanken Grotesk (до этого 20261105-finprod)   // 05.11.2026: натюрморт финала целиком, со своей столешницей (до этого 20261104-bzham)   // 04.11.2026: две коронки, кувалда и осколки для удара на 2009 (до этого 20261104-bz09)   // 04.11.2026: два состояния разрезанной коронки для рекреации 2009 (до этого 20261104-bzlogo)   // 04.11.2026: глянцевая вывеска BruxZir на стене 2009 (до этого 20261104-plant)   // 04.11.2026: монстера на прилавке перед табло TODAY (до этого 20261103-gtv)   // 03.11.2026: логотип Glidewell TV и QR на приложение (до этого 20261102-bzf3)   // 02.11.2026: детали фабрики приведены к одному серому — у эпохи нет тёплого света (до этого 20261102-bzf2)   // 02.11.2026: новые детали фабрики BruxZir, два набора на выбор (до этого 20261030-show2)   // 30.10.2026: витрина glidewell.io на месте стола 2015–2018 (до этого 20261030-desks3)   // 30.10.2026: новые парты 80-х из Chairs_stud.png, исправленный файл (до этого 20261030-desks2, ещё раньше 20261030-crt2)   // 30.10.2026: ЭЛТ 2002 из CRTmonitor.png (до этого 20261030-p85)   // 30.10.2026: стена-плакат 1985 (до этого 20261029-bzf)   // 29.10.2026: фабрика BruxZir (до этого 20261029-tester)   // 29.10.2026: машина R&D 2000 из фото-деталей (до этого 20261028-realism)   // 27.10.2026: капа PlaySafe (до этого 20261007-film-v2 — новый основной фильм)
 const vurl = p => p + (p.includes('?') ? '&' : '?') + 'v=' + ASSET_V;
 /* EVERY PHOTOGRAPH IS SERVED AS WEBP. The names below still say .png and .jpg
    because that is what the file in the studio is; on the wire it is the webp
@@ -16574,6 +16574,8 @@ async function loadPhotoSkin(){
     ph_gio_rev: 'glidewell_io_rev.png',// он же вывороткой: белые буквы, красные точки — для тёмного листа
     /* 2022: знак fastscan.io вместо набранного имени на плинте бухты и на её
        странице (Эльдар, 05.11.2026; файл положил 06.11.2026). tools/cut_fastscan_logo.py */
+    /* подпись Джима — на белую табличку перед горой книг (tools/cut_jim_signature.py) */
+    ph_jimsign: 'jim_sign.png',
     ph_fsio: 'fastscan_io.png',
     ph_fsio_rev: 'fastscan_io_rev.png',// он же вывороткой — для тёмного листа страницы 2022
     ph_bz_soon: 'bruxzir_soon.png',   // 2009: неоновая табличка BruxZir COMING SOON — временная, висела на ниточке (с 04.11.2026 не рисуется)
@@ -17034,6 +17036,7 @@ function initDecor(){
   JIM_FIG = makeFigure(99);
   BOOK_SPRITE = makeBookPyramid();
   BOOK_CARD = makeBookCard();
+  SIGN_PLAQUE = makeSignPlaque();
   for (let v = 0; v < 3; v++){
     FG_SPRITES['plant' + v] = makeFgSprite('plant', v);
     FG_SPRITES['person' + v] = makeFgSprite('person', v + 7);
@@ -20941,8 +20944,17 @@ let BOOK_SPRITE = null;
    мылилась; низ нижнего ряда, как и был, — строка 340 из 360 (теперь 680). */
 function makeBookPyramid(){
   const S = 2;
-  const c = document.createElement('canvas'); c.width = 420 * S; c.height = 360 * S;
+  /* ПОЛЕ ВОКРУГ ХОЛСТА (Эльдар, 05.11.2026: «тень под книгами немного режется
+     справа»). Тень — эллипс с полуосью 6·bw/2 + 14·S от центра 210·S + dp/2,
+     то есть её правый край приходился на 847-ю колонку холста шириной 840, да
+     ещё с размытием в 7·S: справа её срезало ровно по краю. Холст раздвинут на
+     PAD с каждой стороны, всё рисуется со сдвигом, а масштаб берётся не от
+     ширины холста, а от wRef — прежних 420·S, — поэтому сама горка осталась
+     того же размера и на том же месте. */
+  const PAD = 20 * S;
+  const c = document.createElement('canvas'); c.width = 420 * S + PAD * 2; c.height = 360 * S + PAD * 2;
   const g = c.getContext('2d');
+  g.translate(PAD, PAD);
   const spine = IMGS.bookspine, front = IMGS.bookfront;
   const asp = spine ? spine.w / spine.h : 10.6;
   /* КНИГА ТОЛЩЕ СНИМКА КОРЕШКА. Эльдар (16.10.2026): «книга толще». Снимок —
@@ -20996,7 +21008,7 @@ function makeBookPyramid(){
     g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = S;
     g.strokeRect(sx + 0.5 * S, sy + 0.5 * S, fw - S, fh - S);
   }
-  return {c, w: c.width, h: c.height, base};
+  return {c, w: c.width, h: c.height, base: base + PAD, wRef: 420 * S};
 }
 /* the book card: cover, story, code — a product card without the price tag */
 let BOOK_CARD = null;
@@ -21167,7 +21179,7 @@ function drawBookPyramid(b, t){
   const sx = px(b.x + b.pyr.dx, kk);
   if (sx < -600 || sx > W + 600) return;
   const wWorld = b.pyr.w;
-  const scale = (wWorld / BOOK_SPRITE.w) * kk * SS;
+  const scale = (wWorld / (BOOK_SPRITE.wRef || BOOK_SPRITE.w)) * kk * SS;   // поле холста размер горки не меняет
   const sy = py(CFG.benchY - 11, kk);
   pushHit(sx - BOOK_SPRITE.w*scale/2, sy - BOOK_SPRITE.h*scale, BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale,
           {type:'photo', offer: true, sp: BOOK_CARD, wx: b.x + b.pyr.dx, cy: CFG.benchY - 190, z: 0, w: 420,
@@ -21175,6 +21187,94 @@ function drawBookPyramid(b, t){
   const baseRow = BOOK_SPRITE.base != null ? BOOK_SPRITE.base : BOOK_SPRITE.h;
   ctx.drawImage(BOOK_SPRITE.c, sx - BOOK_SPRITE.w*scale/2, sy - baseRow*scale,
                 BOOK_SPRITE.w*scale, BOOK_SPRITE.h*scale);
+}
+/* ТАБЛИЧКА ПЕРЕД КНИГАМИ (Эльдар, 05.11.2026: «перед книгами должна стоять
+   табличка „Don't forget to sign a book“, и там подпись Джима; белая,
+   соответственно, табличка… проследи внимательно, чтобы она лежала на столе и
+   не торчала»).
+   ПЛОСКОСТЬ ТА ЖЕ, ЧТО У ГОРКИ. Прилавок белой эпохи — фотография, лежащая на
+   передней плоскости k(0); всё, что на нём стоит, берёт ту же плоскость, иначе
+   при панораме оно едет относительно стола (тот же разбор, что у горки книг).
+   Поэтому и здесь k(0), а «вглубь столешницы» задаётся высотой: подошва на
+   benchY − 8, на 3 единицы ближе к краю, чем основание горки (benchY − 11), —
+   табличка стоит ПЕРЕД книгами и при этом не доходит до передней кромки
+   (benchY), то есть никуда не торчит.
+   ЛЕВЕЕ СЕРЕДИНЫ. По центру она закрывала бы всю стопку корешков (та всего 73
+   px при 2000×1040, а табличка — 95); сдвиг −150 оставляет открытыми правые
+   две трети горки и стоящую книгу. */
+const SIGN = {
+  dx: -120,          // от середины горки, в единицах мира: доска кончается в 63 единицах от левого торца прилавка (он обрывается на pyr.dx − 270)
+  w: 198,            // ширина ВСЕГО холста таблички; сама доска — 640 из 720 его колонок
+  line1: 'Don\u2019t forget',   // апостроф типографский, как во всех подписях зала
+  line2: 'to sign a book'
+};
+let SIGN_PLAQUE = null;
+function makeSignPlaque(){
+  const BW = 640, BH = 360, PAD = 40, TOPH = 10;   // доска, поле холста, толщина верхнего торца
+  const c = document.createElement('canvas');
+  c.width = BW + PAD * 2; c.height = BH + PAD + TOPH + 46;
+  const g = c.getContext('2d');
+  const x0 = PAD, y0 = PAD * 0.25 + TOPH, base = y0 + BH;
+  // тень у подошвы — доска стоит на камне, а не висит над ним
+  g.save();
+  g.filter = 'blur(9px)';
+  g.fillStyle = 'rgba(0,0,0,0.26)';
+  g.beginPath(); g.ellipse(x0 + BW / 2, base + 6, BW * 0.52, 13, 0, 0, Math.PI * 2); g.fill();
+  g.restore();
+  /* наклон назад: верх доски уже низа на 1.5 % и приподнят на TOPH — видно
+     тонкий торец, и доска читается прислонённой, а не наклеенной на воздух */
+  const inset = BW * 0.015;
+  g.fillStyle = '#e3e4e2';
+  g.beginPath();
+  g.moveTo(x0 + inset, y0 - TOPH); g.lineTo(x0 + BW - inset, y0 - TOPH);
+  g.lineTo(x0 + BW - inset, y0); g.lineTo(x0 + inset, y0); g.closePath(); g.fill();
+  const fg = g.createLinearGradient(0, y0, 0, base);
+  fg.addColorStop(0, '#fcfcfb'); fg.addColorStop(1, '#eceeec');
+  g.fillStyle = fg;
+  g.beginPath();
+  g.moveTo(x0 + inset, y0); g.lineTo(x0 + BW - inset, y0);
+  g.lineTo(x0 + BW, base); g.lineTo(x0, base); g.closePath(); g.fill();
+  g.strokeStyle = 'rgba(70,76,84,0.22)'; g.lineWidth = 1.6;
+  g.stroke();
+  // и линия, которой доска встречает камень
+  g.strokeStyle = 'rgba(40,44,50,0.30)'; g.lineWidth = 2.2;
+  g.beginPath(); g.moveTo(x0, base - 1); g.lineTo(x0 + BW, base - 1); g.stroke();
+  // набор
+  const fam = (SEGMENTS[3] && SEGMENTS[3].font) || SEGMENTS[0].font;
+  g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  g.fillStyle = '#3c424a';
+  const cxB = x0 + BW / 2;
+  let fs = 62;
+  g.font = eraFont(fs, '', fam);
+  // строка не шире 86 % доски — проверяется набором, а не на глаз
+  const widest = () => { g.font = eraFont(fs, '', fam);
+    return Math.max(g.measureText(SIGN.line1).width, g.measureText(SIGN.line2).width); };
+  while (widest() > BW * 0.86 && fs > 24) fs -= 2;
+  g.font = eraFont(fs, '', fam);
+  g.fillText(SIGN.line1, cxB, y0 + BH * 0.27);
+  g.fillText(SIGN.line2, cxB, y0 + BH * 0.27 + fs * 1.26);
+  // подпись — настоящая, из файла; вписывается в оставшуюся нижнюю треть
+  const sg = PROP_SPRITES.ph_jimsign;
+  if (sg){
+    const top = y0 + BH * 0.27 + fs * 1.26 + fs * 0.42;
+    const room = base - top - BH * 0.07;
+    let sw = BW * 0.56, sh = sw * sg.h / sg.w;
+    if (sh > room){ sh = room; sw = sh * sg.w / sg.h; }
+    g.globalAlpha = 0.86;
+    g.drawImage(spriteMip(sg, sw, sh), cxB - sw / 2, top + (room - sh) / 2, sw, sh);
+    g.globalAlpha = 1;
+  }
+  return {c, w: c.width, h: c.height, base, wRef: BW};
+}
+function drawSignPlaque(b){
+  if (!SIGN_PLAQUE) return;
+  const kk = k(0);
+  const sx = px(b.x + b.pyr.dx + SIGN.dx, kk);
+  if (sx < -400 || sx > W + 400) return;
+  const scale = (SIGN.w / SIGN_PLAQUE.wRef) * kk * SS;
+  const sy = py(CFG.benchY - 8, kk);
+  ctx.drawImage(SIGN_PLAQUE.c, sx - SIGN_PLAQUE.w * scale / 2, sy - SIGN_PLAQUE.base * scale,
+                SIGN_PLAQUE.w * scale, SIGN_PLAQUE.h * scale);
 }
 /* a freestanding table plane, rotated in plan — any yaw, anywhere on the floor */
 function drawYawedTable(cx, cz, yawDeg, wW, dW, topY, hW, tone){
@@ -28390,7 +28490,7 @@ function frame(){
     for (const p of (b.props || [])) if (!p.onPed) drawMonitor(p, b.x + p.dx, p.lz, p.w, t);
     if (b.album) drawAlbum(b, i, t, state.dt || 0.016);
     if (b.pfmRow) drawPfmRow(b, i);
-    if (b.pyr) drawBookPyramid(b, t);
+    if (b.pyr){ drawBookPyramid(b, t); drawSignPlaque(b); }
   }
   drawProps('late');   // things meant to lie in front of a beat's own objects
   drawPlane93();       // the freighter puts down on the model's own site — behind the building
