@@ -623,7 +623,13 @@ const BEATS = [
       правый край экрана и гасла (правило «целиком в кадре»), загоралась только
       через 100–600 шагов после центра. В две строки по 410, на 40 от торца, она в зените целиком
       на прилавке справа от рамки. */
-   capW:410, capKeep:40,   // 440 при keep 120 на 1240×700 ещё гасла (0.37); 380 давало три строки с висящим «digital.»
+   /* В ДВЕ СТРОКИ, А НЕ В ТРИ (Эльдар, 06.11.2026: «Scan, design on screen,
+      mill from a block — вот это предложение, и дальше должно быть в две
+      строки, не в три»). 410 ломало её натрое. Проверено при 2000×1040,
+      1240×700 и 1700×490: на 520 строки две — «…mill from a block —» и «the
+      lab goes digital.», надпись в зените горит и целиком стоит на прилавке
+      справа от рамы; на 580 она уже гаснет (правило «целиком в кадре»). */
+   capW:520, capKeep:40,   // было 410; 440 при keep 120 на 1240×700 ещё гасла (0.37); 380 давало три строки с висящим «digital.»
    /* 322, а не круглое число: слева от года на прилавке стоит коробка-зуб
       пластикового цеха (ph_plastic на 21680, шириной 110), а закон тяготения
       не пускает монитор левее начала пролёта прилавка — он ровно на неё и
@@ -16125,6 +16131,7 @@ const sheetOf = tb => {
    is touched. No caps of my own, no door laid one after another, no patches.
    The middle panel repeats with its joins faded through each other, which on a
    doorless panel leaves nothing to see. */
+const BENCH_EFADE = (() => { const m = /[?&]bf=(\d+)/.exec(location.search); return m ? +m[1] : 120; })();   // ширина растворения концевого куска в середину, единицы мира
 const ERA1_BENCH_DROP = 1004 - (700 + (388 - 39) * 380 / 441);   // 3.28 — см. ПРИЛАВОК 1907–1979   // 3.28 — см. ПРИЛАВОК 1907–1979
 function drawSheetBenches(){
   const kf = k(0), wpp = kf * SS;
@@ -16195,7 +16202,19 @@ function drawSheetBenches(){
        line anywhere along the counter (Eldar: растворением). Mirroring every
        other panel would have matched the grain exactly, but a mirrored grain
        reads as a butterfly and no cabinetmaker ever did that. */
-    const a0 = tb.x0 + wL, a1 = tb.x1 - wR, mid = a1 - a0;
+    /* КОНЦЫ ВХОДЯТ В СЕРЕДИНУ РАСТВОРЕНИЕМ, А НЕ СТЫКОМ (Эльдар, 06.11.2026,
+       скрин 1907-го с двумя зелёными стрелками в одну точку: «неправильно стол
+       стык в стык склеивается, это нужно поменять плавным переходом, как
+       минимум на столешнице»). Между собой панели середины растворялись с
+       самого начала, а вот ДВА шва — концевой кусок к середине слева и справа —
+       клались встык. Расчёт был, что это свои швы рендера и их не видно; на
+       деле у листов концов и середины разная выдержка столешницы, и на стыке
+       стоит ступенька тона — её и видно. Теперь середина заходит под оба конца
+       на EFADE единиц, а сам конец на этом же участке растворяется в неё той
+       же лесенкой, что и панели между собой. Ширину пробовать: ?bf=<единиц>. */
+    const EFADE = Math.max(0, Math.min(BENCH_EFADE, wL * 0.45, wR * 0.45, wG * 0.45));
+    const a0 = tb.x0 + wL, a1 = tb.x1 - wR;
+    const m0 = a0 - EFADE, m1 = a1 + EFADE, mid = m1 - m0;
     if (mid > 0.5){
       /* НАХЛЁСТ ПОСТОЯННЫЙ, А ОСТАТОК УХОДИТ ПОД КОНЦЕВОЙ КУСОК. Раньше панели
          раскладывались на равные шаги, и ВЕСЬ остаток длины прогона уходил в
@@ -16220,9 +16239,9 @@ function drawSheetBenches(){
          with a straight vertical cut instead of the render's own rounded corner
          (Eldar, 2026-09-21). The middle is clipped to the stretch between the
          two ends, so what stands outside a mitre is the room, as in the render. */
-      ctx.save(); clipTo(a0, a1);
+      ctx.save(); clipTo(m0, m1);
       for (let i = 0; i < n; i++){
-        const x = a0 + i * step;
+        const x = m0 + i * step;
         if (i === 0 || fade < 1){ put(G, x, wG); continue; }
         ctx.save(); clipTo(x + fade, x + wG); put(G, x, wG); ctx.restore();
         /* ЛЕСЕНКА РАСТВОРЕНИЯ СТОИТ НА ЦЕЛЫХ ПИКСЕЛЯХ. Полосы резались по
@@ -16266,12 +16285,33 @@ function drawSheetBenches(){
     const MITRE = wR * 0.12;
     const tight = wL + wR > tb.x1 - tb.x0;
     const cut = tight ? Math.min(tb.x0 + wL, tb.x1 - MITRE) : tb.x1;
+    /* лесенка растворения — та же, что между панелями середины: границы полос
+       округляются до целого пикселя экрана, иначе ступеньки ползут по кадрам и
+       шов мерцает. dir +1 — кусок проявляется слева направо, −1 — гаснет. */
+    const feather = (w0, w1, draw, dir) => {
+      const K = 16, xs0 = px(w0, kf), xs1 = px(w1, kf);
+      for (let j = 1; j <= K; j++){
+        const b0 = Math.round(xs0 + (xs1 - xs0) * (j - 1) / K);
+        const b1 = Math.round(xs0 + (xs1 - xs0) * j / K);
+        if (b1 <= b0) continue;
+        ctx.save();
+        ctx.globalAlpha = dir > 0 ? j / (K + 1) : 1 - j / (K + 1);
+        ctx.beginPath(); ctx.rect(b0, yBack, b1 - b0, yFloor - yBack + 4); ctx.clip();
+        draw();
+        ctx.restore();
+      }
+    };
     if (tight){
       ctx.save(); clipTo(cut, tb.x1 + 40); put(R, tb.x1 - wR, wR); ctx.restore();
       ctx.save(); clipTo(tb.x0 - 40, cut); put(L, tb.x0, wL); ctx.restore();
-    } else {
+    } else if (EFADE < 1 || mid <= 0.5){
       put(R, tb.x1 - wR, wR);
       put(L, tb.x0, wL);
+    } else {
+      ctx.save(); clipTo(a1 + EFADE, tb.x1 + 40); put(R, tb.x1 - wR, wR); ctx.restore();
+      ctx.save(); clipTo(a1, a1 + EFADE); feather(a1, a1 + EFADE, () => put(R, tb.x1 - wR, wR), 1); ctx.restore();
+      ctx.save(); clipTo(tb.x0 - 40, a0 - EFADE); put(L, tb.x0, wL); ctx.restore();
+      ctx.save(); clipTo(a0 - EFADE, a0); feather(a0 - EFADE, a0, () => put(L, tb.x0, wL), -1); ctx.restore();
     }
     /* PLAIN GROUND UNDER A LINE. A caption is read off the counter's own front,
        and on a short run the doorless middle is 127 units wide (1995) while the
@@ -20714,11 +20754,17 @@ const REC_CUE = {every: 60, hold: 8, fade: 0.6};
    БЛИК. Первую секунду показа по табличке слева направо проходит световая
    полоса, а на её гребне вспыхивает четырёхлучевая искра — тот же приём, что
    на цифрах нижней полосы в момент смены. */
-const CUE_V = (() => { const m = /[?&]cue=([123])/.exec(location.search); return m ? +m[1] : 1; })();
+const CUE_V = (() => { const m = /[?&]cue=([123])/.exec(location.search); return m ? +m[1] : 2; })();   // Эльдар выбрал второй — музейную этикетку (06.11.2026)
+const CUE_SHOW = /[?&]cue=[123]/.test(location.search);
 function drawRecCue(t){
   if (state.camrec || overlayOpen() || state.docOpen) return;
   if (state.mode === 'intro' || (state.attract && state.attract.film)) return;
-  const ph = t % REC_CUE.every;
+  /* С ?cue= ТАБЛИЧКА СТОИТ ПОСТОЯННО (Эльдар, 06.11.2026: «нет второго варианта
+     этой таблички»). Вариант-то есть — просто приглашение выходит раз в минуту
+     на восемь секунд, и открыв адрес, его можно не застать. Когда вид задан
+     явно, зал показывает его без пауз: петля идёт по восьми секундам показа,
+     так что и блик повторяется. */
+  const ph = CUE_SHOW ? (t % REC_CUE.hold) : (t % REC_CUE.every);
   if (ph > REC_CUE.hold) return;
   const a = Math.min(1, ph / REC_CUE.fade) * Math.min(1, (REC_CUE.hold - ph) / REC_CUE.fade);
   if (a <= 0.02) return;
