@@ -8283,6 +8283,7 @@ function drawEventBoard(t){
   ctx.restore();
 }
 
+const FIN_UP = (() => { const m = /[?&]finup=(-?[0-9.]+)/.exec(location.search); return m ? +m[1] : 90; })();
 function drawOutro(){
   // the finale is the mirror of the welcome: the mark under the ceiling,
   // the closing line, and a lit still life of today's products below
@@ -8325,8 +8326,19 @@ function drawOutro(){
      даёт 48 / 0,5725 = 84. Межстрочие там 62 при 54 — здесь 96 при 84, та же
      пропорция. Знак на первом экране 42 при k 0,889 = 37 опорных; здесь
      37 / 0,5725 = 65, округлено до 64. */
+  /* ВОЗДУХ МЕЖДУ НАДПИСЬЮ И ПРИБОРАМИ (Эльдар, 06.11.2026: «нужно, чтобы
+     воздух был между текстом и приборами… нужно поднять вместе с логотипом;
+     обрати внимание, как сделано начало, и по этой же схеме сделать конец»).
+     Замерено на кадре 2000×1040, камера FIN_X: низ строки «made affordable»
+     приходился на 350-ю строку, а верх натюрморта — на 362-ю: двенадцать
+     точек. На первом экране то же место — 233 и 246, то есть тринадцать; по
+     числам финал первому экрану уже отвечал, но там внизу одна тёмная
+     прямоугольная рамка киноэкрана, а здесь неровный ряд приборов, и надпись
+     садилась прямо на мониторы. Весь блок (знак и обе строки) поднят на
+     FIN_UP единиц мира — стена над ним пустая до самой диагонали панели.
+     Пробовать другую высоту: ?finup=<единиц>. */
   if (IMGS.logo2026){
-    const ms = 64 * kw * SS, my = py(108, kw);
+    const ms = 64 * kw * SS, my = py(108 - FIN_UP, kw);
     ctx.save();
     ctx.beginPath(); ctx.roundRect(cx - ms / 2, my - ms / 2, ms, ms, 5 * kw * SS); ctx.clip();
     if (!LOGO26_SP) LOGO26_SP = {c: IMGS.logo2026.el};
@@ -8337,8 +8349,8 @@ function drawOutro(){
   const fs = 84;
   ctx.font = eraFont(fs * kw * SS, '', seg.font);
   try { ctx.letterSpacing = `${fs*TRACK.title*kw*SS}px`; } catch(e){}
-  ctx.fillText('The best dentistry', cx, py(200, kw));
-  ctx.fillText('made affordable', cx, py(296, kw));
+  ctx.fillText('The best dentistry', cx, py(200 - FIN_UP, kw));
+  ctx.fillText('made affordable', cx, py(296 - FIN_UP, kw));
   try { ctx.letterSpacing = '0px'; } catch(e){}
   ctx.restore();
 }
@@ -23536,8 +23548,11 @@ const PEOPLE = {
                 "What he was good at was the trade of the day — porcelain fused to metal, cast and layered and fired by hand. The lab grew on it: nine laboratories across Southern California by 1979, all but two consolidated into one Orange plant in 1984, 175 people serving 3,500 dentists by 1989, and mail bringing 95% of the work. National without having left the county.",
                 "Then he did the thing that defines him. Burned by depending on an outside material, and pushed by Dr. Rella Christensen's idea of a crown ordinary people could afford, he built the company's own research. In 2009 that produced BruxZir — a solid zirconia crown with no porcelain to chip — and it went on to displace the PFM the lab had been built on. He killed his own best-seller, and then let rival laboratories mill it too.",
                 "He did not invent zirconia, or CAD/CAM, or the implant. He took each of them and drove the price down until an ordinary practice could say yes. That is the argument this whole hall is making."],
-           clips:[{src:'media/jim_glass.mp4', label:'in his own workshop'},
-                  {src:'media/jim_trailer_2.mp4', label:'the trailer \u2014 a century of access'}]},
+           /* ТРЕЙЛЕР СО СТРАНИЦЫ ДЖИМА СНЯТ (Эльдар, 06.11.2026: «на странице у
+              Джима трейлер документального фильма надо убрать»). Остаётся одна
+              плёнка — он сам в своей мастерской. Было:
+              {src:'media/jim_trailer_2.mp4', label:'the trailer \u2014 a century of access'} */
+           clips:[{src:'media/jim_glass.mp4', label:'in his own workshop'}]},
   rella:  {name:'Dr. Rella Christensen', role:'TRAC Research the idea of a crown for everyone', img:'rella'},
   ditolla:{name:'Dr. Michael DiTolla', role:'Chairside Magazine the clinical voice', img:'ditolla'},
   gordon: {name:'Dr. Gordon Christensen', role:'Independent clinical researcher', img:'christensen'},
