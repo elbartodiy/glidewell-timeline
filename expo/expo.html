@@ -7700,7 +7700,12 @@ const TODAY_TV = {
      которых «Clinical education, leadership growth,» ещё стоит одной строкой
      (при 58 она уже 1007 > 996). Высота строки и поля подрезаны так, чтобы
      четвёртая строка не увела низ панели за прилавок. */
-  gapTag: 84, tagSize: 56, tagLH: 74, padBot: 96, markDim: 0.45,
+  /* МЕЖСТРОЧИЕ ПО ТОМУ ЖЕ ПРАВИЛУ, ЧТО И ПОДПИСИ ЗАЛА (Эльдар, 06.11.2026:
+     «на стенде Glidewell TV три строки внизу, и похоже, межстрочный интервал
+     всё ещё неправильный»). Было 74 при кегле 56 — 1,32, то есть ещё теснее
+     той нижней границы, с которой мы вчера сняли подписи. Зал держит 1,48:
+     56 · 1,48 = 83. */
+  gapTag: 84, tagSize: 56, tagLH: 83, padBot: 96, markDim: 0.45,
   /* ЩИТ СВЕТЛЫЙ, НО ТЕМНЕЕ СВЕЧЕНИЯ (Эльдар, 03.11.2026: «у тебя очень тёмный
      стенд, он должен быть светлым, но темнее свечения букв лого»). Графит
      03.11 был моей догадкой под его же «подложка нужна темнее стены» — на
@@ -20382,14 +20387,33 @@ function drawCamRig(t){
    СОСТОЯНИЯ: ask → камера спрошена; ready → живой кадр и кнопка; count → 3,2,1;
    rec → пишем REC_LEN секунд; review → смотрим, что вышло; denied → отказ. */
 const CAMREC = {
-  len: 5,            // секунд записи
-  count: 3,          // отсчёт перед записью
+  len: 5,            // секунд на приветствие
+  count: 3,          // отсчёт между бейджем и приветствием
+  badgeMax: 25,      // сколько ждём бейдж, прежде чем предложить пропустить
+  scanEvery: 0.25,   // как часто смотрим в кадр в поисках кода, секунды
   w: 1180, h: 880,   // лист, опорные единицы
 };
+/* ЗАПИСЬ ИДЁТ ОДНИМ ФАЙЛОМ, А НЕ ДВУМЯ (Эльдар, 06.11.2026: «нужно сделать в
+   два этапа, желательно вообще, чтобы не разделять файлы, чтобы запись шла в
+   одном файле. Сначала они должны показать свой бейдж, свой QR-код на камеру,
+   чтобы там зафиксировался их QR-код… и к видео шёл ещё текстовый файл с их
+   инфой с бейджа»).
+
+   Поэтому MediaRecorder запускается НА ПЕРВОМ ЖЕ этапе, на бейдже, и не
+   останавливается до конца приветствия: бейдж оказывается в начале того же
+   ролика, а не в отдельном. Отсюда же и порядок: показал бейдж → отсчёт →
+   сказал о себе → посмотрел, что вышло.
+
+   КОД ЧИТАЕТ САМ БРАУЗЕР. Проверено на живом Chrome 156: BarcodeDetector есть
+   и среди форматов есть qr_code — ни библиотеки, ни интернета не нужно. Если
+   на киоске его не окажется, этап бейджа не ломается: ролик всё равно пишется
+   и бейдж в нём зафиксирован — не будет только текстового файла, и страница
+   честно это скажет. */
 function openCamRec(){
   if (state.camrec) return;
   const S = {st: 'ask', t0: state.time, amt: 0, closing: false, stream: null,
-             v: null, rec: null, chunks: [], blobURL: null, rv: null, err: null};
+             v: null, rec: null, chunks: [], blobURL: null, rv: null, err: null,
+             badge: null, noScan: false};
   state.camrec = S;
   const md = navigator.mediaDevices;
   if (!md || !md.getUserMedia){ S.st = 'denied'; S.err = 'This machine cannot open a camera from here.'; return; }
@@ -20408,6 +20432,19 @@ function openCamRec(){
         ? 'The camera was not allowed. Ask the stand attendant.'
         : 'No camera found on this machine.';
     });
+}
+/* смотрим в текущий кадр и ищем код; вызывается не чаще scanEvery */
+function camRecScan(S){
+  if (!S.v || !S.v.videoWidth || S._busy) return;
+  if (!window.BarcodeDetector){ S.noScan = true; return; }
+  if (!S._det){ try { S._det = new BarcodeDetector({formats: ['qr_code']}); } catch(e){ S.noScan = true; return; } }
+  S._busy = true;
+  S._det.detect(S.v).then(list => {
+    S._busy = false;
+    if (!state.camrec || state.camrec !== S || S.st !== 'badge') return;
+    const hit = list && list.find(b => b.rawValue);
+    if (hit){ S.badge = String(hit.rawValue).slice(0, 2000); S.st = 'found'; S.t0 = state.time; }
+  }).catch(() => { S._busy = false; });
 }
 function camRecStop(S){
   try { if (S.rec && S.rec.state === 'recording') S.rec.stop(); } catch(e){}
@@ -20432,17 +20469,65 @@ function camRecBegin(S){
     rv.play().catch(() => {});
     S.rv = rv; S.st = 'review';
   };
-  S.rec.start();
-  S.st = 'rec'; S.t0 = state.time;
+  S.rec.start();          // состояние ставит вызывающий: запись идёт с этапа бейджа
 }
 function camRecKeep(S){
   if (!S.blobURL) return;
   const d = new Date(), p = n => String(n).padStart(2, '0');
-  const name = `glidewell_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.webm`;
-  const a = document.createElement('a');
-  a.href = S.blobURL; a.download = name;
-  document.body.appendChild(a); a.click(); a.remove();
+  const stem = `glidewell_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  const put = (href, name) => { const a = document.createElement('a');
+    a.href = href; a.download = name; document.body.appendChild(a); a.click(); a.remove(); };
+  put(S.blobURL, stem + '.webm');
+  /* рядом с роликом — то, что сказал бейдж. Текст, а не разбор: что лежит в
+     коде, то и записываем, без попыток угадать поля. Разбирать будем потом,
+     когда увидим настоящий бейдж. */
+  if (S.badge){
+    const txt = `file\t${stem}.webm\nrecorded\t${d.toISOString()}\nbadge\t${S.badge}\n`;
+    const bu = URL.createObjectURL(new Blob([txt], {type: 'text/plain;charset=utf-8'}));
+    put(bu, stem + '.txt');
+    setTimeout(() => { try { URL.revokeObjectURL(bu); } catch(e){} }, 4000);
+  }
   S.st = 'saved'; S.t0 = state.time;
+}
+/* ПРИГЛАШЕНИЕ В УГЛУ (Эльдар, 06.11.2026: «поверх линии, в уголочке справа
+   вверху, кнопка, которая появляется раз в минуту, предлагающая записать видео
+   и стать частью истории Glidewell; появляется и исчезает; нажать — открывается
+   то же меню, что и у камеры»).
+   Раз в REC_CUE.every секунд выходит на REC_CUE.hold секунд и уходит. Молчит,
+   когда зал закрыт страницей или витриной, когда идёт фильм и когда запись уже
+   открыта: приглашать туда, где человек уже стоит, незачем. Отсчёт идёт от
+   времени зала, а не от открытия страницы, поэтому пауза ровная. */
+const REC_CUE = {every: 60, hold: 8, fade: 0.6};
+function drawRecCue(t){
+  if (state.camrec || overlayOpen() || state.docOpen) return;
+  if (state.mode === 'intro' || (state.attract && state.attract.film)) return;
+  const ph = t % REC_CUE.every;
+  if (ph > REC_CUE.hold) return;
+  const a = Math.min(1, ph / REC_CUE.fade) * Math.min(1, (REC_CUE.hold - ph) / REC_CUE.fade);
+  if (a <= 0.02) return;
+  const seg = segAt(cam.x);
+  ctx.save();
+  ctx.globalAlpha = a;
+  const fs = Math.round(21 * SS);
+  ctx.font = eraFont(fs, '', seg.font);
+  const label = 'Put yourself in the story';
+  const tw = ctx.measureText(label).width;
+  const padX = 20 * SS, dot = 7 * SS, gap = 13 * SS;
+  const bw = padX * 2 + dot * 2 + gap + tw, bh = 46 * SS;
+  const bx = W - bw - 26 * SS, by = 22 * SS;
+  ctx.fillStyle = 'rgba(16,19,23,0.62)';
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, bh / 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = Math.max(1, SS);
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, bh / 2); ctx.stroke();
+  const puls = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(t * 2.4));
+  drawGlow('235,40,46', bx + padX + dot, by + bh / 2, dot * 4.5, 0.34 * puls * a);
+  ctx.fillStyle = `rgba(255,70,72,${(0.8 + 0.2 * puls).toFixed(2)})`;
+  ctx.beginPath(); ctx.arc(bx + padX + dot, by + bh / 2, dot, 0, 7); ctx.fill();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = 'rgba(244,246,249,0.95)';
+  ctx.fillText(label, bx + padX + dot * 2 + gap, by + bh * 0.63);
+  ctx.restore();
+  if (a > 0.5) pushHit(bx, by, bw, bh, {type: 'camrig'});
 }
 function drawCamRec(t){
   const S = state.camrec; if (!S) return;
@@ -20465,8 +20550,15 @@ function drawCamRec(t){
   ctx.fillText('Put yourself in the Glidewell story', cx, sy + pad * 1.15);
   ctx.fillStyle = 'rgba(96,104,114,0.95)';
   ctx.font = eraFont(Math.round(sw * 0.023), '', SEGMENTS[3].font);
-  ctx.fillText('Say your name and where you are from.', cx, sy + pad * 1.85);
-  ctx.fillText(`${CAMREC.len} seconds, and you are part of it.`, cx, sy + pad * 2.45);
+  {
+    const L = S.st === 'badge' || S.st === 'found'
+      ? ['Hold your badge up to the camera.', 'Then tell us who you are.']
+      : S.st === 'review' || S.st === 'saved'
+        ? ['This is what we got.', 'Keep it, or do it again.']
+        : ['Say your name and where you are from.', `${CAMREC.len} seconds, and you are part of it.`];
+    ctx.fillText(L[0], cx, sy + pad * 1.85);
+    ctx.fillText(L[1], cx, sy + pad * 2.45);
+  }
   /* ОКНО КАМЕРЫ 16:9, НО НЕ ШИРЕ ТОГО, ЧТО ОСТАЛОСЬ ОТ ЛИСТА. Сперва я брал
      ширину по листу и высоту по пропорции — и кнопка вылезала наружу, под
      нижнюю кромку. Теперь сначала считается, сколько места остаётся под
@@ -20494,6 +20586,32 @@ function drawCamRec(t){
     ctx.font = eraFont(Math.round(sw * 0.022), '', SEGMENTS[3].font);
     ctx.fillText(S.st === 'denied' ? (S.err || 'No camera') : 'Looking for the camera…', cx, vy + vh / 2);
   }
+  /* ЭТАП БЕЙДЖА: прицел посреди кадра и опрос не чаще scanEvery */
+  if (S.st === 'badge'){
+    if (state.time - (S._scan || 0) > CAMREC.scanEvery){ S._scan = state.time; camRecScan(S); }
+    const bs = Math.min(vw, vh) * 0.46, bx2 = cx - bs / 2, by2 = vy + vh / 2 - bs / 2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = Math.max(2, 3 * SS); ctx.lineCap = 'round';
+    const L2 = bs * 0.22;
+    for (const [ox, oy] of [[0,0],[1,0],[0,1],[1,1]]){
+      const px2 = bx2 + ox * bs, py2 = by2 + oy * bs, sx2 = ox ? -1 : 1, sy2 = oy ? -1 : 1;
+      ctx.beginPath();
+      ctx.moveTo(px2 + sx2 * L2, py2); ctx.lineTo(px2, py2); ctx.lineTo(px2, py2 + sy2 * L2);
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
+    ctx.font = eraFont(Math.round(sw * 0.021), '', SEGMENTS[3].font);
+    ctx.fillText(S.noScan ? 'Show the badge — we will film it' : 'Looking for your badge…', cx, by2 + bs + pad * 0.6);
+  }
+  if (S.st === 'found'){
+    ctx.fillStyle = 'rgba(16,140,86,0.92)';
+    ctx.beginPath(); ctx.roundRect(vx + vw * 0.08, vy + vh * 0.40, vw * 0.84, vh * 0.20, 8 * SS); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = eraFont(Math.round(sw * 0.026), '', SEGMENTS[3].font);
+    let bl = S.badge.replace(/\s+/g, ' ').trim();
+    while (ctx.measureText(bl).width > vw * 0.78 && bl.length > 8) bl = bl.slice(0, -1);
+    ctx.fillText('Badge read: ' + bl + (bl.length < S.badge.trim().length ? '…' : ''), cx, vy + vh * 0.53);
+    if (state.time - S.t0 > 1.4){ S.st = 'count'; S.t0 = state.time; }
+  }
   /* отсчёт и полоса записи — поверх кадра */
   if (S.st === 'count'){
     const left = Math.max(0, CAMREC.count - (state.time - S.t0));
@@ -20503,7 +20621,7 @@ function drawCamRec(t){
     ctx.font = eraFont(Math.round(vh * 0.52), '', SEGMENTS[3].font);
     ctx.fillText(String(n), cx, vy + vh * 0.68);
     ctx.globalAlpha = a;
-    if (left <= 0) camRecBegin(S);
+    if (left <= 0){ S.st = 'rec'; S.t0 = state.time; }
   }
   if (S.st === 'rec'){
     const left = Math.max(0, CAMREC.len - (state.time - S.t0));
@@ -20532,7 +20650,13 @@ function drawCamRec(t){
     if (a > 0.6) pushHit(bx, by, bw2, bh, payload);
   };
   if (S.st === 'ready')
-    button('Record', cx - sw * 0.17, sw * 0.34, 'rgba(232,42,48,0.95)', '#fff', {type: 'camrec', do: 'start'});
+    button('Start', cx - sw * 0.17, sw * 0.34, 'rgba(232,42,48,0.95)', '#fff', {type: 'camrec', do: 'start'});
+  else if (S.st === 'badge'){
+    /* дольше badgeMax не держим человека у камеры: пропустить можно всегда,
+       ролик при этом уже пишется и бейдж, если он мелькнул, в нём есть */
+    if (state.time - S.t0 > CAMREC.badgeMax || S.noScan)
+      button('Skip the badge', cx - sw * 0.17, sw * 0.34, 'rgba(0,0,0,0.08)', 'rgba(40,46,54,0.95)', {type: 'camrec', do: 'skip'});
+  }
   else if (S.st === 'review'){
     button('Keep it', cx - sw * 0.355, sw * 0.34, 'rgba(40,46,54,0.95)', '#fff', {type: 'camrec', do: 'keep'});
     button('Again',   cx + sw * 0.015, sw * 0.34, 'rgba(0,0,0,0.08)', 'rgba(40,46,54,0.95)', {type: 'camrec', do: 'again'});
@@ -26857,12 +26981,16 @@ function update(dt){
         const aimed = hitAt(inp.action.x, inp.action.y);
         if (aimed && aimed.type === 'camrec'){
           if (aimed.do === 'close') S2.closing = true;
-          else if (aimed.do === 'start' && S2.st === 'ready'){ S2.st = 'count'; S2.t0 = state.time; }
+          else if (aimed.do === 'start' && S2.st === 'ready'){
+            camRecBegin(S2);                       // пишем с бейджа — один файл на оба этапа
+            if (S2.st !== 'denied'){ S2.st = 'badge'; S2.t0 = state.time; }
+          }
+          else if (aimed.do === 'skip' && S2.st === 'badge'){ S2.st = 'count'; S2.t0 = state.time; }
           else if (aimed.do === 'keep') camRecKeep(S2);
           else if (aimed.do === 'again'){
             if (S2.rv) try { S2.rv.pause(); } catch(e){}
             if (S2.blobURL) try { URL.revokeObjectURL(S2.blobURL); } catch(e){}
-            S2.blobURL = null; S2.rv = null; S2.chunks = [];
+            S2.blobURL = null; S2.rv = null; S2.chunks = []; S2.badge = null;
             S2.st = S2.stream ? 'ready' : 'denied';
           }
         } else if (!aimed || aimed.type !== 'camrecsheet') S2.closing = true;
@@ -28315,6 +28443,7 @@ function frame(){
   drawDebug();
   drawAlbumView();   // the album, open on the table in front of you
   drawCaseView();    // и витрина 1970-го, когда её открыли
+  drawRecCue(t);     // приглашение записаться — раз в минуту в правом верхнем углу
   drawCamRec(t);     // страница записи приветствия, когда нажали камеру
   drawStudy();
   drawPeople();    // the wall of voices
