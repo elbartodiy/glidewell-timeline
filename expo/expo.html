@@ -20662,6 +20662,14 @@ function drawCamRec(t){
   ctx.globalAlpha = a;
   ctx.fillStyle = '#f4f6f8';
   ctx.beginPath(); ctx.roundRect(sx, sy, sw, sh, 10 * SS); ctx.fill();
+  /* ЛИСТ ЗАБИРАЕТ НАЖАТИЯ ПЕРВЫМ, А НЕ ПОСЛЕДНИМ (Эльдар, 06.11.2026: «там не
+     работает крестик, не закрывается окно, и кнопка записи тоже никуда не
+     ведёт»). hitAt идёт по HITS с КОНЦА, то есть побеждает тот, кого положили
+     последним. Прямоугольник всего листа клался после крестика и кнопок и
+     накрывал их целиком: любое нажатие внутри листа читалось как «по листу» —
+     то есть «ничего не делать». Теперь он кладётся сразу под бумагой, до
+     всего, что на ней лежит. */
+  if (a > 0.6) pushHit(sx, sy, sw, sh, {type: 'camrecsheet'});
   const pad = sw * 0.055, cx = sx + sw / 2;
   /* заголовок и просьба */
   ctx.textAlign = 'center';
@@ -20790,7 +20798,6 @@ function drawCamRec(t){
   /* крестик */
   drawCloseX(sx + sw - 26 * SS, sy + 26 * SS, 11 * SS, a, '90,96,104');
   if (a > 0.6) pushHit(sx + sw - 46 * SS, sy + 6 * SS, 40 * SS, 40 * SS, {type: 'camrec', do: 'close'});
-  if (a > 0.6) pushHit(sx, sy, sw, sh, {type: 'camrecsheet'});
   ctx.restore();
 }
 
