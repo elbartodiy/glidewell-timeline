@@ -9470,12 +9470,13 @@ function musicMarkBox(){ const s = 22 * SS; return {x: 26 * SS, y: 26 * SS, w: s
 function soundMarkBox(){ const s = 22 * SS; return {x: 68 * SS, y: 26 * SS, w: s, h: s}; }
 /* ноты и динамика в углу больше нет (звук — в настройках, 26.10.2026): «голоса»
    встают на их строку, отметка сборки и шестерёнка — за ними, как и были */
-/* ЗНАЧОК ГОЛОСОВ КРУПНЕЕ (Эльдар, 04.11.2026: «увеличь иконку героев слева
-   вверху и сделай её более заметной»). 64 × 44 → 84 × 58, то есть в 1,32 раза:
-   на этой кнопке держится вся дверь к людям зала, а она читалась как пылинка
-   в углу. Угол прежний — 26 / 22, растёт значок вправо и вниз, и всё, что под
-   ним (отметка сборки, шестерёнка), считается от его же высоты. */
-function voicesMarkBox(){ return {x: 26 * SS, y: 22 * SS, w: 84 * SS, h: 58 * SS}; }
+/* ЗНАЧОК ГОЛОСОВ КРУПНЕЕ, ВТОРОЙ РАЗ (Эльдар, 04.11.2026: «увеличь иконку
+   героев слева вверху и сделай её более заметной»; 06.11.2026: «эту ссылку на
+   персоналии слева вверху давай сделаем ещё чуть больше, в 1,5 раза»).
+   64 × 44 → 84 × 58 → 126 × 87. На этой кнопке держится вся дверь к людям
+   зала. Угол прежний — 26 / 22, растёт значок вправо и вниз; он теперь один в
+   верхнем углу — отметка сборки и шестерёнка ушли в нижний. */
+function voicesMarkBox(){ return {x: 26 * SS, y: 22 * SS, w: 126 * SS, h: 87 * SS}; }
 function markHit(b, pt){
   if (!pt) return false;
   const pad = 10 * SS;
@@ -9485,10 +9486,16 @@ function markHit(b, pt){
 function musicMarkHit(pt){ return markHit(musicMarkBox(), pt); }
 function soundMarkHit(pt){ return markHit(soundMarkBox(), pt); }
 function voicesMarkHit(pt){ return markHit(voicesMarkBox(), pt); }
-/* шестерёнка настроек — под отметкой сборки (Эльдар, 23.10.2026: «кнопка
-   настроек снизу под временем деплоя, слева сверху») */
-function settingsMarkBox(){ const s = 20 * SS, b = voicesMarkBox();
-  return {x: 26 * SS, y: b.y + b.h + 30 * SS, w: s, h: s}; }   // от высоты значка, а не числом: значок растёт — шестерёнка едет за ним
+/* ОТМЕТКА СБОРКИ И ШЕСТЕРЁНКА — В НИЖНИЙ ЛЕВЫЙ УГОЛ (Эльдар, 06.11.2026:
+   «время и дату последнего деплоя давай опустим максимально вниз, влево, и
+   уменьшим тоже в 1,5 раза; и звёздочку настроек тоже вниз туда же, над этой
+   надписью»). Наверху остаётся одна дверь — к людям зала; служебное уходит
+   туда, куда глаз не ходит. Нижняя полоса фактов начинается от 12 % ширины и
+   левый угол не занимает, так что они друг другу не мешают.
+   Обе отметки считаются от одной опоры — базовой линии даты. */
+function buildMarkBase(){ return H - 18 * SS; }
+function settingsMarkBox(){ const s = 20 * SS;
+  return {x: 26 * SS, y: buildMarkBase() - 18 * SS - s, w: s, h: s}; }
 function settingsMarkHit(pt){ return markHit(settingsMarkBox(), pt); }
 function drawMusicMark(){
   const A = Math.max(0.25, state.ruleA);          // they live with the rule
@@ -9585,11 +9592,15 @@ function drawMusicMark(){
      отвечает на один вопрос: КАКАЯ СБОРКА СЕЙЧАС ОТКРЫТА. Эльдар
      (02.10.2026): «пусть висит под этими кнопками». */
   if (BUILD.txt){
-    const bb = voicesMarkBox();
-    ctx.font = eraFont(11 * SS, '', seg.font);
+    /* 11 → 7,3: «уменьшим тоже в 1,5 раза» (Эльдар, 06.11.2026). Плотность
+       чернил при этом поднята с 0,26 до 0,38: 0,26 были посчитаны для
+       одиннадцати пикселей на тёмном верху, а семь пикселей на светлом полу
+       при той же плотности уже не читаются — отметка, которую нельзя
+       прочитать, не отметка. */
+    ctx.font = eraFont(7.3 * SS, '', seg.font);
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = `rgba(${seg.ink},${(0.26 * A).toFixed(3)})`;
-    ctx.fillText(BUILD.txt, bb.x, bb.y + bb.h + 19 * SS);
+    ctx.fillStyle = `rgba(${seg.ink},${(0.38 * A).toFixed(3)})`;
+    ctx.fillText(BUILD.txt, 26 * SS, buildMarkBase());
   }
   // THE GEAR — the settings menu (SETTINGS)
   {
@@ -9658,7 +9669,11 @@ function openSettings(){
   }
   const el = SETTINGS.el, dpr = H / innerHeight, b = settingsMarkBox();
   el.style.left = Math.round(b.x / dpr) + 'px';
-  el.style.top = Math.round((b.y + b.h) / dpr + 10) + 'px';
+  /* МЕНЮ РАСКРЫВАЕТСЯ ВВЕРХ: шестерёнка стоит у самого низа (06.11.2026), и
+     список, открытый вниз, ушёл бы за край экрана. Опора — низ списка, а не
+     верх, поэтому высоту знать не нужно. */
+  el.style.top = '';
+  el.style.bottom = Math.round(innerHeight - b.y / dpr + 10) + 'px';
   el.innerHTML = '<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.55;margin-bottom:8px">Settings</div>';
   for (const it of SETTINGS_ITEMS){
     const row = document.createElement('label');
