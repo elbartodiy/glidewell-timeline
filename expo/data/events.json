@@ -1,36 +1,8 @@
 {
- "updated": "2026-11-06T19:27:48+00:00",
+ "updated": "2026-11-07T06:00:34+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 82,
+ "count": 80,
  "events": [
-  {
-   "title": "Practical Chairside 3D Printing: A Hands-On Approach Chicago, IL | 5 CE",
-   "from": "2026-11-06",
-   "to": "2026-11-06",
-   "city": "Chicago, IL",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Bianca Clark"
-   ],
-   "duration": "One Day",
-   "price": "0.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/practical-chairside-3d-printing-a-hands-on-approach-chicago-il-5-ce?variant=54006669181292"
-  },
-  {
-   "title": "Dental Sleep Medicine: Snoring and Sleep Apnea Treatment Made Easy",
-   "from": "2026-11-06",
-   "to": "2026-11-07",
-   "city": "Raleigh, NC",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Jamison Spencer"
-   ],
-   "duration": "Two Days",
-   "price": "795.00",
-   "open": false,
-   "url": "https://glidewelldirect.com/products/dental-sleep-medicine-treating-patients-with-sleep-related-disordered-breathing?variant=53730342863212"
-  },
   {
    "title": "Clear Aligner Therapy Simplified",
    "from": "2026-11-07",
