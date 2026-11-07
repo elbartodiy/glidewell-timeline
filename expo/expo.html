@@ -20657,6 +20657,9 @@ const CAMREC = {
   scanEvery: 0.25,   // как часто смотрим в кадр в поисках кода, секунды
   w: 1180, h: 880,   // лист, опорные единицы
 };
+/* сколько экран молчит после прочитанного кода, секунды: эти полсекунды
+   человек ещё держит бейдж, и они уже в файле (Эльдар, 06.11.2026) */
+const BADGE_LAG = (() => { const m = /[?&]blag=([\d.]+)/.exec(location.search); return m ? +m[1] : 0.6; })();
 /* высота звона на прочитанном коде: 1 — исходный колокольчик 2009-го,
    1.5 — он же квинтой выше (Эльдар, 06.11.2026) */
 const BADGE_PING = (() => { const m = /[?&]bping=([\d.]+)/.exec(location.search); return m ? +m[1] : 1.5; })();
@@ -20691,7 +20694,11 @@ function openCamRec(){
       const v = document.createElement('video');
       v.srcObject = stream; v.muted = true; v.playsInline = true;
       v.play().catch(() => {});
-      S.v = v; S.st = 'ready';
+      /* БЕЗ КНОПКИ START (Эльдар, 06.11.2026: «теперь старт-кнопка на видео не
+         нужна — старт начинается, когда бейдж считывается»). Камера поднялась —
+         и человек сразу под прицелом: лишний тап стоял между ним и единственным,
+         что от него нужно, — поднять бейдж. */
+      S.v = v; S.st = 'badge'; S.t0 = state.time;
     })
     .catch(err => {
       S.st = 'denied';
@@ -20711,12 +20718,15 @@ function camRecScan(S){
     if (!state.camrec || state.camrec !== S || S.st !== 'badge') return;
     const hit = list && list.find(b => b.rawValue);
     if (hit){
-      S.badge = String(hit.rawValue).slice(0, 2000); S.st = 'found'; S.t0 = state.time;
-      /* КОД ПРОЧИТАН — КОРОТКИЙ ЗВОН (Эльдар, 06.11.2026). Тот же колокольчик,
-         что звенит на совпадении слоёв в 2009-м, поднятый на квинту: гость
-         смотрит в камеру на свой бейдж, а не на экран, и ухо должно сказать
-         ему «готово» раньше глаза. Высоту подбираем на месте: ?bping=1.35 */
-      pingOnce('ws08', 0.45, 520, BADGE_PING);
+      /* ЗАПИСЬ НАЧИНАЕТСЯ ЗДЕСЬ (Эльдар, 06.11.2026: «старт начинается, когда
+         бейдж считывается, тогда запись начинается, и начинается она с чёткого
+         кадра бейджа»). Раньше MediaRecorder заводился по кнопке Start, и в
+         начале файла лежали секунды поисков. Теперь первый кадр ролика — тот
+         самый кадр, в котором браузер прочитал код: бейдж в руке, в фокусе. */
+      S.badge = String(hit.rawValue).slice(0, 2000);
+      camRecBegin(S);
+      if (S.st === 'denied') return;
+      S.st = 'found'; S.t0 = state.time; S._ping = false;
     }
   }).catch(() => { S._busy = false; });
 }
@@ -20997,8 +21007,15 @@ function drawCamRec(t){
     ctx.fillText(S.st === 'denied' ? (S.err || 'No camera') : 'Looking for the camera…', cx, vy + vh / 2);
   }
   /* ЭТАП БЕЙДЖА: прицел посреди кадра и опрос не чаще scanEvery */
-  if (S.st === 'badge'){
-    if (state.time - (S._scan || 0) > CAMREC.scanEvery){ S._scan = state.time; camRecScan(S); }
+  /* ЗАДЕРЖКА ПЕРЕД ПОДТВЕРЖДЕНИЕМ (Эльдар, 06.11.2026: «на долю секунды опоздай
+     с указанием „бейдж прочитан", чтобы юзер всё ещё держал бейдж и начало
+     записи не смазывалось, чтобы мы видели его бейдж»). Код прочитан, запись
+     уже идёт — но на экране ничего не меняется: тот же белый прицел, та же
+     строка. Человеку не от чего опускать руку, и первые полсекунды файла
+     остаются чистым кадром бейджа. */
+  const inLag = S.st === 'found' && state.time - S.t0 < BADGE_LAG;
+  if (S.st === 'badge' || inLag){
+    if (S.st === 'badge' && state.time - (S._scan || 0) > CAMREC.scanEvery){ S._scan = state.time; camRecScan(S); }
     const bs = Math.min(vw, vh) * 0.46, bx2 = cx - bs / 2, by2 = vy + vh / 2 - bs / 2;
     ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = Math.max(2, 3 * SS); ctx.lineCap = 'round';
     const L2 = bs * 0.22;
@@ -21020,12 +21037,18 @@ function drawCamRec(t){
      кадра, шириной ровно по содержимому: зелёный кружок с галкой и слова
      «Badge scanned». Сам прицел в этот миг тоже становится зелёным — глазу
      этого хватает раньше, чем он прочитает текст. */
-  if (S.st === 'found'){
+  if (S.st === 'found' && !inLag){
     /* ПРИЦЕЛ ВСПЫХИВАЕТ И СХЛОПЫВАЕТСЯ К ЦЕНТРУ (Эльдар, 06.11.2026). Полсекунды
        на ход: рамка идёт от своего размера к четверти его, углы на ходу
        укорачиваются, в середине — зелёная вспышка, и к концу всё гаснет. Глаз
        ловит это раньше, чем успевает прочитать строку внизу. */
-    const u = Math.min(1, (state.time - S.t0) / 0.5);
+    /* ЗВОН — ВМЕСТЕ СО ЗНАКОМ, А НЕ НА ЧТЕНИИ КОДА: звук «готово» в момент
+       чтения опустил бы руку с бейджем ровно тогда, когда камера его пишет.
+       Тот же колокольчик, что звенит на совпадении слоёв в 2009-м, квинтой
+       выше; высоту подбираем на месте: ?bping=1.35 */
+    if (!S._ping){ S._ping = true; pingOnce('ws08', 0.45, 520, BADGE_PING); }
+    const tf = state.time - S.t0 - BADGE_LAG;
+    const u = Math.min(1, tf / 0.5);
     const e = u * u * (3 - 2 * u);
     const al = 1 - Math.max(0, (u - 0.5) / 0.5);
     const gs = Math.min(vw, vh) * 0.46 * (1 - 0.74 * e), gx = cx - gs / 2, gy = vy + vh / 2 - gs / 2;
@@ -21068,7 +21091,7 @@ function drawCamRec(t){
     ctx.fillStyle = 'rgba(240,255,246,0.98)';
     ctx.fillText(bl, ccx + dotR + gapB, byB + bhB * 0.66);
     ctx.textAlign = 'center';
-    if (state.time - S.t0 > 1.4){ S.st = 'count'; S.t0 = state.time; }
+    if (tf > 1.4){ S.st = 'count'; S.t0 = state.time; }
   }
   /* О ЧЁМ ГОВОРИТЬ — СПИСКОМ, ПОСЛЕ УДАЧНОГО СКАНА (Эльдар, 06.11.2026: «добавь
      там вопросы после того, как бейдж сосканирован — как тебя зовут? откуда ты?
@@ -21135,9 +21158,7 @@ function drawCamRec(t){
     ctx.fillText(label, bx + bw2 / 2, by + bh * 0.64);
     if (a > 0.6) pushHit(bx, by, bw2, bh, payload);
   };
-  if (S.st === 'ready')
-    button('Start', cx - sw * 0.17, sw * 0.34, 'rgba(232,42,48,0.95)', '#fff', {type: 'camrec', do: 'start'});
-  else if (S.st === 'badge'){
+  if (S.st === 'badge'){
     /* дольше badgeMax не держим человека у камеры: пропустить можно всегда,
        ролик при этом уже пишется и бейдж, если он мелькнул, в нём есть */
     if (state.time - S.t0 > CAMREC.badgeMax || S.noScan)
@@ -27681,17 +27702,20 @@ function update(dt){
         const aimed = hitAt(inp.action.x, inp.action.y);
         if (aimed && aimed.type === 'camrec'){
           if (aimed.do === 'close') S2.closing = true;
-          else if (aimed.do === 'start' && S2.st === 'ready'){
-            camRecBegin(S2);                       // пишем с бейджа — один файл на оба этапа
-            if (S2.st !== 'denied'){ S2.st = 'badge'; S2.t0 = state.time; }
+          else if (aimed.do === 'skip' && S2.st === 'badge'){
+            /* бейдж не читается или его нет — тогда запись начинается здесь:
+               до этого мига MediaRecorder не заведён вовсе */
+            camRecBegin(S2);
+            if (S2.st !== 'denied'){ S2.st = 'count'; S2.t0 = state.time; }
           }
-          else if (aimed.do === 'skip' && S2.st === 'badge'){ S2.st = 'count'; S2.t0 = state.time; }
           else if (aimed.do === 'keep') camRecKeep(S2);
           else if (aimed.do === 'again'){
             if (S2.rv) try { S2.rv.pause(); } catch(e){}
             if (S2.blobURL) try { URL.revokeObjectURL(S2.blobURL); } catch(e){}
             S2.blobURL = null; S2.rv = null; S2.chunks = []; S2.badge = null;
-            S2.st = S2.stream ? 'ready' : 'denied';
+            S2._ping = false; S2._scan = 0;
+            S2.st = S2.stream ? 'badge' : 'denied';   // «ещё раз» — снова под прицел, без кнопки
+            S2.t0 = state.time;
           }
         } else if (!aimed || aimed.type !== 'camrecsheet') S2.closing = true;
       } else if (inp.action === true) S2.closing = true;
