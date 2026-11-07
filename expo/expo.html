@@ -9431,14 +9431,26 @@ const SFX = {off: (() => { try { return localStorage.getItem('glidewell.sfx') ==
    peak on arrival. This is a sound tied to a thing that happens in the room:
    it takes its own copy of a file, plays the head of it and cuts. */
 const PINGS = {};
-function pingOnce(file, gain, cutMs){
+/* ЧЕТВЁРТЫМ — ВЫСОТА ТОНА (Эльдар, 06.11.2026: «можешь питч поднять, мб и
+   будет новый»). Зал звенит шестью файлами, которые он отобрал на слух, и
+   заводить седьмой ради одного события не хочется. Ускорение с выключенным
+   preservesPitch поднимает тон вместе со скоростью: тот же колокольчик, но
+   выше и короче — ухо слышит новый звук. Своя копия файла на каждую высоту,
+   иначе один и тот же элемент звучал бы то так, то эдак. */
+function pingOnce(file, gain, cutMs, rate){
   if (SFX.off) return;
-  let a = PINGS[file];
-  if (!a){ a = PINGS[file] = new Audio('audio/whoosh/' + file + '.m4a'); a.preload = 'auto'; }
+  const r = rate > 0 ? rate : 1;
+  const key = r === 1 ? file : file + '@' + r;
+  let a = PINGS[key];
+  if (!a){ a = PINGS[key] = new Audio('audio/whoosh/' + file + '.m4a'); a.preload = 'auto'; }
   try {
     a.pause(); a.currentTime = 0; a.volume = Math.max(0, Math.min(1, gain));
+    if (r !== 1){
+      a.preservesPitch = false; a.mozPreservesPitch = false; a.webkitPreservesPitch = false;
+      a.playbackRate = r;
+    }
     a.play().catch(() => {});
-    setTimeout(() => { try { a.pause(); } catch(e){} }, cutMs || 600);
+    setTimeout(() => { try { a.pause(); } catch(e){} }, (cutMs || 600) / r);
   } catch(e){}
 }
 function toggleSound(){
@@ -20645,6 +20657,9 @@ const CAMREC = {
   scanEvery: 0.25,   // как часто смотрим в кадр в поисках кода, секунды
   w: 1180, h: 880,   // лист, опорные единицы
 };
+/* высота звона на прочитанном коде: 1 — исходный колокольчик 2009-го,
+   1.5 — он же квинтой выше (Эльдар, 06.11.2026) */
+const BADGE_PING = (() => { const m = /[?&]bping=([\d.]+)/.exec(location.search); return m ? +m[1] : 1.5; })();
 /* ЗАПИСЬ ИДЁТ ОДНИМ ФАЙЛОМ, А НЕ ДВУМЯ (Эльдар, 06.11.2026: «нужно сделать в
    два этапа, желательно вообще, чтобы не разделять файлы, чтобы запись шла в
    одном файле. Сначала они должны показать свой бейдж, свой QR-код на камеру,
@@ -20695,7 +20710,14 @@ function camRecScan(S){
     S._busy = false;
     if (!state.camrec || state.camrec !== S || S.st !== 'badge') return;
     const hit = list && list.find(b => b.rawValue);
-    if (hit){ S.badge = String(hit.rawValue).slice(0, 2000); S.st = 'found'; S.t0 = state.time; }
+    if (hit){
+      S.badge = String(hit.rawValue).slice(0, 2000); S.st = 'found'; S.t0 = state.time;
+      /* КОД ПРОЧИТАН — КОРОТКИЙ ЗВОН (Эльдар, 06.11.2026). Тот же колокольчик,
+         что звенит на совпадении слоёв в 2009-м, поднятый на квинту: гость
+         смотрит в камеру на свой бейдж, а не на экран, и ухо должно сказать
+         ему «готово» раньше глаза. Высоту подбираем на месте: ?bping=1.35 */
+      pingOnce('ws08', 0.45, 520, BADGE_PING);
+    }
   }).catch(() => { S._busy = false; });
 }
 function camRecStop(S){
@@ -20995,10 +21017,9 @@ function drawCamRec(t){
      Плашка занимала 84 % ширины окна и 20 % высоты поперёк лица, а обрезка
      мерила ОДНО значение бейджа, забывая про приставку «Badge read: », — на
      длинном коде строка вылезала за плашку. Теперь это узкая полоска по низу
-     кадра, шириной ровно по содержимому: зелёный кружок с галкой и значение
-     бейджа. Мерится вся строка целиком, и длинный код честно сходит на
-     многоточие. Сам прицел в этот миг тоже становится зелёным — глазу этого
-     хватает раньше, чем он прочитает текст. */
+     кадра, шириной ровно по содержимому: зелёный кружок с галкой и слова
+     «Badge scanned». Сам прицел в этот миг тоже становится зелёным — глазу
+     этого хватает раньше, чем он прочитает текст. */
   if (S.st === 'found'){
     /* ПРИЦЕЛ ВСПЫХИВАЕТ И СХЛОПЫВАЕТСЯ К ЦЕНТРУ (Эльдар, 06.11.2026). Полсекунды
        на ход: рамка идёт от своего размера к четверти его, углы на ходу
@@ -21022,15 +21043,13 @@ function drawCamRec(t){
     ctx.restore();
     const fsB = Math.round(sw * 0.022);
     ctx.font = eraFont(fsB, '', SEGMENTS[3].font);
-    /* значение бейджа — одной строкой, без схемы адреса: на бейджах обычно QR
-       со ссылкой, и «https://» в подтверждении не говорит ничего */
-    let bl = String(S.badge).replace(/\s+/g, ' ').replace(/^https?:\/\//i, '').trim();
+    /* ПОДТВЕРЖДЕНИЕ, А НЕ ВЫПИСКА (Эльдар, 06.11.2026: «там не надо это писать,
+       там нужно Badge scanned»). В полоске стоит одно постоянное слово: гостю
+       нужно знать, что код прочитан, а не что именно в нём записано — номер и
+       имя он и так носит на груди. Само значение по-прежнему живёт в S.badge и
+       ложится в текстовую карточку рядом с записью. */
+    const bl = 'Badge scanned';
     const dotR = fsB * 0.42, gapB = fsB * 0.55, padB = fsB * 0.8;
-    const roomB = vw * 0.74 - dotR * 2 - gapB - padB * 2;
-    if (ctx.measureText(bl).width > roomB){
-      while (bl.length > 4 && ctx.measureText(bl + '…').width > roomB) bl = bl.slice(0, -1);
-      bl += '…';
-    }
     const twB = ctx.measureText(bl).width;
     const bwB = padB * 2 + dotR * 2 + gapB + twB, bhB = fsB * 2.0;
     const bxB = cx - bwB / 2, byB = vy + vh - bhB - vh * 0.06;
