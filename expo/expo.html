@@ -21459,8 +21459,10 @@ let BOOK_CARD = null;
    между аннотацией и линейкой встала пустая полоса в полтораста пикселей —
    вёрстка, в которой текст кончается раньше, чем кончается отведённое ему
    место. Теперь порядок обратный: меряем аннотацию, от неё ведём линейку,
-   под линейку кладём форму (ей нужно 0.62 ширины колонки — это те же 19.4
-   её единиц, а единица равна 0.0305 ширины), и высота холста получается
+   под линейку кладём форму (ей нужно 0.47 ширины колонки — это те же 15.4
+   её единиц, а единица равна 0.0305 ширины; до 06.11.2026 было 0.62, но с
+   карточки ушёл блок бейджа и форма стала на 4.7 единицы короче), и высота
+   холста получается
    суммой. Левая колонка проверяется отдельно: если обложка с кодом длиннее
    правой, холст растёт под неё. */
 function makeBookCard(){
@@ -21488,15 +21490,29 @@ function makeBookCard(){
   const ratio = IMGS.bookfront ? IMGS.bookfront.w / IMGS.bookfront.h : 0.67;
   const botPad = 46, blurbTop = 294;
   let coverH = 620, coverW = coverH * ratio, tx = 0, colW = 0;
+  /* ПОДПИСЬ ДЖИМА ПОСЛЕ АННОТАЦИИ (Эльдар, 06.11.2026: «где-то после описания
+     книги сделай размером, наверное, с половину книги изображение его
+     подписи»). Ширина — половина обложки, высота по её собственным пропорциям
+     (1662 × 676 в файле). Она входит в тот же трёхпроходный расчёт: линейка и
+     форма съезжают вниз ровно на её высоту, а холст растёт следом, иначе
+     подпись легла бы поверх полей. Примерить другой размер: ?signbook=0.6 */
+  const SIGN_BOOK = (() => { const m = /[?&]signbook=([\d.]+)/.exec(location.search); return m ? +m[1] : 0.5; })();
+  let signW = 0, signH = 0, signTop = 0;
   let blurbLines = [], ruleY = 0, formTop = 0, formH = 0, H0 = 0, qrC = 2, qrC2 = 1;
   for (let pass = 0; pass < 3; pass++){
     coverW = coverH * ratio;
     tx = padL + coverW + 56; colW = W0 - padL - tx;
     mc.font = '26px ' + FAM;
     blurbLines = wrapWith(mc, blurb, colW);
-    ruleY = blurbTop + (blurbLines.length - 1) * 38 + 36;
+    const lastBase = blurbTop + (blurbLines.length - 1) * 38;
+    if (IMGS.jimsign){
+      signW = Math.min(colW, coverW * SIGN_BOOK);
+      signH = signW * IMGS.jimsign.h / IMGS.jimsign.w;
+      signTop = lastBase + 30;
+      ruleY = signTop + signH + 34;
+    } else ruleY = lastBase + 36;
     formTop = ruleY + 40;
-    formH = Math.round(colW * 0.62);
+    formH = Math.round(colW * 0.47);   // 06.11.2026: без блока бейджа форме нужно 15 единиц вместо 20
     H0 = formTop + formH + botPad + M;
     mc.font = '600 23px ' + FAM; qrC  = wrapWith(mc, qrL1, coverW).length;
     mc.font = '22px ' + FAM;     qrC2 = wrapWith(mc, qrL2, coverW).length;
@@ -21561,6 +21577,7 @@ function makeBookCard(){
   g.font = '26px ' + FAM;
   let yy = blurbTop;
   for (const ln of blurbLines){ g.fillText(ln, tx, yy); yy += 38; }
+  if (IMGS.jimsign) g.drawImage(IMGS.jimsign.el, tx, signTop, signW, signH);
 
   /* КОД — ПОД ОБЛОЖКОЙ, В СВОЕЙ КОЛОНКЕ. Он второй путь к той же книге, и
      стоять ему рядом с полями незачем: тот, кто снимает код, поля не трогает. */
@@ -23632,7 +23649,7 @@ function drawBookOffer(r, e){
   y += u * 2.35;
   ctx.fillStyle = dim(0.95);
   put(BOOK.done ? 'Thank you \u2014 it is on its way.'
-                : 'Hold your badge up to the scanner, or type your address.',
+                : 'Leave your name and address, and we will send it to you.',
       r.x, y + u * 0.9, u * 1.02, '', r.w);
   y += u * 2.0;
 
@@ -23664,42 +23681,14 @@ function drawBookOffer(r, e){
     pushHit(x, y, w, h, {type: 'bookfield', key});
   };
 
-  // ── бейдж ──
-  label('BADGE', r.x, r.w * 0.5);
-  /* справа в той же строке — состояние порта или сколько нажатий долетело */
-  const ser = SER.state === 'open';
-  ctx.fillStyle = (ser || BOOK.keys) ? `rgba(30,132,72,${(0.9*a).toFixed(3)})` : dim(0.55);
-  put(ser ? 'port open' : (BOOK.keys ? BOOK.keys + ' keys ' + BOOK.lastKey : 'no scan yet'),
-      r.x + r.w, y + u * 0.8, u * 0.8, '', r.w * 0.45, 'right');
-  y += u * 1.3;
-  const bH = u * 2.25;
-  ctx.fillStyle = `rgba(24,118,176,${((BOOK.badge ? 0.07 : 0.025) * a).toFixed(3)})`;
-  ctx.beginPath(); ctx.roundRect(r.x, y, r.w, bH, u * 0.45); ctx.fill();
-  ctx.strokeStyle = BOOK.field === 'badge' ? FOCUS(0.85) : LINE(0.22);
-  ctx.setLineDash(BOOK.badge ? [] : [5 * SS, 4.5 * SS]);
-  ctx.lineWidth = 1.3 * SS;
-  ctx.beginPath(); ctx.roundRect(r.x, y, r.w, bH, u * 0.45); ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle = BOOK.badge ? ink(0.95) : dim(0.55);
-  put(BOOK.badge || 'waiting for a scan\u2026', r.x + u * 0.85, y + bH * 0.66, u * 1.0, '', r.w - u * 1.7, '', !BOOK.badge);
-  BOOK.hit.badge = [r.x, y, r.w, bH];
-  pushHit(r.x, y, r.w, bH, {type: 'bookfield', key: 'badge'});
-  y += bH + u * 1.15;
-
-  /* ОДНО НАЖАТИЕ НА ВЕСЬ ПОКАЗ. Права на COM-порт браузер выдаёт только по
-     жесту человека и запоминает их для этого адреса — дальше порт поднимается
-     сам при каждом открытии книги. Ссылка, а не кнопка: это наладка зала, а
-     не то, что делает гость. */
-  if (serOk() && SER.state !== 'open'){
-    ctx.fillStyle = FOCUS(0.7);
-    const fs = put('Connect the scanner', r.x, y + u * 0.8, u * 0.85, '', r.w * 0.6);
-    ctx.font = `${fs.toFixed(1)}px ${FAM}`;
-    const lw = ctx.measureText('Connect the scanner').width;
-    ctx.fillStyle = FOCUS(0.3);
-    ctx.fillRect(r.x, y + u * 1.02, lw, 1.2 * SS);
-    pushHit(r.x, y - u * 0.4, lw, u * 1.8, {type: 'bookserial'});
-    y += u * 1.9;
-  }
+  /* БЕЙДЖА НА КАРТОЧКЕ БОЛЬШЕ НЕТ (Эльдар, 06.11.2026: «там нужно убрать вот
+     этот вот весь, всю эту информацию, и скан происходит через камеру»). Здесь
+     стояла наладка стенда на виду у гостя: поле «waiting for a scan…»,
+     состояние COM-порта, счётчик долетевших нажатий и ссылка «Connect the
+     scanner». Код бейджа теперь читает камера — на странице приветствия, — а
+     книге от гостя нужны только имя и адрес. Приёмник кода (bookFromCode) и
+     скрытое поле остались: если код всё же придёт, имя и почта из него
+     подставятся, но на экране этого хозяйства нет. */
 
   // ── имя и почта, в две колонки ──
   const gap = u * 1.1, colW = (r.w - gap) / 2;
@@ -29956,6 +29945,7 @@ jim18:'assets/img/jim18.jpg',
 jim1970:'assets/img/jim1970.jpg',
 jim76:'assets/img/jim76.jpg',
 jimnow:'assets/img/jimnow.jpg',
+jimsign:'assets/photo/jim_sign.png',
 joeha:'assets/img/joeha.jpg',
 ad1985:'assets/img/ad1985.jpg',   // плакат «The Sales Secret» — Эльдар, 27.10.2026 (Artefacts/1985.png)
 lab3ben:'assets/img/lab3ben.jpg',
@@ -29982,7 +29972,7 @@ lab1ext:'assets/img/lab1ext.jpg',
 jimlect:'assets/img/jim_lectures.jpg',
 donuts2026:'assets/img/donuts2026.jpg',
 lab2ext:'assets/img/lab2ext.jpg',
-qr:'assets/img/qr.png',
+qr:'assets/img/qr_book.png',
 gtvqr:'assets/img/gtv_qr.png',
 rella:'assets/img/rella.jpg',
 rose:'assets/img/rose.jpg',
