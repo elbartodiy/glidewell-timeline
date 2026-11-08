@@ -1,36 +1,8 @@
 {
- "updated": "2026-11-07T21:53:23+00:00",
+ "updated": "2026-11-08T06:04:00+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 80,
+ "count": 78,
  "events": [
-  {
-   "title": "Clear Aligner Therapy Simplified",
-   "from": "2026-11-07",
-   "to": "2026-11-07",
-   "city": "Irvine, CA",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Ben Miraglia"
-   ],
-   "duration": "One Day",
-   "price": "195.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/introduction-to-clear-aligner-therapy-made-easy?variant=53049767788908"
-  },
-  {
-   "title": "Clear Aligners Therapy Advanced Course",
-   "from": "2026-11-07",
-   "to": "2026-11-07",
-   "city": "Irvine, CA",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Ben Miraglia"
-   ],
-   "duration": "One Day",
-   "price": "95.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/clear-aligners-therapy-advanced-course?variant=53190191186284"
-  },
   {
    "title": "Restoring Dental Implants: From Digital Impression to Final Restoration",
    "from": "2026-11-13",
