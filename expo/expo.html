@@ -20831,7 +20831,9 @@ function camRecSettle(S){
   const how = S.want; S.want = null; S.ask = false;
   if (how === 'save' && S.blobURL){
     camRecSave(S);
-    S.st = 'saved'; S.t0 = state.time;      // «Saved. Thank you» и само закроется
+    if (S.rv) try { S.rv.pause(); S.rv.muted = true; S.rv.loop = false; } catch(e){}
+    S.st = 'saved'; S.t0 = state.time;      // «Saved. Thank you» мелькает на уходе
+    S.closing = true;                        // то же правило, что и у «Keep it»
     return;
   }
   S.chunks = [];
@@ -20907,9 +20909,20 @@ function camRecBegin(S){
   };
   S.rec.start();          // состояние ставит вызывающий: запись идёт с этапа бейджа
 }
+/* «KEEP IT» — И ОКНО УХОДИТ (Эльдар, 09.11.2026: «после того как нажимается
+   Keep it и видео сохраняется, окошко с видео продолжает показываться, и оно
+   повторяется, и всё ещё висит; нужно, чтобы сразу как Keep it нажата — всё,
+   это окошко уходит, и мы возвращаемся к линии»). Было: сохранили и встали на
+   «saved», а ролик просмотра так и крутился по кругу ещё пару секунд. Теперь
+   ролик замолкает в тот же миг, а лист начинает растворяться — «Saved. Thank
+   you» успевает мелькнуть на нём, и зал возвращается. Элемент не убиваем
+   совсем, пока лист виден: на паузе он всё ещё отдаёт свой кадр, и окно гаснет
+   с картинкой, а не с надписью «нет камеры». Добьёт его camRecStop. */
 function camRecKeep(S){
   camRecSave(S);
-  if (S.saved){ S.st = 'saved'; S.t0 = state.time; }
+  if (S.rv) try { S.rv.pause(); S.rv.muted = true; S.rv.loop = false; } catch(e){}
+  S.st = 'saved'; S.t0 = state.time;
+  S.closing = true;
 }
 /* одно место, где ролик ложится на диск: и по кнопке, и при закрытии окна */
 function camRecSave(S){
@@ -21352,7 +21365,6 @@ function drawCamRec(t){
     ctx.fillStyle = 'rgba(40,46,54,0.95)';
     ctx.font = eraFont(Math.round(sw * 0.026), '', SEGMENTS[3].font);
     ctx.fillText('Saved. Thank you — you are in it now.', cx, by + bh * 0.64);
-    if (state.time - S.t0 > 2.6) S.closing = true;   // сказали спасибо и ушли: киоск ждёт следующего
   } else if (S.st === 'denied'){
     button('Close', cx - sw * 0.17, sw * 0.34, 'rgba(0,0,0,0.08)', 'rgba(40,46,54,0.95)', {type: 'camrec', do: 'close'});
   }
