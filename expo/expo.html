@@ -6420,7 +6420,13 @@ function updateFilm(){
      отступает, пока звучит любой ролик страницы/карточки (VIDEO_EL, со звуком,
      не на паузе) — так же, как перед страницей. */
   const voice = (() => { for (const k in VIDEO_EL){ const c = VIDEO_EL[k]; if (c && c !== v && !c.paused && !c.muted && !c.ended) return true; } return false; })();
-  const busy = state.clip || state.person || state.study || state.people || state.docOpen || voice;
+  /* …И ПОКА ПИШУТ ПРИВЕТСТВИЕ (Эльдар, 09.11.2026: «когда открывается это окно
+     записи, у нас фоном всё равно продолжает идти фильм, и голос накладывается,
+     и звук не тот, что нам нужен»). Окно записи — та же страница поверх зала,
+     только здесь фильм не просто мешает слушать: он лезет в микрофон и
+     остаётся в ролике навсегда. */
+  const busy = state.clip || state.person || state.study || state.people || state.docOpen ||
+               state.camrec || voice;
   const engaged = !v.muted;                 // sound on = a real showing
   const wanted = engaged && !T.userPaused && !busy;
   // the poster holds its frame: a not-yet-started set snaps back to the
@@ -20674,6 +20680,8 @@ const CAMREC = {
 };
 /* сколько экран молчит после прочитанного кода, секунды: эти полсекунды
    человек ещё держит бейдж, и они уже в файле (Эльдар, 06.11.2026) */
+/* доля меньшей стороны кадра, которую занимает рамка прицела */
+const AIM_F = 0.78;
 const BADGE_LAG = (() => { const m = /[?&]blag=([\d.]+)/.exec(location.search); return m ? +m[1] : 0.6; })();
 /* высота звона на прочитанном коде: 1 — исходный колокольчик 2009-го,
    1.5 — он же квинтой выше (Эльдар, 06.11.2026) */
@@ -20702,7 +20710,11 @@ function openCamRec(){
   state.camrec = S;
   const md = navigator.mediaDevices;
   if (!md || !md.getUserMedia){ S.st = 'denied'; S.err = 'This machine cannot open a camera from here.'; return; }
-  md.getUserMedia({video: {width: {ideal: 1280}, height: {ideal: 720}, facingMode: 'user'}, audio: true})
+  /* 1280 → 1920 (Эльдар, 09.11.2026: «ни один из новых бейджей мне не
+     сработал»). Код на бейдже занимает в кадре считанные десятки пикселей, и
+     каждый отданный камерой пиксель — это шанс его прочитать. Если камера
+     столько не умеет, браузер сам отдаст, сколько может: ideal, не exact. */
+  md.getUserMedia({video: {width: {ideal: 1920}, height: {ideal: 1080}, facingMode: 'user'}, audio: true})
     .then(stream => {
       if (!state.camrec || state.camrec !== S){ stream.getTracks().forEach(tr => tr.stop()); return; }
       S.stream = stream;
@@ -20722,13 +20734,58 @@ function openCamRec(){
         : 'No camera found on this machine.';
     });
 }
+/* ЛЮБОЙ БЕЙДЖ — БЕЙДЖ (Эльдар, 09.11.2026: «это может быть сотрудничество,
+   могут быть гости, и у них разного размера бейджи… ни один из новых бейджей,
+   которые я тестировал, мне не сработал»).
+
+   Две причины, почему новые бейджи молчали, и обе здесь.
+
+   ПЕРВАЯ — ФОРМАТ. Детектор просили читать ТОЛЬКО qr_code. Но на служебных
+   бейджах код чаще линейный (Code 128, Code 39) или матричный не-QR (PDF417
+   на американских пропусках, Data Matrix), и такой бейдж браузер честно не
+   видел — он его и не искал. Теперь спрашиваем у браузера, что он вообще
+   умеет, и просим всё, что он умеет из списка ниже.
+
+   ВТОРАЯ — РАЗМЕР. Бейдж размером с визитку, поднесённый на вытянутой руке,
+   даёт код в полсотни пикселей среди всей комнаты. Поэтому проходов два, через
+   раз: весь кадр — и середина кадра, вырезанная и увеличенная вдвое. Второй
+   проход стоит одну отрисовку в четверть секунды и вытаскивает ровно те
+   бейджи, которые «почти читаются». */
+const BADGE_FORMATS = ['qr_code', 'data_matrix', 'aztec', 'pdf417', 'code_128',
+                       'code_39', 'code_93', 'codabar', 'itf',
+                       'ean_13', 'ean_8', 'upc_a', 'upc_e'];
+function camRecDet(S){
+  if (S._detMake) return;                 // строится или уже построен
+  S._detMake = true;
+  if (!window.BarcodeDetector){ S.noScan = true; return; }
+  const make = f => { try { S._det = new BarcodeDetector({formats: f}); S.fmts = f.length; }
+                      catch(e){ S.noScan = true; } };
+  if (BarcodeDetector.getSupportedFormats){
+    BarcodeDetector.getSupportedFormats()
+      .then(list => { const f = BADGE_FORMATS.filter(x => list.indexOf(x) >= 0);
+                      make(f.length ? f : ['qr_code']); })
+      .catch(() => make(['qr_code']));
+  } else make(['qr_code']);
+}
 /* смотрим в текущий кадр и ищем код; вызывается не чаще scanEvery */
 function camRecScan(S){
   if (!S.v || !S.v.videoWidth || S._busy) return;
-  if (!window.BarcodeDetector){ S.noScan = true; return; }
-  if (!S._det){ try { S._det = new BarcodeDetector({formats: ['qr_code']}); } catch(e){ S.noScan = true; return; } }
+  if (!S._det){ camRecDet(S); return; }
   S._busy = true;
-  S._det.detect(S.v).then(list => {
+  /* через раз — середина кадра крупно */
+  S._zoom = !S._zoom;
+  let src = S.v;
+  if (S._zoom){
+    const vw2 = S.v.videoWidth, vh2 = S.v.videoHeight;
+    const cw = Math.round(vw2 * 0.6), ch = Math.round(vh2 * 0.6);
+    if (!S._zc) S._zc = document.createElement('canvas');
+    if (S._zc.width !== cw * 2){ S._zc.width = cw * 2; S._zc.height = ch * 2; }
+    const g = S._zc.getContext('2d');
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.drawImage(S.v, (vw2 - cw) / 2, (vh2 - ch) / 2, cw, ch, 0, 0, cw * 2, ch * 2);
+    src = S._zc;
+  }
+  S._det.detect(src).then(list => {
     S._busy = false;
     if (!state.camrec || state.camrec !== S || S.st !== 'badge') return;
     const hit = list && list.find(b => b.rawValue);
@@ -20745,11 +20802,67 @@ function camRecScan(S){
     }
   }).catch(() => { S._busy = false; });
 }
-function camRecStop(S){
-  try { if (S.rec && S.rec.state === 'recording') S.rec.stop(); } catch(e){}
+/* ЗАКРЫТЬ ЗАПИСЬ МОЖНО ТОЛЬКО ОТВЕТИВ (Эльдар, 09.11.2026: «если человек
+   пытается закрыть окно, а запись идёт, то сразу возникает вопрос — сохранить
+   это или cancel… даже если он нажимает на крестик»). Крестик и нажатие мимо
+   листа больше не закрывают окно, пока в нём лежит несохранённый ролик: они
+   поднимают табличку. Саму запись при этом останавливаем сразу — файл кончается
+   там, где человек решил кончить, а не там, где он дотянулся до кнопки. */
+function camRecAskClose(S){
+  if (S.ask) return;
+  const live = !!(S.rec && S.rec.state === 'recording');
+  if (!live && !(S.blobURL && !S.saved)){ S.closing = true; return; }
+  S.ask = true;
+  if (live) try { S.rec.stop(); } catch(e){}
+}
+/* ответ: 'save' — положить файл, 'drop' — выбросить. Если запись ещё идёт,
+   ждём onstop: блоба до него не существует. */
+function camRecFinish(S, how){
+  S.want = how;
+  if (S.rec && S.rec.state === 'recording'){ try { S.rec.stop(); return; } catch(e){} }
+  camRecSettle(S);
+}
+function camRecSettle(S){
+  const how = S.want; S.want = null; S.ask = false;
+  if (how === 'save' && S.blobURL){
+    camRecSave(S);
+    S.st = 'saved'; S.t0 = state.time;      // «Saved. Thank you» и само закроется
+    return;
+  }
+  S.chunks = [];
+  if (S.blobURL){ try { URL.revokeObjectURL(S.blobURL); } catch(e){} S.blobURL = null; }
+  S.closing = true;
+}
+/* ролик, который больше не показывают, должен ЗАМОЛЧАТЬ НАСОВСЕМ: pause()
+   мало — элемент остаётся с источником и браузер волен его воскресить */
+function camRecKill(v){
+  if (!v) return;
+  try { v.pause(); v.muted = true; v.loop = false; v.removeAttribute('src'); v.load(); } catch(e){}
+}
+function camRecTracks(S){
   try { if (S.stream) S.stream.getTracks().forEach(tr => tr.stop()); } catch(e){}
-  if (S.blobURL) try { URL.revokeObjectURL(S.blobURL); } catch(e){}
-  S.stream = null; S.v = null; S.rec = null; S.rv = null; S.blobURL = null;
+  S.stream = null;
+}
+/* ОКНО ЗАКРЫЛИ — РОЛИК НЕ ПРОПАДАЕТ (Эльдар, 09.11.2026: «люди проговорили и,
+   не дождавшись тридцати секунд, нажимают „Закрыть" — сохраняется это видео
+   или нет? Нужно, чтобы сохранялось, даже если они закрывают»).
+
+   Было: закрытие просто останавливало запись и стирало блоб, а то, что человек
+   успел сказать, терялось. Теперь закрытие равносильно «Keep it»:
+   — идёт запись → останавливаем, и onstop сохранит файл сам (дорожки камеры
+     гасим ТАМ ЖЕ, не здесь: погасить их сейчас значит обрезать последний
+     кусок, который MediaRecorder ещё не отдал);
+   — стоим на просмотре и «Keep it» не нажимали → сохраняем прямо здесь. */
+function camRecStop(S){
+  S.gone = true;
+  camRecKill(S.rv); S.rv = null;
+  if (S.rec && S.rec.state === 'recording'){
+    try { S.rec.stop(); } catch(e){ camRecTracks(S); }
+  } else {
+    if (S.blobURL && !S.saved) camRecSave(S);
+    camRecTracks(S);
+  }
+  S.v = null;
 }
 function camRecBegin(S){
   if (!S.stream) return;
@@ -20761,17 +20874,42 @@ function camRecBegin(S){
   catch(e){ S.st = 'denied'; S.err = 'This browser cannot record video.'; return; }
   S.rec.ondataavailable = e => { if (e.data && e.data.size) S.chunks.push(e.data); };
   S.rec.onstop = () => {
-    const blob = new Blob(S.chunks, {type: S.chunks[0] ? S.chunks[0].type : 'video/webm'});
+    if (!S.chunks.length){
+      if (S.gone) camRecTracks(S);
+      else if (S.want || S.ask){ S.want = 'drop'; camRecSettle(S); }
+      return;
+    }
+    const blob = new Blob(S.chunks, {type: S.chunks[0].type || 'video/webm'});
     S.blobURL = URL.createObjectURL(blob);
+    /* ответ уже дан кнопкой — исполняем его, не заходя на просмотр */
+    if (S.want){ camRecSettle(S); return; }
+    /* табличка на экране — ждём ответа, ролик не показываем */
+    if (S.ask) return;
+    /* ПРИЗРАК С ГОЛОСОМ (Эльдар, 09.11.2026: «когда запись произведена и окно
+       закрыто, это видео начинает воспроизводиться — мы слышим его звук, но не
+       видим его, и он зациклен, и не знаешь, как от него отделаться»).
+       Вот он: onstop приходит ПОСЛЕ закрытия окна, заводил новый video с
+       loop = true и muted = false и запускал его — а показать его было уже
+       негде и остановить некому. Теперь, если окна нет, ролик не заводится
+       вовсе: файл сохраняется, блоб отпускается, камера гаснет. */
+    if (S.gone || S.closing || state.camrec !== S){
+      camRecSave(S); camRecTracks(S); return;
+    }
     const rv = document.createElement('video');
     rv.src = S.blobURL; rv.loop = true; rv.muted = false; rv.playsInline = true;
     rv.play().catch(() => {});
-    S.rv = rv; S.st = 'review';
+    S.rv = rv; S.st = 'review'; S.t0 = state.time;
   };
   S.rec.start();          // состояние ставит вызывающий: запись идёт с этапа бейджа
 }
 function camRecKeep(S){
-  if (!S.blobURL) return;
+  camRecSave(S);
+  if (S.saved){ S.st = 'saved'; S.t0 = state.time; }
+}
+/* одно место, где ролик ложится на диск: и по кнопке, и при закрытии окна */
+function camRecSave(S){
+  if (!S.blobURL || S.saved) return;
+  S.saved = true;
   const d = new Date(), p = n => String(n).padStart(2, '0');
   const stem = `glidewell_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
   const put = (href, name) => { const a = document.createElement('a');
@@ -20786,7 +20924,9 @@ function camRecKeep(S){
     put(bu, stem + '.txt');
     setTimeout(() => { try { URL.revokeObjectURL(bu); } catch(e){} }, 4000);
   }
-  S.st = 'saved'; S.t0 = state.time;
+  /* блоб отпускаем не сразу: браузеру нужен живой адрес, пока он кладёт файл */
+  const bl = S.blobURL;
+  setTimeout(() => { try { URL.revokeObjectURL(bl); } catch(e){} }, 10000);
 }
 /* ПРИГЛАШЕНИЕ В УГЛУ (Эльдар, 06.11.2026: «поверх линии, в уголочке справа
    вверху, кнопка, которая появляется раз в минуту, предлагающая записать видео
@@ -21031,7 +21171,13 @@ function drawCamRec(t){
   const inLag = S.st === 'found' && state.time - S.t0 < BADGE_LAG;
   if (S.st === 'badge' || inLag){
     if (S.st === 'badge' && state.time - (S._scan || 0) > CAMREC.scanEvery){ S._scan = state.time; camRecScan(S); }
-    const bs = Math.min(vw, vh) * 0.46, bx2 = cx - bs / 2, by2 = vy + vh / 2 - bs / 2;
+    /* ПРИЦЕЛ ВО ВЕСЬ КАДР (Эльдар, 09.11.2026: «нужно, чтобы любой бейдж
+       считался как бейдж, чтобы он попал на весь экран»). Рамка в 0,46 высоты
+       читалась как «положи бейдж сюда», и человек держал его в этом окошке —
+       то есть делал код вчетверо мельче, чем мог бы. Теперь рамка занимает
+       почти весь кадр: она говорит «подойди ближе», а не «целься точнее».
+       Ищем мы при этом по всему кадру и всегда искали. */
+    const bs = Math.min(vw, vh) * AIM_F, bx2 = cx - bs / 2, by2 = vy + vh / 2 - bs / 2;
     ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = Math.max(2, 3 * SS); ctx.lineCap = 'round';
     const L2 = bs * 0.22;
     for (const [ox, oy] of [[0,0],[1,0],[0,1],[1,1]]){
@@ -21042,7 +21188,10 @@ function drawCamRec(t){
     }
     ctx.fillStyle = 'rgba(255,255,255,0.88)';
     ctx.font = eraFont(Math.round(sw * 0.021), '', SEGMENTS[3].font);
-    ctx.fillText(S.noScan ? 'Show the badge — we will film it' : 'Looking for your badge…', cx, by2 + bs + pad * 0.6);
+    /* подсказка переехала внутрь окна: при рамке почти во весь кадр строка под
+       ней ушла бы на бумагу листа */
+    ctx.fillText(S.noScan ? 'Show the badge — we will film it'
+                          : 'Hold your badge close to the camera…', cx, vy + vh - pad * 0.45);
   }
   /* КОД ПРОЧИТАН — ЗНАК, А НЕ ПЛАКАТ (Эльдар, 06.11.2026: «очень крупно и
      выглядит как баг, особенно с длинным текстом, который не помещается»).
@@ -21066,7 +21215,7 @@ function drawCamRec(t){
     const u = Math.min(1, tf / 0.5);
     const e = u * u * (3 - 2 * u);
     const al = 1 - Math.max(0, (u - 0.5) / 0.5);
-    const gs = Math.min(vw, vh) * 0.46 * (1 - 0.74 * e), gx = cx - gs / 2, gy = vy + vh / 2 - gs / 2;
+    const gs = Math.min(vw, vh) * AIM_F * (1 - 0.74 * e), gx = cx - gs / 2, gy = vy + vh / 2 - gs / 2;
     drawGlow('86,226,154', cx, vy + vh / 2, Math.min(vw, vh) * 0.42, 0.42 * (1 - e) * al);
     ctx.save();
     ctx.globalAlpha = a * al;
@@ -21179,6 +21328,17 @@ function drawCamRec(t){
     if (state.time - S.t0 > CAMREC.badgeMax || S.noScan)
       button('Skip the badge', cx - sw * 0.17, sw * 0.34, 'rgba(0,0,0,0.08)', 'rgba(40,46,54,0.95)', {type: 'camrec', do: 'skip'});
   }
+  /* ВЫХОД ИЗ ЗАПИСИ — ТОЛЬКО ЧЕРЕЗ СОХРАНИТЬ ИЛИ ОТМЕНИТЬ (Эльдар, 09.11.2026:
+     «должна быть кнопка сохранить или cancel во время записи — выход всё равно
+     из видео, выход через кнопку сохранить или отменить»). Тридцать секунд —
+     потолок, а не урок: человек сказал своё за двенадцать и стоит, глядя на
+     полосу. Save останавливает запись и кладёт файл, Cancel останавливает и
+     выбрасывает. */
+  else if (S.st === 'count' || S.st === 'rec'){
+    const bw3 = sw * 0.34;
+    button('Save',   cx - sw * 0.355, bw3, 'rgba(40,46,54,0.95)', '#fff', {type: 'camrec', do: 'save'});
+    button('Cancel', cx + sw * 0.015, bw3, 'rgba(0,0,0,0.08)', 'rgba(40,46,54,0.95)', {type: 'camrec', do: 'drop'});
+  }
   else if (S.st === 'review'){
     button('Keep it', cx - sw * 0.355, sw * 0.34, 'rgba(40,46,54,0.95)', '#fff', {type: 'camrec', do: 'keep'});
     button('Again',   cx + sw * 0.015, sw * 0.34, 'rgba(0,0,0,0.08)', 'rgba(40,46,54,0.95)', {type: 'camrec', do: 'again'});
@@ -21186,12 +21346,52 @@ function drawCamRec(t){
     ctx.fillStyle = 'rgba(40,46,54,0.95)';
     ctx.font = eraFont(Math.round(sw * 0.026), '', SEGMENTS[3].font);
     ctx.fillText('Saved. Thank you — you are in it now.', cx, by + bh * 0.64);
+    if (state.time - S.t0 > 2.6) S.closing = true;   // сказали спасибо и ушли: киоск ждёт следующего
   } else if (S.st === 'denied'){
     button('Close', cx - sw * 0.17, sw * 0.34, 'rgba(0,0,0,0.08)', 'rgba(40,46,54,0.95)', {type: 'camrec', do: 'close'});
   }
   /* крестик */
   drawCloseX(sx + sw - 26 * SS, sy + 26 * SS, 11 * SS, a, '90,96,104');
   if (a > 0.6) pushHit(sx + sw - 46 * SS, sy + 6 * SS, 40 * SS, 40 * SS, {type: 'camrec', do: 'close'});
+
+  /* «СОХРАНИТЬ ЭТО?» — ПОВЕРХ ВСЕХ СЛОЁВ (Эльдар, 09.11.2026: «если человек
+     пытается закрыть окно, а запись идёт, то сразу возникает вопрос — сохранить
+     это или cancel… даже если он нажимает на крестик, эта табличка появляется
+     сверху… сверху, я имею в виду слоем, над всеми слоями»).
+     Рисуется последней и кладёт свои нажатия последними: hitAt идёт по HITS с
+     конца, поэтому победят её кнопки, а подложка во весь экран съест всё
+     остальное — ни крестик, ни лист под ней не отзовутся. */
+  if (S.ask){
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = `rgba(6,8,11,${(0.62 * a).toFixed(3)})`;
+    ctx.fillRect(0, 0, W, H);
+    pushHit(0, 0, W, H, {type: 'camrec', do: 'none'});
+    const qw = Math.min(W * 0.84, 560 * SS), qh = 196 * SS;
+    const qx = (W - qw) / 2, qy = (H - qh) / 2;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 30 * SS; ctx.shadowOffsetY = 10 * SS;
+    ctx.fillStyle = '#f4f6f8';
+    ctx.beginPath(); ctx.roundRect(qx, qy, qw, qh, 12 * SS); ctx.fill();
+    ctx.restore();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(40,46,54,0.95)';
+    ctx.font = eraFont(Math.round(qw * 0.062), '', SEGMENTS[3].font);
+    ctx.fillText('Keep this recording?', qx + qw / 2, qy + qh * 0.33);
+    ctx.fillStyle = 'rgba(96,104,114,0.95)';
+    ctx.font = eraFont(Math.round(qw * 0.037), '', SEGMENTS[3].font);
+    ctx.fillText('Cancel throws it away.', qx + qw / 2, qy + qh * 0.50);
+    const qbw = qw * 0.40, qbh = 52 * SS, qby = qy + qh - qbh - 20 * SS;
+    const qbut = (label, bx2, fill, ink, act) => {
+      ctx.fillStyle = fill;
+      ctx.beginPath(); ctx.roundRect(bx2, qby, qbw, qbh, qbh / 2); ctx.fill();
+      ctx.fillStyle = ink;
+      ctx.font = eraFont(Math.round(qw * 0.042), '', SEGMENTS[3].font);
+      ctx.fillText(label, bx2 + qbw / 2, qby + qbh * 0.64);
+      pushHit(bx2, qby, qbw, qbh, {type: 'camrec', do: act});
+    };
+    qbut('Save',   qx + qw * 0.055, 'rgba(40,46,54,0.95)', '#fff', 'save');
+    qbut('Cancel', qx + qw * 0.545, 'rgba(0,0,0,0.08)', 'rgba(40,46,54,0.95)', 'drop');
+  }
   ctx.restore();
 }
 
@@ -27705,7 +27905,10 @@ function update(dt){
       if (inp.action && typeof inp.action === 'object'){
         const aimed = hitAt(inp.action.x, inp.action.y);
         if (aimed && aimed.type === 'camrec'){
-          if (aimed.do === 'close') S2.closing = true;
+          if (aimed.do === 'none'){ /* подложка таблички: нажатие в пустоту */ }
+          else if (aimed.do === 'close') camRecAskClose(S2);
+          else if (aimed.do === 'save') camRecFinish(S2, 'save');
+          else if (aimed.do === 'drop') camRecFinish(S2, 'drop');
           else if (aimed.do === 'skip' && S2.st === 'badge'){
             /* бейдж не читается или его нет — тогда запись начинается здесь:
                до этого мига MediaRecorder не заведён вовсе */
@@ -27714,15 +27917,16 @@ function update(dt){
           }
           else if (aimed.do === 'keep') camRecKeep(S2);
           else if (aimed.do === 'again'){
-            if (S2.rv) try { S2.rv.pause(); } catch(e){}
+            camRecKill(S2.rv);
             if (S2.blobURL) try { URL.revokeObjectURL(S2.blobURL); } catch(e){}
             S2.blobURL = null; S2.rv = null; S2.chunks = []; S2.badge = null;
+            S2.saved = false; S2.ask = false; S2.want = null;
             S2._ping = false; S2._scan = 0;
             S2.st = S2.stream ? 'badge' : 'denied';   // «ещё раз» — снова под прицел, без кнопки
             S2.t0 = state.time;
           }
-        } else if (!aimed || aimed.type !== 'camrecsheet') S2.closing = true;
-      } else if (inp.action === true) S2.closing = true;
+        } else if (!aimed || aimed.type !== 'camrecsheet') camRecAskClose(S2);
+      } else if (inp.action === true) camRecAskClose(S2);
       cam.vel = 0;
     } else if (state.caseView){
       const V = state.caseView;
