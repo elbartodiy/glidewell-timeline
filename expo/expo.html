@@ -20704,6 +20704,16 @@ const AIM_F = 0.78 * 2 / 3;
 const AIM_NUM = (k, d) => { const m = new RegExp('[?&]' + k + '=([\\d.]+)').exec(location.search); return m ? +m[1] : d; };
 const AIM_GHOST = AIM_NUM('ghost', 0.15);
 const AIM_SHADE = AIM_NUM('shade', 0);
+/* БЛИК ПО ЗНАКУ (Эльдар, 10.11.2026: «сделай блик, бегущий по QR, раз в две
+   секунды»). Неподвижный знак на 15 % глаз перестаёт замечать через секунду
+   стояния; бегущая по нему полоса возвращает его в поле внимания, не делая
+   ярче. Ходит наискось слева направо за 0,75 с, потом пауза до конца второй
+   секунды. Полоса — не белая вспышка поверх знака, а ВТОРОЙ проход того же
+   знака сквозь мягкое диагональное окно: по полосе модули ненадолго наливаются
+   плотностью, как будто по коду прошёл свет. Отсчёт идёт от времени зала, так
+   что все такты в кадре мигают в такт, а не каждый от своего открытия. */
+const AIM_SHEEN = {every: 2.0, run: 0.75, a: 0.22, w: 0.42};
+let QR_SHEEN = null;
 let QR_GHOST = null;
 function qrGhost(){
   if (QR_GHOST) return QR_GHOST;
@@ -21261,8 +21271,31 @@ function drawCamRec(t){
         ctx.fillStyle = gg;
         ctx.fillRect(cx - r0, vy + vh / 2 - r0, r0 * 2, r0 * 2);
       }
-      ctx.globalAlpha = (ctx.globalAlpha || 1) * AIM_GHOST;
+      const base = ctx.globalAlpha || 1;
+      ctx.globalAlpha = base * AIM_GHOST;
       ctx.drawImage(q, qx0, qy0, qs, qs);
+      /* и по нему — бегущая полоса */
+      const ph = state.time % AIM_SHEEN.every;
+      if (ph < AIM_SHEEN.run){
+        const u = ph / AIM_SHEEN.run;
+        const qw = q.width, qh = q.height;
+        if (!QR_SHEEN){ QR_SHEEN = document.createElement('canvas'); QR_SHEEN.width = qw; QR_SHEEN.height = qh; }
+        const sg = QR_SHEEN.getContext('2d');
+        sg.clearRect(0, 0, qw, qh);
+        sg.drawImage(q, 0, 0);
+        sg.globalCompositeOperation = 'destination-in';
+        const bx = (-0.35 + u * 1.7) * qw, bw = qw * AIM_SHEEN.w;
+        const gb = sg.createLinearGradient(bx - bw, 0, bx + bw, qh);
+        gb.addColorStop(0, 'rgba(0,0,0,0)');
+        gb.addColorStop(0.5, 'rgba(0,0,0,1)');
+        gb.addColorStop(1, 'rgba(0,0,0,0)');
+        sg.fillStyle = gb; sg.fillRect(0, 0, qw, qh);
+        sg.globalCompositeOperation = 'source-over';
+        /* на входе и выходе полоса гаснет, иначе она возникает рубцом */
+        const fade = Math.min(1, Math.min(u, 1 - u) * 5);
+        ctx.globalAlpha = base * AIM_SHEEN.a * fade;
+        ctx.drawImage(QR_SHEEN, qx0, qy0, qs, qs);
+      }
       ctx.restore();
     }
     ctx.fillStyle = 'rgba(255,255,255,0.88)';
