@@ -20693,6 +20693,11 @@ const AIM_F = 0.78 * 2 / 3;
    силуэт: три глаза по углам, дорожка между ними и ровное поле модулей.
    Поле считается по хешу от клетки — иначе оно рябило бы от кадра к кадру.
    Холст строится один раз и дальше просто масштабируется. */
+/* плотность призрака и тёмная подложка под ним — на пробу с адреса:
+   на светлом бейдже пятнадцать процентов белого почти пропадают */
+const AIM_NUM = (k, d) => { const m = new RegExp('[?&]' + k + '=([\\d.]+)').exec(location.search); return m ? +m[1] : d; };
+const AIM_GHOST = AIM_NUM('ghost', 0.15);
+const AIM_SHADE = AIM_NUM('shade', 0);
 let QR_GHOST = null;
 function qrGhost(){
   if (QR_GHOST) return QR_GHOST;
@@ -21241,9 +21246,17 @@ function drawCamRec(t){
     /* сам призрак — внутри рамки, с полем в модуль по краю */
     {
       const q = qrGhost(), qs = bs * 0.82;
+      const qx0 = cx - qs / 2, qy0 = vy + vh / 2 - qs / 2;
       ctx.save();
-      ctx.globalAlpha = (ctx.globalAlpha || 1) * 0.15;
-      ctx.drawImage(q, cx - qs / 2, vy + vh / 2 - qs / 2, qs, qs);
+      if (AIM_SHADE > 0){
+        const r0 = qs * 0.62, gg = ctx.createRadialGradient(cx, vy + vh / 2, r0 * 0.25, cx, vy + vh / 2, r0);
+        gg.addColorStop(0, `rgba(6,8,11,${AIM_SHADE})`);
+        gg.addColorStop(1, 'rgba(6,8,11,0)');
+        ctx.fillStyle = gg;
+        ctx.fillRect(cx - r0, vy + vh / 2 - r0, r0 * 2, r0 * 2);
+      }
+      ctx.globalAlpha = (ctx.globalAlpha || 1) * AIM_GHOST;
+      ctx.drawImage(q, qx0, qy0, qs, qs);
       ctx.restore();
     }
     ctx.fillStyle = 'rgba(255,255,255,0.88)';
