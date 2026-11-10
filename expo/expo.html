@@ -20796,6 +20796,11 @@ function camRecScan(S){
          начале файла лежали секунды поисков. Теперь первый кадр ролика — тот
          самый кадр, в котором браузер прочитал код: бейдж в руке, в фокусе. */
       S.badge = String(hit.rawValue).slice(0, 2000);
+      /* ТИП КОДА ТОЖЕ ЗАПИСЫВАЕМ (09.11.2026). На бейдже сотрудника это
+         Code 39 с табельным номером (121164 — проверено на живом бейдже), у
+         гостя — QR с vCard. По одному значению эти два не различить, а
+         разбирать записи потом придётся именно по этому. */
+      S.badgeFmt = hit.format || '';
       camRecBegin(S);
       if (S.st === 'denied') return;
       S.st = 'found'; S.t0 = state.time; S._ping = false;
@@ -20919,7 +20924,8 @@ function camRecSave(S){
      коде, то и записываем, без попыток угадать поля. Разбирать будем потом,
      когда увидим настоящий бейдж. */
   if (S.badge){
-    const txt = `file\t${stem}.webm\nrecorded\t${d.toISOString()}\nbadge\t${S.badge}\n`;
+    const txt = `file\t${stem}.webm\nrecorded\t${d.toISOString()}\n` +
+                `badge\t${S.badge}\n` + (S.badgeFmt ? `format\t${S.badgeFmt}\n` : '');
     const bu = URL.createObjectURL(new Blob([txt], {type: 'text/plain;charset=utf-8'}));
     put(bu, stem + '.txt');
     setTimeout(() => { try { URL.revokeObjectURL(bu); } catch(e){} }, 4000);
@@ -21191,7 +21197,7 @@ function drawCamRec(t){
     /* подсказка переехала внутрь окна: при рамке почти во весь кадр строка под
        ней ушла бы на бумагу листа */
     ctx.fillText(S.noScan ? 'Show the badge — we will film it'
-                          : 'Hold your badge close to the camera…', cx, vy + vh - pad * 0.45);
+                          : 'Hold your badge up to the camera…', cx, vy + vh - pad * 0.45);
   }
   /* КОД ПРОЧИТАН — ЗНАК, А НЕ ПЛАКАТ (Эльдар, 06.11.2026: «очень крупно и
      выглядит как баг, особенно с длинным текстом, который не помещается»).
