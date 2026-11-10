@@ -21029,9 +21029,24 @@ const REC_CUE = {every: 60, hold: 8, fade: 0.6, press: 0.16, down: false, downT:
    на цифрах нижней полосы в момент смены. */
 const CUE_V = (() => { const m = /[?&]cue=([123])/.exec(location.search); return m ? +m[1] : 2; })();   // Эльдар выбрал второй — музейную этикетку (06.11.2026)
 const CUE_SHOW = /[?&]cue=[123]/.test(location.search);
+/* ПРИГЛАШЕНИЕ НАЧИНАЕТСЯ С 1970-го (Эльдар, 10.11.2026: «tell your story с
+   уголочка справа вверху — пусть появляется только начиная с 70-го года»).
+   До него на рельсе стоит вступление и век до компании — 1907-й, восковое
+   литьё; звать человека рассказать СВОЮ историю там рано: он ещё не вошёл в
+   историю Glidewell. Такт ищется один раз и запоминается: BEATS не меняется
+   на ходу, а искать его каждый кадр незачем. */
+let CUE_X0 = null;
+function cueStartX(){
+  if (CUE_X0 == null){
+    const b = BEATS.find(q => q.y === '1970');
+    CUE_X0 = b ? b.x : -Infinity;
+  }
+  return CUE_X0;
+}
 function drawRecCue(t){
   if (state.camrec || overlayOpen() || state.docOpen) return;
   if (state.mode === 'intro' || (state.attract && state.attract.film)) return;
+  if (cam.x < cueStartX()) return;
   /* С ?cue= ТАБЛИЧКА СТОИТ ПОСТОЯННО (Эльдар, 06.11.2026: «нет второго варианта
      этой таблички»). Вариант-то есть — просто приглашение выходит раз в минуту
      на восемь секунд, и открыв адрес, его можно не застать. Когда вид задан
