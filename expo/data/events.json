@@ -1,7 +1,7 @@
 {
- "updated": "2026-11-11T19:39:26+00:00",
+ "updated": "2026-11-12T07:13:52+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 78,
+ "count": 80,
  "events": [
   {
    "title": "Restoring Dental Implants: From Digital Impression to Final Restoration",
@@ -529,6 +529,21 @@
    "url": "https://glidewelldirect.com/products/incorporating-aligner-therapy-and-cad-cam-dentistry?variant=67808927744364"
   },
   {
+   "title": "Tooth Out, Implant In: The Immediate Implant Playbook for General Dentists",
+   "from": "2027-06-16",
+   "to": "2027-06-16",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Clark Oakey",
+    "Dr. Jay Oakey"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/tooth-out-implant-in-the-immediate-implant-playbook-for-general-dentists?variant=68095814435180"
+  },
+  {
    "title": "Implant Surgery, Aligner Therapy and CAD/CAM Dentistry",
    "from": "2027-06-25",
    "to": "2027-06-26",
@@ -969,6 +984,21 @@
    "price": "1190.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/implant-surgery-aligner-therapy-and-cad-cam-dentistry?variant=67836908896620"
+  },
+  {
+   "title": "Tooth Out, Implant In: The Immediate Implant Playbook for General Dentists",
+   "from": "2027-09-24",
+   "to": "2027-09-24",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Clark Oakey",
+    "Dr. Jay Oakey"
+   ],
+   "duration": "One Day",
+   "price": "595.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/tooth-out-implant-in-the-immediate-implant-playbook-for-general-dentists?variant=68095814533484"
   },
   {
    "title": "Incorporating Digital Dentistry and Aligner Therapy",
