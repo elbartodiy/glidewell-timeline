@@ -1,7 +1,7 @@
 {
- "updated": "2026-11-12T07:13:52+00:00",
+ "updated": "2026-11-12T19:57:16+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 80,
+ "count": 79,
  "events": [
   {
    "title": "Restoring Dental Implants: From Digital Impression to Final Restoration",
@@ -428,20 +428,6 @@
    "price": "795.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/effective-and-practical-implant-overdentures?variant=67836897296748"
-  },
-  {
-   "title": "Clear Aligner Therapy Simplified",
-   "from": "2027-05-22",
-   "to": "2027-05-22",
-   "city": "Raleigh, NC",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Ben Miraglia"
-   ],
-   "duration": "One Day",
-   "price": "195.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/introduction-to-clear-aligner-therapy-made-easy?variant=68050801131884"
   },
   {
    "title": "All-on-X Advanced Concepts: Modern Full-Arch Workflow",
