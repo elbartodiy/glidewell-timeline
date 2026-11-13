@@ -1,65 +1,8 @@
 {
- "updated": "2026-11-13T06:48:24+00:00",
+ "updated": "2026-11-13T19:44:33+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 81,
+ "count": 77,
  "events": [
-  {
-   "title": "Restoring Dental Implants: From Digital Impression to Final Restoration",
-   "from": "2026-11-13",
-   "to": "2026-11-13",
-   "city": "Irvine, CA",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Taylor Manalili"
-   ],
-   "duration": "One Day",
-   "price": "595.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/restoring-dental-implants-from-digital-impression-to-final-restoration?variant=52977532305772"
-  },
-  {
-   "title": "Restoring Dental Implants, 3D Printing for Bite Splints, Sleep Devices, and Dentures",
-   "from": "2026-11-13",
-   "to": "2026-11-14",
-   "city": "Irvine, CA",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Bianca Clark",
-    "Dr. Taylor Manalili"
-   ],
-   "duration": "One Day",
-   "price": "1090.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/restoring-dental-implants-3d-printing-for-bite-splints-sleep-devices-and-dentures?variant=52982358770028"
-  },
-  {
-   "title": "3D Printing for Bite Splints, Sleep Devices, and Dentures - Expanding Clinical Possibilities",
-   "from": "2026-11-14",
-   "to": "2026-11-14",
-   "city": "Irvine, CA",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Bianca Clark"
-   ],
-   "duration": "One Day",
-   "price": "595.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/3d-printing-for-bite-sleep-devices-and-dentures-expanding-clinical-possibilities?variant=52977542398316"
-  },
-  {
-   "title": "Esthetic Techniques with Anterior Crowns and Veneers",
-   "from": "2026-11-20",
-   "to": "2026-11-20",
-   "city": "Raleigh, NC",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Danielle Brown"
-   ],
-   "duration": "One Day",
-   "price": "595.00",
-   "open": false,
-   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=53730192687468"
-  },
   {
    "title": "Techniques for Predictable Implant Surgery",
    "from": "2026-12-03",
@@ -234,20 +177,6 @@
    "url": "https://glidewelldirect.com/products/all-on-x-fundamentals-modern-full-arch-workflow-start-to-finish-techniques-for-predictable-fixed-implant-restorations?variant=67836895789420"
   },
   {
-   "title": "Dental Sleep Medicine: Snoring and Sleep Apnea Treatment Made Easy",
-   "from": "2027-03-12",
-   "to": "2027-03-13",
-   "city": "Irvine, CA",
-   "kind": "Live course",
-   "instructors": [
-    "Dr. Jamison Spencer"
-   ],
-   "duration": "Two Days",
-   "price": "795.00",
-   "open": true,
-   "url": "https://glidewelldirect.com/products/dental-sleep-medicine-treating-patients-with-sleep-related-disordered-breathing?variant=67808926892396"
-  },
-  {
    "title": "Implant Surgery: A Comprehensive Review Utilizing Freehand and Guided Techniques",
    "from": "2027-03-12",
    "to": "2027-03-13",
@@ -260,6 +189,20 @@
    "price": "795.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/implant-surgery-a-comprehensive-review-utilizing-freehand-and-guided-techniques?variant=67836896641388"
+  },
+  {
+   "title": "Dental Sleep Medicine: Snoring and Sleep Apnea Treatment Made Easy",
+   "from": "2027-03-12",
+   "to": "2027-03-13",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Jamison Spencer"
+   ],
+   "duration": "Two Days",
+   "price": "795.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/dental-sleep-medicine-treating-patients-with-sleep-related-disordered-breathing?variant=67808926892396"
   },
   {
    "title": "Effective and Practical Implant Overdentures",
@@ -322,7 +265,7 @@
    "title": "Implant Surgery, Aligner Therapy and CAD/CAM Dentistry",
    "from": "2027-04-02",
    "to": "2027-04-03",
-   "city": "Dallas,TX",
+   "city": "Dallas, TX",
    "kind": "Live course",
    "instructors": [
     "Dr. Arvind Petrie",
@@ -337,7 +280,7 @@
    "duration": "Two Days",
    "price": "1190.00",
    "open": true,
-   "url": "https://glidewelldirect.com/products/implant-surgery-aligner-therapy-and-cad-cam-dentistry?variant=67836908503404"
+   "url": "https://glidewelldirect.com/products/implant-surgery-aligner-therapy-and-cad-cam-dentistry?variant=68157682483564"
   },
   {
    "title": "Esthetic Techniques with Anterior Crowns and Veneers",
