@@ -1,7 +1,7 @@
 {
- "updated": "2026-11-12T19:57:16+00:00",
+ "updated": "2026-11-13T06:48:24+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 79,
+ "count": 81,
  "events": [
   {
    "title": "Restoring Dental Implants: From Digital Impression to Final Restoration",
@@ -386,6 +386,21 @@
    "price": "595.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/facial-esthetics-with-injectable-neuromodulators-glidewell-in-partnership-with-jeuveau?variant=67808928530796"
+  },
+  {
+   "title": "The Digital Implant Blueprint: From Restorative-Driven Planning to Chairside Provisionalization",
+   "from": "2027-04-16",
+   "to": "2027-04-17",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Bushra Imam",
+    "Dr. Isaac Tawil"
+   ],
+   "duration": "Two Days",
+   "price": "795.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/the-digital-implant-blueprint-from-restorative-driven-planning-to-chairside-provisionalization?variant=68139962794348"
   },
   {
    "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
@@ -1177,6 +1192,21 @@
    "price": "1190.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/implant-surgery-aligner-therapy-and-cad-cam-dentistry?variant=67836909027692"
+  },
+  {
+   "title": "The Digital Implant Blueprint: From Restorative-Driven Planning to Chairside Provisionalization",
+   "from": "2027-10-29",
+   "to": "2027-10-30",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Bushra Imam",
+    "Dr. Isaac Tawil"
+   ],
+   "duration": "Two Days",
+   "price": "795.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/the-digital-implant-blueprint-from-restorative-driven-planning-to-chairside-provisionalization?variant=68139962892652"
   },
   {
    "title": "Facial Esthetics with Injectable Neuromodulators",
