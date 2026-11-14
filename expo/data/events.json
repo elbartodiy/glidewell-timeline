@@ -1,7 +1,7 @@
 {
- "updated": "2026-11-13T19:44:33+00:00",
+ "updated": "2026-11-14T06:25:56+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 77,
+ "count": 81,
  "events": [
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -297,6 +297,22 @@
    "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67808548749676"
   },
   {
+   "title": "Esthetic Techniques with Anterior Crowns, Facial Esthetics with Injectable Neuromodulators",
+   "from": "2027-04-02",
+   "to": "2027-04-03",
+   "city": "Louisville, KY",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Danielle Brown",
+    "Dr. Mary Shields",
+    "Dr. Sarah Belderes"
+   ],
+   "duration": "One Day",
+   "price": "1090.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-facial-esthetics-with-injectable-neuromodulators?variant=67836895560044"
+  },
+  {
    "title": "Incorporating Digital Dentistry and Aligner Therapy",
    "from": "2027-04-03",
    "to": "2027-04-03",
@@ -536,6 +552,22 @@
    "price": "595.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67808548847980"
+  },
+  {
+   "title": "Esthetic Techniques with Anterior Crowns, Facial Esthetics with Injectable Neuromodulators",
+   "from": "2027-06-25",
+   "to": "2027-06-26",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Danielle Brown",
+    "Dr. Mary Shields",
+    "Dr. Sarah Belderes"
+   ],
+   "duration": "One Day",
+   "price": "1090.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-facial-esthetics-with-injectable-neuromodulators?variant=68159754469740"
   },
   {
    "title": "Incorporating Digital Dentistry and Aligner Therapy",
@@ -879,6 +911,22 @@
    "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67808548946284"
   },
   {
+   "title": "Esthetic Techniques with Anterior Crowns, Facial Esthetics with Injectable Neuromodulators",
+   "from": "2027-09-17",
+   "to": "2027-09-18",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Danielle Brown",
+    "Dr. Mary Shields",
+    "Dr. Sarah Belderes"
+   ],
+   "duration": "One Day",
+   "price": "1090.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-facial-esthetics-with-injectable-neuromodulators?variant=68159754568044"
+  },
+  {
    "title": "Facial Esthetics with Injectable Neuromodulators",
    "from": "2027-09-18",
    "to": "2027-09-18",
@@ -1099,6 +1147,22 @@
    "price": "595.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-and-veneers?variant=67808549044588"
+  },
+  {
+   "title": "Esthetic Techniques with Anterior Crowns, Facial Esthetics with Injectable Neuromodulators",
+   "from": "2027-10-29",
+   "to": "2027-10-30",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Danielle Brown",
+    "Dr. Mary Shields",
+    "Dr. Sarah Belderes"
+   ],
+   "duration": "One Day",
+   "price": "1090.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/esthetic-techniques-with-anterior-crowns-facial-esthetics-with-injectable-neuromodulators?variant=68159754666348"
   },
   {
    "title": "Techniques for Predictable Implant Surgery",
