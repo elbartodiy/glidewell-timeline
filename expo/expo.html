@@ -18123,6 +18123,7 @@ function drawProps(midPass){
     else if ((!!p.mid) !== !!midPass || p.late) continue;
     if (Math.abs(p.x - cam.x) > 3200) continue;
     const sp = PROP_SPRITES[p.kind];
+    if (!sp) continue;       // спрайт не загрузился — предмет пропускаем, зал не падает (Эльдар, 18.11.2026: замерзал на x 9300)
     const kk = k(p.mid ? p.z : bz(p.z));
     const sx = px(p.x, kk);
     const scale = (p.w / sp.w) * kk * SS;
@@ -20048,6 +20049,7 @@ function drawPedestal(b, t, hero){
   // the object
   if (ped.bare) return;        // предмет на шляпке рисует кто-то другой (2002: монитор)
   const obj = PED_SPRITES[ped.obj];
+  if (!obj) return;           // спрайт экспоната не загрузился — тумбу рисуем без него, зал не падает (Эльдар, 18.11.2026)
   /* a wide, low machine needs more of the cap than a puck does — `wide` lets
      an exhibit ask for it, and the dome is 172 units across, so it still fits */
   const ow = 120 * (ped.wide || 1) * (ped.vitrine ? 1.25 : big) * kk * SS, oh = ow * obj.h / obj.w;
@@ -29632,11 +29634,29 @@ function loop(ts){
   }
   // a tab that boots hidden measures 0x0 — never draw a zero frame
   if (!W || !H){ resize(); if (!W || !H){ requestAnimationFrame(loop); return; } }
-  update(dt);
-  const _t0 = FPS_HUD ? performance.now() : 0;
-  frame();
-  if (FPS_HUD) drawFpsHud(dt, performance.now() - _t0);
+  /* СЛЕДУЮЩИЙ КАДР ПЛАНИРУЕТСЯ ДО РИСОВАНИЯ, А ОШИБКА КАДРА ЕГО НЕ ГАСИТ
+     (Эльдар, 18.11.2026, новый тач-экран: «страница зависает перед 1980-м и
+     ничего не двигается»). Раньше requestAnimationFrame стоял последней
+     строкой: первое же исключение в update() или frame() (там — предмет без
+     спрайта в drawProps, лента x 9300) обрывало цикл навсегда, и зал стоял
+     мёртвым до перезапуска. На стенде достаточно одного недогруженного файла,
+     чтобы гость застал именно это. Теперь кадр с ошибкой пропускается, цикл
+     живёт, а причина пишется в консоль один раз на каждый разный текст.
+     После ошибки состояние холста сбрасывается (ctx.reset): сорванный
+     посередине кадр оставляет незакрытые save(), и без сброса их стопка
+     росла бы каждый кадр. */
   requestAnimationFrame(loop);
+  try {
+    update(dt);
+    const _t0 = FPS_HUD ? performance.now() : 0;
+    frame();
+    if (FPS_HUD) drawFpsHud(dt, performance.now() - _t0);
+  } catch (err){
+    const key = String(err && err.message || err).slice(0, 120);
+    if (!loop._seen) loop._seen = new Set();
+    if (!loop._seen.has(key)){ loop._seen.add(key); console.error('frame error (skipped, hall keeps running):', err); }
+    try { if (ctx.reset) ctx.reset(); else ctx.setTransform(1, 0, 0, 1, 0, 0); } catch (e2){}
+  }
 }
 
 /* ---------------- BOOT ---------------- */
