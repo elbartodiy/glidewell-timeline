@@ -29640,12 +29640,43 @@ function loop(ts){
 }
 
 /* ---------------- BOOT ---------------- */
+/* Без этих фото зал не стартует (см. boot). Стены четырёх эпох, стена 1907-го,
+   верх и лицо прилавка эпохи 1 и шкаф 1907-го: всё, что иначе заменилось бы
+   рисованной комнатой. Файлы все в expo/assets/photo (проверено 18.11.2026). */
+const REQUIRED_SKIN = ['wall_e1', 'wall_e1_1907', 'wall_e2', 'wall_e3', 'wall_e4',
+                       'bench_top_e1', 'bench_face_e1', 'ph_cabinet'];
+function haltNoPictures(miss){
+  console.error('hall halted: pictures missing', miss.join(', '));
+  const cvEl = document.querySelector('canvas'); if (cvEl) cvEl.style.display = 'none';
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;'
+    + 'justify-content:center;gap:14px;background:#0d0906;color:#cdb98f;text-align:center;'
+    + 'font-family:Georgia,serif;padding:0 8vw;z-index:99999';
+  d.innerHTML = '<div style="font-size:26px;letter-spacing:.02em">The hall\u2019s pictures could not be loaded.</div>'
+    + '<div style="font-size:15px;opacity:.7;line-height:1.5">Open expo.html from the Glidewell_Expo folder,<br>'
+    + 'with its assets folder next to it. Missing: ' + miss.length + ' of ' + REQUIRED_SKIN.length + ' main pictures.</div>';
+  document.body.appendChild(d);
+}
 async function boot(){
   resize();
   applyCut();          // before anything reads a beat position
   await loadAssets();
   loadPageFonts();                      // the reading pages' typefaces, in the background
   if (PHOTO_SKIN) await loadPhotoSkin();
+  /* ЗАПАСНОГО ЗАЛА ЗРИТЕЛЮ НЕ ПОКАЗЫВАЕМ (Эльдар, 18.11.2026, новый тач-экран
+     на Android: файл открылся без папки assets, и вместо зала на экране
+     встала рисованная комната — тёмные доски, решётка ящиков 1907-го,
+     давно снятые таблички: «что за старьё, зритель должен видеть только
+     последнюю версию, как мы её запланировали»). Рисованные стены и столы
+     остались в коде с 21.08.2026 как страховка на случай, когда фото не
+     загрузилось, — но страховка, которая молча показывает прошлое, хуже
+     пустого экрана: её принимают за рабочую версию. Поэтому без главных
+     фото зал НЕ СТАРТУЕТ, а говорит, чего ему не хватает. ?skin=flat —
+     явный режим разработчика, его не трогаем. */
+  if (PHOTO_SKIN){
+    const miss = REQUIRED_SKIN.filter(k => !PHOTO_TEX[k]);
+    if (miss.length){ haltNoPictures(miss); return; }
+  }
   prewarmFinaleWall();   // маска стены финала — до первого кадра
   loadPortraits();     // the wall of voices — small, and never blocking the boot
   await loadPlates();
