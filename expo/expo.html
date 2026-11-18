@@ -9546,7 +9546,7 @@ const SETTINGS_ITEMS = [
   {key: 'lightpic', label: 'Light picture (slow screens)', get: () => RQ_LIGHT,
    set: on => { RQ_LIGHT = on; RQ = on ? RQ_LIGHT_Q : 1; resize(); }},
   {key: 'fpshud', own: true, label: 'Show frame rate (service)', get: () => FPS_HUD,
-   set: on => { FPS_HUD = on; }},
+   set: on => { FPS_HUD = on; if (on) hudProfInstall(); }},
 ];
 function initSettings(){
   for (const it of SETTINGS_ITEMS){
@@ -29303,6 +29303,7 @@ function frame(){
 const DEBUG = /debug/.test(location.search);
 let last = 0, fps = 60, qFrames = 0, qCool = 0;
 let FPS_HUD = /[?&]fps=1/.test(location.search);   // let: переключается из настроек («Show frame rate»)
+const FPS_BOOT = FPS_HUD;      // открыт с ?fps=1 — обёртки ставит boot, не настройки
 let HUD_WORST = 0, HUD_LONG = 0, HUD_T = 0;
 /* СТРОКА О ЖЕЛЕЗЕ ДЛЯ СТРОКИ КАДРОВ (Эльдар, 18.11.2026, Android-панель
    DSB-0230: AIDA64 показал Adreno 610 и свободные 988 МБ из 4 ГБ — а тормозит
@@ -29310,6 +29311,41 @@ let HUD_WORST = 0, HUD_LONG = 0, HUD_T = 0;
    видит WebView: имя видеокарты (SwiftShader/llvmpipe значило бы программный
    рендер), память страницы и число ядер. Считается один раз. */
 let HUD_HW = null;
+/* ЧЕТЫРЕ САМЫХ ТЯЖЁЛЫХ ЭТАПА КАДРА (Эльдар, 18.11.2026, Android-панель
+   DSB-0230: с Light picture холст в 2,6 раза меньше, а время кадра прежнее —
+   28–188 мс; значит, цена не в числе точек). Включается вместе со строкой
+   кадров: все глобальные функции, которые зовёт frame(), оборачиваются
+   секундомером, и раз в 90 кадров в строку попадают четыре самых дорогих —
+   среднее время за кадр. Так одна съёмка экрана говорит, ЧТО тормозит на
+   этом месте ленты. Выключено — ни обёрток, ни накладных расходов. */
+let HUD_PROF = null, HUD_TOP = '', HUD_PF = 0;
+function hudProfInstall(){
+  if (HUD_PROF) return;
+  HUD_PROF = {};
+  const names = new Set(), re = /\b([A-Za-z_$][\w$]*)\s*\(/g;
+  let m; const src = frame.toString();
+  while ((m = re.exec(src))){
+    const n = m[1];
+    if (n !== 'frame' && n !== 'drawFpsHud' && typeof window[n] === 'function' && !window[n].__hudw) names.add(n);
+  }
+  for (const n of names){
+    const f = window[n];
+    const w = function(...a){
+      const t = performance.now();
+      try { return f.apply(this, a); }
+      finally { const d = performance.now() - t; const e = HUD_PROF[n] || (HUD_PROF[n] = {sum: 0}); e.sum += d; }
+    };
+    w.__hudw = true;
+    try { window[n] = w; } catch(err){}
+  }
+}
+function hudProfTick(){
+  if (!HUD_PROF || ++HUD_PF < 90) return;
+  const rows = Object.entries(HUD_PROF).map(([n, e]) => [n, e.sum / HUD_PF]).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  HUD_TOP = rows.map(r => r[0].replace(/^draw/, '') + ' ' + r[1].toFixed(0)).join('  ');
+  for (const k in HUD_PROF) HUD_PROF[k].sum = 0;
+  HUD_PF = 0;
+}
 function hudHardware(){
   if (HUD_HW) return HUD_HW;
   let gpu = 'n/a';
@@ -29321,6 +29357,7 @@ function hudHardware(){
   return HUD_HW;
 }
 function drawFpsHud(dt, frameMs){
+  hudProfTick();
   HUD_WORST = Math.max(HUD_WORST * 0.985, frameMs);
   if (dt > 0.024) HUD_LONG++;
   HUD_T += dt;
@@ -29333,9 +29370,10 @@ function drawFpsHud(dt, frameMs){
     `dropped ${HUD_LONG}  in ${HUD_T.toFixed(0)}s    RQ ${RQ.toFixed(2)}`,
     `${W}\u00d7${H} @${(window.devicePixelRatio || 1).toFixed(1)}   SS ${SS.toFixed(2)}   vel ${cam.vel.toFixed(0)}`,
     `gpu ${hudHardware().gpu}`,
+    `top ms/frame: ${HUD_TOP || '...'}`,
     `cores ${hudHardware().cores}   ram ${hudHardware().dev}GB   heap ${performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : '?'}MB`,
   ];
-  const wBox = 380 * SS, hBox = 18 * SS * rows.length + 14 * SS;
+  const wBox = 430 * SS, hBox = 18 * SS * rows.length + 14 * SS;
   ctx.fillStyle = 'rgba(4,6,9,0.72)';
   ctx.fillRect(12 * SS, H - hBox - 12 * SS, wBox, hBox);
   ctx.fillStyle = fps < 50 ? 'rgba(255,150,120,0.95)' : 'rgba(190,235,255,0.9)';
@@ -29438,6 +29476,7 @@ async function boot(){
   TEX.bench2 = blankTex(1200, 512); TEX.bench3 = blankTex(1200, 512); TEX.bench4 = blankTex(1200, 512);
   TEX.front2 = blankTex(1200, 600); TEX.front3 = blankTex(1200, 600);
   if (PHOTO_SKIN) applyPhotoTextures();
+  if (FPS_BOOT) setTimeout(hudProfInstall, 3000);   // ?fps=1: когда зал построен
   cacheWrap();
   SECTIONS.old = makeSection('old');
   SECTIONS.neu = makeSection('neu');
