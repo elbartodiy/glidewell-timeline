@@ -2498,7 +2498,7 @@ function attachMouseDriver(el){
   el.addEventListener('pointerdown', e => {
     down = true; moved = 0; lastX = e.clientX; lastY = e.clientY; markTap = false;
     Input.downAt = toBuf(e); Input.downFinger = isFinger(e);   // где и чем начато касание — для экрана с сайтом
-    fling = [[performance.now(), e.clientX]];
+    fling = [[e.timeStamp, e.clientX]];     // время САМОГО касания, не обработчика (см. pointerup)
     downX = e.clientX; downY = e.clientY;
     if (isFinger(e)) goFullscreen();     // палец входит в зал — зал занимает экран
     const pt = toBuf(e);
@@ -2594,7 +2594,7 @@ function attachMouseDriver(el){
        — но только когда поверх зала ничего не открыто: на раскрытой странице
        то же ведение листает текст, и там прежний канал толчка правильный. */
     if (isFinger(e)){
-      const now = performance.now();
+      const now = e.timeStamp;           // время касания: медленный кадр задерживает обработчик, но не палец
       if (overlayOpen()){
         /* НА РАСКРЫТОЙ СТРАНИЦЕ ПАЛЕЦ ДЕРЖИТ ТЕКСТ, А НЕ ЗАЛ, и держит его по
            вертикали. Прежний канал толчка брал только горизонталь, поэтому
@@ -2644,7 +2644,16 @@ function attachMouseDriver(el){
          захватывается и не отпускается, и при скрине, когда кнопки отпускаются,
          сайт двигается быстро в сторону»). Последнее движение старше 90 мс —
          значит, палец стоял: бросать нечего. */
-      const stale = performance.now() - t1 > 90;
+      /* ВРЕМЯ — ПО КАСАНИЮ, А НЕ ПО ОБРАБОТЧИКУ (Эльдар, 18.11.2026, новый
+         тач-экран на Android: «инерции нет, палец отпустил — зал встал»).
+         Здесь стояло performance.now() - t1, где t1 — момент, когда
+         обработчик ПОСЛЕДНЕГО движения отработал. На слабой панели кадр идёт
+         дольше 90 мс, события приходят пачкой после него, и отпускание
+         оказывалось «старше 90 мс» ВСЕГДА — зал считал палец замершим, и
+         броска не было никогда (на Маке с процессором, замедленным в 20 раз,
+         это воспроизводится: инерция 0, иногда с обратным знаком). Теперь и
+         движения, и отпускание берут e.timeStamp — время самого события. */
+      const stale = e.timeStamp - t1 > 90;
       let v = (ms > 40 && !stale) ? -(x1 - x0) / (ms / 1000) * worldPerPx() : 0;
       /* ПОСАДКА БЕЗ МАГНИТА. Прежде на излёте зал хватал магнит: как только
          скорость падала ниже 120, его подтягивало пружиной к году, с рывком и
@@ -9522,6 +9531,12 @@ const SETTINGS_ITEMS = [
    set: on => { TILT.on = on; if (!on){ TILT.a = TILT.w = TILT.target = TILT.shown = 0; cv.style.transform = ''; } }},
   {key: 'filmzoom', label: 'Zoom to film screens (tour)', get: () => FILM_STOP.z > 0,
    set: on => { FILM_STOP.z = on ? 240 : 0; }},
+  /* ДЛЯ ОБСЛУЖИВАНИЯ: СТРОКА С КАДРАМИ (Эльдар, 18.11.2026, новый тач-экран:
+     «подтормаживает»). На панели нет консоли, а цифры нужны, чтобы понять, что
+     тормозит, — fps, время кадра, размер холста. Не запоминается (own): после
+     перезапуска строка пропадает, гость её не увидит. */
+  {key: 'fpshud', own: true, label: 'Show frame rate (service)', get: () => FPS_HUD,
+   set: on => { FPS_HUD = on; }},
 ];
 function initSettings(){
   for (const it of SETTINGS_ITEMS){
@@ -29277,7 +29292,7 @@ function frame(){
 /* ---------------- MAIN LOOP ---------------- */
 const DEBUG = /debug/.test(location.search);
 let last = 0, fps = 60, qFrames = 0, qCool = 0;
-const FPS_HUD = /[?&]fps=1/.test(location.search);
+let FPS_HUD = /[?&]fps=1/.test(location.search);   // let: переключается из настроек («Show frame rate»)
 let HUD_WORST = 0, HUD_LONG = 0, HUD_T = 0;
 function drawFpsHud(dt, frameMs){
   HUD_WORST = Math.max(HUD_WORST * 0.985, frameMs);
