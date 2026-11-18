@@ -2000,12 +2000,13 @@ function ambient(x){
 const IMGS = {};   // name -> {el, canvas (processed), w, h}
 function loadAssets(){
   const names = Object.keys(window.ASSETS || {});
+  const lost = [];      // что не пришло: boot по этому списку решает, стартовать ли зал (Эльдар, 18.11.2026)
   return Promise.all(names.map(n => new Promise(res => {
     const el = new Image();
     el.onload = () => { IMGS[n] = {el, w: el.width, h: el.height}; res(); };
-    el.onerror = () => { console.warn('asset failed', n); res(); };
+    el.onerror = () => { console.warn('asset failed', n); lost.push(n); res(); };
     el.src = ASSETS[n];
-  })));
+  }))).then(() => lost);
 }
 
 /* Preprocess: tone + paper/frame + baked shadow, all into offscreen canvases. */
@@ -2402,91 +2403,12 @@ function noiseTile(size, alpha){
   g.putImageData(id, 0, 0);
   return c;
 }
-function woodTexture({w=1024, h=1024, plank='v', plankSize=170, base='#241708', light='#3d2a13', gapCol='rgba(0,0,0,.55)'}){
-  const c = document.createElement('canvas'); c.width = w; c.height = h;
-  const g = c.getContext('2d');
-  g.fillStyle = base; g.fillRect(0,0,w,h);
-  const across = plank === 'v' ? w : h;
-  const nP = Math.round(across / plankSize);
-  for (let p = 0; p < nP; p++){
-    const a0 = p * across / nP, aw = across / nP;
-    const tone = 0.75 + Math.random()*0.5;
-    g.save();
-    if (plank === 'v'){ g.translate(a0, 0); } else { g.translate(0, a0); }
-    const grad = g.createLinearGradient(0, 0, plank==='v'?aw:0, plank==='v'?0:aw);
-    grad.addColorStop(0, base); grad.addColorStop(.5, light); grad.addColorStop(1, base);
-    g.globalAlpha = tone * 0.9;
-    g.fillStyle = grad;
-    g.fillRect(0, 0, plank==='v'?aw:w, plank==='v'?h:aw);
-    // grain streaks along plank
-    g.globalAlpha = 1;
-    for (let s = 0; s < 26; s++){
-      g.strokeStyle = `rgba(${Math.random()<.5?'0,0,0':'255,215,150'},${(Math.random()*0.10+0.03).toFixed(3)})`;
-      g.lineWidth = Math.random()*2+0.5;
-      g.beginPath();
-      const along = plank==='v'?h:w;
-      const off = Math.random()*(plank==='v'?aw:aw);
-      let px = off, py = -20;
-      g.moveTo(plank==='v'?px:py, plank==='v'?py:px);
-      for (let t = 0; t < along+40; t += 60){
-        px += (Math.random()*2-1)*6;
-        py += 60;
-        g.lineTo(plank==='v'?px:py, plank==='v'?py:px);
-      }
-      g.stroke();
-    }
-    // plank gap
-    g.strokeStyle = gapCol; g.lineWidth = 2.5;
-    g.beginPath();
-    if (plank === 'v'){ g.moveTo(0.5,0); g.lineTo(0.5,h); } else { g.moveTo(0,0.5); g.lineTo(w,0.5); }
-    g.stroke();
-    g.restore();
-  }
-  // dirt/noise
-  const nz = noiseTile(256, 0.05);
-  g.globalAlpha = 1; g.fillStyle = g.createPattern(nz, 'repeat');
-  g.fillRect(0,0,w,h);
-  return c;
-}
-function panelTexture({w=1200, h=900, base='#6e6b5e', groove=280}){
-  // painted 80s workshop panelling
-  const c = document.createElement('canvas'); c.width = w; c.height = h;
-  const g = c.getContext('2d');
-  g.fillStyle = base; g.fillRect(0,0,w,h);
-  const vg = g.createLinearGradient(0,0,0,h);
-  vg.addColorStop(0, 'rgba(255,255,255,0.09)');
-  vg.addColorStop(.5, 'rgba(255,255,255,0)');
-  vg.addColorStop(1, 'rgba(0,0,0,0.28)');
-  g.fillStyle = vg; g.fillRect(0,0,w,h);
-  for (let x = groove/2; x < w; x += groove){
-    g.fillStyle = 'rgba(0,0,0,0.26)'; g.fillRect(x, 0, 3, h);
-    g.fillStyle = 'rgba(255,255,255,0.09)'; g.fillRect(x+3, 0, 2, h);
-  }
-  for (let i = 0; i < 90; i++){  // scuffs and stains — soft, barely-there
-    g.fillStyle = `rgba(${Math.random()<.5?'0,0,0':'255,255,255'},${(Math.random()*0.02).toFixed(3)})`;
-    g.beginPath();
-    g.ellipse(Math.random()*w, Math.random()*h, 30+Math.random()*130, 8+Math.random()*26, Math.random()*3, 0, 7);
-    g.fill();
-  }
-  const nz = noiseTile(256, 0.035);
-  g.fillStyle = g.createPattern(nz, 'repeat'); g.fillRect(0,0,w,h);
-  return c;
-}
-function formicaTexture({w=1200, h=512, base='#867f71'}){
-  const c = document.createElement('canvas'); c.width = w; c.height = h;
-  const g = c.getContext('2d');
-  g.fillStyle = base; g.fillRect(0,0,w,h);
-  for (let i = 0; i < 9000; i++){   // speckle
-    g.fillStyle = `rgba(${Math.random()<.55?'42,40,32':'236,233,222'},${(0.05+Math.random()*0.12).toFixed(3)})`;
-    g.fillRect(Math.random()*w, Math.random()*h, 1.7, 1.7);
-  }
-  const vg = g.createLinearGradient(0,0,0,h);
-  vg.addColorStop(0, 'rgba(255,255,255,0.12)');
-  vg.addColorStop(.4, 'rgba(255,255,255,0)');
-  vg.addColorStop(1, 'rgba(0,0,0,0.2)');
-  g.fillStyle = vg; g.fillRect(0,0,w,h);
-  return c;
-}
+/* РИСОВАННЫХ ТЕКСТУР СТЕН И ПРИЛАВКОВ В ЗАЛЕ БОЛЬШЕ НЕТ (Эльдар, 18.11.2026:
+   «если не подгрузилась картинка, то все плохо; мы так больше не работаем»).
+   Здесь жили woodTexture, panelTexture и formicaTexture — 85 строк, которыми
+   зал сам рисовал себе стены, прилавки и лица прилавков, пока фото не
+   пришло. Все стены, верх и лицо прилавка эпохи 1 и лицо прилавка эпохи 4 —
+   теперь только фото (applyPhotoTextures), а без фото зал не стартует. */
 
 /* ---------------- INPUT ABSTRACTION ----------------
    Single point where the physical control plugs in.
@@ -7543,59 +7465,8 @@ function drawDeskScreens(){
       if (bi2 >= 0) pushHit(x02, y02, bw2, bh2, {type: 'study', beat: bi2});
       continue;
     }
-    const scw = d.w * kk * SS, sch = scw * 3/4;
-    const pad = 10 * kk * SS, chin = 26 * kk * SS;
-    const bw = scw + pad * 2, bh = sch + pad + chin;
-    if (sx < -bw || sx > W + bw) continue;
-    const footY = py(CFG.benchY - 2, kk);
-    const x0 = sx - bw / 2, y0 = footY - bh;
-    contactShadow(sx, footY, bw * 0.55, 0.28);
-    const pg = ctx.createLinearGradient(0, y0, 0, y0 + bh);
-    pg.addColorStop(0, '#8e8b82'); pg.addColorStop(0.6, '#6d6a62'); pg.addColorStop(1, '#4a4740');
-    ctx.fillStyle = pg;
-    ctx.beginPath(); ctx.roundRect(x0, y0, bw, bh, 7 * kk * SS); ctx.fill();
-    ctx.save();
-    ctx.beginPath(); ctx.roundRect(x0 + pad, y0 + pad, scw, sch, 9 * kk * SS); ctx.clip();
-    ctx.fillStyle = '#0d1014'; ctx.fillRect(x0 + pad, y0 + pad, scw, sch);
-    if (d.ready && d.v.readyState >= 2){
-      /* запись 640×428 шире экранного 4:3 — берём её по ширине и срезаем поля
-         сверху и снизу, а не мнём кадр */
-      const vw0 = d.v.videoWidth || 640, vh0 = d.v.videoHeight || 428;
-      const sc = Math.max(scw / vw0, sch / vh0);
-      ctx.drawImage(d.v, x0 + pad + scw / 2 - vw0 * sc / 2,
-                         y0 + pad + sch / 2 - vh0 * sc / 2, vw0 * sc, vh0 * sc);
-      /* КИНЕСКОП СВЕТИТ, А НЕ ОТРАЖАЕТ. Запись — это съёмка экрана: её средняя
-         яркость около 140 из 255, и положенная как есть, на светлой стене зала
-         она читается тёмной дырой. Тот же кадр кладётся вторым слоем в режиме
-         screen: чёрное остаётся чёрным, а полутона поднимаются — ровно то, что
-         делает лампа за стеклом. Эльдар, 2026-09-28: «почему видео такое
-         тёмное». Стекло сверху осталось, тёмного низа больше нет: он отнимал
-         последнее у и без того тусклой записи. */
-      ctx.save();
-      ctx.globalCompositeOperation = 'screen';
-      ctx.globalAlpha = 0.42;
-      ctx.drawImage(d.v, x0 + pad + scw / 2 - vw0 * sc / 2,
-                         y0 + pad + sch / 2 - vh0 * sc / 2, vw0 * sc, vh0 * sc);
-      ctx.restore();
-      const gl = ctx.createLinearGradient(0, y0 + pad, 0, y0 + pad + sch);
-      gl.addColorStop(0, 'rgba(255,255,255,0.12)'); gl.addColorStop(0.4, 'rgba(255,255,255,0.03)');
-      gl.addColorStop(1, 'rgba(255,255,255,0.01)');
-      ctx.fillStyle = gl; ctx.fillRect(x0 + pad, y0 + pad, scw, sch);
-    }
-    ctx.restore();
-    ctx.strokeStyle = 'rgba(30,28,24,0.55)'; ctx.lineWidth = 1.4 * kk * SS;
-    for (let i = 0; i < 3; i++){
-      const gy = y0 + pad + sch + chin * 0.3 + i * 4.4 * kk * SS;
-      ctx.beginPath(); ctx.moveTo(x0 + bw * 0.08, gy); ctx.lineTo(x0 + bw * 0.4, gy); ctx.stroke();
-    }
-    ctx.fillStyle = 'rgba(140,220,120,0.9)';
-    ctx.beginPath(); ctx.arc(x0 + bw * 0.9, y0 + pad + sch + chin * 0.5, 2 * kk * SS, 0, 7); ctx.fill();
-    /* тап по монитору открывает страницу года — тот же вход, что даёт предмет
-       на прилавке в 1996-м. Бит ищется ПО НАЗВАНИЮ и прямо здесь: индекс,
-       взятый на старте, сдвигался вместе с BEATS, и монитор открывал соседний
-       2002-й. */
-    const bi = BEATS.findIndex(bb => bb.t === d.beat);
-    if (bi >= 0) pushHit(x0, y0, bw, bh, {type: 'study', beat: bi});
+    /* рисованного корпуса монитора больше нет (Эльдар, 18.11.2026): без
+       ph_monlcd зал не стартует (boot), а эта ветка была только запасной */
   }
 }
 function drawFilmRelays(){
@@ -12323,20 +12194,6 @@ function box93(p, x0, x1, y0, y1, z0, z1, bands){
     quad93(p, [[x1,b2,z0+3],[x1,b2,z1-3],[x1,a,z1-3],[x1,a,z0+3]], '#6f6c66');
   }
 }
-function roundPoly93(pts, rr){
-  ctx.beginPath();
-  for (let i = 0; i < pts.length; i++){
-    const a = pts[i], b = pts[(i + 1) % pts.length], c = pts[(i + 2) % pts.length];
-    const d1 = Math.hypot(b[0]-a[0], b[1]-a[1]) || 1, t1 = Math.min(rr / d1, 0.45);
-    const d2 = Math.hypot(c[0]-b[0], c[1]-b[1]) || 1, t2 = Math.min(rr / d2, 0.45);
-    const s1 = [a[0] + (b[0]-a[0]) * t1, a[1] + (b[1]-a[1]) * t1];
-    const e1 = [b[0] - (b[0]-a[0]) * t1, b[1] - (b[1]-a[1]) * t1];
-    if (i === 0) ctx.moveTo(s1[0], s1[1]); else ctx.lineTo(s1[0], s1[1]);
-    ctx.lineTo(e1[0], e1[1]);
-    ctx.quadraticCurveTo(b[0], b[1], b[0] + (c[0]-b[0]) * t2, b[1] + (c[1]-b[1]) * t2);
-  }
-  ctx.closePath();
-}
 
 /* The stand. A soft white slab with a fat rounded edge — the way a model of a
    place is presented when the place is the point, lifted off the floor so you
@@ -12425,134 +12282,10 @@ function drawModel93(wx, lz, wWorld, topWorldY){
       if (bi93 >= 0) pushHit(ix, iy, iw, ih, {type: 'study', beat: bi93}); }
     return;
   }
-  ctx.save();
-  ctx.translate(sx, py(1080, kk)); ctx.scale(1, 0.16); ctx.translate(-sx, -py(1080, kk));
-  const gsh = ctx.createRadialGradient(sx, py(1080, kk), 0, sx, py(1080, kk), (XM+2*OV) * s * 0.7);
-  gsh.addColorStop(0, 'rgba(0,0,0,0.45)'); gsh.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = gsh;
-  ctx.beginPath(); ctx.arc(sx, py(1080, kk), (XM+2*OV) * s * 0.7, 0, 7); ctx.fill();
-  ctx.restore();
-  const wallG = ctx.createLinearGradient(0, foot, 0, foot + H);
-  wallG.addColorStop(0, '#f0f2f4'); wallG.addColorStop(0.35, '#dfe3e7'); wallG.addColorStop(1, '#a9b0b7');
-  ctx.fillStyle = wallG;
-  ctx.beginPath();
-  ctx.moveTo(D[0], D[1]); ctx.lineTo(C[0], C[1]); ctx.lineTo(B[0], B[1]);
-  ctx.lineTo(B[0], B[1] + H); ctx.lineTo(C[0], C[1] + H); ctx.lineTo(D[0], D[1] + H);
-  ctx.closePath(); ctx.fill();
-  roundPoly93([[A[0], A[1]+H], [B[0], B[1]+H], [C[0], C[1]+H], [D[0], D[1]+H]], rr);
-  ctx.fillStyle = '#9ba2a9'; ctx.fill();
-  roundPoly93([A, B, C, D], rr);
-  const topG = ctx.createLinearGradient(A[0], A[1], C[0], C[1]);
-  topG.addColorStop(0, '#ffffff'); topG.addColorStop(1, '#e4e8ec');
-  ctx.fillStyle = topG; ctx.fill();
-
-
-  /* The grounds. A building alone on a plate is a massing study; what the film
-     shows is a place — asphalt, a lot with the stalls painted on it, young
-     trees that have not filled out yet, and the walk up to the door. Painted
-     flat on the ground plane in the same oblique, so it lies down properly. */
-  const flat = (x0, x1, z0, z1, tone) => quad93(p, [[x0,0.4,z0],[x1,0.4,z0],[x1,0.4,z1],[x0,0.4,z1]], tone);
-  const oval = (mx, mz, ax, az, tone, kerb) => {
-    ctx.beginPath();
-    for (let i = 0; i <= 30; i++){
-      const th = Math.PI * 2 * i / 30;
-      const q = m93(p, mx + Math.cos(th) * ax, 0.4, mz + Math.sin(th) * az);
-      i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]);
-    }
-    ctx.closePath();
-    ctx.fillStyle = tone; ctx.fill();
-    if (kerb){ ctx.strokeStyle = kerb; ctx.lineWidth = Math.max(0.8, 1.1 * s); ctx.stroke(); }
-  };
-
-  /* The grounds, read off the live footage: a broad pale drive sweeping past
-     the entrance around an oval of lawn in a concrete kerb, raised beds of dark
-     planting hugging the building, a row of bollards along the walk, and young
-     trees everywhere — slender ones, the year they went in. */
-  flat(4, XM-4, 4, ZM-4, '#dcded9');                      // lawn
-  flat(6, 44, 40, 56, '#a8adb2');                         // the lot, off to one side
-  ctx.lineWidth = Math.max(0.6, 0.7 * s);
-  ctx.strokeStyle = 'rgba(250,250,248,0.7)';
-  for (let i = 0; i < 6; i++){
-    const xx = 10 + i * 5.6;
-    const a = m93(p, xx, 0.6, 42), b2 = m93(p, xx, 0.6, 54);
-    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b2[0], b2[1]); ctx.stroke();
-  }
-  for (let i = 0; i < 4; i++)
-    box93(p, 9 + i * 8.2, 15 + i * 8.2, 0.4, 4.4, 43 + (i % 2) * 6, 52 + (i % 2) * 6, false);
-  flat(6, XM-6, 58, ZM-4, '#b7bcc1');                     // the drive across the front
-  oval(66, 66, 24, 5.2, '#c6cfc2', 'rgba(245,246,242,0.85)');   // the lawn island in it
-  flat(56, 76, 58, 66, '#ced2ce');                        // the walk to the door
-  flat(6, 46, 34, 39, '#8e9a8a');                         // beds along the rear bar
-  flat(86, XM-6, 34, 39, '#8e9a8a');
-  flat(46, 86, 62, 67, '#8e9a8a');                        // and in front of the wing
-
-  /* The building: a long bar with a wing brought forward out of its middle, two
-     ribbons of glass, white pilasters at the ends and where the wing meets it,
-     a plant room on the rear roof, and two octagonal columns standing free in
-     the plaza either side of the wing. */
-  box93(p, 6, 126, 0, 30, 10, 34, true);                  // the rear bar
-  box93(p, 46, 86, 0, 30, 34, 62, true);                  // the wing, forward
-  box93(p, 54, 78, 30, 36, 14, 26, false);                // the plant on the roof
-  for (const [px2, zf] of [[5, 34], [39, 34], [86, 34], [119, 34], [45, 62], [79, 62]])
-    box93(p, px2, px2 + 7, 0, 32, zf, zf + 5, false);     // pilasters
-  // the two octagons out in front
-  for (const ox2 of [32, 100]){
-    const [ux, uy] = m93(p, ox2, 26, 52), [, ly] = m93(p, ox2, 0, 52);
-    const r2 = 6 * s;
-    const og = ctx.createLinearGradient(ux - r2, 0, ux + r2, 0);
-    og.addColorStop(0, T93[1]); og.addColorStop(0.36, T93[0]); og.addColorStop(1, T93[2]);
-    ctx.fillStyle = og;
-    ctx.beginPath();
-    for (let i = 0; i < 8; i++){
-      const th = Math.PI * 2 * i / 8 + Math.PI / 8;
-      const X = ux + Math.cos(th) * r2, Y = uy + Math.sin(th) * r2 * 0.34;
-      i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
-    }
-    ctx.closePath();
-    ctx.lineTo(ux + Math.cos(Math.PI/8) * r2, ly);
-    ctx.fillRect(ux - r2, uy, r2 * 2, ly - uy);
-    ctx.fill();
-    ctx.fillStyle = T93[0];
-    ctx.beginPath();
-    for (let i = 0; i < 8; i++){
-      const th = Math.PI * 2 * i / 8 + Math.PI / 8;
-      const X = ux + Math.cos(th) * r2, Y = uy + Math.sin(th) * r2 * 0.34;
-      i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
-    }
-    ctx.closePath(); ctx.fill();
-  }
-  // bollards along the walk
-  for (let i = 0; i < 6; i++){
-    const bx2 = 57 + i * 3.7;
-    const [ux, uy] = m93(p, bx2, 3.6, 64), [, ly] = m93(p, bx2, 0, 64);
-    ctx.fillStyle = T93[1];
-    ctx.fillRect(ux - 1.2 * s, uy, 2.4 * s, ly - uy);
-    ctx.fillStyle = T93[0];
-    ctx.beginPath(); ctx.ellipse(ux, uy, 1.2 * s, 0.42 * s, 0, 0, 7); ctx.fill();
-  }
-  // young trees: slender, high-crowned, the year they went in
-  for (const [tx2, tz2, r2] of [[10, 62, 3.6], [24, 70, 3.2], [40, 62, 3.8], [52, 72, 3.0],
-                                [80, 72, 3.4], [92, 62, 3.6], [108, 70, 3.2], [124, 62, 3.4],
-                                [24, 38, 3.0], [66, 8, 3.4], [104, 38, 3.2], [6, 30, 3.4],
-                                [128, 30, 3.2], [46, 30, 2.8]]){
-    const [ux, uy] = m93(p, tx2, 0.4, tz2);
-    const [, cy2] = m93(p, tx2, r2 * 3.2, tz2);
-    ctx.strokeStyle = '#8b8880'; ctx.lineWidth = Math.max(0.7, 0.9 * s);
-    ctx.beginPath(); ctx.moveTo(ux, uy); ctx.lineTo(ux, cy2 + r2 * 0.6 * s); ctx.stroke();
-    ctx.fillStyle = '#a4b59c';
-    ctx.beginPath(); ctx.ellipse(ux, cy2, r2 * 0.92 * s, r2 * 1.05 * s, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = 'rgba(228,238,222,0.5)';
-    ctx.beginPath(); ctx.ellipse(ux - r2 * 0.28 * s, cy2 - r2 * 0.34 * s, r2 * 0.42 * s, r2 * 0.44 * s, 0, 0, 7); ctx.fill();
-  }
-  // the number, where it is on the building
-  const [nx2, ny2] = m93(p, 92, 21, 34);
-  ctx.fillStyle = 'rgba(70,68,64,0.85)';
-  ctx.font = eraFont(Math.max(5, 4.6 * s), '700', SEGMENTS[2].font);
-  ctx.textAlign = 'left';
-  ctx.fillText('4141', nx2, ny2);
-
-  pushHit(sx - XM * s * 0.5, foot - 46 * s, XM * s, 46 * s,
-          {type: 'focus', beat: nearestBeat(wx).i, anchor: wx});
+  /* РИСОВАННОГО МАКЕТА ЗДАНИЯ 4141 БОЛЬШЕ НЕТ (Эльдар, 18.11.2026): здесь было
+     128 строк — нарисованные плита, стена, крыша и вывеска «4141», запасные на
+     случай, если рендер ph_model93 не пришёл. Теперь без него зал не стартует
+     (boot), и фото-ветка выше — единственная. */
 }
 /* -------- THE FREIGHTER · 1989 to 1993, and back --------
    The case in the carton went somewhere. The moment the 1989 plinth clears the
@@ -15858,8 +15591,8 @@ const PROPS = [], SHEETS = [], FIGURES = [];
    placeholders when the page runs with ?skin=photo. Assets live in
    assets/photo/ (see SKIN_SPEC.md); each is a neutral-lit cutout that the
    engine lights and shades itself. Same slots, same physics, same audits. */
-// the photographed hall IS the hall now; ?skin=flat brings back the drawn one
-const PHOTO_SKIN = !/[?&]skin=flat/.test(location.search);
+// the photographed hall IS the hall — and the only one (18.11.2026: ?skin=flat, the drawn hall, is gone)
+const PHOTO_SKIN = true;
 
 /* SCENE PLATES — a fully generated frame of the hall dropped between beats.
    A plate is a matte painting: flat, one depth, so everything inside it moves
@@ -16643,7 +16376,7 @@ function applyPhotoTextures(){
      the hall. Cropped between two real plank joints a whole number of planks
      apart, so a repeat lands joint on joint; nothing is blended at the edges,
      because blending them is what put one joint on top of another. */
-  TEX.wall1_dark = PHOTO_TEX.wall_e1_1907 || TEX.wall1;
+  TEX.wall1_dark = PHOTO_TEX.wall_e1_1907;
   for (const [slot, key] of [['wall1','wall_e1'], ['wall2','wall_e2'], ['wall3','wall_e3'], ['wall4','wall_e4'], ['front4','front_e4'],
                              ['bench1','bench_top_e1'], ['front1','bench_face_e1']])
     if (PHOTO_TEX[key]) TEX[slot] = PHOTO_TEX[key];
@@ -16801,6 +16534,7 @@ async function loadPhotoSkin(){
     bench_b4_long:  'bench_b4_long.png',
     bench_b4_right: 'bench_b4_right.png',
   };
+  const lost = [];      // файлы, которых нет ни в webp, ни в оригинале
   await Promise.all(Object.entries(want).map(([key, file]) => new Promise(res => {
     const im = new Image();
     im.onload = () => {
@@ -16820,10 +16554,11 @@ async function loadPhotoSkin(){
     let tried = false;
     im.onerror = () => {
       if (!tried){ tried = true; im.src = vurl('assets/photo/' + file); return; }
-      console.error('photo skin: missing asset', file); res();
+      console.error('photo skin: missing asset', file); lost.push(file); res();
     };
     im.src = photoURL(file);
   })));
+  return lost;
 }
 function initDecor(){
   for (const kind of ['jar','plaster','toolbox','mailtray','box','papers','crtOff','mill','palmNear','jaw1','jaw2','gradcap'])
@@ -21569,55 +21304,11 @@ function drawQuotePlate(b, i){
     return;
   }
 
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.font = eraFont(fs, 'italic', seg.font);
-  let wTx = 0;
-  for (const ln of q.lines) wTx = Math.max(wTx, ctx.measureText(ln).width);
-  const wP = Math.max((q.w || 700) * kk * SS * 0.5, wTx + pad * 2);
-  const hP = pad * 1.5 + lead * q.lines.length + (q.by ? byFs * 2.1 : 0);
-  const x0 = cx - wP / 2, y0 = py(q.cy || 390, kk) - hP / 2;
-
-  // доска: тёплое дерево, светлее сверху — как падает свет в зале
-  const wood = ctx.createLinearGradient(0, y0, 0, y0 + hP);
-  wood.addColorStop(0,    'rgba(104,72,42,0.97)');
-  wood.addColorStop(0.55, 'rgba(78,52,30,0.97)');
-  wood.addColorStop(1,    'rgba(52,34,19,0.97)');
-  ctx.fillStyle = wood;
-  ctx.beginPath(); ctx.roundRect(x0, y0, wP, hP, 7 * kk * SS); ctx.fill();
-
-  // фаска: светлая линия сверху, тёмная снизу — доска читается объёмной
-  ctx.lineWidth = 1.4 * SS;
-  ctx.strokeStyle = 'rgba(176,138,92,0.55)';
-  ctx.beginPath(); ctx.moveTo(x0 + 6*kk*SS, y0 + 1); ctx.lineTo(x0 + wP - 6*kk*SS, y0 + 1); ctx.stroke();
-  ctx.strokeStyle = 'rgba(20,12,6,0.6)';
-  ctx.beginPath(); ctx.moveTo(x0 + 6*kk*SS, y0 + hP - 1); ctx.lineTo(x0 + wP - 6*kk*SS, y0 + hP - 1); ctx.stroke();
-
-  // золотой кант внутрь от края
-  const inset = 13 * kk * SS;
-  ctx.strokeStyle = 'rgba(198,160,74,0.5)';
-  ctx.lineWidth = 1.2 * SS;
-  ctx.strokeRect(x0 + inset, y0 + inset, wP - inset*2, hP - inset*2);
-
-  // золото: градиент сверху вниз, иначе буквы читаются плоской краской
-  const gold = ctx.createLinearGradient(0, y0 + pad, 0, y0 + hP - pad);
-  gold.addColorStop(0,   '#F0DCA0');
-  gold.addColorStop(0.5, '#D4AF52');
-  gold.addColorStop(1,   '#A8832C');
-  ctx.fillStyle = gold;
-  ctx.font = eraFont(fs, 'italic', seg.font);
-  let ty = y0 + pad * 1.05 + fs * 0.86;
-  for (const ln of q.lines){ ctx.fillText(ln, cx, ty); ty += lead; }
-
-  if (q.by){
-    ctx.font = eraFont(byFs, '', seg.font);
-    ctx.fillStyle = 'rgba(186,150,78,0.78)';
-    try { ctx.letterSpacing = `${byFs*0.09}px`; } catch(e){}
-    ctx.fillText('\u2014 ' + q.by, cx, ty + byFs * 0.5);
-    try { ctx.letterSpacing = '0px'; } catch(e){}
-  }
-  ctx.restore();
-  pushHit(x0, y0, wP, hP, {type:'study', beat: i});
+  /* РИСОВАННОЙ ТАБЛИЧКИ БОЛЬШЕ НЕТ (Эльдар, 18.11.2026: «там старая табличка
+     висит, она точно там ни к чему»). Здесь была нарисованная доска с золотыми
+     буквами — запасная на случай, когда quote_1976.jpg не пришёл. Теперь без
+     фото зал не стартует (boot), а эта функция вызывается ровно для одного
+     бита — 1976-го, у которого фото есть. */
 }
 
 function drawPlasmaPanel(b, t){
@@ -29660,11 +29351,6 @@ function loop(ts){
 }
 
 /* ---------------- BOOT ---------------- */
-/* Без этих фото зал не стартует (см. boot). Стены четырёх эпох, стена 1907-го,
-   верх и лицо прилавка эпохи 1 и шкаф 1907-го: всё, что иначе заменилось бы
-   рисованной комнатой. Файлы все в expo/assets/photo (проверено 18.11.2026). */
-const REQUIRED_SKIN = ['wall_e1', 'wall_e1_1907', 'wall_e2', 'wall_e3', 'wall_e4',
-                       'bench_top_e1', 'bench_face_e1', 'ph_cabinet'];
 function haltNoPictures(miss){
   console.error('hall halted: pictures missing', miss.join(', '));
   const cvEl = document.querySelector('canvas'); if (cvEl) cvEl.style.display = 'none';
@@ -29674,44 +29360,40 @@ function haltNoPictures(miss){
     + 'font-family:Georgia,serif;padding:0 8vw;z-index:99999';
   d.innerHTML = '<div style="font-size:26px;letter-spacing:.02em">The hall\u2019s pictures could not be loaded.</div>'
     + '<div style="font-size:15px;opacity:.7;line-height:1.5">Open expo.html from the Glidewell_Expo folder,<br>'
-    + 'with its assets folder next to it. Missing: ' + miss.length + ' of ' + REQUIRED_SKIN.length + ' main pictures.</div>';
+    + 'with its assets folder next to it. Pictures missing: ' + miss.length + '.</div>';
   document.body.appendChild(d);
 }
 async function boot(){
   resize();
   applyCut();          // before anything reads a beat position
-  await loadAssets();
+  const lostA = await loadAssets();
   loadPageFonts();                      // the reading pages' typefaces, in the background
-  if (PHOTO_SKIN) await loadPhotoSkin();
-  /* ЗАПАСНОГО ЗАЛА ЗРИТЕЛЮ НЕ ПОКАЗЫВАЕМ (Эльдар, 18.11.2026, новый тач-экран
-     на Android: файл открылся без папки assets, и вместо зала на экране
-     встала рисованная комната — тёмные доски, решётка ящиков 1907-го,
-     давно снятые таблички: «что за старьё, зритель должен видеть только
-     последнюю версию, как мы её запланировали»). Рисованные стены и столы
-     остались в коде с 21.08.2026 как страховка на случай, когда фото не
-     загрузилось, — но страховка, которая молча показывает прошлое, хуже
-     пустого экрана: её принимают за рабочую версию. Поэтому без главных
-     фото зал НЕ СТАРТУЕТ, а говорит, чего ему не хватает. ?skin=flat —
-     явный режим разработчика, его не трогаем. */
-  if (PHOTO_SKIN){
-    const miss = REQUIRED_SKIN.filter(k => !PHOTO_TEX[k]);
-    if (miss.length){ haltNoPictures(miss); return; }
-  }
+  const lostP = PHOTO_SKIN ? await loadPhotoSkin() : [];
+  /* ЗАПАСНОГО ЗАЛА ЗРИТЕЛЮ НЕ ПОКАЗЫВАЕМ — ЕСЛИ НЕ ПРИШЛА ХОТЬ ОДНА
+     КАРТИНКА, ЗАЛ НЕ СТАРТУЕТ (Эльдар, 18.11.2026, новый тач-экран на
+     Android: файл открылся без папки assets, и вместо зала встала рисованная
+     комната — тёмные доски, решётка ящиков, давно снятые таблички: «если не
+     подгрузилась картинка, то все плохо; мы так больше не работаем, только
+     если картинки подгружаются»). Рисованные запасные слои держались в коде
+     с 21.08.2026 как страховка, но молча показывали прошлое и выглядели как
+     рабочая версия. Полная сборка грузит все 56 + 147 картинок без единого
+     сбоя (проверено), поэтому правило строгое — без исключений.
+     Режима ?skin=flat (рисованный зал) больше нет. */
+  const miss = lostA.concat(lostP);
+  if (miss.length){ haltNoPictures(miss); return; }
   prewarmFinaleWall();   // маска стены финала — до первого кадра
   loadPortraits();     // the wall of voices — small, and never blocking the boot
   await loadPlates();
-  TEX.wall1 = woodTexture({plank:'v', plankSize:150, base:'#20150b', light:'#372712', w:1400, h:900});
-  TEX.bench1 = woodTexture({plank:'h', plankSize:110, base:'#3a2812', light:'#5a4020', w:1200, h:512});
-  TEX.front1 = woodTexture({plank:'v', plankSize:190, base:'#170f07', light:'#2a1c0c', w:1200, h:600});
-  TEX.wall2 = panelTexture({w:1400, h:900, base:'#5d5b47', groove:300});
-  TEX.bench2 = formicaTexture({w:1200, h:512});
-  TEX.front2 = panelTexture({w:1200, h:600, base:'#39392f', groove:220});
-  TEX.wall3 = panelTexture({w:1400, h:900, base:'#cfd2d3', groove:470});
-  TEX.bench3 = formicaTexture({w:1200, h:512, base:'#b6b2a8'});
-  TEX.front3 = panelTexture({w:1200, h:600, base:'#5a5d57', groove:240});
-  TEX.wall4 = panelTexture({w:1400, h:900, base:'#e0e3e6', groove:600});
-  TEX.bench4 = formicaTexture({w:1200, h:512, base:'#eef0f2'});
-  TEX.front4 = panelTexture({w:1200, h:600, base:'#c8ccd0', groove:420});
+  /* ПЯТЬ СЛОТОВ БЕЗ ФОТО — ПРОЗРАЧНЫЕ (Эльдар, 18.11.2026). Верх прилавка
+     эпох 2–4 и лицо прилавка эпох 2–3 никогда не имели фото-замены: их
+     закрывают фото-плиты bench_b1…b4. Проверено попиксельно в 20 точках ленты
+     (слоты залиты плоским цветом — на экране ни пятна, расходятся только
+     живые предметы: рука робота, частицы, строки табло). Прозрачные холсты
+     нужны лишь тому, что код прилавка читает TEX[seg.bench]/TEX[seg.front];
+     рисовать им нечего. */
+  const blankTex = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+  TEX.bench2 = blankTex(1200, 512); TEX.bench3 = blankTex(1200, 512); TEX.bench4 = blankTex(1200, 512);
+  TEX.front2 = blankTex(1200, 600); TEX.front3 = blankTex(1200, 600);
   if (PHOTO_SKIN) applyPhotoTextures();
   cacheWrap();
   SECTIONS.old = makeSection('old');
