@@ -3500,7 +3500,15 @@ if (!/[?&]noz=1/.test(location.search)) cv.style.transform = 'translateZ(0)';
 const ctx = cv.getContext('2d', {alpha:false});
 let W = 0, H = 0, SS = 1;  // canvas px, and scale ref->canvas
 let RQ = 1;   // adaptive render quality (drops on weak hardware)
-const RQ_PIN = /[?&]rq=1/.test(location.search);   // ?rq=1 pins full resolution — for the show machine and for screenshots
+const RQ_PIN = /[?&]rq=1/.test(location.search);
+/* ЛЁГКАЯ КАРТИНКА ДЛЯ СЛАБОГО ЭКРАНА (Эльдар, 18.11.2026, новый Android-тач
+   DSB-0230: на видео строка кадров показывает fps 20–22, кадр 31–131 мс, холст
+   1747×983 при @1.5; на Маке тот же кадр 1,5 мс). Холст там считается на
+   процессоре, и цена растёт с числом точек, поэтому рисуем в 0,62 размера, а
+   браузер растягивает. Включается в настройках, запоминается, и зал не
+   пытается сам поднять качество обратно (см. still в loop). */
+let RQ_LIGHT = false;
+const RQ_LIGHT_Q = 0.62;   // ?rq=1 pins full resolution — for the show machine and for screenshots
 function resize(){
   const dpr = Math.min(window.devicePixelRatio || 1, CFG.dprCap);
   W = cv.width = Math.round(innerWidth * dpr * RQ);
@@ -9535,6 +9543,8 @@ const SETTINGS_ITEMS = [
      «подтормаживает»). На панели нет консоли, а цифры нужны, чтобы понять, что
      тормозит, — fps, время кадра, размер холста. Не запоминается (own): после
      перезапуска строка пропадает, гость её не увидит. */
+  {key: 'lightpic', label: 'Light picture (slow screens)', get: () => RQ_LIGHT,
+   set: on => { RQ_LIGHT = on; RQ = on ? RQ_LIGHT_Q : 1; resize(); }},
   {key: 'fpshud', own: true, label: 'Show frame rate (service)', get: () => FPS_HUD,
    set: on => { FPS_HUD = on; }},
 ];
@@ -29333,7 +29343,7 @@ function loop(ts){
        below that the type goes to mush, and 0.72 bought a few frames nobody
        asked for. Recovery at 46, so it climbs back after one slow stretch. */
     const still = state.introHold || state.docOpen || state.study || state.person ||
-                  state.people || state.clip || RQ_PIN;
+                  state.people || state.clip || RQ_PIN || RQ_LIGHT;
     if (still){ /* hold the buffer where it is */ }
     else if (fps < 34 && RQ > 0.82){ RQ = Math.max(0.82, RQ - 0.09); resize(); qCool = 900; }
     else if (fps > 46 && RQ < 1){ RQ = Math.min(1, RQ + 0.09); resize(); qCool = 900; }
