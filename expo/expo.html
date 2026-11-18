@@ -29304,6 +29304,22 @@ const DEBUG = /debug/.test(location.search);
 let last = 0, fps = 60, qFrames = 0, qCool = 0;
 let FPS_HUD = /[?&]fps=1/.test(location.search);   // let: переключается из настроек («Show frame rate»)
 let HUD_WORST = 0, HUD_LONG = 0, HUD_T = 0;
+/* СТРОКА О ЖЕЛЕЗЕ ДЛЯ СТРОКИ КАДРОВ (Эльдар, 18.11.2026, Android-панель
+   DSB-0230: AIDA64 показал Adreno 610 и свободные 988 МБ из 4 ГБ — а тормозит
+   она так, будто холст считается на процессоре). Здесь видно, что именно
+   видит WebView: имя видеокарты (SwiftShader/llvmpipe значило бы программный
+   рендер), память страницы и число ядер. Считается один раз. */
+let HUD_HW = null;
+function hudHardware(){
+  if (HUD_HW) return HUD_HW;
+  let gpu = 'n/a';
+  try {
+    const gl = document.createElement('canvas').getContext('webgl');
+    if (gl){ const e = gl.getExtension('WEBGL_debug_renderer_info'); gpu = e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER); }
+  } catch(err){}
+  HUD_HW = {gpu: String(gpu).replace(/^ANGLE \(/, '').slice(0, 46), cores: navigator.hardwareConcurrency || '?', dev: navigator.deviceMemory || '?'};
+  return HUD_HW;
+}
 function drawFpsHud(dt, frameMs){
   HUD_WORST = Math.max(HUD_WORST * 0.985, frameMs);
   if (dt > 0.024) HUD_LONG++;
@@ -29316,8 +29332,10 @@ function drawFpsHud(dt, frameMs){
     `fps ${fps.toFixed(1)}   frame ${frameMs.toFixed(1)}ms   worst ${HUD_WORST.toFixed(1)}ms`,
     `dropped ${HUD_LONG}  in ${HUD_T.toFixed(0)}s    RQ ${RQ.toFixed(2)}`,
     `${W}\u00d7${H} @${(window.devicePixelRatio || 1).toFixed(1)}   SS ${SS.toFixed(2)}   vel ${cam.vel.toFixed(0)}`,
+    `gpu ${hudHardware().gpu}`,
+    `cores ${hudHardware().cores}   ram ${hudHardware().dev}GB   heap ${performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : '?'}MB`,
   ];
-  const wBox = 330 * SS, hBox = 18 * SS * rows.length + 14 * SS;
+  const wBox = 380 * SS, hBox = 18 * SS * rows.length + 14 * SS;
   ctx.fillStyle = 'rgba(4,6,9,0.72)';
   ctx.fillRect(12 * SS, H - hBox - 12 * SS, wBox, hBox);
   ctx.fillStyle = fps < 50 ? 'rgba(255,150,120,0.95)' : 'rgba(190,235,255,0.9)';
