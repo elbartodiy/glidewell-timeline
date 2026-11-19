@@ -5473,18 +5473,6 @@ function capRec(x){
     if (x > a && x < b2) return (a + b2) / 2;
   return null;
 }
-/* WHERE A COUNTER IS FLAT. A photographed run is an end and two doors, then the
-   doorless middle panel, then two doors and the other end. Eldar: if a line
-   needs room, take the part of the counter that is flat — where there are no
-   doors. So this returns that middle span, and a caption is clamped into it. */
-function benchFlat(tb){
-  const S2 = sheetOf(tb);
-  if (!S2) return {a0: tb.x0 + 350, a1: tb.x1 - 350};
-  const IH = S2.L.naturalHeight || S2.L.height;
-  const U = (1080 - CFG.benchY) / (IH - S2.sh.top);
-  return {a0: tb.x0 + (S2.L.naturalWidth || S2.L.width) * U,
-          a1: tb.x1 - (S2.R.naturalWidth || S2.R.width) * U};
-}
 /* the run a beat's line reads off — its own, or, when the beat stands in a gap
    between two counters, the nearest one. The tour reads left to right, so a
    counter ahead is preferred to one already passed. It is the same choice the
@@ -7583,7 +7571,6 @@ const FIN_X = SHIFT(29750) - 450;
    между плазмой и этим табло». Просвет между ними 217 единиц (правый край
    плазмы BOARD_X − 875, левый край табло BOARD_X − 658), на столько и сдвиг.
    Плазма привязана к BOARD_X, поэтому едет вместе с ним и просвет сохраняется. */
-const BOARD_X0 = SHIFT(29750) - 3400 + 580 + 217;   // своё место на стене, от стола не зависит: он подвинулся, табло нет
 /* С НОВОЙ СТЕНОЙ ФИНАЛА (20.10.2026) табло висит на ореховой панели, как на
    эскизе Эльдара: центр 39291, верх −20, и оно на 0,86 меньше (BOARD_S) — панель
    в этом месте шириной около 1230, полное табло (1316) из неё вылезало. Строки
@@ -9359,7 +9346,7 @@ function updateWhoosh(){
    ducks hard whenever a clip is playing and idles when nobody is watching.
    Browsers refuse sound before a gesture, so it waits for the first touch. */
 const MUSIC = {src: 'audio/mus_hall.m4a', vol: 0.30, duck: 0.18, cur: 0, el: null,
-               off: localStorage.getItem('glidewell.music') !== 'on'};   // silent by default: the film is the soundtrack now
+               off: (() => { try { return localStorage.getItem('glidewell.music') !== 'on'; } catch(e){ return true; } })()};   // silent by default: the film is the soundtrack now; storage blocked → still silent, hall still starts (Eldar's last look, 2026-11-19)
 /* КНОПКА-ДИНАМИК ГЛУШИТ ТОЛЬКО ФОНОВЫЙ ФИЛЬМ. Была общим выключателем: один
    тап — и молчали фильм, спикеры на страницах, музыка, звуки зала. Эльдар
    (14.10.2026): «должен выключаться звук фильма фонового… открыли страницу,
@@ -9367,7 +9354,7 @@ const MUSIC = {src: 'audio/mus_hall.m4a', vol: 0.30, duck: 0.18, cur: 0, el: nul
    пока не отключаем, не делаем такой возможности». SOUND.off теперь значит
    «фильм без звука» и больше нигде не читается: голоса, музыка (у неё своя
    кнопка) и звуки зала от него не зависят. */
-const SOUND = {off: localStorage.getItem('glidewell.sound') === 'off'};
+const SOUND = {off: (() => { try { return localStorage.getItem('glidewell.sound') === 'off'; } catch(e){ return false; } })()};
 /* ЗВУКОВЫЕ ЭФФЕКТЫ — свисты на подлёте к годам (WHOOSH) и разовые звуки зала
    (pingOnce: самолёт 1993-го и др.). Свой выключатель в настройках (Эльдар,
    26.10.2026: «сделай ещё одну кнопку внутри настроек — включить/выключить
@@ -9774,12 +9761,6 @@ function ruleStyle(){
   return {thumb: mixInk(A.thumb, Z.thumb, B.t), edge: mixInk(A.edge, Z.edge, B.t),
           glow: mixInk(A.glow, Z.glow, B.t), form: B.t < 0.5 ? A.form : Z.form,
           tick: B.t < 0.5 ? A.tick : Z.tick};
-}
-/* how far the rule has turned white at a point along it (0..1 of its length):
-   untouched through the first half of the hall, white by the end */
-function ruleWhite(u){
-  const t = Math.max(0, Math.min(1, (u - 0.45) / 0.55));
-  return t * t * (3 - 2 * t);
 }
 
 /* Each era holds the line with its own hardware, not merely its own colour:
@@ -12249,29 +12230,6 @@ function drawRec93(t){
    it full, the faces that turn away lose it in two steps. */
 function m93(p, mx, my, mz){
   return [p.ox + (mx - mz * 0.50) * p.s, p.oy - (my - mz * 0.34) * p.s];
-}
-function quad93(p, pts, tone){
-  ctx.fillStyle = tone;
-  ctx.beginPath();
-  pts.forEach((v, i) => {
-    const q = m93(p, v[0], v[1], v[2]);
-    i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]);
-  });
-  ctx.closePath(); ctx.fill();
-}
-const T93 = ['#f6f4ef', '#dedad2', '#b3aea6', '#8e8a83'];   // roof, front, side, shade
-function box93(p, x0, x1, y0, y1, z0, z1, bands){
-  quad93(p, [[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]], T93[0]);   // roof
-  quad93(p, [[x1,y1,z0],[x1,y1,z1],[x1,y0,z1],[x1,y0,z0]], T93[2]);   // the side that turns away
-  quad93(p, [[x0,y1,z1],[x1,y1,z1],[x1,y0,z1],[x0,y0,z1]], T93[1]);   // the face
-  if (!bands) return;
-  // three ribbon windows, recessed between the spandrels
-  const h = (y1 - y0) / 2;
-  for (let i = 0; i < 2; i++){
-    const a = y0 + i * h + h * 0.30, b2 = y0 + i * h + h * 0.78;
-    quad93(p, [[x0+3,b2,z1],[x1-3,b2,z1],[x1-3,a,z1],[x0+3,a,z1]], T93[3]);
-    quad93(p, [[x1,b2,z0+3],[x1,b2,z1-3],[x1,a,z1-3],[x1,a,z0+3]], '#6f6c66');
-  }
 }
 
 /* The stand. A soft white slab with a fat rounded edge — the way a model of a
@@ -22006,55 +21964,6 @@ function makeImageBanner(name){
   g.drawImage(im.el, P, P, im.w, im.h); g.restore();
   g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 2; g.strokeRect(P + 1, P + 1, im.w - 2, im.h - 2);
   return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}, pad: P};
-}
-function makeBannerVert(title, sub, cta, imgName){
-  const c = document.createElement('canvas'); c.width = 560; c.height = 1000;
-  const g = c.getContext('2d');
-  g.save();
-  g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 22; g.shadowOffsetY = 10;
-  const bg = g.createLinearGradient(0, 0, 0, 1000);
-  bg.addColorStop(0, '#fdfefe'); bg.addColorStop(1, '#e8edf0');
-  g.fillStyle = bg;
-  g.fillRect(12, 12, 536, 976);
-  g.restore();
-  g.strokeStyle = 'rgba(90,200,250,0.65)'; g.lineWidth = 3;
-  g.strokeRect(12, 12, 536, 976);
-  if (IMGS.glidewelllogo){
-    const L = IMGS.glidewelllogo; g.drawImage(L.el, 40, 42, 40 * L.w / L.h, 40);
-  } else {
-    g.fillStyle = '#d0342c'; g.fillRect(40, 42, 40, 40);
-    g.fillStyle = '#fff'; g.textAlign = 'center';
-    g.font = '700 27px "Helvetica Neue", Arial, sans-serif';
-    g.fillText('G', 60, 71);
-    g.textAlign = 'left';
-    g.fillStyle = '#4a5058';
-    g.font = '600 24px "Helvetica Neue", Arial, sans-serif';
-    g.fillText('Glidewell', 92, 70);
-  }
-  g.textAlign = 'left';
-  g.fillStyle = '#23282e';
-  g.font = '800 64px "Helvetica Neue", Arial, sans-serif';
-  title.split('\n').forEach((ln, i) => g.fillText(ln, 40, 160 + i*70));
-  g.fillStyle = '#5a616a';
-  g.font = '400 27px "Helvetica Neue", Arial, sans-serif';
-  sub.split('\n').forEach((ln, i) => g.fillText(ln, 40, 210 + i*36));
-  if (imgName && IMGS[imgName]){
-    const im = IMGS[imgName];
-    const dw = 480, dh = 560;
-    const s = Math.max(dw/im.w, dh/im.h);
-    g.save();
-    g.beginPath(); g.roundRect(40, 300, dw, dh, 10); g.clip();
-    g.drawImage(im.el, 40 + dw/2 - im.w*s/2, 300 + dh/2 - im.h*s/2, im.w*s, im.h*s);
-    g.restore();
-    g.strokeStyle = 'rgba(0,0,0,0.15)'; g.lineWidth = 1.5;
-    g.strokeRect(40, 300, dw, dh);
-  }
-  g.fillStyle = '#12b7e2';
-  g.beginPath(); g.roundRect(40, 896, 20 + cta.length*15, 56, 28); g.fill();
-  g.fillStyle = '#ffffff';
-  g.font = '700 27px "Helvetica Neue", Arial, sans-serif';
-  g.fillText(cta, 56, 933);
-  return {c, w: c.width, h: c.height, inner: {w: c.width, h: c.height}};
 }
 function initBanners(){
   /* A CARD HANGS WITH ITS YEAR. They were written at fixed coordinates, and the
