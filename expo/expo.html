@@ -1780,7 +1780,7 @@ const FILM_STOP = {on: !/[?&]filmstop=0/.test(location.search),
                    dwell: 3.0, in: 900, out: 1100,
                    zBy: {crt70: 0, vwall: 150}};
 /* фильм «включён» — со звуком; подгрузка (readyState < 2) его не выключает */
-const filmEngaged = () => { const v = WELCOME_TV.v; return !!(v && !v.muted); };
+const filmEngaged = () => { const v = WELCOME_TV.v; return !!(v && (!v.muted || WELCOME_TV.auto)); };   // auto: идёт сама, без звука (браузер не дал звук без касания)
 function filmStops(){
   if (!FILM_STOP.on || !filmEngaged()) return [];
   return FILM_RELAYS.filter(r => !ATTRACT_STOPS.some(sx => Math.abs(sx - r.x) < 200));
@@ -6322,7 +6322,7 @@ function startFilm(){
   const T = WELCOME_TV, v = T.v;
   if (!v || !v.muted) return;
   try { v.currentTime = 0; } catch(e){}
-  v.muted = false; T.userPaused = false;
+  v.muted = false; T.userPaused = false; T.auto = false;
   v.play().catch(() => {
     /* the wheel is not a gesture the browser honours for sound: stay on the
        poster, and the first real touch anywhere starts the show properly */
@@ -6333,6 +6333,39 @@ function startFilm(){
       const go = () => { window.removeEventListener('pointerdown', go); startFilm(); };
       window.addEventListener('pointerdown', go);
     }
+  });
+}
+/* ФИЛЬМ — ЧАСТЬ ЗАГРУЗКИ ЗАЛА (Эльдар, 19.11.2026: «видео должно идти всё
+   время»; на новой панели ТВ и проектор стояли тёмными). Как картинки: пока
+   у фильма нет первого кадра, зал не открывается, а экран называет файл. Файл
+   лежит рядом, но читается через сервер и декодер: сервер без Range, обрыв
+   копии, нехватка памяти на слабой панели — любая из этих бед раньше молча
+   оставляла экраны чёрными. 25 секунд на первый кадр — с запасом для флешки. */
+function filmArrived(ms){
+  const v = WELCOME_TV.v, t0 = performance.now();
+  return new Promise(res => {
+    const ok = () => v && v.readyState >= 2 && v.videoWidth > 0;
+    if (ok()) return res(true);
+    const iv = setInterval(() => {
+      if (ok()){ clearInterval(iv); res(true); }
+      else if ((v && v.error) || performance.now() - t0 > (ms || 25000)){ clearInterval(iv); res(false); }
+    }, 120);
+  });
+}
+/* ФИЛЬМ ИДЁТ САМ, КАК ЗАЛ ОТКРЫЛСЯ, СО ЗВУКОМ (Эльдар, 19.11.2026: «ничего
+   страшного, если звук на автоплее, так и надо»). В приложении панели автоплей
+   со звуком разрешён. Если браузер звук без касания не даёт (Chrome на Маке),
+   фильм идёт без звука — картинка не останавливается никогда, — а первое
+   касание перезапускает его с 0:00 уже со звуком (startFilm, правило 03.09).
+   ?autofilm=0 — только для проверок, где нужен неподвижный кадр. */
+function autoStartFilm(){
+  const T = WELCOME_TV, v = T.v;
+  if (!v || !v.muted || /[?&]autofilm=0/.test(location.search)) return;
+  try { v.currentTime = 0; } catch(e){}
+  v.muted = false; T.userPaused = false; T.auto = false;
+  v.play().catch(() => {
+    v.muted = true; T.auto = true;
+    v.play().catch(() => {});
   });
 }
 /* One film, many screens. The film is engaged once its sound is on; from then
@@ -6366,7 +6399,7 @@ function updateFilm(){
      остаётся в ролике навсегда. */
   const busy = state.clip || state.person || state.study || state.people || state.docOpen ||
                state.camrec || voice;
-  const engaged = !v.muted;                 // sound on = a real showing
+  const engaged = !v.muted || !!T.auto;     // sound on, or running on its own without sound = a real showing
   const wanted = engaged && !T.userPaused && !busy;
   // the poster holds its frame: a not-yet-started set snaps back to the
   // instruments if anything (a lost seek, a stray reset) knocked it off
@@ -6374,6 +6407,25 @@ function updateFilm(){
       Math.abs(v.currentTime - (T.posterT || 0)) > 0.4){
     try { v.currentTime = T.posterT || 0; } catch(e){}
   }
+  /* СТОРОЖ (Эльдар, 19.11.2026: «видео должно идти всё время»). Ролик должен
+     идти, а его время стоит больше шести секунд — декодер потерян или файл
+     перестал читаться: грузим его заново и возвращаемся на то же место. Пока
+     идёт возврат, второй раз не пытаемся. Пауза по странице или по касанию —
+     не поломка, там сторож спит. */
+  if (wanted && !v.paused && !T._recovering){
+    const nowMs = performance.now();
+    if (v.currentTime !== T._wt || !T._wAt){ T._wt = v.currentTime; T._wAt = nowMs; }
+    else if (nowMs - T._wAt > 6000){
+      T._recovering = true; const at = v.currentTime;
+      console.warn('film stalled at', at.toFixed(1), '- reloading');
+      v.addEventListener('loadeddata', () => {
+        try { v.currentTime = at; } catch(e){}
+        v.play().catch(() => {}); T._recovering = false; T._wAt = performance.now();
+      }, {once: true});
+      v.load();
+      setTimeout(() => { T._recovering = false; T._wAt = performance.now(); }, 15000);
+    }
+  } else T._wAt = performance.now();
   /* the film never snaps: it bows out over a second — volume slides down,
      THEN it pauses, holding its place — and slides back up when it returns */
   const dt = state.dt || 0.016;
@@ -6645,7 +6697,7 @@ function drawFilmPanel(x, wWorld, welcome){
      перематывается к постеру. */
   const posterIm = IMGS.filmposter;
   const vidReady = v && v.videoWidth && v.readyState >= 2 &&
-                   !(v.muted && (v.seeking || Math.abs(v.currentTime - (T.posterT || 0)) > 0.4));
+                   !(v.muted && !T.auto && (v.seeking || Math.abs(v.currentTime - (T.posterT || 0)) > 0.4));
   if (vidReady){
     const s = Math.max(sw / v.videoWidth, sh / v.videoHeight);
     ctx.drawImage(v, sx - v.videoWidth*s/2, vy + sh/2 - v.videoHeight*s/2,
@@ -29433,15 +29485,15 @@ function loop(ts){
 
 /* ---------------- BOOT ---------------- */
 function haltNoPictures(miss){
-  console.error('hall halted: pictures missing', miss.join(', '));
+  console.error('hall halted: files missing', miss.join(', '));
   const cvEl = document.querySelector('canvas'); if (cvEl) cvEl.style.display = 'none';
   const d = document.createElement('div');
   d.style.cssText = 'position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;'
     + 'justify-content:center;gap:14px;background:#0d0906;color:#cdb98f;text-align:center;'
     + 'font-family:Georgia,serif;padding:0 8vw;z-index:99999';
-  d.innerHTML = '<div style="font-size:26px;letter-spacing:.02em">The hall\u2019s pictures could not be loaded.</div>'
+  d.innerHTML = '<div style="font-size:26px;letter-spacing:.02em">The hall\u2019s files could not be loaded.</div>'
     + '<div style="font-size:15px;opacity:.7;line-height:1.5">Open expo.html from the Glidewell_Expo folder,<br>'
-    + 'with its assets folder next to it. Pictures missing: ' + miss.length + '.</div>';
+    + 'with its assets and media folders next to it. Files missing: ' + miss.length + '.</div>';
   document.body.appendChild(d);
 }
 async function boot(){
@@ -29485,6 +29537,7 @@ async function boot(){
   initDeskScreens();
   initTodayTV();
   initWelcomeTV();
+  if (!(await filmArrived())){ haltNoPictures(['expo/media/' + WELCOME_TV.src.replace('media/','')]); return; }
   // reseat the film relays once everything (skin, props) has settled
   setTimeout(initFilmRelays, 2500);
   initMusic();
@@ -30085,6 +30138,7 @@ async function boot(){
     } catch (e){ console.error('PLAN_JSON failed', e); }
   }
   requestAnimationFrame(loop);
+  autoStartFilm();
   /* AND NOTHING HEAVY IS LEFT TO BE BUILT ON ARRIVAL. Several of the bays put
      their sprite, mesh or mask together the first time they are drawn, which
      means the cost lands on the frame you walk up to them — the worst possible
