@@ -72,6 +72,26 @@
   .toast.on{opacity:1}
   .nav-right a.ghost{color:var(--muted);text-decoration:none;font-size:14px;padding:7px 10px}
   .nav-right a.ghost:hover{color:#fff}
+  /* приложение: библиотека видео и встроенный плеер (только когда страница открыта внутри Glidewell Finder) */
+  .nav-right button.ghost{font-size:14px;padding:7px 12px}
+  .lib .lrow{display:grid;grid-template-columns:1fr auto;gap:4px 14px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+  .lib .lrow .n{font-size:14px;color:var(--ink);word-break:break-all}
+  .lib .lrow .p{grid-column:1;font:400 11px var(--mono);color:var(--muted-dim);word-break:break-all}
+  .lib .lrow .st{grid-row:1/3;grid-column:2;display:flex;gap:8px;align-items:center;font:400 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .lib .lrow .st.err,.lib .lrow .st.miss{color:#ff8a8a}
+  .lib .lrow .st.ok{color:var(--muted-dim)}
+  .lib .lrow .bar{grid-column:1;height:3px;border-radius:2px;background:var(--line);overflow:hidden}
+  .lib .lrow .bar i{display:block;height:100%;background:var(--red)}
+  .lib .lrow button{font-size:12px;padding:3px 10px}
+  .lib .list{max-height:420px;overflow:auto;margin-top:12px}
+  .lib .sum{font:400 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted-dim);margin-top:8px}
+  .lib .sum b{color:var(--ink);font-weight:500}
+  .fplayer{position:fixed;inset:0;z-index:110;background:rgba(5,5,9,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+  .fplayer video{max-width:min(1200px,100%);max-height:calc(100vh - 140px);background:#000;border-radius:10px}
+  .fplayer .pbar{display:flex;gap:10px;align-items:center;margin-top:14px;width:min(1200px,100%)}
+  .fplayer .pbar .t{flex:1;font:400 12px var(--mono);color:var(--muted);word-break:break-all}
+  .fplayer .pbar button{font-size:13px;padding:6px 14px}
+  .fplayer[hidden],.lib[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -83,6 +103,7 @@
   <span class="badge" id="badge" hidden></span>
   <div class="nav-right">
     <span class="timer" id="timer"></span>
+    <button class="ghost" id="libBtn" hidden data-t="Video library">Video library</button>
     <a class="ghost" id="back" href="https://elbartodiy.github.io/glidewell-timeline/doc/index.html" data-t="Timeline">Timeline</a>
     <button class="lang" id="lang"><span data-l="en">EN</span><span data-l="ru">RU</span></button>
   </div>
@@ -94,6 +115,8 @@
     <h1><span data-t="Find any moment">Find any moment</span> <span class="accent" data-t="in the archive.">in the archive.</span></h1>
     <p class="sub" data-t="sub">Interviews and the company archive in one search, by words and by meaning. Every result gives the file and the timecode.</p>
   </section>
+
+  <div id="lib" class="card lib" hidden></div>
 
   <div id="loader" class="card load" hidden>
     <h3 data-t="Load the index folder">Load the index folder</h3>
@@ -122,6 +145,8 @@
 
 <footer><div class="madeby"><span class="by">Made with</span><img src="filmdesk/aimos-logo.png" alt="AIMOS"></div></footer>
 <div class="toast" id="toast"></div>
+<div class="fplayer" id="player" hidden><video id="pv" controls preload="metadata"></video>
+  <div class="pbar"><span class="t" id="pt"></span><button class="ghost" id="psys" data-t="Open in the system player">Open in the system player</button><button class="ghost" id="pfold" data-t="Open folder">Open folder</button><button class="act ready" id="pclose" data-t="Close">Close</button></div></div>
 
 <script src="finder_rank.js"></script>
 <script>
@@ -144,7 +169,8 @@
   // ---- язык EN/RU (Film Desk: каждый экран работает на двух языках) ----
   function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
   var footFn=function(){}, LANG=ls('finder_lang')==='ru'?'ru':'en', showRu=ls('finder_ru')==='1', showMeaning=ls('finder_meaning')!=='0';
-  var EN={sub:'Interviews and the company archive in one search, by words and by meaning. Every result gives the file and the timecode.',
+  var EN={libDo:'Add a folder with videos: every folder inside it too. The app analyses speech, shots and text on screen and keeps everything in the work folder, never next to the videos.',
+    sub:'Interviews and the company archive in one search, by words and by meaning. Every result gives the file and the timecode.',
     loadDo:'Choose the index folder on the drive. Transcripts and thumbnails live there, not on this site.',
     loadHint:'This browser remembers it. When the index is updated, load the folder again.',
     placeholder:'Words or a phrase in English, e.g. digital impression'};
@@ -175,7 +201,17 @@
     'Loading the index …':'Загружаю индекс …','Reading thumbnails …':'Читаю миниатюры …','Saving':'Сохраняю',
     'Downloading the meaning model (once) …':'Скачиваю модель смысла (один раз) …','Loading the meaning model …':'Загружаю модель смысла …',
     'Preparing meaning search (once) …':'Готовлю поиск по смыслу (один раз) …','Loading the meaning model (first time only) …':'Загружаю модель смысла (только в первый раз) …',
-    'Meaning search unavailable':'Поиск по смыслу недоступен','searching by words.':'ищу по словам.'};
+    'Meaning search unavailable':'Поиск по смыслу недоступен','searching by words.':'ищу по словам.',
+    'Video library':'Библиотека видео','Work folder:':'Рабочая папка:','Add a folder':'Добавить папку','Add files':'Добавить файлы',
+    'Find moved files':'Найти перемещённые файлы','Pause analysis':'Пауза анализа','Resume analysis':'Продолжить анализ','Change work folder':'Сменить рабочую папку',
+    'videos':'видео','analysed':'разобрано','in queue':'в очереди','not found':'не найдено','errors':'ошибок',
+    'queued':'в очереди','done':'готово','error':'ошибка','missing':'не найден','Retry':'Ещё раз','Remove':'Убрать',
+    'probe':'проверка','speech':'речь','shots':'кадры','text':'смысл','fragments':'фрагментов',
+    'libDo':'Добавь папку с видео: все вложенные папки тоже. Приложение разберёт речь, кадры и текст в кадре и сохранит всё в рабочую папку, рядом с видео ничего не пишет.',
+    'Show the folder where the files are now':'Покажи папку, где файлы лежат теперь',
+    'found':'найдено','still missing':'всё ещё не найдено','added':'добавлено','already in the library':'уже в библиотеке','moved, found again':'перемещены, найдены',
+    'Open in the system player':'Открыть в системном плеере','Close':'Закрыть','This format does not play here, opening the system player':'Этот формат здесь не играет, открываю системный плеер',
+    'File not found. Video library → Find moved files':'Файл не найден. Библиотека видео → Найти перемещённые файлы'};
   function T(k){return LANG==='ru'?(RU[k]||EN[k]||k):(EN[k]||k)}
   function applyLang(){
     document.documentElement.lang=LANG;
@@ -195,7 +231,8 @@
   applyLang();paintRu();
   // Сервер поиска на Mac (Documents/_scripts/finder_server.mjs) работает, только если страница открыта С НЕГО
   // (http://127.0.0.1:8765). Публичный сайт к компьютеру не обращается — решение Эльдара 15.10.2026.
-  var LOCAL=location.hostname==='127.0.0.1'&&location.port==='8765';
+  var APP=window.finderApp||null;   // внутри приложения Glidewell Finder (preload.cjs)
+  var LOCAL=!!APP||(location.hostname==='127.0.0.1'&&location.port==='8765');
   var SERVER=LOCAL?location.origin:'', serverMode=false, SV=null, VIS=[];
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
   function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(function(){e.classList.remove('on')},1600)}
@@ -313,11 +350,27 @@
 
   // Где лежат файлы. Ссылки открывает помощник «Glidewell Opener» (~/Applications) по схеме glidewell-finder://
   var ROOT=(function(){try{return localStorage.getItem('finder_root')}catch(e){return null}})()||'/Volumes/Extreme SSD/Documentary Glidewell/';
-  function abs(r,f){return ROOT+(r.base?r.base+'/':'')+f}
+  function abs(r,f){return r.vid?f:ROOT+(r.base?r.base+'/':'')+f}   // видео из библиотеки: сервер отдаёт текущий путь
   function link(a,path,t){return 'glidewell-finder://open?a='+a+'&t='+Math.round(t||0)+'&f='+encodeURIComponent(path)}
   function fileLine(r,x,many){var p=abs(r,x.file),t=tcs(x.tc);
-    return esc(x.file)+'<span class="tcode">'+esc(x.tc)+'</span>'+(many?'<a class="go" data-open="play" data-f="'+esc(p)+'" data-t="'+t+'" href="'+link('play',p,t)+'" title="'+esc(T('Open in QuickTime at')+' '+x.tc)+'">▶</a>':'')}
-  function openVia(a,f,t){if(serverMode){fetch(SERVER+'/api/open?a='+a+'&t='+Math.round(t||0)+'&f='+encodeURIComponent(f)).then(function(r){return r.json()}).then(function(d){if(d.result!=='ok')toast(T('File not found — is the drive connected?'))}).catch(function(){location.href=link(a,f,t)})}else location.href=link(a,f,t)}
+    return esc(x.file)+'<span class="tcode">'+esc(x.tc)+'</span>'+(many?'<a class="go" data-open="play" data-f="'+esc(p)+'" data-v="'+esc(r.vid||'')+'" data-t="'+t+'" href="'+link('play',p,t)+'" title="'+esc(T('Open in QuickTime at')+' '+x.tc)+'">▶</a>':'')}
+  function openVia(a,f,t,v){
+    if(APP&&a==='play'){player(f,t,v);return}
+    if(serverMode){fetch(SERVER+'/api/open?a='+a+'&t='+Math.round(t||0)+'&f='+encodeURIComponent(f)+(v?'&v='+encodeURIComponent(v):'')).then(function(r){return r.json()}).then(function(d){if(d.result!=='ok')toast(T(APP?'File not found. Video library → Find moved files':'File not found — is the drive connected?'))}).catch(function(){location.href=link(a,f,t)})}else location.href=link(a,f,t)}
+  // встроенный плеер: сразу на таймкоде; формат, который Chromium не играет, уходит в системный плеер
+  var PL=null;
+  function player(f,t,v){
+    PL={f:f,t:t,v:v};var pv=$('pv');$('player').hidden=false;$('pt').textContent=f.split(/[\\/]/).pop()+'  '+hmsj(t||0);
+    pv.onerror=function(){if(!PL)return;toast(T('This format does not play here, opening the system player'));var p=PL;closePlayer();openVia('sys',p.f,p.t,p.v)};
+    pv.onloadedmetadata=function(){try{pv.currentTime=t||0}catch(e){}pv.play().catch(function(){})};
+    pv.src=SERVER+'/media?'+(v?'v='+encodeURIComponent(v):'f='+encodeURIComponent(f));
+  }
+  function closePlayer(){PL=null;var pv=$('pv');pv.pause();pv.removeAttribute('src');pv.load();$('player').hidden=true}
+  $('pclose').onclick=closePlayer;
+  $('player').onclick=function(e){if(e.target===$('player'))closePlayer()};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('player').hidden)closePlayer()});
+  $('psys').onclick=function(){var p=PL;if(!p)return;var ct=$('pv').currentTime||p.t;closePlayer();openVia('sys',p.f,ct,p.v)};
+  $('pfold').onclick=function(){var p=PL;if(p)openVia('reveal',p.f,0,p.v)};
   function tcs(t){var p=String(t).replace('≈','').split(':').map(Number);return p[0]*3600+p[1]*60+(p[2]||0)}
   function nShots(r){return r.nshots||(STRIPS[r.aid]&&STRIPS[r.aid].shots.length)||0}
   function card(r,ts,sem){
@@ -342,8 +395,8 @@
     if(arch&&nShots(r))bar+='<button class="ghost" data-act="strip">'+T('All shots')+' ('+nShots(r)+')</button>';
     bar+='<button class="ghost" data-act="copy">'+T('Copy')+'</button><span class="sp"></span>';
     if(mf){var mp=abs(r,mf.file),mt=tcs(mf.tc);
-      bar+='<a class="btn go" data-open="play" data-f="'+esc(mp)+'" data-t="'+mt+'" href="'+link('play',mp,mt)+'" title="'+esc(T('Open in QuickTime at')+' '+mf.tc)+'">▶ '+T('Play')+'</a>'+
-           '<a class="btn go" data-open="reveal" data-f="'+esc(mp)+'" data-t="0" href="'+link('reveal',mp,0)+'" title="'+T('Show in Finder')+'">'+T('Open folder')+'</a>'}
+      bar+='<a class="btn go" data-open="play" data-f="'+esc(mp)+'" data-v="'+esc(r.vid||'')+'" data-t="'+mt+'" href="'+link('play',mp,mt)+'" title="'+esc(T('Open in QuickTime at')+' '+mf.tc)+'">▶ '+T('Play')+'</a>'+
+           '<a class="btn go" data-open="reveal" data-f="'+esc(mp)+'" data-v="'+esc(r.vid||'')+'" data-t="0" href="'+link('reveal',mp,0)+'" title="'+T('Show in Finder')+'">'+T('Open folder')+'</a>'}
     return '<div class="card'+(th?' has-th':'')+'" style="--ac:var('+ac+')" data-i="'+r._i+'">'+th+body+'<div class="actbar">'+bar+'</div></div>';
   }
   function hmsj(x){x=Math.round(x);return [x/3600|0,(x/60|0)%60,x%60].map(function(n){return (n<10?'0':'')+n}).join(':')}
@@ -439,10 +492,10 @@
   $('q').addEventListener('keydown',function(e){if(e.key==='Enter'){clearTimeout(tmr);run()}});
 
   $('res').onclick=function(e){
-    var vs=e.target.closest('.vis .s');if(vs){var v=VIS[+vs.getAttribute('data-v')];openVia(e.altKey?'reveal':'play',ROOT+v.base+'/'+v.file,v.t0);return}
+    var vs=e.target.closest('.vis .s');if(vs){var v=VIS[+vs.getAttribute('data-v')];openVia(e.altKey?'reveal':'play',v.vid?v.file:ROOT+v.base+'/'+v.file,v.t0,v.vid);return}
     var sh=e.target.closest('.strip .s');
-    if(sh){var cr=rows[+sh.closest('.card').getAttribute('data-i')];openVia('play',abs(cr,cr.cams[0].file),tcs(sh.getAttribute('data-tc')));return}
-    var go=e.target.closest('a.go[data-open]');if(go){e.preventDefault();openVia(go.getAttribute('data-open'),go.getAttribute('data-f'),+go.getAttribute('data-t'));return}
+    if(sh){var cr=rows[+sh.closest('.card').getAttribute('data-i')];openVia('play',abs(cr,cr.cams[0].file),tcs(sh.getAttribute('data-tc')),cr.vid);return}
+    var go=e.target.closest('a.go[data-open]');if(go){e.preventDefault();openVia(go.getAttribute('data-open'),go.getAttribute('data-f'),+go.getAttribute('data-t'),go.getAttribute('data-v')||'');return}
     var b=e.target.closest('[data-act]');if(!b)return;var c=b.closest('.card'),r=rows[+c.getAttribute('data-i')],a=b.getAttribute('data-act');
     if(a==='full'){c.querySelector('.q').innerHTML=highlight(r.text,lastQ);b.remove()}
     if(a==='strip'&&serverMode&&!STRIPS[r.aid]){fetch(SERVER+'/api/strip?aid='+encodeURIComponent(r.aid)).then(function(x){return x.json()}).then(function(S){STRIPS[r.aid]=S;b.click()});return}
@@ -458,9 +511,43 @@
   try{var hp=new URLSearchParams(location.hash.slice(1));if(hp.get('q'))$('q').value=hp.get('q');if(hp.get('p'))person=hp.get('p')}catch(e){}
   function startServer(st){
     serverMode=true;SV=st;ROOT=st.root||ROOT;showApp();
-    footFn=function(){$('foot').textContent=T('Search server on this Mac')+' · '+st.rows+' '+T('segments')};footFn();
+    footFn=function(){$('foot').textContent=(APP?'':T('Search server on this Mac')+' · ')+st.rows+' '+T('segments')};footFn();
     chips();run();
+    if(APP){$('libBtn').hidden=false;if(!st.rows)libOpen(true);else libPoll()}
   }
+  // ---- библиотека видео (только в приложении): добавить папки/файлы, ход анализа, найти перемещённые ----
+  var LIBS=null,libT=null,libShown=false,libDone=-1;
+  function libOpen(on){libShown=on;$('lib').hidden=!on;if(on)libPoll()}
+  $('libBtn').onclick=function(){libOpen(!libShown)};
+  function post(a,b){return fetch(SERVER+'/api/library/'+a,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})}).then(function(x){return x.json()})}
+  function libPoll(){clearTimeout(libT);fetch(SERVER+'/api/library').then(function(x){return x.json()}).then(function(d){
+      LIBS=d;if(libShown)libRender();
+      if(libDone>=0&&d.counts.done!==libDone)fetch(SERVER+'/api/status').then(function(x){return x.json()}).then(function(st){SV=st;chips();footFn()});
+      libDone=d.counts.done;
+      libT=setTimeout(libPoll,(d.counts.working||d.counts.queued)?2000:(libShown?5000:15000));
+    }).catch(function(){libT=setTimeout(libPoll,5000)})}
+  function libRender(){
+    var d=LIBS,c=d.counts,h='<h3>'+T('Video library')+'</h3><div class="do">'+T('libDo')+'</div>'+
+      '<p class="hint">'+T('Work folder:')+' <code>'+esc(d.lib)+'</code> <button class="ghost" data-l="lib">'+T('Change work folder')+'</button></p>'+
+      '<div class="sum"><b>'+c.all+'</b> '+T('videos')+'   <b>'+c.done+'</b> '+T('analysed')+'   <b>'+(c.queued+c.working)+'</b> '+T('in queue')+(c.missing?'   <b>'+c.missing+'</b> '+T('not found'):'')+(c.error?'   <b>'+c.error+'</b> '+T('errors'):'')+'</div><div class="list">';
+    d.videos.slice(0,300).forEach(function(v){
+      var st=v.missing?'<span class="st miss">'+T('missing')+'</span>':v.status==='working'?'<span class="st">'+T(v.stage||'probe')+' '+v.pct+'%</span>':v.status==='error'?'<span class="st err" title="'+esc(v.err)+'">'+T('error')+' <button class="ghost" data-l="retry" data-id="'+v.id+'">'+T('Retry')+'</button></span>':
+        '<span class="st'+(v.status==='done'?' ok':'')+'">'+(v.status==='done'?v.nseg+' '+T('fragments'):T(v.status))+(v.status!=='working'?' <button class="ghost" data-l="remove" data-id="'+v.id+'" title="'+T('Remove')+'">×</button>':'')+'</span>';
+      h+='<div class="lrow"><span class="n">'+esc(v.name)+'</span>'+st+'<span class="p">'+esc(v.path)+'</span>'+(v.status==='working'?'<div class="bar"><i style="width:'+v.pct+'%"></i></div>':'')+'</div>'});
+    h+='</div><div class="actbar"><button class="ghost" data-l="pause">'+T(d.paused?'Resume analysis':'Pause analysis')+'</button>'+(c.missing?'<button class="ghost" data-l="relink">'+T('Find moved files')+'</button>':'')+
+      '<span class="sp" style="flex:1"></span><button class="ghost" data-l="files">'+T('Add files')+'</button><button class="act ready" data-l="folder">'+T('Add a folder')+'</button></div>';
+    $('lib').innerHTML=h;
+  }
+  $('lib').onclick=function(e){var b=e.target.closest('[data-l]');if(!b)return;var a=b.getAttribute('data-l'),id=b.getAttribute('data-id');
+    var added=function(r){toast(T('added')+' '+r.added+(r.known?', '+T('already in the library')+' '+r.known:'')+(r.moved?', '+T('moved, found again')+' '+r.moved:''));libPoll()};
+    if(a==='folder')APP.pickFolders().then(function(p){if(p&&p.length)post('add',{paths:p}).then(added)});
+    if(a==='files')APP.pickFiles().then(function(p){if(p&&p.length)post('add',{paths:p}).then(added)});
+    if(a==='relink')APP.pickFolders(T('Show the folder where the files are now')).then(function(p){if(p&&p.length)post('relink',{folder:p[0]}).then(function(r){toast(T('found')+' '+r.found+(r.missing?', '+T('still missing')+' '+r.missing:''));libPoll()})});
+    if(a==='pause')post('pause',{on:!LIBS.paused}).then(libPoll);
+    if(a==='retry')post('retry',{id:id}).then(libPoll);
+    if(a==='remove')post('remove',{id:id}).then(libPoll);
+    if(a==='lib')APP.changeLibrary();
+  };
   if(LOCAL)fetch(SERVER+'/api/status').then(function(x){return x.json()}).then(function(st){if(st&&st.ok)startServer(st);else throw 0}).catch(function(){browserStart()});
   else browserStart();
   function browserStart(){
