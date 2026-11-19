@@ -5,134 +5,121 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Glidewell Finder</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="filmdesk/filmdesk.css">
 <style>
-  /* Токены — те же, что у рабочего таймлайна (doc/index.html) */
-  :root{
-    --ink:#13171B;--ink-2:#4A555F;--paper:#F4F6F8;--card:#FFFFFF;--line:#E4E8EC;
-    --navy:#1C2024;--slate:#9098A0;--teal:#137C7C;--teal-tint:#E6F2F2;--red:#E11B2A;--red-tint:#FCEDEE;
-    --mute:#8A929B;--mark:#FFE9A8;
-    --nm-lo:rgba(174,186,206,.55);--nm-hi:rgba(255,255,255,.92);
-    --disp:"Space Grotesk",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased}
-  a{color:var(--teal)}
-  .page{max-width:980px;margin:0 auto;padding:28px 24px 64px}
-  @media(max-width:600px){.page{padding:18px 16px 48px}}
-  .top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
-  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal)}
-  h1{font-family:var(--disp);font-size:30px;font-weight:700;letter-spacing:-.01em;margin:4px 0 6px;color:var(--navy)}
-  .sub{color:var(--ink-2);font-size:14px;line-height:1.5;margin:0 0 20px;max-width:640px}
-  .back{font-family:var(--mono);font-size:12px;color:var(--mute);text-decoration:none}
-  .back:hover{color:var(--ink)}
+  /* Finder поверх Film Desk (filmdesk.css): здесь только то, чего в ките нет — строка поиска, фильтры, карточка результата, кадры. */
+  .search{position:sticky;top:96px;z-index:30;margin:0 -12px;padding:10px 12px 12px;border-radius:0 0 16px 16px;background:rgba(11,11,17,.86);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+  @media(max-width:820px){.search{top:0}}
+  .qbox{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1px solid var(--line-strong);border-radius:var(--r-input);padding:0 14px 0 16px}
+  .qbox:focus-within{border-color:var(--muted)}
+  .qbox input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:400 17px/1.2 var(--body);padding:15px 0;border-radius:0}
+  .qbox input::placeholder{color:var(--muted-dim)}
+  .qbox .cnt{font:400 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted-dim);white-space:nowrap}
+  .ctlrow{margin-top:12px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:13px;padding:6px 14px;color:var(--muted)}
+  .chip b{font:400 10.5px var(--mono);color:var(--muted-dim);margin-left:6px}
+  .chip.on{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 0 14px -4px var(--red)}
+  .chip.on b{color:rgba(255,255,255,.75)}
+  #chips2:not(:empty){margin-top:10px}
+  .status{font:400 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted-dim);margin-top:10px;min-height:14px}
 
-  .search{position:sticky;top:0;z-index:5;background:var(--paper);padding:10px 0 12px}
-  .qbox{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:14px;padding:4px 6px 4px 16px;
-        box-shadow:6px 6px 16px var(--nm-lo),-6px -6px 14px var(--nm-hi)}
-  .qbox input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:500 17px/1.2 var(--body);color:var(--ink);padding:12px 0}
-  .qbox input::placeholder{color:#A9B0B7}
-  .qbox .cnt{font-family:var(--mono);font-size:12px;color:var(--mute);white-space:nowrap;padding-right:8px}
-  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-  .chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 11px;font:500 12.5px var(--body);color:var(--ink-2);cursor:pointer}
-  .chip b{font-family:var(--mono);font-weight:500;color:var(--mute);margin-left:4px;font-size:11px}
-  .chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
-  .chip.on b{color:#C9CED3}
-
-  .res{display:flex;flex-direction:column;gap:14px;margin-top:6px}
-  .card{background:var(--card);border-radius:14px;padding:16px 18px 14px;box-shadow:5px 5px 14px var(--nm-lo),-5px -5px 12px var(--nm-hi);position:relative}
-  .card::before{content:"";position:absolute;left:16px;right:16px;top:0;height:3px;border-radius:0 0 3px 3px;background:var(--teal);opacity:.85}
-  .who{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
-  .who .p{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--navy)}
-  .who .s{font-size:12.5px;color:var(--mute)}
-  .who .d{font-family:var(--mono);font-size:11.5px;color:var(--mute);margin-left:auto}
-  .who .copy{margin-left:4px}
-  .q{font-size:15px;line-height:1.55;color:var(--ink)}
-  .q mark,.ru mark{background:var(--mark);color:inherit;border-radius:2px;padding:0 1px}
-  .more{border:0;background:none;color:var(--teal);font:600 12.5px var(--body);cursor:pointer;padding:6px 0 0}
-  .ru{margin-top:8px;padding-left:12px;border-left:2px solid var(--teal-tint);color:#3D5A80;font-size:14px;line-height:1.5;font-style:italic}
-
-  .where{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px;display:grid;grid-template-columns:auto 1fr;gap:5px 12px;align-items:baseline}
-  .where .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
-  .where .v{font-family:var(--mono);font-size:13px;color:var(--ink);word-break:break-all}
-  .where .v .tc{background:var(--teal-tint);color:var(--teal);border-radius:4px;padding:1px 6px;margin-left:6px;font-weight:600;white-space:nowrap}
-  .where .v .dev{color:var(--mute);font-size:11.5px;margin-left:6px}
-  .where .v .go{display:inline-block;margin-left:8px;font:600 11.5px var(--body);color:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:1px 8px;text-decoration:none;white-space:nowrap;vertical-align:1px}
-  .where .v .go:hover{border-color:var(--teal);color:var(--teal)}
-  .where .v .go.dir{color:#fff;background:var(--navy);border-color:var(--navy)}
-  .where .v .go.dir:hover{background:var(--teal);border-color:var(--teal);color:#fff}
-  .where .v.nf{color:var(--mute);font-family:var(--body);font-size:13px}
-  .copy{border:1px solid var(--line);background:var(--card);border-radius:8px;font:600 12px var(--body);color:var(--ink-2);padding:5px 10px;cursor:pointer;white-space:nowrap}
-  .copy:hover{border-color:var(--teal);color:var(--teal)}
-
-  .empty{color:var(--mute);font-size:14px;padding:30px 4px;line-height:1.6}
-  .load{background:var(--card);border-radius:16px;padding:26px 24px;box-shadow:6px 6px 16px var(--nm-lo),-6px -6px 14px var(--nm-hi);margin-top:8px}
-  .load h2{font-family:var(--disp);font-size:19px;margin:0 0 8px;color:var(--navy)}
-  .load p{margin:0 0 14px;color:var(--ink-2);font-size:14px;line-height:1.55}
-  .load code{font-family:var(--mono);font-size:12.5px;background:var(--paper);padding:2px 6px;border-radius:4px;word-break:break-all}
-  .drop{border:2px dashed var(--slate);border-radius:12px;padding:22px;text-align:center;color:var(--ink-2);font-size:14px;cursor:pointer}
-  .drop.over{border-color:var(--teal);background:var(--teal-tint)}
-  .btn{display:inline-block;border:0;background:var(--navy);color:#fff;font:600 13px var(--body);border-radius:9px;padding:9px 14px;cursor:pointer}
-  .foot{margin-top:28px;font-size:12.5px;color:var(--mute);line-height:1.6}
-  .foot button{border:0;background:none;color:var(--teal);font:600 12.5px var(--body);cursor:pointer;padding:0}
-  .status{font-family:var(--mono);font-size:11.5px;color:var(--teal);margin-top:10px;min-height:14px}
-  .sim{font-family:var(--mono);font-size:11px;color:var(--mute)}
-  .card.has-th{display:grid;grid-template-columns:200px 1fr;gap:16px}
+  .res{margin-top:6px}
+  .res .card{position:relative}
+  .card.has-th{display:grid;grid-template-columns:200px 1fr;gap:18px}
+  .card.has-th .actbar,.card.has-th .strip{grid-column:1/-1}
   @media(max-width:640px){.card.has-th{grid-template-columns:1fr}}
-  .th{position:relative;border-radius:8px;overflow:hidden;background:#11151a;width:200px;height:150px;align-self:start}
+  .who{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .who h3{margin:0}
+  .who .s{font-size:12.5px;font-weight:300;color:var(--muted)}
+  .who .d{font:400 11px var(--mono);color:var(--muted-dim);margin-left:auto;font-variant-numeric:tabular-nums}
+  .who .sim{font:400 10.5px var(--mono);color:var(--muted-dim)}
+  .q{font-size:15px;line-height:1.6;color:var(--ink)}
+  mark{background:rgba(255,255,255,.16);color:#fff;border-radius:3px;padding:0 2px}
+  .ru{margin-top:10px;padding-left:12px;border-left:2px solid var(--line-strong);color:var(--muted);font-size:14px;line-height:1.55;font-weight:300}
+  .ocr{margin-top:6px;font:400 12px var(--mono);color:var(--muted)}
+  .where{margin-top:14px;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:baseline}
+  .where .k{font:400 9.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted-dim)}
+  .where .v{font:400 12.5px var(--mono);color:var(--ink);word-break:break-all}
+  .where .v.nf{font-family:var(--body);font-weight:300;color:var(--muted)}
+  .tcode{display:inline-block;margin-left:8px;font:500 11.5px var(--mono);color:#ffd27a;background:rgba(255,210,122,.08);border-radius:4px;padding:1px 6px;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .where a.go{margin-left:8px;font:400 11px var(--mono);color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:1px 9px;white-space:nowrap}
+  .where a.go:hover{color:#fff;border-color:var(--muted)}
+  .res .actbar{margin-top:14px;padding-top:12px;gap:8px}
+  .res .actbar button,.res .actbar a.btn{font-size:13px;padding:6px 14px}
+  .res .actbar .sp{flex:1}
+  a.btn{display:inline-block;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none;white-space:nowrap}
+  a.btn:hover{border-color:var(--muted)}
+
+  /* кадры: фиксированный размер плиток (проценты/aspect-ratio в прокручиваемой сетке схлопывают строки) */
+  .th{position:relative;border-radius:8px;overflow:hidden;background:#000;border:1px solid var(--line);width:200px;height:150px;align-self:start}
   @media(max-width:640px){.th{width:100%;height:auto;aspect-ratio:4/3}}
-  .th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-  .th .ttc,.strip .ttc{position:absolute;left:6px;bottom:6px;font:600 11px var(--mono);color:#fff;background:rgba(19,23,27,.72);padding:2px 6px;border-radius:4px}
-  .src{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal)}
-  .ocr{margin-top:6px;font-family:var(--mono);font-size:12px;color:var(--ink-2)}
-  /* фиксированный размер плиток: проценты/aspect-ratio в прокручиваемой сетке схлопывают строки и плитки ложатся друг на друга */
-  .strip{display:grid;grid-template-columns:repeat(auto-fill,136px);grid-auto-rows:102px;justify-content:space-between;align-content:start;gap:8px;margin-top:12px;grid-column:1/-1;max-height:440px;overflow:auto;padding:2px}
-  .strip .s{position:relative;border-radius:6px;overflow:hidden;background:#11151a;width:136px;height:102px;cursor:pointer}
-  .strip .s img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-  .strip .s.cur{outline:4px solid var(--red);outline-offset:-4px}
-  .strip .s.cur .ttc{background:var(--red)}
-  .chips.sub{margin-top:8px}
-  .vis{background:var(--card);border-radius:14px;padding:12px 14px 14px;box-shadow:5px 5px 14px var(--nm-lo),-5px -5px 12px var(--nm-hi)}
-  .vis h3{margin:0 0 10px;font:600 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--teal)}
+  .th img,.strip .s img,.vis .s img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .ttc{position:absolute;left:6px;bottom:6px;font:500 11px var(--mono);color:#ffd27a;background:#000a;padding:2px 6px;border-radius:4px}
+  .strip{display:grid;grid-template-columns:repeat(auto-fill,136px);grid-auto-rows:102px;justify-content:space-between;align-content:start;gap:8px;margin-top:12px;max-height:440px;overflow:auto;padding:2px}
+  .strip .s,.vis .s{position:relative;border-radius:6px;overflow:hidden;background:#000;width:136px;height:102px;cursor:pointer;border:1px solid var(--line)}
+  .strip .s:hover,.vis .s:hover{outline:2px solid var(--muted);outline-offset:-2px}
+  .strip .s.cur{outline:3px solid var(--red);outline-offset:-3px}
+  .strip .s.cur .ttc{background:var(--red);color:#fff}
   .vis .row{display:grid;grid-template-columns:repeat(auto-fill,136px);grid-auto-rows:102px;gap:8px;justify-content:space-between}
-  .vis .s{position:relative;border-radius:6px;overflow:hidden;background:#11151a;width:136px;height:102px;cursor:pointer}
-  .vis .s img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  .vis .s .ttc{position:absolute;left:6px;bottom:6px;font:600 11px var(--mono);color:#fff;background:rgba(19,23,27,.72);padding:2px 6px;border-radius:4px}
-  .vis .s:hover{outline:3px solid var(--teal);outline-offset:-3px}
-  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy);color:#fff;font-size:13px;padding:9px 14px;border-radius:9px;opacity:0;transition:opacity .2s;pointer-events:none}
+
+  .empty{color:var(--muted);font-weight:300;font-size:14px;padding:26px 6px}
+  .load code{font:400 12.5px var(--mono);background:rgba(255,255,255,.06);padding:2px 7px;border-radius:5px;word-break:break-all}
+  .load .drop{cursor:pointer;margin-top:4px}
+  .foot{margin-top:24px}
+  .foot button{font-size:12px;padding:4px 12px;margin-left:6px}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#1b1e26;border:1px solid var(--line);color:#fff;font-size:13px;padding:9px 16px;border-radius:999px;opacity:0;transition:opacity .18s;pointer-events:none;z-index:120;box-shadow:0 10px 30px rgba(0,0,0,.5)}
   .toast.on{opacity:1}
+  .nav-right a.ghost{color:var(--muted);text-decoration:none;font-size:14px;padding:7px 10px}
+  .nav-right a.ghost:hover{color:#fff}
 </style>
 </head>
 <body>
-<div class="page">
-  <div class="top">
-    <div>
-      <div class="kicker">Interviews · Archive</div>
-      <h1>Finder</h1>
-    </div>
-    <a class="back" href="https://elbartodiy.github.io/glidewell-timeline/doc/index.html">← timeline</a>
-  </div>
+<div class="bg-fx"></div>
 
-  <div id="loader" class="load" hidden>
-    <h2>Load the index folder</h2>
-    <p>Transcripts and thumbnails are not stored on this site — they live on the drive. Choose the folder<br><code>Extreme SSD / Documentary Glidewell / Documents / _Index</code><br>This browser will remember it. When the index is updated, load the folder again.</p>
-    <label class="drop" id="drop"><span class="btn">Choose the _Index folder</span>
-      <input type="file" id="file" webkitdirectory directory multiple hidden></label>
+<div class="topnav"><div class="nav-inner">
+  <a class="gl-logo" href="https://elbartodiy.github.io/glidewell-timeline/doc/index.html"><img src="filmdesk/glidewell-logo.svg" alt="Glidewell"></a>
+  <span class="appname">Finder</span>
+  <span class="badge" id="badge" hidden></span>
+  <div class="nav-right">
+    <span class="timer" id="timer"></span>
+    <a class="ghost" id="back" href="https://elbartodiy.github.io/glidewell-timeline/doc/index.html" data-t="Timeline">Timeline</a>
+    <button class="lang" id="lang"><span data-l="en">EN</span><span data-l="ru">RU</span></button>
+  </div>
+</div></div><div class="nav-spacer"></div>
+
+<main>
+  <section class="hero">
+    <p class="eyebrow" data-t="Interviews and archive">Interviews and archive</p>
+    <h1><span data-t="Find any moment">Find any moment</span> <span class="accent" data-t="in the archive.">in the archive.</span></h1>
+    <p class="sub" data-t="sub">Interviews and the company archive in one search, by words and by meaning. Every result gives the file and the timecode.</p>
+  </section>
+
+  <div id="loader" class="card load" hidden>
+    <h3 data-t="Load the index folder">Load the index folder</h3>
+    <div class="do" data-t="loadDo">Choose the index folder on the drive. Transcripts and thumbnails live there, not on this site.</div>
+    <p class="hint"><code>Extreme SSD / Documentary Glidewell / Documents / _Index</code></p>
+    <p class="hint" data-t="loadHint">This browser remembers it. When the index is updated, load the folder again.</p>
+    <input type="file" id="file" webkitdirectory directory multiple hidden>
+    <div class="actbar"><button class="act ready" id="pick" data-t="Choose the _Index folder">Choose the _Index folder</button></div>
   </div>
 
   <div id="app" hidden>
     <div class="search">
-      <div class="qbox"><input id="q" type="search" placeholder="Where does Jim refuse to do implants?" autocomplete="off"><span class="cnt" id="cnt"></span></div>
-      <div class="chips" id="chips"></div>
-      <div class="chips sub" id="chips2"></div>
+      <div class="qbox"><input id="q" type="search" autocomplete="off"><span class="cnt" id="cnt"></span></div>
+      <div class="ctlrow">
+        <div class="chips" id="chips"></div>
+        <label class="swl" id="ruSw"><button class="sw" type="button"><i></i></button><span data-t="Russian translation">Russian translation</span></label>
+      </div>
+      <div class="chips" id="chips2"></div>
       <div class="status" id="status"></div>
     </div>
     <div class="res" id="res"></div>
-    <div class="foot" id="foot"></div>
+    <p class="hint foot" id="foot"></p>
   </div>
-</div>
+</main>
+
+<footer><div class="madeby"><span class="by">Made with</span><img src="filmdesk/aimos-logo.png" alt="AIMOS"></div></footer>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -151,6 +138,52 @@
   }
   function fillThumbs(root){(root||document).querySelectorAll('img[data-th]').forEach(function(im){var k=im.getAttribute('data-th');im.removeAttribute('data-th');if(serverMode){im.src=SERVER+'/thumb/'+k.split('/').map(encodeURIComponent).join('/');return}thumbGet(k).then(function(u){if(u)im.src=u})})}
   var $=function(id){return document.getElementById(id)};
+  // ---- язык EN/RU (Film Desk: каждый экран работает на двух языках) ----
+  function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+  var footFn=function(){}, LANG=ls('finder_lang')==='ru'?'ru':'en', showRu=ls('finder_ru')==='1';
+  var EN={sub:'Interviews and the company archive in one search, by words and by meaning. Every result gives the file and the timecode.',
+    loadDo:'Choose the index folder on the drive. Transcripts and thumbnails live there, not on this site.',
+    loadHint:'This browser remembers it. When the index is updated, load the folder again.',
+    placeholder:'Where does Jim refuse to do implants?'};
+  var RU={sub:'Интервью и архив компании в одном поиске, по словам и по смыслу. У каждого результата есть файл и таймкод.',
+    loadDo:'Выбери папку индекса на диске. Расшифровки и миниатюры лежат там, а не на этом сайте.',
+    loadHint:'Браузер её запомнит. Когда индекс обновится, загрузи папку снова.',
+    placeholder:'Где Джим отказывается ставить импланты?',
+    'Interviews and archive':'Интервью и архив','Find any moment':'Найди любой момент','in the archive.':'в архиве.',
+    'Timeline':'Таймлайн','Load the index folder':'Загрузи папку индекса','Choose the _Index folder':'Выбрать папку _Index',
+    'Index folder needed':'Нужна папка индекса','Russian translation':'Русский перевод',
+    'All':'Все','Interviews':'Интервью','Archive':'Архив','Everyone':'Все люди',
+    'matches':'совпадений','word matches':'совпадений по словам','Nothing found. Try describing it differently.':'Ничего не нашлось. Попробуй описать иначе.',
+    'Showing the best':'Показаны лучшие','Narrow the search or pick a person.':'Уточни запрос или выбери человека.',
+    'Shots that look like this':'Похожие кадры','click to play':'щёлкни, чтобы смотреть',
+    'audio':'звук','file':'файл','camera':'камера','copy':'копия','not yet matched to an original':'ещё не сопоставлен с оригиналом',
+    'shot':'кадр','speech':'речь','speaking:':'говорит:','On screen:':'На экране:',
+    'Full segment':'Весь фрагмент','All shots':'Все кадры','Hide shots':'Скрыть кадры','Copy':'Копировать','Play':'Смотреть','Open folder':'Открыть папку',
+    'Play from':'Смотреть с','Show in Finder':'Показать в Finder','Open in QuickTime at':'Открыть в QuickTime на',
+    'Searching …':'Ищу …','searched as:':'искал как:','Search server stopped — reload the page':'Сервер поиска остановлен, перезагрузи страницу',
+    'Search server on this Mac':'Сервер поиска на этом Mac','segments':'фрагментов','thumbnails':'миниатюр','loaded':'загружен',
+    'Index:':'Индекс:','load a newer folder':'загрузить новую папку',
+    'Copied':'Скопировано','Could not copy':'Не удалось скопировать','File not found — is the drive connected?':'Файл не найден. Диск подключён?',
+    'No records in this file':'В этом файле нет записей','No index files in this folder':'В этой папке нет файлов индекса','Index loaded':'Индекс загружен',
+    'Loading the index …':'Загружаю индекс …','Reading thumbnails …':'Читаю миниатюры …','Saving':'Сохраняю',
+    'Downloading the meaning model (once) …':'Скачиваю модель смысла (один раз) …','Loading the meaning model …':'Загружаю модель смысла …',
+    'Preparing meaning search (once) …':'Готовлю поиск по смыслу (один раз) …','Loading the meaning model (first time only) …':'Загружаю модель смысла (только в первый раз) …',
+    'Meaning search unavailable':'Поиск по смыслу недоступен','searching by words.':'ищу по словам.'};
+  function T(k){return LANG==='ru'?(RU[k]||EN[k]||k):(EN[k]||k)}
+  function applyLang(){
+    document.documentElement.lang=LANG;
+    document.querySelectorAll('[data-t]').forEach(function(e){e.textContent=T(e.getAttribute('data-t'))});
+    document.querySelectorAll('#lang span').forEach(function(e){e.classList.toggle('on',e.getAttribute('data-l')===LANG)});
+    $('q').placeholder=T('placeholder');$('badge').textContent=T('Index folder needed');
+  }
+  function paintRu(){var sw=$('ruSw');sw.classList.toggle('is-on',showRu);sw.querySelector('.sw').classList.toggle('on',showRu);
+    document.querySelectorAll('#res .ru').forEach(function(d){d.hidden=!showRu})}
+  function showLoader(){$('loader').hidden=false;$('app').hidden=true;$('badge').hidden=false}
+  function showApp(){$('loader').hidden=true;$('app').hidden=false;$('badge').hidden=true}
+  $('lang').onclick=function(){LANG=LANG==='ru'?'en':'ru';ls('finder_lang',LANG);applyLang();if(!$('app').hidden){chips();run();footFn()}};
+  $('ruSw').onclick=function(e){e.preventDefault();showRu=!showRu;ls('finder_ru',showRu?'1':'0');paintRu()};
+  $('pick').onclick=function(){$('file').click()};
+  applyLang();paintRu();
   // Сервер поиска на Mac (Documents/_scripts/finder_server.mjs) работает, только если страница открыта С НЕГО
   // (http://127.0.0.1:8765). Публичный сайт к компьютеру не обращается — решение Эльдара 15.10.2026.
   var LOCAL=location.hostname==='127.0.0.1'&&location.port==='8765';
@@ -168,7 +201,7 @@
     model=import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2').then(function(T){
       T.env.allowLocalModels=false;
       return T.pipeline('feature-extraction',MODEL,{quantized:true,progress_callback:function(p){
-        if(p.status==='progress'&&/onnx/.test(p.file||''))status('Downloading the meaning model (once) … '+Math.round(p.progress)+'%');}});
+        if(p.status==='progress'&&/onnx/.test(p.file||''))status(T('Downloading the meaning model (once) …')+' '+Math.round(p.progress)+'%');}});
     });
     return model;
   }
@@ -189,16 +222,16 @@
     idbGet('emb').then(function(c){
       if(c&&c.sig===sg){EMB=c.v;DIM=c.d;embReady=true;status('');run();return}
       var n=rows.length,B=16,i=0,v=null;
-      status('Loading the meaning model …');
+      status(T('Loading the meaning model …'));
       (function step(){
         var batch=rows.slice(i,i+B).map(function(r){return 'passage: '+r.text.slice(0,1500)});
         embed(batch).then(function(e){
           if(!v){DIM=e.length/batch.length;v=new Float32Array(n*DIM)}
           v.set(e,i*DIM);i+=B;
-          status('Preparing meaning search (once) … '+Math.min(i,n)+' / '+n);
+          status(T('Preparing meaning search (once) …')+' '+Math.min(i,n)+' / '+n);
           if(i<n)setTimeout(step,0);
           else{EMB=v;embReady=true;idbSet('emb',{sig:sg,v:v,d:DIM});status('');run()}
-        }).catch(function(err){embErr=true;status('Meaning search unavailable ('+(err&&err.message||err)+') — searching by words.');run()});
+        }).catch(function(err){embErr=true;status(T('Meaning search unavailable')+' ('+(err&&err.message||err)+'), '+T('searching by words.'));run()});
       })();
     });
   }
@@ -243,13 +276,13 @@
   function start(text,meta,strips){
     try{STRIPS=JSON.parse(strips||'{}')}catch(e){STRIPS={}}
     rows=parse(text);
-    if(!rows.length){$('loader').hidden=false;$('app').hidden=true;toast('No records in this file');return}
+    if(!rows.length){showLoader();toast(T('No records in this file'));return}
     rows.forEach(function(r,i){r.source=r.source||'interview';r._i=i;r._en=norm(r.text);r._ru=norm(r.ru||'');r._nw=r._en.split(' ').length});
     buildIdf();
-    $('loader').hidden=true;$('app').hidden=false;
-    $('foot').innerHTML='Index: '+rows.length+' segments'+(meta&&meta.thumbs?' · '+meta.thumbs+' thumbnails':'')+(meta&&meta.at?' · loaded '+esc(meta.at):'')+
-      ' · <button id="reload">load a newer folder</button>';
-    $('reload').onclick=function(){$('file').click()};
+    showApp();
+    footFn=function(){$('foot').innerHTML=T('Index:')+' '+rows.length+' '+T('segments')+(meta&&meta.thumbs?' · '+meta.thumbs+' '+T('thumbnails'):'')+(meta&&meta.at?' · '+T('loaded')+' '+esc(meta.at):'')+
+      ' <button id="reload">'+T('load a newer folder')+'</button>';
+      $('reload').onclick=function(){$('file').click()}};footFn();
     chips();run();prepare();
   }
   function readText(f){return new Promise(function(ok){var rd=new FileReader();rd.onload=function(){ok(rd.result)};rd.onerror=function(){ok('')};rd.readAsText(f)})}
@@ -257,17 +290,17 @@
     files=Array.prototype.slice.call(files);
     var by=function(n){return files.find(function(f){return f.name===n})};
     var fi=by('interviews_index.jsonl'),fa=by('archive_index.jsonl'),fs=by('archive_strips.json');
-    if(!fi&&!fa){toast('No index files in this folder');return}
+    if(!fi&&!fa){toast(T('No index files in this folder'));return}
     // миниатюры лежат пакетами archive_thumbs/<id>.pack (thumbs_pack.py): 4 байта длины заголовка, JSON {кадр:[смещение,длина]}, JPEG подряд
     var packs=files.filter(function(f){return /\.pack$/i.test(f.name)&&!/^\._/.test(f.name)&&/archive_thumbs\//.test(f.webkitRelativePath||'')});
-    status('Loading the index …');
+    status(T('Loading the index …'));
     Promise.all([fi?readText(fi):'',fa?readText(fa):'',fs?readText(fs):'{}']).then(function(t){
       var text=(t[0]||'')+'\n'+(t[1]||''),meta={name:'_Index folder',at:new Date().toLocaleString('en-US'),thumbs:0};
-      status('Reading thumbnails …');
+      status(T('Reading thumbnails …'));
       return Promise.all(packs.map(function(f){return f.arrayBuffer().then(function(buf){
         var aid=f.name.replace(/\.pack$/i,''),n=new DataView(buf).getUint32(0),idx=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,4,n))),base=4+n;
         return Object.keys(idx).map(function(k){return[aid+'/'+k,new Blob([new Uint8Array(buf,base+idx[k][0],idx[k][1])],{type:'image/jpeg'})]});
-      })})).then(function(parts){var list=[].concat.apply([],parts);meta.thumbs=list.length;status('Saving '+list.length+' thumbnails …');return thumbsPut(list)}).then(function(){thumbURL={};return Promise.all([idbSet('index',text),idbSet('strips',t[2]),idbSet('meta',meta)])}).then(function(){start(text,meta,t[2]);toast('Index loaded')});
+      })})).then(function(parts){var list=[].concat.apply([],parts);meta.thumbs=list.length;status(T('Saving')+' '+list.length+' '+T('thumbnails')+' …');return thumbsPut(list)}).then(function(){thumbURL={};return Promise.all([idbSet('index',text),idbSet('strips',t[2]),idbSet('meta',meta)])}).then(function(){start(text,meta,t[2]);toast(T('Index loaded'))});
     });
   }
   $('file').onchange=function(e){if(e.target.files.length)readFolder(e.target.files)};
@@ -323,52 +356,58 @@
   var ROOT=(function(){try{return localStorage.getItem('finder_root')}catch(e){return null}})()||'/Volumes/Extreme SSD/Documentary Glidewell/';
   function abs(r,f){return ROOT+(r.base?r.base+'/':'')+f}
   function link(a,path,t){return 'glidewell-finder://open?a='+a+'&t='+Math.round(t||0)+'&f='+encodeURIComponent(path)}
-  function fileLine(r,x){var p=abs(r,x.file),t=tcs(x.tc);
-    return esc(x.file)+'<span class="tc">'+esc(x.tc)+'</span><a class="go dir" data-open="reveal" data-f="'+esc(p)+'" data-t="0" href="'+link('reveal',p,0)+'" title="Show in Finder">Folder</a><a class="go" data-open="play" data-f="'+esc(p)+'" data-t="'+t+'" href="'+link('play',p,t)+'" title="Open in QuickTime at '+esc(x.tc)+'">▶</a>'}
-  function openVia(a,f,t){if(serverMode){fetch(SERVER+'/api/open?a='+a+'&t='+Math.round(t||0)+'&f='+encodeURIComponent(f)).then(function(r){return r.json()}).then(function(d){if(d.result!=='ok')toast('File not found — is the drive connected?')}).catch(function(){location.href=link(a,f,t)})}else location.href=link(a,f,t)}
+  function fileLine(r,x,many){var p=abs(r,x.file),t=tcs(x.tc);
+    return esc(x.file)+'<span class="tcode">'+esc(x.tc)+'</span>'+(many?'<a class="go" data-open="play" data-f="'+esc(p)+'" data-t="'+t+'" href="'+link('play',p,t)+'" title="'+esc(T('Open in QuickTime at')+' '+x.tc)+'">▶</a>':'')}
+  function openVia(a,f,t){if(serverMode){fetch(SERVER+'/api/open?a='+a+'&t='+Math.round(t||0)+'&f='+encodeURIComponent(f)).then(function(r){return r.json()}).then(function(d){if(d.result!=='ok')toast(T('File not found — is the drive connected?'))}).catch(function(){location.href=link(a,f,t)})}else location.href=link(a,f,t)}
   function tcs(t){var p=String(t).replace('≈','').split(':').map(Number);return p[0]*3600+p[1]*60+(p[2]||0)}
+  function nShots(r){return r.nshots||(STRIPS[r.aid]&&STRIPS[r.aid].shots.length)||0}
   function card(r,ts,sem){
     var en=highlight(r.text,ts,false),c=clip(en,520);
     var ru=r.ru?highlight(r.ru,ts,true):'';
-    var w='',arch=r.source==='archive';
-    if(r.audio)w+='<span class="k">audio</span><span class="v">'+fileLine(r,r.audio)+'</span>';
-    (r.sound||[]).forEach(function(s){w+='<span class="k">audio</span><span class="v">'+fileLine(r,s)+'</span>'});
-    (r.cams||[]).forEach(function(x){w+='<span class="k">'+(arch?'file':'camera')+'</span><span class="v">'+fileLine(r,x)+'</span>'});
-    (r.also||[]).forEach(function(a){w+='<span class="k">copy</span><span class="v nf">'+esc(a)+'</span>'});
-    if(!r.audio&&!(r.cams||[]).length)w+='<span class="k">file</span><span class="v nf">not yet matched to an original</span>';
+    var w='',arch=r.source==='archive',files=[].concat(r.audio?[['audio',r.audio]]:[],(r.sound||[]).map(function(x){return['audio',x]}),(r.cams||[]).map(function(x){return[arch?'file':'camera',x]}));
+    files.forEach(function(f){w+='<span class="k">'+T(f[0])+'</span><span class="v">'+fileLine(r,f[1],files.length>1)+'</span>'});
+    (r.also||[]).forEach(function(a){w+='<span class="k">'+T('copy')+'</span><span class="v nf">'+esc(a)+'</span>'});
+    if(!files.length)w+='<span class="k">'+T('file')+'</span><span class="v nf">'+T('not yet matched to an original')+'</span>';
     var tc=(r.cams&&r.cams[0]&&r.cams[0].tc)||'';
     var th=r.thumb?'<div class="th"><img alt="" data-th="'+esc(r.thumb)+'"><span class="ttc">'+esc(tc)+'</span></div>':'';
+    var ac=!arch?'--cat-3':(r.kind==='shot'?'--cat-5':'--cat-4');
     var body='<div>'+
-      '<div class="who">'+(arch?'<span class="src">'+(r.kind==='shot'?'shot':'speech')+'</span>':'')+'<span class="p">'+esc(r.person)+'</span>'+(r.who&&r.who!==r.person?'<span class="s">speaking: '+esc(r.who)+'</span>':'')+(sem!=null&&!serverMode?'<span class="sim">'+Math.round(sem*100)+'</span>':'')+'<span class="d">'+esc(r.date||'')+'</span><button class="copy" data-act="copy">Copy</button></div>'+
-      '<div class="q" data-full="0">'+(r.kind==='shot'?esc(r.text.split(' · On screen: ')[0]):c.h)+'</div>'+
-      (r.ocr?'<div class="ocr">On screen: '+esc(r.ocr)+'</div>':'')+
-      (c.cut&&r.kind!=='shot'?'<button class="more" data-act="full">show full segment</button>':'')+
-      (ru?'<button class="more" data-act="ru">Russian translation</button><div class="ru" hidden>'+ru+'</div>':'')+
-      (arch&&(r.nshots||(STRIPS[r.aid]&&STRIPS[r.aid].shots.length))?' <button class="more" data-act="strip">all shots of this file ('+(r.nshots||STRIPS[r.aid].shots.length)+')</button>':'')+
+      '<div class="who">'+(arch?'<span class="label">'+T(r.kind==='shot'?'shot':'speech')+'</span>':'')+'<h3>'+esc(r.person)+'</h3>'+(r.who&&r.who!==r.person?'<span class="s">'+T('speaking:')+' '+esc(r.who)+'</span>':'')+(sem!=null&&!serverMode?'<span class="sim">'+Math.round(sem*100)+'</span>':'')+'<span class="d">'+esc(r.date||'')+'</span></div>'+
+      '<div class="q">'+(r.kind==='shot'?esc(r.text.split(' · On screen: ')[0]):c.h)+'</div>'+
+      (r.ocr?'<div class="ocr">'+T('On screen:')+' '+esc(r.ocr)+'</div>':'')+
+      (ru?'<div class="ru"'+(showRu?'':' hidden')+'>'+ru+'</div>':'')+
       '<div class="where">'+w+'</div></div>';
-    return '<div class="card'+(th?' has-th':'')+'" data-i="'+r._i+'">'+th+body+'</div>';
+    // главное действие карточки — внизу: сначала мелкие, в конце «Смотреть» и «Открыть папку»
+    var mf=files.length?files[files.length>1&&r.cams&&r.cams.length?files.length-r.cams.length:0][1]:null,bar='';
+    if(c.cut&&r.kind!=='shot')bar+='<button class="ghost" data-act="full">'+T('Full segment')+'</button>';
+    if(arch&&nShots(r))bar+='<button class="ghost" data-act="strip">'+T('All shots')+' ('+nShots(r)+')</button>';
+    bar+='<button class="ghost" data-act="copy">'+T('Copy')+'</button><span class="sp"></span>';
+    if(mf){var mp=abs(r,mf.file),mt=tcs(mf.tc);
+      bar+='<a class="btn go" data-open="play" data-f="'+esc(mp)+'" data-t="'+mt+'" href="'+link('play',mp,mt)+'" title="'+esc(T('Open in QuickTime at')+' '+mf.tc)+'">▶ '+T('Play')+'</a>'+
+           '<a class="btn go" data-open="reveal" data-f="'+esc(mp)+'" data-t="0" href="'+link('reveal',mp,0)+'" title="'+T('Show in Finder')+'">'+T('Open folder')+'</a>'}
+    return '<div class="card'+(th?' has-th':'')+'" style="--ac:var('+ac+')" data-i="'+r._i+'">'+th+body+'<div class="actbar">'+bar+'</div></div>';
   }
   function hmsj(x){x=Math.round(x);return [x/3600|0,(x/60|0)%60,x%60].map(function(n){return (n<10?'0':'')+n}).join(':')}
   function strip(r){
     var S=STRIPS[r.aid],cur=tcs((r.cams[0]||{}).tc||0),best=0;
     S.shots.forEach(function(x,i){if(x[0]<=cur)best=i});
-    return '<div class="strip">'+S.shots.map(function(x,i){return '<div class="s'+(i===best?' cur':'')+'" data-tc="'+hmsj(x[0])+'" title="Play from '+hmsj(x[0])+'"><img alt="" loading="lazy" data-th="'+esc(r.aid+'/'+x[1])+'"><span class="ttc">'+hmsj(x[0])+'</span></div>'}).join('')+'</div>';
+    return '<div class="strip">'+S.shots.map(function(x,i){return '<div class="s'+(i===best?' cur':'')+'" data-tc="'+hmsj(x[0])+'" title="'+T('Play from')+' '+hmsj(x[0])+'"><img alt="" loading="lazy" data-th="'+esc(r.aid+'/'+x[1])+'"><span class="ttc">'+hmsj(x[0])+'</span></div>'}).join('')+'</div>';
   }
 
   function chips(){
     if(serverMode){
-      var h='';[['','All',SV.rows],['interview','Interviews',SV.counts.interview],['archive','Archive',SV.counts.archive]].forEach(function(c){h+='<button class="chip'+(source===c[0]?' on':'')+'" data-s="'+c[0]+'">'+c[1]+'<b>'+c[2]+'</b></button>'});
+      var h='';[['',T('All'),SV.rows],['interview',T('Interviews'),SV.counts.interview],['archive',T('Archive'),SV.counts.archive]].forEach(function(c){h+='<button class="chip'+(source===c[0]?' on':'')+'" data-s="'+c[0]+'">'+c[1]+'<b>'+c[2]+'</b></button>'});
       $('chips').innerHTML=h;var h2='';
-      if(source==='interview'){h2='<button class="chip'+(person?'':' on')+'" data-p="">Everyone</button>';SV.people.forEach(function(p){h2+='<button class="chip'+(person===p?' on':'')+'" data-p="'+esc(p)+'">'+esc(p)+'</button>'})}
+      if(source==='interview'){h2='<button class="chip'+(person?'':' on')+'" data-p="">'+T('Everyone')+'</button>';SV.people.forEach(function(p){h2+='<button class="chip'+(person===p?' on':'')+'" data-p="'+esc(p)+'">'+esc(p)+'</button>'})}
       $('chips2').innerHTML=h2;return;
     }
     var n={interview:0,archive:0},cnt={};
     rows.forEach(function(r){n[r.source]=(n[r.source]||0)+1;if(r.source==='interview')cnt[r.person]=(cnt[r.person]||0)+1});
-    var h='';[['','All',rows.length],['interview','Interviews',n.interview],['archive','Archive',n.archive]].forEach(function(c){
+    var h='';[['',T('All'),rows.length],['interview',T('Interviews'),n.interview],['archive',T('Archive'),n.archive]].forEach(function(c){
       if(c[0]&&!c[2])return;h+='<button class="chip'+(source===c[0]?' on':'')+'" data-s="'+c[0]+'">'+c[1]+'<b>'+c[2]+'</b></button>'});
     $('chips').innerHTML=h;
     var h2='';
-    if(source==='interview'){h2='<button class="chip'+(person?'':' on')+'" data-p="">Everyone</button>';
+    if(source==='interview'){h2='<button class="chip'+(person?'':' on')+'" data-p="">'+T('Everyone')+'</button>';
       Object.keys(cnt).sort().forEach(function(p){h2+='<button class="chip'+(person===p?' on':'')+'" data-p="'+esc(p)+'">'+esc(p)+'<b>'+cnt[p]+'</b></button>'})}
     $('chips2').innerHTML=h2;
   }
@@ -377,9 +416,9 @@
 
   var lastTs=[],runId=0;
   function render(list,ts,total,label){
-    $('cnt').textContent=total?total+' '+label:'';
-    if(!list.length){$('res').innerHTML='<div class="empty">Nothing found. Try describing it differently.</div>';return}
-    $('res').innerHTML=list.map(function(x){return card(x.r,ts,x.sem)}).join('')+(total>list.length?'<div class="empty">Showing the best '+list.length+'. Narrow the search or pick a person.</div>':'');
+    $('cnt').textContent=total?total+' '+T(label):'';
+    if(!list.length){$('res').innerHTML='<div class="empty">'+T('Nothing found. Try describing it differently.')+'</div>';return}
+    $('res').innerHTML=list.map(function(x){return card(x.r,ts,x.sem)}).join('')+(total>list.length?'<div class="empty">'+T('Showing the best')+' '+list.length+'. '+T('Narrow the search or pick a person.')+'</div>':'');
     fillThumbs($('res'));
   }
   function run(){
@@ -392,24 +431,24 @@
     if(!q){$('cnt').textContent='';$('res').innerHTML='';return}
     var phrase=norm(q);
     if(serverMode){
-      status('Searching …');
+      status(T('Searching …'));
       var url=SERVER+'/api/search?q='+encodeURIComponent($('q').value.trim())+'&source='+encodeURIComponent(source)+'&person='+encodeURIComponent(person);
       fetch(url).then(function(x){return x.json()}).then(function(d){
         if(id!==runId)return;
         rows=[];d.results.forEach(function(r){r._en=norm(r.text);r._ru=norm(r.ru||'');rows[r._i]=r});
-        status((d.person?'→ '+d.person+' · ':'')+(d.used?'searched as: “'+d.used+'” · ':'')+(d.ms/1000).toFixed(1)+' s');
+        status((d.person?'→ '+d.person+(d.used?' · ':''):'')+(d.used?T('searched as:')+' “'+d.used+'”':''));$('timer').textContent=(d.ms/1000).toFixed(1)+' s';
         render(d.results.map(function(r){return{r:r,sem:r.score}}),terms(d.used||q),d.total,'matches');
         if(d.visual&&d.visual.length){
           VIS=d.visual;
-          $('res').insertAdjacentHTML('afterbegin','<div class="vis"><h3>Shots that look like this</h3><div class="row">'+d.visual.map(function(v,k){
-            return '<div class="s" data-v="'+k+'" title="'+esc(v.title)+' · '+hmsj(v.t0)+' — click to play"><img alt="" data-th="'+esc(v.thumb)+'"><span class="ttc">'+hmsj(v.t0)+'</span></div>'}).join('')+'</div></div>');
+          $('res').insertAdjacentHTML('afterbegin','<div class="card vis" style="--ac:var(--cat-5)"><h3>'+T('Shots that look like this')+'</h3><div class="row">'+d.visual.map(function(v,k){
+            return '<div class="s" data-v="'+k+'" title="'+esc(v.title)+' · '+hmsj(v.t0)+', '+T('click to play')+'"><img alt="" data-th="'+esc(v.thumb)+'"><span class="ttc">'+hmsj(v.t0)+'</span></div>'}).join('')+'</div></div>');
           fillThumbs($('res'));
         }
-      }).catch(function(){status('Search server stopped — reload the page');});
+      }).catch(function(){status(T('Search server stopped — reload the page'));});
       return;
     }
     if(embReady){
-      if(!window._mReady)status('Loading the meaning model (first time only) …');
+      if(!window._mReady)status(T('Loading the meaning model (first time only) …'));
       semScores(q).then(function(sc){
         window._mReady=true;status(auto?'→ '+auto.p:'');
         if(id!==runId)return;
@@ -440,12 +479,11 @@
     var b=e.target.closest('[data-act]');if(!b)return;var c=b.closest('.card'),r=rows[+c.getAttribute('data-i')],a=b.getAttribute('data-act');
     if(a==='full'){c.querySelector('.q').innerHTML=highlight(r.text,lastTs,false);b.remove()}
     if(a==='strip'&&serverMode&&!STRIPS[r.aid]){fetch(SERVER+'/api/strip?aid='+encodeURIComponent(r.aid)).then(function(x){return x.json()}).then(function(S){STRIPS[r.aid]=S;b.click()});return}
-    if(a==='strip'){var ex=c.querySelector('.strip');if(ex){ex.remove();b.textContent=b.textContent.replace('hide','all')}else{c.insertAdjacentHTML('beforeend',strip(r));fillThumbs(c);var sp=c.querySelector('.strip'),cu=sp.querySelector('.cur');if(cu)sp.scrollTop+=cu.getBoundingClientRect().top-sp.getBoundingClientRect().top-140;b.textContent=b.textContent.replace('all','hide')}}
-    if(a==='ru'){var d=c.querySelector('.ru');d.hidden=!d.hidden;b.textContent=d.hidden?'Russian translation':'hide translation'}
+    if(a==='strip'){var ex=c.querySelector('.strip');if(ex){ex.remove();b.textContent=T('All shots')+' ('+nShots(r)+')'}else{c.querySelector('.actbar').insertAdjacentHTML('beforebegin',strip(r));fillThumbs(c);var sp=c.querySelector('.strip'),cu=sp.querySelector('.cur');if(cu)sp.scrollTop+=cu.getBoundingClientRect().top-sp.getBoundingClientRect().top-140;b.textContent=T('Hide shots')}}
     if(a==='copy'){
       var t=r.person+(r.who&&r.who!==r.person?' ('+r.who+')':'')+(r.date?' — '+r.date:'')+'\n'+
         [r.audio].concat(r.sound||[]).filter(Boolean).map(function(x){return 'Audio: '+abs(r,x.file)+'  '+x.tc}).concat((r.cams||[]).map(function(x){return (r.source==='archive'?'File: ':'Camera: ')+abs(r,x.file)+'  '+x.tc})).join('\n')+'\n«'+r.text.slice(0,240)+(r.text.length>240?'…':'')+'»';
-      (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){toast('Copied')},function(){toast('Could not copy')});
+      (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){toast(T('Copied'))},function(){toast(T('Could not copy'))});
     }
   };
 
@@ -453,14 +491,14 @@
   var h=decodeURIComponent(location.hash.slice(1));var mq=h.match(/q=([^&]*)/),mp=h.match(/p=([^&]*)/);
   if(mq)$('q').value=mq[1];if(mp)person=mp[1];
   function startServer(st){
-    serverMode=true;SV=st;ROOT=st.root||ROOT;$('loader').hidden=true;$('app').hidden=false;
-    $('foot').innerHTML='Search server on this Mac · '+st.rows+' segments';
+    serverMode=true;SV=st;ROOT=st.root||ROOT;showApp();
+    footFn=function(){$('foot').textContent=T('Search server on this Mac')+' · '+st.rows+' '+T('segments')};footFn();
     chips();run();
   }
   if(LOCAL)fetch(SERVER+'/api/status').then(function(x){return x.json()}).then(function(st){if(st&&st.ok)startServer(st);else throw 0}).catch(function(){browserStart()});
   else browserStart();
   function browserStart(){
-  Promise.all([idbGet('index'),idbGet('meta'),idbGet('strips')]).then(function(v){if(v[0]&&v[1]&&v[1].name==='_Index folder')start(v[0],v[1],v[2]);else{$('loader').hidden=false}});
+  Promise.all([idbGet('index'),idbGet('meta'),idbGet('strips')]).then(function(v){if(v[0]&&v[1]&&v[1].name==='_Index folder')start(v[0],v[1],v[2]);else showLoader()});
   }
 })();
 </script>
