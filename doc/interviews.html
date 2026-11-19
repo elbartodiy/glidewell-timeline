@@ -109,6 +109,7 @@
       <div class="qbox"><input id="q" type="search" autocomplete="off"><span class="cnt" id="cnt"></span></div>
       <div class="ctlrow">
         <div class="chips" id="chips"></div>
+        <label class="swl" id="meanSw"><button class="sw" type="button"><i></i></button><span data-t="Also by meaning">Also by meaning</span></label>
         <label class="swl" id="ruSw"><button class="sw" type="button"><i></i></button><span data-t="Russian translation">Russian translation</span></label>
       </div>
       <div class="chips" id="chips2"></div>
@@ -122,12 +123,14 @@
 <footer><div class="madeby"><span class="by">Made with</span><img src="filmdesk/aimos-logo.png" alt="AIMOS"></div></footer>
 <div class="toast" id="toast"></div>
 
+<script src="finder_rank.js"></script>
 <script>
 (function(){
   'use strict';
-  var DB='interview_finder', ST='kv', TS='thumbs', rows=[], person='', source='', idf={}, MAX=60, STRIPS={}, thumbURL={};
+  var DB='interview_finder', ST='kv', TS='thumbs', rows=[], person='', source='', DOCS=[], FST=null, MAX=60, STRIPS={}, thumbURL={};
 
-  function idb(){return new Promise(function(ok,no){try{var r=indexedDB.open(DB,2);r.onupgradeneeded=function(){var d=r.result;if(!d.objectStoreNames.contains(ST))d.createObjectStore(ST);if(!d.objectStoreNames.contains(TS))d.createObjectStore(TS)};r.onsuccess=function(){ok(r.result)};r.onerror=function(){no(r.error)}}catch(e){no(e)}})}
+  var idbP=null;
+  function idb(){return idbP||(idbP=new Promise(function(ok,no){try{var r=indexedDB.open(DB,2);r.onupgradeneeded=function(){var d=r.result;if(!d.objectStoreNames.contains(ST))d.createObjectStore(ST);if(!d.objectStoreNames.contains(TS))d.createObjectStore(TS)};r.onsuccess=function(){ok(r.result)};r.onerror=function(){no(r.error)}}catch(e){no(e)}}).catch(function(e){idbP=null;throw e}))}
   function idbGet(k){return idb().then(function(d){return new Promise(function(ok){var t=d.transaction(ST).objectStore(ST).get(k);t.onsuccess=function(){ok(t.result)};t.onerror=function(){ok(null)}})}).catch(function(){return null})}
   function idbSet(k,v){return idb().then(function(d){return new Promise(function(ok){var t=d.transaction(ST,'readwrite');t.objectStore(ST).put(v,k);t.oncomplete=ok;t.onerror=ok})}).catch(function(){})}
 
@@ -140,15 +143,19 @@
   var $=function(id){return document.getElementById(id)};
   // ---- язык EN/RU (Film Desk: каждый экран работает на двух языках) ----
   function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
-  var footFn=function(){}, LANG=ls('finder_lang')==='ru'?'ru':'en', showRu=ls('finder_ru')==='1';
+  var footFn=function(){}, LANG=ls('finder_lang')==='ru'?'ru':'en', showRu=ls('finder_ru')==='1', showMeaning=ls('finder_meaning')!=='0';
   var EN={sub:'Interviews and the company archive in one search, by words and by meaning. Every result gives the file and the timecode.',
     loadDo:'Choose the index folder on the drive. Transcripts and thumbnails live there, not on this site.',
     loadHint:'This browser remembers it. When the index is updated, load the folder again.',
-    placeholder:'Where does Jim refuse to do implants?'};
+    placeholder:'Words or a phrase in English, e.g. digital impression'};
   var RU={sub:'Интервью и архив компании в одном поиске, по словам и по смыслу. У каждого результата есть файл и таймкод.',
     loadDo:'Выбери папку индекса на диске. Расшифровки и миниатюры лежат там, а не на этом сайте.',
     loadHint:'Браузер её запомнит. Когда индекс обновится, загрузи папку снова.',
-    placeholder:'Где Джим отказывается ставить импланты?',
+    placeholder:'Слова или фраза по-английски, например digital impression',
+    'Exact phrase':'Фраза целиком','Exact word':'Слово как есть','Phrase in other word forms':'Фраза в других формах','Other word forms':'Другие формы слова',
+    'All the words, apart':'Все слова, порознь','Some of the words':'Часть слов','By meaning, without these words':'По смыслу, без этих слов',
+    'No fragment has these words.':'Ни в одном фрагменте нет этих слов.','Also by meaning':'Ещё и по смыслу',
+    'The word, outside the phrase':'Слово вне фразы','Search everyone':'Искать у всех',
     'Interviews and archive':'Интервью и архив','Find any moment':'Найди любой момент','in the archive.':'в архиве.',
     'Timeline':'Таймлайн','Load the index folder':'Загрузи папку индекса','Choose the _Index folder':'Выбрать папку _Index',
     'Index folder needed':'Нужна папка индекса','Russian translation':'Русский перевод',
@@ -176,12 +183,14 @@
     document.querySelectorAll('#lang span').forEach(function(e){e.classList.toggle('on',e.getAttribute('data-l')===LANG)});
     $('q').placeholder=T('placeholder');$('badge').textContent=T('Index folder needed');
   }
-  function paintRu(){var sw=$('ruSw');sw.classList.toggle('is-on',showRu);sw.querySelector('.sw').classList.toggle('on',showRu);
+  function paintSw(id,on){var sw=$(id);sw.classList.toggle('is-on',on);sw.querySelector('.sw').classList.toggle('on',on)}
+  function paintRu(){paintSw('ruSw',showRu);paintSw('meanSw',showMeaning);
     document.querySelectorAll('#res .ru').forEach(function(d){d.hidden=!showRu})}
   function showLoader(){$('loader').hidden=false;$('app').hidden=true;$('badge').hidden=false}
   function showApp(){$('loader').hidden=true;$('app').hidden=false;$('badge').hidden=true}
   $('lang').onclick=function(){LANG=LANG==='ru'?'en':'ru';ls('finder_lang',LANG);applyLang();if(!$('app').hidden){chips();run();footFn()}};
   $('ruSw').onclick=function(e){e.preventDefault();showRu=!showRu;ls('finder_ru',showRu?'1':'0');paintRu()};
+  $('meanSw').onclick=function(e){e.preventDefault();showMeaning=!showMeaning;ls('finder_meaning',showMeaning?'1':'0');paintRu();if(!$('app').hidden)run()};
   $('pick').onclick=function(){$('file').click()};
   applyLang();paintRu();
   // Сервер поиска на Mac (Documents/_scripts/finder_server.mjs) работает, только если страница открыта С НЕГО
@@ -198,11 +207,11 @@
   function sig(){return MODEL+'|'+rows.length+'|'+rows[0].text.slice(0,60)+'|'+rows[rows.length-1].text.slice(0,60)}
   function getModel(){
     if(model)return model;
-    model=import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2').then(function(T){
-      T.env.allowLocalModels=false;
-      return T.pipeline('feature-extraction',MODEL,{quantized:true,progress_callback:function(p){
+    model=import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2').then(function(TF){   // не T: T — перевод интерфейса
+      TF.env.allowLocalModels=false;
+      return TF.pipeline('feature-extraction',MODEL,{quantized:true,progress_callback:function(p){
         if(p.status==='progress'&&/onnx/.test(p.file||''))status(T('Downloading the meaning model (once) …')+' '+Math.round(p.progress)+'%');}});
-    });
+    }).catch(function(e){model=null;throw e});
     return model;
   }
   function embed(texts){return getModel().then(function(m){return m(texts,{pooling:'mean',normalize:true})}).then(function(o){return o.data})}
@@ -214,6 +223,7 @@
       for(var j=0;j<d;j++){var x=b.charCodeAt(j);if(x>127)x-=256;v[o+j]=x/r.es;n+=v[o+j]*v[o+j]}
       n=Math.sqrt(n)||1;for(j=0;j<d;j++)v[o+j]/=n;
     }
+    rows.forEach(function(r){delete r.e;delete r.es});
     EMB=v;DIM=d;embReady=true;return true;
   }
   function prepare(){
@@ -237,36 +247,17 @@
   }
   function semScores(q){
     var k='query: '+q;
-    var p=qcache[k]||(qcache[k]=embed([k]));
+    var p=qcache[k]||(qcache[k]=embed([k]).catch(function(e){delete qcache[k];throw e}));
     return p.then(function(qv){
       var out=new Float32Array(rows.length);
-      for(var r=0;r<rows.length;r++){var o=r*DIM,d=0;for(var j=0;j<DIM;j++)d+=EMB[o+j]*qv[j];out[r]=d}
+      for(var r=0;r<rows.length;r++){var o=r*DIM,d=0,nw=rows[r]._nw;for(var j=0;j<DIM;j++)d+=EMB[o+j]*qv[j];out[r]=d-(nw<20?(20-nw)*.0025:0)}
       return out;
     });
   }
 
-  // ---- имя в запросе = фильтр по человеку («Азерников про …», «where does Paul …») ----
-  var ALIAS={
-    'Sergei Azernikov':['azernikov','азерников','sergei','сергей'],
-    'Dr. Howard Farran':['farran','фарран','howard','говард'],
-    'Dr. Paul Feuerstein':['feuerstein','фейерштейн','фойерштайн','paul','пол'],
-    'Dr. Marie Buell':['buell','бьюэлл','бьюэл','бюэлл','marie','мари'],
-    'Dr. Paresh Patel':['patel','патель','пател','paresh','пареш'],
-    'Dr. Randy Resnik':['resnik','резник','randy','рэнди','ренди'],
-    'Dr. Neil Park':['park','парк','neil','нил'],
-    'Dr. Abdul Alas':['abdul','абдул','alas'],
-    'Edsel Labao':['edsel','эдсел','эдсель','labao','лабао']
-  };
-  function aliasHit(w,a){return w===a||(a.length>=3&&w.indexOf(a)===0&&w.length-a.length<=2)}
-  function whoInQuery(q){
-    var words=norm(q).split(' '),known={};rows.forEach(function(r){known[r.person]=1});
-    for(var p in ALIAS){if(!known[p])continue;
-      for(var i=0;i<words.length;i++)for(var k=0;k<ALIAS[p].length;k++)if(aliasHit(words[i],ALIAS[p][k])){
-        var rest=words.filter(function(w,j){return j!==i&&w!=='dr'&&w!=='др'&&w!=='доктор'&&w!=='doctor'}).join(' ');
-        return{p:p,rest:rest};
-      }}
-    return null;
-  }
+  // ---- имя в запросе = фильтр по человеку: только фамилия или полное имя (общий список в finder_rank.js) ----
+  var KNOWN={};
+  function whoInQuery(q){return FinderRank.who(q,KNOWN)}
 
   // ---- загрузка ----
   function parse(text){
@@ -275,10 +266,10 @@
   }
   function start(text,meta,strips){
     try{STRIPS=JSON.parse(strips||'{}')}catch(e){STRIPS={}}
-    rows=parse(text);
+    rows=parse(text);KNOWN={};
     if(!rows.length){showLoader();toast(T('No records in this file'));return}
-    rows.forEach(function(r,i){r.source=r.source||'interview';r._i=i;r._en=norm(r.text);r._ru=norm(r.ru||'');r._nw=r._en.split(' ').length});
-    buildIdf();
+    rows.forEach(function(r,i){r.source=r.source||'interview';r._i=i;r._en=norm(r.text);r._nw=r._en.split(' ').length;if(r.source==='interview')KNOWN[r.person]=1});
+    DOCS=rows.map(function(r){return FinderRank.prep(r.text)});FST=FinderRank.stats(DOCS);
     showApp();
     footFn=function(){$('foot').innerHTML=T('Index:')+' '+rows.length+' '+T('segments')+(meta&&meta.thumbs?' · '+meta.thumbs+' '+T('thumbnails'):'')+(meta&&meta.at?' · '+T('loaded')+' '+esc(meta.at):'')+
       ' <button id="reload">'+T('load a newer folder')+'</button>';
@@ -297,52 +288,20 @@
     Promise.all([fi?readText(fi):'',fa?readText(fa):'',fs?readText(fs):'{}']).then(function(t){
       var text=(t[0]||'')+'\n'+(t[1]||''),meta={name:'_Index folder',at:new Date().toLocaleString('en-US'),thumbs:0};
       status(T('Reading thumbnails …'));
-      return Promise.all(packs.map(function(f){return f.arrayBuffer().then(function(buf){
+      var parts=[];   // пакеты по одному: все сразу — сотни мегабайт в памяти
+      return packs.reduce(function(pr,f){return pr.then(function(){return f.arrayBuffer()}).then(function(buf){
         var aid=f.name.replace(/\.pack$/i,''),n=new DataView(buf).getUint32(0),idx=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,4,n))),base=4+n;
-        return Object.keys(idx).map(function(k){return[aid+'/'+k,new Blob([new Uint8Array(buf,base+idx[k][0],idx[k][1])],{type:'image/jpeg'})]});
-      })})).then(function(parts){var list=[].concat.apply([],parts);meta.thumbs=list.length;status(T('Saving')+' '+list.length+' '+T('thumbnails')+' …');return thumbsPut(list)}).then(function(){thumbURL={};return Promise.all([idbSet('index',text),idbSet('strips',t[2]),idbSet('meta',meta)])}).then(function(){start(text,meta,t[2]);toast(T('Index loaded'))});
+        parts.push(Object.keys(idx).map(function(k){return[aid+'/'+k,new Blob([new Uint8Array(buf,base+idx[k][0],idx[k][1])],{type:'image/jpeg'})]}));
+      })},Promise.resolve()).then(function(){var list=[].concat.apply([],parts);meta.thumbs=list.length;status(T('Saving')+' '+list.length+' '+T('thumbnails')+' …');return thumbsPut(list)}).then(function(){for(var u in thumbURL)URL.revokeObjectURL(thumbURL[u]);thumbURL={};return Promise.all([idbSet('index',text),idbSet('strips',t[2]),idbSet('meta',meta)])}).then(function(){start(text,meta,t[2]);toast(T('Index loaded'))});
     });
   }
   $('file').onchange=function(e){if(e.target.files.length)readFolder(e.target.files)};
 
   // ---- поиск ----
   function norm(s){return String(s).toLowerCase().replace(/ё/g,'е').replace(/[^\p{L}\p{N}\s'-]/gu,' ').replace(/\s+/g,' ')}
-  var STOP={'the':1,'a':1,'an':1,'and':1,'or':1,'of':1,'to':1,'in':1,'on':1,'is':1,'it':1,'that':1,'about':1,'where':1,'what':1,'how':1,'did':1,'say':1,'said':1,'talk':1,'talked':1,
-    'где':1,'как':1,'что':1,'про':1,'о':1,'об':1,'и':1,'в':1,'на':1,'с':1,'по':1,'он':1,'она':1,'говорил':1,'говорила':1,'рассказывал':1,'рассказывала':1,'сказал':1,'сказала':1,'это':1,'тот':1,'там':1};
-  function stem(w){ // грубая основа: англ. и рус. окончания
-    if(/[а-я]/.test(w)){return w.length>5?w.slice(0,w.length-2):w}
-    return w.replace(/(ings|ing|ers|er|ies|ied|ed|es|s)$/,'').slice(0,Math.max(4,w.length-3))||w;
-  }
-  function terms(q){
-    return norm(q).split(' ').filter(function(w){return w&&!STOP[w]&&(w.length>1||/\d/.test(w))}).map(function(w){return{w:w,st:stem(w),ru:/[а-я]/.test(w)}});
-  }
-  function hit(field,t){ // слово, начинающееся с основы
-    var i=field.indexOf(t.st);
-    while(i>-1){if(i===0||field[i-1]===' '||field[i-1]==='-')return true;i=field.indexOf(t.st,i+1)}
-    return false;
-  }
-  function buildIdf(){idf={};}
-  function weight(t){
-    if(idf[t.st]!=null)return idf[t.st];
-    var n=0;rows.forEach(function(r){if(hit(t.ru?r._ru:r._en,t))n++});
-    return idf[t.st]=Math.log((rows.length+1)/(n+1))+0.2;
-  }
-  function score(r,ts,phrase){
-    var s=0,m=0;
-    ts.forEach(function(t){if(hit(t.ru?r._ru:r._en,t)){s+=weight(t);m++}});
-    if(!m)return 0;
-    if(phrase&&(r._en.indexOf(phrase)>-1||r._ru.indexOf(phrase)>-1))s+=3;
-    return s*(m/ts.length)*(m/ts.length);
-  }
-
-  function highlight(text,ts,ru){
-    var h=esc(text);
-    ts.filter(function(t){return t.ru===ru}).forEach(function(t){
-      var re=new RegExp('(^|[^\\p{L}])('+t.st.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[\\p{L}\']*)','giu');
-      h=h.replace(re,'$1<mark>$2</mark>');
-    });
-    return h;
-  }
+  // подсветка: фраза одним куском, иначе каждое слово запроса в любой форме (doc/finder_rank.js)
+  function highlight(text,Q){var t=String(text||''),sp=Q?FinderRank.spans(t,Q):[],h='',p=0;
+    sp.forEach(function(x){if(x[0]<p)return;h+=esc(t.slice(p,x[0]))+'<mark>'+esc(t.slice(x[0],x[1]))+'</mark>';p=x[1]});return h+esc(t.slice(p))}
   function clip(html,n){ // режем вокруг первой подсветки
     var plain=html.replace(/<[^>]+>/g,'');if(plain.length<=n)return{h:html,cut:false};
     var i=html.indexOf('<mark>');if(i<0)i=0;var a=Math.max(0,i-n/3|0);
@@ -362,8 +321,8 @@
   function tcs(t){var p=String(t).replace('≈','').split(':').map(Number);return p[0]*3600+p[1]*60+(p[2]||0)}
   function nShots(r){return r.nshots||(STRIPS[r.aid]&&STRIPS[r.aid].shots.length)||0}
   function card(r,ts,sem){
-    var en=highlight(r.text,ts,false),c=clip(en,520);
-    var ru=r.ru?highlight(r.ru,ts,true):'';
+    var en=highlight(r.text,ts),c=clip(en,520);
+    var ru=r.ru?esc(r.ru):'';
     var w='',arch=r.source==='archive',files=[].concat(r.audio?[['audio',r.audio]]:[],(r.sound||[]).map(function(x){return['audio',x]}),(r.cams||[]).map(function(x){return[arch?'file':'camera',x]}));
     files.forEach(function(f){w+='<span class="k">'+T(f[0])+'</span><span class="v">'+fileLine(r,f[1],files.length>1)+'</span>'});
     (r.also||[]).forEach(function(a){w+='<span class="k">'+T('copy')+'</span><span class="v nf">'+esc(a)+'</span>'});
@@ -414,61 +373,69 @@
   $('chips').onclick=function(e){var b=e.target.closest('.chip');if(!b)return;source=b.getAttribute('data-s');person='';chips();run()};
   $('chips2').onclick=function(e){var b=e.target.closest('.chip');if(!b)return;person=b.getAttribute('data-p');chips();run()};
 
-  var lastTs=[],runId=0;
-  function render(list,ts,total,label){
-    $('cnt').textContent=total?total+' '+T(label):'';
-    if(!list.length){$('res').innerHTML='<div class="empty">'+T('Nothing found. Try describing it differently.')+'</div>';return}
-    $('res').innerHTML=list.map(function(x){return card(x.r,ts,x.sem)}).join('')+(total>list.length?'<div class="empty">'+T('Showing the best')+' '+list.length+'. '+T('Narrow the search or pick a person.')+'</div>':'');
-    fillThumbs($('res'));
+  var lastQ=null,runId=0,noAuto=false,ctl=null;
+  // ступени выдачи (правило Эльдара 18.11): фраза целиком → фраза в других формах → все слова порознь → часть слов; смысл — отдельно внизу
+  var TIERN=[['Exact phrase','Exact word'],['Phrase in other word forms','Other word forms'],['All the words, apart'],['Some of the words']];
+  function gtitle(t,n){return '<div class="group-title"><span>'+T(t)+'</span><b>'+(n==null?'':n)+'</b></div>'}
+  function autoStatus(p){
+    if(!p){status('');return}
+    $('status').innerHTML='→ '+esc(p)+' <button class="ghost" id="noAuto">'+T('Search everyone')+'</button>';
+    $('noAuto').onclick=function(){noAuto=true;run()};
+  }
+  function render(hits,mean,Q,total,counts){
+    $('cnt').textContent=total?total+' '+T('matches'):'';
+    var h='',last=-1;
+    hits.forEach(function(x){if(x.tier!==last){last=x.tier;var nm=TIERN[x.tier];h+=gtitle(x.tier===2&&Q.oneWord?'The word, outside the phrase':(Q.phrase||!nm[1]?nm[0]:nm[1]),counts&&counts[x.tier])}h+=card(x.r,Q,x.sem)});
+    if(!hits.length)h+='<div class="empty">'+T('No fragment has these words.')+'</div>';
+    else if(total>hits.length)h+='<div class="empty">'+T('Showing the best')+' '+hits.length+'. '+T('Narrow the search or pick a person.')+'</div>';
+    if(mean&&mean.length){h+=gtitle('By meaning, without these words');mean.forEach(function(x){h+=card(x.r,Q,x.sem)})}
+    $('res').innerHTML=h;fillThumbs($('res'));
   }
   function run(){
-    var q=$('q').value.trim(),ts=terms(q),id=++runId;lastTs=ts;
+    var q=$('q').value.trim(),id=++runId;
     try{history.replaceState(null,'',q?('#q='+encodeURIComponent(q)+(person?'&p='+encodeURIComponent(person):'')):location.pathname)}catch(e){}
-    var auto=!person&&q&&source!=='archive'?whoInQuery(q):null,who=person||(auto&&auto.p)||'';
-    if(auto){q=auto.rest||q;ts=terms(q);lastTs=ts}
-    status(auto?'→ '+auto.p:'');
-    var pool=rows.filter(function(r){return (!source||r.source===source)&&(!who||r.person===who)});
-    if(!q){$('cnt').textContent='';$('res').innerHTML='';return}
-    var phrase=norm(q);
     if(serverMode){
+      if(!q){$('cnt').textContent='';$('res').innerHTML='';status('');return}
       status(T('Searching …'));
-      var url=SERVER+'/api/search?q='+encodeURIComponent($('q').value.trim())+'&source='+encodeURIComponent(source)+'&person='+encodeURIComponent(person);
-      fetch(url).then(function(x){return x.json()}).then(function(d){
-        if(id!==runId)return;
-        rows=[];d.results.forEach(function(r){r._en=norm(r.text);r._ru=norm(r.ru||'');rows[r._i]=r});
-        status((d.person?'→ '+d.person+(d.used?' · ':''):'')+(d.used?T('searched as:')+' “'+d.used+'”':''));$('timer').textContent=(d.ms/1000).toFixed(1)+' s';
-        render(d.results.map(function(r){return{r:r,sem:r.score}}),terms(d.used||q),d.total,'matches');
+      if(ctl)ctl.abort();ctl=window.AbortController?new AbortController():null;
+      var url=SERVER+'/api/search?q='+encodeURIComponent(q)+'&source='+encodeURIComponent(source)+'&person='+encodeURIComponent(person)+'&meaning='+(showMeaning?1:0)+(noAuto?'&auto=0':'');
+      fetch(url,ctl?{signal:ctl.signal}:{}).then(function(x){return x.json().then(function(d){if(!x.ok)throw new Error(d.error||x.status);return d})}).then(function(d){
+        if(id!==runId||d.stale)return;
+        var Q=FinderRank.query(d.used||q);lastQ=Q;   // подсветка — по тому, что сервер искал на самом деле
+        rows=[];var put=function(r){rows[r._i]=r;return r};
+        autoStatus(d.person);$('timer').textContent=(d.ms/1000).toFixed(1)+' s';
+        if(!Q.qw.length){$('cnt').textContent='';$('res').innerHTML='';return}
+        render(d.results.map(function(r){return{r:put(r),tier:r.tier,sem:r.score}}),(d.meaning||[]).map(function(r){return{r:put(r),tier:4,sem:r.score}}),Q,d.total,d.counts);
         if(d.visual&&d.visual.length){
           VIS=d.visual;
           $('res').insertAdjacentHTML('afterbegin','<div class="card vis" style="--ac:var(--cat-5)"><h3>'+T('Shots that look like this')+'</h3><div class="row">'+d.visual.map(function(v,k){
             return '<div class="s" data-v="'+k+'" title="'+esc(v.title)+' · '+hmsj(v.t0)+', '+T('click to play')+'"><img alt="" data-th="'+esc(v.thumb)+'"><span class="ttc">'+hmsj(v.t0)+'</span></div>'}).join('')+'</div></div>');
           fillThumbs($('res'));
         }
-      }).catch(function(){status(T('Search server stopped — reload the page'));});
+      }).catch(function(e){if(e&&e.name==='AbortError')return;status(e&&e.message&&!/fetch/i.test(e.message)?e.message:T('Search server stopped — reload the page'))});
       return;
     }
-    if(embReady){
+    var auto=!noAuto&&!person&&q&&source!=='archive'?whoInQuery(q):null,who=person||(auto&&auto.p)||'';
+    if(auto)q=auto.rest||q;
+    var Q=FinderRank.query(q);lastQ=Q;
+    autoStatus(auto&&auto.p);
+    if(!q||!Q.qw.length){$('cnt').textContent='';$('res').innerHTML='';return}
+    // без сервера: те же ступени по словам; смысл (e5 в браузере) упорядочивает «часть слов» и даёт блок «по смыслу»
+    var pool=[];rows.forEach(function(r,i){if(r._nw>=5&&(!source||r.source===source)&&(!who||r.person===who)&&!(r.kind==='shot'&&!r.ocr))pool.push(i)});
+    var go=function(sc){
+      if(id!==runId)return;
+      var R=FinderRank.rank(Q,DOCS,pool,FST,sc);
+      var mean=showMeaning&&sc?R.none.sort(function(a,b){return sc[b]-sc[a]}).slice(0,10).map(function(i){return{r:rows[i],tier:4,sem:sc[i]}}):[];
+      render(R.hits.slice(0,MAX).map(function(x){return{r:rows[x.i],tier:x.tier,sem:sc?sc[x.i]:null}}),mean,Q,R.hits.length,R.counts);
+    };
+    go(null);   // слова — сразу; смысл догоняет, когда модель готова
+    if(embReady&&!embErr){
       if(!window._mReady)status(T('Loading the meaning model (first time only) …'));
-      semScores(q).then(function(sc){
-        window._mReady=true;status(auto?'→ '+auto.p:'');
-        if(id!==runId)return;
-        // слияние рангов (RRF): смысл + слова (+ реплики Джима, если он в вопросе) — по замерам на контрольном наборе
-        var cand=pool.filter(function(r){return r._nw>=5});
-        var sem=cand.map(function(r){var damp=r._nw<20?(20-r._nw)*0.0025:0;return{r:r,v:sc[r._i]-damp}}).sort(function(a,b){return b.v-a.v});
-        var kw=ts.length?cand.map(function(r){return{r:r,v:score(r,ts,phrase)}}).filter(function(x){return x.v>0}).sort(function(a,b){return b.v-a.v}):[];
-        var rr=new Map(),add=function(list){list.slice(0,200).forEach(function(x,k){rr.set(x.r,(rr.get(x.r)||0)+1/(60+k))})};
-        add(sem);add(kw);
-        if(/(^|[^\p{L}])(jim|джим\p{L}*)/iu.test(q))add(sem.filter(function(x){return x.r.who==='Jim Glidewell'}));
-        var found=Array.from(rr.entries()).sort(function(a,b){return b[1]-a[1]}).map(function(e){return{r:e[0],sem:sc[e[0]._i]}});
-        render(found.slice(0,30),ts,found.length,'matches');
-      });
-      return;
+      semScores(q).then(function(sc){window._mReady=true;autoStatus(auto&&auto.p);go(sc)})
+        .catch(function(err){embErr=true;status(T('Meaning search unavailable')+' ('+(err&&err.message||err)+'), '+T('searching by words.'))});
     }
-    if(!ts.length){$('res').innerHTML='';return}
-    var found=pool.map(function(r){return{r:r,s:score(r,ts,phrase)}}).filter(function(x){return x.s>0}).sort(function(a,b){return b.s-a.s});
-    render(found.slice(0,MAX),ts,found.length,'word matches');
   }
-  var tmr;$('q').addEventListener('input',function(){clearTimeout(tmr);tmr=setTimeout(run,serverMode?900:(embReady?350:140))});
+  var tmr;$('q').addEventListener('input',function(){noAuto=false;clearTimeout(tmr);tmr=setTimeout(run,serverMode?900:(embReady?350:140))});
   $('q').addEventListener('keydown',function(e){if(e.key==='Enter'){clearTimeout(tmr);run()}});
 
   $('res').onclick=function(e){
@@ -477,7 +444,7 @@
     if(sh){var cr=rows[+sh.closest('.card').getAttribute('data-i')];openVia('play',abs(cr,cr.cams[0].file),tcs(sh.getAttribute('data-tc')));return}
     var go=e.target.closest('a.go[data-open]');if(go){e.preventDefault();openVia(go.getAttribute('data-open'),go.getAttribute('data-f'),+go.getAttribute('data-t'));return}
     var b=e.target.closest('[data-act]');if(!b)return;var c=b.closest('.card'),r=rows[+c.getAttribute('data-i')],a=b.getAttribute('data-act');
-    if(a==='full'){c.querySelector('.q').innerHTML=highlight(r.text,lastTs,false);b.remove()}
+    if(a==='full'){c.querySelector('.q').innerHTML=highlight(r.text,lastQ);b.remove()}
     if(a==='strip'&&serverMode&&!STRIPS[r.aid]){fetch(SERVER+'/api/strip?aid='+encodeURIComponent(r.aid)).then(function(x){return x.json()}).then(function(S){STRIPS[r.aid]=S;b.click()});return}
     if(a==='strip'){var ex=c.querySelector('.strip');if(ex){ex.remove();b.textContent=T('All shots')+' ('+nShots(r)+')'}else{c.querySelector('.actbar').insertAdjacentHTML('beforebegin',strip(r));fillThumbs(c);var sp=c.querySelector('.strip'),cu=sp.querySelector('.cur');if(cu)sp.scrollTop+=cu.getBoundingClientRect().top-sp.getBoundingClientRect().top-140;b.textContent=T('Hide shots')}}
     if(a==='copy'){
@@ -488,8 +455,7 @@
   };
 
   // ---- старт ----
-  var h=decodeURIComponent(location.hash.slice(1));var mq=h.match(/q=([^&]*)/),mp=h.match(/p=([^&]*)/);
-  if(mq)$('q').value=mq[1];if(mp)person=mp[1];
+  try{var hp=new URLSearchParams(location.hash.slice(1));if(hp.get('q'))$('q').value=hp.get('q');if(hp.get('p'))person=hp.get('p')}catch(e){}
   function startServer(st){
     serverMode=true;SV=st;ROOT=st.root||ROOT;showApp();
     footFn=function(){$('foot').textContent=T('Search server on this Mac')+' · '+st.rows+' '+T('segments')};footFn();
