@@ -19,14 +19,6 @@
   #mchips,#fchips{margin-bottom:8px}
   .chip.fold{max-width:520px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .chip.fold i{font-style:normal;margin-left:8px;opacity:.7}
-  .fpanel{margin-top:10px;padding:14px 16px;max-height:56vh;overflow:auto}
-  .fpanel[hidden]{display:none}
-  .fpanel input{width:100%;box-sizing:border-box;margin-bottom:8px}
-  .fpanel .fr{display:flex;gap:10px;align-items:baseline;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:14px;color:var(--ink)}
-  .fpanel .fr:hover{background:rgba(255,255,255,.06)}
-  .fpanel .fr.on{background:rgba(255,255,255,.1)}
-  .fpanel .fr b{font:400 10.5px var(--mono);color:var(--muted-dim);margin-left:auto}
-  .fpanel .fr span.d{color:var(--muted-dim)}
   .label.src-img{color:#c9a7ff;border-color:rgba(201,167,255,.35)}
   .chips{display:flex;flex-wrap:wrap;gap:6px}
   .chip{font-size:13px;padding:6px 14px;color:var(--muted)}
@@ -149,7 +141,6 @@
         <label class="swl" id="meanSw"><button class="sw" type="button"><i></i></button><span data-t="Also by meaning">Also by meaning</span></label>
         <label class="swl" id="ruSw"><button class="sw" type="button"><i></i></button><span data-t="Russian translation">Russian translation</span></label>
       </div>
-      <div class="card fpanel" id="fpanel" hidden></div>
       <div class="chips" id="chips2"></div>
       <div class="status" id="status"></div>
     </div>
@@ -219,7 +210,9 @@
     'Meaning search unavailable':'Поиск по смыслу недоступен','searching by words.':'ищу по словам.',
     'Sound':'Звук','Image':'Изображение','Text on screen':'Надпись в кадре','By picture':'По картинке','Everything':'Всё',
     'Shots that look like this, by picture':'Похожие кадры, по картинке',
-    'All folders':'Все папки','Folder:':'Папка:','Search only inside a folder':'Искать только внутри папки','Filter folders':'Найти папку','Choose on disk …':'Выбрать на диске …','videos':'видео',
+    'Folder:':'Папка:','Search only inside a folder':'Искать только внутри папки','Browse …':'Обзор …','Search everywhere':'Искать везде','videos':'видео',
+    'No analysed videos in this folder. Add it in the Video library.':'В этой папке нет разобранных видео. Добавь её в библиотеке видео.',
+    'No analysed videos in this folder.':'В этой папке нет разобранных видео.',
     'Video library':'Библиотека видео','Work folder:':'Рабочая папка:','Add a folder':'Добавить папку','Add files':'Добавить файлы',
     'Find moved files':'Найти перемещённые файлы','Pause analysis':'Пауза анализа','Resume analysis':'Продолжить анализ','Change work folder':'Сменить рабочую папку',
     'videos':'видео','analysed':'разобрано','in queue':'в очереди','not found':'не найдено','errors':'ошибок',
@@ -323,7 +316,7 @@
     try{STRIPS=JSON.parse(strips||'{}')}catch(e){STRIPS={}}
     rows=parse(text);KNOWN={};
     if(!rows.length){showLoader();toast(T('No records in this file'));return}
-    rows.forEach(function(r,i){r.source=r.source||'interview';r._i=i;var x=r.audio||(r.cams||[])[0];if(x){r._file=(r.base?r.base+'/':'')+x.file;r._dir=r._file.slice(0,r._file.lastIndexOf('/'))}r._en=norm(r.text);r._nw=r._en.split(' ').length;if(r.source==='interview')KNOWN[r.person]=1});
+    rows.forEach(function(r,i){r.source=r.source||'interview';r._i=i;r._en=norm(r.text);r._nw=r._en.split(' ').length;if(r.source==='interview')KNOWN[r.person]=1});
     DOCS=rows.map(function(r){return FinderRank.prep(r.kind==='shot'?(r.ocr||''):r.text)});FST=FinderRank.stats(DOCS);
     showApp();
     footFn=function(){$('foot').innerHTML=T('Index:')+' '+rows.length+' '+T('segments')+(meta&&meta.thumbs?' · '+meta.thumbs+' '+T('thumbnails'):'')+(meta&&meta.at?' · '+T('loaded')+' '+esc(meta.at):'')+
@@ -425,29 +418,19 @@
 
   function mchips(){var h='';[['','Everything'],['sound','Sound'],['image','Image']].forEach(function(c){h+='<button class="chip'+(media===c[0]?' on':'')+'" data-m="'+c[0]+'">'+T(c[1])+'</button>'});$('mchips').innerHTML=h}
   $('mchips').onclick=function(e){var b=e.target.closest('.chip');if(!b)return;media=b.getAttribute('data-m');ls('finder_media',media);mchips();run()};
-  // ---- папка: искать только внутри выбранной папки (и всех вложенных) ----
-  var FOLDERS=null,FROOT='';
+  // ---- папка: искать только внутри выбранной папки (и всех вложенных), пока не вернёшься к общему поиску ----
+  // выбор — системным окном «Обзор» (приложение или сервер на этом Mac); выбор запоминается между поисками и запусками
+  var FROOT='';
   function relF(p){return FROOT&&p.indexOf(FROOT)===0?p.slice(FROOT.length):p}
-  function fname(p){var r=relF(p).replace(/[\\/]+$/,'');return r.split(/[\\/]/).pop()||r}
-  function fchips(){$('fchips').innerHTML='<button class="chip fold'+(folder?' on':'')+'" id="fbtn" title="'+esc(folder?relF(folder):T('Search only inside a folder'))+'">'+T('Folder:')+' '+esc(folder?fname(folder):T('All folders'))+'</button>'+(folder?'<button class="chip" id="fclr" title="'+T('All folders')+'">×</button>':'')}
-  function setFolder(f){folder=f||'';ls('finder_folder',folder);$('fpanel').hidden=true;fchips();run()}
-  function browserFolders(){var m={};rows.forEach(function(r){var d=r._dir;if(!d)return;var seen=r._file;var x=d;while(x){m[x]=m[x]||{};m[x][seen]=1;var i=x.lastIndexOf('/');if(i<0)break;x=x.slice(0,i)}});
-    return Object.keys(m).sort().map(function(p){return{p:p,n:Object.keys(m[p]).length}})}
-  function fpanel(){
-    var P=$('fpanel');if(!P.hidden){P.hidden=true;return}P.hidden=false;
-    var draw=function(){var flt=(($('fq')||{}).value||'').toLowerCase(),h='';
-      h+='<div class="fr'+(folder?'':' on')+'" data-f="">'+T('All folders')+'</div>';
-      FOLDERS.forEach(function(x){var r=relF(x.p);if(!r||x.p+'/'===FROOT||x.p+'\\'===FROOT)return;if(flt&&r.toLowerCase().indexOf(flt)<0)return;var dep=r.split(/[\\/]/).filter(Boolean).length;
-        h+='<div class="fr'+(folder===x.p?' on':'')+'" data-f="'+esc(x.p)+'" style="padding-left:'+(8+Math.max(0,dep-1)*16)+'px" title="'+esc(x.p)+'">'+esc(fname(x.p))+'<b>'+x.n+' '+T('videos')+'</b></div>'});
-      $('flist').innerHTML=h};
-    P.innerHTML='<input id="fq" type="search" placeholder="'+T('Filter folders')+'" autocomplete="off">'+(APP?'<button class="ghost" id="fdisk" style="margin-bottom:8px">'+T('Choose on disk …')+'</button>':'')+'<div id="flist"></div>';
-    $('fq').oninput=draw;if(APP)$('fdisk').onclick=function(){APP.pickFolders(T('Search only inside a folder')).then(function(p){if(p&&p[0])setFolder(p[0])})};
-    if(FOLDERS){draw();return}
-    if(serverMode)fetch(SERVER+'/api/folders').then(function(x){return x.json()}).then(function(d){FROOT=d.root||'';FOLDERS=d.list;draw()});
-    else{FOLDERS=browserFolders();draw()}
+  function fname(p){var r=p.replace(/[\\/]+$/,'');return r.split(/[\\/]/).pop()||r}
+  function fchips(){if(!serverMode){$('fchips').innerHTML='';return}
+    $('fchips').innerHTML='<button class="chip fold'+(folder?' on':'')+'" id="fbtn" title="'+esc(folder?folder:T('Search only inside a folder'))+'">'+T('Folder:')+' '+(folder?esc(fname(folder)):T('Browse …'))+'</button>'+(folder?'<button class="chip" id="fclr" title="'+T('Search everywhere')+'">× '+T('Search everywhere')+'</button>':'')}
+  function setFolder(f){folder=f||'';ls('finder_folder',folder);fchips();run()}
+  function browse(){
+    if(APP){APP.pickFolders(T('Search only inside a folder')).then(function(p){if(p&&p[0])setFolder(p[0])});return}
+    fetch(SERVER+'/api/pick-folder').then(function(x){return x.json()}).then(function(d){if(d.path)setFolder(d.path);else if(d.error)toast(d.error)});
   }
-  $('fchips').onclick=function(e){if(e.target.id==='fbtn')fpanel();if(e.target.id==='fclr')setFolder('')};
-  $('fpanel').onclick=function(e){var r=e.target.closest('.fr');if(r)setFolder(r.getAttribute('data-f'))};
+  $('fchips').onclick=function(e){if(e.target.id==='fbtn')browse();if(e.target.id==='fclr')setFolder('')};
   function chips(){
     mchips();fchips();
     if(serverMode){
@@ -497,6 +480,7 @@
       var url=SERVER+'/api/search?q='+encodeURIComponent(q)+'&source='+encodeURIComponent(source)+'&person='+encodeURIComponent(person)+'&meaning='+(showMeaning?1:0)+'&media='+media+(folder?'&folder='+encodeURIComponent(folder):'')+(noAuto?'&auto=0':'');
       fetch(url,ctl?{signal:ctl.signal}:{}).then(function(x){return x.json().then(function(d){if(!x.ok)throw new Error(d.error||x.status);return d})}).then(function(d){
         if(id!==runId||d.stale)return;
+        if(folder&&d.infolder===0){$('cnt').textContent='';$('res').innerHTML='<div class="empty">'+T(APP?'No analysed videos in this folder. Add it in the Video library.':'No analysed videos in this folder.')+'</div>';status('');return}
         var Q=FinderRank.query(d.used||q);lastQ=Q;   // подсветка — по тому, что сервер искал на самом деле
         rows=[];var put=function(r){rows[r._i]=r;return r};
         autoStatus(d.person);$('timer').textContent=(d.ms/1000).toFixed(1)+' s';
@@ -517,7 +501,7 @@
     autoStatus(auto&&auto.p);
     if(!q||!Q.qw.length){$('cnt').textContent='';$('res').innerHTML='';return}
     // без сервера: те же ступени по словам; смысл (e5 в браузере) упорядочивает «часть слов» и даёт блок «по смыслу»
-    var pool=[];rows.forEach(function(r,i){if((r.kind==='shot'?!!r.ocr:r._nw>=5)&&(!media||(media==='image')===(r.kind==='shot'))&&(!folder||(r._dir&&(r._dir===folder||r._dir.indexOf(folder+'/')===0)))&&(!source||r.source===source)&&(!who||r.person===who)&&!(r.kind==='shot'&&!r.ocr))pool.push(i)});
+    var pool=[];rows.forEach(function(r,i){if((r.kind==='shot'?!!r.ocr:r._nw>=5)&&(!media||(media==='image')===(r.kind==='shot'))&&(!source||r.source===source)&&(!who||r.person===who)&&!(r.kind==='shot'&&!r.ocr))pool.push(i)});
     var go=function(sc){
       if(id!==runId)return;
       var R=FinderRank.rank(Q,DOCS,pool,FST,sc);
