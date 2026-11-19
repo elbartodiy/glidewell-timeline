@@ -3863,8 +3863,8 @@ function drawWall(){
         ctx.drawImage(tile(tex, tw, hW), tx, yTopW, tw, hW);
         ctx.restore();
       } else {
-        const tw2 = tileW * kk * SS * 1.03;
-        ctx.drawImage(tile(texT, tw2, hW), px(wx, kk), yTopW, tw2, hW);
+        const tw2 = tileW * kk * SS * 1.03, tx2 = px(wx, kk);
+        if (tx2 + tw2 >= 0 && tx2 <= W) ctx.drawImage(tile(texT, tw2, hW), tx2, yTopW, tw2, hW);   // плитка за краем экрана — не рисуем (Эльдар, 19.11.2026)
       }
     }
     /* ПЛИНТУС ТАМ, ГДЕ ЕГО НЕТ В ФОТОГРАФИИ (Эльдар, 19.10.2026: «по всей
@@ -10882,6 +10882,7 @@ function drawBoxPile(b, t){
     if (BS){
       const [cx0, cy0, cw, chh] = BOX24[(i * 7 + q.r * 5) % 24];
       const dw = bw * 1.14, dh = dw * chh / cw;
+      if (bx + dw < 0 || bx - dw > W){ ctx.restore(); continue; }   // коробка за краем экрана (Эльдар, 19.11.2026)
       ctx.drawImage(BS.c, cx0, cy0, cw, chh, bx - bw / 2, by - dh, dw, dh);
       ctx.restore();
       continue;
@@ -11175,6 +11176,7 @@ function drawAiDataField(x0, y0, w, h, t, ph, walked){
       }
       if (!on) continue;
       const px2 = ox + cx2 * cell, py2 = oy + cy2 * cell;
+      if (px2 + cell < 0 || px2 > W || py2 + cell < 0 || py2 > H) continue;   // клетка за краем экрана (Эльдар, 19.11.2026)
       if (useGlyph && rnd > 0.945){
         ctx.fillStyle = `rgba(150,220,255,${(bright * 0.9).toFixed(2)})`;
         ctx.fillText(((cx2 + cy2 + glyphRow) & 1) ? '1' : '0', px2, py2);
@@ -13068,7 +13070,14 @@ function drawRec2Front(t){
     // re-lay the flat line onto the barrel: a slice at screen x reads the line
     // at the arc distance that lands there, so letters crowd toward the edges
     const step = Math.max(1, Math.round(1.5 * SS));
-    for (let x = -iw/2; x < iw/2; x += step){
+    /* ТОЛЬКО СРЕЗЫ, ЧТО ПОПАДАЮТ В КАДР (Эльдар, 19.11.2026: «невидимые куски не
+       рисовать»). Лента режется на срезы по 1,5 пикселя, и при подходе к колонне
+       с боку большая их часть лежала за краем экрана: замер по ленте — 39 из 48
+       рисований этого места уходили за кадр. Начало цикла сдвинуто на целое число
+       шагов, так что оставшиеся срезы стоят там же, где стояли. */
+    const xFrom = -iw/2 + Math.max(0, Math.floor((-nx - 2 * step + iw/2) / step)) * step;
+    const xTo = Math.min(iw/2, W - nx + 2 * step);
+    for (let x = xFrom; x < xTo; x += step){
       const u = Math.max(-0.999, Math.min(0.999, x / R));
       const s = R * Math.asin(u);
       /* провис строки — это сама дуга плиты: на смещении x от центра нижний
@@ -16043,6 +16052,7 @@ function drawSheetBenches(){
        else. The two ends simply overlap, and because the right piece begins on
        a door's own seam the overlap reads as one more seam in the row. */
     const wL = wOf(L), wR = wOf(R), wG = wOf(G);
+    const seen = (b0, b1) => px(b1, kf) >= 0 && px(b0, kf) <= W;   // кусок хоть краем в кадре
     const clipTo = (b0, b1) => { ctx.beginPath();
       ctx.rect(px(b0, kf), yBack, Math.max(1, px(b1, kf) - px(b0, kf)) + 1,
                yFloor - yBack + 4); ctx.clip(); };
@@ -16098,6 +16108,11 @@ function drawSheetBenches(){
       ctx.save(); clipTo(m0, m1);
       for (let i = 0; i < n; i++){
         const x = m0 + i * step;
+        /* НЕВИДИМОЕ НЕ РИСУЕМ (Эльдар, 19.11.2026). Панель целиком за краем экрана
+           давала шестнадцать обрезок лесенки впустую: замер по ленте — 83 из 162
+           обрезок первой эры приходились на то, чего нет в кадре. Панель живёт
+           только в своих границах [x, x + wG], так что пропуск ничего не меняет. */
+        if (px(x + wG, kf) < 0 || px(x, kf) > W) continue;
         if (i === 0 || fade < 1){ put(G, x, wG); continue; }
         ctx.save(); clipTo(x + fade, x + wG); put(G, x, wG); ctx.restore();
         /* ЛЕСЕНКА РАСТВОРЕНИЯ СТОИТ НА ЦЕЛЫХ ПИКСЕЛЯХ. Полосы резались по
@@ -16110,7 +16125,7 @@ function drawSheetBenches(){
         for (let j = 1; j <= K; j++){
           const b0 = Math.round(xs0 + (xs1 - xs0) * (j - 1) / K);
           const b1 = Math.round(xs0 + (xs1 - xs0) * j / K);
-          if (b1 <= b0) continue;
+          if (b1 <= b0 || b1 <= 0 || b0 >= W) continue;   // полоса за краем экрана
           ctx.save();
           ctx.globalAlpha = j / (K + 1);
           ctx.beginPath(); ctx.rect(b0, yBack, b1 - b0, yFloor - yBack + 4); ctx.clip();
@@ -16149,7 +16164,7 @@ function drawSheetBenches(){
       for (let j = 1; j <= K; j++){
         const b0 = Math.round(xs0 + (xs1 - xs0) * (j - 1) / K);
         const b1 = Math.round(xs0 + (xs1 - xs0) * j / K);
-        if (b1 <= b0) continue;
+        if (b1 <= b0 || b1 <= 0 || b0 >= W) continue;   // полоса за краем экрана
         ctx.save();
         ctx.globalAlpha = dir > 0 ? j / (K + 1) : 1 - j / (K + 1);
         ctx.beginPath(); ctx.rect(b0, yBack, b1 - b0, yFloor - yBack + 4); ctx.clip();
@@ -16158,16 +16173,16 @@ function drawSheetBenches(){
       }
     };
     if (tight){
-      ctx.save(); clipTo(cut, tb.x1 + 40); put(R, tb.x1 - wR, wR); ctx.restore();
-      ctx.save(); clipTo(tb.x0 - 40, cut); put(L, tb.x0, wL); ctx.restore();
+      if (seen(cut, tb.x1 + 40)){ ctx.save(); clipTo(cut, tb.x1 + 40); put(R, tb.x1 - wR, wR); ctx.restore(); }
+      if (seen(tb.x0 - 40, cut)){ ctx.save(); clipTo(tb.x0 - 40, cut); put(L, tb.x0, wL); ctx.restore(); }
     } else if (EFADE < 1 || mid <= 0.5){
       put(R, tb.x1 - wR, wR);
       put(L, tb.x0, wL);
     } else {
-      ctx.save(); clipTo(a1 + EFADE, tb.x1 + 40); put(R, tb.x1 - wR, wR); ctx.restore();
-      ctx.save(); clipTo(a1, a1 + EFADE); feather(a1, a1 + EFADE, () => put(R, tb.x1 - wR, wR), 1); ctx.restore();
-      ctx.save(); clipTo(tb.x0 - 40, a0 - EFADE); put(L, tb.x0, wL); ctx.restore();
-      ctx.save(); clipTo(a0 - EFADE, a0); feather(a0 - EFADE, a0, () => put(L, tb.x0, wL), -1); ctx.restore();
+      if (seen(a1 + EFADE, tb.x1 + 40)){ ctx.save(); clipTo(a1 + EFADE, tb.x1 + 40); put(R, tb.x1 - wR, wR); ctx.restore(); }
+      if (seen(a1, a1 + EFADE)){ ctx.save(); clipTo(a1, a1 + EFADE); feather(a1, a1 + EFADE, () => put(R, tb.x1 - wR, wR), 1); ctx.restore(); }
+      if (seen(tb.x0 - 40, a0 - EFADE)){ ctx.save(); clipTo(tb.x0 - 40, a0 - EFADE); put(L, tb.x0, wL); ctx.restore(); }
+      if (seen(a0 - EFADE, a0)){ ctx.save(); clipTo(a0 - EFADE, a0); feather(a0 - EFADE, a0, () => put(L, tb.x0, wL), -1); ctx.restore(); }
     }
     /* PLAIN GROUND UNDER A LINE. A caption is read off the counter's own front,
        and on a short run the doorless middle is 127 units wide (1995) while the
@@ -16220,15 +16235,15 @@ function drawSheetBenches(){
       const n2 = Math.max(1, Math.ceil((w1 - w0) / (wG - 8)));   // they overlap by the seam they dropped
       const st2 = n2 > 1 ? (w1 - w0 - wG) / (n2 - 1) : 0;
       const copies = () => { for (let i = 0; i < n2; i++) putFace(G, w0 + i * st2, wG); };
-      ctx.save(); clipTo(w0, w1); copies(); ctx.restore();
+      if (seen(w0, w1)){ ctx.save(); clipTo(w0, w1); copies(); ctx.restore(); }
       const FD = 140, K2 = 8;
       for (let j = 1; j <= K2; j++){
         const a = j / (K2 + 1);
-        if (f0){
+        if (f0 && seen(w0 - FD * (K2 - j + 1) / K2, w0 - FD * (K2 - j) / K2)){
           ctx.save(); ctx.globalAlpha = a;
           clipTo(w0 - FD * (K2 - j + 1) / K2, w0 - FD * (K2 - j) / K2); copies(); ctx.restore();
         }
-        if (f1){
+        if (f1 && seen(w1 + FD * (K2 - j) / K2, w1 + FD * (K2 - j + 1) / K2)){
           ctx.save(); ctx.globalAlpha = a;
           clipTo(w1 + FD * (K2 - j) / K2, w1 + FD * (K2 - j + 1) / K2); copies(); ctx.restore();
         }
