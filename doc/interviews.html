@@ -88,6 +88,7 @@
   .lib .lrow .bar i{display:block;height:100%;background:var(--red)}
   .lib .lrow button{font-size:12px;padding:3px 10px}
   .lib .list{max-height:420px;overflow:auto;margin-top:12px}
+  .lib h4{margin:22px 0 0;font:500 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .lib .sum{font:400 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted-dim);margin-top:8px}
   .lib .sum b{color:var(--ink);font-weight:500}
   .fplayer{position:fixed;inset:0;z-index:110;background:rgba(5,5,9,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
@@ -213,7 +214,7 @@
     'Folder:':'Папка:','Search only inside a folder':'Искать только внутри папки','Browse …':'Обзор …','Search everywhere':'Искать везде','videos':'видео',
     'No analysed videos in this folder. Add it in the Video library.':'В этой папке нет разобранных видео. Добавь её в библиотеке видео.',
     'No analysed videos in this folder.':'В этой папке нет разобранных видео.',
-    'Video library':'Библиотека видео','Work folder:':'Рабочая папка:','Add a folder':'Добавить папку','Add files':'Добавить файлы',
+    'Video library':'Библиотека видео','Index for other apps':'Индекс для других программ','exported':'выгружено','files':'файлов','after analysis':'выгрузится после разбора','Export now':'Выгрузить сейчас','Show':'Показать','Exporting …':'Выгружаю …','describing shots':'описываю планы','Work folder:':'Рабочая папка:','Add a folder':'Добавить папку','Add files':'Добавить файлы',
     'Find moved files':'Найти перемещённые файлы','Pause analysis':'Пауза анализа','Resume analysis':'Продолжить анализ','Change work folder':'Сменить рабочую папку',
     'videos':'видео','analysed':'разобрано','in queue':'в очереди','not found':'не найдено','errors':'ошибок',
     'queued':'в очереди','done':'готово','error':'ошибка','missing':'не найден','Retry':'Ещё раз','Remove':'Убрать',
@@ -561,7 +562,13 @@
       var st=v.missing?'<span class="st miss">'+T('missing')+'</span>':v.status==='working'?'<span class="st">'+T(v.stage||'probe')+' '+v.pct+'%</span>':v.status==='error'?'<span class="st err" title="'+esc(v.err)+'">'+T('error')+' <button class="ghost" data-l="retry" data-id="'+v.id+'">'+T('Retry')+'</button></span>':
         '<span class="st'+(v.status==='done'?' ok':'')+'">'+(v.status==='done'?v.nseg+' '+T('fragments'):T(v.status))+(v.status!=='working'?' <button class="ghost" data-l="remove" data-id="'+v.id+'" title="'+T('Remove')+'">×</button>':'')+'</span>';
       h+='<div class="lrow"><span class="n">'+esc(v.name)+'</span>'+st+'<span class="p">'+esc(v.path)+'</span>'+(v.status==='working'?'<div class="bar"><i style="width:'+v.pct+'%"></i></div>':'')+'</div>'});
-    h+='</div><div class="actbar"><button class="ghost" data-l="pause">'+T(d.paused?'Resume analysis':'Pause analysis')+'</button>'+(c.missing?'<button class="ghost" data-l="relink">'+T('Find moved files')+'</button>':'')+
+    if(d.describing)h+='<div class="lrow"><span class="n">'+esc(d.describing)+'</span><span class="st">'+T('describing shots')+'</span></div>';
+    h+='</div>';
+    if(d.exports&&d.exports.length){h+='<h4>'+T('Index for other apps')+'</h4><div class="list">';
+      d.exports.forEach(function(e){h+='<div class="lrow"><span class="n">'+esc(fname(e.root))+'</span><span class="st'+(e.at?' ok':'')+'">'+(e.at?T('exported')+' '+new Date(e.at).toLocaleString()+', '+e.items+' '+T('files'):T('after analysis'))+
+        ' <button class="ghost" data-l="export" data-root="'+esc(e.root)+'">'+T('Export now')+'</button>'+(e.at?' <button class="ghost" data-l="rexp" data-root="'+esc(e.root)+'">'+T('Show')+'</button>':'')+'</span><span class="p">'+esc(e.dir||e.root)+'</span></div>'});
+      h+='</div>'}
+    h+='<div class="actbar"><button class="ghost" data-l="pause">'+T(d.paused?'Resume analysis':'Pause analysis')+'</button>'+(c.missing?'<button class="ghost" data-l="relink">'+T('Find moved files')+'</button>':'')+
       '<span class="sp" style="flex:1"></span><button class="ghost" data-l="files">'+T('Add files')+'</button><button class="act ready" data-l="folder">'+T('Add a folder')+'</button></div>';
     $('lib').innerHTML=h;
   }
@@ -574,6 +581,9 @@
     if(a==='retry')post('retry',{id:id}).then(libPoll);
     if(a==='remove')post('remove',{id:id}).then(libPoll);
     if(a==='lib')APP.changeLibrary();
+    var root=b.getAttribute('data-root');
+    if(a==='export'){b.disabled=true;toast(T('Exporting …'));post('export',{root:root}).then(function(r){toast(r.error?T('error'):T('exported')+': '+r.items+' '+T('files'));libPoll()})}
+    if(a==='rexp')post('reveal-export',{root:root});
   };
   if(LOCAL)fetch(SERVER+'/api/status').then(function(x){return x.json()}).then(function(st){if(st&&st.ok)startServer(st);else throw 0}).catch(function(){browserStart()});
   else browserStart();
