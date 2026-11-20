@@ -1,7 +1,7 @@
 {
- "updated": "2026-11-20T07:18:59+00:00",
+ "updated": "2026-11-20T20:23:35+00:00",
  "source": "https://glidewelldirect.com/collections/education/products.json?limit=250",
- "count": 81,
+ "count": 83,
  "events": [
   {
    "title": "Techniques for Predictable Implant Surgery",
@@ -360,6 +360,20 @@
    "price": "795.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/the-digital-implant-blueprint-from-restorative-driven-planning-to-chairside-provisionalization?variant=68139962794348"
+  },
+  {
+   "title": "Fixed Implant Prosthetics: From Single Unit to Full Arch",
+   "from": "2027-05-14",
+   "to": "2027-05-15",
+   "city": "Irvine, CA",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Taylor Manalili"
+   ],
+   "duration": "",
+   "price": "795.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/fixed-implant-prosthetics-from-single-unit-to-full-arch?variant=68249857950060"
   },
   {
    "title": "Surgical Placement of Dental Implants: A Restorative-Driven Approach",
@@ -791,6 +805,20 @@
    "price": "1190.00",
    "open": true,
    "url": "https://glidewelldirect.com/products/implant-surgery-aligner-therapy-and-cad-cam-dentistry?variant=67836908765548"
+  },
+  {
+   "title": "Fixed Implant Prosthetics: From Single Unit to Full Arch",
+   "from": "2027-08-27",
+   "to": "2027-08-28",
+   "city": "Raleigh, NC",
+   "kind": "Live course",
+   "instructors": [
+    "Dr. Taylor Manalili"
+   ],
+   "duration": "",
+   "price": "795.00",
+   "open": true,
+   "url": "https://glidewelldirect.com/products/fixed-implant-prosthetics-from-single-unit-to-full-arch?variant=68249858015596"
   },
   {
    "title": "Incorporating Digital Dentistry and Aligner Therapy",
